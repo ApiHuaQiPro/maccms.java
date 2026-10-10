@@ -1,0 +1,488 @@
+openapi: 3.0.3
+info:
+  title: MacCMS 内容只读接口（首批）
+  version: 1.0.0
+  description: |
+    MacCMS 重构首批对外接口（MACC-4）：视频分类、视频分页列表、视频公开详情元数据、健康检查。
+
+    本文件是前后端契约，后端实现位于 backend/ 的 content 模块，HTTP 契约测试
+    （backend/src/test/java/com/maccms/backend/content/ContentApiContractTest.java）逐字段比对响应与本文件中的 schema。
+    修改接口必须同时修改本文件和测试，规则见 docs/architecture/02-agent-development-rules.md。
+
+    通用约定：
+    - 只有 GET；所有响应为 `application/json; charset=UTF-8`。
+    - 所有字段都会输出，不省略：字符串缺省为 `""`，数字缺省为 `0`，不会出现 `null`。
+    - 文本字段原样返回库内值（可能含后台录入时转义过的 HTML 实体）；图片字段可能是相对路径、完整 URL
+      或旧系统的 `mac://` 前缀，地址规范化不在本批范围。
+    - 时间字段是 Unix 时间戳（秒，整数），与旧库存储一致。
+    - 未声明的查询参数会被忽略；值为空字符串的参数按"未传"处理。
+    - 访问者一律按旧系统的游客（会员组 group_id=1）身份判定可见性；本批不识别登录态。
+    - 本批不提供：播放/下载地址与授权、观看密码校验、收费/积分、会员、Provide 资源站协议、采集、后台写入、搜索、
+      文章/专题/演员等其他内容类型。
+servers:
+  - url: http://127.0.0.1:18280
+    description: 本机开发（默认端口，见 backend/README.md）
+tags:
+  - name: content
+    description: 视频分类与视频公开元数据（只读）
+  - name: ops
+    description: 运维
+paths:
+  /api/v1/video-categories:
+    get:
+      tags: [content]
+      operationId: listVideoCategories
+      summary: 视频分类树
+      description: |
+        返回公开可见的视频分类（mac_type.type_mid=1），按树形组织。一个分类可见，当且仅当：
+        1. `type_status=1`；
+        2. 游客组对该分类有"列表"权限（group_type 包含该分类，且 group_popedom 中权限位 1 非空）——
+           后端开关 `maccms.content.enforce-guest-popedom=false` 时跳过此条；
+        3. 上级分类同样可见（上级不可见的子分类不出现）。
+
+        同级排序：`sort` 升序，再按 `id` 升序。没有可见分类时 `items` 为空数组。
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryListResponse'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /api/v1/videos:
+    get:
+      tags: [content]
+      operationId: listVideos
+      summary: 视频分页列表（可按分类筛选）
+      description: |
+        返回已审核（vod_status=1）且所属分类可见（规则同 /api/v1/video-categories）的视频。
+
+        - 传 `categoryId` 时，结果包含该分类及其可见的直接子分类下的视频（与旧系统按分类取列表的规则一致）。
+          分类不存在或不可见时返回 404 `CATEGORY_NOT_FOUND`。
+        - 排序：按 `sort` 字段，`order` 方向，再按视频 `id` 同方向排序，保证分页结果稳定。
+        - `page` 超过总页数时返回 200，`items` 为空数组，`total`/`totalPages` 仍为实际值。
+        - 列表项不含正文；`detailPasswordRequired=true` 的视频调用详情接口会得到 403。
+      parameters:
+        - name: categoryId
+          in: query
+          required: false
+          description: 分类 ID（mac_type.type_id）。
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 65535
+        - name: sort
+          in: query
+          required: false
+          description: |
+            排序字段，默认 `time`（更新时间）。对应旧库列：time=vod_time，time_add=vod_time_add，id=vod_id，
+            score=vod_score，hits=vod_hits，hits_day/hits_week/hits_month=对应点击数，up=vod_up，down=vod_down，
+            level=vod_level（推荐等级）。不支持旧系统的 rnd（随机）。
+          schema:
+            type: string
+            enum: [time, time_add, id, score, hits, hits_day, hits_week, hits_month, up, down, level]
+            default: time
+        - name: order
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [desc, asc]
+            default: desc
+        - name: page
+          in: query
+          required: false
+          description: 页码，从 1 开始。
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 1
+        - name: pageSize
+          in: query
+          required: false
+          description: 每页条数。
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VideoPage'
+        '400':
+          $ref: '#/components/responses/InvalidParameter'
+        '404':
+          description: 分类不存在或不可见（code=CATEGORY_NOT_FOUND）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                code: CATEGORY_NOT_FOUND
+                message: 分类不存在
+                fieldErrors: []
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /api/v1/videos/{id}:
+    get:
+      tags: [content]
+      operationId: getVideo
+      summary: 视频公开详情元数据
+      description: |
+        返回单个视频的公开元数据。**这不是播放授权**：不含播放/下载地址、试看、积分或会员信息。
+
+        判定顺序：
+        1. 视频不存在、未审核（vod_status≠1）、所属分类不可见、或游客组对该分类没有"详情"权限（权限位 2）
+           → 404 `VIDEO_NOT_FOUND`（不区分原因，不暴露视频是否存在）；
+        2. 视频设置了观看密码（vod_pwd 非空）→ 403 `VIDEO_PASSWORD_REQUIRED`，不返回任何视频字段；
+        3. 视频标记版权（vod_copyright=1）且后端开关 `maccms.content.copyright-hides-detail=true`（默认）
+           → 403 `VIDEO_COPYRIGHT_RESTRICTED`；
+        4. 其他情况 → 200。
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: 视频 ID（mac_vod.vod_id）。
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+            maximum: 4294967295
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VideoDetail'
+        '400':
+          $ref: '#/components/responses/InvalidParameter'
+        '403':
+          description: 需要观看密码（VIDEO_PASSWORD_REQUIRED）或因版权不提供详情（VIDEO_COPYRIGHT_RESTRICTED）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                code: VIDEO_PASSWORD_REQUIRED
+                message: 该视频详情需要观看密码
+                fieldErrors: []
+        '404':
+          description: 视频不存在或不可见（code=VIDEO_NOT_FOUND）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                code: VIDEO_NOT_FOUND
+                message: 视频不存在
+                fieldErrors: []
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /actuator/health:
+    get:
+      tags: [ops]
+      operationId: health
+      summary: 健康检查
+      description: 只返回整体状态（含数据库连通性），不返回组件明细、版本或配置。数据库不可用时返回 503 与 DOWN。
+      responses:
+        '200':
+          description: 服务与数据库可用
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Health'
+              example:
+                status: UP
+        '503':
+          description: 服务或数据库不可用
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Health'
+              example:
+                status: DOWN
+components:
+  responses:
+    InvalidParameter:
+      description: 参数不合法（code=INVALID_PARAMETER），fieldErrors 指出具体参数
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            code: INVALID_PARAMETER
+            message: 请求参数不合法
+            fieldErrors:
+              - field: pageSize
+                message: 必须是 1 到 100 之间的整数
+    ServiceUnavailable:
+      description: 数据库暂时不可用（code=SERVICE_UNAVAILABLE）
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    InternalError:
+      description: 未预期的服务器错误（code=INTERNAL_ERROR），不包含内部细节
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+  schemas:
+    ErrorResponse:
+      type: object
+      additionalProperties: false
+      required: [code, message, fieldErrors]
+      description: |
+        统一错误响应。code 取值与 HTTP 状态：
+        INVALID_PARAMETER=400，CATEGORY_NOT_FOUND=404，VIDEO_NOT_FOUND=404，VIDEO_PASSWORD_REQUIRED=403，
+        VIDEO_COPYRIGHT_RESTRICTED=403，NOT_FOUND=404（路径不存在），METHOD_NOT_ALLOWED=405，
+        SERVICE_UNAVAILABLE=503，INTERNAL_ERROR=500。前端应按 code 分支，message 仅供展示。
+      properties:
+        code:
+          type: string
+          enum: [INVALID_PARAMETER, CATEGORY_NOT_FOUND, VIDEO_NOT_FOUND, VIDEO_PASSWORD_REQUIRED,
+                 VIDEO_COPYRIGHT_RESTRICTED, NOT_FOUND, METHOD_NOT_ALLOWED, SERVICE_UNAVAILABLE, INTERNAL_ERROR]
+        message:
+          type: string
+        fieldErrors:
+          type: array
+          description: 仅 INVALID_PARAMETER 时非空。
+          items:
+            $ref: '#/components/schemas/FieldError'
+    FieldError:
+      type: object
+      additionalProperties: false
+      required: [field, message]
+      properties:
+        field:
+          type: string
+          description: 出错的参数名（如 page、pageSize、sort、order、categoryId、id）。
+        message:
+          type: string
+    Health:
+      type: object
+      additionalProperties: false
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [UP, DOWN]
+    CategoryListResponse:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          description: 顶级分类（parentId=0），子分类在各自的 children 中。
+          items:
+            $ref: '#/components/schemas/Category'
+    Category:
+      type: object
+      additionalProperties: false
+      required: [id, name, enName, sort, parentId, title, keywords, description, logo, pic, extend, children]
+      properties:
+        id:
+          type: integer
+          description: mac_type.type_id
+        name:
+          type: string
+          description: type_name
+        enName:
+          type: string
+          description: type_en（拼音/英文别名）
+        sort:
+          type: integer
+          description: type_sort
+        parentId:
+          type: integer
+          description: type_pid，顶级为 0
+        title:
+          type: string
+          description: type_title（SEO 标题）
+        keywords:
+          type: string
+          description: type_key（SEO 关键词）
+        description:
+          type: string
+          description: type_des（SEO 描述）
+        logo:
+          type: string
+          description: type_logo
+        pic:
+          type: string
+          description: type_pic
+        extend:
+          $ref: '#/components/schemas/CategoryExtend'
+        children:
+          type: array
+          description: 可见的子分类，排序规则同上；没有时为空数组。
+          items:
+            $ref: '#/components/schemas/Category'
+    CategoryExtend:
+      type: object
+      additionalProperties: false
+      required: [classes, area, lang, year, star, director, state, version]
+      description: |
+        type_extend（JSON）中供前台筛选的候选值，原样返回逗号分隔字符串；JSON 缺失、无法解析或缺键时为 ""。
+        classes 对应 JSON 键 class。
+      properties:
+        classes: {type: string}
+        area: {type: string}
+        lang: {type: string}
+        year: {type: string}
+        star: {type: string}
+        director: {type: string}
+        state: {type: string}
+        version: {type: string}
+    CategoryRef:
+      type: object
+      additionalProperties: false
+      required: [id, name, enName, parentId]
+      properties:
+        id: {type: integer}
+        name: {type: string}
+        enName: {type: string}
+        parentId: {type: integer}
+    VideoPage:
+      type: object
+      additionalProperties: false
+      required: [items, page, pageSize, total, totalPages]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/VideoSummary'
+        page:
+          type: integer
+          description: 本次请求的页码（回显）
+        pageSize:
+          type: integer
+          description: 本次请求的每页条数（回显）
+        total:
+          type: integer
+          format: int64
+          description: 满足条件的视频总数
+        totalPages:
+          type: integer
+          format: int64
+          description: ceil(total / pageSize)，total=0 时为 0
+    VideoSummary:
+      type: object
+      additionalProperties: false
+      required: [id, name, subTitle, enName, letter, color, category, classes, tag, pic, picThumb, picSlide,
+                 actor, director, blurb, remarks, area, lang, year, version, state, serial, total, finished,
+                 level, copyright, score, scoreNum, hits, hitsDay, hitsWeek, hitsMonth, up, down, updatedAt,
+                 addedAt, detailPasswordRequired]
+      properties:
+        id: {type: integer, format: int64, description: vod_id}
+        name: {type: string, description: vod_name}
+        subTitle: {type: string, description: vod_sub（副标题/别名）}
+        enName: {type: string, description: vod_en}
+        letter: {type: string, description: vod_letter（首字母）}
+        color: {type: string, description: vod_color（标题颜色）}
+        category:
+          $ref: '#/components/schemas/CategoryRef'
+        classes: {type: string, description: vod_class（扩展分类，逗号分隔）}
+        tag: {type: string, description: vod_tag}
+        pic: {type: string, description: vod_pic}
+        picThumb: {type: string, description: vod_pic_thumb}
+        picSlide: {type: string, description: vod_pic_slide}
+        actor: {type: string, description: vod_actor}
+        director: {type: string, description: vod_director}
+        blurb: {type: string, description: vod_blurb（简介）}
+        remarks: {type: string, description: vod_remarks（备注，如"更新至10集"）}
+        area: {type: string, description: vod_area}
+        lang: {type: string, description: vod_lang}
+        year: {type: string, description: vod_year}
+        version: {type: string, description: vod_version}
+        state: {type: string, description: vod_state}
+        serial: {type: string, description: vod_serial（连载数）}
+        total: {type: integer, description: vod_total（总集数）}
+        finished: {type: boolean, description: vod_isend=1}
+        level: {type: integer, description: vod_level（推荐等级 0-9）}
+        copyright: {type: boolean, description: vod_copyright=1}
+        score: {type: number, description: vod_score（一位小数）}
+        scoreNum: {type: integer, description: vod_score_num}
+        hits: {type: integer}
+        hitsDay: {type: integer}
+        hitsWeek: {type: integer}
+        hitsMonth: {type: integer}
+        up: {type: integer, description: vod_up（顶）}
+        down: {type: integer, description: vod_down（踩）}
+        updatedAt: {type: integer, format: int64, description: vod_time（Unix 秒）}
+        addedAt: {type: integer, format: int64, description: vod_time_add（Unix 秒）}
+        detailPasswordRequired:
+          type: boolean
+          description: 视频设置了观看密码，详情接口会返回 403 VIDEO_PASSWORD_REQUIRED。密码本身从不返回。
+    VideoDetail:
+      type: object
+      additionalProperties: false
+      required: [id, name, subTitle, enName, letter, color, category, classes, tag, pic, picThumb, picSlide,
+                 actor, director, writer, behind, blurb, remarks, pubdate, area, lang, year, version, state, tv,
+                 weekday, duration, serial, total, finished, level, copyright, score, scoreAll, scoreNum,
+                 doubanId, doubanScore, hits, hitsDay, hitsWeek, hitsMonth, up, down, updatedAt, addedAt, content]
+      description: 视频公开元数据。不包含播放/下载地址、观看密码、积分、试看、会员组、模板、来源地址等字段。
+      properties:
+        id: {type: integer, format: int64}
+        name: {type: string}
+        subTitle: {type: string}
+        enName: {type: string}
+        letter: {type: string}
+        color: {type: string}
+        category:
+          $ref: '#/components/schemas/CategoryRef'
+        classes: {type: string}
+        tag: {type: string}
+        pic: {type: string}
+        picThumb: {type: string}
+        picSlide: {type: string}
+        actor: {type: string}
+        director: {type: string}
+        writer: {type: string, description: vod_writer（编剧）}
+        behind: {type: string, description: vod_behind（幕后）}
+        blurb: {type: string}
+        remarks: {type: string}
+        pubdate: {type: string, description: vod_pubdate（上映日期，原样字符串）}
+        area: {type: string}
+        lang: {type: string}
+        year: {type: string}
+        version: {type: string}
+        state: {type: string}
+        tv: {type: string, description: vod_tv（电视频道）}
+        weekday: {type: string, description: vod_weekday（节目周期）}
+        duration: {type: string, description: vod_duration（时长）}
+        serial: {type: string}
+        total: {type: integer}
+        finished: {type: boolean}
+        level: {type: integer}
+        copyright: {type: boolean}
+        score: {type: number}
+        scoreAll: {type: integer}
+        scoreNum: {type: integer}
+        doubanId: {type: integer, format: int64}
+        doubanScore: {type: number}
+        hits: {type: integer}
+        hitsDay: {type: integer}
+        hitsWeek: {type: integer}
+        hitsMonth: {type: integer}
+        up: {type: integer}
+        down: {type: integer}
+        updatedAt: {type: integer, format: int64}
+        addedAt: {type: integer, format: int64}
+        content:
+          type: string
+          description: vod_content，后台录入的原始 HTML。前端渲染前必须做 HTML 白名单过滤。

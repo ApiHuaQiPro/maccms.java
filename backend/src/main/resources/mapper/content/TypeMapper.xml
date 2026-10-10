@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 只读映射：沿用旧表 mac_type（application/install/sql/install.sql:574）。禁止在此文件加入写语句。 -->
+<mapper namespace="com.maccms.backend.content.infrastructure.TypeMapper">
+
+    <!--
+      对应旧 Type::listCacheData 的固定条件 type_status=1（common/model/Type.php:189）与 flag=vod 的 type_mid=1（:130-131）。
+      行数受 type_id smallint 主键限制，属于配置表，不分页。
+    -->
+    <select id="selectEnabledVodTypes" resultType="com.maccms.backend.content.infrastructure.TypeRow">
+        SELECT type_id     AS id,
+               type_name   AS name,
+               type_en     AS enName,
+               type_sort   AS sort,
+               type_pid    AS parentId,
+               type_title  AS title,
+               type_key    AS keywords,
+               type_des    AS description,
+               type_logo   AS logo,
+               type_pic    AS pic,
+               type_extend AS extendJson
+        FROM mac_type
+        WHERE type_mid = 1
+          AND type_status = 1
+        ORDER BY type_sort ASC, type_id ASC
+    </select>
+</mapper>

@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+  只读映射：沿用旧表 mac_vod（install.sql:685）。禁止在此文件加入写语句，禁止 ${} 拼接。
+  不查询的列（不得出现在任何 select 中）：vod_pwd 及 vod_pwd_*（只以 CHAR_LENGTH(vod_pwd) > 0 的布尔结果出现；比 PHP 的 !empty 更严：值为 "0" 也视为有密码）、
+  vod_play_* / vod_down_*（播放与下载地址）、vod_points*、vod_trysee、group_id、vod_lock、vod_tpl*、
+  vod_reurl、vod_jumpurl、vod_author、vod_time_make、vod_time_hits、vod_rel_*、vod_plot*、vod_pic_screenshot。
+-->
+<mapper namespace="com.maccms.backend.content.infrastructure.VodMapper">
+
+    <sql id="publishedInTypes">
+        vod_status = 1
+        AND type_id IN
+        <foreach collection="typeIds" item="tid" open="(" separator="," close=")">#{tid}</foreach>
+    </sql>
+
+    <sql id="summaryColumns">
+        vod_id                   AS id,
+        type_id                  AS categoryId,
+        vod_name                 AS name,
+        vod_sub                  AS subTitle,
+        vod_en                   AS enName,
+        vod_letter               AS letter,
+        vod_color                AS color,
+        vod_class                AS classes,
+        vod_tag                  AS tag,
+        vod_pic                  AS pic,
+        vod_pic_thumb            AS picThumb,
+        vod_pic_slide            AS picSlide,
+        vod_actor                AS actor,
+        vod_director             AS director,
+        vod_blurb                AS blurb,
+        vod_remarks              AS remarks,
+        vod_area                 AS area,
+        vod_lang                 AS lang,
+        vod_year                 AS year,
+        vod_version              AS version,
+        vod_state                AS state,
+        vod_serial               AS serial,
+        vod_total                AS total,
+        vod_isend                AS isEnd,
+        vod_level                AS level,
+        vod_copyright            AS copyright,
+        vod_score                AS score,
+        vod_score_num            AS scoreNum,
+        vod_hits                 AS hits,
+        vod_hits_day             AS hitsDay,
+        vod_hits_week            AS hitsWeek,
+        vod_hits_month           AS hitsMonth,
+        vod_up                   AS up,
+        vod_down                 AS down,
+        vod_time                 AS updatedAt,
+        vod_time_add             AS addedAt,
+        (CHAR_LENGTH(vod_pwd) &gt; 0) AS detailPasswordRequired
+    </sql>
+
+    <select id="countPublished" resultType="long">
+        SELECT COUNT(*)
+        FROM mac_vod
+        WHERE <include refid="publishedInTypes"/>
+    </select>
+
+    <!--
+      排序白名单对应旧 Vod::listCacheData 的 by 取值（common/model/Vod.php:539），rnd 暂不支持；
+      追加 vod_id 同向排序保证分页稳定。
+    -->
+    <select id="selectPublishedPage" resultType="com.maccms.backend.content.infrastructure.VodSummaryRow">
+        SELECT <include refid="summaryColumns"/>
+        FROM mac_vod
+        WHERE <include refid="publishedInTypes"/>
+        ORDER BY
+        <choose>
+            <when test="sort.name() == 'TIME'">vod_time</when>
+            <when test="sort.name() == 'TIME_ADD'">vod_time_add</when>
+            <when test="sort.name() == 'SCORE'">vod_score</when>
+            <when test="sort.name() == 'HITS'">vod_hits</when>
+            <when test="sort.name() == 'HITS_DAY'">vod_hits_day</when>
+            <when test="sort.name() == 'HITS_WEEK'">vod_hits_week</when>
+            <when test="sort.name() == 'HITS_MONTH'">vod_hits_month</when>
+            <when test="sort.name() == 'UP'">vod_up</when>
+            <when test="sort.name() == 'DOWN'">vod_down</when>
+            <when test="sort.name() == 'LEVEL'">vod_level</when>
+            <otherwise>vod_id</otherwise>
+        </choose>
+        <choose>
+            <when test="descending">DESC, vod_id DESC</when>
+            <otherwise>ASC, vod_id ASC</otherwise>
+        </choose>
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- 对应旧 mac_label_vod_detail 的 vod_id + vod_status=1 条件（application/common.php:2715-2728）。 -->
+    <select id="selectPublishedDetail" resultType="com.maccms.backend.content.infrastructure.VodDetailRow">
+        SELECT vod_id                   AS id,
+               type_id                  AS categoryId,
+               vod_name                 AS name,
+               vod_sub                  AS subTitle,
+               vod_en                   AS enName,
+               vod_letter               AS letter,
+               vod_color                AS color,
+               vod_class                AS classes,
+               vod_tag                  AS tag,
+               vod_pic                  AS pic,
+               vod_pic_thumb            AS picThumb,
+               vod_pic_slide            AS picSlide,
+               vod_actor                AS actor,
+               vod_director             AS director,
+               vod_writer               AS writer,
+               vod_behind               AS behind,
+               vod_blurb                AS blurb,
+               vod_remarks              AS remarks,
+               vod_pubdate              AS pubdate,
+               vod_area                 AS area,
+               vod_lang                 AS lang,
+               vod_year                 AS year,
+               vod_version              AS version,
+               vod_state                AS state,
+               vod_tv                   AS tv,
+               vod_weekday              AS weekday,
+               vod_duration             AS duration,
+               vod_serial               AS serial,
+               vod_total                AS total,
+               vod_isend                AS isEnd,
+               vod_level                AS level,
+               vod_copyright            AS copyright,
+               vod_score                AS score,
+               vod_score_all            AS scoreAll,
+               vod_score_num            AS scoreNum,
+               vod_douban_id            AS doubanId,
+               vod_douban_score         AS doubanScore,
+               vod_hits                 AS hits,
+               vod_hits_day             AS hitsDay,
+               vod_hits_week            AS hitsWeek,
+               vod_hits_month           AS hitsMonth,
+               vod_up                   AS up,
+               vod_down                 AS down,
+               vod_time                 AS updatedAt,
+               vod_time_add             AS addedAt,
+               vod_content              AS content,
+               (CHAR_LENGTH(vod_pwd) &gt; 0) AS detailPasswordRequired
+        FROM mac_vod
+        WHERE vod_id = #{id}
+          AND vod_status = 1
+    </select>
+</mapper>
