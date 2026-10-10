@@ -1,0 +1,67 @@
+# 默认配置不含任何数据库地址或凭证：缺少环境变量时启动直接失败，不会回落到任何默认库或 root 账号。
+# 可用的环境变量见 backend/config/maccms-backend.env.example。
+spring:
+  application:
+    name: maccms-backend
+  datasource:
+    url: ${MACCMS_DB_URL}
+    username: ${MACCMS_DB_USERNAME}
+    password: ${MACCMS_DB_PASSWORD}
+    hikari:
+      # 只读连接：Connector/J 会对会话执行 SET SESSION TRANSACTION READ ONLY，写语句会被 MySQL 拒绝
+      read-only: true
+      maximum-pool-size: ${MACCMS_DB_POOL_SIZE:10}
+      connection-timeout: 5000
+      pool-name: maccms-ro
+  sql:
+    init:
+      # 不执行任何 schema/data 初始化脚本
+      mode: never
+  jackson:
+    default-property-inclusion: always
+
+mybatis:
+  mapper-locations: classpath:mapper/**/*.xml
+  configuration:
+    arg-name-based-constructor-auto-mapping: true
+    map-underscore-to-camel-case: false
+    default-statement-timeout: 10
+
+maccms:
+  datasource:
+    allow-root: ${MACCMS_DB_ALLOW_ROOT:false}
+  content:
+    # 对齐 PHP 配置 user.status：1 时按游客组(group_id=1)的 group_type/group_popedom 判定分类与详情可见性
+    enforce-guest-popedom: ${MACCMS_CONTENT_ENFORCE_GUEST_POPEDOM:true}
+    # 对齐 PHP 配置 app.copyright_status==2（内容页跳转）：vod_copyright=1 的视频详情返回 403
+    copyright-hides-detail: ${MACCMS_CONTENT_COPYRIGHT_HIDES_DETAIL:true}
+
+server:
+  port: ${MACCMS_SERVER_PORT:18280}
+  address: ${MACCMS_SERVER_ADDRESS:127.0.0.1}
+  error:
+    include-stacktrace: never
+    include-message: never
+    include-exception: false
+    whitelabel:
+      enabled: false
+  shutdown: graceful
+
+management:
+  endpoints:
+    access:
+      default: none
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      access: read-only
+      show-details: never
+      show-components: never
+      # 不在响应中列出 liveness/readiness 分组
+      probes:
+        enabled: false
+  info:
+    env:
+      enabled: false
