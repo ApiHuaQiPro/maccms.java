@@ -1,0 +1,7 @@
+target/
+# 本地环境配置（含凭证），只提交 *.example
+config/*.env
+!config/*.env.example
+*.log
+.idea/
+*.iml

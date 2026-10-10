@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 只读映射：沿用旧表 mac_group（install.sql:361）。只取权限判定需要的两列。 -->
+<mapper namespace="com.maccms.backend.content.infrastructure.GroupMapper">
+
+    <select id="selectGroupPermission" resultType="com.maccms.backend.content.infrastructure.GroupPermissionRow">
+        SELECT group_id      AS id,
+               group_type    AS typeIds,
+               group_popedom AS popedomJson
+        FROM mac_group
+        WHERE group_id = #{groupId}
+    </select>
+</mapper>
