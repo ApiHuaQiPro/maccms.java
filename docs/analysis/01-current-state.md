@@ -16,7 +16,8 @@
 | 项 | 现状 | 证据 |
 |---|---|---|
 | 版本 | 苹果CMS v10，`code` 为 `2023.1000.3051` | `application/extra/version.php` 【确认】 |
-| 框架 | ThinkPHP 5.0.x 内核，放在 `thinkphp/` 目录；备份里 composer 的 `installed.json` 记录的是 `topthink/framework v5.0.14`，项目文档写的是 5.0.24 | `thinkphp/base.php`、备份内 `vendor/composer/installed.json` 【确认，具体小版本待核实】 |
+| 框架 | ThinkPHP **5.0.24**：`thinkphp/base.php:12` 定义 `THINK_VERSION='5.0.24'`，备份 zip 里的同一文件也是这个值；入口通过 `index.php:39` 加载的就是这个目录 | 【确认】 |
+| 框架元数据不一致 | 备份 zip 中 `vendor/composer/installed.json` 记录的是 `topthink/framework v5.0.14`，但备份里并没有 `vendor/topthink/framework/` 目录，运行时不会用到这份元数据。为什么会留下 5.0.14 的记录（例如早期用 composer 安装、之后手动替换了 `thinkphp/` 目录）无法从仓库判断 | 【确认不一致；成因待核实】 |
 | PHP 兼容性 | 193 个 PHP 文件在 7.2、7.3、8.0、8.2 上 `php -l` 全部通过（PHP 8.x 下有 2 条 Deprecated：`common/extend/sms/Qcloud.php:179`、`common/util/SinaUpload.php:105`）；后台在 7.3 和 8.0 上实测能运行 | 第 9 节 【确认】 |
 | 数据库 | 只支持 MySQL，共 26 张表。其中 25 张是 MyISAM + utf8，只有 `mac_vod_search` 是 InnoDB + utf8mb4 | `application/install/sql/install.sql` 【确认】 |
 | 代码规模（行数，含空行） | 后台控制器 8.5k；前台控制器 2.8k；API 1.2k；模型 10.7k（其中 `Collect.php` 2.5k）；公共函数 `application/common.php` 3.0k；后台视图 17k（layui）；第三方集成 `common/extend` 1.3k | `wc -l` 【确认】 |
@@ -26,7 +27,7 @@
 
 这些问题会直接影响本地运行和评估的准确性。
 
-1. **前台模板缺失**【确认】。`template/` 下只有 `template/default/html/index.html`，大小 0 字节。生产备份 zip 里也是这个状态。因此前台每个页面都报 `模板文件不存在`（见第 9 节）。线上实际用的模板（大概率是第三方或付费模板）**不在备份里**【待核实】。这一点直接决定了"模板能不能复用"以及前台的改造工作量。
+1. **前台模板缺失**【确认】。`template/` 下只有 `template/default/html/index.html`，大小 0 字节。生产备份 zip 里也是这个状态。本地实测的 3 个前台样本页都报 `模板文件不存在`（见第 9 节）；其余依赖模板的前台页面按代码推断也会失败，但没有逐一实测。线上实际使用的模板不在备份里，它的来源、页数和写法都**待核实**。这一点直接决定了"模板能不能复用"以及前台的改造工作量。
 2. **`vendor/` 没有进 git**【确认】。备份 zip 里有 `vendor/`，包括：
    - `topthink/think-captcha`、`think-image`、`think-helper`、`think-queue`、`think-installer`
    - `karsonzhang/fastadmin-addons 1.1.3`
@@ -107,7 +108,7 @@
 |---|---|---|---|
 | `Provide::vod/art/actor/role/website` | 资源站输出，供其他站采集。参数 `ac=list/videolist/detail`、`t`、`ids`、`wd`、`h`、`pg`、`pagesize`（最大 100）、`at=xml`；JSON 或 RSS 5.1 风格的 XML；按 `cachetime` 缓存 | `api.{type}.status!=1` 时返回 `closed`（`Provide.php:23` 等）；`charge=1` 时启用 IP/域名白名单（`:785-804`） | 【确认】本地返回 `closed`，与默认配置一致 |
 | `Receive::vod/art/…/comment` | 外部推送入库，调用 `model('Collect')->*_data` | 要求 `interface.status==1`，且 `pass` 和配置一致、长度不少于 16（`Receive.php:15-26`） | 【静态】 |
-| `Timming::index` | 定时任务触发（采集、生成、清缓存、URL 推送），由外部 cron 访问 | **无鉴权**，`admin/controller/Base.php:22` 对它放行；带 `enforce=1` 可强制执行（`Timming.php:37`） | 【确认，代码】 |
+| `Timming::index` | 定时任务触发（采集、生成、清缓存、URL 推送），由外部 cron 访问；每次执行都会回写 `extra/timming.php` 的 runtime（`Timming.php:42`） | 代码中**没有鉴权**，`admin/controller/Base.php:22` 对它放行；带 `enforce=1` 可强制执行（`Timming.php:37`） | 【静态，只读了代码，未本地实测】 |
 | `Wechat::index` | 微信公众号消息 | `weixin.status` | 【静态】 |
 
 **格式兼容的重要性**：`Provide` 的 JSON/XML 格式和 `Collect` 能消费的格式，事实上是苹果CMS 资源站生态的通用协议。新系统做消费端（采集）和生产端（对外提供）时，都必须按这个协议兼容。
@@ -174,7 +175,7 @@
   - `group_type` 是首尾带逗号的分类 ID 列表，例如 `,1,6,`。
   - `group_popedom` 是 JSON，结构为 `{type_id:{"1":"1",...}}`，权限位 1 列表、2 详情、3 播放、4 下载、5 试看（`admin/view/group/info.html:55-60`）。
   - 校验在 `User::popedom`（`common/model/User.php:528-537`）。
-- **密码**：会员和管理员都是**不加盐的 `md5(明文)`**。管理员见 `Admin.php:65,76,124`，会员见 `User.php:77,87,180`。
+- **密码**：会员和管理员都是**不加盐的 md5**。管理员见 `Admin.php:65,76,124`，会员见 `User.php:77,87,180,515,840`。但各入口对输入的处理不同：前台注册、找回存 `md5(trim(原值))`，后台编辑会员和管理员存 `md5(原值)`、不做 trim，部分校验又用 `htmlspecialchars(urldecode(trim()))` 之后的值。所以"`md5(明文)`"只是近似说法，逐入口的字节语义见 03 第 4.3 节【静态】。
 
 **移植时要注意的 MySQL 专有写法**【静态】
 - 大量 ThinkPHP 数组条件，以及 `_string` 原生 SQL 片段（`Vod.php:24-48,458,520-526`）。
@@ -204,7 +205,7 @@
 - 控制器用 `mac_tpl_fetch` 拼出模板路径，例如 `vod/detail`、`vod/play`、`public/jump`。
 
 **与改造的关系**
-- 第三方苹果CMS 模板的写法是"TP 模板语法 + `{maccms:*}` 标签 + 直接调用 PHP 函数"。在模板里直接调用的函数有 `mac_url_*`、`mac_substring`、`mac_default` 等【静态，按通用写法推断，线上模板缺失，无法逐个核实】。
+- 苹果CMS v10 模板的通用写法是"TP 模板语法 + `{maccms:*}` 标签 + 直接调用 PHP 函数"，常见的有 `mac_url_*`、`mac_substring`、`mac_default` 等【按框架能力推断；线上模板不在备份里，它实际用了哪些写法无法核实】。
 - Go 或 Java 的模板引擎都不能直接运行这类模板（见 02 文档）。
 
 **静态生成**【静态】
@@ -267,30 +268,41 @@
 
 ### 9. 本地验证记录（2026-10-10）
 
+- **执行者与时间**：下表标"已运行"的项目，都是 Claude 后端工程师（本任务执行者）于 2026-10-10 在本机执行的，使用本地开发库 `maccms_dev` 和 `php -S` 内置服务器。
+- **队长复核范围**：队长在首轮验收中只做了静态复核（改动范围、26 张表、0 字节模板和关键代码证据），**没有复跑**下表中的数据库和 HTTP 实验。
+- 修订轮（同日）只改文档，没有重新运行数据库或 HTTP 实验；新增的结论都是静态代码阅读，均标为【静态】。
+
 | 项 | 方式 | 结果 |
 |---|---|---|
 | 语法 | 193 个 PHP 文件分别用 PHP 7.2、7.3、8.0、8.2 执行 `php -l` | 全部通过 【已运行】 |
 | 建库 | 新建 `maccms_dev`（utf8mb4），导入 `install.sql` 和 `initdata.sql` | 26 张表，`mac_type` 18 行 【已运行】 |
-| 前台首页、分类页、会员登录页 | `php -S`，分别用 7.3 和 8.0 | 500：`模板文件不存在:index\index.html`、`vod\type.html`、`user\login.html` 【已运行，失败原因：模板缺失】 |
+| 前台 3 个样本页：首页、分类页、会员登录页 | `php -S`，分别用 7.3 和 8.0 | 3 个都返回 500：`模板文件不存在:index\index.html`、`vod\type.html`、`user\login.html` 【已运行，失败原因：模板缺失】。其他前台页面没有逐一实测 |
 | 后台 18 个页面（首页、视频、分类、采集、会员、会员组、管理员、系统配置、播放器、插件、数据库、模板、定时任务、文章等） | 用本地脚本向 PHP session 注入管理员身份，绕过验证码 | 在恢复 `vendor` 之后，7.3 和 8.0 上都返回 200。`admin/make/index` 因为前台模板缺失报错 【已运行】 |
 | 没有 `vendor/` 时 | 临时移走 `vendor` | 验证码报 500，`Class think\captcha\Captcha not found`；后台页面本身能渲染 【已运行】 |
 | 资源站接口 | `GET /api.php/provide/vod/?ac=list` | 返回 `closed`（默认关闭） 【已运行】 |
 | 会员登录安全 | POST `/index.php/user/login.html`，用本地测试账号 | 见第 10 节第 1、2 条 【已运行】 |
+| 定时任务接口无鉴权 | — | **未实测**，只有代码证据（第 3.2 节） |
 | 采集、支付、短信、邮件、静态生成、前台模板标签 | — | 没有外部资源站，没有模板，没有密钥，**未验证** |
 
 ---
 
 ### 10. 主要风险（按严重度）
 
-1. **会员登录可以直接用密码哈希登录**【确认，本地实测】。`User::login` 的条件是 `user_pwd = md5(输入) OR user_pwd = 输入`（`common/model/User.php:346`）。只要拿到数据库里的 md5 值，就能直接登录。
-2. **会员登录可以只凭 openid 登录**【确认，本地实测】。前台 `User::login` 把 `input()` 原样传给模型（`index/controller/User.php:183-184`），模型在收到 `openid` 加 `col=user_openid_qq|weixin` 时，不做任何 OAuth 校验就按 openid 登录（`User.php:331-354`）。只要知道某个会员绑定的 openid，就能接管这个账号。线上是否开启了会员功能、有没有绑定数据【待核实】。
-3. **定时任务接口无鉴权**【确认，代码】。`api.php/timming/index?enforce=1` 任何人都能触发采集、生成、清缓存。
-4. **密码是不加盐的 md5，cookie 签名也只是 md5**【确认】。会员的 `user_check` 等于 `md5(user_random-用户名-ID-)`（`User.php:389,446`），cookie 没有 httponly（`config.php:232`）。
-5. **客户端 IP 可以伪造**【静态】。`mac_get_client_ip` 优先读取 `CF-Connecting-IP`、`Client-IP`、`X-Real-IP` 等请求头（`common.php:950-`），资源站接口的 IP 白名单因此可以被绕过。
-6. **采集的 SSRF 防护较弱，且不校验 TLS 证书**【静态】。
-7. **配置写在 PHP 文件里，由后台回写**。后台的写文件能力加上模板编辑功能，权限面很大；多实例部署时这些文件无法同步。
-8. **仓库不完整**（模板、`vendor`、`extend` 缺失，见第 1 节）。现在的评估只能覆盖后端逻辑，前台的工作量没法精确估算。
-9. **MyISAM 没有事务**。积分、订单、卡密等资金类操作不具备原子性（例如 `Card.php:142` 的 `setInc` 分步执行）。
-10. **没有自动化测试**。仓库里只有框架自带的 `thinkphp/phpunit.xml`，应用层没有任何测试。
+以下问题都是**在本仓库代码中、或在本地开发环境里**发现的。线上是否同样存在、是否已被利用，取决于线上实际代码和配置（例如会员功能是否开启、有没有绑定数据），**均待核实**。每条注明证据级别。
 
-> 第 1～3 条是现网系统本身的安全问题，与是否重构无关。建议另开任务，在 PHP 现网先修复，但需要用户确认。本任务不修改业务代码。
+1. **会员可以用库里的密码哈希直接登录**【本地实测，2026-10-10】。`User::login` 的条件是 `user_pwd = md5(trim(输入)) OR user_pwd = 处理后的输入`（`common/model/User.php:346`）。只要拿到数据库里的 md5 值，就能直接登录。
+2. **会员可以只凭 openid 登录**【本地实测，2026-10-10】。前台 `User::login` 把 `input()` 原样传给模型（`index/controller/User.php:183-184`），模型在收到 `openid` 加 `col=user_openid_qq|weixin` 时，不做任何 OAuth 校验就按 openid 登录（`User.php:331-354`）。只要知道某个会员绑定的 openid，就能接管这个账号。
+3. **定时任务接口无鉴权**【静态，未实测】。按代码，`api.php/timming/index?enforce=1` 任何人都能触发采集、生成、清缓存（第 3.2 节）。
+4. **OAuth 首次登录自动建号时，密码是注册时刻的时间戳**【静态】。`index/controller/User.php:263-267` 用 `time()` 作为密码，用户名是 openid 的前 10 位。时间戳可以根据注册时间推算。
+5. **密码是不加盐的 md5，登录 cookie 的校验值也只是 md5**【静态】。会员的 `user_check` 等于 `md5(user_random-用户名-ID-)`（`User.php:389,446`）；`user_random` 只在登录时更新，注销和改密都不会让已有的 cookie 失效（`User.php:368,411-419`）；cookie 没有设置 HttpOnly 和 Secure（`application/config.php:220-235`）。
+6. **管理员会话不回库校验**【静态】。登录时把整条管理员记录存进 session（`common/model/Admin.php:145-146`），之后 `checkLogin` 只看 session（`:166-176`），停用管理员或改密码不会让已登录的会话失效。
+7. **客户端 IP 可以伪造**【静态】。`mac_get_client_ip` 优先读取 `CF-Connecting-IP`、`Client-IP`、`X-Real-IP` 等请求头（`common.php:950-`），资源站接口的 IP 白名单因此可以被绕过。
+8. **采集的 SSRF 防护较弱，且不校验 TLS 证书**【静态】（第 7 节）。
+9. **很多 GET 请求带写入副作用**【静态】。点击、顶踩、评分、购买观看权限扣积分、推广奖励等入口不限制请求方法；普通页面的登录检查也可能写库。完整清单见 03 第 3.1 节。这会影响 CSRF 防护，也决定了影子流量不能随意复制请求。
+10. **支付回调不是幂等的条件更新**【静态】。`Order::notify` 先查订单状态、再无条件更新并加积分（`common/model/Order.php:116-138`），MyISAM 下没有事务，并发的重复回调可能重复加积分。
+11. **配置写在 PHP 文件里，由后台回写**【静态】。后台的写文件能力加上模板编辑功能，权限面很大；多实例部署时这些文件无法同步。
+12. **仓库不完整**【确认】（模板、`vendor`、`extend` 缺失，见第 1 节）。现在的评估只能覆盖后端逻辑，前台的工作量没法精确估算。
+13. **MyISAM 没有事务**【确认，`install.sql`】。积分、订单、卡密等资金类操作不具备原子性（例如 `Card.php:142` 的 `setInc` 分步执行）。
+14. **没有自动化测试**【确认】。仓库里只有框架自带的 `thinkphp/phpunit.xml`，应用层没有任何测试。
+
+> 第 1～4 条是现有代码本身的安全问题，与是否重构无关。建议先核实线上是否存在，如果存在，另开任务在 PHP 端修复（需要用户确认）。本任务不修改业务代码。
