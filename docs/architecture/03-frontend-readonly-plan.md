@@ -31,18 +31,18 @@
 | | A. 服务端渲染（SSR，Java 单体内的 `site` 模块） | B. 前后端分离静态应用（SPA/静态站 + `/api/v1`） | C. PHP 兼容过渡层 |
 |---|---|---|---|
 | 做法 | 新增 `site` 模块（03 草稿第 1 节已规划：前台渲染、SEO URL、播放页等），在同一个 jar 内用服务端模板输出 HTML；进程内调用 `content` 的 application 服务 | 独立前端工程（Node 工具链构建），浏览器经公开 API 取数，客户端渲染 | 继续用 ThinkPHP 渲染：要么补回模板，要么让 PHP 控制器改调 Java API；或实现 `{maccms:*}` 标签兼容层（03 草稿 4.7 乙） |
-| SEO / canonical / 真实 404 | 原生支持：首屏即完整 HTML，可返回真正的 404/301 状态码 | 需要额外的预渲染或 SSR 框架；纯客户端渲染只能"软 404"，canonical 需要客户端注入 | 与旧站一致（但旧站本身没有 canonical 证据，清单 2.3） |
-| 与旧 URL 共存 | 同一路径由 nginx 分流到 Java 或 PHP，Java 用"交还 PHP"响应处理不归它管的情况（第 3.3 节） | 需要一个 HTML 入口 + 前端路由去匹配旧 URL 形态，旧 URL 解析逻辑落在浏览器里 | 不需要改路由 |
-| 授权边界 | 服务端判定、服务端过滤字段，浏览器拿不到 API 之外的东西 | API 必须对外公开（当前后端默认只监听 127.0.0.1，无 CORS 配置：`backend/src/main/resources/application.yml:41`），浏览器可直接调用全部公开接口 | 沿用 PHP 授权，但所有旧问题也一并保留 |
+| SEO / canonical / 真实 404 | 原生支持：首屏即完整 HTML，可返回真正的 404/301 状态码 | SEO 通常需预渲染或 SSR 配合；真实 404 需托管/服务端按资源判定，不能只由客户端路由给出，canonical 也需相应维护 | 与旧站一致（但旧站本身没有 canonical 证据，清单 2.3） |
+| 与旧 URL 共存 | 同一路径由 nginx 分流到 Java 或 PHP，Java 用"交还 PHP"响应处理不归它管的情况（第 4.2 节） | 需要一个 HTML 入口 + 前端路由去匹配旧 URL 形态，旧 URL 解析逻辑落在浏览器里 | 不需要改路由 |
+| 授权边界 | 服务端判定、服务端过滤字段，浏览器拿不到 API 之外的东西 | API 必须对外公开（当前后端默认只监听 127.0.0.1（`backend/src/main/resources/application.yml:41`），源码未配置 CORS），浏览器可直接调用全部公开接口 | 沿用 PHP 授权，但所有旧问题也一并保留 |
 | 对智能体开发 | 一种语言、一条构建（`./mvnw verify`）、一套测试（MockMvc 断言 HTML/状态码/头）；字段只经过已有的契约 DTO，护栏测试可复用 | 两种语言、两条构建与依赖链；需额外维护 API 客户端与类型同步；智能体对主流前端框架熟悉，但跨仓库/跨工具链的一致性检查更多 | 在即将退役的 PHP 上继续投入；改 PHP 业务代码需用户另行批准；模板仍然缺失 |
 | 模块化单体契合度 | 高：`site` 是单体内的一个模块，只依赖 `content` 的 application 层 | 中：后端仍是单体，但前台成为单体之外的第二个部署物 | 低：增加 PHP 与 Java 的耦合点 |
-| 隐式写入 | 新进程只读连接（`application.yml:11-12` `read-only: true`），游客请求不再经过 PHP 的 `label_user` | 同 A（API 只读） | 每个页面仍经过 `index/Base` 构造（`application/index/controller/Base.php:11-18`），会员到期 UPDATE 保留 |
+| 隐式写入 | 新进程只读连接（`backend/src/main/resources/application.yml:11-12` `read-only: true`），游客请求不再经过 PHP 的 `label_user` | 同 A（API 只读） | 每个页面仍经过 `index/Base` 构造（`application/index/controller/Base.php:11-18`），会员到期 UPDATE 保留 |
 | 首批工作量 | 中：模板 + URL 生成/解析 + 图片地址规范化 | 中到高：除页面外还要解决 SEO 与路由 | 低（补模板）到高（标签兼容层，`application/common/taglib/Maccms.php` 体系庞大） |
 | 回滚 | nginx 把路由切回 PHP | 同左，另需处理静态资源缓存 | 无切换，无需回滚，但也没有前进 |
 
 #### 1.2 推荐（待用户批准）
 
-**推荐 A：Java 单体内的服务端渲染（`site` 模块），页面以渐进增强为原则，交互一律跳转或交还给 PHP。** 理由：
+**推荐 A：Java 单体内的服务端渲染（`site` 模块），页面以渐进增强为原则，会员、播放及写入交互跳转或交还给 PHP。** 理由：
 
 1. 首批三页都是内容页，SEO、canonical 与真实 HTTP 状态码是硬需求；A 不需要额外的预渲染层。
 2. "今后主要由智能体开发"：A 把页面、URL 规则、字段护栏放进同一个工程、同一套 `./mvnw verify`，智能体改一处就能在一次构建里看到契约、HTML 与路由测试是否一起通过，出错面最小。
@@ -92,7 +92,7 @@ flowchart LR
 ```
 
 - **Java 只服务游客。**【需求】请求携带旧会员登录 cookie（`user_id`、`user_check`，写入见 `application/common/model/User.php:385-390`，ThinkPHP cookie 前缀为空 `application/config.php:222`）时，nginx 把首批三页也路由给 PHP。原因：契约一律按游客判定（契约 `info.description`"访问者一律按旧系统的游客…判定可见性"），会员能看到的分类/详情范围可能更大（01 计划第 5 节第 7 条）。这样也保证会员请求仍经过 PHP 的 `label_user`，到期降级写入照旧发生（第 6.2 节）。
-- **Java 不写库**：只读连接已由 `application.yml:11-12` 与 `DatabaseAccountGuard` 保证；`site` 模块不新增任何数据源。
+- **Java 不写库**：现有连接池配置为只读会话（`backend/src/main/resources/application.yml:11-12`）；账号检查由 `DatabaseAccountGuard` 执行，生产仍须使用管理员配置的仅 SELECT 账号；`site` 模块不新增任何数据源。
 - **本地阶段没有 nginx 分流**：Java 只在 `127.0.0.1` 上响应白名单路由（第 5.4 节的本地验证策略）。
 
 ### 3. 首批三页
@@ -105,8 +105,8 @@ flowchart LR
 |---|---|---|
 | 导航分类树 | `GET /api/v1/video-categories`（进程内 `listCategories()`），`items[].children[]` | 【已证实】已实现 |
 | 站点名、站点关键词/描述、Logo、ICP、统计代码 | 旧配置 `site.*`（`application/extra/maccms.php:18-44`）、`seo.vod.*`（`:620-626`） | **未实现**。新系统没有站点配置来源。【需求】首批用 `site` 模块自己的配置项（环境变量/外部配置文件，值由运维从线上配置人工抄录，智能体不读取仓库外的线上配置、值不入仓库）；统一来源由 03 草稿 3.5 节决定，待批准 |
-| 站点关闭（`site_status=0` 输出关闭页） | `application/index/controller/Base.php:73-79`；仓库值 `site_status='1'`（`maccms.php:40`） | 【需求】Java 不读 PHP 配置；站点关闭由 nginx 统一处理或 Java 配置开关，二选一，实现前确定 |
-| 移动端独立模板（`mob_status`、`mob_template_dir`，`maccms.php:36-37`） | 旧系统按 UA 切模板 | 【需求】新页面只做响应式单模板；线上是否开启移动模板【待验证】 |
+| 站点关闭（`site_status=0` 输出关闭页） | `application/index/controller/Base.php:73-79`；仓库值 `site_status='1'`（`application/extra/maccms.php:40`） | 【需求】Java 不读 PHP 配置；站点关闭由 nginx 统一处理或 Java 配置开关，二选一，实现前确定 |
+| 移动端独立模板（`mob_status`、`mob_template_dir`，`application/extra/maccms.php:36-37`） | 旧系统按 UA 切模板 | 【需求】新页面只做响应式单模板；线上是否开启移动模板【待验证】 |
 | 搜索框 | 表单 `GET` 提交到旧搜索 URL（搜索归 PHP，01 计划第 8 节） | 【需求】只是一个指向 PHP 的表单，不调用 `ajax/suggest`（`static/js/home.js:381`） |
 | 会员入口 | 链接到 PHP `user/login`、`user/index` | 【需求】Java 不显示登录状态（游客页面），文案用"登录 / 会员中心" |
 
@@ -120,7 +120,7 @@ flowchart LR
 | 未实现/差异 | 旧推荐语义是"按推荐等级筛选"（`vod_level` 某值，`application/common/model/Vod.php:290-294`），契约只能按 `level` **排序**，不能"只取 level=9 幻灯片"——首页推荐位只能近似；【需求】后端补 `level` 筛选参数（后续契约变更，见第 9 节）。热搜词、幻灯片专用图（`picSlide` 已有字段，但无"只取幻灯片"筛选）、文章/专题区块均不在首批 |
 | 分页 | 首页不分页；`index-<page>` 形态不承接（交 PHP） |
 | 空结果 | 某区块无数据时隐藏该区块；全部为空时显示"暂无内容"并返回 200 |
-| 错误 | 任一区块查询失败（`SERVICE_UNAVAILABLE`/`INTERNAL_ERROR`）→ 整页 503（见 7.3），不输出半残页面被缓存 |
+| 错误 | 任一区块查询失败 → 整页错误：`SERVICE_UNAVAILABLE` 为 503，`INTERNAL_ERROR` 为 500（见 7.3），不输出半残页面被缓存 |
 
 #### 3.3 分类列表页（`vod/type`）与筛选页（`vod/show`）
 
@@ -128,24 +128,24 @@ flowchart LR
 
 | 项 | 方案 |
 |---|---|
-| 旧入口 | `vod/type`（`application/index/controller/Vod.php:17-21`），参数 `id` + `page`；`id` 形态受 `rewrite.type_id` 控制（`maccms.php:495`） |
+| 旧入口 | `vod/type`（`application/index/controller/Vod.php:17-21`），参数 `id` + `page`；`id` 形态受 `rewrite.type_id` 控制（`application/extra/maccms.php:495`） |
 | 首批承接范围 | 【需求】只承接**数字 type_id**；`type_en` 拼音形态、编码 id 形态交 PHP（编码依赖 `encode_key`，仓库已清空，清单 2.4） |
 | 数据 | 分类信息：从分类树中按 id 查找（`listCategories()`，无单独的分类详情接口）；列表：`listVideos(categoryId=id, sort, order, page, pageSize)` |
-| 子分类 | 契约行为：结果包含该分类与可见的**直接**子分类（契约 `/api/v1/videos` 描述；旧依据 `Vod.php:336-351`） |
+| 子分类 | 契约行为：结果包含该分类与可见的**直接**子分类（契约 `/api/v1/videos` 描述；旧依据 `application/common/model/Vod.php:336-351`） |
 | SEO | `<title>`：`title` 非空用 `title`，否则 `name` + 站点名；`keywords`/`description` 用分类的同名字段（契约 `Category`）。旧标题拼接规则在模板里【缺模板】，属新设计 |
-| 每页条数 | 默认 20，与旧配置一致（`maccms.php:92`；契约 `pageSize` 默认 20） |
+| 每页条数 | 默认 20，与旧配置一致（`application/extra/maccms.php:92`；契约 `pageSize` 默认 20） |
 | 排序 | 首批固定 `sort=time, order=desc`（旧默认，01 计划 4.2）；排序切换属于筛选页 |
 | 分页 | `page` 从 URL 读取；第 1 页 URL 不带页码（旧 `mac_url` 把 `page=1` 置空，`application/common.php:1740-1744`）。分页导航用真实 `<a href>`，显示当前页前后窗口（旧默认窗口 5，`application/common.php:517`） |
 | 越界 | 契约：`page>totalPages` 返回 200 空列表；`page>1000` 或非法值返回 400（契约 `page` 最大 1000）。【需求】页面层：`page` 非正整数、`page>1000`、或 `totalPages>0 且 page>totalPages` → **404 页**（防止无限分页的重复页被收录）。与旧行为不同（旧系统空页照常 200，见 `mac_page_param` 空结果分支 `application/common.php:522-524`），属差异，见第 10 节 |
-| 空结果 | `total=0`（分类存在但没有可见视频）→ 200，显示"该分类暂无内容"，保留分类导航 |
-| 不存在 | 契约 `CATEGORY_NOT_FOUND`（不存在、停用、或游客无列表权限）→ 404 页。**与旧行为不同**：旧系统分类查不到时走 ThinkPHP 的 error 跳转页（`application/common/controller/All.php:177-178`），无权限时 error 并跳 `user/index`（`All.php:180-185`）；见第 10 节 |
+| 空结果 | `total=0`（分类存在但没有可见视频）且 `page=1` → 200，显示"该分类暂无内容"，保留分类导航；`total=0` 且 `page>1` → 404，避免产生无限空页 |
+| 不存在 | 契约 `CATEGORY_NOT_FOUND`（不存在、停用、或游客无列表权限）→ 404 页。**与旧行为不同**：旧系统分类查不到时走 ThinkPHP 的 error 跳转页（`application/common/controller/All.php:177-178`），无权限时 error 并跳 `user/index`（`application/common/controller/All.php:180-185`）；见第 10 节 |
 
 **筛选页**
 
 | 项 | 方案 |
 |---|---|
 | 旧入口 | `vod/show`（`application/index/controller/Vod.php:23-28`），参数 `area/by/class/lang/letter/level/order/page/state/tag/year` 等（清单 1.2） |
-| 旧开关 | `check_show`：`app.show=0` 时整页关闭报错，`show_verify=1` 时要求验证码（`application/index/controller/Base.php:29-43`）。**仓库配置 `app.show='0'`**（`maccms.php:64`），即仓库默认下筛选页是关闭的；线上值【待验证】 |
+| 旧开关 | `check_show`：`app.show=0` 时整页关闭报错，`show_verify=1` 时要求验证码（`application/index/controller/Base.php:29-43`）。**仓库配置 `app.show='0'`**（`application/extra/maccms.php:64`），即仓库默认下筛选页是关闭的；线上值【待验证】 |
 | API 映射 | 契约**只支持** `categoryId` 与 `sort`/`order`；`area/year/lang/class/letter/level/tag/state` 均**未实现**（01 计划第 5 节第 8 条）。筛选候选值已有：`Category.extend`（`classes/area/lang/year/star/director/state/version`） |
 | 结论 | 【需求】**筛选页不进入首批实现**，作为第二步：先由后端在契约中加筛选参数（同一提交改 OpenAPI + DTO + 契约测试，02 规范第 1 节），并核实线上 `app.show`。在此之前 `vod/show` 全部交 PHP。分类页上可以展示 `extend` 候选值，但只做成指向旧筛选 URL 的链接 |
 | 排序映射（为第二步准备） | 旧 `by` 取值与契约 `sort` 对照：time/time_add/id/score/hits/hits_day/hits_week/hits_month/up/down/level 一一对应；旧 `rnd`（随机）契约不支持（契约 `sort` 描述），遇到时交 PHP |
@@ -154,15 +154,15 @@ flowchart LR
 
 | 项 | 方案 |
 |---|---|
-| 旧入口 | `vod/detail`（`application/index/controller/Vod.php:55-64`），首批只承接数字 `vod_id`（`rewrite.vod_id` 形态，`maccms.php:493`）；拼音/编码形态交 PHP |
+| 旧入口 | `vod/detail`（`application/index/controller/Vod.php:55-64`），首批只承接数字 `vod_id`（`rewrite.vod_id` 形态，`application/extra/maccms.php:493`）；拼音/编码形态交 PHP |
 | 数据 | `getVideo(id)`（契约 `GET /api/v1/videos/{id}`）；面包屑用 `category`（`CategoryRef`，含 `parentId`，父级名称从分类树查） |
 | 200 | 渲染契约 `VideoDetail` 字段（第 3.5 节） |
-| 404 `VIDEO_NOT_FOUND` | 不存在 / 未审核 / 分类不可见 / 游客无详情权限 → Java 404 页。旧系统：缺失走 `page_error` 404 模板（`application/common/controller/All.php:390-393`、`:98-115`），游客无权限走 error 跳转（`All.php:408-413`），后者是差异（第 10 节）。会员请求不会到达 Java（第 2 节），所以不会把"会员有权限"误判为 404 |
-| 403 `VIDEO_PASSWORD_REQUIRED` | 【需求】**交还 PHP**（第 4.2 节机制），由 PHP 输出观看密码页（`Vod.php:61-63`）并经 `ajax/pwd` 写 session（`application/index/controller/Ajax.php:400-457`）。Java 不渲染密码表单，不代理密码校验 |
-| 403 `VIDEO_COPYRIGHT_RESTRICTED` | 【需求】**交还 PHP**，由 PHP 按 `copyright_status` 选择版权页（`Vod.php:58-60`）。注意后端开关 `copyright-hides-detail` 默认 true，而仓库配置 `copyright_status='1'`（`maccms.php:73`），上线前须对齐线上值（01 计划第 9 节） |
+| 404 `VIDEO_NOT_FOUND` | 不存在 / 未审核 / 分类不可见 / 游客无详情权限 → Java 404 页。旧系统：缺失走 `page_error` 404 模板（`application/common/controller/All.php:390-393`、`:98-115`），游客无权限走 error 跳转（`application/common/controller/All.php:408-413`），后者是差异（第 10 节）。会员请求不会到达 Java（第 2 节），所以不会把"会员有权限"误判为 404 |
+| 403 `VIDEO_PASSWORD_REQUIRED` | 【需求】**交还 PHP**（第 4.2 节机制），由 PHP 输出观看密码页（`application/index/controller/Vod.php:61-63`）并经 `ajax/pwd` 写 session（`application/index/controller/Ajax.php:400-457`）。Java 不渲染密码表单，不代理密码校验 |
+| 403 `VIDEO_COPYRIGHT_RESTRICTED` | 【需求】**交还 PHP**，由 PHP 按 `copyright_status` 选择版权页（`application/index/controller/Vod.php:58-60`）。注意后端开关 `copyright-hides-detail` 默认 true，而仓库配置 `copyright_status='1'`（`application/extra/maccms.php:73`），上线前须对齐线上值（01 计划第 9 节） |
 | 400 | 路径中的 id 非法（契约 `id` 范围 1..4294967295）→ 404 页（对用户而言就是"没有这个页面"） |
 | 播放入口 | **主要缺口。** 旧详情页的剧集列表与"立即播放"来自 `vod_play_list` 解析（`mac_url_vod_play($info,'first')` 在无播放列表时返回空串，`application/common.php:2572-2583`）；契约有意不含任何播放字段（C 档，清单 3.2）。因此新详情页**无法**列出播放源和剧集，也无法确定合法的 `sid/nid`。【需求】二选一，由用户/后端确认：<br/>(a) 后端新增"剧集索引"只读接口：只返回 `sid`、播放源显示名、`nid`、剧集标题，**不含任何地址、试看、积分信息**，并按旧逻辑过滤未启用的播放器（`mac_play_list`，`application/common.php:1346` 起）；需要单独的契约与安全评审。<br/>(b) 首批详情页只放一个"播放"链接，指向旧 PHP 播放页的 `sid=1&nid=1`；风险是第一个播放源被禁用或不存在时链接失效。<br/>建议 (a)，在它就绪前详情页可以在本地实现与验收，但**不具备切流量条件** |
-| 评论 | 首批不渲染评论区（旧评论由模板经 `comment/ajax` 加载，`application/index/controller/Comment.php:30`）。【需求】放"查看/发表评论"链接到 PHP 评论页；是否需要嵌入列表留待 interact 模块 |
+| 评论 | 首批不渲染评论区。旧代码提供 `comment/ajax` 片段入口（`application/index/controller/Comment.php:30`），缺模板，不能确认详情页实际加载方式。【需求】"查看/发表评论"链接指向 `comment/index`（视频参数 `mid=1&id=<vod_id>`，入口见 `application/index/controller/Comment.php:18-28`；`mac_url` 的评论分支只保留 page，见 `application/common.php:2369-2371`，生成页面链接后需单独保留 mid/id 参数；缺评论模板，渲染与提交仍待验证）；是否需要嵌入列表留待 interact 模块 |
 | 评分/顶踩 | 只读展示 `score`/`scoreNum`/`up`/`down`；不放可点击的评分、顶踩控件（它们会调用 PHP 的写接口，`static/js/home.js:241-300`） |
 | 相关推荐 | `vod_rel_vod` 未进契约（01 计划 4.4 "从不查询"）；【需求】首批用同分类最新 `listVideos(categoryId, pageSize=6)` 代替，属新设计 |
 | 剧情分集 | `vod_plot*` 未进契约；首批不展示 |
@@ -175,7 +175,7 @@ flowchart LR
 | 分类图、筛选字典（B） | `Category.logo/pic/extend` | 图片地址规范化（见下） |
 | 视频标题、副标题、URL（A） | `id/name/subTitle/enName/letter/color` | — |
 | 分类与标签（A） | `category`、`classes`、`tag` | `type_id_1` 不单独输出（`CategoryRef.parentId` 可替代） |
-| 海报（A） | `pic/picThumb/picSlide` | 原样返回库内值，可能是相对路径、完整 URL 或 `mac:` 前缀（契约 `info.description`）。【需求】`site` 实现与 `mac_url_img`（`application/common.php:1633-1657`）等价的规范化：`mac:` 前缀按 `upload.protocol` 替换（`maccms.php:157`），相对路径按 `upload.mode` 拼本地前缀或 `remoteurl`（`:158`），`img_key` 命中时加 `img_api`；需要这些配置的线上值【待验证】，用 PHP 生成的测试向量对拍 |
+| 海报（A） | `pic/picThumb/picSlide` | 原样返回库内值，可能是相对路径、完整 URL 或 `mac:` 前缀（契约 `info.description`）。【需求】`site` 实现与 `mac_url_img`（`application/common.php:1633-1657`）等价的规范化：`mac:` 前缀按 `upload.protocol` 替换（`application/extra/maccms.php:157`），相对路径按 `upload.mode`（`application/extra/maccms.php:158`）拼本地前缀或 `remoteurl`（`application/extra/maccms.php:159`），`img_key` 命中时加 `img_api`；需要这些配置的线上值【待验证】，用 PHP 生成的测试向量对拍 |
 | 演职员、简介（A） | `actor/director/writer/behind/blurb/content` | `content` 是原始 HTML，**必须白名单过滤**（契约 `VideoDetail.content`）；其他文本字段可能含 HTML 实体（契约 `info.description`），【需求】统一"先解码一次实体、再按上下文转义输出"，用真实数据样本验证不出现 `&amp;amp;`【待验证】 |
 | 更新状态（A） | `remarks/pubdate/total/serial/finished` | — |
 | 筛选展示（A） | `area/lang/year/version/state`、`tv/weekday/duration` | — |
@@ -224,22 +224,23 @@ flowchart LR
 - 只对 `GET`/`HEAD` 使用；Java 白名单路由本来就只接受这两种方法。
 - 交还响应不带正文、不带 `Set-Cookie`、不缓存（`Cache-Control: no-store`）。
 - nginx 的内部 location 设为 `internal`，外部无法直接访问；交还最多一次，PHP 的响应不会再回到 Java。
+- `X-Accel-Redirect` 会改变内部 URI，单独返回该响应头不会自动保留原始 PHP 路由。nginx 必须在跳转前保存可信的原始 URI/查询串，并在内部 location 显式传给 PHP upstream（或 FastCGI 的 `REQUEST_URI`、`QUERY_STRING` 与固定入口 `SCRIPT_FILENAME`）；不得将客户端可控路径当作脚本文件名。具体配置尚未实现，需通过第 5.4 节的本地演练验证原始参数和 GET/HEAD 行为；上线前该演练为必选项。
 - 交还原因写入 Java 访问日志（第 7.4 节），但不记录 cookie。
 
 备选：在 nginx 层用规则（cookie、路径形态）事先把这些请求留在 PHP；但 403 的原因只有查过库才知道，nginx 无法预判，所以仍需要上面的机制兜底。
 
 #### 4.3 本地缺模板的影响
 
-所有指向 PHP 的链接与交还，在本仓库**本地都会落到"模板文件不存在"的 500**（`AGENTS.md`"本地运行与测试"第 4 步）。这是环境限制，不是新页面的缺陷；本地验收只检查链接/交还的**目标 URL 与响应头**是否正确，不检查 PHP 渲染结果。
+【已证实】`AGENTS.md`"本地运行与测试"第 4 步只实测首页、分类页和会员登录页三个样本返回"模板文件不存在"的 500；其他前台页面未逐一实测，不能断言所有 PHP 出口都会返回 500。本地验收检查链接/交还的**目标 URL、参数、响应头及实际到达 PHP**是否正确；缺模板页面不验收渲染结果。支付回调、Ajax 等非模板响应应按各自入口判断，不视为模板缺失。
 
 ### 5. 旧 URL 与 canonical
 
 #### 5.1 已知事实（引自清单第 2 节）
 
-- 仓库配置：`pathinfo_depr='/'`（`maccms.php:47`）、`rewrite.status=0`（`:490`）、`route_status=0`（`:489`）、`suffix=html`（`:484`）、`suffix_hide=0`（`:488`）。
+- 仓库配置：`pathinfo_depr='/'`（`application/extra/maccms.php:47`）、`rewrite.status=0`（`:490`）、`route_status=0`（`:489`）、`suffix=html`（`:484`）、`suffix_hide=0`（`:488`）。
 - 在该配置下 `mac_url` 生成形如 `/index.php/vod/detail/id/123.html`、`/index.php/vod/type/id/1.html` 的 URL（`application/common.php:2395-2423`）；第 1 页不带页码（`:1740-1744`）。
 - 同一内容在不同配置下还可能以 `?s=`、路由别名、静态化路径出现（清单 2.1、2.2），旧代码没有统一的 canonical 输出，仓库模板也没有 `<link rel="canonical">` 的证据（清单 2.3）。
-- 线上 `rewrite`、`route`、`path.*`、`view.*`、nginx 规则、`domain.php` 绑定【待验证】（清单 2.4），属于**部署/切流量前**的核实项。
+- 线上 `rewrite`、`route`、`path.*`、`view.*`、nginx 规则、`application/extra/domain.php` 绑定【待验证】（清单 2.4），属于**部署/切流量前**的核实项。
 
 #### 5.2 设计
 
@@ -276,7 +277,7 @@ canonical 规则：
 1. **URL 黄金向量**：在 PHP 环境里写一个只调用 `mac_url`/`mac_url_type`/`mac_url_vod_detail` 的 CLI 脚本，用**合成的配置组合**（仓库默认；`rewrite.status=1`；`suffix_hide=1`；`route_status=1` + 仓库默认 `route` 文本；`pathinfo_depr='-'`）和合成的 `info` 数组生成期望 URL，输出为 JSON 测试向量提交到 `backend/src/test/resources/`。如果脚本需要数据库（例如分类缓存），只连**一次性库**（与 `-Pmysql-it` 相同的 `maccms_it_*` 方式），不连 `maccms_dev`。该脚本本身是否需要改 PHP 业务代码【待验证】：若需要，改为在测试工程内复制函数逻辑并人工核对，不改旧 PHP。
 2. **生成器/解析器单元测试**：对每组配置逐条比对向量；解析器对每条向量做"解析 → 再生成"往返测试。
 3. **页面 HTTP 测试**（MockMvc）：对白名单路由断言状态码、`<link rel="canonical">`、301 的 `Location`、交还响应头。
-4. **本地 nginx 演练**（可选，实现阶段）：用本机 nginx 起一个**不占用 80/8080/8072/8073/8082** 的独立端口，Java 与 PHP 内置服务器（同样连一次性库）作为两个 upstream，验证"游客 → Java、带会员 cookie → PHP、交还 → PHP 不循环"。PHP 端返回缺模板 500 是预期结果，只看是哪一端响应。
+4. **本地 nginx 演练**（可选，实现阶段）：用本机 nginx 起一个**不占用 80/8080/8072/8073/8082** 的独立端口，Java 与 PHP 内置服务器（同样连一次性库）作为两个 upstream，验证"游客 → Java、带会员 cookie → PHP、交还 → PHP 不循环"。缺模板的 PHP 页面可能返回 500，仍须验证 PHP 实际收到的原始 URI、参数、方法；本地可选演练，但使用交还机制切流量前必须完成。
 5. 编码 id（`rewrite.vod_id=2`、`encode_key`）不在首批，不做向量。
 
 ### 6. 继续留在 PHP 的能力与授权边界
@@ -291,30 +292,30 @@ canonical 规则：
 | 评论（列表、发表、顶踩、举报） | `comment/*`（`application/index/controller/Comment.php:18-22,30,37,119,140`） | 链接；不嵌入、不代理 |
 | 留言 | `gbook/*` | 链接 |
 | 积分购买/试看确认 | `user/ajax_buy_popedom`（`application/index/controller/User.php:101` 起） | 不出现（详情页不展示收费信息） |
-| 观看密码 | 密码页 + `ajax/pwd`（`Ajax.php:400-457`） | 详情 403 → 交还 PHP |
+| 观看密码 | 密码页 + `ajax/pwd`（`application/index/controller/Ajax.php:400-457`） | 详情 403 → 交还 PHP |
 | 播放、下载 | `vod/play`、`vod/player`、`vod/down` | 链接；播放权限、试看、加密、`player_aaaa` 全在 PHP（清单 1.5） |
 | 支付回调 | `payment/notify`（只有 POST 分支调用适配器，`application/index/controller/Payment.php:13-36`） | 与前台页面无关，nginx 永远留给 PHP |
-| 计数（hits/digg/score） | `ajax/hits`、`ajax/digg`、`ajax/score`（`Ajax.php:152,302,347`） | 见 6.3 |
+| 计数（hits/digg/score） | `ajax/hits`、`ajax/digg`、`ajax/score`（`application/index/controller/Ajax.php:152,302,347`） | 见 6.3 |
 | 搜索 | `vod/search` | 表单 GET 提交到 PHP |
 
 #### 6.2 授权与隐式写入的边界
 
 - **公开 API 不能成为绕过授权的通道**：契约已保证不返回播放/下载地址、密码、积分、试看、会员组（契约 `VideoDetail.description`；01 计划 4.4 "从不查询"列表 + `ReadOnlyGuardrailsTest`）。`site` 模块只用这些字段，**不得**为了页面需要另开 Mapper 或 SQL 读取这些列；需要新字段必须走契约变更（02 规范第 1 节）。
 - **游客判定**：Java 只按游客渲染；带会员 cookie 的请求不进 Java（第 2 节）。Java 不读取、不校验、不签发、不改写任何会员 cookie 或 PHP session。
-- **隐式写入**：旧前台每个继承 `index/Base` 的页面都会调用 `label_user`，会员组到期时执行 `UPDATE group_id=2`（`Base.php:17`；`application/common/model/User.php:455-466`）。游客请求不触发这条写入，会员请求仍留在 PHP，所以把游客的三页切到 Java **不改变**这条写入的发生条件。这一点依赖第 2 节的 cookie 分流规则；如果将来让会员请求也进入 Java，必须先按 03 草稿 3.3.1 处理。
+- **隐式写入**：旧前台每个继承 `index/Base` 的页面都会调用 `label_user`，会员组到期时执行 `UPDATE group_id=2`（`application/index/controller/Base.php:17`；`application/common/model/User.php:455-466`）。游客请求不触发这条写入，会员请求仍留在 PHP，所以把游客的三页切到 Java **不改变**这条写入的发生条件。这一点依赖第 2 节的 cookie 分流规则；如果将来让会员请求也进入 Java，必须先按 03 草稿 3.3.1 处理。
 - **GET 不一定只读**：新页面上指向 PHP 的链接里有些是带写副作用的 GET（清单第 4 节"风险"；03 草稿 3.1）。【需求】新页面**不**直接链接到这些带副作用的端点（`ajax/hits`、`ajax/digg`、`ajax/score`、`user/ajax_ulog`、`user/ajax_buy_popedom`、`user/visit`、`ajax/referer`）；只链接到页面级 URL。指向登录、会员、评论等非内容页的链接加 `rel="nofollow"`。
 - **静态资源**：新页面**不引入**旧 `static/js/home.js`，因为它会在页面加载时自动调用 `ajax/hits`（`static/js/home.js:214-219`）、`user/ajax_ulog`（`:521`）、`ajax/referer`（`:563`）等写接口。
 
 #### 6.3 点击计数（D5，需用户决定）
 
-旧详情页的点击数由模板中的 `.mac_hits` 元素 + `home.js` 在加载后请求 `ajax/hits?type=update` 写入（`static/js/home.js:214-219` → `Ajax.php:152-203`）。游客详情页切到 Java 后：
+旧详情页的点击数由模板中的 `.mac_hits` 元素 + `static/js/home.js` 在加载后请求 `ajax/hits?type=update` 写入（`static/js/home.js:214-219` → `application/index/controller/Ajax.php:152-203`）。游客详情页切到 Java 后：
 
 | 选项 | 结果 | 写入方 |
 |---|---|---|
 | 甲：不计数 | 被 Java 服务的游客访问不再增加 hits；排行榜（`sort=hits*`）逐渐失真 | 无 |
 | 乙（建议）：保留 PHP 计数 | Java 详情页带一段很小的独立脚本，加载后向 PHP `ajax/hits` 发一次请求，与旧模板行为一致；PHP 仍是唯一写入方（03 草稿 3.3 计数字段在阶段 0～4 归 PHP） | PHP |
 
-乙要求：脚本独立于 `home.js`、只调用 `ajax/hits`、受配置开关控制（本地与测试默认**关闭**，避免对开发库产生写入）、对爬虫不额外放大（旧系统同样由 JS 触发，行为一致）。
+乙要求：脚本独立于 `static/js/home.js`、只调用 `ajax/hits`、受配置开关控制（本地与测试默认**关闭**，避免对开发库产生写入）、对爬虫不额外放大（旧系统同样由 JS 触发，行为一致）。
 
 ### 7. 实现前置条件、组件边界、错误、可观测性、回滚
 
@@ -370,7 +371,7 @@ P1、P2、P4 满足即可开始本地实现；P3、P5～P8 只影响验收范围
 
 【需求】
 
-- 访问日志字段：时间、路由名（`home`/`vod_type`/`vod_detail`）、状态码、耗时、结果分类（`ok`/`not_found`/`handoff_password`/`handoff_copyright`/`handoff_unrecognized`/`redirect_canonical`/`error`）、请求 ID。**不记录** cookie、session、查询串中的未知参数值、User-Agent 之外的个人信息。
+- 访问日志字段：时间、路由名（`home`/`vod_type`/`vod_detail`）、状态码、耗时、结果分类（`ok`/`not_found`/`handoff_password`/`handoff_copyright`/`handoff_unrecognized`/`redirect_canonical`/`error`）、请求 ID。**不记录** cookie、session、会员身份、凭证、未知查询参数值或其他个人信息；原始 User-Agent 不列入本批日志字段。
 - 指标：按路由的请求数、状态码分布、p50/p95/p99 耗时、交还 PHP 的比例与原因、数据库查询耗时、首页区块查询次数。
 - 健康检查沿用 `/actuator/health`（契约），不新增暴露端点。
 - 切流量后重点看：404 比例突增（URL 解析或 canonical 有误）、交还比例突增、蜘蛛抓取错误（03 草稿 4.5"监控"）。
@@ -380,11 +381,11 @@ P1、P2、P4 满足即可开始本地实现；P3、P5～P8 只影响验收范围
 - 本地阶段：页面代码在独立分支/提交，回滚即 `git revert`；不涉及数据，无需数据回滚。
 - 切流量后（未获批准，仅作设计）：nginx 把白名单路由切回 PHP 即可，Java 从不写库，**没有任何数据需要回迁**（03 草稿第 6 节"只读路由"）。回滚后用黄金 URL 抽样验证 PHP 正常；回滚耗时待演练。
 - 前提：PHP 实例在整个并行期一直运行、配置不变；PHP 模板必须在线上可用（本仓库缺模板，不能据此在本地演练 PHP 侧渲染）。
-- 若已启用 301：回滚到 PHP 后，PHP 对所有形态都返回 200，不会与 301 冲突；但搜索引擎可能已缓存 301，回滚前需评估（这也是 D4 需要谨慎的原因）。
+- 若已启用 301：回滚前必须验证 PHP 能继续承接已发布的 canonical URL，不能假定所有形态都返回 200。浏览器/搜索引擎可能已缓存 301，回滚配置需保留必要的 URL 兼容规则并演练（这也是 D4 需要谨慎的原因）。
 
 ### 8. 交付验收标准（供后续实现任务使用）
 
-实现任务交付时逐条给出结论；本方案本身的验收见文末。
+实现任务交付时逐条给出结论；本方案本身按 MACC-6 issue 的文档验收标准审查。
 
 | # | 验收项 | 验证方式 |
 |---|---|---|
@@ -400,7 +401,7 @@ P1、P2、P4 满足即可开始本地实现；P3、P5～P8 只影响验收范围
 | F10 | 第 3.6 节移动端/键盘/无 JS 各项通过 | 浏览器自动化 + 截图附在交付评论 |
 | F11 | 页面不引入 `static/js/home.js`，不包含指向带写副作用端点的链接（D5 选乙时的计数脚本除外，且默认关闭） | HTML 断言 |
 | F12 | 访问日志不含 cookie/session；异常日志无 message | 日志捕获测试 |
-| F13 | 本地验证未连接 `maccms_dev` 以外的已有库做写入，PHP 请求只打一次性库 | 交付评论如实说明 |
+| F13 | 本地验证未向 `maccms_dev` 或任何其他已有库写入；可能触发写入的 PHP 请求只打一次性库 | 交付评论如实说明 |
 | F14 | 与旧版差异写入 `docs/architecture/` 对应文档 | 文档审查 |
 
 ### 9. 后续拆分建议（方案批准前不派发）
@@ -425,18 +426,18 @@ P1、P2、P4 满足即可开始本地实现；P3、P5～P8 只影响验收范围
 
 | # | 方面 | 旧 PHP | 新页面（方案） | 是否需批准 |
 |---|---|---|---|---|
-| 1 | 分类不存在/停用/游客无权限 | error 跳转页（`All.php:177-185`） | 404 页 | 是（随本方案） |
-| 2 | 详情游客无权限 | error 跳 `user/index`（`All.php:408-413`） | 404 页（契约行为） | 是 |
+| 1 | 分类不存在/游客无权限 | error 跳转页（`application/common/controller/All.php:177-185`）；停用分类另见第 10 项 | 404 页 | 是（随本方案） |
+| 2 | 详情游客无权限 | error 跳 `user/index`（`application/common/controller/All.php:408-413`） | 404 页（契约行为） | 是 |
 | 3 | 越界分页 | 200 空页 | 404 | 是 |
 | 4 | 非规范 URL | 各形态都 200 | 输出 canonical；D4 批准后 301 | 是（D4） |
 | 5 | 首页推荐位 | 模板按推荐等级筛选 | 按 `level` 排序近似 | 是（或等契约扩展） |
-| 6 | 详情播放/剧集 | 列出全部播放源与剧集 | 首批无剧集列表（等剧集索引接口），只有播放链接 | 是（P5） |
+| 6 | 详情播放/剧集 | 代码提供播放列表与链接生成；实际模板展示缺证据 | 剧集索引就绪前只做本地元数据页，不生成未经验证的播放链接；降级链接须另行批准（P5） | 是（P5） |
 | 7 | 评论、评分、顶踩 | 页面内交互 | 只读数字 + 链接到 PHP | 是 |
 | 8 | 点击计数 | 模板 JS 调 `ajax/hits` | 取决于 D5 | 是（D5） |
 | 9 | 移动端 | 可配置独立移动模板 | 响应式单模板 | 是 |
 | 10 | 分类停用后的页面 | 仍可访问（01 计划第 5 节第 2 条） | 404 | 已在 MACC-4 接受 |
 | 11 | 版权视频 | 由 `copyright_status` 决定 | 契约 403 → 交还 PHP，最终仍由 PHP 决定 | 否（行为等价，需对齐开关） |
-| 12 | 每视频/每分类自定义模板（`vod_tpl`、`type_tpl*`，`All.php:398-406`） | 生效 | 不支持，统一模板 | 是 |
+| 12 | 每视频/每分类自定义模板（`vod_tpl`、`type_tpl*`，`application/common/controller/All.php:398-406`） | 生效 | 不支持，统一模板 | 是 |
 | 13 | 筛选页 | `app.show` 控制 | 首批不承接，留在 PHP | 否 |
 
 ### 11. 风险与待验证
