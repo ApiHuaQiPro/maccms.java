@@ -15,7 +15,7 @@
 | Spring Boot | 4.1.1 | 截至 2026-10 的最新稳定分支。4.1 的开源支持到 2027-07-31；4.0 到 2026-12-31，3.5 已于 2026-06-30 结束（[endoflife.date/spring-boot](https://endoflife.date/spring-boot)）。新工程不应选即将停止支持的分支 |
 | MyBatis Spring Boot Starter | 4.1.0（MyBatis 3.5.19、MyBatis-Spring 4.1.0） | 官方兼容表：Starter 4.x 对应 Spring Boot 4.0+、Java 17+（[mybatis-spring-boot-autoconfigure](https://mybatis.org/spring-boot-starter/mybatis-spring-boot-autoconfigure/)）。4.1.0 的 POM 以 Spring Boot 4.1.0 构建 |
 | MySQL Connector/J | **8.2.0**（覆盖 Spring Boot 默认的 9.7.0） | 旧库为 MySQL 5.7（本机 5.7.44，线上版本待核实）。Connector/J 8.3.0 起发布说明改为"can be used against MySQL Server version 8.0 and later"，9.x 同样只支持 8.0+；8.2.0 是最后一个写明"5.7 and later"的版本（[8.2.0 发布说明](https://dev.mysql.com/doc/relnotes/connector-j/en/news-8-2-0.html)、[8.3.0](https://dev.mysql.com/doc/relnotes/connector-j/en/news-8-3-0.html)），并已包含 CVE-2023-22102（影响 ≤8.1.0）的修复。若线上确认是 MySQL 8.0+，应改回 Spring Boot 管理的版本 |
-| 构建 | Maven 3.9.16，经 Maven Wrapper 3.3.4（only-script，带 SHA-512 校验） | Maven 是 Spring Boot/MyBatis 文档的默认示例，配置是声明式 XML，智能体读写出错面小；Wrapper 让本机不必预装 Maven。没有选 3.10/4.0 新版，以免引入不必要的变化 |
+| 构建 | Maven 3.9.16，经 Maven Wrapper 3.3.4（only-script，`distributionSha256Sum` 校验；SHA-256 取自与 Apache 官方 SHA-512 比对通过的分发包，Wrapper 不支持 SHA-512 属性） | Maven 是 Spring Boot/MyBatis 文档的默认示例，配置是声明式 XML，智能体读写出错面小；Wrapper 让本机不必预装 Maven。没有选 3.10/4.0 新版，以免引入不必要的变化 |
 | 连接池 / Web / JSON | 由 Spring Boot 4.1.1 统一管理（HikariCP 7.0.2、Tomcat 11.0.24、Jackson 3） | 不单独锁版本，减少版本冲突 |
 
 ### 3. 模块边界
@@ -113,7 +113,7 @@
 
 | 命令 | 内容 | 本批结果 |
 |---|---|---|
-| `./mvnw verify` | 编译、单元测试、HTTP 契约测试、静态护栏（60 个用例） | 通过 |
+| `./mvnw verify`（Git Bash）/ `.\mvnw.cmd verify`（PowerShell） | 编译、单元测试、HTTP 契约测试、静态护栏、异常日志脱敏（63 个用例） | 通过 |
 | `./mvnw verify -Pmysql-it`（需 `MACCMS_IT_ADMIN_*` 环境变量） | 以上 + 真实 MySQL 5.7 集成测试（2 个用例） | 通过 |
 | `java -jar target/maccms-backend-0.1.0-SNAPSHOT.jar` + `curl /actuator/health` | 启动、请求、停止 | 通过（见 MACC-4 交付评论） |
 
@@ -129,3 +129,5 @@
 - 每个请求读取一次分类表与游客组（都是小表）。分类数量很大时可加短期缓存，届时需评估与 PHP 后台改分类的一致性。
 - `COUNT(*)` 在 MyISAM 上带条件时需要扫描索引；视频量很大时列表首屏耗时待线上数据量评估（03 第 4 节黄金样本阶段一并测）。
 - 列表只校验游客"列表"权限，详情另校验"详情"权限；会员看到的范围会在会员模块接入后变化，前端不要把游客结果当成全量。
+- 异常日志：`GlobalExceptionHandler` 只通过 `SafeExceptionLog` 记录异常类名、cause 链类名和栈帧，不记录任何 message（含嵌套 cause、suppressed），由 `ContentApiContractTest` 的日志捕获用例保证。框架自身在**启动阶段**的失败日志（如缺环境变量、连不上库）不经过该处理器，会带框架异常 message（变量名、驱动报错；密码不写进 URL，不会出现）。
+- `mvnw.cmd` 含一处对官方 3.3.4 的本地修补（`~/.m2` 为普通目录时 Target 为空），升级 Wrapper 时需复核；分发包校验依赖 `distributionSha256Sum`，升级 Maven 版本必须同步更新。

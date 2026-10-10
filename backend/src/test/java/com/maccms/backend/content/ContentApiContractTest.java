@@ -28,11 +28,14 @@ import java.util.Set;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -50,6 +53,7 @@ import tools.jackson.databind.json.JsonMapper;
 @WebMvcTest(controllers = {VideoController.class, VideoCategoryController.class})
 @Import(ContentReadService.class)
 @EnableConfigurationProperties(ContentProperties.class)
+@ExtendWith(OutputCaptureExtension.class)
 class ContentApiContractTest {
 
     private static final JsonMapper JSON = JsonMapper.builder().build();
@@ -296,24 +300,58 @@ class ContentApiContractTest {
         assertThat(body.get("code").asString()).isEqualTo("METHOD_NOT_ALLOWED");
     }
 
-    @Test
-    void databaseFailureReturns503WithoutDetails() throws Exception {
-        when(typeMapper.selectEnabledVodTypes()).thenThrow(
-                new org.springframework.dao.DataAccessResourceFailureException("jdbc:mysql://secret-host user=x"));
+    // 失败路径：响应和日志都不能出现异常 message（含嵌套 cause / suppressed）。标记是合成值，不是真实配置。
+
+    private static final String LEAK = "SYNTHETIC-LEAK-MARKER";
+
+    private JsonNode failWith(RuntimeException e, int status, CapturedOutput output) throws Exception {
+        when(typeMapper.selectEnabledVodTypes()).thenThrow(e);
         MvcResult r = mvc.perform(get("/api/v1/video-categories")).andReturn();
-        assertThat(r.getResponse().getStatus()).isEqualTo(503);
+        assertThat(r.getResponse().getStatus()).isEqualTo(status);
         String text = r.getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
-        assertThat(text).doesNotContain("secret-host").doesNotContain("jdbc");
-        contract.assertMatches(JSON.readTree(text), contract.responseSchema("/api/v1/video-categories", "get", 503));
+        assertThat(text).doesNotContain(LEAK).doesNotContain("jdbc").doesNotContain("Exception");
+        contract.assertMatches(JSON.readTree(text), contract.responseSchema("/api/v1/video-categories", "get", status));
+        assertThat(output.getAll()).as("日志").doesNotContain(LEAK);
+        return JSON.readTree(text);
     }
 
     @Test
-    void unexpectedFailureReturns500WithoutDetails() throws Exception {
-        when(typeMapper.selectEnabledVodTypes()).thenThrow(new IllegalStateException("internal secret detail"));
-        MvcResult r = mvc.perform(get("/api/v1/video-categories")).andReturn();
-        assertThat(r.getResponse().getStatus()).isEqualTo(500);
-        assertThat(r.getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8))
-                .doesNotContain("internal secret detail");
+    void databaseFailureReturns503WithoutDetailsInResponseOrLog(CapturedOutput output) throws Exception {
+        java.sql.SQLException cause = new java.sql.SQLException(LEAK + "-cause user=synthetic_user");
+        JsonNode body = failWith(new org.springframework.dao.DataAccessResourceFailureException(
+                "jdbc:mysql://" + LEAK + "-host/db password=" + LEAK, cause), 503, output);
+        assertThat(body.get("code").asString()).isEqualTo("SERVICE_UNAVAILABLE");
+        // 日志仍有定位价值：外层与 cause 的类型
+        assertThat(output.getAll()).contains("database unavailable")
+                .contains("org.springframework.dao.DataAccessResourceFailureException <- java.sql.SQLException");
+    }
+
+    @Test
+    void plainDataAccessFailureReturns500WithoutDetailsInResponseOrLog(CapturedOutput output) throws Exception {
+        java.sql.SQLException root = new java.sql.SQLException(LEAK + "-root");
+        java.sql.SQLException cause = new java.sql.SQLSyntaxErrorException(LEAK + "-sql-error", root);
+        cause.addSuppressed(new IllegalStateException(LEAK + "-suppressed"));
+        JsonNode body = failWith(new org.springframework.jdbc.BadSqlGrammarException(
+                LEAK + "-task", "SELECT * FROM mac_vod WHERE vod_pwd = '" + LEAK + "'", cause), 500, output);
+        assertThat(body.get("code").asString()).isEqualTo("INTERNAL_ERROR");
+        assertThat(output.getAll()).contains("database access failed")
+                .contains("org.springframework.jdbc.BadSqlGrammarException")
+                .contains("Caused by: java.sql.SQLSyntaxErrorException")
+                .contains("Caused by: java.sql.SQLException")
+                .contains("Suppressed: java.lang.IllegalStateException")
+                .contains("	at ");
+    }
+
+    @Test
+    void unexpectedFailureReturns500WithoutDetailsInResponseOrLog(CapturedOutput output) throws Exception {
+        RuntimeException e = new IllegalStateException(LEAK + "-outer",
+                new IllegalArgumentException(LEAK + "-nested", new RuntimeException(LEAK + "-deepest")));
+        JsonNode body = failWith(e, 500, output);
+        assertThat(body.get("code").asString()).isEqualTo("INTERNAL_ERROR");
+        assertThat(output.getAll()).contains("unhandled exception")
+                .contains("java.lang.IllegalStateException")
+                .contains("Caused by: java.lang.IllegalArgumentException")
+                .contains("Caused by: java.lang.RuntimeException");
     }
 
     @Test

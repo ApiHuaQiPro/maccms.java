@@ -41,16 +41,24 @@ public class GlobalExceptionHandler {
         return respond(ErrorCode.METHOD_NOT_ALLOWED, "不支持的请求方法");
     }
 
+    // 日志只记录异常类名与调用栈位置（SafeExceptionLog），不记录任何 message 或 cause message：
+    // 驱动/MyBatis/运行时异常的 message 可能包含连接串、账号、SQL 参数等内部信息。
+
     @ExceptionHandler({DataAccessResourceFailureException.class, TransientDataAccessException.class})
     public ResponseEntity<ErrorResponse> handleDbUnavailable(DataAccessException e) {
-        // 只记录异常类型，不记录 message（可能含连接串等配置信息）
-        log.error("database unavailable: {}", e.getClass().getName());
+        log.error("database unavailable: {}", SafeExceptionLog.typeChain(e));
         return respond(ErrorCode.SERVICE_UNAVAILABLE, "服务暂时不可用");
+    }
+
+    @ExceptionHandler(DataAccessException.class)
+    public ResponseEntity<ErrorResponse> handleDataAccess(DataAccessException e) {
+        log.error("database access failed: {}", SafeExceptionLog.describe(e));
+        return respond(ErrorCode.INTERNAL_ERROR, "服务器内部错误");
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleOther(Exception e) {
-        log.error("unhandled exception: {}", e.getClass().getName(), e);
+        log.error("unhandled exception: {}", SafeExceptionLog.describe(e));
         return respond(ErrorCode.INTERNAL_ERROR, "服务器内部错误");
     }
 

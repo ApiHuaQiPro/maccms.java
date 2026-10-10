@@ -88,11 +88,19 @@ if (-not (Test-Path -Path $MAVEN_M2_PATH)) {
     New-Item -Path $MAVEN_M2_PATH -ItemType Directory | Out-Null
 }
 
-$MAVEN_WRAPPER_DISTS = $null
-if ((Get-Item $MAVEN_M2_PATH).Target[0] -eq $null) {
+# MACC-4 local patch: upstream 3.3.4 indexes .Target[0] directly, which throws
+# "Cannot index into a null array" on Windows PowerShell 5.1 when .m2 is a plain
+# directory (Target is $null). Treat Target as optional (string or string[]), and
+# resolve a relative link target against the link's parent directory.
+$MAVEN_M2_ITEM = Get-Item -LiteralPath $MAVEN_M2_PATH
+$MAVEN_M2_TARGET = @($MAVEN_M2_ITEM.Target) | Where-Object { $_ } | Select-Object -First 1
+if (-not $MAVEN_M2_TARGET) {
   $MAVEN_WRAPPER_DISTS = "$MAVEN_M2_PATH/wrapper/dists"
 } else {
-  $MAVEN_WRAPPER_DISTS = (Get-Item $MAVEN_M2_PATH).Target[0] + "/wrapper/dists"
+  if (-not [System.IO.Path]::IsPathRooted($MAVEN_M2_TARGET)) {
+    $MAVEN_M2_TARGET = Join-Path $MAVEN_M2_ITEM.Parent.FullName $MAVEN_M2_TARGET
+  }
+  $MAVEN_WRAPPER_DISTS = "$MAVEN_M2_TARGET/wrapper/dists"
 }
 
 $MAVEN_HOME_PARENT = "$MAVEN_WRAPPER_DISTS/$distributionUrlNameMain"

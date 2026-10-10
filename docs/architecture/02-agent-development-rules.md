@@ -36,6 +36,7 @@
 - 样例配置只用占位符（`config/*.env.example`）；真实 `*.env` 已被忽略，不提交。
 - 不读取仓库外的线上配置（`D:\Ai\MACCMS\prod-config\`），不连接线上库或服务器。
 - 日志不记录 cookie、session、会员身份、密码；异常处理只返回错误码与通用说明。
+- 请求处理中的异常**不得**把 Throwable 或 `getMessage()` 交给日志框架（message 可能含 SQL 参数、连接串、账号）；统一用 `common.web.SafeExceptionLog` 只记录类型与栈帧。新增异常分支要补日志捕获测试（`OutputCaptureExtension` + 合成标记，不用真实密钥）。
 
 ### 5. 测试与完成条件
 

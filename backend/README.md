@@ -15,8 +15,12 @@ MacCMS 重构的 Java 后端（模块化单体）。本批（MACC-4）只包含 
 ### 环境
 
 - JDK 21（本机 `D:\Tools\Java\jdk-21`，`JAVA_HOME` 已指向它）。
-- 不需要预装 Maven：使用仓库内的 Maven Wrapper（`mvnw` / `mvnw.cmd`），首次运行会下载 Maven 3.9.16 并校验 SHA-512。
-- 以下命令都在 `backend/` 目录下执行。Git Bash 用 `./mvnw`，PowerShell/cmd 用 `.\mvnw.cmd`。
+- 不需要预装 Maven：使用仓库内的 Maven Wrapper 3.3.4（`mvnw` / `mvnw.cmd`），首次运行会下载 Maven 3.9.16 到 `~/.m2/wrapper/dists`（或 `MAVEN_USER_HOME`），
+  并按 `.mvn/wrapper/maven-wrapper.properties` 的 `distributionSha256Sum` 校验 SHA-256，不一致则拒绝执行。
+  该 SHA-256 来自与 Apache 官方 `.sha512` 比对通过的分发包（Wrapper 只支持 SHA-256 属性），见属性文件注释。
+- 以下命令都在 `backend/` 目录下执行。Git Bash 用 `./mvnw`，PowerShell/cmd 用 `.\mvnw.cmd`，两种入口都已在本机实测。
+- `mvnw.cmd` 在官方 3.3.4 脚本上有一处本地修补：官方脚本在 `~/.m2` 是普通目录时会报
+  `Cannot index into a null array`（Windows PowerShell 5.1），已改为同时支持普通目录和链接目录。升级 Wrapper 时要保留或确认上游已修复。
 
 ### 构建与测试
 

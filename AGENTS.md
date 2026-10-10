@@ -91,8 +91,8 @@
 ## 新系统（backend/）本地运行与测试
 以下命令由 Claude 后端工程师于 2026-10-10 在本机执行通过，工作目录为 `backend/`（Git Bash 用 `./mvnw`，PowerShell 用 `.\mvnw.cmd`）。详细说明见 `backend/README.md`。
 
-1. **环境**：JDK 21（本机已装）；Maven 由仓库内的 Maven Wrapper 自动下载，无需预装。
-2. **构建与测试**（不连数据库）：`./mvnw verify`——编译、单元测试、HTTP 契约测试、只读/无凭证静态检查。
+1. **环境**：JDK 21（本机已装）；Maven 由仓库内的 Maven Wrapper 自动下载并按 `distributionSha256Sum` 校验，无需预装。
+2. **构建与测试**（不连数据库）：`./mvnw verify` 或 `.\mvnw.cmd verify`——编译、单元测试、HTTP 契约测试、只读/无凭证静态检查、异常日志脱敏检查。
 3. **MySQL 集成测试**：设置环境变量 `MACCMS_IT_ADMIN_URL`（如 `jdbc:mysql://127.0.0.1:3306/?characterEncoding=UTF-8&useSSL=false`，不含库名）、`MACCMS_IT_ADMIN_USERNAME`、`MACCMS_IT_ADMIN_PASSWORD` 后执行 `./mvnw verify -Pmysql-it`。测试自建一次性库 `maccms_it_<时间>_<随机>`、导入 `install.sql` 表结构与合成数据，结束后只删除该库；**不碰 `maccms_dev`**。
 4. **运行**：`./mvnw -q package -DskipTests` 后，设置 `MACCMS_DB_URL`、`MACCMS_DB_USERNAME`、`MACCMS_DB_PASSWORD`（样例见 `backend/config/maccms-backend.env.example`），执行 `java -jar target/maccms-backend-0.1.0-SNAPSHOT.jar`，默认监听 `127.0.0.1:18280`；`curl http://127.0.0.1:18280/actuator/health` 返回 `{"status":"UP"}` 即就绪。
    - 缺少数据库环境变量时拒绝启动；用 `root` 需显式设置 `MACCMS_DB_ALLOW_ROOT=true`（仅本机开发）。连接池是只读会话，应用无法写库。
