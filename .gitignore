@@ -1,0 +1,18 @@
+# ThinkPHP runtime cache/logs and user uploads
+runtime/*
+!runtime/.gitkeep
+upload/*
+!upload/.gitkeep
+
+# Secrets / local overrides (production config lives outside the repo: D:\Ai\MACCMS\prod-config)
+.env
+*.pem
+*.key
+
+# Multica / agent metadata, OS / editor
+.agent_context/
+.multica/
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
