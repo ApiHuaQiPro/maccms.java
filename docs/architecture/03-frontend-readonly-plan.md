@@ -104,7 +104,7 @@ flowchart LR
 | 区块 | 数据来源 | 状态 |
 |---|---|---|
 | 导航分类树 | `GET /api/v1/video-categories`（进程内 `listCategories()`），`items[].children[]` | 【已证实】已实现 |
-| 站点名、站点关键词/描述、Logo、ICP、统计代码 | 旧配置 `site.*`（`application/extra/maccms.php:18-44`）、`seo.vod.*`（`:620-626`） | **未实现**。新系统没有站点配置来源。【需求】首批用 `site` 模块自己的配置项（环境变量/外部配置文件，值由运维从线上配置人工抄录，不读 `D:\Ai\MACCMS\prod-config\`、不入仓库）；统一来源由 03 草稿 3.5 节决定，待批准 |
+| 站点名、站点关键词/描述、Logo、ICP、统计代码 | 旧配置 `site.*`（`application/extra/maccms.php:18-44`）、`seo.vod.*`（`:620-626`） | **未实现**。新系统没有站点配置来源。【需求】首批用 `site` 模块自己的配置项（环境变量/外部配置文件，值由运维从线上配置人工抄录，智能体不读取仓库外的线上配置、值不入仓库）；统一来源由 03 草稿 3.5 节决定，待批准 |
 | 站点关闭（`site_status=0` 输出关闭页） | `application/index/controller/Base.php:73-79`；仓库值 `site_status='1'`（`maccms.php:40`） | 【需求】Java 不读 PHP 配置；站点关闭由 nginx 统一处理或 Java 配置开关，二选一，实现前确定 |
 | 移动端独立模板（`mob_status`、`mob_template_dir`，`maccms.php:36-37`） | 旧系统按 UA 切模板 | 【需求】新页面只做响应式单模板；线上是否开启移动模板【待验证】 |
 | 搜索框 | 表单 `GET` 提交到旧搜索 URL（搜索归 PHP，01 计划第 8 节） | 【需求】只是一个指向 PHP 的表单，不调用 `ajax/suggest`（`static/js/home.js:381`） |
