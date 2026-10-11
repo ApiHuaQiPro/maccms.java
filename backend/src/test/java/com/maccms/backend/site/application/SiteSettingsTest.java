@@ -151,7 +151,8 @@ class SiteSettingsTest {
 
     @ParameterizedTest
     @ValueSource(strings = {"/abs", "a/../b", "..", "a b", "a?b", "a#b", "a\\b", "中文", "a%2Fb", "a//b", "a/./b",
-            "a/.", "./a", "//a"})
+            "a/.", "./a", "//a", "a%2fb", "a%e4b", "a%2Eb", "%2E%2E/a", "a%5Cb", "a%00b", "a%0Ab", "a%1Fb", "a%7Fb",
+            "a%G1", "a%4", "a%", "a:b", "a@b", "a;b"})
     void sitePathsRejectUnsafeOrNonNormalized(String path) {
         SiteSettings s = SiteSettings.from(props("合成站", "http://maccms.local.test/"));
         assertThatThrownBy(() -> s.canonical(path)).isInstanceOf(IllegalArgumentException.class);
@@ -164,5 +165,10 @@ class SiteSettingsTest {
         assertThat(s.canonical("vod/type/id/1.html").href()).isEqualTo("http://maccms.local.test/vod/type/id/1.html");
         assertThat(s.canonical("a/b/").href()).isEqualTo("http://maccms.local.test/a/b/");
         assertThat(s.publicPath("").href()).isEqualTo("/");
+        // 旧 urlencode 的输出形态（大写 %HH、+）用于链接到旧搜索/筛选页（MACC-10）
+        assertThat(s.publicPath("index.php/vod/search/wd/%E5%90%88+a.html").href())
+                .isEqualTo("/index.php/vod/search/wd/%E5%90%88+a.html");
+        assertThat(s.canonical("index.php/vod/search/wd/...html").href())
+                .isEqualTo("http://maccms.local.test/index.php/vod/search/wd/...html");
     }
 }
