@@ -12,8 +12,9 @@ MacCMS 重构的 Java 后端（模块化单体）。本批（MACC-4）只包含 
 正式契约：`docs/contracts/content-read.openapi.yaml`。设计与验收：`docs/architecture/01-batch1-content-read-plan.md`。
 开发规范：`docs/architecture/02-agent-development-rules.md`。
 
-另有 `site` 服务端渲染骨架（MACC-9，jte 3.2.4）：默认关闭（`MACCMS_SITE_ENABLED=false`），开启后只有骨架占位页
-`GET /_site/placeholder` 与错误/维护页，没有首页、分类或详情页面。配置、行为与本地运行见 `docs/architecture/05-site-skeleton.md`。
+另有 `site` 服务端渲染页面（jte 3.2.4）：默认关闭（`MACCMS_SITE_ENABLED=false`）。骨架（MACC-9，占位页 `GET /_site/placeholder`、
+错误/维护页）见 `docs/architecture/05-site-skeleton.md`；首页、分类列表（`vod/type`）、视频公开详情（`vod/detail`）三页（MACC-14，只读、
+只承接数字 id，路由与旧 URL 兼容规则、配置、与旧版差异）见 `docs/architecture/08-site-pages.md`。
 
 ### 环境
 

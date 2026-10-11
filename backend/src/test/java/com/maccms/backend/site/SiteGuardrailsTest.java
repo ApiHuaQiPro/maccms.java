@@ -188,7 +188,8 @@ class SiteGuardrailsTest {
             }
         }
         assertThat(components).extracting(p -> p.getFileName().toString())
-                .contains("SiteConfiguration.java", "SitePlaceholderController.java", "SiteExceptionHandler.java");
+                .contains("SiteConfiguration.java", "SitePlaceholderController.java", "SiteExceptionHandler.java",
+                        "SiteContentController.java");
     }
 
     @Test

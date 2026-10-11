@@ -1,13 +1,20 @@
 package com.maccms.backend.site.web;
 
+import com.maccms.backend.site.application.LegacyUrlBuilder;
 import com.maccms.backend.site.application.SafeUrl;
 import com.maccms.backend.site.application.SiteSettings;
 import com.maccms.backend.site.web.view.ErrorPage;
+import com.maccms.backend.site.web.view.NavLink;
 import com.maccms.backend.site.web.view.PageChrome;
 import com.maccms.backend.site.web.view.PlaceholderPage;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
-/** 由站点设置组装页面视图模型。错误页不带 canonical、description、keywords，一律 noindex。 */
+/**
+ * 由站点设置组装页面外壳与错误页视图模型。错误页不带 canonical、description、keywords、分类导航，一律 noindex，
+ * 组装时不读取任何内容数据（维护页、503 页不查库）。
+ */
 public class SitePages {
 
     /** 骨架占位页的站内路径（相对站点根）。 */
@@ -16,13 +23,23 @@ public class SitePages {
     static final String STYLESHEET_PATH = "site/site.css";
 
     private final SiteSettings site;
+    private final SafeUrl searchAction;
+    private final SafeUrl loginUrl;
 
-    public SitePages(SiteSettings site) {
+    public SitePages(SiteSettings site, LegacyUrlBuilder urls) {
         this.site = site;
+        // 搜索、登录仍归旧 PHP（03 方案第 3.1、6.1 节）：只是页面级链接，不调用 ajax/suggest 等接口
+        this.searchAction = site.publicPath(urls.vodSearch(Map.of(), 1));
+        this.loginUrl = site.publicPath(urls.user("login"));
+    }
+
+    public SiteSettings site() {
+        return site;
     }
 
     public PlaceholderPage placeholder() {
-        return new PlaceholderPage(chrome("站点骨架占位页", Optional.of(site.canonical(PLACEHOLDER_PATH)), true));
+        return new PlaceholderPage(chrome("站点骨架占位页 - " + site.name(), site.description(), site.keywords(),
+                Optional.of(site.canonical(PLACEHOLDER_PATH)), true, List.of()));
     }
 
     public ErrorPage notFound() {
@@ -41,15 +58,28 @@ public class SitePages {
         return error("站点维护中", site.closedMessage());
     }
 
-    private ErrorPage error(String heading, String message) {
-        PageChrome chrome = new PageChrome(heading + " - " + site.name(), site.name(), site.homePath(),
-                site.publicPath(STYLESHEET_PATH), site.logo(), site.icp(), "", "", Optional.empty(), true);
-        return new ErrorPage(chrome, heading, message);
+    /**
+     * 内容页外壳。
+     *
+     * @param fullTitle   完整的 title 文本（调用方负责拼接站名）
+     * @param description meta description，空串时用站点描述
+     * @param keywords    meta keywords，空串时用站点关键词
+     * @param canonical   canonical 绝对地址（只由 base-url 生成）
+     * @param nav         顶级分类导航
+     */
+    PageChrome content(String fullTitle, String description, String keywords, SafeUrl canonical, List<NavLink> nav) {
+        return chrome(fullTitle, description.isEmpty() ? site.description() : description,
+                keywords.isEmpty() ? site.keywords() : keywords, Optional.of(canonical), false, nav);
     }
 
-    private PageChrome chrome(String pageTitle, Optional<SafeUrl> canonical, boolean noindex) {
-        return new PageChrome(pageTitle + " - " + site.name(), site.name(), site.homePath(),
-                site.publicPath(STYLESHEET_PATH), site.logo(), site.icp(), site.description(), site.keywords(), canonical,
-                noindex);
+    private ErrorPage error(String heading, String message) {
+        return new ErrorPage(chrome(heading + " - " + site.name(), "", "", Optional.empty(), true, List.of()),
+                heading, message);
+    }
+
+    private PageChrome chrome(String fullTitle, String description, String keywords, Optional<SafeUrl> canonical,
+                              boolean noindex, List<NavLink> nav) {
+        return new PageChrome(fullTitle, site.name(), site.homePath(), site.publicPath(STYLESHEET_PATH), site.logo(),
+                site.icp(), description, keywords, canonical, noindex, List.copyOf(nav), searchAction, loginUrl);
     }
 }

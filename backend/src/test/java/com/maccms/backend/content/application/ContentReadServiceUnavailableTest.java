@@ -1,0 +1,113 @@
+package com.maccms.backend.content.application;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import com.maccms.backend.common.web.ApiException;
+import com.maccms.backend.common.web.ErrorCode;
+import com.maccms.backend.content.Fixtures;
+import com.maccms.backend.content.infrastructure.GroupMapper;
+import com.maccms.backend.content.infrastructure.TypeMapper;
+import com.maccms.backend.content.infrastructure.VodMapper;
+import java.sql.SQLException;
+import java.sql.SQLTransientConnectionException;
+import java.util.function.Consumer;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
+import org.springframework.dao.DataAccessException;
+import org.springframework.dao.QueryTimeoutException;
+import org.springframework.dao.RecoverableDataAccessException;
+import org.springframework.jdbc.BadSqlGrammarException;
+import org.springframework.jdbc.CannotGetJdbcConnectionException;
+
+/**
+ * content.application 把数据库连接类故障归一为 ApiException(SERVICE_UNAVAILABLE)（MACC-14），调用方不需要 Spring DAO 类型。
+ * 判定范围与 GlobalExceptionHandler 原有的 503 分支相同；其他数据访问异常不转换。日志只有类型链，不含 message。
+ */
+@ExtendWith(OutputCaptureExtension.class)
+class ContentReadServiceUnavailableTest {
+
+    private static final String LEAK = "SYNTHETIC-LEAK-0d9e";
+
+    private TypeMapper typeMapper;
+    private GroupMapper groupMapper;
+    private VodMapper vodMapper;
+    private ContentReadService service;
+
+    @BeforeEach
+    void setUp() {
+        typeMapper = mock(TypeMapper.class);
+        groupMapper = mock(GroupMapper.class);
+        vodMapper = mock(VodMapper.class);
+        when(typeMapper.selectEnabledVodTypes()).thenReturn(Fixtures.standardTypes());
+        when(groupMapper.selectGroupPermission(anyInt())).thenReturn(Fixtures.guestGroup());
+        service = new ContentReadService(typeMapper, groupMapper, vodMapper, new ContentProperties(true, true));
+    }
+
+    private static CannotGetJdbcConnectionException connectionFailure() {
+        return new CannotGetJdbcConnectionException("jdbc:mysql://" + LEAK + "-host/db password=" + LEAK,
+                new SQLTransientConnectionException(LEAK + " user=synthetic_user"));
+    }
+
+    private void assertUnavailable(Runnable call, CapturedOutput output) {
+        assertThatThrownBy(call::run)
+                .isInstanceOfSatisfying(ApiException.class, e -> {
+                    assertThat(e.code()).isEqualTo(ErrorCode.SERVICE_UNAVAILABLE);
+                    assertThat(e.getMessage()).isEqualTo("服务暂时不可用");
+                    assertThat(e.fieldErrors()).isEmpty();
+                    assertThat(e.getCause()).isNull();
+                });
+        assertThat(output.getAll()).contains("database unavailable: org.springframework.jdbc"
+                + ".CannotGetJdbcConnectionException <- java.sql.SQLTransientConnectionException")
+                .doesNotContain(LEAK).doesNotContain("synthetic_user");
+    }
+
+    @Test
+    void connectionFailureInEachMethodBecomesServiceUnavailable(CapturedOutput output) {
+        when(typeMapper.selectEnabledVodTypes()).thenThrow(connectionFailure());
+        assertUnavailable(service::listCategories, output);
+        assertUnavailable(() -> service.listVideos(new VideoListQuery(null, VideoSort.TIME, true, 1, 20)), output);
+        when(vodMapper.selectPublishedDetail(anyLong())).thenThrow(connectionFailure());
+        assertUnavailable(() -> service.getVideo(1), output);
+    }
+
+    @Test
+    void transientFailuresAreAlsoServiceUnavailable() {
+        for (DataAccessException e : new DataAccessException[] {
+                new QueryTimeoutException(LEAK), new org.springframework.dao.TransientDataAccessResourceException(LEAK)}) {
+            doThrow(e).when(typeMapper).selectEnabledVodTypes();
+            assertThatThrownBy(service::listCategories).isInstanceOfSatisfying(ApiException.class,
+                    a -> assertThat(a.code()).isEqualTo(ErrorCode.SERVICE_UNAVAILABLE));
+        }
+    }
+
+    @Test
+    void otherDataAccessFailuresAreNotConverted() {
+        for (DataAccessException e : new DataAccessException[] {
+                new BadSqlGrammarException(LEAK, "SELECT 1", new SQLException(LEAK)),
+                new RecoverableDataAccessException(LEAK)}) {
+            doThrow(e).when(typeMapper).selectEnabledVodTypes();
+            assertThatThrownBy(service::listCategories).isSameAs(e);
+        }
+    }
+
+    @Test
+    void businessErrorsPassThroughUnchanged() {
+        assertThatThrownBy(() -> service.listVideos(new VideoListQuery(999, VideoSort.TIME, true, 1, 20)))
+                .isInstanceOfSatisfying(ApiException.class,
+                        e -> assertThat(e.code()).isEqualTo(ErrorCode.CATEGORY_NOT_FOUND));
+        Consumer<RuntimeException> rethrown = e -> {
+            when(vodMapper.selectPublishedDetail(anyLong())).thenThrow(e);
+            assertThatThrownBy(() -> service.getVideo(1)).isSameAs(e);
+        };
+        rethrown.accept(new IllegalStateException(LEAK));
+    }
+}

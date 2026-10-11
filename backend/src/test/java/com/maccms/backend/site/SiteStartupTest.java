@@ -73,6 +73,30 @@ class SiteStartupTest {
     }
 
     @Test
+    void invalidUrlAndImageConfigFailsStartupWithoutEchoingThem(CapturedOutput output) {
+        assertThatThrownBy(() -> app().run(args("maccms.site.enabled=true",
+                "maccms.site.name=合成站",
+                "maccms.site.base-url=http://maccms.local.test/",
+                "maccms.site.url.rewrite=" + SECRET)).close())
+                .hasStackTraceContaining("maccms.site.url.rewrite")
+                .satisfies(e -> assertThat(stackTrace(e)).doesNotContain(SECRET));
+        assertThatThrownBy(() -> app().run(args("maccms.site.enabled=true",
+                "maccms.site.name=合成站",
+                "maccms.site.base-url=http://maccms.local.test/",
+                "maccms.site.image.img-key=(a+)+" + SECRET)).close())
+                .hasStackTraceContaining("maccms.site.image.img-key")
+                .satisfies(e -> assertThat(stackTrace(e)).doesNotContain(SECRET));
+        assertThatThrownBy(() -> app().run(args("maccms.site.enabled=true",
+                "maccms.site.name=合成站",
+                "maccms.site.base-url=http://maccms.local.test/",
+                "maccms.site.image.mode=remote",
+                "maccms.site.image.remote-url=javascript:" + SECRET)).close())
+                .hasStackTraceContaining("maccms.site.image.remote-url")
+                .satisfies(e -> assertThat(stackTrace(e)).doesNotContain(SECRET));
+        assertThat(output.getAll()).doesNotContain(SECRET);
+    }
+
+    @Test
     void invalidEnabledFlagFailsStartup(CapturedOutput output) {
         assertThatThrownBy(() -> app().run(args("maccms.site.enabled=" + SECRET)).close())
                 .hasStackTraceContaining("maccms.site.enabled")

@@ -54,8 +54,8 @@ public class SiteExceptionHandler {
                 log.warn("site page unavailable: {}", SafeExceptionLog.typeChain(e));
                 yield unavailable();
             }
-            // 观看密码、版权：按 03 方案第 4.2 节应交还 PHP，交还机制需与部署一起评审，骨架未实现。
-            // 先返回 503（no-store、noindex），不渲染详情、不泄露原因；实现三页时替换为交还响应。
+            // 观看密码、版权：按 03 方案第 4.2 节应交还 PHP（X-Accel-Redirect），交还机制需与部署一起评审，尚未批准。
+            // 详情页（MACC-14）仍返回 503（no-store、noindex），不渲染详情、不泄露原因；批准后再替换为交还响应。
             case VIDEO_PASSWORD_REQUIRED, VIDEO_COPYRIGHT_RESTRICTED -> {
                 log.warn("site handoff not implemented: {}", e.code());
                 yield unavailable();

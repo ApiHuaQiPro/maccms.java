@@ -3,6 +3,7 @@ package com.maccms.backend.content.application;
 import com.maccms.backend.common.web.ApiException;
 import com.maccms.backend.common.web.ErrorCode;
 import com.maccms.backend.common.web.PageResponse;
+import com.maccms.backend.common.web.SafeExceptionLog;
 import com.maccms.backend.content.application.view.CategoryDto;
 import com.maccms.backend.content.application.view.CategoryExtendDto;
 import com.maccms.backend.content.application.view.CategoryListResponse;
@@ -18,6 +19,11 @@ import com.maccms.backend.content.infrastructure.VodSummaryRow;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Supplier;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessResourceFailureException;
+import org.springframework.dao.TransientDataAccessException;
 import org.springframework.stereotype.Service;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.JsonNode;
@@ -26,11 +32,20 @@ import tools.jackson.databind.json.JsonMapper;
 /**
  * content 模块的只读查询。只调用 Mapper 的 select，不写任何表，不写缓存。
  * 可见性规则见 CategoryCatalog 与 docs/architecture/01-batch1-content-read-plan.md 第 4 节。
+ *
+ * <p>数据库连接类故障（{@link DataAccessResourceFailureException}、{@link TransientDataAccessException}，
+ * 与 GlobalExceptionHandler 原有的 503 判定相同）在这里统一转换为 {@code ApiException(SERVICE_UNAVAILABLE)}，
+ * 调用方（公开 API、site 页面）不需要、也不应依赖 Spring DAO 类型（MACC-14）。对外 JSON 与转换前相同：
+ * {@code {"code":"SERVICE_UNAVAILABLE","message":"服务暂时不可用","fieldErrors":[]}}；日志沿用 "database unavailable"
+ * + 类型链，不含 message。其他数据访问异常不转换，仍由全局处理返回 500。
  */
 @Service
 public class ContentReadService {
 
+    private static final Logger log = LoggerFactory.getLogger(ContentReadService.class);
     private static final JsonMapper JSON = JsonMapper.builder().build();
+    /** 与 GlobalExceptionHandler 对连接类故障返回的 message 相同。 */
+    static final String UNAVAILABLE_MESSAGE = "服务暂时不可用";
 
     private final TypeMapper typeMapper;
     private final GroupMapper groupMapper;
@@ -46,11 +61,31 @@ public class ContentReadService {
     }
 
     public CategoryListResponse listCategories() {
-        CategoryCatalog catalog = loadCatalog(loadGuest());
-        return new CategoryListResponse(toTree(catalog, catalog.roots()));
+        return read(() -> {
+            CategoryCatalog catalog = loadCatalog(loadGuest());
+            return new CategoryListResponse(toTree(catalog, catalog.roots()));
+        });
     }
 
     public PageResponse<VideoSummaryDto> listVideos(VideoListQuery query) {
+        return read(() -> doListVideos(query));
+    }
+
+    public VideoDetailDto getVideo(long id) {
+        return read(() -> doGetVideo(id));
+    }
+
+    /** 执行一次只读查询，把数据库连接类故障转换为 SERVICE_UNAVAILABLE；其他异常原样抛出。 */
+    static <T> T read(Supplier<T> query) {
+        try {
+            return query.get();
+        } catch (DataAccessResourceFailureException | TransientDataAccessException e) {
+            log.error("database unavailable: {}", SafeExceptionLog.typeChain(e));
+            throw new ApiException(ErrorCode.SERVICE_UNAVAILABLE, UNAVAILABLE_MESSAGE);
+        }
+    }
+
+    private PageResponse<VideoSummaryDto> doListVideos(VideoListQuery query) {
         CategoryCatalog catalog = loadCatalog(loadGuest());
         Set<Integer> typeIds;
         if (query.categoryId() != null) {
@@ -74,7 +109,7 @@ public class ContentReadService {
         return PageResponse.of(items, query.page(), query.pageSize(), total);
     }
 
-    public VideoDetailDto getVideo(long id) {
+    private VideoDetailDto doGetVideo(long id) {
         VodDetailRow row = vodMapper.selectPublishedDetail(id);
         if (row == null) {
             throw notFound();

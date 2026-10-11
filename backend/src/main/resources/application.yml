@@ -51,6 +51,19 @@ maccms:
     # canonical 301（D4）与点击计数（D5）未批准，只接受 false
     canonical-redirect: ${MACCMS_SITE_CANONICAL_REDIRECT:false}
     hit-counter-enabled: ${MACCMS_SITE_HIT_COUNTER_ENABLED:false}
+    # 旧站 URL 形态（MACC-14，对应旧 rewrite.status / rewrite.suffix_hide），只接受 true/false；
+    # pathinfo_depr 固定 /、不启用路由别名。规则见 docs/architecture/08-site-pages.md。
+    url:
+      rewrite: ${MACCMS_SITE_URL_REWRITE:false}
+      suffix-hide: ${MACCMS_SITE_URL_SUFFIX_HIDE:false}
+    # 图片地址（MACC-14，对应旧 upload.protocol/mode/remoteurl/img_key/img_api），校验见 06 文档第 4 节；
+    # img-key 只接受字面域名多选一（不含量词、分组、字符类）。
+    image:
+      protocol: ${MACCMS_SITE_IMAGE_PROTOCOL:}
+      mode: ${MACCMS_SITE_IMAGE_MODE:}
+      remote-url: ${MACCMS_SITE_IMAGE_REMOTE_URL:}
+      img-key: ${MACCMS_SITE_IMAGE_IMG_KEY:}
+      img-api: ${MACCMS_SITE_IMAGE_IMG_API:}
 
 server:
   port: ${MACCMS_SERVER_PORT:18280}
