@@ -242,3 +242,25 @@
 - jte 社区规模与维护连续性弱于 Thymeleaf；Initializr 当前不对 Boot 4.1 列出 jte（第 2 节）。
 - jte 的事件属性与 `javascript:` 处理缺陷依赖本项目规则规避，规则失效（例如有人在护栏外加了新模板目录）就会暴露；护栏应扫描整个模板根目录。
 - 缓冲渲染对超大页面的内存占用未测；首批三页分页上限为 100 条，风险低。
+
+### 9. 队长验收补记（2026-10-11）
+
+本轮以成员交付 `79455af`（59 个文件）为依据，选取到父任务分支；未选取成员 baseline/runtime。复测使用 JDK 21、现有 PowerShell Wrapper，不设置数据库变量，不连接数据库。
+
+- `mvnw.cmd -B verify`：正式工程 63 个测试全部通过。
+- `mvnw.cmd -B -f spikes/site-template/pom.xml clean verify`：最初因 Windows `core.autocrlf=true` 检出 CRLF，而两个真实 HTTP 测试硬编码 LF 结尾，发生一项失败。队长将完整页断言改为 `stripTrailing().endsWith("</html>")`，保留状态码、传输完整性、错误标记、禁止半页/泄漏标记的断言；重跑 Thymeleaf 19 项、jte 22 项全部通过。修复只在隔离实验测试内。
+- 分别用两个子工程的 `-Pmismatch` / `-Pmismatch-branch clean verify` 复跑：Thymeleaf 直接失配 7 个失败、4 个错误；分支失配仍通过 19 项测试；jte 两种失配分别因 `remakrs()` / `picc()` 不存在而编译失败。
+- 真实 Tomcat 测试复现两种直接输出路径的大页面失败为 200、传输不完整；缓冲路径均为完整 500、`no-store`，无合成异常标记。开启 Thymeleaf 禁止部分输出也得到完整 500。响应字节数受 LF/CRLF 影响，不作为跨平台验收常量。
+- 正式 `backend/pom.xml`、`backend/src/`、OpenAPI 均未修改；提交路径、严格 UTF-8 与 `git diff --check` 核验通过。没有复跑 MySQL 集成测试，因本次没有改动任何数据访问。
+
+队长认可 D2 推荐为 jte 3.2.4，具体引擎仍待用户确认；正式工程暂不引入依赖。第 4 节和第 8 节的“去掉 starter 后未测”边界保留，本轮不把独立启动兼容性宣布为通过。
+
+P2/P4 按第 5、6 节作为后续实施建议，收敛下列常规实现边界：
+
+- `VideoListQuery.categoryId` 为可空；仅非空时校验 1..65535，保留未筛选列表。构造校验与 `parse` 继续采用现有错误类型，不改变 API 契约。
+- site 专用异常处理随 site 骨架实施；独立 P2 准备任务只移包、加构造校验、公开安全日志方法和修改规范/护栏。
+- `enabled=false` 是不注册 site 路由；`enabled=true,status=closed` 才是返回 503 关闭页，二者分开。
+- 图片/logo 的站内路径不得以 `//` 或反斜线开头；URL 校验拒绝控制字符、用户信息和混淆协议。不能把“以 / 开头”直接当作安全白名单。
+- 富文本与实体处理任务必须先确认字段的编码约定；不能对所有普通文本无条件解码实体，避免损坏合法字面文本。
+
+验收通过仅覆盖本 spike 与报告；性能/内存、starter 移除后的独立启动、真实实体样本、线上与 nginx 仍未验证。D2 确认前不派正式三页实现。

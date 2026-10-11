@@ -80,7 +80,7 @@ class RealHttpRenderingTest {
         assertThat(r.complete()).isTrue();
         assertThat(r.headers()).containsKey("content-length");
         assertThat(r.headers().get("cache-control")).isEqualTo("no-store");
-        assertThat(r.body()).contains("data-spike=\"error-page\"").endsWith("</html>\n")
+        assertThat(r.body().stripTrailing()).contains("data-spike=\"error-page\"").endsWith("</html>")
                 .doesNotContain(SyntheticPages.PARTIAL_MARKER)
                 .doesNotContain(VideoCard.LEAK_MARKER);
         assertThat(output.getAll()).contains("page render failed: ")
