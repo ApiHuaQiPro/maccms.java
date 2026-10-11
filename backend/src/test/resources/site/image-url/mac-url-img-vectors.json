@@ -1,0 +1,1319 @@
+{
+  "meta": {
+    "description": "mac_url_img（application/common.php:1633-1657）黄金向量。php 为旧函数的真实输出，expect 为新版 site.application.ImageUrlNormalizer 的结果。全部为合成值：域名使用保留的 .test 顶级域，不含线上域名、密钥或 URL；线上 upload 配置未知，向量不代表生产行为。",
+    "verification": "php 与 php_warning 由同目录 mac_url_img_golden.php 从 application/common.php 原样取出 mac_url_img 与 mac_filter_xss 后执行得到，并用该脚本复核（PHP 7.2.34、7.3.33、8.0.30、8.2.32 结果一致）。Java 侧由 ImageUrlGoldenVectorsTest 读取本文件，逐条断言 branch、expect 与 compat。",
+    "compat_rules": {
+      "SAME": "新版 href 等于浏览器从旧输出得到的地址：按 HTML 属性规则解码字符引用，再把空格编码为 %20",
+      "PROTOCOL_RELATIVE_COMPLETED": "旧输出解码后是协议相对地址（//host/…），新版 href = base-url 的协议 + \":\" + 该地址",
+      "REJECTED": "新版不输出地址（页面显示占位图）；note 写明旧版的结果",
+      "CONFIG_REJECTED": "新版在创建规范化器时拒绝该配置（启动失败），只报配置项名称，不回显取值"
+    },
+    "outcomes": {
+      "ACCEPTED": "得到 SafeUrl",
+      "EMPTY": "空值或只有空白",
+      "TAG_LIKE": "含 <（旧版 strip_tags 会改写，不模拟）",
+      "UNSUPPORTED_CHAR_REF": "含浏览器可能解码、但新版不支持的字符引用",
+      "NOT_ALLOWED": "结果不在 SafeUrl 白名单内",
+      "CONFIG_ERROR": "配置不合法"
+    }
+  },
+  "configs": {
+    "local-root": {
+      "php": {
+        "protocol": "",
+        "mode": "local",
+        "remoteurl": "https://img-remote.example.test/",
+        "img_key": "",
+        "img_api": "/img.php?url=",
+        "install_dir": "/"
+      },
+      "java": {
+        "base_url": "https://www.maccms.test/"
+      },
+      "note": "本地模式、安装在根目录、protocol 留空（旧代码按 http）；页面协议 https"
+    },
+    "local-http-page": {
+      "php": {
+        "protocol": "",
+        "mode": "local",
+        "remoteurl": "https://img-remote.example.test/",
+        "img_key": "",
+        "img_api": "/img.php?url=",
+        "install_dir": "/"
+      },
+      "java": {
+        "base_url": "http://maccms.local.test/"
+      },
+      "note": "同 local-root，但站点 base-url 为 http（只影响新版的协议相对地址补全）"
+    },
+    "local-sub-https": {
+      "php": {
+        "protocol": "https",
+        "mode": "local",
+        "remoteurl": "https://img-remote.example.test/",
+        "img_key": "",
+        "img_api": "/img.php?url=",
+        "install_dir": "/sub/"
+      },
+      "java": {
+        "base_url": "https://www.maccms.test/sub/"
+      },
+      "note": "protocol=https、安装在子目录 /sub/"
+    },
+    "local-mode-other": {
+      "php": {
+        "protocol": "",
+        "mode": "ftp",
+        "remoteurl": "https://img-remote.example.test/",
+        "img_key": "",
+        "img_api": "/img.php?url=",
+        "install_dir": "/"
+      },
+      "java": {
+        "base_url": "https://www.maccms.test/"
+      },
+      "note": "mode 为 local/remote 以外的值（如 ftp），旧代码按本地处理"
+    },
+    "remote": {
+      "php": {
+        "protocol": "",
+        "mode": "remote",
+        "remoteurl": "https://img-remote.example.test/",
+        "img_key": "",
+        "img_api": "/img.php?url=",
+        "install_dir": "/"
+      },
+      "java": {
+        "base_url": "https://www.maccms.test/"
+      },
+      "note": "远程模式，remoteurl 为 https 绝对地址并以 / 结尾"
+    },
+    "remote-protocol-relative": {
+      "php": {
+        "protocol": "",
+        "mode": "remote",
+        "remoteurl": "//img-remote.example.test/",
+        "img_key": "",
+        "img_api": "/img.php?url=",
+        "install_dir": "/"
+      },
+      "java": {
+        "base_url": "https://www.maccms.test/"
+      },
+      "note": "远程模式，remoteurl 为协议相对地址"
+    },
+    "img-key": {
+      "php": {
+        "protocol": "",
+        "mode": "local",
+        "remoteurl": "https://img-remote.example.test/",
+        "img_key": "img\\.cdn\\.example\\.test|pic\\.cdn\\.example\\.test",
+        "img_api": "/img.php?url=",
+        "install_dir": "/"
+      },
+      "java": {
+        "base_url": "https://www.maccms.test/"
+      },
+      "note": "img_key 为两个合成域名的正则，img_api 为站内路径（仓库开发值 /img.php?url=）"
+    },
+    "img-key-abs-api": {
+      "php": {
+        "protocol": "",
+        "mode": "local",
+        "remoteurl": "https://img-remote.example.test/",
+        "img_key": "img\\.cdn\\.example\\.test|pic\\.cdn\\.example\\.test",
+        "img_api": "https://proxy.example.test/img?url=",
+        "install_dir": "/"
+      },
+      "java": {
+        "base_url": "https://www.maccms.test/"
+      },
+      "note": "img_api 为 https 绝对地址"
+    },
+    "img-key-pr-api": {
+      "php": {
+        "protocol": "",
+        "mode": "local",
+        "remoteurl": "https://img-remote.example.test/",
+        "img_key": "img\\.cdn\\.example\\.test|pic\\.cdn\\.example\\.test",
+        "img_api": "//proxy.example.test/img?url=",
+        "install_dir": "/"
+      },
+      "java": {
+        "base_url": "https://www.maccms.test/"
+      },
+      "note": "img_api 为协议相对地址"
+    },
+    "img-key-empty-api": {
+      "php": {
+        "protocol": "",
+        "mode": "local",
+        "remoteurl": "https://img-remote.example.test/",
+        "img_key": "img\\.cdn\\.example\\.test|pic\\.cdn\\.example\\.test",
+        "img_api": "",
+        "install_dir": "/"
+      },
+      "java": {
+        "base_url": "https://www.maccms.test/"
+      },
+      "note": "img_key 有值但 img_api 为空"
+    },
+    "img-key-zero": {
+      "php": {
+        "protocol": "",
+        "mode": "local",
+        "remoteurl": "https://img-remote.example.test/",
+        "img_key": "0",
+        "img_api": "/img.php?url=",
+        "install_dir": "/"
+      },
+      "java": {
+        "base_url": "https://www.maccms.test/"
+      },
+      "note": "img_key 为 \"0\"：PHP empty(\"0\") 为真，视为未设置"
+    },
+    "bad-img-key-slash": {
+      "php": {
+        "protocol": "",
+        "mode": "local",
+        "remoteurl": "https://img-remote.example.test/",
+        "img_key": "cdn/x",
+        "img_api": "/img.php?url=",
+        "install_dir": "/"
+      },
+      "java": {
+        "base_url": "https://www.maccms.test/"
+      },
+      "note": "img_key 含未转义的 /，PHP 正则定界符提前结束"
+    },
+    "bad-img-key-backslash": {
+      "php": {
+        "protocol": "",
+        "mode": "local",
+        "remoteurl": "https://img-remote.example.test/",
+        "img_key": "cdn\\",
+        "img_api": "/img.php?url=",
+        "install_dir": "/"
+      },
+      "java": {
+        "base_url": "https://www.maccms.test/"
+      },
+      "note": "img_key 以反斜线结尾，转义了结束定界符"
+    },
+    "bad-remote-empty": {
+      "php": {
+        "protocol": "",
+        "mode": "remote",
+        "remoteurl": "",
+        "img_key": "",
+        "img_api": "/img.php?url=",
+        "install_dir": "/"
+      },
+      "java": {
+        "base_url": "https://www.maccms.test/"
+      },
+      "note": "远程模式但 remoteurl 为空"
+    },
+    "bad-remote-no-slash": {
+      "php": {
+        "protocol": "",
+        "mode": "remote",
+        "remoteurl": "https://img-remote.example.test",
+        "img_key": "",
+        "img_api": "/img.php?url=",
+        "install_dir": "/"
+      },
+      "java": {
+        "base_url": "https://www.maccms.test/"
+      },
+      "note": "remoteurl 不以 / 结尾"
+    },
+    "bad-protocol-ftp": {
+      "php": {
+        "protocol": "ftp",
+        "mode": "local",
+        "remoteurl": "https://img-remote.example.test/",
+        "img_key": "",
+        "img_api": "/img.php?url=",
+        "install_dir": "/"
+      },
+      "java": {
+        "base_url": "https://www.maccms.test/"
+      },
+      "note": "protocol 不是 http/https"
+    },
+    "bad-protocol-javascript": {
+      "php": {
+        "protocol": "javascript",
+        "mode": "local",
+        "remoteurl": "https://img-remote.example.test/",
+        "img_key": "",
+        "img_api": "/img.php?url=",
+        "install_dir": "/"
+      },
+      "java": {
+        "base_url": "https://www.maccms.test/"
+      },
+      "note": "protocol 为 javascript"
+    },
+    "bad-img-api-javascript": {
+      "php": {
+        "protocol": "",
+        "mode": "local",
+        "remoteurl": "https://img-remote.example.test/",
+        "img_key": "img\\.cdn\\.example\\.test|pic\\.cdn\\.example\\.test",
+        "img_api": "javascript:alert(1)//",
+        "install_dir": "/"
+      },
+      "java": {
+        "base_url": "https://www.maccms.test/"
+      },
+      "note": "img_api 为 javascript: 地址"
+    }
+  },
+  "vectors": [
+    {
+      "id": "mac-default-protocol",
+      "config": "local-root",
+      "branch": "MAC_PROTOCOL",
+      "evidence": "application/common.php:1635-1640",
+      "input": "mac://img.example.test/upload/vod/a.jpg",
+      "php": "http://img.example.test/upload/vod/a.jpg",
+      "php_warning": false,
+      "expect": {
+        "outcome": "ACCEPTED",
+        "href": "http://img.example.test/upload/vod/a.jpg"
+      },
+      "compat": "SAME",
+      "note": "protocol 留空时按 http"
+    },
+    {
+      "id": "mac-https-protocol",
+      "config": "local-sub-https",
+      "branch": "MAC_PROTOCOL",
+      "evidence": "application/common.php:1635-1640",
+      "input": "mac://img.example.test/upload/vod/a.jpg",
+      "php": "https://img.example.test/upload/vod/a.jpg",
+      "php_warning": false,
+      "expect": {
+        "outcome": "ACCEPTED",
+        "href": "https://img.example.test/upload/vod/a.jpg"
+      },
+      "compat": "SAME",
+      "note": "protocol=https"
+    },
+    {
+      "id": "mac-replaces-every-occurrence",
+      "config": "local-root",
+      "branch": "MAC_PROTOCOL",
+      "evidence": "application/common.php:1635-1640",
+      "input": "mac://img.example.test/mac:1.jpg",
+      "php": "http://img.example.test/http:1.jpg",
+      "php_warning": false,
+      "expect": {
+        "outcome": "ACCEPTED",
+        "href": "http://img.example.test/http:1.jpg"
+      },
+      "compat": "SAME",
+      "note": "str_replace 替换所有 mac:，不只前缀；照搬"
+    },
+    {
+      "id": "mac-ignores-img-key",
+      "config": "img-key",
+      "branch": "MAC_PROTOCOL",
+      "evidence": "application/common.php:1635-1640",
+      "input": "mac://img.cdn.example.test/a.jpg",
+      "php": "http://img.cdn.example.test/a.jpg",
+      "php_warning": false,
+      "expect": {
+        "outcome": "ACCEPTED",
+        "href": "http://img.cdn.example.test/a.jpg"
+      },
+      "compat": "SAME",
+      "note": "mac: 分支不再检查 img_key"
+    },
+    {
+      "id": "mac-uppercase-is-relative",
+      "config": "local-root",
+      "branch": "RELATIVE_LOCAL",
+      "evidence": "application/common.php:1642,1646-1647；MAC_PATH 即 site.install_dir（application/common/behavior/Init.php:48）",
+      "input": "MAC://img.example.test/a.jpg",
+      "php": "/MAC://img.example.test/a.jpg",
+      "php_warning": false,
+      "expect": {
+        "outcome": "ACCEPTED",
+        "href": "/MAC://img.example.test/a.jpg"
+      },
+      "compat": "SAME",
+      "note": "前缀比较区分大小写，MAC: 落入相对路径分支，得到站内路径（旧版同样是坏图，结果无害）"
+    },
+    {
+      "id": "mac-without-slashes",
+      "config": "local-root",
+      "branch": "MAC_PROTOCOL",
+      "evidence": "application/common.php:1635-1640",
+      "input": "mac:img.example.test/a.jpg",
+      "php": "http:img.example.test/a.jpg",
+      "php_warning": false,
+      "expect": {
+        "outcome": "NOT_ALLOWED"
+      },
+      "compat": "REJECTED",
+      "note": "旧版输出 http:img.example.test/a.jpg（无主机名的 http 地址，浏览器按页面协议可能解析为相对路径或其他主机）；新版拒绝"
+    },
+    {
+      "id": "mac-javascript",
+      "config": "local-root",
+      "branch": "MAC_PROTOCOL",
+      "evidence": "application/common.php:1635-1640",
+      "input": "mac:javascript:alert(1)",
+      "php": "http:javascript:alert(1)",
+      "php_warning": false,
+      "expect": {
+        "outcome": "NOT_ALLOWED"
+      },
+      "compat": "REJECTED",
+      "note": "旧版输出 http:javascript:alert(1)；新版拒绝"
+    },
+    {
+      "id": "relative-local-root",
+      "config": "local-root",
+      "branch": "RELATIVE_LOCAL",
+      "evidence": "application/common.php:1642,1646-1647；MAC_PATH 即 site.install_dir（application/common/behavior/Init.php:48）",
+      "input": "upload/vod/20260101-1/a.jpg",
+      "php": "/upload/vod/20260101-1/a.jpg",
+      "php_warning": false,
+      "expect": {
+        "outcome": "ACCEPTED",
+        "href": "/upload/vod/20260101-1/a.jpg"
+      },
+      "compat": "SAME",
+      "note": "本地上传的相对路径拼 MAC_PATH"
+    },
+    {
+      "id": "relative-local-subdir",
+      "config": "local-sub-https",
+      "branch": "RELATIVE_LOCAL",
+      "evidence": "application/common.php:1642,1646-1647；MAC_PATH 即 site.install_dir（application/common/behavior/Init.php:48）",
+      "input": "upload/vod/20260101-1/a.jpg",
+      "php": "/sub/upload/vod/20260101-1/a.jpg",
+      "php_warning": false,
+      "expect": {
+        "outcome": "ACCEPTED",
+        "href": "/sub/upload/vod/20260101-1/a.jpg"
+      },
+      "compat": "SAME",
+      "note": "新版用 base-url 的路径部分代替 install_dir"
+    },
+    {
+      "id": "relative-mode-other-is-local",
+      "config": "local-mode-other",
+      "branch": "RELATIVE_LOCAL",
+      "evidence": "application/common.php:1642,1646-1647；MAC_PATH 即 site.install_dir（application/common/behavior/Init.php:48）",
+      "input": "upload/vod/a.jpg",
+      "php": "/upload/vod/a.jpg",
+      "php_warning": false,
+      "expect": {
+        "outcome": "ACCEPTED",
+        "href": "/upload/vod/a.jpg"
+      },
+      "compat": "SAME",
+      "note": "mode 只与 'remote' 比较，其他值都按本地"
+    },
+    {
+      "id": "relative-remote",
+      "config": "remote",
+      "branch": "RELATIVE_REMOTE",
+      "evidence": "application/common.php:1642-1644",
+      "input": "upload/vod/a.jpg",
+      "php": "https://img-remote.example.test/upload/vod/a.jpg",
+      "php_warning": false,
+      "expect": {
+        "outcome": "ACCEPTED",
+        "href": "https://img-remote.example.test/upload/vod/a.jpg"
+      },
+      "compat": "SAME",
+      "note": "remoteurl 直接拼接"
+    },
+    {
+      "id": "relative-remote-protocol-relative",
+      "config": "remote-protocol-relative",
+      "branch": "RELATIVE_REMOTE",
+      "evidence": "application/common.php:1642-1644",
+      "input": "upload/vod/a.jpg",
+      "php": "//img-remote.example.test/upload/vod/a.jpg",
+      "php_warning": false,
+      "expect": {
+        "outcome": "ACCEPTED",
+        "href": "https://img-remote.example.test/upload/vod/a.jpg"
+      },
+      "compat": "PROTOCOL_RELATIVE_COMPLETED",
+      "note": "旧版输出 //img-remote...，由浏览器按页面协议补全；新版按 base-url 协议补全"
+    },
+    {
+      "id": "relative-non-ascii-and-space",
+      "config": "local-root",
+      "branch": "RELATIVE_LOCAL",
+      "evidence": "application/common.php:1642,1646-1647；MAC_PATH 即 site.install_dir（application/common/behavior/Init.php:48）",
+      "input": "upload/vod/海报 1.jpg",
+      "php": "/upload/vod/海报 1.jpg",
+      "php_warning": false,
+      "expect": {
+        "outcome": "ACCEPTED",
+        "href": "/upload/vod/海报%201.jpg"
+      },
+      "compat": "SAME",
+      "note": "空格按浏览器 URL 解析器编码为 %20，非 ASCII 原样（与浏览器请求的地址相同）"
+    },
+    {
+      "id": "relative-empty",
+      "config": "local-root",
+      "branch": "RELATIVE_LOCAL",
+      "evidence": "application/common.php:1642,1646-1647；MAC_PATH 即 site.install_dir（application/common/behavior/Init.php:48）",
+      "input": "",
+      "php": "/",
+      "php_warning": false,
+      "expect": {
+        "outcome": "EMPTY"
+      },
+      "compat": "REJECTED",
+      "note": "旧版空值输出 MAC_PATH（指向站点首页的 img）；新版返回空，由页面显示占位图"
+    },
+    {
+      "id": "relative-null",
+      "config": "local-root",
+      "branch": "RELATIVE_LOCAL",
+      "evidence": "application/common.php:1642,1646-1647；MAC_PATH 即 site.install_dir（application/common/behavior/Init.php:48）",
+      "input": null,
+      "php": "/",
+      "php_warning": false,
+      "expect": {
+        "outcome": "EMPTY"
+      },
+      "compat": "REJECTED",
+      "note": "NULL 与空串相同"
+    },
+    {
+      "id": "relative-whitespace-only",
+      "config": "local-root",
+      "branch": "RELATIVE_LOCAL",
+      "evidence": "application/common.php:1642,1646-1647；MAC_PATH 即 site.install_dir（application/common/behavior/Init.php:48）",
+      "input": " \t ",
+      "php": "/",
+      "php_warning": false,
+      "expect": {
+        "outcome": "EMPTY"
+      },
+      "compat": "REJECTED",
+      "note": "只有空白：旧版拼前缀后 trim 得到 MAC_PATH"
+    },
+    {
+      "id": "relative-empty-remote",
+      "config": "remote",
+      "branch": "RELATIVE_REMOTE",
+      "evidence": "application/common.php:1642-1644",
+      "input": "",
+      "php": "https://img-remote.example.test/",
+      "php_warning": false,
+      "expect": {
+        "outcome": "EMPTY"
+      },
+      "compat": "REJECTED",
+      "note": "远程模式空值：旧版输出 remoteurl 本身"
+    },
+    {
+      "id": "relative-javascript-scheme",
+      "config": "local-root",
+      "branch": "RELATIVE_LOCAL",
+      "evidence": "application/common.php:1642,1646-1647；MAC_PATH 即 site.install_dir（application/common/behavior/Init.php:48）",
+      "input": "javascript:alert(1)",
+      "php": "/javascript:alert(1)",
+      "php_warning": false,
+      "expect": {
+        "outcome": "ACCEPTED",
+        "href": "/javascript:alert(1)"
+      },
+      "compat": "SAME",
+      "note": "恶意 scheme 不以 http、/ 开头，被当作相对路径拼成站内路径，不会执行；照搬（结果是本站一个不存在的路径）"
+    },
+    {
+      "id": "relative-javascript-remote",
+      "config": "remote",
+      "branch": "RELATIVE_REMOTE",
+      "evidence": "application/common.php:1642-1644",
+      "input": "javascript:alert(1)",
+      "php": "https://img-remote.example.test/javascript:alert(1)",
+      "php_warning": false,
+      "expect": {
+        "outcome": "ACCEPTED",
+        "href": "https://img-remote.example.test/javascript:alert(1)"
+      },
+      "compat": "SAME",
+      "note": "远程模式下同理，成为图片域名下的路径"
+    },
+    {
+      "id": "relative-data-uri",
+      "config": "local-root",
+      "branch": "RELATIVE_LOCAL",
+      "evidence": "application/common.php:1642,1646-1647；MAC_PATH 即 site.install_dir（application/common/behavior/Init.php:48）",
+      "input": "data:image/svg+xml;base64,PHN2Zz4=",
+      "php": "/data:image/svg+xml;base64,PHN2Zz4=",
+      "php_warning": false,
+      "expect": {
+        "outcome": "ACCEPTED",
+        "href": "/data:image/svg+xml;base64,PHN2Zz4="
+      },
+      "compat": "SAME",
+      "note": "data: 同样成为站内路径，不会作为 data URI 加载"
+    },
+    {
+      "id": "relative-uppercase-https",
+      "config": "local-root",
+      "branch": "RELATIVE_LOCAL",
+      "evidence": "application/common.php:1642,1646-1647；MAC_PATH 即 site.install_dir（application/common/behavior/Init.php:48）",
+      "input": "HTTPS://img.example.test/a.jpg",
+      "php": "/HTTPS://img.example.test/a.jpg",
+      "php_warning": false,
+      "expect": {
+        "outcome": "ACCEPTED",
+        "href": "/HTTPS://img.example.test/a.jpg"
+      },
+      "compat": "SAME",
+      "note": "前缀比较区分大小写；旧版同样输出站内路径（坏图）"
+    },
+    {
+      "id": "relative-leading-space-absolute",
+      "config": "local-root",
+      "branch": "RELATIVE_LOCAL",
+      "evidence": "application/common.php:1642,1646-1647；MAC_PATH 即 site.install_dir（application/common/behavior/Init.php:48）",
+      "input": " https://img.example.test/upload/vod/a.jpg",
+      "php": "/ https://img.example.test/upload/vod/a.jpg",
+      "php_warning": false,
+      "expect": {
+        "outcome": "ACCEPTED",
+        "href": "/%20https://img.example.test/upload/vod/a.jpg"
+      },
+      "compat": "SAME",
+      "note": "前导空格使绝对地址落入相对分支；trim 只去掉首尾，中间空格按浏览器行为编码"
+    },
+    {
+      "id": "relative-backslash-host",
+      "config": "local-root",
+      "branch": "RELATIVE_LOCAL",
+      "evidence": "application/common.php:1642,1646-1647；MAC_PATH 即 site.install_dir（application/common/behavior/Init.php:48）",
+      "input": "\\evil.example.test\\a.jpg",
+      "php": "/\\evil.example.test\\a.jpg",
+      "php_warning": false,
+      "expect": {
+        "outcome": "NOT_ALLOWED"
+      },
+      "compat": "REJECTED",
+      "note": "旧版输出 /\\evil.example.test\\a.jpg，浏览器把 \\ 当 /，成为协议相对地址指向其他主机；新版拒绝任何反斜线"
+    },
+    {
+      "id": "relative-entity-encoded-slash",
+      "config": "local-root",
+      "branch": "RELATIVE_LOCAL",
+      "evidence": "application/common.php:1642,1646-1647；MAC_PATH 即 site.install_dir（application/common/behavior/Init.php:48）",
+      "input": "&#47;evil.example.test/a.jpg",
+      "php": "/&#47;evil.example.test/a.jpg",
+      "php_warning": false,
+      "expect": {
+        "outcome": "ACCEPTED",
+        "href": "https://evil.example.test/a.jpg"
+      },
+      "compat": "PROTOCOL_RELATIVE_COMPLETED",
+      "note": "旧版输出 /&#47;evil...，浏览器解码属性后为 //evil.example.test/a.jpg（其他主机）；新版先按属性规则解码再判断，按协议相对地址补全并通过 SafeUrl（与直接写绝对地址等价，不额外放宽）"
+    },
+    {
+      "id": "relative-tab",
+      "config": "local-root",
+      "branch": "RELATIVE_LOCAL",
+      "evidence": "application/common.php:1642,1646-1647；MAC_PATH 即 site.install_dir（application/common/behavior/Init.php:48）",
+      "input": "upload/vod/a\tb.jpg",
+      "php": "/upload/vod/a\tb.jpg",
+      "php_warning": false,
+      "expect": {
+        "outcome": "NOT_ALLOWED"
+      },
+      "compat": "REJECTED",
+      "note": "中间的制表符：旧版原样输出，浏览器解析 URL 时删除；新版拒绝控制字符（java<TAB>script: 类混淆不放行）"
+    },
+    {
+      "id": "relative-inner-nul",
+      "config": "local-root",
+      "branch": "RELATIVE_LOCAL",
+      "evidence": "application/common.php:1642,1646-1647；MAC_PATH 即 site.install_dir（application/common/behavior/Init.php:48）；application/common.php:1653-1655；mac_filter_xss 见 application/common.php:1222-1225",
+      "input": "upload/vod/a\u0000.jpg",
+      "php": "/upload/vod/a.jpg",
+      "php_warning": false,
+      "expect": {
+        "outcome": "NOT_ALLOWED"
+      },
+      "compat": "REJECTED",
+      "note": "strip_tags 删除 NUL，旧版输出 /upload/vod/a.jpg；新版拒绝控制字符"
+    },
+    {
+      "id": "relative-tag",
+      "config": "local-root",
+      "branch": "RELATIVE_LOCAL",
+      "evidence": "application/common.php:1642,1646-1647；MAC_PATH 即 site.install_dir（application/common/behavior/Init.php:48）；application/common.php:1653-1655；mac_filter_xss 见 application/common.php:1222-1225",
+      "input": "upload/vod/a.jpg<script>alert(1)</script>",
+      "php": "/upload/vod/a.jpgalert(1)",
+      "php_warning": false,
+      "expect": {
+        "outcome": "TAG_LIKE"
+      },
+      "compat": "REJECTED",
+      "note": "strip_tags 删掉标签后旧版输出 /upload/vod/a.jpgalert(1)；新版不模拟 strip_tags，含 < 一律拒绝"
+    },
+    {
+      "id": "relative-attr-breakout",
+      "config": "local-root",
+      "branch": "RELATIVE_LOCAL",
+      "evidence": "application/common.php:1642,1646-1647；MAC_PATH 即 site.install_dir（application/common/behavior/Init.php:48）；application/common.php:1653-1655；mac_filter_xss 见 application/common.php:1222-1225",
+      "input": "upload/vod/a.jpg\" onerror=\"alert(1)",
+      "php": "/upload/vod/a.jpg&quot; onerror=&quot;alert(1)",
+      "php_warning": false,
+      "expect": {
+        "outcome": "NOT_ALLOWED"
+      },
+      "compat": "REJECTED",
+      "note": "旧版把 \" 编码为 &quot;，不能跳出属性；浏览器解码后地址含引号。新版拒绝引号"
+    },
+    {
+      "id": "relative-quote-gt-removed",
+      "config": "local-root",
+      "branch": "RELATIVE_LOCAL",
+      "evidence": "application/common.php:1642,1646-1647；MAC_PATH 即 site.install_dir（application/common/behavior/Init.php:48）；application/common.php:1653-1655；mac_filter_xss 见 application/common.php:1222-1225",
+      "input": "upload/vod/a.jpg\">",
+      "php": "/upload/vod/a.jpg",
+      "php_warning": false,
+      "expect": {
+        "outcome": "NOT_ALLOWED"
+      },
+      "compat": "REJECTED",
+      "note": "旧版编码后删除 &quot;&gt;，输出 /upload/vod/a.jpg；新版不做这种删除，含引号即拒绝"
+    },
+    {
+      "id": "relative-single-quote",
+      "config": "local-root",
+      "branch": "RELATIVE_LOCAL",
+      "evidence": "application/common.php:1642,1646-1647；MAC_PATH 即 site.install_dir（application/common/behavior/Init.php:48）；application/common.php:1653-1655；mac_filter_xss 见 application/common.php:1222-1225",
+      "input": "upload/vod/a'b.jpg",
+      "php": "/upload/vod/a&#039;b.jpg",
+      "php_warning": false,
+      "expect": {
+        "outcome": "NOT_ALLOWED"
+      },
+      "compat": "REJECTED",
+      "note": "旧版输出 &#039;（浏览器解码为 '）；新版拒绝单引号"
+    },
+    {
+      "id": "absolute-https",
+      "config": "local-root",
+      "branch": "UNCHANGED",
+      "evidence": "application/common.php:1642,1650（三个分支均未命中，原样进入过滤）",
+      "input": "https://img.example.test/upload/vod/a.jpg?w=200",
+      "php": "https://img.example.test/upload/vod/a.jpg?w=200",
+      "php_warning": false,
+      "expect": {
+        "outcome": "ACCEPTED",
+        "href": "https://img.example.test/upload/vod/a.jpg?w=200"
+      },
+      "compat": "SAME",
+      "note": "已有 https 地址"
+    },
+    {
+      "id": "absolute-http",
+      "config": "local-root",
+      "branch": "UNCHANGED",
+      "evidence": "application/common.php:1642,1650（三个分支均未命中，原样进入过滤）",
+      "input": "http://img.example.test/upload/vod/a.jpg",
+      "php": "http://img.example.test/upload/vod/a.jpg",
+      "php_warning": false,
+      "expect": {
+        "outcome": "ACCEPTED",
+        "href": "http://img.example.test/upload/vod/a.jpg"
+      },
+      "compat": "SAME",
+      "note": "已有 http 地址，不升级为 https"
+    },
+    {
+      "id": "site-path-root",
+      "config": "local-root",
+      "branch": "UNCHANGED",
+      "evidence": "application/common.php:1642,1650（三个分支均未命中，原样进入过滤）",
+      "input": "/upload/vod/a.jpg",
+      "php": "/upload/vod/a.jpg",
+      "php_warning": false,
+      "expect": {
+        "outcome": "ACCEPTED",
+        "href": "/upload/vod/a.jpg"
+      },
+      "compat": "SAME",
+      "note": "以 / 开头的站内路径原样"
+    },
+    {
+      "id": "site-path-not-prefixed-in-subdir",
+      "config": "local-sub-https",
+      "branch": "UNCHANGED",
+      "evidence": "application/common.php:1642,1650（三个分支均未命中，原样进入过滤）",
+      "input": "/upload/vod/a.jpg",
+      "php": "/upload/vod/a.jpg",
+      "php_warning": false,
+      "expect": {
+        "outcome": "ACCEPTED",
+        "href": "/upload/vod/a.jpg"
+      },
+      "compat": "SAME",
+      "note": "子目录安装时，以 / 开头的路径也不拼 install_dir；照搬"
+    },
+    {
+      "id": "protocol-relative-https-page",
+      "config": "local-root",
+      "branch": "UNCHANGED",
+      "evidence": "application/common.php:1642,1650（三个分支均未命中，原样进入过滤）",
+      "input": "//img.example.test/upload/vod/a.jpg",
+      "php": "//img.example.test/upload/vod/a.jpg",
+      "php_warning": false,
+      "expect": {
+        "outcome": "ACCEPTED",
+        "href": "https://img.example.test/upload/vod/a.jpg"
+      },
+      "compat": "PROTOCOL_RELATIVE_COMPLETED",
+      "note": "旧版原样输出 //...，由浏览器按页面协议补全；新版按 base-url 协议（https）补全后过 SafeUrl"
+    },
+    {
+      "id": "protocol-relative-http-page",
+      "config": "local-http-page",
+      "branch": "UNCHANGED",
+      "evidence": "application/common.php:1642,1650（三个分支均未命中，原样进入过滤）",
+      "input": "//img.example.test/upload/vod/a.jpg",
+      "php": "//img.example.test/upload/vod/a.jpg",
+      "php_warning": false,
+      "expect": {
+        "outcome": "ACCEPTED",
+        "href": "http://img.example.test/upload/vod/a.jpg"
+      },
+      "compat": "PROTOCOL_RELATIVE_COMPLETED",
+      "note": "base-url 为 http 时补 http"
+    },
+    {
+      "id": "protocol-relative-triple-slash",
+      "config": "local-root",
+      "branch": "UNCHANGED",
+      "evidence": "application/common.php:1642,1650（三个分支均未命中，原样进入过滤）",
+      "input": "///img.example.test/a.jpg",
+      "php": "///img.example.test/a.jpg",
+      "php_warning": false,
+      "expect": {
+        "outcome": "NOT_ALLOWED"
+      },
+      "compat": "REJECTED",
+      "note": "旧版原样输出，浏览器会把 ///host 当作 host；新版补全为 https:///… 无主机名，拒绝"
+    },
+    {
+      "id": "slash-backslash-host",
+      "config": "local-root",
+      "branch": "UNCHANGED",
+      "evidence": "application/common.php:1642,1650（三个分支均未命中，原样进入过滤）",
+      "input": "/\\evil.example.test/a.jpg",
+      "php": "/\\evil.example.test/a.jpg",
+      "php_warning": false,
+      "expect": {
+        "outcome": "NOT_ALLOWED"
+      },
+      "compat": "REJECTED",
+      "note": "以 / 开头所以原样输出，浏览器视为 //evil.example.test；新版拒绝"
+    },
+    {
+      "id": "http-prefixed-other-scheme",
+      "config": "local-root",
+      "branch": "UNCHANGED",
+      "evidence": "application/common.php:1642,1650（三个分支均未命中，原样进入过滤）",
+      "input": "httpx://evil.example.test/a.jpg",
+      "php": "httpx://evil.example.test/a.jpg",
+      "php_warning": false,
+      "expect": {
+        "outcome": "NOT_ALLOWED"
+      },
+      "compat": "REJECTED",
+      "note": "只比较前 4 个字符 http，其他 scheme 原样输出；新版只接受 http/https"
+    },
+    {
+      "id": "absolute-with-userinfo",
+      "config": "local-root",
+      "branch": "UNCHANGED",
+      "evidence": "application/common.php:1642,1650（三个分支均未命中，原样进入过滤）",
+      "input": "https://user:pass@img.example.test/a.jpg",
+      "php": "https://user:pass@img.example.test/a.jpg",
+      "php_warning": false,
+      "expect": {
+        "outcome": "NOT_ALLOWED"
+      },
+      "compat": "REJECTED",
+      "note": "合成的用户信息；旧版原样输出，新版拒绝带用户信息的地址"
+    },
+    {
+      "id": "absolute-trailing-newline",
+      "config": "local-root",
+      "branch": "UNCHANGED",
+      "evidence": "application/common.php:1642,1650（三个分支均未命中，原样进入过滤）；application/common.php:1653-1655；mac_filter_xss 见 application/common.php:1222-1225",
+      "input": "https://img.example.test/upload/vod/a.jpg\n",
+      "php": "https://img.example.test/upload/vod/a.jpg",
+      "php_warning": false,
+      "expect": {
+        "outcome": "ACCEPTED",
+        "href": "https://img.example.test/upload/vod/a.jpg"
+      },
+      "compat": "SAME",
+      "note": "末尾换行被 trim 去掉"
+    },
+    {
+      "id": "absolute-trailing-nul",
+      "config": "local-root",
+      "branch": "UNCHANGED",
+      "evidence": "application/common.php:1642,1650（三个分支均未命中，原样进入过滤）；application/common.php:1653-1655；mac_filter_xss 见 application/common.php:1222-1225",
+      "input": "https://img.example.test/upload/vod/a.jpg\u0000",
+      "php": "https://img.example.test/upload/vod/a.jpg",
+      "php_warning": false,
+      "expect": {
+        "outcome": "ACCEPTED",
+        "href": "https://img.example.test/upload/vod/a.jpg"
+      },
+      "compat": "SAME",
+      "note": "末尾 NUL：旧版 strip_tags 删除，新版按 PHP trim 去掉"
+    },
+    {
+      "id": "absolute-pipe",
+      "config": "local-root",
+      "branch": "UNCHANGED",
+      "evidence": "application/common.php:1642,1650（三个分支均未命中，原样进入过滤）",
+      "input": "https://img.example.test/a|b.jpg",
+      "php": "https://img.example.test/a|b.jpg",
+      "php_warning": false,
+      "expect": {
+        "outcome": "NOT_ALLOWED"
+      },
+      "compat": "REJECTED",
+      "note": "旧版原样输出（浏览器会编码 |）；新版 SafeUrl 用 java.net.URI 解析，| 不合法，拒绝"
+    },
+    {
+      "id": "entity-amp",
+      "config": "local-root",
+      "branch": "UNCHANGED",
+      "evidence": "application/common.php:1642,1650（三个分支均未命中，原样进入过滤）；application/common.php:1653-1655；mac_filter_xss 见 application/common.php:1222-1225",
+      "input": "https://img.example.test/upload/vod/a.jpg?w=1&amp;h=2",
+      "php": "https://img.example.test/upload/vod/a.jpg?w=1&amp;h=2",
+      "php_warning": false,
+      "expect": {
+        "outcome": "ACCEPTED",
+        "href": "https://img.example.test/upload/vod/a.jpg?w=1&h=2"
+      },
+      "compat": "SAME",
+      "note": "库内 &amp;：旧版输出 &amp;（浏览器解码为 &）；新版解码后由模板转义"
+    },
+    {
+      "id": "entity-plain-amp",
+      "config": "local-root",
+      "branch": "UNCHANGED",
+      "evidence": "application/common.php:1642,1650（三个分支均未命中，原样进入过滤）；application/common.php:1653-1655；mac_filter_xss 见 application/common.php:1222-1225",
+      "input": "https://img.example.test/upload/vod/a.jpg?w=1&h=2",
+      "php": "https://img.example.test/upload/vod/a.jpg?w=1&h=2",
+      "php_warning": false,
+      "expect": {
+        "outcome": "ACCEPTED",
+        "href": "https://img.example.test/upload/vod/a.jpg?w=1&h=2"
+      },
+      "compat": "SAME",
+      "note": "普通 & 原样"
+    },
+    {
+      "id": "entity-legacy-name-before-equals",
+      "config": "local-root",
+      "branch": "UNCHANGED",
+      "evidence": "application/common.php:1642,1650（三个分支均未命中，原样进入过滤）；application/common.php:1653-1655；mac_filter_xss 见 application/common.php:1222-1225",
+      "input": "https://img.example.test/upload/vod/a.jpg?a=1&copy=2",
+      "php": "https://img.example.test/upload/vod/a.jpg?a=1&copy=2",
+      "php_warning": false,
+      "expect": {
+        "outcome": "ACCEPTED",
+        "href": "https://img.example.test/upload/vod/a.jpg?a=1&copy=2"
+      },
+      "compat": "SAME",
+      "note": "属性值中 &copy 后跟 = 时浏览器不解码（HTML 字符引用规则）"
+    },
+    {
+      "id": "entity-legacy-name-before-letter",
+      "config": "local-root",
+      "branch": "UNCHANGED",
+      "evidence": "application/common.php:1642,1650（三个分支均未命中，原样进入过滤）；application/common.php:1653-1655；mac_filter_xss 见 application/common.php:1222-1225",
+      "input": "https://img.example.test/upload/vod/a.jpg?a=1&notify=1",
+      "php": "https://img.example.test/upload/vod/a.jpg?a=1&notify=1",
+      "php_warning": false,
+      "expect": {
+        "outcome": "ACCEPTED",
+        "href": "https://img.example.test/upload/vod/a.jpg?a=1&notify=1"
+      },
+      "compat": "SAME",
+      "note": "&not 后跟字母时不解码"
+    },
+    {
+      "id": "entity-legacy-name-at-end",
+      "config": "local-root",
+      "branch": "UNCHANGED",
+      "evidence": "application/common.php:1642,1650（三个分支均未命中，原样进入过滤）；application/common.php:1653-1655；mac_filter_xss 见 application/common.php:1222-1225",
+      "input": "https://img.example.test/upload/vod/a.jpg?a=1&copy",
+      "php": "https://img.example.test/upload/vod/a.jpg?a=1&copy",
+      "php_warning": false,
+      "expect": {
+        "outcome": "UNSUPPORTED_CHAR_REF"
+      },
+      "compat": "REJECTED",
+      "note": "末尾的 &copy 会被浏览器解码为 ©；新版只解码 &amp; 系列与数字引用，其余可能被解码的引用一律拒绝"
+    },
+    {
+      "id": "entity-named-semicolon",
+      "config": "local-root",
+      "branch": "UNCHANGED",
+      "evidence": "application/common.php:1642,1650（三个分支均未命中，原样进入过滤）；application/common.php:1653-1655；mac_filter_xss 见 application/common.php:1222-1225",
+      "input": "https://img.example.test/upload/vod/a.jpg?a=&hellip;",
+      "php": "https://img.example.test/upload/vod/a.jpg?a=&hellip;",
+      "php_warning": false,
+      "expect": {
+        "outcome": "UNSUPPORTED_CHAR_REF"
+      },
+      "compat": "REJECTED",
+      "note": "带分号的其他命名引用拒绝（不内置完整实体表）"
+    },
+    {
+      "id": "entity-numeric-amp",
+      "config": "local-root",
+      "branch": "UNCHANGED",
+      "evidence": "application/common.php:1642,1650（三个分支均未命中，原样进入过滤）；application/common.php:1653-1655；mac_filter_xss 见 application/common.php:1222-1225",
+      "input": "https://img.example.test/upload/vod/a.jpg?w=1&#38;h=2&#x26;q=3",
+      "php": "https://img.example.test/upload/vod/a.jpg?w=1&#38;h=2&#x26;q=3",
+      "php_warning": false,
+      "expect": {
+        "outcome": "ACCEPTED",
+        "href": "https://img.example.test/upload/vod/a.jpg?w=1&h=2&q=3"
+      },
+      "compat": "SAME",
+      "note": "数字引用按浏览器规则解码"
+    },
+    {
+      "id": "entity-numeric-quote",
+      "config": "local-root",
+      "branch": "UNCHANGED",
+      "evidence": "application/common.php:1642,1650（三个分支均未命中，原样进入过滤）；application/common.php:1653-1655；mac_filter_xss 见 application/common.php:1222-1225",
+      "input": "https://img.example.test/upload/vod/a.jpg&#34;onerror=x",
+      "php": "https://img.example.test/upload/vod/a.jpg&#34;onerror=x",
+      "php_warning": false,
+      "expect": {
+        "outcome": "NOT_ALLOWED"
+      },
+      "compat": "REJECTED",
+      "note": "解码后含引号，拒绝"
+    },
+    {
+      "id": "entity-quot",
+      "config": "local-root",
+      "branch": "UNCHANGED",
+      "evidence": "application/common.php:1642,1650（三个分支均未命中，原样进入过滤）；application/common.php:1653-1655；mac_filter_xss 见 application/common.php:1222-1225",
+      "input": "https://img.example.test/upload/vod/a.jpg&quot;onerror=&quot;alert(1)",
+      "php": "https://img.example.test/upload/vod/a.jpg&quot;onerror=&quot;alert(1)",
+      "php_warning": false,
+      "expect": {
+        "outcome": "NOT_ALLOWED"
+      },
+      "compat": "REJECTED",
+      "note": "库内 &quot;：旧版输出 &quot;（浏览器解码为 \"，不能跳出属性）；新版解码后拒绝"
+    },
+    {
+      "id": "img-key-hit",
+      "config": "img-key",
+      "branch": "IMG_API",
+      "evidence": "application/common.php:1650-1651",
+      "input": "https://img.cdn.example.test/upload/a.jpg",
+      "php": "/img.php?url=https://img.cdn.example.test/upload/a.jpg",
+      "php_warning": false,
+      "expect": {
+        "outcome": "ACCEPTED",
+        "href": "/img.php?url=https://img.cdn.example.test/upload/a.jpg"
+      },
+      "compat": "SAME",
+      "note": "命中：img_api 直接拼接，URL 不编码；照搬"
+    },
+    {
+      "id": "img-key-hit-second-alternative",
+      "config": "img-key",
+      "branch": "IMG_API",
+      "evidence": "application/common.php:1650-1651",
+      "input": "http://pic.cdn.example.test/b.jpg",
+      "php": "/img.php?url=http://pic.cdn.example.test/b.jpg",
+      "php_warning": false,
+      "expect": {
+        "outcome": "ACCEPTED",
+        "href": "/img.php?url=http://pic.cdn.example.test/b.jpg"
+      },
+      "compat": "SAME",
+      "note": "正则的另一分支命中"
+    },
+    {
+      "id": "img-key-miss",
+      "config": "img-key",
+      "branch": "UNCHANGED",
+      "evidence": "application/common.php:1642,1650（三个分支均未命中，原样进入过滤）",
+      "input": "https://img.example.test/upload/vod/a.jpg",
+      "php": "https://img.example.test/upload/vod/a.jpg",
+      "php_warning": false,
+      "expect": {
+        "outcome": "ACCEPTED",
+        "href": "https://img.example.test/upload/vod/a.jpg"
+      },
+      "compat": "SAME",
+      "note": "未命中，原样"
+    },
+    {
+      "id": "img-key-case-sensitive-miss",
+      "config": "img-key",
+      "branch": "UNCHANGED",
+      "evidence": "application/common.php:1642,1650（三个分支均未命中，原样进入过滤）",
+      "input": "https://IMG.CDN.EXAMPLE.TEST/a.jpg",
+      "php": "https://IMG.CDN.EXAMPLE.TEST/a.jpg",
+      "php_warning": false,
+      "expect": {
+        "outcome": "ACCEPTED",
+        "href": "https://IMG.CDN.EXAMPLE.TEST/a.jpg"
+      },
+      "compat": "SAME",
+      "note": "正则无修饰符，区分大小写"
+    },
+    {
+      "id": "img-key-hit-protocol-relative",
+      "config": "img-key",
+      "branch": "IMG_API",
+      "evidence": "application/common.php:1650-1651",
+      "input": "//img.cdn.example.test/a.jpg",
+      "php": "/img.php?url=//img.cdn.example.test/a.jpg",
+      "php_warning": false,
+      "expect": {
+        "outcome": "ACCEPTED",
+        "href": "/img.php?url=//img.cdn.example.test/a.jpg"
+      },
+      "compat": "SAME",
+      "note": "协议相对地址命中后成为站内路径（查询串里的 // 不影响）"
+    },
+    {
+      "id": "img-key-hit-site-path",
+      "config": "img-key",
+      "branch": "IMG_API",
+      "evidence": "application/common.php:1650-1651",
+      "input": "/upload/img.cdn.example.test.jpg",
+      "php": "/img.php?url=/upload/img.cdn.example.test.jpg",
+      "php_warning": false,
+      "expect": {
+        "outcome": "ACCEPTED",
+        "href": "/img.php?url=/upload/img.cdn.example.test.jpg"
+      },
+      "compat": "SAME",
+      "note": "以 / 开头的站内路径也会被代理；照搬"
+    },
+    {
+      "id": "img-key-relative-not-applied",
+      "config": "img-key",
+      "branch": "RELATIVE_LOCAL",
+      "evidence": "application/common.php:1642,1646-1647；MAC_PATH 即 site.install_dir（application/common/behavior/Init.php:48）",
+      "input": "upload/img.cdn.example.test/a.jpg",
+      "php": "/upload/img.cdn.example.test/a.jpg",
+      "php_warning": false,
+      "expect": {
+        "outcome": "ACCEPTED",
+        "href": "/upload/img.cdn.example.test/a.jpg"
+      },
+      "compat": "SAME",
+      "note": "相对路径先走相对分支，不再检查 img_key"
+    },
+    {
+      "id": "img-key-hit-with-query",
+      "config": "img-key",
+      "branch": "IMG_API",
+      "evidence": "application/common.php:1650-1651；application/common.php:1653-1655；mac_filter_xss 见 application/common.php:1222-1225",
+      "input": "https://img.cdn.example.test/a.jpg?w=1&h=2",
+      "php": "/img.php?url=https://img.cdn.example.test/a.jpg?w=1&h=2",
+      "php_warning": false,
+      "expect": {
+        "outcome": "ACCEPTED",
+        "href": "/img.php?url=https://img.cdn.example.test/a.jpg?w=1&h=2"
+      },
+      "compat": "SAME",
+      "note": "原地址的 & 不编码，代理只收到 w=1 之前的部分；照搬（旧缺陷）"
+    },
+    {
+      "id": "img-key-abs-api",
+      "config": "img-key-abs-api",
+      "branch": "IMG_API",
+      "evidence": "application/common.php:1650-1651",
+      "input": "https://img.cdn.example.test/a.jpg",
+      "php": "https://proxy.example.test/img?url=https://img.cdn.example.test/a.jpg",
+      "php_warning": false,
+      "expect": {
+        "outcome": "ACCEPTED",
+        "href": "https://proxy.example.test/img?url=https://img.cdn.example.test/a.jpg"
+      },
+      "compat": "SAME",
+      "note": "img_api 为绝对地址"
+    },
+    {
+      "id": "img-key-pr-api",
+      "config": "img-key-pr-api",
+      "branch": "IMG_API",
+      "evidence": "application/common.php:1650-1651",
+      "input": "https://img.cdn.example.test/a.jpg",
+      "php": "//proxy.example.test/img?url=https://img.cdn.example.test/a.jpg",
+      "php_warning": false,
+      "expect": {
+        "outcome": "ACCEPTED",
+        "href": "https://proxy.example.test/img?url=https://img.cdn.example.test/a.jpg"
+      },
+      "compat": "PROTOCOL_RELATIVE_COMPLETED",
+      "note": "img_api 为协议相对地址，结果按 base-url 协议补全"
+    },
+    {
+      "id": "img-key-empty-api",
+      "config": "img-key-empty-api",
+      "branch": "IMG_API",
+      "evidence": "application/common.php:1650-1651",
+      "input": "https://img.cdn.example.test/a.jpg",
+      "php": "https://img.cdn.example.test/a.jpg",
+      "php_warning": false,
+      "expect": {
+        "outcome": "ACCEPTED",
+        "href": "https://img.cdn.example.test/a.jpg"
+      },
+      "compat": "SAME",
+      "note": "img_api 为空时命中等于原样"
+    },
+    {
+      "id": "img-key-zero-is-unset",
+      "config": "img-key-zero",
+      "branch": "UNCHANGED",
+      "evidence": "application/common.php:1642,1650（三个分支均未命中，原样进入过滤）",
+      "input": "https://img.example.test/0.jpg",
+      "php": "https://img.example.test/0.jpg",
+      "php_warning": false,
+      "expect": {
+        "outcome": "ACCEPTED",
+        "href": "https://img.example.test/0.jpg"
+      },
+      "compat": "SAME",
+      "note": "img_key=\"0\" 被 empty() 视为未设置，不会匹配含 0 的地址"
+    },
+    {
+      "id": "config-img-key-unescaped-slash",
+      "config": "bad-img-key-slash",
+      "branch": "UNCHANGED",
+      "evidence": "application/common.php:1650-1651",
+      "input": "https://cdn.example.test/cdn/x/a.jpg",
+      "php": "https://cdn.example.test/cdn/x/a.jpg",
+      "php_warning": true,
+      "expect": {
+        "outcome": "CONFIG_ERROR",
+        "config_key": "upload.img_key"
+      },
+      "compat": "CONFIG_REJECTED",
+      "note": "旧版：preg_match 报 E_WARNING 并返回 false，CLI 下原样输出；在 ThinkPHP 中警告会转为异常（thinkphp/library/think/Error.php:28,71，代码阅读，未实测）。新版启动时拒绝该配置"
+    },
+    {
+      "id": "config-img-key-trailing-backslash",
+      "config": "bad-img-key-backslash",
+      "branch": "UNCHANGED",
+      "evidence": "application/common.php:1650-1651",
+      "input": "https://cdn.example.test/a.jpg",
+      "php": "https://cdn.example.test/a.jpg",
+      "php_warning": true,
+      "expect": {
+        "outcome": "CONFIG_ERROR",
+        "config_key": "upload.img_key"
+      },
+      "compat": "CONFIG_REJECTED",
+      "note": "同上：缺少结束定界符"
+    },
+    {
+      "id": "config-remote-empty",
+      "config": "bad-remote-empty",
+      "branch": "RELATIVE_REMOTE",
+      "evidence": "application/common.php:1642-1644",
+      "input": "upload/vod/a.jpg",
+      "php": "upload/vod/a.jpg",
+      "php_warning": false,
+      "expect": {
+        "outcome": "CONFIG_ERROR",
+        "config_key": "upload.remoteurl"
+      },
+      "compat": "CONFIG_REJECTED",
+      "note": "旧版输出相对地址 upload/vod/a.jpg，浏览器按当前页面目录解析（坏图）；新版启动时拒绝"
+    },
+    {
+      "id": "config-remote-no-trailing-slash",
+      "config": "bad-remote-no-slash",
+      "branch": "RELATIVE_REMOTE",
+      "evidence": "application/common.php:1642-1644",
+      "input": "upload/vod/a.jpg",
+      "php": "https://img-remote.example.testupload/vod/a.jpg",
+      "php_warning": false,
+      "expect": {
+        "outcome": "CONFIG_ERROR",
+        "config_key": "upload.remoteurl"
+      },
+      "compat": "CONFIG_REJECTED",
+      "note": "旧版拼出 https://img-remote.example.testupload/vod/a.jpg（主机名被改变）；新版要求 remoteurl 以 / 结尾"
+    },
+    {
+      "id": "config-protocol-ftp",
+      "config": "bad-protocol-ftp",
+      "branch": "MAC_PROTOCOL",
+      "evidence": "application/common.php:1635-1640",
+      "input": "mac://img.example.test/a.jpg",
+      "php": "ftp://img.example.test/a.jpg",
+      "php_warning": false,
+      "expect": {
+        "outcome": "CONFIG_ERROR",
+        "config_key": "upload.protocol"
+      },
+      "compat": "CONFIG_REJECTED",
+      "note": "旧版输出 ftp://…；新版只接受空、http、https"
+    },
+    {
+      "id": "config-protocol-javascript",
+      "config": "bad-protocol-javascript",
+      "branch": "MAC_PROTOCOL",
+      "evidence": "application/common.php:1635-1640",
+      "input": "mac://img.example.test/a.jpg",
+      "php": "javascript://img.example.test/a.jpg",
+      "php_warning": false,
+      "expect": {
+        "outcome": "CONFIG_ERROR",
+        "config_key": "upload.protocol"
+      },
+      "compat": "CONFIG_REJECTED",
+      "note": "旧版输出 javascript://…；新版启动时拒绝"
+    },
+    {
+      "id": "config-img-api-javascript",
+      "config": "bad-img-api-javascript",
+      "branch": "IMG_API",
+      "evidence": "application/common.php:1650-1651",
+      "input": "https://img.cdn.example.test/a.jpg",
+      "php": "javascript:alert(1)//https://img.cdn.example.test/a.jpg",
+      "php_warning": false,
+      "expect": {
+        "outcome": "CONFIG_ERROR",
+        "config_key": "upload.img_api"
+      },
+      "compat": "CONFIG_REJECTED",
+      "note": "旧版输出 javascript:alert(1)//https://…；新版要求 img_api 为空、站内路径或 http/https（可协议相对）地址"
+    }
+  ]
+}
