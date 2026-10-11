@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
-import java.util.regex.Pattern;
 
 /**
  * 校验后的站点设置（site 启用时才创建）。规则见 docs/architecture/04-site-template-spike.md 第 6.2 节与第 9 节。
@@ -15,9 +14,6 @@ public record SiteSettings(String name, SafeUrl baseUrl, SafeUrl homePath, Strin
                            String icp, Optional<SafeUrl> logo, boolean closed, String closedMessage) {
 
     public static final String DEFAULT_CLOSED_MESSAGE = "站点维护中，请稍后访问。";
-
-    /** canonical 路径只允许这些字符；URL 生成器（后续任务）负责编码。 */
-    private static final Pattern SITE_PATH = Pattern.compile("[A-Za-z0-9._~/-]*");
 
     public static SiteSettings from(SiteProperties p) {
         List<String> errors = new ArrayList<>();
@@ -71,10 +67,10 @@ public record SiteSettings(String name, SafeUrl baseUrl, SafeUrl homePath, Strin
     /**
      * 由配置的 base-url 生成 canonical 绝对地址，不使用 Host、X-Forwarded-Host 等请求头。
      *
-     * @param sitePath 相对站点根的路径，见 {@link #checkSitePath(String)}
+     * @param sitePath 相对站点根的路径，规则见 {@link SitePaths}（旧 URL 由 {@link LegacyUrlBuilder} 生成）
      */
     public SafeUrl canonical(String sitePath) {
-        return new SafeUrl(baseUrl.href() + checkSitePath(sitePath));
+        return new SafeUrl(baseUrl.href() + SitePaths.check(sitePath));
     }
 
     /**
@@ -82,23 +78,7 @@ public record SiteSettings(String name, SafeUrl baseUrl, SafeUrl homePath, Strin
      * 浏览器看到的是对外地址空间；base-url 带子目录时由反向代理把该前缀映射到本应用根路径（部署时评审）。
      */
     public SafeUrl publicPath(String sitePath) {
-        return new SafeUrl(homePath.href() + checkSitePath(sitePath));
-    }
-
-    /** 相对站点根的路径：不以 / 开头，只含 [A-Za-z0-9._~/-]，不含空段、"." 或 ".." 段（末尾的 / 允许）。 */
-    private static String checkSitePath(String sitePath) {
-        if (sitePath == null || sitePath.startsWith("/") || !SITE_PATH.matcher(sitePath).matches()) {
-            throw new IllegalArgumentException("站内路径不合法");
-        }
-        String[] segments = sitePath.split("/", -1);
-        for (int i = 0; i < segments.length; i++) {
-            String s = segments[i];
-            boolean lastEmpty = i == segments.length - 1 && s.isEmpty();
-            if (!lastEmpty && (s.isEmpty() || s.equals(".") || s.equals(".."))) {
-                throw new IllegalArgumentException("站内路径不合法");
-            }
-        }
-        return sitePath;
+        return new SafeUrl(homePath.href() + SitePaths.check(sitePath));
     }
 
     private static SafeUrl parseBaseUrl(String raw) {

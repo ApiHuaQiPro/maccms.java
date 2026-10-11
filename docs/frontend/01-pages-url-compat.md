@@ -80,6 +80,8 @@ MACC-4 首批后端**只交付分类与视频公开元数据 API**（不提供�
 - `?s=` 读取在 `thinkphp/library/think/Request.php:401-423`（`pathinfo()`），读到后经路由别名表（仅 `route_status=1` 时启用）与 PATHINFO 解析。
 - 因此 `/?s=vod-detail-id-123`（`-` 分隔）**只在 `pathinfo_depr='-'` 分支有效**；在仓库当前 `/` 配置下该串会被当成一段路径而非参数对。不能同时标为当前配置下有效。
 
+> MACC-10 补充（旧代码执行结果，见 `docs/frontend/02-url-golden-vectors.md` 第 3 节）：`route_status=1` 时直达的模块路径（如 `/index.php/vod/detail/id/123.html`、`?s=/vod/detail/id/123`）返回 404，只有别名可达，二者不会并存；`pathinfo_depr=-` 时 `/` 仍可作分隔符。
+
 URL 生成、PHP 路由匹配、nginx 去入口转发是三层不同的事：生成由 `mac_url`（`application/common.php`）按 `rewrite.status` 决定是否含 `index.php`；匹配由 ThinkPHP 按 `var_pathinfo`/`pathinfo_depr`/`url_route_on` 进行；去 `index.php` 直达依赖 nginx/部署层转发，**别名不是 `rewrite.status=1` 就必然启用**（`rewrite.status` 控制 URL 生成形态，`route_status` 控制别名匹配开关，且省略 `index.php` 的路径能否到达 PHP 取决于部署转发）。
 
 ### 2.1 基础形态（仓库当前配置：pathinfo_depr=/、rewrite.status=0、route_status=0、suffix=html、suffix_hide=0）
