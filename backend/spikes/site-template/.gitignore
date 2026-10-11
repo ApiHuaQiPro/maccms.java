@@ -1,0 +1,4 @@
+# spike 构建产物与 jte 开发模式缓存，不提交
+target/
+jte-classes/
+*.log

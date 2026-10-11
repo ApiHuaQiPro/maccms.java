@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head th:fragment="head(meta, site)">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title th:text="${meta.title} + ' - ' + ${site.name}">标题</title>
+  <meta name="description" th:content="${meta.description}">
+  <link rel="canonical" th:href="${meta.canonical}">
+</head>
+<body>
+<header th:fragment="header(site, nav)" class="site-header">
+  <a class="skip-link" href="#main">跳到主要内容</a>
+  <a class="site-name" th:href="${site.baseUrl}" th:text="${site.name}">站点</a>
+  <nav aria-label="分类导航">
+    <ul>
+      <li th:each="item : ${nav}"><a th:href="${item.url}" th:text="${item.name}">分类</a></li>
+    </ul>
+  </nav>
+</header>
+<footer th:fragment="footer(site)" class="site-footer">
+  <p th:text="${site.name}">站点</p>
+</footer>
+</body>
+</html>

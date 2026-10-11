@@ -1,0 +1,10 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<p id="text" th:text="${x}">t</p>
+<p id="inline">[[${x}]]</p>
+<div id="attr" th:title="${x}">a</div>
+<a id="href" th:href="${x}">h</a>
+<script id="js" th:inline="javascript">var s = [[${x}]];</script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<!-- MACC-7 失配实验：remarks 故意写成 remakrs，位于测试数据会走到的分支 -->
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<body>
+<ul>
+  <li th:fragment="card(card)" class="video-card">
+    <a th:href="${card.url}" th:title="${card.name}">
+      <img th:src="${card.pic}" th:alt="${card.name}" loading="lazy" width="200" height="280">
+      <span class="video-card__name" th:text="${card.name}">名称</span>
+    </a>
+    <span class="video-card__remarks" th:if="${card.remarks != ''}" th:text="${card.remakrs}">备注</span>
+    <span class="video-card__placeholder" th:if="${card.pic == ''}">暂无海报</span>
+  </li>
+</ul>
+</body>
+</html>

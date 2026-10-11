@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(${page.meta}, ${page.site})}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header(${page.site}, ${page.nav})}"></header>
+<main id="main">
+  <h1 th:text="${page.heading}">标题</h1>
+  <ul class="video-grid" th:unless="${#lists.isEmpty(page.cards)}">
+    <th:block th:each="card : ${page.cards}">
+      <li th:replace="~{fragments/card :: card(${card})}"></li>
+    </th:block>
+  </ul>
+  <p class="empty-state" th:if="${#lists.isEmpty(page.cards)}">暂无内容</p>
+</main>
+<footer th:replace="~{fragments/layout :: footer(${page.site})}"></footer>
+</body>
+</html>
