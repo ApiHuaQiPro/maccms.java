@@ -1,7 +1,7 @@
 package com.maccms.backend.content.api;
 
-import com.maccms.backend.content.api.dto.CategoryListResponse;
 import com.maccms.backend.content.application.ContentReadService;
+import com.maccms.backend.content.application.view.CategoryListResponse;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;

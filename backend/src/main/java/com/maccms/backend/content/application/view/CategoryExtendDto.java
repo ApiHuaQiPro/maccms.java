@@ -1,4 +1,4 @@
-package com.maccms.backend.content.api.dto;
+package com.maccms.backend.content.application.view;
 
 /**
  * mac_type.type_extend（JSON）中用于前台筛选的候选值，均为逗号分隔的原始字符串；缺失或无法解析时为空字符串。

@@ -1,11 +1,11 @@
 package com.maccms.backend.content.api;
 
 import com.maccms.backend.common.web.PageResponse;
-import com.maccms.backend.content.api.dto.VideoDetailDto;
-import com.maccms.backend.content.api.dto.VideoSummaryDto;
 import com.maccms.backend.content.application.ContentReadService;
 import com.maccms.backend.content.application.VideoId;
 import com.maccms.backend.content.application.VideoListQuery;
+import com.maccms.backend.content.application.view.VideoDetailDto;
+import com.maccms.backend.content.application.view.VideoSummaryDto;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;

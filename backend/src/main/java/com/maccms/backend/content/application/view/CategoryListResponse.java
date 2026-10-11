@@ -1,4 +1,4 @@
-package com.maccms.backend.content.api.dto;
+package com.maccms.backend.content.application.view;
 
 import java.util.List;
 

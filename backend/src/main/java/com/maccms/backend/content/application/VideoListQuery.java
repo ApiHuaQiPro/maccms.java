@@ -5,6 +5,9 @@ import com.maccms.backend.common.web.ApiException;
 /**
  * GET /api/v1/videos 的已校验参数。取值范围是契约的一部分，见 docs/contracts/content-read.openapi.yaml。
  * 空字符串参数按"未传"处理。
+ *
+ * <p>紧凑构造器与 {@link #parse} 使用相同的取值范围和错误类型，其他模块直接构造时也不能越过页大小等上限；
+ * {@code categoryId == null} 表示不按分类筛选。
  */
 public record VideoListQuery(Integer categoryId, VideoSort sort, boolean descending, int page, int pageSize) {
 
@@ -12,6 +15,17 @@ public record VideoListQuery(Integer categoryId, VideoSort sort, boolean descend
     public static final int MAX_PAGE_SIZE = 100;
     public static final int MAX_PAGE = 1000;
     public static final int MAX_CATEGORY_ID = 65535;
+
+    public VideoListQuery {
+        if (categoryId != null) {
+            checkRange("categoryId", categoryId, 1, MAX_CATEGORY_ID);
+        }
+        if (sort == null) {
+            throw ApiException.invalidParameter("sort", "不支持的排序字段");
+        }
+        checkRange("page", page, 1, MAX_PAGE);
+        checkRange("pageSize", pageSize, 1, MAX_PAGE_SIZE);
+    }
 
     public static VideoListQuery parse(String categoryId, String sort, String order, String page, String pageSize) {
         Integer category = blank(categoryId) ? null : parseInt("categoryId", categoryId, 1, MAX_CATEGORY_ID);
@@ -43,9 +57,13 @@ public record VideoListQuery(Integer categoryId, VideoSort sort, boolean descend
             throw ApiException.invalidParameter(field, "必须是 " + min + " 到 " + max + " 之间的整数");
         }
         long v = Long.parseLong(raw);
-        if (v < min || v > max) {
+        checkRange(field, v, min, max);
+        return (int) v;
+    }
+
+    private static void checkRange(String field, long value, int min, int max) {
+        if (value < min || value > max) {
             throw ApiException.invalidParameter(field, "必须是 " + min + " 到 " + max + " 之间的整数");
         }
-        return (int) v;
     }
 }
