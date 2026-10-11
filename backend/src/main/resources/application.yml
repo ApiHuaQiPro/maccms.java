@@ -35,6 +35,22 @@ maccms:
     enforce-guest-popedom: ${MACCMS_CONTENT_ENFORCE_GUEST_POPEDOM:true}
     # 对齐 PHP 配置 app.copyright_status==2（内容页跳转）：vod_copyright=1 的视频详情返回 403
     copyright-hides-detail: ${MACCMS_CONTENT_COPYRIGHT_HIDES_DETAIL:true}
+  # site 服务端页面（MACC-9 骨架）：默认关闭，关闭时不注册任何 site 路由。
+  # 启用时 name、base-url 必填并校验，缺失或不合法即启动失败（不回显取值）。规则见 docs/architecture/05-site-skeleton.md。
+  # 只读本应用自己的环境变量，不读取 PHP 配置；canonical 只用 base-url，不从 Host 头推断。
+  site:
+    enabled: ${MACCMS_SITE_ENABLED:false}
+    name: ${MACCMS_SITE_NAME:}
+    base-url: ${MACCMS_SITE_BASE_URL:}
+    keywords: ${MACCMS_SITE_KEYWORDS:}
+    description: ${MACCMS_SITE_DESCRIPTION:}
+    icp: ${MACCMS_SITE_ICP:}
+    logo-url: ${MACCMS_SITE_LOGO_URL:}
+    status: ${MACCMS_SITE_STATUS:open}
+    closed-message: ${MACCMS_SITE_CLOSED_MESSAGE:}
+    # canonical 301（D4）与点击计数（D5）未批准，只接受 false
+    canonical-redirect: ${MACCMS_SITE_CANONICAL_REDIRECT:false}
+    hit-counter-enabled: ${MACCMS_SITE_HIT_COUNTER_ENABLED:false}
 
 server:
   port: ${MACCMS_SERVER_PORT:18280}

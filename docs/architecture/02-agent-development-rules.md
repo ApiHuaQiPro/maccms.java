@@ -19,9 +19,10 @@
   - `content` 的已发布只读类型（MACC-8 起）：`content.application.view` 下的 `CategoryListResponse`、`CategoryDto`、`CategoryExtendDto`、`CategoryRefDto`、`VideoSummaryDto`、`VideoDetailDto`，分别对应 `docs/contracts/content-read.openapi.yaml` 中的同名（去掉 `Dto`）schema，Controller 直接以它们作为响应。
   - 已发布只读类型与 `docs/contracts/` 中的 schema 一一对应时，修改它们等同修改契约，按第 1 节在同一提交里改 OpenAPI、类型与契约测试（`PublishedViewContractTest` 校验 record 组件与 schema 字段集合一致）。
   - 跨模块传入的查询参数类型自带校验：例如 `VideoListQuery` 的构造器与 `parse` 采用相同范围（`page` 1..1000、`pageSize` 1..100、`sort` 非空、`categoryId` 为 `null`（不筛选）或 1..65535），越界抛 `ApiException`（`INVALID_PARAMETER`）。调用方不能靠直接构造绕过上限。
-- `site` 模块（服务端页面，尚未建立）只依赖 `content.application`（含 `.view`）与 `common`——`common` 中限 `common.web` 的 `PageResponse`、`ApiException`、`ErrorCode`、`SafeExceptionLog`，需要更多时在任务中说明并同步修改护栏；不拥有表、不新增 Mapper/SQL，不引用 MyBatis、JDBC、`javax.sql`、Spring JDBC/DAO 类型；页面需要新字段时走契约变更。
+- `site` 模块（服务端页面，MACC-9 起为骨架，见 `05-site-skeleton.md`）只依赖 `content.application`（含 `.view`）与 `common`——`common` 中限 `common.web` 的 `PageResponse`、`ApiException`、`ErrorCode`、`SafeExceptionLog`，需要更多时在任务中说明并同步修改护栏；不拥有表、不新增 Mapper/SQL，不引用 MyBatis、JDBC、`javax.sql`、Spring JDBC/DAO 类型；不读文件、环境变量（只经 `maccms.site.*` 配置绑定），不启动进程，不发起 HTTP 请求（不回环调用旧 PHP 或本应用 API），模板表达式只读取视图模型；页面需要新字段时走契约变更。
+  - `site` 的每个 Spring 组件都带 `@ConditionalOnSiteEnabled`；`maccms.site.enabled` 默认关闭，关闭时不注册任何 site 组件与路由。
 - MyBatis/JDBC 类型只出现在各模块的 `infrastructure` 包（`common.config` 的数据源检查除外）。
-- 以上依赖规则由 `backend/src/test/java/com/maccms/backend/architecture/ModuleBoundaryTest.java` 扫描源码检查（注释和字符串不计）；`site` 规则在 `site` 包出现前用合成源码验证，出现后自动覆盖真实文件。
+- 以上依赖规则由 `backend/src/test/java/com/maccms/backend/architecture/ModuleBoundaryTest.java` 扫描源码检查（注释和字符串不计），合成源码自检规则本身；`site` 的模板、构建与装配规则由 `backend/src/test/java/com/maccms/backend/site/SiteGuardrailsTest.java` 与 `SiteTemplatePolicyTest.java` 检查。
 - `common` 只放与业务无关的支持代码（错误处理、分页、配置检查），不得引用业务模块。
 
 ### 3. 数据库
@@ -45,10 +46,11 @@
 - 日志不记录 cookie、session、会员身份、密码；异常处理只返回错误码与通用说明。
 - 请求处理中的异常**不得**把 Throwable 或 `getMessage()` 交给日志框架（message 可能含 SQL 参数、连接串、账号）；统一用 `common.web.SafeExceptionLog` 只记录类型与栈帧。新增异常分支要补日志捕获测试（`OutputCaptureExtension` + 合成标记，不用真实密钥）。
   - `SafeExceptionLog` 已公开（MACC-8），只公开 `typeChain`（单行类型链）与 `describe`（类型 + 栈帧）两个方法，其他模块直接复用，不要自行拼接异常信息。
-- 服务端页面（`site`，后续任务实施，依据 `04-site-template-spike.md` 第 3.5、5.3 节）：
+- 服务端页面（`site`，MACC-9 骨架已实施，依据 `04-site-template-spike.md` 第 3.5、5.3 节；用法见 `05-site-skeleton.md`）：
   - 一律先把整页渲染到缓冲区，成功后再写响应（带 `Content-Length`）；不使用边渲染边输出的视图路径，避免失败时返回 200 + 半页 HTML 被缓存。
   - 渲染或读取失败时由 `site` 自己的异常处理（`@ControllerAdvice(basePackages = "com.maccms.backend.site")`，优先于全局 JSON 处理）输出完整错误页并带 `Cache-Control: no-store`，不依赖 Boot 的 `/error` 转发；日志只用 `SafeExceptionLog` 记录类型链。
   - 模板引擎自身的错误日志不得输出异常 message（引擎会自行记录时须关闭对应 logger 并有测试）。
+  - 模板（jte 3.2.4，只放在 `backend/src/main/jte/site/`）：只通过生成的 `Templates` 接口与 `SiteHtmlRenderer` 渲染；不用 `$unsafe{}`/`@raw`/`!{}`；事件属性、`<script>`、`<style>`、`style` 属性中不放数据（严格策略直接禁止这些标签与属性）；URL 属性（`href`、`src` 等）的动态值只能是 `SafeUrl.href()`，模板不拼接 URL；默认转义不是富文本过滤，不得引用 `vod_content`/`content`。
 
 ### 5. 测试与完成条件
 
@@ -81,6 +83,6 @@
 ### 7. 协作
 
 - 每个目录有明确的负责人：`backend/` 与 `docs/contracts/` 由后端智能体维护；`docs/frontend/` 由前端智能体维护，后端不修改。需要对方配合时在任务评论中提出，不直接改对方目录，不给其他智能体派活。
-- `backend/` 内的例外（建议，待 `site` 骨架任务建立这些目录时生效）：`backend/src/main/jte/site/components/` 与 `backend/src/main/resources/static/site/` 由前端智能体维护，后端智能体维护其余部分（含页面模板、视图模型、模板参数签名）；组件模板的 `@param` 签名变更需双方在任务中确认。
+- `backend/` 内的例外（MACC-9 起生效；`static/site/` 已建立，`jte/site/components/` 在首个组件出现时建立）：`backend/src/main/jte/site/components/` 与 `backend/src/main/resources/static/site/` 由前端智能体维护，后端智能体维护其余部分（含页面模板、视图模型、模板参数签名）；组件模板的 `@param` 签名变更需双方在任务中确认。
 - 同一文件同一时间只由一个任务修改；发现冲突先在任务中说明。
 - 不确定的业务规则先问，不猜；推断出来的规则标注"待核实"。

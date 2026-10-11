@@ -1,0 +1,127 @@
+/*
+ * site 最小设计 token 与基础样式（MACC-9 骨架）。不还原旧站视觉（03 方案 D6 未定）。
+ * 模板与组件只引用这里的 token；后续视觉调整改 token，不改组件（03 方案第 7.2 节）。
+ * 本目录按 02 规范第 7 节由前端智能体维护。
+ */
+:root {
+  --site-color-text: #1f2328;
+  --site-color-muted: #59636e;
+  --site-color-bg: #ffffff;
+  --site-color-surface: #f6f8fa;
+  --site-color-border: #d1d9e0;
+  --site-color-link: #0b62c4;
+  --site-color-focus: #0b62c4;
+  --site-color-danger: #b42318;
+
+  --site-font-family: system-ui, -apple-system, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  --site-font-size-sm: 0.875rem;
+  --site-font-size-md: 1rem;
+  --site-font-size-lg: 1.25rem;
+  --site-font-size-xl: 1.5rem;
+  --site-line-height: 1.6;
+
+  --site-space-1: 0.25rem;
+  --site-space-2: 0.5rem;
+  --site-space-3: 1rem;
+  --site-space-4: 1.5rem;
+  --site-space-5: 2rem;
+
+  --site-radius: 6px;
+  --site-shadow: 0 1px 2px rgba(31, 35, 40, 0.08);
+  --site-max-width: 72rem;
+  --site-focus-ring: 2px solid var(--site-color-focus);
+  --site-poster-ratio: 2 / 3;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--site-font-family);
+  font-size: var(--site-font-size-md);
+  line-height: var(--site-line-height);
+  color: var(--site-color-text);
+  background: var(--site-color-bg);
+}
+
+a {
+  color: var(--site-color-link);
+}
+
+a:focus-visible {
+  outline: var(--site-focus-ring);
+  outline-offset: 2px;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+.skip-link {
+  position: absolute;
+  left: var(--site-space-2);
+  top: -3rem;
+  padding: var(--site-space-2) var(--site-space-3);
+  background: var(--site-color-bg);
+  border: 1px solid var(--site-color-border);
+  border-radius: var(--site-radius);
+}
+
+.skip-link:focus {
+  top: var(--site-space-2);
+}
+
+.site-header,
+.site-main,
+.site-footer {
+  max-width: var(--site-max-width);
+  margin: 0 auto;
+  padding: var(--site-space-3);
+}
+
+.site-header {
+  border-bottom: 1px solid var(--site-color-border);
+}
+
+.site-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--site-space-2);
+  color: var(--site-color-text);
+  font-size: var(--site-font-size-lg);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.site-brand__logo {
+  width: auto;
+  height: 40px;
+}
+
+.site-footer {
+  border-top: 1px solid var(--site-color-border);
+  color: var(--site-color-muted);
+  font-size: var(--site-font-size-sm);
+}
+
+.notice {
+  padding: var(--site-space-4);
+  background: var(--site-color-surface);
+  border: 1px solid var(--site-color-border);
+  border-radius: var(--site-radius);
+  box-shadow: var(--site-shadow);
+}
+
+.notice__title {
+  margin-top: 0;
+  font-size: var(--site-font-size-xl);
+}
+
+.notice--error .notice__title {
+  color: var(--site-color-danger);
+}

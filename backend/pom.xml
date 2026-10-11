@@ -16,7 +16,7 @@
     <artifactId>maccms-backend</artifactId>
     <version>0.1.0-SNAPSHOT</version>
     <name>maccms-backend</name>
-    <description>MacCMS 重构：Java 模块化单体（首批：content 只读接口）</description>
+    <description>MacCMS 重构：Java 模块化单体（content 只读接口、site 服务端渲染骨架）</description>
 
     <properties>
         <java.version>21</java.version>
@@ -28,6 +28,11 @@
           "can be used against MySQL Server version 5.7 and later" 的版本，且已修复 CVE-2023-22102。
         -->
         <mysql.version>8.2.0</mysql.version>
+        <!--
+          site 模板引擎（MACC-7 选型、用户确认 D2）：jte 固定 3.2.4，不受 Spring Boot 依赖管理。
+          只用 jte-runtime + jte-models（预编译 + 类型安全入口），不引入 jte-spring-boot-starter-4。
+        -->
+        <jte.version>3.2.4</jte.version>
     </properties>
 
     <dependencies>
@@ -57,6 +62,17 @@
             <artifactId>mysql-connector-j</artifactId>
             <scope>runtime</scope>
         </dependency>
+        <dependency>
+            <groupId>gg.jte</groupId>
+            <artifactId>jte-runtime</artifactId>
+            <version>${jte.version}</version>
+        </dependency>
+        <!-- 生成的类型安全模板入口（Templates / StaticTemplates）依赖它 -->
+        <dependency>
+            <groupId>gg.jte</groupId>
+            <artifactId>jte-models</artifactId>
+            <version>${jte.version}</version>
+        </dependency>
 
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -68,6 +84,20 @@
             <artifactId>spring-boot-starter-webmvc-test</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- 仅测试：用 jte 编译器以更严格的站点 HTML 策略重新编译全部正式模板（SiteTemplatePolicyTest） -->
+        <dependency>
+            <groupId>gg.jte</groupId>
+            <artifactId>jte</artifactId>
+            <version>${jte.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <!-- 仅测试：用真实 HTML 解析器断言页面结构（MIT 许可，Boot 不管理其版本） -->
+        <dependency>
+            <groupId>org.jsoup</groupId>
+            <artifactId>jsoup</artifactId>
+            <version>1.23.2</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -75,6 +105,44 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+            <!--
+              site 模板预编译：src/main/jte 下的模板在 generate-sources 生成 Java 源码，与业务代码一起 javac，
+              模板引用不存在的字段/方法、参数类型不符都会让 compile 失败（包括测试走不到的分支）。
+              OwaspHtmlPolicy 在生成阶段拒绝未加引号的属性值、在标签名/属性名中输出等写法；
+              更严格的站点策略（禁止事件属性、脚本块等）由 SiteTemplatePolicyTest 在 verify 中执行。
+              运行时只加载生成的类，不编译模板，也不需要 JDK 编译器。
+            -->
+            <plugin>
+                <groupId>gg.jte</groupId>
+                <artifactId>jte-maven-plugin</artifactId>
+                <version>${jte.version}</version>
+                <configuration>
+                    <sourceDirectory>${project.basedir}/src/main/jte</sourceDirectory>
+                    <contentType>Html</contentType>
+                    <htmlPolicyClass>gg.jte.html.OwaspHtmlPolicy</htmlPolicyClass>
+                    <packageName>com.maccms.backend.site.web.jte</packageName>
+                    <extensions>
+                        <extension>
+                            <className>gg.jte.models.generator.ModelExtension</className>
+                        </extension>
+                    </extensions>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <dependencies>
+                    <dependency>
+                        <groupId>gg.jte</groupId>
+                        <artifactId>jte-models</artifactId>
+                        <version>${jte.version}</version>
+                    </dependency>
+                </dependencies>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

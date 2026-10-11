@@ -21,7 +21,9 @@ import org.junit.jupiter.api.Test;
  * <li>跨模块只能引用对方 {@code application} 的公开服务与 {@code application.view} 已发布只读类型。</li>
  * <li>MyBatis/JDBC 类型只出现在 infrastructure（以及 common.config 的数据源检查）。</li>
  * <li>site 只能引用 content.application(.view) 与 common.web 中的四个支持类，不得接触任何数据访问类型，
- * 不得有自己的 Mapper XML。site 尚未建立时这些规则由 {@link #siteRulesOnSyntheticSources()} 验证。</li>
+ * 不得有自己的 Mapper XML；也不得读文件、环境变量，启动进程或发起网络请求（站点设置只来自
+ * {@code maccms.site.*} 外部化配置，不读取 PHP 配置或线上目录，不回环调用旧 PHP 或本应用 API）。
+ * 规则由 {@link #siteRulesOnSyntheticSources()} 自检，并由 {@link #mainSourcesRespectModuleBoundaries()} 覆盖真实文件。</li>
  * </ul>
  * 注释与字符串字面量中的包名不计入。
  */
@@ -46,6 +48,13 @@ class ModuleBoundaryTest {
             "\\b(org\\.apache\\.ibatis|org\\.mybatis|java\\.sql|javax\\.sql|org\\.springframework\\.jdbc|"
                     + "com\\.zaxxer\\.hikari|com\\.mysql)\\.");
     private static final Pattern SITE_FORBIDDEN_EXTRA = Pattern.compile("\\b(org\\.springframework\\.dao)\\.");
+    /** site 不读文件/环境变量、不启动进程、不发起网络请求（MACC-9）。java.net.URI 允许（URL 白名单校验要用）。 */
+    private static final Pattern SITE_FORBIDDEN_IO = Pattern.compile(
+            "\\b(java\\.nio\\.file\\.|java\\.io\\.File\\w*\\b|java\\.io\\.RandomAccessFile\\b|java\\.net\\.http\\."
+                    + "|java\\.net\\.(?:URL|URLConnection|HttpURLConnection|Socket|ServerSocket)\\b"
+                    + "|org\\.springframework\\.web\\.client\\.|org\\.springframework\\.web\\.reactive\\."
+                    + "|org\\.springframework\\.core\\.io\\.|ProcessBuilder\\b|Runtime\\s*\\.\\s*getRuntime\\b"
+                    + "|System\\s*\\.\\s*getenv\\b|System\\s*\\.\\s*getProperty\\b)");
 
     @Test
     void mainSourcesRespectModuleBoundaries() throws IOException {
@@ -90,6 +99,8 @@ class ModuleBoundaryTest {
                 import com.maccms.backend.common.web.PageResponse;
                 import com.maccms.backend.common.web.SafeExceptionLog;
                 import com.maccms.backend.site.application.UrlBuilder;
+                import java.net.URI;
+                import java.io.Serializable;
                 // 注释里提到 com.maccms.backend.content.infrastructure.VodMapper 不算依赖
                 class Ok { String s = "com.maccms.backend.content.api.VideoController java.sql.Connection"; }
                 """))).isEmpty();
@@ -109,7 +120,21 @@ class ModuleBoundaryTest {
                 "import org.springframework.jdbc.core.JdbcTemplate;",
                 "import org.springframework.dao.DataAccessException;",
                 "import com.zaxxer.hikari.HikariDataSource;",
-                "class X { Object o = new com.maccms.backend.content.infrastructure.TypeRow(); }")) {
+                "class X { Object o = new com.maccms.backend.content.infrastructure.TypeRow(); }",
+                "import java.nio.file.Files;",
+                "import java.nio.file.*;",
+                "import java.io.File;",
+                "import java.io.FileInputStream;",
+                "import java.net.http.HttpClient;",
+                "import java.net.URL;",
+                "import java.net.HttpURLConnection;",
+                "import org.springframework.web.client.RestClient;",
+                "import org.springframework.web.reactive.function.client.WebClient;",
+                "import org.springframework.core.io.ClassPathResource;",
+                "class X { void f() throws Exception { new ProcessBuilder(\"php\").start(); } }",
+                "class X { void f() throws Exception { Runtime.getRuntime().exec(\"php\"); } }",
+                "class X { String s = System.getenv(\"MACCMS_SITE_NAME\"); }",
+                "class X { String s = System.getProperty(\"user.dir\"); }")) {
             assertThat(violations(site(bad))).as(bad).isNotEmpty();
         }
         // site 内部也不能建数据访问层
@@ -211,6 +236,10 @@ class ModuleBoundaryTest {
             Matcher dao = SITE_FORBIDDEN_EXTRA.matcher(code);
             while (dao.find()) {
                 out.add("site 不得引用数据访问异常类型：" + dao.group(1));
+            }
+            Matcher io = SITE_FORBIDDEN_IO.matcher(code);
+            while (io.find()) {
+                out.add("site 不得读文件/环境变量、启动进程或发起网络请求：" + io.group(1));
             }
         }
         return out;
