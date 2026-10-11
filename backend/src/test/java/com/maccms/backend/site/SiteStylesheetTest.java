@@ -84,4 +84,23 @@ class SiteStylesheetTest {
                 .as("CSS 不得带 UTF-8 BOM").isFalse();
         assertThat(new String(raw, StandardCharsets.UTF_8)).doesNotContain("\uFFFD");
     }
+
+    /**
+     * 窄屏（30rem 断点）下 .metadata-list 必须回退为单列 minmax(0, 1fr)：
+     * 队长在 MACC-14 真实详情页 320/360px 视口实测 max-content 1fr 会溢出（scrollWidth=385）。
+     */
+    @Test
+    void narrowViewportMetadataListIsSingleColumn() throws IOException {
+        String body = stripComments(css());
+        Matcher media = Pattern.compile(
+                "@media\\s*\\(max-width:\\s*30rem\\)\\s*\\{(.*?)\\}\\s*\\}", Pattern.DOTALL).matcher(body);
+        boolean found = false;
+        while (media.find()) {
+            if (media.group(1).contains(".metadata-list")
+                    && media.group(1).contains("minmax(0, 1fr)")) {
+                found = true;
+            }
+        }
+        assertThat(found).as("30rem 断点内须有 .metadata-list 单列 minmax(0, 1fr) 规则").isTrue();
+    }
 }

@@ -333,18 +333,33 @@ img {
   font-weight: 600;
 }
 
-/* 详情页元数据列表（契约 class metadata-list） */
+/* 详情页元数据列表（契约 class metadata-list）
+ * 窄屏回退为单列：`max-content 1fr` 在 320/360px 视口下会因 dt 内容宽度溢出
+ * （队长复核：详情页 scrollWidth=385，右边界 384.78px 来自该 grid 子项）。
+ * dt/dd 均为该 grid 的子项，均须 min-width: 0 才允许收缩。
+ */
 .metadata-list {
   display: grid;
-  grid-template-columns: max-content 1fr;
+  grid-template-columns: minmax(max-content, 10rem) minmax(0, 1fr);
   gap: var(--site-space-1) var(--site-space-3);
   margin: var(--site-space-3) 0;
   font-size: var(--site-font-size-sm);
 }
 
+@media (max-width: 30rem) {
+  .metadata-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.metadata-list > * {
+  min-width: 0;
+}
+
 .metadata-list dt {
   font-weight: 600;
   color: var(--site-color-muted);
+  overflow-wrap: anywhere;
 }
 
 .metadata-list dd {
