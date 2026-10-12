@@ -10,7 +10,7 @@
 | `backend/src/main/java/com/maccms/backend/site/application/RichTextSanitizer.java` | 富文本过滤（纯函数），结果 `Result(SafeHtml html, Outcome outcome, Set<Finding> findings)` |
 | `.../site/application/SafeHtml.java` | 过滤结果类型：构造器包内可见，只有过滤器能创建；`toString()` 不输出内容 |
 | `.../site/application/LegacyTextEntities.java` | 普通文本字段的字符引用解码（只解一次、只认带分号的引用） |
-| `backend/src/test/resources/site/rich-text/rich-text-vectors.json` | 富文本黄金向量 95 条 |
+| `backend/src/test/resources/site/rich-text/rich-text-vectors.json` | 富文本黄金向量 99 条 |
 | `backend/src/test/resources/site/rich-text/entity-vectors.json`、`entity_golden.php` | 普通文本实体黄金向量 29 条与 PHP 生成/核对脚本 |
 | `backend/src/test/java/.../site/application/RichTextSanitizerGoldenTest.java`、`RichTextSanitizerTest.java`、`LegacyTextEntitiesTest.java` | 向量、不变量、边界、随机输入、日志 |
 | `backend/src/test/java/.../site/SiteRichTextTemplateTest.java`、`backend/src/test/jte-richtext*/` | 与 jte 严格站点策略的配合 |
@@ -67,9 +67,9 @@
 #### 3.3 地址
 
 - **链接 `a[href]`**：去掉首尾 C0 控制字符与空格（WHATWG URL 规则）后必须通过 `SafeUrl`（http/https 绝对地址且有主机名、无用户信息，或以单个 `/` 开头的站内路径；中间出现空白/控制字符/反斜线/引号/尖括号即拒绝）。不通过 → 去掉 `<a>` 标签、保留文字（`LINK_REJECTED`）。因此 `javascript:`（含大小写、`java\tscript:`、`&#106;`、`&colon;` 等混淆）、`vbscript:`、`data:`、`//host`、`/\host`、`\\host`、`ftp:`、`mailto:`、相对地址 `detail.html`、锚点 `#x` 都被拒绝。绝对地址统一 `rel="nofollow noopener noreferrer"`，站内路径不带 `rel`。
-- **图片 `img[src]`**：去掉首尾空白；带 scheme 时只接受 `http://`、`https://`、`mac:` 前缀（区分大小写，与 `mac_url_img` 的分支一致），`javascript:`、`data:`、大写 `HTTPS://` 等直接拒绝；然后交给 `ImageUrlNormalizer.normalize`（`mac:` → upload.protocol、相对路径拼站点路径、img_key → img_api、协议相对地址按 base-url 协议补全、`SafeUrl` 校验）。不通过 → **整张图片删除**（`IMAGE_REJECTED`）。
+- **图片 `img[src]`**：去掉首尾空白；带 scheme 时只接受 `http://`、`https://`、`mac:` 前缀（区分大小写，与 `mac_url_img` 的分支一致），`javascript:`、`data:`、大写 `HTTPS://` 等直接拒绝；**协议相对地址直接拒绝**（`isProtocolRelative`：忽略 tab/CR/LF 后以两个 `/` 或 `\` 开头，即 `//host`、`/\host`、`\\host`、`\/host`、`/<tab>/host`，浏览器在 http/https 页面上都把它们解析为外部主机）；其余交给 `ImageUrlNormalizer.normalize`（`mac:` → upload.protocol、相对路径拼站点路径、img_key → img_api、`SafeUrl` 校验）。`mac://host` 是旧版指定协议的写法，替换后是绝对地址，不受影响。不通过 → **整张图片删除**（`IMAGE_REJECTED`）。
 - **只解码一次**：jsoup 给出的属性值已解码过一次，而 `ImageUrlNormalizer` 的输入约定是"放进属性前的库内字符串"、会自己再解码一次。所以先把 `&` 还原为 `&amp;` 再交给它（`asLegacyAttributeText`），`<img src="/a.jpg?x=1&amp;amp;y=2">` 得到 `/a.jpg?x=1&amp;y=2`（与浏览器从旧输出得到的地址相同），不会变成 `x=1&y=2`。
-- 输出中不会出现协议相对地址：链接里的被拒绝；图片里的按 base-url 协议补全为绝对地址（与 `vod_pic` 规则一致，`06` 文档第 2 节）。**这一点需队长确认**：如要求正文图片也拒绝协议相对地址，只需在 `checkImage` 中多拒绝一种前缀。
+- 正文中的协议相对地址一律拒绝：链接去掉标签、保留文字；图片整张删除。这与 `vod_pic` 等单字段图片不同——它们仍按 `06` 文档第 2 节用 base-url 协议补全；正文不走补全分支（任务验收要求）。
 
 #### 3.4 结果模型
 
@@ -119,7 +119,7 @@
 #### 4.4 黄金向量来源
 
 - `entity-vectors.json`：29 条合成输入。`php_filter_xss`、`php_plain`（`trim(strip_tags())`）、`php_decode`（`html_entity_decode(ENT_QUOTES|ENT_HTML5)`）由 `entity_golden.php` 从 `application/common.php` 原样取出 `mac_filter_xss` 执行生成，PHP 7.2.34 / 7.3.33 / 8.0.30 / 8.2.32 结果一致【实测】。Java 断言：`decodeOnce(input) == expect`；expect 与 PHP、浏览器参照（jsoup `Parser.unescapeEntities`，`&#0;`/代理区按规范修正为 U+FFFD）的关系等于 `compat`（SAME 22（含空串）、PHP_ONLY 3、BROWSER_ONLY 3、NEITHER 1）；**往返**：对每条向量 `decodeOnce(php_filter_xss) == php_plain`，即经旧 `mac_filter_xss` 存库的值解码一次恰好还原录入文本，双重编码（`&amp;lt;` → `&lt;`）、字面 `&lt;`、非法实体都不被多解或改写。
-- `rich-text-vectors.json`：95 条合成输入，分 8 类：恶意标签 16、事件属性 5、URL 协议混淆 20、图片 15、CSS/嵌入 7、属性转义 8、实体边界 11、结构 13（含随机输入发现的 foster parenting 与 pre 换行回归）。expect 为逐字比较的完整输出（预期值先手写，与实现不一致处逐条分析：4 条是对 HTML5 解析行为的预期有误，已在 note 中写明）；每条另断言安全不变量与稳定性（第 6 节）。
+- `rich-text-vectors.json`：99 条合成输入，分 8 类：恶意标签 16、事件属性 5、URL 协议混淆 20、图片 19、CSS/嵌入 7、属性转义 8、实体边界 11、结构 13（含随机输入发现的 foster parenting 与 pre 换行回归）。expect 为逐字比较的完整输出（预期值先手写，与实现不一致处逐条分析：4 条是对 HTML5 解析行为的预期有误，已在 note 中写明）；每条另断言安全不变量与稳定性（第 6 节）。
 
 ### 5. 与模板、图片、URL 任务的接口边界
 
@@ -133,7 +133,7 @@
 
 | 测试 | 内容 |
 |---|---|
-| `RichTextSanitizerGoldenTest` | 95 条向量逐字比较输出与 findings；每条输出用 jsoup 按浏览器规则重新解析，断言只含白名单元素/属性、无 `on*`/`style`/注释/脚本数据、`href`/`src` 能通过 `SafeUrl`、外链 `rel` 正确、无控制字符与不成对代理项；再过滤一次不变且无改动；重新解析再序列化不变。8 类与 7 种 Finding 均有覆盖（测试检查）。img_api 前缀与旧 `mac_url_img` 一样不是幂等的（`/img.php?url=https://cdn…` 仍命中 img_key），稳定性检查用去掉 img_key 的同一配置，另有测试固定这一行为 |
+| `RichTextSanitizerGoldenTest` | 99 条向量逐字比较输出与 findings；每条输出用 jsoup 按浏览器规则重新解析，断言只含白名单元素/属性、无 `on*`/`style`/注释/脚本数据、`href`/`src` 能通过 `SafeUrl`、外链 `rel` 正确、无控制字符与不成对代理项；再过滤一次不变且无改动；重新解析再序列化不变。8 类与 7 种 Finding 均有覆盖（测试检查）。img_api 前缀与旧 `mac_url_img` 一样不是幂等的（`/img.php?url=https://cdn…` 仍命中 img_key），稳定性检查用去掉 img_key 的同一配置，另有测试固定这一行为 |
 | `RichTextSanitizerTest` | null/空/全角空白；恰好上限与超出 1 个字符；9 000 层嵌套不栈溢出；大量兄弟元素被删除时不超过 2 秒；输出超限；超深表格嵌套按 `UNSTABLE` 不输出；不成对代理项 → U+FFFD 且可严格 UTF-8 编码；3 000 条固定种子随机输入（含 `<pre>`、表格、各种危险片段）不抛异常、满足不变量、稳定；200 次并行调用结果一致；合成标记不出现在日志与 `toString()`；`SafeHtml` 无公开构造器；稳定化的失败分支；pom 固定 jsoup 1.23.2 且没有其他过滤库 |
 | `LegacyTextEntitiesTest` | 29 条实体向量（含往返）；只解一层；超长/未知名称；`&#0;`～`&#160;` 解码结果不含控制字符 |
 | `SiteRichTextTemplateTest` | 第 5 节的模板配合与属性误用 |
@@ -152,7 +152,7 @@
 | 白名单外元素（`font`、`center`、自定义元素） | 生效 | 去掉标签，保留文字 |
 | 相对地址链接（`detail.html`、`#x`）、协议相对链接 | 可点击 | 改为普通文字 |
 | 相对路径正文图片（`upload/x.jpg`） | 浏览器按页面地址解析（通常是错误地址） | 按 `mac_url_img` 拼站点路径 |
-| 协议相对正文图片 | 浏览器按页面协议补全 | 按 base-url 协议补全（同 3.3 节，待确认） |
+| 协议相对正文图片（`//host/a.png`、`/\host`、`\\host`） | 浏览器按页面协议补全并显示 | 整张删除（`IMAGE_REJECTED`，3.3 节） |
 | 正文图片 img_key | `mac_url_content_img` 只匹配 `[\w/\-:.]*` 字符的地址并在全文 `str_replace` | 每个 `src` 单独按 `mac_url_img` 规则处理 |
 | 正文文字里的 `mac:` | `mac_url_content_img` 全文替换（`imac:` 会变成 `imhttp:`） | 只处理图片地址，文字不变 |
 | 超过 100 000 字符的正文，或过滤后超过 500 000 字符 | 输出 | 不输出（`TOO_LONG`） |
@@ -163,7 +163,7 @@
 
 ### 8. 风险与遗留
 
-- 3.3 节协议相对图片的处理需要队长确认。
+- 旧站正文中的协议相对图片（`//host/a.png`）新版不再显示。接入详情页前用脱敏样本统计 `IMAGE_REJECTED`；如数量多，应通过数据迁移改写为绝对地址，而不是放宽过滤器。
 - 页面任务：`SafeHtml` → `Content` 适配类、详情页视图模型、upload 配置绑定、按 4.3 节为文本字段接入 `decodeOnce`、用脱敏真实样本复核并决定是否需要放宽白名单（如 `style` 中的颜色/对齐，需要单独的 CSS 白名单评审）。
 - jsoup 升级时须重跑全部向量与随机测试；序列化细节（转义字符集、`<pre>` 换行）变化会改变输出字节。
 - 正文图片较多时，`ImageUrlNormalizer` 对每个地址执行后台配置的 `img_key` 正则；该正则由管理员配置（MACC-11 校验了语法，未限制回溯），与旧版 PCRE 相比没有回溯上限。正文中的图片数量远多于 `vod_pic`，建议页面任务评审是否限制 `img_key` 的写法。

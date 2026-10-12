@@ -363,10 +363,44 @@
     },
     {
       "id": "img/protocol-relative",
-      "input": "<img src=\"//img.maccms.test/a.png\">",
+      "input": "<p>前<img src=\"//img.maccms.test/a.png\" alt=\"图\">后</p>",
+      "expect": "<p>前后</p>",
+      "findings": [
+        "IMAGE_REJECTED"
+      ],
+      "note": "正文图片拒绝协议相对地址，不交给 ImageUrlNormalizer 补全（vod_pic 等字段仍按 06 文档补全）"
+    },
+    {
+      "id": "img/protocol-relative-backslash",
+      "input": "<img src=\"/\\img.maccms.test/a.png\"><img src=\"\\\\img.maccms.test/b.png\"><img src=\"\\/img.maccms.test/c.png\">",
+      "expect": "",
+      "findings": [
+        "IMAGE_REJECTED"
+      ],
+      "note": "浏览器在 http/https 页面把反斜线当作 /，这三种都是协议相对地址"
+    },
+    {
+      "id": "img/protocol-relative-whitespace",
+      "input": "<img src=\" \n//img.maccms.test/a.png\"><img src=\"/\t/img.maccms.test/b.png\"><img src=\"/&#10;/img.maccms.test/c.png\">",
+      "expect": "",
+      "findings": [
+        "IMAGE_REJECTED"
+      ],
+      "note": "首尾空白先去掉；URL 中间的 tab/LF 会被浏览器删除，/\\t/host 等同 //host"
+    },
+    {
+      "id": "img/mac-protocol-relative",
+      "input": "<img src=\"mac://img.maccms.test/a.png\">",
       "expect": "<img src=\"https://img.maccms.test/a.png\">",
       "findings": [],
-      "note": "按 base-url 的协议补全（与 vod_pic 规则一致），输出中不出现协议相对地址"
+      "note": "mac:// 是旧版指定协议的写法，替换后是绝对地址，不属于协议相对地址"
+    },
+    {
+      "id": "img/single-slash-site-path",
+      "input": "<img src=\"/upload/vod/3.jpg\">",
+      "expect": "<img src=\"/upload/vod/3.jpg\">",
+      "findings": [],
+      "note": "单个 / 开头的站内路径不受影响"
     },
     {
       "id": "img/javascript",

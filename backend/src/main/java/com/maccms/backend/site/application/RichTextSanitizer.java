@@ -321,14 +321,15 @@ public final class RichTextSanitizer {
 
     /**
      * 图片地址：浏览器先去掉首尾空白；带 scheme 的只接受旧代码认识的 {@code http://}、{@code https://}、{@code mac:} 前缀
-     * （区分大小写，与 mac_url_img 的分支一致），{@code javascript:}、{@code data:} 等直接拒绝，
-     * 不交给规范化器（它会把不以 http、/ 开头的值当作相对路径拼上站点路径）。不合格时改为 {@link #DROP}（整张删除）。
+     * （区分大小写，与 mac_url_img 的分支一致），{@code javascript:}、{@code data:} 等直接拒绝；协议相对地址
+     * （{@link #isProtocolRelative}）也直接拒绝。这些都不交给规范化器（它会把不以 http、/ 开头的值当作相对路径拼上站点路径，
+     * 并把协议相对地址按 base-url 协议补全）。不合格时改为 {@link #DROP}（整张删除）。
      */
     private boolean checkImage(Element img, Set<Finding> findings) {
         String raw = stripC0ControlOrSpace(img.attr("src"));
         boolean schemeOk = !SCHEME.matcher(raw).lookingAt()
                 || raw.startsWith("http://") || raw.startsWith("https://") || raw.startsWith("mac:");
-        Optional<SafeUrl> src = !raw.isEmpty() && schemeOk
+        Optional<SafeUrl> src = !raw.isEmpty() && schemeOk && !isProtocolRelative(raw)
                 ? images.normalize(asLegacyAttributeText(raw))
                 : Optional.empty();
         if (src.isEmpty()) {
@@ -347,6 +348,23 @@ public final class RichTextSanitizer {
      */
     static String asLegacyAttributeText(String decoded) {
         return decoded.replace("&", "&amp;");
+    }
+
+    /**
+     * 协议相对地址：浏览器解析时先删去 URL 中所有的 tab/CR/LF，并把 {@code \} 当作 {@code /}（http/https 页面），
+     * 所以 {@code //host}、{@code /\host}、{@code \\host}、{@code \/host}、{@code /<tab>/host} 都指向外部主机。
+     */
+    static boolean isProtocolRelative(String url) {
+        int slashes = 0;
+        for (int i = 0; i < url.length() && slashes < 2; i++) {
+            char c = url.charAt(i);
+            if (c == '/' || c == '\\') {
+                slashes++;
+            } else if (c != '\t' && c != '\n' && c != '\r') {
+                return false;
+            }
+        }
+        return slashes == 2;
     }
 
     /** 浏览器解析 URL 前去掉首尾的 C0 控制字符与空格（WHATWG URL 标准）。 */
