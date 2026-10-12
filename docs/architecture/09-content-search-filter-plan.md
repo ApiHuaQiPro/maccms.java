@@ -1,17 +1,19 @@
 ## 视频搜索与多条件筛选：只读契约与下一批实施方案（MACC-16）
 
-> **状态：方案草案（第 3 版，按队长 2026-10-12 第二次复核意见修订），待队长审查。** 本文只做设计，**不实现**任何代码；文中新接口、新参数、新配置、新页面全部是**拟实施**，不是已实现能力。
+> **状态：方案草案（第 4 版，按队长 2026-10-13 要求对齐已验收的 MACC-17 base-url 长度边界），待队长审查。** 本文只做设计，**不实现**任何代码；文中新接口、新参数、新配置、新页面全部是**拟实施**，不是已实现能力。
 > 配套接口草案：`docs/contracts/content-search-filter.draft.openapi.yaml`（以下简称"草案"）。已发布契约 `docs/contracts/content-read.openapi.yaml`（1.0.0，以下简称"契约"）不变。
 >
 > 输入：父任务 MACC-2 评论、`AGENTS.md`、`docs/architecture/02-agent-development-rules.md`、`docs/architecture/03-frontend-readonly-plan.md`、`docs/architecture/08-site-pages.md`、`docs/frontend/02-url-golden-vectors.md`、契约，以及下文逐条引用的旧代码与 Java 代码。
 >
 > 证据标注：
-> - **【代码】**：仓库代码可直接核对，一律给出**仓库根目录相对的完整路径**与行号（`路径:行号`）。行号基于本 worktree（主线 `3f81c72`；本任务只改文档，代码行号与主线相同），第 2 版已逐条复核。
+> - **【代码】**：仓库代码可直接核对，一律给出**仓库根目录相对的完整路径**与行号（`路径:行号`）。行号基于本 worktree（主线 `3f81c72`；本任务只改文档，代码行号与主线相同），第 2 版已逐条复核。**例外**：`base-url`/站内地址的长度预算（`SiteSettings.MAX_BASE_URL_LENGTH`、`SitePaths.MAX_LENGTH`）来自已验收的 MACC-17（提交 `7f5706c`，已整合进父任务本地分支 `6f34d7d`），本 worktree 的 `3f81c72` 尚不含该提交；这类引用标为"`6f34d7d` 中"，行号按该提交。MACC-17 只改了 `SitePaths.java`、`SiteSettings.java`、`SiteSettingsTest.java` 与 `docs/architecture/05-site-skeleton.md`，本文其他代码行号不受影响。
 > - **【已验收】**：父任务已验收的 Java 行为（首页/分类/详情三页、URL 生成解析、公开 API），依据 `docs/architecture/08-site-pages.md` 与父任务评论。
 > - **【建议】**：本方案提出、尚未实现，需审查。
 > - **【待核实】**：依赖线上配置、真实数据、缺失模板或未做的实验，本文不下结论。
 >
 > 本任务**没有**：运行旧 PHP 请求、连接任何数据库、读取仓库外配置、修改代码/正式契约/AGENTS.md。
+>
+> 第 4 版只改一处（其余沿用第 3 版，已通过的查询串/字段边界、原始请求长度限制与 `%`/`+` 单次解码语义不变）：**`base-url` 长度向量对齐 MACC-17**。旧的"`base-url` ≤ 200"与"200 字符子目录 `base-url`"改为：完整 `base-url`（协议、主机、端口、路径合计，去首尾空白后按 Java `String.length()`）≤ 768；站内地址 `B?Q` ≤ 1235 ≤ `SitePaths.MAX_LENGTH` 1280；最大 canonical = 768 + 25 + 1 + 1209 = 2003 ≤ `SafeUrl.MAX_LENGTH` 2048；测试向量区分完整 URL 与目录路径，覆盖根地址、含非根子目录且总长恰为 768 的完整 `base-url`，以及 769 启动拒绝（第 1.5、7.2.2、7.2.4、7.2.5、7.2.7 节与 T3）。这只是方案文档的更新：Java 行为没有因本版改变，搜索功能仍未实现。
 >
 > 第 3 版只改两处（其余沿用第 2 版，第 2 版已通过的项未改动）：① **SSR 链接改为"固定路径 + 查询串"**：Java 生成的搜索页链接（分页、筛选、canonical）一律把参数放在查询串里，SSR 也只接受查询串形式的参数；现有 `LegacyUrlBuilder.vodSearch` 的 PATHINFO 输出不再用于 SSR 搜索页。补充原始请求、解码值、生成后 URL 三类长度上限及超限处理，并列出 API 与 SSR 的全部差异（第 7.2 节）；② **`level` 增加"原始字符串额外约束"**：明确 `integer` schema 的 `minimum`/`maximum` 不覆盖"最多 10 位"的词法限制，补上校验顺序与 `00000000009` 示例（第 4.3 节）。
 >
@@ -97,6 +99,7 @@
 | 三页外壳的搜索表单 `GET` 提交到 `vodSearch(Map.of(), 1)`，即 `/index.php/vod/search.html`，输入框 `name="wd"`、`maxlength="64"` | 【已验收】`backend/src/main/java/com/maccms/backend/site/web/SitePages.java:32`；`backend/src/main/jte/site/layout/page.jte:50-54` |
 | Java 解析器目前**不认识** `vod/search`（返回 empty，本地 404），并拒绝一切查询串 | 【已验收】`backend/src/main/java/com/maccms/backend/site/application/LegacyUrlParser.java:93-96,167-183` |
 | 现有解析器的输入上限：原始路径、原始查询串各 ≤ `MAX_INPUT=1024` 字符，超出返回 empty | 【代码】`backend/src/main/java/com/maccms/backend/site/application/LegacyUrlParser.java:35,61-62` |
+| 生成地址的长度预算（MACC-17 已验收）：页面输出的 URL 都是 `SafeUrl`，总长 ≤ `SafeUrl.MAX_LENGTH` = 2048（不变）；站内地址（相对站点根）≤ `SitePaths.MAX_LENGTH` = 1280；完整 `base-url`（协议、主机、端口、路径合计，去首尾空白后按 `String.length()` 计）≤ `SiteSettings.MAX_BASE_URL_LENGTH` = 2048 − 1280 = 768，可以是根路径或长的合法子目录地址；769 起启动失败，错误信息为"最多 768 个字符"且不回显取值。旧的"`base-url` ≤ 200"已被取代 | 【代码】`6f34d7d` 中 `backend/src/main/java/com/maccms/backend/site/application/SafeUrl.java:24,44`、`backend/src/main/java/com/maccms/backend/site/application/SitePaths.java:10-19,33`、`backend/src/main/java/com/maccms/backend/site/application/SiteSettings.java:18-22,31-35,94`；【已验收】`6f34d7d` 中 `backend/src/test/java/com/maccms/backend/site/application/SiteSettingsTest.java:69-107`（199/200/201/512/767/768 接受、769 拒绝）、`:153-169`（现有 `vodSearch` 最长 1235）；`docs/architecture/05-site-skeleton.md` 第 2 节 |
 | `vodSearch` 只生成 PATHINFO（值经 PHP `urlencode` 后放进路径段，`.` 不编码），输出必须通过 `SitePaths.isValid`：拒绝 `%2F`、`%5C`、`%2E`、控制字符与空段、`.`、`..` 段；`suffixHide=true` 时把输出中**所有** `.html` 换成 `/`（含值内的 `.html`） | 【代码】`backend/src/main/java/com/maccms/backend/site/application/LegacyUrlBuilder.java:166-167,177-180,254-269`；`backend/src/main/java/com/maccms/backend/site/application/SitePaths.java:23-51` |
 | 由此产生的生成失败（第 3 版**实际执行**现有类得到；编译当前 worktree 源码的临时探针，未提交）：四种 URL 形态下 `wd` 或 `area` 为 `A/B`、`A\B` 均抛 `IllegalArgumentException`；`area` 为 `.`、`..` 在任何形态都失败（`wd` 在末位时 `wd/..html` 通过）；`suffixHide=true` 时 `.`、`..`、`A.html` 失败，`a.htmlb` **不报错但被改写**成 `wd/a/b/`（回读后值与键都错位） | 探针输出摘要见第 7.2.1 节 |
 | 按 schema 上限组合（`wd` 64、`area` 20、`lang` 10、`class` 32 个 3 字节汉字）调用 `vodSearch`，路径长度：默认 1182、`suffixHide` 1178、`rewrite` 1172、两者都开 1168（加首个 `/` 再 +1）；再加 `year/level/by/order` 与 `page=1000` 为 1235/1231/1225/1221。均超过 1024，解析器直接返回 empty | 同上（探针实测）；队长复核给出的 1189 与本节口径不同（是否含前缀），结论一致：超过 1024 |
@@ -372,7 +375,7 @@ Java 只从本应用环境变量读取这些值，**不读取** `application/ext
 | 搜索基址 B | `LegacyUrlBuilder.vodSearch(Map.of(), 1)`（现有方法，**不改**）。site 的 URL 形态固定 `depr='/'`、不启用路由别名（`backend/src/main/java/com/maccms/backend/site/application/SiteUrlProperties.java:29`），所以 B 只有上表最后一行的 4 种取值，都是不含参数的常量，长度 ≤ 25，必然通过 `SitePaths`。B 就是现有外壳搜索表单的 `action`（`backend/src/main/java/com/maccms/backend/site/web/SitePages.java:32`） |
 | 链接形态 | `B`（无条件且第 1 页）或 `B?Q`。Java 搜索页生成的**所有**链接（分页、移除筛选、组合筛选、排序、canonical）都是这一形态；不生成路径参数形式 |
 | Q 的生成（新方法，建议名 `LegacyUrlBuilder.vodSearchLink(SearchFilters f, int page)`，返回 `SiteLink(path=B, query=Q)`） | ① 键按固定顺序 `area, by, class, lang, level, order, page, wd, year`（字母序，与 `mac_url` 按键排序一致，`application/common.php:1732-1746`）；② 只输出已设置的条件，`page` 只在 > 1 时输出；③ 值用现有 `LegacyUrlBuilder.urlencode`（PHP `urlencode`：字母数字与 `-_.` 原样，空格为 `+`，其余 UTF-8 字节为大写 `%HH`，`backend/src/main/java/com/maccms/backend/site/application/LegacyUrlBuilder.java:254-269`），因此 `/`→`%2F`、`\`→`%5C`、`%`→`%25`、`+`→`%2B`、`&`→`%26`、`=`→`%3D`，`.` 原样；④ `level` 输出规范整数（`09`→`9`），`by`/`order` 输出枚举值，`page` 为无前导 0 的十进制。Q 的字符只可能是 `[A-Za-z0-9._+-]`、`=`、`&` 与大写 `%HH` |
-| 输出为 `SafeUrl` | 新增 `SiteSettings.publicPath(SiteLink)` 与 `SiteSettings.canonical(SiteLink)`：路径部分仍走现有 `SitePaths.check`（**规则不变**），查询部分走新的 `SiteQueries.check`：结构为 `键=值(&键=值)*`，键只能是上述 9 个且不重复，值只含 `[A-Za-z0-9._+-]` 与大写 `%HH`，`%HH` 不得是 `%00`–`%1F`、`%7F`。`%2F`、`%5C`、`%2E` **只在查询串中允许**：RFC 3986 第 5.2.4 节的点段消除只作用于路径，Servlet 容器与 nginx 的 location 匹配都不解码查询串，它们不会改变路径结构。最后仍由现有 `SafeUrl` 构造器做总校验（总长 ≤ 2048，`backend/src/main/java/com/maccms/backend/site/application/SafeUrl.java:24`）。`SafeUrl`、`SitePaths` 都不放宽，也不做二次解码 |
+| 输出为 `SafeUrl` | 新增 `SiteSettings.publicPath(SiteLink)` 与 `SiteSettings.canonical(SiteLink)`：路径部分仍走现有 `SitePaths.check`（**规则不变**），查询部分走新的 `SiteQueries.check`：结构为 `键=值(&键=值)*`，键只能是上述 9 个且不重复，值只含 `[A-Za-z0-9._+-]` 与大写 `%HH`，`%HH` 不得是 `%00`–`%1F`、`%7F`。`%2F`、`%5C`、`%2E` **只在查询串中允许**：RFC 3986 第 5.2.4 节的点段消除只作用于路径，Servlet 容器与 nginx 的 location 匹配都不解码查询串，它们不会改变路径结构。整个站内地址 `B?Q` 的长度与 `SitePaths` 共用同一预算 `SitePaths.MAX_LENGTH` = 1280（MACC-17，`6f34d7d` 中 `backend/src/main/java/com/maccms/backend/site/application/SitePaths.java:19`；第 7.2.4 节计算得最大 1235），超出按"站内地址不合法"拒绝，不调整预算、不放宽 `SafeUrl`。这样任意合法 `base-url`（≤ 768）拼出的结果都不超过 2048。最后仍由现有 `SafeUrl` 构造器做总校验（总长 ≤ 2048，`backend/src/main/java/com/maccms/backend/site/application/SafeUrl.java:24`）。`SafeUrl`、`SitePaths` 都不放宽，也不做二次解码 |
 | 与旧站的关系 | 旧 `mac_param_url` 把 `$_REQUEST` 合并进参数（`application/common.php:1565`），这些链接在旧站同样是合法的搜索地址；但旧站会再 `urldecode` 一次（第 1.2 节），含 `%` 或 `+` 的值在 PHP 下含义不同（例如 `wd=%2541`：Java 为 `%41`，PHP 为 `A`）。本批不做交还，此差异列入第 9 节与部署评审 |
 
 ##### 7.2.3 接受的请求（`LegacyUrlParser.parseSearch(rawPath, rawQuery)`，拟实施）
@@ -402,9 +405,15 @@ Java 只从本应用环境变量读取这些值，**不读取** `application/ext
 | 单值解码后、去首尾空白前 | 不单独设限 | — | 受原始查询串 2048 约束 |
 | 单值归一后 | `wd` 64、`area` 20、`lang` 10、`class` 32 个码点；`year` 4 位；`level` 原始最多 10 个字符；`page` ≤ 1000 | 400 | 与 API 完全相同（第 4.3 节），由 content 校验 |
 | 生成的查询串 Q | **≤ 1209 字符**（计算见下） | 不可能超出；生成方法仍断言，失败抛 `IllegalStateException` → 500，由测试锁定 | — |
-| 生成的 canonical / 页内链接 | **≤ 200 + 25 + 1 + 1209 = 1435 字符**，低于 `SafeUrl` 的 2048 | 同上 | `base-url` ≤ 200（`backend/src/main/java/com/maccms/backend/site/application/SiteSettings.java:86`），页内链接前缀是 `base-url` 的路径部分，更短 |
+| 搜索基址 B | **≤ 25 字符**（`index.php/vod/search.html`；四种形态为 25/21/15/11） | 常量，不会超出 | 第 7.2.1 节最后一行 |
+| 生成的站内地址 `B + ? + Q` | **≤ 25 + 1 + 1209 = 1235 字符**，≤ `SitePaths.MAX_LENGTH` 1280 | 不可能超出；超出按站内地址不合法抛异常 → 500，由测试锁定 | MACC-17 预算（第 1.5 节） |
+| 完整 `base-url` | **≤ 768 字符**（协议、主机、端口、路径合计，去首尾空白后按 `String.length()` 计；根路径或长子目录都可） | 769 起**启动失败**（现有 `SiteSettings.from`，MACC-17），不会在请求时出现 | `6f34d7d` 中 `backend/src/main/java/com/maccms/backend/site/application/SiteSettings.java:22,94`；768 不是目录路径长度 |
+| 生成的 canonical（`base-url + B + ? + Q`） | **≤ 768 + 25 + 1 + 1209 = 2003 字符**，≤ `SafeUrl.MAX_LENGTH` 2048 | 不可能超出（由上两行推出） | `SafeUrl.MAX_LENGTH`（`backend/src/main/java/com/maccms/backend/site/application/SafeUrl.java:24`，不变） |
+| 生成的页内链接（`base-url` 的路径部分 + B + `?` + Q） | **< 2003 字符**：路径部分是完整 `base-url` 去掉协议与主机后的部分，必然更短（例如 `https://maccms.local.test/…/` 共 768 时为 743，页内链接最长 1978） | 同上 | 同上 |
 
-第 3 版探针另外实际验证了（同第 7.2.1 节的临时探针，未提交）：① 16 个样例值（`A/B`、`A\B`、`.`、`..`、`A.html`、`a.htmlb`、`%41`、`%2F`、`C++`、`a b`、`中文`、`Love, Death & Robots`、`a=b&c`、`!%_`、64 个汉字、`~*'()`）经现有 `LegacyUrlBuilder.urlencode` 编码后，再用现有解析器的表单解码（`LegacyUrlParser.formDecode`，`backend/src/main/java/com/maccms/backend/site/application/LegacyUrlParser.java:222-253`）解码一次，全部得到原值，编码结果都只含 `[A-Za-z0-9._+-]` 与大写 `%HH`；② 四种形态下 B 都通过 `SitePaths.isValid`，而 `B?Q` 不通过（`?` 不在允许字符内）——所以查询串需要独立的 `SiteQueries`，不能也不应放宽 `SitePaths`；③ 用 200 字符的子目录 `base-url` 拼出四项上限组合的 canonical，长度为 1435/1431/1425/1421，页内链接为 1415/1411/1405/1401，都能通过现有 `SafeUrl.isAllowed`。
+第 4 版用同样方式（仓库外临时目录，用 `javac` 编译父任务本地分支 `6f34d7d` 的源码，探针未提交，运行后已删除）**实际执行**了 MACC-17 后的现有类：`SiteSettings.MAX_BASE_URL_LENGTH`=768、`SitePaths.MAX_LENGTH`=1280、`SafeUrl.MAX_LENGTH`=2048；`SiteSettings.from` 接受前后带空格、去空白后总长恰为 768 的子目录 `base-url`（`https://maccms.local.test/aaa…a/`，`href` 长 768，路径部分 743），拒绝 769，错误信息含"最多 768 个字符"且不含取值；四项上限组合用现有 `LegacyUrlBuilder.urlencode` 按键序拼出 Q=1209，四种形态（默认/`suffixHide`/`rewrite`/两者都开）下 `B?Q` 为 1235/1231/1225/1221（都 ≤ 1280，B 都通过 `SitePaths.isValid`），768 字符 `base-url` 的 canonical 为 2003/1999/1993/1989、页内链接为 1978/1974/1968/1964，根地址 `http://maccms.local.test/` 的 canonical 为 1260/1256/1250/1246，全部通过现有 `SafeUrl.isAllowed`。总长 768 的根地址（长主机名、路径为 `/`）由 MACC-17 测试覆盖，按上表算式 canonical 同样 ≤ 2003。
+
+第 3 版探针另外实际验证了（同第 7.2.1 节的临时探针，未提交）：① 16 个样例值（`A/B`、`A\B`、`.`、`..`、`A.html`、`a.htmlb`、`%41`、`%2F`、`C++`、`a b`、`中文`、`Love, Death & Robots`、`a=b&c`、`!%_`、64 个汉字、`~*'()`）经现有 `LegacyUrlBuilder.urlencode` 编码后，再用现有解析器的表单解码（`LegacyUrlParser.formDecode`，`backend/src/main/java/com/maccms/backend/site/application/LegacyUrlParser.java:222-253`）解码一次，全部得到原值，编码结果都只含 `[A-Za-z0-9._+-]` 与大写 `%HH`；② 四种形态下 B 都通过 `SitePaths.isValid`，而 `B?Q` 不通过（`?` 不在允许字符内）——所以查询串需要独立的 `SiteQueries`，不能也不应放宽 `SitePaths`；③ 当时（MACC-17 之前，`base-url` 上限为 200）用总长 200 的子目录 `base-url` 拼出四项上限组合的 canonical，长度为 1435/1431/1425/1421，都能通过现有 `SafeUrl.isAllowed`；该上限已被 768 取代，以上一段第 4 版结果为准。
 
 Q 的最大值计算：第 4.2 节禁用 U+FFFF 以上字符，每个码点 UTF-8 最多 3 字节，编码后最多 9 个字符（`%HH%HH%HH`）。`area=`(5)+180、`&by=hits_month`(14)、`&class=`(7)+288、`&lang=`(6)+90、`&level=9`(8)、`&order=desc`(11)、`&page=1000`(10)、`&wd=`(4)+576、`&year=2020`(10)，合计 **1209**；探针用 `LegacyUrlBuilder.urlencode` 对同一组合拼出的长度也是 1209，在四种形态下加上 B 分别为 1235/1231/1225/1221。三页现有的 1024 上限与"拒绝查询串"不变。
 
@@ -423,7 +432,7 @@ Q 的最大值计算：第 4.2 节禁用 U+FFFF 以上字符，每个码点 UTF-
 
 为保持这一不变式，**筛选候选值**（取自分类 `extend`）与隐藏字段的值除满足第 4 节外，还必须是归一的不动点：跳过 `''`、`'0'` 和带首尾 W 字符的值（否则生成的链接回读后条件会消失或变化）。
 
-base-url 子目录：与三页相同，反向代理把前缀映射到应用根，解析器输入不含前缀；页内链接 = `base-url` 路径部分 + B + `?Q`，canonical = `base-url` + B + `?Q`，不读 Host/X-Forwarded-*。
+base-url 子目录：与三页相同，反向代理把前缀映射到应用根，解析器输入不含前缀；页内链接 = `base-url` 路径部分 + B + `?Q`，canonical = `base-url` + B + `?Q`，不读 Host/X-Forwarded-*。长度：完整 `base-url` ≤ 768（MACC-17），`B?Q` ≤ 1235，canonical ≤ 2003，页内链接的前缀不长于完整 `base-url`，同样闭环（第 7.2.4 节）。
 
 ##### 7.2.6 API 与 SSR 的差异（全部列出）
 
@@ -444,12 +453,15 @@ base-url 子目录：与三页相同，反向代理把前缀映射到应用根�
 | 错误输出 | JSON `ErrorResponse`，`fieldErrors` 含字段与文案 | HTML 400 页，固定文案，不显示字段与输入 |
 | 开关 | `maccms.content.search.enabled` 控制 `keyword`/`classes` | 另需 `maccms.site.search.enabled`；`keyword`/`classes` 仍受前者控制 |
 
-##### 7.2.7 T3 必须覆盖的向量（四种 URL 形态各一遍；`base-url` 用根路径与一个 200 字符的子目录各一遍）
+##### 7.2.7 T3 必须覆盖的向量（四种 URL 形态各一遍；`base-url` 用下列三种完整地址各一遍）
+
+`base-url` 向量一律按**完整 URL**（协议、主机、端口、路径合计）计长度，不按目录路径计：① 根地址 `http://maccms.local.test/`；② 含非根子目录的完整地址，如 `https://maccms.local.test/sub/`；③ 含非根子目录、**完整总长恰为 768** 的地址（如 `https://maccms.local.test/` + 741 个 `a` + `/`，其路径部分为 743）。另确认（现有 MACC-17 行为，T3 只引用不重复实现）：完整总长 769 的 `base-url` 启动失败，因此不进入请求阶段。
+
 
 - 解析：`wd=A/B`、`wd=A%2FB`、`wd=A%5CB` 与原始 `\`、`wd=.`、`wd=..`、`area=..`、`wd=A.html`、`wd=a.htmlb`（`suffixHide` 下尤其要测）、`wd=%2541`（值为 `%41`）、`wd=%252F`（值为 `%2F`，不得再解码）、`wd=C%2B%2B`（`C++`）、`wd=C++`（`C` 加两个空格，裁剪后为 `C`）、`wd=%e4%b8%ad`（接受，canonical 为大写且 `canonical=false`）、`wd=%FF`、`wd=%E4%B8`、`wd=%` → 400、`wd=%E3%80%80a`（U+3000 被裁掉）、`wd=0` → 未传、`level=0000000009` → 9（canonical 为 `level=9`）、`level=00000000009` → 400、`page=01` → 400、`page=1` → canonical 不带 `page`、`wd=&wd=x` → 400、`foo=1` → 400、`s=/vod/detail/id/1`、`actor=x`、`by=rnd`、路径 `/index.php/vod/search/wd/x.html`、2049 字符的查询串 → empty。
-- 四项上限组合（4 个参数各取最大码点数的 3 字节汉字，另加 `year/level/by/order/page=1000`）：Q 长度为 1209，canonical ≤ 1435，可解析回原条件。
+- 四项上限组合（4 个参数各取最大码点数的 3 字节汉字，另加 `year/level/by/order/page=1000`）：Q 长度为 1209，`B?Q` 为 1235/1231/1225/1221（≤ 1280）；在 768 字符 `base-url` 下 canonical 为 2003/1999/1993/1989（≤ 2048），页内链接更短；可解析回原条件。
 - 生成与回读：对上述每个被接受的条件 F，分页（第 1、2、1000 页）、移除每个键、组合每个候选值、排序链接、canonical 都能构造 `SafeUrl`，长度在上限内，且 `parseSearch` 回读为同一 `(F, page)`、`canonical=true`；另以固定种子随机生成满足第 4 节字母表的 F 做同样检查。
-- 不变：`vodSearch`、`SitePaths`、`SafeUrl` 现有测试与 PHP 黄金向量不改且通过；三页仍拒绝查询串。
+- 不变：`vodSearch`、`SitePaths`、`SafeUrl`、`SiteSettings`（含 MACC-17 的 `SiteSettingsTest` 长度边界）现有测试与 PHP 黄金向量不改且通过；三页仍拒绝查询串。
 
 ##### 7.2.8 其他方案与不采用的理由
 
@@ -520,9 +532,9 @@ base-url 子目录：与三页相同，反向代理把前缀映射到应用根�
 
 | 项 | 内容 |
 |---|---|
-| 前置 | T1 合入；T2 报告给出"可开启"或限定条件（页面可先实现，开关默认关闭） |
+| 前置 | T1 合入；T2 报告给出"可开启"或限定条件（页面可先实现，开关默认关闭）；分支须包含 MACC-17（`base-url` ≤ 768、`SitePaths.MAX_LENGTH` = 1280，`6f34d7d`），T3 不改这两个常量与 `SafeUrl.MAX_LENGTH` |
 | 文件 | `backend/src/main/java/com/maccms/backend/site/application/LegacyUrlParser.java`（`parseSearch`、`MAX_SEARCH_QUERY=2048`、旧站式归一；现有 `parse` 与 `MAX_INPUT` 不变）、`backend/src/main/java/com/maccms/backend/site/application/SiteRoute.java`（`VodSearch`）、`backend/src/main/java/com/maccms/backend/site/application/LegacyUrlBuilder.java`（新增 `vodSearchLink`；现有 `vodSearch`、`urlencode` 不变）、`backend/src/main/java/com/maccms/backend/site/application/SiteLink.java`（新，路径 + 查询串）、`backend/src/main/java/com/maccms/backend/site/application/SiteQueries.java`（新，查询串白名单校验）、`backend/src/main/java/com/maccms/backend/site/application/SiteSettings.java`（新增 `publicPath(SiteLink)`、`canonical(SiteLink)`；现有方法不变）、`backend/src/main/java/com/maccms/backend/site/application/SearchFilters.java`（新）、`backend/src/main/java/com/maccms/backend/site/application/SiteProperties.java`（或新增搜索开关配置类）、`backend/src/main/java/com/maccms/backend/site/web/SiteContentController.java`（条件注册路由）、`backend/src/main/java/com/maccms/backend/site/web/ContentPages.java`、`backend/src/main/java/com/maccms/backend/site/web/view/` 下新增搜索页视图模型、`backend/src/main/jte/site/pages/search.jte`（新）、`backend/src/main/java/com/maccms/backend/site/web/SiteExceptionHandler.java`（搜索页 400 视图）、`backend/src/main/resources/application.yml`、`backend/config/maccms-backend.env.example`、`docs/architecture/08-site-pages.md` 或新文档、`docs/frontend/02-url-golden-vectors.md` |
-| 测试 | PHP 黄金向量扩展：`backend/src/test/php/mac_url_golden.php` 增加 `vod/search` 解析向量（只执行旧 URL/路由代码，不连库、不发请求），Java 认得的每条向量在 PHP 中也调度到 `vod/search`，且对不含 `%`、`+` 的值，`wd/area/lang/year/level/class/by/order/page` 的取值一致（PHP 二次解码，含 `%`、`+` 的值按第 9 节差异处理，不比对）；`backend/src/test/java/com/maccms/backend/site/application/LegacyUrlParserTest.java`（第 7.2.7 节全部解析向量）；`backend/src/test/java/com/maccms/backend/site/application/SearchLinkRoundTripTest.java`（新；第 7.2.7 节生成与回读、四项上限组合、长度上限、200 字符子目录 base-url、固定种子随机 F）；`backend/src/test/java/com/maccms/backend/site/application/SiteQueriesTest.java`（新；拒绝 `?`、`#`、小写十六进制、`%00`–`%1F`、`%7F`、未知键、重复键）；`backend/src/test/java/com/maccms/backend/site/web/SiteSearchPagesMvcTest.java`（新；200/400/404/503/500、noindex、no-store、canonical、Host 注入、日志不含关键字）、`backend/src/test/java/com/maccms/backend/site/web/SiteContentHtmlStructureTest.java` 扩展（表单标签、筛选链接名称、`aria-current`）、`backend/src/test/java/com/maccms/backend/site/SiteContentRealHttpTest.java` 扩展；开关关闭时路由不存在 |
+| 测试 | PHP 黄金向量扩展：`backend/src/test/php/mac_url_golden.php` 增加 `vod/search` 解析向量（只执行旧 URL/路由代码，不连库、不发请求），Java 认得的每条向量在 PHP 中也调度到 `vod/search`，且对不含 `%`、`+` 的值，`wd/area/lang/year/level/class/by/order/page` 的取值一致（PHP 二次解码，含 `%`、`+` 的值按第 9 节差异处理，不比对）；`backend/src/test/java/com/maccms/backend/site/application/LegacyUrlParserTest.java`（第 7.2.7 节全部解析向量）；`backend/src/test/java/com/maccms/backend/site/application/SearchLinkRoundTripTest.java`（新；第 7.2.7 节生成与回读、四项上限组合、长度上限、第 7.2.7 节三种完整 `base-url`（含总长恰为 768 的子目录地址）、`B?Q` ≤ 1280 与 canonical ≤ 2003 的断言、固定种子随机 F）；`backend/src/test/java/com/maccms/backend/site/application/SiteQueriesTest.java`（新；拒绝 `?`、`#`、小写十六进制、`%00`–`%1F`、`%7F`、未知键、重复键）；`backend/src/test/java/com/maccms/backend/site/web/SiteSearchPagesMvcTest.java`（新；200/400/404/503/500、noindex、no-store、canonical、Host 注入、日志不含关键字）、`backend/src/test/java/com/maccms/backend/site/web/SiteContentHtmlStructureTest.java` 扩展（表单标签、筛选链接名称、`aria-current`）、`backend/src/test/java/com/maccms/backend/site/SiteContentRealHttpTest.java` 扩展；开关关闭时路由不存在 |
 | 浏览器验收 | `backend/src/test/browser/site-pages-check.mjs` 增加搜索页：320/360/1280 px 无横向溢出、Tab 可达所有筛选与分页、无 JS 可用、焦点可见 |
 | 只读证据 | 用合成库运行候选 jar，请求前后 26 张表 CHECKSUM 与行数不变（同父任务三页验收方法） |
 | 回滚 | `maccms.site.search.enabled=false` 即撤下路由；或 `git revert` |
