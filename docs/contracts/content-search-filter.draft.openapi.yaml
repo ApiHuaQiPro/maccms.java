@@ -1,0 +1,514 @@
+openapi: 3.0.3
+info:
+  title: MacCMS 视频搜索与多条件筛选（草案，未实现）
+  version: 1.1.0-draft.3
+  description: |
+    **状态：草案（MACC-16 第 3 版），未实现、未发布。** 本文件不是前后端契约，不能被当作已实现接口，也不会被任何契约测试加载；
+    已发布契约仍是 docs/contracts/content-read.openapi.yaml（1.0.0）。方案与依据见
+    docs/architecture/09-content-search-filter-plan.md（以下简称"09 方案"）。
+
+    草案只描述对已发布接口 `GET /api/v1/videos` 的**向后兼容扩展**：新增 6 个可选查询参数
+    （keyword、area、lang、year、level、classes）。其余路径（分类树、视频详情、健康检查）不变，未在此重复。
+    审查通过并实施时，按 docs/architecture/02-agent-development-rules.md 第 1 节在**同一个提交**里把本文件内容合并进
+    docs/contracts/content-read.openapi.yaml（版本升为 1.1.0）、修改 DTO/Controller/SQL 与契约测试，并删除本草案文件（清单见 09 方案第 8 节）。
+
+    兼容性约定（相对 1.0.0）：
+    - 不传任何新参数时，SQL、响应字段、排序、分页、错误码与 1.0.0 完全相同；既有 5 个参数的 schema 与描述逐字沿用 1.0.0。
+    - 响应 schema（VideoPage、VideoSummary、CategoryRef、ErrorResponse、FieldError）**逐字复制自** 1.0.0，没有新增、删除或修改字段；
+      ErrorResponse.code 没有新增取值。
+    - 1.0.0 声明"未声明的查询参数会被忽略"。新参数名一旦声明就开始生效：此前误传 `keyword=x` 的调用方会从"整表列表"变为"筛选结果"。
+      旧站参数名（wd、tid、by、class 等）仍属未声明参数，继续被忽略，不做别名。
+
+    schema 约束的对象（09 方案第 4.1 节）：
+    - 每个参数的 schema（maxLength、pattern、minimum/maximum）**直接作用于原始解码值**——Servlet 容器按
+      application/x-www-form-urlencoded 解码一次后的字符串。服务端**不做任何裁剪或改写**，校验规则与 schema 一一对应。
+    - 唯一例外是 1.0.0 的通用约定：原始解码值为空字符串时按"未传"处理，不做 schema 校验。字符串参数的 pattern 本身接受空串；
+      integer 参数（含 level 与 1.0.0 的 categoryId/page/pageSize）无法在 schema 中表达这一点，以本约定为准。
+    - integer 参数的 minimum/maximum **只约束数值**。服务端（VideoListQuery.parseInt）另对原始字符串有词法约束：
+      只含 ASCII 数字、最多 10 个字符（允许前导 0）；它不在 schema 的表达范围内，是 schema 之外的"原始字符串额外约束"。
+      level 在参数描述与扩展字段 `x-maccms-raw-pattern` 中写明（如 `00000000009` 数值为 9，但长度 11 → 400）；
+      1.0.0 的 categoryId/page/pageSize 有同一约束，为保持逐字沿用，不改它们的描述，以本条为准。
+    - pattern 按 OpenAPI 3.0 规定的 ECMA-262 方言解释（字符串视为 UTF-16 码元序列）；maxLength 按 Unicode 码点计。
+      由于 U+FFFF 以上字符（代理项）被禁用，两种计数一致。
+
+    新参数的通用规则（09 方案第 4.2–4.4 节）：
+    - 禁用字符：U+0000–U+001F、U+007F–U+009F、U+D800–U+DFFF（U+FFFF 以上字符或非法 UTF-8 的残留）、U+FFFD。
+      查询串中非法 UTF-8 的百分号编码（如 `keyword=%FF`）同样 → 400。
+    - 空白字符 W = ECMAScript `\s`（U+0009–U+000D、U+0020、U+00A0、U+1680、U+2000–U+200A、U+2028、U+2029、U+202F、U+205F、U+3000、U+FEFF）。
+      文本参数首尾不得为 W 字符（因此仅含空白的值也 → 400）；中间的空白原样保留。去首尾空白由调用方（如 SSR 页面）负责。
+    - 每个新参数最多出现一次，重复出现（含空值）→ 400。area、lang、classes 含半角逗号 `,` → 400（首批不支持多值）；
+      keyword 中的逗号是字面字符（与旧 wd 一致）。
+    - 校验顺序：既有 5 个参数（不变）→ keyword → area → lang → year → level → classes；每个参数内依次为
+      重复 → 空串（未传）→ 开关（keyword/classes）→ 禁用字符 → 逗号 → 首尾空白 → 长度 → 格式（year；level 为
+      先词法：只含 ASCII 数字且 ≤ 10 个字符，再数值：1..9，两步失败的文案相同）。
+      只报第一个错误，fieldErrors 只有一项，message 为固定文案，不回显输入。
+    - 输入 → 结果对照（与 09 方案第 4.4 节同表）：
+      | 原始解码值 | keyword | area/lang/classes | year | level |
+      | "" | 未传 | 未传 | 未传 | 未传 |
+      | "   "（仅空白） | 400 首尾空白 | 400 首尾空白 | 400 年份格式 | 400 整数 |
+      | " 2020" / "2020 " | 400 首尾空白 | 400 首尾空白 | 400 年份格式 | 400 整数 |
+      | "a b" | 原样匹配 | 原样匹配 | 400 年份格式 | 400 整数 |
+      | "a,b" | 字面匹配 | 400 多值 | 400 年份格式 | 400 整数 |
+      | 超长 | 400 长度 | 400 长度 | 400 年份格式 | 400 整数 |
+      | "09" | 原样匹配 | 原样匹配 | 400 年份格式 | 9 |
+      | "0000000009"（10 位） | 原样匹配 | 原样匹配（lang 恰好 10 个码点，未超限） | 400 年份格式 | 9 |
+      | "00000000009"（11 位） | 原样匹配 | area/classes 原样匹配；lang 400 长度 | 400 年份格式 | 400 整数（词法长度） |
+      | "0" | 原样匹配 | 字面值 0 | 400 年份格式 | 400 整数 |
+    - 值原样比较，不做实体编码/解码以外的任何改写：不截断、不做大小写或全半角转换、不做 Unicode 规范化；
+      大小写与尾随空格是否敏感由旧表列的排序规则（utf8_general_ci）决定。
+    - 所有条件之间为 AND；可见性（vod_status=1、分类可见、游客列表权限）与 1.0.0 相同，任何条件都不能扩大可见范围。
+      参数错误（400）先于分类可见性检查（404）。
+    - 包含匹配（keyword、classes）中的 `%`、`_`、`!` 按字面匹配（SQL 使用 `ESCAPE '!'`），反斜线也是普通字符；
+      用户输入从不作为列名、排序表达式或 SQL 片段。
+
+    运行开关与成本控制（09 方案第 6 节）：
+    - 后端开关 `maccms.content.search.enabled`（默认 **false**）控制包含匹配参数 keyword、classes；关闭时传入非空值 → 400。
+      精确匹配参数 area、lang、year、level 不受该开关影响。
+    - 带任一新参数的 count/分页语句有服务端执行时限（MAX_EXECUTION_TIME 3000 ms）；带 keyword/classes 的请求另有进程内
+      并发上限 `maccms.content.search.max-concurrent`（默认 4）。超时或超过并发上限时返回 503 `SERVICE_UNAVAILABLE`，
+      响应体与数据库不可用时逐字相同。不带新参数的请求不受这两项影响。
+
+    本草案只描述 JSON API。SSR 搜索页使用旧参数名（wd、class、by）、固定路径 + 查询串，并在交给本接口前裁掉首尾空白、
+    把 '0' 视为未传；两者的全部差异见 09 方案第 7.2.6 节。
+servers:
+  - url: http://127.0.0.1:18280
+    description: 本机开发（默认端口，见 backend/README.md）
+tags:
+  - name: content
+    description: 视频分类与视频公开元数据（只读）
+paths:
+  /api/v1/videos:
+    get:
+      tags: [content]
+      operationId: listVideos
+      summary: 视频分页列表（可按分类、关键字与筛选条件查询）【草案】
+      description: |
+        在 1.0.0 行为上增加可选条件。返回已审核（vod_status=1）且所属分类可见的视频。
+
+        - 传 `categoryId` 时，结果包含该分类及其可见的直接子分类下的视频（同 1.0.0）。分类不存在或不可见时返回 404
+          `CATEGORY_NOT_FOUND`（与是否带其他条件无关）。
+        - 新条件与 `categoryId` 之间为 AND。count 与分页查询使用同一组条件（共享 SQL 片段）。
+        - 既有参数 categoryId、sort、order、page、pageSize 的 schema 与描述逐字沿用 1.0.0；带新条件时它们的取值、默认值、
+          上限与错误文案都不变。
+        - 排序：按 `sort` 字段，`order` 方向，再按视频 `id` 同方向排序，带条件时同样保证分页稳定（同 1.0.0）。
+        - `page` 超过总页数时返回 200，`items` 为空数组，`total`/`totalPages` 仍为实际值（同 1.0.0）。
+        - 列表项字段与 1.0.0 相同，不含正文、播放/下载地址、观看密码、积分、会员信息。
+      parameters:
+        - name: categoryId
+          in: query
+          required: false
+          description: 分类 ID（mac_type.type_id）。
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 65535
+        - name: keyword
+          in: query
+          required: false
+          description: |
+            【新增，受 maccms.content.search.enabled 控制】关键字，包含匹配（旧 vod/search 的 wd，
+            application/common/model/Vod.php:462-468）。命中条件：`vod_name`、`vod_sub`、`vod_en` 任一列包含该关键字
+            （字段集合固定，对应仓库配置 `search_vod_rule='vod_en|vod_sub'`，application/extra/maccms.php:70；
+            线上取值待核实，见 09 方案决策 D1）。
+            关键字含 `& " ' < >` 时，另以其 HTML 实体形式（`&amp; &quot; &#039; &lt; &gt;`）各匹配一次，两者为 OR，
+            兼容以 mac_filter_xss（application/common.php:1222-1225）转义后存库的值；输入中本来就有的实体不解码。
+            schema 作用于原始解码值（不裁剪）：空串 = 未传；否则最多 64 个码点，首尾不得为空白字符，不得含禁用字符；
+            允许半角逗号，按字面匹配（与旧 wd 一致，不拆分多值）。
+          schema:
+            type: string
+            maxLength: 64
+            pattern: '^(?:[^\s\x00-\x1F\x7F-\x9F\uD800-\uDFFF\uFFFD](?:[^\x00-\x1F\x7F-\x9F\uD800-\uDFFF\uFFFD]*[^\s\x00-\x1F\x7F-\x9F\uD800-\uDFFF\uFFFD])?)?$'
+          example: 合成影片
+        - name: area
+          in: query
+          required: false
+          description: |
+            【新增】地区，精确匹配 `vod_area`（旧 application/common/model/Vod.php:299-301）。候选值可取自分类的
+            `extend.area`（CategoryExtend，逗号分隔）。schema 作用于原始解码值（不裁剪）：空串 = 未传；否则单值，
+            最多 20 个码点（列宽 varchar(20)，application/install/sql/install.sql:713），首尾不得为空白字符，
+            不得含半角逗号或禁用字符。
+          schema:
+            type: string
+            maxLength: 20
+            pattern: '^(?:[^\s,\x00-\x1F\x7F-\x9F\uD800-\uDFFF\uFFFD](?:[^,\x00-\x1F\x7F-\x9F\uD800-\uDFFF\uFFFD]*[^\s,\x00-\x1F\x7F-\x9F\uD800-\uDFFF\uFFFD])?)?$'
+          example: 大陆
+        - name: lang
+          in: query
+          required: false
+          description: |
+            【新增】语言，精确匹配 `vod_lang`（旧 application/common/model/Vod.php:302-304）。schema 作用于原始解码值
+            （不裁剪）：空串 = 未传；否则单值，最多 10 个码点（varchar(10)，application/install/sql/install.sql:714），
+            首尾不得为空白字符，不得含半角逗号或禁用字符。
+          schema:
+            type: string
+            maxLength: 10
+            pattern: '^(?:[^\s,\x00-\x1F\x7F-\x9F\uD800-\uDFFF\uFFFD](?:[^,\x00-\x1F\x7F-\x9F\uD800-\uDFFF\uFFFD]*[^\s,\x00-\x1F\x7F-\x9F\uD800-\uDFFF\uFFFD])?)?$'
+          example: 国语
+        - name: year
+          in: query
+          required: false
+          description: |
+            【新增】年份，精确匹配 `vod_year`（按字符串比较；旧 application/common/model/Vod.php:183-186,296-298）。
+            schema 作用于原始解码值（不裁剪）：空串 = 未传；否则必须恰为 4 位 ASCII 数字，带首尾空白、全角数字、
+            旧站的 `YYYY-YYYY` 区间写法均 → 400（message "必须是 4 位数字年份"）。
+          schema:
+            type: string
+            pattern: '^(?:[0-9]{4})?$'
+          example: '2020'
+        - name: level
+          in: query
+          required: false
+          description: |
+            【新增】推荐等级，精确匹配 `vod_level`（旧 application/common/model/Vod.php:290-295；URL 中经 intval 只能是单值）。
+            解析规则与 1.0.0 的 page/pageSize 相同（VideoListQuery.parseInt）。不传表示不筛选（等级 0 不能单独筛选）。
+            schema 的 minimum/maximum 只约束数值 1..9；**原始字符串额外约束**（schema 未覆盖）按以下顺序校验：
+            1. 原始解码值为空串 → 未传；
+            2. 词法：只含 ASCII 数字且最多 10 个字符（允许前导 0），否则 400；
+            3. 数值：按十进制取值须在 1..9，否则 400。
+            2、3 失败的 message 都是"必须是 1 到 9 之间的整数"。三步合起来等价于原始字符串匹配
+            `x-maccms-raw-pattern`（最多 9 个前导 0 加一个 1–9 数字；空串 = 未传）。
+            例：`9`、`09`、`0000000009` → 9；`00000000009`（数值 9，长度 11）→ 400；`0`、`10` → 400；
+            ` 9`、`+9`、`9.0`、`all` → 400。
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 9
+          x-maccms-raw-pattern: '^(?:0{0,9}[1-9])?$'
+          example: 9
+        - name: classes
+          in: query
+          required: false
+          description: |
+            【新增，受 maccms.content.search.enabled 控制】扩展分类（剧情类型），包含匹配 `vod_class`（与旧
+            `vod_class LIKE '%值%'` 语义一致，application/common/model/Vod.php:475-477；例如 `动作` 也会命中 `动作冒险`）。
+            与响应字段 `classes`、CategoryExtend.classes 同名。schema 作用于原始解码值（不裁剪）：空串 = 未传；
+            否则单值，最多 32 个码点，首尾不得为空白字符，不得含半角逗号或禁用字符。
+          schema:
+            type: string
+            maxLength: 32
+            pattern: '^(?:[^\s,\x00-\x1F\x7F-\x9F\uD800-\uDFFF\uFFFD](?:[^,\x00-\x1F\x7F-\x9F\uD800-\uDFFF\uFFFD]*[^\s,\x00-\x1F\x7F-\x9F\uD800-\uDFFF\uFFFD])?)?$'
+          example: 剧情
+        - name: sort
+          in: query
+          required: false
+          description: |
+            排序字段，默认 `time`（更新时间）。对应旧库列：time=vod_time，time_add=vod_time_add，id=vod_id，
+            score=vod_score，hits=vod_hits，hits_day/hits_week/hits_month=对应点击数，up=vod_up，down=vod_down，
+            level=vod_level（推荐等级）。不支持旧系统的 rnd（随机）。
+          schema:
+            type: string
+            enum: [time, time_add, id, score, hits, hits_day, hits_week, hits_month, up, down, level]
+            default: time
+        - name: order
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [desc, asc]
+            default: desc
+        - name: page
+          in: query
+          required: false
+          description: 页码，从 1 开始。
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 1
+        - name: pageSize
+          in: query
+          required: false
+          description: 每页条数。
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VideoPage'
+              examples:
+                filtered:
+                  summary: keyword=合成影片&area=大陆&page=1&pageSize=1（合成数据）
+                  value:
+                    items:
+                      - id: 9001
+                        name: 合成影片甲
+                        subTitle: ''
+                        enName: hechengyingpianjia
+                        letter: H
+                        color: ''
+                        category: {id: 1, name: 合成分类, enName: hechengfenlei, parentId: 0}
+                        classes: 剧情
+                        tag: ''
+                        pic: upload/vod/synthetic.jpg
+                        picThumb: ''
+                        picSlide: ''
+                        actor: 合成演员
+                        director: 合成导演
+                        blurb: 合成简介
+                        remarks: 更新至10集
+                        area: 大陆
+                        lang: 国语
+                        year: '2020'
+                        version: ''
+                        state: ''
+                        serial: '10'
+                        total: 20
+                        finished: false
+                        level: 0
+                        copyright: false
+                        score: 8.5
+                        scoreNum: 12
+                        hits: 100
+                        hitsDay: 1
+                        hitsWeek: 7
+                        hitsMonth: 30
+                        up: 3
+                        down: 0
+                        updatedAt: 1760000000
+                        addedAt: 1750000000
+                        detailPasswordRequired: false
+                    page: 1
+                    pageSize: 1
+                    total: 3
+                    totalPages: 3
+                empty:
+                  summary: 没有命中（200，不是 404）
+                  value:
+                    items: []
+                    page: 1
+                    pageSize: 20
+                    total: 0
+                    totalPages: 0
+        '400':
+          description: |
+            参数不合法（code=INVALID_PARAMETER），fieldErrors 只含第一个出错的参数（校验顺序见 info.description）。
+            新增的 400 情形只在带新参数时出现：重复、开关关闭时使用 keyword/classes、含禁用字符或非法 UTF-8、
+            area/lang/classes 含逗号、首尾空白（含仅空白）、超长、year 格式不符、level 词法（非 ASCII 数字或原始字符串超过 10 个字符）或数值（不在 1..9）不符。message 为下列固定文案之一，不回显用户输入：
+            参数不能重复 / 当前未开放关键字搜索 / 含不允许的字符 / 不支持多个取值 / 首尾不能有空白字符 /
+            长度不能超过 N 个字符 / 必须是 4 位数字年份 / 必须是 1 到 9 之间的整数。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                duplicate:
+                  summary: 同一新参数出现两次（含 area=&area=）
+                  value:
+                    code: INVALID_PARAMETER
+                    message: 请求参数不合法
+                    fieldErrors:
+                      - field: area
+                        message: 参数不能重复
+                disabled:
+                  summary: maccms.content.search.enabled=false 时使用非空 keyword
+                  value:
+                    code: INVALID_PARAMETER
+                    message: 请求参数不合法
+                    fieldErrors:
+                      - field: keyword
+                        message: 当前未开放关键字搜索
+                badChar:
+                  summary: keyword=%FF（非法 UTF-8）或含控制字符、U+FFFF 以上字符
+                  value:
+                    code: INVALID_PARAMETER
+                    message: 请求参数不合法
+                    fieldErrors:
+                      - field: keyword
+                        message: 含不允许的字符
+                multiValue:
+                  summary: lang 含半角逗号（首批不支持多值）
+                  value:
+                    code: INVALID_PARAMETER
+                    message: 请求参数不合法
+                    fieldErrors:
+                      - field: lang
+                        message: 不支持多个取值
+                surroundingWhitespace:
+                  summary: keyword 仅含空白，或首尾带空白（如 " 合成"）
+                  value:
+                    code: INVALID_PARAMETER
+                    message: 请求参数不合法
+                    fieldErrors:
+                      - field: keyword
+                        message: 首尾不能有空白字符
+                tooLong:
+                  summary: keyword 超过 64 个码点
+                  value:
+                    code: INVALID_PARAMETER
+                    message: 请求参数不合法
+                    fieldErrors:
+                      - field: keyword
+                        message: 长度不能超过 64 个字符
+                badYear:
+                  summary: year=2020-2022 或 year=%202020（首尾空白）
+                  value:
+                    code: INVALID_PARAMETER
+                    message: 请求参数不合法
+                    fieldErrors:
+                      - field: year
+                        message: 必须是 4 位数字年份
+                badLevel:
+                  summary: level=0 或 level=10（数值越界）
+                  value:
+                    code: INVALID_PARAMETER
+                    message: 请求参数不合法
+                    fieldErrors:
+                      - field: level
+                        message: 必须是 1 到 9 之间的整数
+                levelTooManyDigits:
+                  summary: level=00000000009（数值为 9，但原始字符串 11 个字符，超过词法上限 10，schema 的 minimum/maximum 不能表达）
+                  value:
+                    code: INVALID_PARAMETER
+                    message: 请求参数不合法
+                    fieldErrors:
+                      - field: level
+                        message: 必须是 1 到 9 之间的整数
+        '404':
+          description: 分类不存在或不可见（code=CATEGORY_NOT_FOUND），同 1.0.0
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                code: CATEGORY_NOT_FOUND
+                message: 分类不存在
+                fieldErrors: []
+        '503':
+          description: |
+            服务暂时不可用（code=SERVICE_UNAVAILABLE），响应体与 1.0.0 的数据库不可用逐字相同。新增两种触发原因：
+            带任一新参数时单条语句超过服务端执行时限；带 keyword/classes 时包含匹配并发达到上限。
+            客户端不应区分原因，可稍后重试。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                code: SERVICE_UNAVAILABLE
+                message: 服务暂时不可用
+                fieldErrors: []
+        '500':
+          description: 未预期的服务器错误（code=INTERNAL_ERROR），不包含内部细节
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+components:
+  schemas:
+    # 以下 schema 逐字复制自 docs/contracts/content-read.openapi.yaml（1.0.0），本草案不修改响应结构。
+    ErrorResponse:
+      type: object
+      additionalProperties: false
+      required: [code, message, fieldErrors]
+      description: |
+        统一错误响应。code 取值与 HTTP 状态：
+        INVALID_PARAMETER=400，CATEGORY_NOT_FOUND=404，VIDEO_NOT_FOUND=404，VIDEO_PASSWORD_REQUIRED=403，
+        VIDEO_COPYRIGHT_RESTRICTED=403，NOT_FOUND=404（路径不存在），METHOD_NOT_ALLOWED=405，
+        SERVICE_UNAVAILABLE=503，INTERNAL_ERROR=500。前端应按 code 分支，message 仅供展示。
+      properties:
+        code:
+          type: string
+          enum: [INVALID_PARAMETER, CATEGORY_NOT_FOUND, VIDEO_NOT_FOUND, VIDEO_PASSWORD_REQUIRED,
+                 VIDEO_COPYRIGHT_RESTRICTED, NOT_FOUND, METHOD_NOT_ALLOWED, SERVICE_UNAVAILABLE, INTERNAL_ERROR]
+        message:
+          type: string
+        fieldErrors:
+          type: array
+          description: 仅 INVALID_PARAMETER 时非空。
+          items:
+            $ref: '#/components/schemas/FieldError'
+    FieldError:
+      type: object
+      additionalProperties: false
+      required: [field, message]
+      properties:
+        field:
+          type: string
+          description: 出错的参数名（如 page、pageSize、sort、order、categoryId、id）。
+        message:
+          type: string
+    CategoryRef:
+      type: object
+      additionalProperties: false
+      required: [id, name, enName, parentId]
+      properties:
+        id: {type: integer}
+        name: {type: string}
+        enName: {type: string}
+        parentId: {type: integer}
+    VideoPage:
+      type: object
+      additionalProperties: false
+      required: [items, page, pageSize, total, totalPages]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/VideoSummary'
+        page:
+          type: integer
+          description: 本次请求的页码（回显）
+        pageSize:
+          type: integer
+          description: 本次请求的每页条数（回显）
+        total:
+          type: integer
+          format: int64
+          description: 满足条件的视频总数
+        totalPages:
+          type: integer
+          format: int64
+          description: ceil(total / pageSize)，total=0 时为 0
+    VideoSummary:
+      type: object
+      additionalProperties: false
+      required: [id, name, subTitle, enName, letter, color, category, classes, tag, pic, picThumb, picSlide,
+                 actor, director, blurb, remarks, area, lang, year, version, state, serial, total, finished,
+                 level, copyright, score, scoreNum, hits, hitsDay, hitsWeek, hitsMonth, up, down, updatedAt,
+                 addedAt, detailPasswordRequired]
+      properties:
+        id: {type: integer, format: int64, description: vod_id}
+        name: {type: string, description: vod_name}
+        subTitle: {type: string, description: vod_sub（副标题/别名）}
+        enName: {type: string, description: vod_en}
+        letter: {type: string, description: vod_letter（首字母）}
+        color: {type: string, description: vod_color（标题颜色）}
+        category:
+          $ref: '#/components/schemas/CategoryRef'
+        classes: {type: string, description: vod_class（扩展分类，逗号分隔）}
+        tag: {type: string, description: vod_tag}
+        pic: {type: string, description: vod_pic}
+        picThumb: {type: string, description: vod_pic_thumb}
+        picSlide: {type: string, description: vod_pic_slide}
+        actor: {type: string, description: vod_actor}
+        director: {type: string, description: vod_director}
+        blurb: {type: string, description: vod_blurb（简介）}
+        remarks: {type: string, description: vod_remarks（备注，如"更新至10集"）}
+        area: {type: string, description: vod_area}
+        lang: {type: string, description: vod_lang}
+        year: {type: string, description: vod_year}
+        version: {type: string, description: vod_version}
+        state: {type: string, description: vod_state}
+        serial: {type: string, description: vod_serial（连载数）}
+        total: {type: integer, description: vod_total（总集数）}
+        finished: {type: boolean, description: vod_isend=1}
+        level: {type: integer, description: vod_level（推荐等级 0-9）}
+        copyright: {type: boolean, description: vod_copyright=1}
+        score: {type: number, description: vod_score（一位小数）}
+        scoreNum: {type: integer, description: vod_score_num}
+        hits: {type: integer}
+        hitsDay: {type: integer}
+        hitsWeek: {type: integer}
+        hitsMonth: {type: integer}
+        up: {type: integer, description: vod_up（顶）}
+        down: {type: integer, description: vod_down（踩）}
+        updatedAt: {type: integer, format: int64, description: vod_time（Unix 秒）}
+        addedAt: {type: integer, format: int64, description: vod_time_add（Unix 秒）}
+        detailPasswordRequired:
+          type: boolean
+          description: 视频设置了观看密码，详情接口会返回 403 VIDEO_PASSWORD_REQUIRED。密码本身从不返回。
