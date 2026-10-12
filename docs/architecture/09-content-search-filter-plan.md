@@ -1,6 +1,6 @@
 ## 视频搜索与多条件筛选：只读契约与下一批实施方案（MACC-16）
 
-> **状态：方案草案（第 2 版，按队长 2026-10-12 复核意见修订），待队长审查。** 本文只做设计，**不实现**任何代码；文中新接口、新参数、新配置、新页面全部是**拟实施**，不是已实现能力。
+> **状态：方案草案（第 3 版，按队长 2026-10-12 第二次复核意见修订），待队长审查。** 本文只做设计，**不实现**任何代码；文中新接口、新参数、新配置、新页面全部是**拟实施**，不是已实现能力。
 > 配套接口草案：`docs/contracts/content-search-filter.draft.openapi.yaml`（以下简称"草案"）。已发布契约 `docs/contracts/content-read.openapi.yaml`（1.0.0，以下简称"契约"）不变。
 >
 > 输入：父任务 MACC-2 评论、`AGENTS.md`、`docs/architecture/02-agent-development-rules.md`、`docs/architecture/03-frontend-readonly-plan.md`、`docs/architecture/08-site-pages.md`、`docs/frontend/02-url-golden-vectors.md`、契约，以及下文逐条引用的旧代码与 Java 代码。
@@ -13,6 +13,8 @@
 >
 > 本任务**没有**：运行旧 PHP 请求、连接任何数据库、读取仓库外配置、修改代码/正式契约/AGENTS.md。
 >
+> 第 3 版只改两处（其余沿用第 2 版，第 2 版已通过的项未改动）：① **SSR 链接改为"固定路径 + 查询串"**：Java 生成的搜索页链接（分页、筛选、canonical）一律把参数放在查询串里，SSR 也只接受查询串形式的参数；现有 `LegacyUrlBuilder.vodSearch` 的 PATHINFO 输出不再用于 SSR 搜索页。补充原始请求、解码值、生成后 URL 三类长度上限及超限处理，并列出 API 与 SSR 的全部差异（第 7.2 节）；② **`level` 增加"原始字符串额外约束"**：明确 `integer` schema 的 `minimum`/`maximum` 不覆盖"最多 10 位"的词法限制，补上校验顺序与 `00000000009` 示例（第 4.3 节）。
+>
 > 第 2 版主要变化：① 所有代码证据改为完整路径；② 参数规则改为"API 不做任何裁剪，schema 约束直接作用于容器解码一次后的原始值"，空串/仅空白/首尾空白/超长在方案、草案 schema 与错误示例中一致（第 4 节）；③ `keyword` 允许半角逗号（按字面匹配，与旧 `wd` 一致），只有精确/扩展分类参数禁止逗号；④ `level` 改用与既有整数参数相同的解析；⑤ SSR 层对旧参数做 `trim` 与 `''`/`'0'` 归一（第 7.2 节）；⑥ `ContentApiMySqlIT` 为既有测试，改为"扩展"。
 
 ### 0. 结论摘要
@@ -22,9 +24,9 @@
 | 实现路径 | **方案 A**：在已发布的 `GET /api/v1/videos` 上增加 6 个可选参数（`keyword`、`area`、`lang`、`year`、`level`、`classes`），复用 `VideoPage`/`VideoSummary`、可见性、排序与分页。不新建接口，不引入外部搜索引擎、索引、表或缓存（第 2 节） |
 | 兼容性 | 不传新参数时 SQL 文本、响应、排序、分页、错误与 1.0.0 完全相同，由 BoundSql 黄金测试与既有契约测试锁定（第 2.3 节） |
 | 首批参数 | 关键字（name/sub/en 包含匹配）、地区、语言、年份（4 位单值）、推荐等级（1..9）、扩展分类（包含匹配），加上已有的分类与 11 种排序。暂缓：演员、导演、标签、首字母、状态、版本、年份区间、多值、`rnd`、`tid` 别名等（第 3 节） |
-| 参数规范化 | API：取容器解码一次后的原始值，**不裁剪**；只有空字符串按未传（契约 1.0.0 既有约定）；仅空白、首尾空白、超长、非法字符一律 400。schema 约束即运行规则（第 4 节）。SSR 层负责像旧站一样 `trim`（第 7.2 节） |
+| 参数规范化 | API：取容器解码一次后的原始值，**不裁剪**；只有空字符串按未传（契约 1.0.0 既有约定）；仅空白、首尾空白、超长、非法字符一律 400。schema 约束即运行规则；`level` 另有 schema 之外的原始字符串约束（最多 10 个字符，第 4.3 节）。SSR 层负责像旧站一样 `trim`（第 7.2 节） |
 | 成本控制 | 包含匹配（keyword/classes）默认关闭（`maccms.content.search.enabled=false`），开启后有进程内并发上限（默认 4）与服务端语句时限（`MAX_EXECUTION_TIME(3000)`），超限返回既有 503。上线前必须在一次性合成库上完成 EXPLAIN/耗时/表锁测量（第 6 节） |
-| 前台 | Java 承接旧 `vod/search`（默认与 rewrite 两种 URL 形态，路径参数 + 查询串），页面 `noindex`、`no-store`；`vod/show`（筛选页）、路由别名、`-` 分隔符、不支持的参数仍归 PHP（第 7 节） |
+| 前台 | Java 承接旧 `vod/search` 的**固定路径 + 查询串**形式（即现有搜索表单提交出的形式），链接与 canonical 也只生成这一种形式，所有被接受的值都能生成并回读；页面 `noindex`、`no-store`。路径参数形式（`…/vod/search/wd/x.html`）、`vod/show`（筛选页）、路由别名、`-` 分隔符、不支持的参数仍归 PHP（第 7 节） |
 | 拆分 | T1 content API/SQL + 真实 MySQL 集成测试 → T2 一次性合成库性能测量（只读证据）→ T3 URL 解析 + SSR 搜索页 → T4 Kimi 样式（第 8 节） |
 | 需要决策 | D1 关键字匹配字段；D2 反滥用（不复刻频率限制/验证码）；D3 `vod/show` 是否本批承接（第 10 节） |
 
@@ -94,6 +96,11 @@
 | Java 生成器已能生成旧搜索地址（仍指向 PHP）：`vodSearch(filters, page)`，参数白名单 `SEARCH_KEYS`；与 `mac_url` 一样跳过 `''` 与 `'0'` | 【已验收】`backend/src/main/java/com/maccms/backend/site/application/LegacyUrlBuilder.java:28-30,105-109,131-153`（跳过空值 142-144）；PHP 黄金向量见 `docs/frontend/02-url-golden-vectors.md` |
 | 三页外壳的搜索表单 `GET` 提交到 `vodSearch(Map.of(), 1)`，即 `/index.php/vod/search.html`，输入框 `name="wd"`、`maxlength="64"` | 【已验收】`backend/src/main/java/com/maccms/backend/site/web/SitePages.java:32`；`backend/src/main/jte/site/layout/page.jte:50-54` |
 | Java 解析器目前**不认识** `vod/search`（返回 empty，本地 404），并拒绝一切查询串 | 【已验收】`backend/src/main/java/com/maccms/backend/site/application/LegacyUrlParser.java:93-96,167-183` |
+| 现有解析器的输入上限：原始路径、原始查询串各 ≤ `MAX_INPUT=1024` 字符，超出返回 empty | 【代码】`backend/src/main/java/com/maccms/backend/site/application/LegacyUrlParser.java:35,61-62` |
+| `vodSearch` 只生成 PATHINFO（值经 PHP `urlencode` 后放进路径段，`.` 不编码），输出必须通过 `SitePaths.isValid`：拒绝 `%2F`、`%5C`、`%2E`、控制字符与空段、`.`、`..` 段；`suffixHide=true` 时把输出中**所有** `.html` 换成 `/`（含值内的 `.html`） | 【代码】`backend/src/main/java/com/maccms/backend/site/application/LegacyUrlBuilder.java:166-167,177-180,254-269`；`backend/src/main/java/com/maccms/backend/site/application/SitePaths.java:23-51` |
+| 由此产生的生成失败（第 3 版**实际执行**现有类得到；编译当前 worktree 源码的临时探针，未提交）：四种 URL 形态下 `wd` 或 `area` 为 `A/B`、`A\B` 均抛 `IllegalArgumentException`；`area` 为 `.`、`..` 在任何形态都失败（`wd` 在末位时 `wd/..html` 通过）；`suffixHide=true` 时 `.`、`..`、`A.html` 失败，`a.htmlb` **不报错但被改写**成 `wd/a/b/`（回读后值与键都错位） | 探针输出摘要见第 7.2.1 节 |
+| 按 schema 上限组合（`wd` 64、`area` 20、`lang` 10、`class` 32 个 3 字节汉字）调用 `vodSearch`，路径长度：默认 1182、`suffixHide` 1178、`rewrite` 1172、两者都开 1168（加首个 `/` 再 +1）；再加 `year/level/by/order` 与 `page=1000` 为 1235/1231/1225/1221。均超过 1024，解析器直接返回 empty | 同上（探针实测）；队长复核给出的 1189 与本节口径不同（是否含前缀），结论一致：超过 1024 |
+| ThinkPHP 只要查询串中有 `s` 参数，就用它**覆盖** PATH_INFO（与请求路径无关）；路径末尾的 `.html` 等后缀在路由前去掉 | 【代码】`thinkphp/library/think/Request.php:403-406,436-443`；`application/config.php:80,86` |
 
 #### 1.6 表结构与索引（`mac_vod`）
 
@@ -163,7 +170,7 @@
 #### 4.1 校验对象：原始解码值，不裁剪
 
 - **API 层不做任何裁剪或改写**。校验与匹配的对象都是"原始解码值"：Servlet 容器按 `application/x-www-form-urlencoded` 解码**一次**后得到的字符串（`+` 为空格）。这与 1.0.0 既有参数一致（`backend/src/main/java/com/maccms/backend/content/application/VideoListQuery.java:51-53` 只把 `""` 当未传，不 trim）。
-- **草案中每个新参数的 schema（`maxLength`、`pattern`、`minimum`/`maximum`）都直接作用于原始解码值**，与运行规则一一对应，没有"先规范化再校验"的隐含步骤。
+- **草案中每个新参数的 schema（`maxLength`、`pattern`、`minimum`/`maximum`）都直接作用于原始解码值**，没有"先规范化再校验"的隐含步骤。5 个字符串参数的 schema 与运行规则一一对应；`level` 是 `integer`，其 `minimum`/`maximum` 只覆盖数值范围，"只含 ASCII 数字、最多 10 个字符"是 schema 之外的原始字符串额外约束（第 4.3 节 8a，草案以描述和 `x-maccms-raw-pattern` 写明）。
 - 唯一例外沿用 1.0.0 通用约定：**原始解码值为空字符串 `""` 时按未传处理，不做 schema 校验**。字符串参数的 `pattern` 本身就接受 `""`；`level` 是 `integer`，OpenAPI 3.0 无法在 integer schema 中表达这一点，与 1.0.0 的 `categoryId/page/pageSize` 相同，由 `info.description` 的通用约定覆盖。
 - 去掉首尾空白属于**用户输入体验**，放在 SSR 层（第 7.2 节，与旧站 `trim` 对应）；API 收到首尾带空白的值直接 400，不猜测调用方意图。
 
@@ -189,7 +196,19 @@
 | 6 | `keyword`、`area`、`lang`、`classes` | 第一个或最后一个字符属于 W（因此"仅空白"也在此报错） | 400 `首尾不能有空白字符` |
 | 7 | `keyword`（64）、`area`（20）、`lang`（10）、`classes`（32） | 码点数 > 上限 | 400 `长度不能超过 N 个字符` |
 | 8 | `year` | 不匹配 `^[0-9]{4}$`（ASCII 数字；空白、逗号、区间、全角数字都不匹配） | 400 `必须是 4 位数字年份` |
-| 8 | `level` | 不满足既有 `VideoListQuery.parseInt(field, raw, 1, 9)`：只含 ASCII 数字、最多 10 位、数值 1..9（与 `page` 相同，允许前导 0：`09` 即 9） | 400 `必须是 1 到 9 之间的整数` |
+| 8a | `level` | **词法**（原始字符串额外约束）：原始解码值含 ASCII 数字以外的字符，或长度 > 10 个字符 | 400 `必须是 1 到 9 之间的整数` |
+| 8b | `level` | **数值**：通过 8a 后按十进制取值，不在 1..9 内 | 400 `必须是 1 到 9 之间的整数` |
+
+`level` 的 8a/8b 就是既有 `VideoListQuery.parseInt(field, raw, 1, 9)`（`backend/src/main/java/com/maccms/backend/content/application/VideoListQuery.java:55-62`：先查 `raw.length() > 10` 或含非数字，再查范围），与 1.0.0 的 `categoryId/page/pageSize` 同一实现，因此允许前导 0。草案中 `level` 仍是 `type: integer, minimum: 1, maximum: 9`，与既有整数参数一致，但**`minimum`/`maximum` 只约束数值，不表达 8a 的词法长度**；8a 作为"原始字符串额外约束"写在草案参数描述中，并用扩展字段 `x-maccms-raw-pattern: '^(?:0{0,9}[1-9])?$'` 给出与 2（空串）+ 8a + 8b 完全等价的原始字符串正则（最多 9 个前导 0 加一个 1–9 数字，总长 ≤ 10；空串 = 未传）。示例（第 3 版用现有 `parseInt` 实际执行，见第 7.2.1 节）：
+
+| 原始解码值 | 长度 | 结果 |
+|---|---|---|
+| `9`、`09`、`0000000009` | 1、2、10 | 9 |
+| `00000000009` | 11 | 400 `必须是 1 到 9 之间的整数`（数值为 9，但 8a 长度超限，在 8b 之前失败） |
+| `0`、`10` | 1、2 | 400（8b） |
+| `+9`、` 9`、`9.0` | 2、2、3 | 400（8a） |
+
+1.0.0 的 `categoryId/page/pageSize` 也有同样的 10 位词法限制，但 1.0.0 契约未写明；草案按"逐字沿用"不改这三个参数的描述，只在 `info.description` 的通用约定中注明。T1 合并正式契约时也只在通用约定中补充，不改它们的 schema。
 
 注：非法 UTF-8 百分号编码（如 `keyword=%FF`）的**验收用例固定为 400 `field=keyword`**。容器对它的处理（拒绝整个查询串、丢弃该参数或替换为 U+FFFD）实施时须先实测；若容器丢弃参数，Controller 须从原始查询串检测该参数名的存在，不得把它当成"未传"。
 
@@ -205,6 +224,8 @@
 | 超长（如 `keyword` 65 码点、`area` 21 码点） | 400 长度 | 400 长度 | 400 年份格式 | 400 整数 |
 | `"2020-2022"` | 原样匹配 | 原样匹配 | 400 年份格式 | 400 整数 |
 | `"09"` | 原样匹配 | 原样匹配 | 400 年份格式 | 9 |
+| `"0000000009"`（10 位） | 原样匹配 | 原样匹配（`lang` 恰好 10 个码点，未超限） | 400 年份格式 | 9 |
+| `"00000000009"`（11 位） | 原样匹配 | `area`/`classes` 原样匹配；`lang` 400 长度 | 400 年份格式 | 400 整数（词法长度） |
 | `"0"` | 原样匹配 | 字面值 `0` | 400 年份格式 | 400 整数 |
 | `%FF`（非法 UTF-8） | 400 字符 | 400 字符 | 400 年份格式 | 400 整数 |
 | 开关关闭时非空值 | 400 未开放 | `classes`：400 未开放；`area`/`lang` 不受影响 | 不受影响 | 不受影响 |
@@ -319,36 +340,136 @@ Java 只从本应用环境变量读取这些值，**不读取** `application/ext
 
 #### 7.1 路由与开关
 
-- 只在 `maccms.site.enabled=true` **且** `maccms.site.search.enabled=true` 时注册：`/index.php/vod/search`、`/index.php/vod/search.html`、`/index.php/vod/search/**`；`maccms.site.url.rewrite=true` 时另加 `/vod/search`、`/vod/search.html`、`/vod/search/**`。GET/HEAD；其他方法维持全局 405。
+- 只在 `maccms.site.enabled=true` **且** `maccms.site.search.enabled=true` 时注册：`/index.php/vod/search`、`/index.php/vod/search.html`、`/index.php/vod/search/`；`maccms.site.url.rewrite=true` 时另加 `/vod/search`、`/vod/search.html`、`/vod/search/`。只有这几个精确路径，不注册 `/vod/search/**`（路径参数形式归 PHP，第 7.2.3 节）。GET/HEAD；其他方法维持全局 405。
 - 页面调用 `ContentReadService.listVideos`（不新增 site 侧 SQL/Mapper），因此 SSR 的关键字/扩展分类同时依赖 `maccms.content.search.enabled`；后者关闭而请求带非空 `wd`/`class` 时，content 返回 400 → 页面按 7.4 显示 400。
 - 表单地址**不变**：外壳搜索框一直提交到旧地址 `/index.php/vod/search.html?wd=…`（`backend/src/main/java/com/maccms/backend/site/web/SitePages.java:32`）。所谓"改指向 Java"不是改模板，而是该路径由谁处理：本地开启 `maccms.site.search.enabled` 后由 Java 处理；部署时由 nginx 决定（**本批不做 nginx 分流、不 301、不实现交还**）。开关关闭时该路径在 Java 中不存在（本地 404），与现状一致；本地 404/503 不代表已部署的降级行为。
 
-#### 7.2 URL 与查询串解析（`LegacyUrlParser` 新增 `parseSearch`，拟实施）
+#### 7.2 搜索页 URL：链接编码、解析与长度（拟实施；第 3 版重写）
+
+##### 7.2.1 现状：PATHINFO 无法承载所有可接受的值
+
+【代码】现有 `LegacyUrlBuilder.vodSearch` 把参数写进路径段，输出必须通过 `SitePaths`（第 1.5 节）。第 3 版用临时探针**实际执行**了现有类：在仓库外的临时目录里用 `javac` 编译当前 worktree 的 `LegacyUrlBuilder`、`LegacyUrlParser`、`SitePaths`、`VideoListQuery` 等源码和一个调用它们的 `main` 类，四种 URL 形态各运行一遍；探针未提交，运行后已删除。结果摘要：
+
+| 输入（`vodSearch(filters, 1)`） | 默认 | `suffixHide` | `rewrite` | 两者都开 |
+|---|---|---|---|---|
+| `wd` 或 `area` 为 `A/B`、`A\B` | 异常 | 异常 | 异常 | 异常 |
+| `area` 为 `.`、`..`（后面还有 `wd`） | 异常 | 异常 | 异常 | 异常 |
+| `wd=.`（末位） | `index.php/vod/search/wd/..html` | 异常 | `vod/search/wd/..html` | 异常 |
+| `wd=A.html` | `index.php/vod/search/wd/A.html.html` | 异常 | `vod/search/wd/A.html.html` | 异常 |
+| `wd=a.htmlb` | `index.php/vod/search/wd/a.htmlb.html` | `index.php/vod/search/wd/a/b/`（**被改写**） | `vod/search/wd/a.htmlb.html` | `vod/search/wd/a/b/`（**被改写**） |
+| `wd=%41`（字面百分号） | `index.php/vod/search/wd/%2541.html` | `…/wd/%2541/` | `vod/search/wd/%2541.html` | `…/wd/%2541/` |
+| 四项上限组合（`wd` 64、`area` 20、`lang` 10、`class` 32 个汉字）路径长度 | 1182 | 1178 | 1172 | 1168 |
+| 同上再加 `year/level/by/order` 与 `page=1000` | 1235 | 1231 | 1225 | 1221 |
+| 把四项上限组合的路径交给现有 `parse` | empty（> 1024） | empty | empty | empty |
+| `vodSearch(Map.of(), 1)`（搜索基址） | `index.php/vod/search.html` | `index.php/vod/search/` | `vod/search.html` | `vod/search/` |
+
+另外，即使生成成功，路径里的 `.`/`.html` 还会碰上 ThinkPHP 的后缀剥离（`thinkphp/library/think/Request.php:436-443`），回读不唯一。要让 PATHINFO 承载 `/`、`\`、点段，只能在路径里放 `%2F`/`%5C`/`%2E` 或二次编码，这正是 `SitePaths` 出于安全拒绝的，任务也明确不允许放宽。因此本版**不再用 PATHINFO 承载 SSR 搜索参数**。
+
+##### 7.2.2 推荐方案：固定路径 + 查询串
 
 | 项 | 决策 |
 |---|---|
-| 支持形态 | 默认 PATHINFO：`/index.php/vod/search[/<键>/<值>]….html`（也接受无后缀或末尾 `/`，即 `suffix_hide`）；`rewrite=true` 时不带 `index.php` 的同样形态；`?s=/vod/search/…` 兼容模式不认（交 PHP） |
-| 不认识 → 交 PHP（本地 404） | 路由别名 `vodsearch/…`（`application/route.php:331`，14 个位置参数用 `-` 连接，值本身可含 `-`，有歧义）、`-` 分隔符形态、大写控制器、`.htm` 等其他后缀；参数含旧站支持但 Java 首批不支持的键：`actor`、`director`、`tag`、`letter`、`state`、`version`、`tid`、`name`、`ids`、`isend`、`ajax`；`by=rnd` |
-| 认识的键 | `wd`→`keyword`、`area`、`lang`、`year`、`level`、`class`→`classes`、`by`→`sort`（11 种）、`order`、`page`。与 `LegacyUrlBuilder.SEARCH_KEYS`（`backend/src/main/java/com/maccms/backend/site/application/LegacyUrlBuilder.java:29-30`）的交集，保证生成器输出可被解析回来 |
-| 参数来源 | 路径参数与查询串**都接受**（表单提交是查询串，分页/筛选链接是生成器输出的路径参数）。同一个键同时出现在两处或在任一处重复 → 400；其他未知键（不在旧参数集合中，如 `utm_source`）→ 400 |
-| 解码 | 每个值只解码**一次**。查询串按 `application/x-www-form-urlencoded`（`+` 为空格，`%HH` 必须完整且结果为合法 UTF-8，否则 400）；路径值按同一规则解码（与生成器 `urlencode` 的 `+` 互逆），路径段本身仍须通过 `SitePaths`（拒绝 `%2F`、`%5C`、`%2E`、控制字符、空段、`.`/`..` 段）。值中的 `/` 只能经查询串提交 |
-| 旧站式归一（SSR 独有） | 对 `wd/area/lang/year/level/class/by/order` 的解码值先去掉首尾 W 字符（第 4.2 节；对应旧 `trim`，`application/common.php:1582-1594`），之后为 `''` 或 `'0'` 的 → 按未传（对应旧 `!empty()`，`application/common/model/Vod.php:174-240`，以及生成器跳过 `''`/`'0'`，`backend/src/main/java/com/maccms/backend/site/application/LegacyUrlBuilder.java:142-144`）。因此 SSR 交给 content 的值永远不会触发第 4.3 节步骤 6（首尾空白）。`page` 不做此归一 |
-| 值校验 | 归一后交给 content 的同一套规则（第 4 节），SSR 不另写一份；`page` 沿用现有解析器规则（1..1000，`page=0` → 400） |
-| 长度 | 路径与查询串各自 > 1024 字符 → 不认识（与现有解析器一致）；`wd` 64 个汉字编码后约 576 字符，在上限内 |
-| base-url 子目录 | 与三页相同：反向代理把前缀映射到应用根，解析器输入不含前缀；页面内链接经 `SiteSettings.publicPath`（`backend/src/main/java/com/maccms/backend/site/application/SiteSettings.java:80`）加前缀，canonical 只用 `base-url`（`backend/src/main/java/com/maccms/backend/site/application/SiteSettings.java:72`），不读 Host/X-Forwarded-* |
-| 新路由类型 | `SiteRoute.VodSearch(SearchFilters filters, int page)`；`LegacyUrlBuilder.path` 对其输出 `vodSearch(filters, page)` |
+| 搜索基址 B | `LegacyUrlBuilder.vodSearch(Map.of(), 1)`（现有方法，**不改**）。site 的 URL 形态固定 `depr='/'`、不启用路由别名（`backend/src/main/java/com/maccms/backend/site/application/SiteUrlProperties.java:29`），所以 B 只有上表最后一行的 4 种取值，都是不含参数的常量，长度 ≤ 25，必然通过 `SitePaths`。B 就是现有外壳搜索表单的 `action`（`backend/src/main/java/com/maccms/backend/site/web/SitePages.java:32`） |
+| 链接形态 | `B`（无条件且第 1 页）或 `B?Q`。Java 搜索页生成的**所有**链接（分页、移除筛选、组合筛选、排序、canonical）都是这一形态；不生成路径参数形式 |
+| Q 的生成（新方法，建议名 `LegacyUrlBuilder.vodSearchLink(SearchFilters f, int page)`，返回 `SiteLink(path=B, query=Q)`） | ① 键按固定顺序 `area, by, class, lang, level, order, page, wd, year`（字母序，与 `mac_url` 按键排序一致，`application/common.php:1732-1746`）；② 只输出已设置的条件，`page` 只在 > 1 时输出；③ 值用现有 `LegacyUrlBuilder.urlencode`（PHP `urlencode`：字母数字与 `-_.` 原样，空格为 `+`，其余 UTF-8 字节为大写 `%HH`，`backend/src/main/java/com/maccms/backend/site/application/LegacyUrlBuilder.java:254-269`），因此 `/`→`%2F`、`\`→`%5C`、`%`→`%25`、`+`→`%2B`、`&`→`%26`、`=`→`%3D`，`.` 原样；④ `level` 输出规范整数（`09`→`9`），`by`/`order` 输出枚举值，`page` 为无前导 0 的十进制。Q 的字符只可能是 `[A-Za-z0-9._+-]`、`=`、`&` 与大写 `%HH` |
+| 输出为 `SafeUrl` | 新增 `SiteSettings.publicPath(SiteLink)` 与 `SiteSettings.canonical(SiteLink)`：路径部分仍走现有 `SitePaths.check`（**规则不变**），查询部分走新的 `SiteQueries.check`：结构为 `键=值(&键=值)*`，键只能是上述 9 个且不重复，值只含 `[A-Za-z0-9._+-]` 与大写 `%HH`，`%HH` 不得是 `%00`–`%1F`、`%7F`。`%2F`、`%5C`、`%2E` **只在查询串中允许**：RFC 3986 第 5.2.4 节的点段消除只作用于路径，Servlet 容器与 nginx 的 location 匹配都不解码查询串，它们不会改变路径结构。最后仍由现有 `SafeUrl` 构造器做总校验（总长 ≤ 2048，`backend/src/main/java/com/maccms/backend/site/application/SafeUrl.java:24`）。`SafeUrl`、`SitePaths` 都不放宽，也不做二次解码 |
+| 与旧站的关系 | 旧 `mac_param_url` 把 `$_REQUEST` 合并进参数（`application/common.php:1565`），这些链接在旧站同样是合法的搜索地址；但旧站会再 `urldecode` 一次（第 1.2 节），含 `%` 或 `+` 的值在 PHP 下含义不同（例如 `wd=%2541`：Java 为 `%41`，PHP 为 `A`）。本批不做交还，此差异列入第 9 节与部署评审 |
+
+##### 7.2.3 接受的请求（`LegacyUrlParser.parseSearch(rawPath, rawQuery)`，拟实施）
+
+输入仍是未解码的原始路径与原始查询串，不读取 Host、X-Forwarded-*。结果沿用现有解析器的三类：认得（`Match`）/ 不认识（`Optional.empty()`，交 PHP，本地 404）/ 认得但参数不合法（`ApiException` `INVALID_PARAMETER`，搜索页显示 400，第 7.4 节）。按以下顺序处理：
+
+| 步骤 | 检查 | 结果 |
+|---|---|---|
+| 1 | 原始路径 ≤ 1024 字符（现有 `MAX_INPUT`，不变）且**恰为** `/index.php/vod/search.html`、`/index.php/vod/search/`、`/index.php/vod/search` 之一；`rewrite=true` 时也接受去掉 `/index.php` 的同样三种。`suffixHide` 不影响接受哪种（与现有解析器对 `.html`、`/`、无后缀的处理一致） | 否则 empty：路径参数形式（`…/vod/search/wd/x.html`）、`vodsearch/…` 别名、`-` 分隔符、大写、`.htm` 等 |
+| 2 | 原始查询串 ≤ 2048 字符（新常量 `MAX_SEARCH_QUERY`，只用于搜索；三页仍是 1024 且仍拒绝查询串） | 否则 empty |
+| 3 | 按 `&` 切分，跳过空项（`a=1&&b=2`、结尾的 `&`）；每项第一个 `=` 之前为键，之后为值，无 `=` 的项值为 `''`。键**不解码**，须与已知键逐字相同（区分大小写；`w%64`、`WD`、`wd[]` 都不是 `wd`） | — |
+| 4 | 任一键为 `s`（ThinkPHP 兼容模式，会覆盖路径，`thinkphp/library/think/Request.php:403-406`），或是旧站支持而首批不支持的键：`actor`、`director`、`tag`、`letter`、`state`、`version`、`tid`、`name`、`ids`、`isend`、`ajax` | empty |
+| 5 | 按原始查询串中的出现顺序逐项检查，只报第一个错误：① 键不是 `wd/area/lang/year/level/class/by/order/page`（含 API 参数名 `keyword`、`classes`、`sort`、`pageSize` 与 `utm_source` 等）→ 400 `field=query`、`不支持的参数`（不回显键名）；② 同一键第二次出现（含 `wd=&wd=x`）→ 400 `field=<旧参数名>`、`参数重复`；③ 值按 `application/x-www-form-urlencoded` 解码**一次**（`+` 为空格，`%HH` 大小写十六进制均可）：原始字符不在 0x21–0x7E 内、`%` 后不足两位十六进制、或解码结果不是合法 UTF-8 → 400 `field=<旧参数名>`、`含不允许的字符` | 400 |
+| 6 | `by` 的解码值去首尾 W 字符后恰为 `rnd` | empty |
+| 7 | 旧站式归一（SSR 独有）：`wd/area/lang/year/level/class/by/order` 的解码值去掉首尾 W 字符（第 4.2 节；对应旧 `trim`，`application/common.php:1582-1594`），结果为 `''` 或 `'0'` 的按未传（对应旧 `!empty()`，`application/common/model/Vod.php:174-240`）。`page`：`''` 按未传；否则须为 1..1000 且无前导 0，否则 400 `field=page`（文案同现有解析器，`backend/src/main/java/com/maccms/backend/site/application/LegacyUrlParser.java:215-218`） | 400 / 继续 |
+| 8 | 映射 `wd`→`keyword`、`class`→`classes`、`by`→`sort`，其余同名，交给 content 的同一套校验（第 4 节；`VideoFilter` 与 `VideoListQuery.parse`），SSR 不另写一份。归一后的值不会再触发第 4.3 节步骤 6（首尾空白） | 400 / 认得 |
+| 9 | `Match.canonical` = 原始路径等于 `"/" + B` **且** 原始查询串与 `vodSearchLink(归一后的条件, page).query` 逐字相同（无条件第 1 页时须无查询串） | 非规范请求照常渲染，只输出 canonical，不 301 |
+
+新路由类型：`SiteRoute.VodSearch(SearchFilters filters, int page)`，`SearchFilters` 只保存归一并校验后的值（`level` 为整数，`by`/`order` 为枚举）。`LegacyUrlBuilder.path(SiteRoute)` 只返回路径，搜索页的 canonical 改用 `vodSearchLink`。
+
+##### 7.2.4 长度上限与超限处理
+
+| 量 | 上限 | 超限处理 | 依据 |
+|---|---|---|---|
+| 原始请求路径 | 1024 字符 | 不认识 → 交 PHP（本地 404） | 现有 `MAX_INPUT`，不变；搜索路径本身 ≤ 26 字符 |
+| 原始查询串 | 2048 字符 | 不认识 → 交 PHP（本地 404） | 新常量，只用于搜索；高于规范查询串的最大值 1209，为浏览器表单编码差异（如 `*` 不编码、小写十六进制）、SSR 会裁掉的首尾空白和空字段留余量，同时限制解析工作量 |
+| 单值解码后、去首尾空白前 | 不单独设限 | — | 受原始查询串 2048 约束 |
+| 单值归一后 | `wd` 64、`area` 20、`lang` 10、`class` 32 个码点；`year` 4 位；`level` 原始最多 10 个字符；`page` ≤ 1000 | 400 | 与 API 完全相同（第 4.3 节），由 content 校验 |
+| 生成的查询串 Q | **≤ 1209 字符**（计算见下） | 不可能超出；生成方法仍断言，失败抛 `IllegalStateException` → 500，由测试锁定 | — |
+| 生成的 canonical / 页内链接 | **≤ 200 + 25 + 1 + 1209 = 1435 字符**，低于 `SafeUrl` 的 2048 | 同上 | `base-url` ≤ 200（`backend/src/main/java/com/maccms/backend/site/application/SiteSettings.java:86`），页内链接前缀是 `base-url` 的路径部分，更短 |
+
+第 3 版探针另外实际验证了（同第 7.2.1 节的临时探针，未提交）：① 16 个样例值（`A/B`、`A\B`、`.`、`..`、`A.html`、`a.htmlb`、`%41`、`%2F`、`C++`、`a b`、`中文`、`Love, Death & Robots`、`a=b&c`、`!%_`、64 个汉字、`~*'()`）经现有 `LegacyUrlBuilder.urlencode` 编码后，再用现有解析器的表单解码（`LegacyUrlParser.formDecode`，`backend/src/main/java/com/maccms/backend/site/application/LegacyUrlParser.java:222-253`）解码一次，全部得到原值，编码结果都只含 `[A-Za-z0-9._+-]` 与大写 `%HH`；② 四种形态下 B 都通过 `SitePaths.isValid`，而 `B?Q` 不通过（`?` 不在允许字符内）——所以查询串需要独立的 `SiteQueries`，不能也不应放宽 `SitePaths`；③ 用 200 字符的子目录 `base-url` 拼出四项上限组合的 canonical，长度为 1435/1431/1425/1421，页内链接为 1415/1411/1405/1401，都能通过现有 `SafeUrl.isAllowed`。
+
+Q 的最大值计算：第 4.2 节禁用 U+FFFF 以上字符，每个码点 UTF-8 最多 3 字节，编码后最多 9 个字符（`%HH%HH%HH`）。`area=`(5)+180、`&by=hits_month`(14)、`&class=`(7)+288、`&lang=`(6)+90、`&level=9`(8)、`&order=desc`(11)、`&page=1000`(10)、`&wd=`(4)+576、`&year=2020`(10)，合计 **1209**；探针用 `LegacyUrlBuilder.urlencode` 对同一组合拼出的长度也是 1209，在四种形态下加上 B 分别为 1235/1231/1225/1221。三页现有的 1024 上限与"拒绝查询串"不变。
+
+##### 7.2.5 生成与回读
+
+| 链接 | 生成方式（都经 `vodSearchLink`，再经 `publicPath`/`canonical` 成为 `SafeUrl`） |
+|---|---|
+| 分页 | `vodSearchLink(F, n)` |
+| 移除某个筛选 | `vodSearchLink(F 去掉该键, 1)` |
+| 组合 / 替换筛选 | `vodSearchLink(F 设置该键为候选值, 1)` |
+| 排序 | `vodSearchLink(F 设置 by/order, 1)` |
+| canonical | `canonical(vodSearchLink(F, page))` |
+| 表单 | `action` = `publicPath(B)`（与现状相同）；当前条件中除 `wd`、`page` 外的值以隐藏字段保留，浏览器提交得到 `B?…`，回到第 7.2.3 节 |
+
+**不变式**：对 SSR 能接受的任意 `(F, page)`，`parseSearch("/" + B, vodSearchLink(F, page).query)` 返回同一 `(F, page)` 且 `canonical=true`。理由：F 中的值都满足第 4 节规则，且不是 `''`、`'0'`，也没有首尾 W 字符（归一的不动点）；对这样的字符串，`urlencode` 后再按表单规则解码一次得到原值（UTF-8 合法，空格↔`+`，`+`↔`%2B`）；查询串不受 `suffixHide` 的 `.html` 替换和路径段规则影响；键固定且不重复；B 在四种形态下都是常量。
+
+为保持这一不变式，**筛选候选值**（取自分类 `extend`）与隐藏字段的值除满足第 4 节外，还必须是归一的不动点：跳过 `''`、`'0'` 和带首尾 W 字符的值（否则生成的链接回读后条件会消失或变化）。
+
+base-url 子目录：与三页相同，反向代理把前缀映射到应用根，解析器输入不含前缀；页内链接 = `base-url` 路径部分 + B + `?Q`，canonical = `base-url` + B + `?Q`，不读 Host/X-Forwarded-*。
+
+##### 7.2.6 API 与 SSR 的差异（全部列出）
+
+| 方面 | API `GET /api/v1/videos` | SSR 搜索页 |
+|---|---|---|
+| 参数名 | `keyword`、`classes`、`sort`、`area`、`lang`、`year`、`level`、`order`、`page`、`pageSize`、`categoryId` | 旧名 `wd`、`class`、`by`，其余同名；不接受 `pageSize`（固定 20）与 `categoryId`/`tid`（首批不认分类） |
+| 参数位置 | 查询串 | 只认固定路径 + 查询串；路径参数形式交 PHP |
+| 解码 | 容器按表单规则解码一次 | 解析器按同一规则解码一次（`%HH` 不合法或非 UTF-8 → 400） |
+| 首尾空白 | 400 | 去掉首尾 W 字符后再校验 |
+| `'0'` | `keyword/area/lang/classes` 为字面值 `0`；`level=0` → 400 | 一律按未传 |
+| `''` | 按未传 | 按未传 |
+| 未知参数 | 忽略（契约 1.0.0） | 400；`s` 与旧站支持而首批不支持的键 → 交 PHP |
+| 重复参数 | 新参数 400；既有参数维持现状 | 任一键重复 → 400 |
+| `page` | `parseInt`，允许前导 0（`02` 即 2） | 1..1000、无前导 0（与现有解析器一致），`''` 按未传 |
+| `level` | 原始最多 10 个字符、允许前导 0 | 同 API（交给 content）；`'0'` 按未传；canonical 输出规范整数 |
+| `by=rnd` | `sort=rnd` → 400 | 交 PHP |
+| 长度 | 码点上限同左；原始查询串长度只受容器限制 | 码点上限同 API；另有原始查询串 ≤ 2048（超出交 PHP）、原始路径 ≤ 1024 |
+| 错误输出 | JSON `ErrorResponse`，`fieldErrors` 含字段与文案 | HTML 400 页，固定文案，不显示字段与输入 |
+| 开关 | `maccms.content.search.enabled` 控制 `keyword`/`classes` | 另需 `maccms.site.search.enabled`；`keyword`/`classes` 仍受前者控制 |
+
+##### 7.2.7 T3 必须覆盖的向量（四种 URL 形态各一遍；`base-url` 用根路径与一个 200 字符的子目录各一遍）
+
+- 解析：`wd=A/B`、`wd=A%2FB`、`wd=A%5CB` 与原始 `\`、`wd=.`、`wd=..`、`area=..`、`wd=A.html`、`wd=a.htmlb`（`suffixHide` 下尤其要测）、`wd=%2541`（值为 `%41`）、`wd=%252F`（值为 `%2F`，不得再解码）、`wd=C%2B%2B`（`C++`）、`wd=C++`（`C` 加两个空格，裁剪后为 `C`）、`wd=%e4%b8%ad`（接受，canonical 为大写且 `canonical=false`）、`wd=%FF`、`wd=%E4%B8`、`wd=%` → 400、`wd=%E3%80%80a`（U+3000 被裁掉）、`wd=0` → 未传、`level=0000000009` → 9（canonical 为 `level=9`）、`level=00000000009` → 400、`page=01` → 400、`page=1` → canonical 不带 `page`、`wd=&wd=x` → 400、`foo=1` → 400、`s=/vod/detail/id/1`、`actor=x`、`by=rnd`、路径 `/index.php/vod/search/wd/x.html`、2049 字符的查询串 → empty。
+- 四项上限组合（4 个参数各取最大码点数的 3 字节汉字，另加 `year/level/by/order/page=1000`）：Q 长度为 1209，canonical ≤ 1435，可解析回原条件。
+- 生成与回读：对上述每个被接受的条件 F，分页（第 1、2、1000 页）、移除每个键、组合每个候选值、排序链接、canonical 都能构造 `SafeUrl`，长度在上限内，且 `parseSearch` 回读为同一 `(F, page)`、`canonical=true`；另以固定种子随机生成满足第 4 节字母表的 F 做同样检查。
+- 不变：`vodSearch`、`SitePaths`、`SafeUrl` 现有测试与 PHP 黄金向量不改且通过；三页仍拒绝查询串。
+
+##### 7.2.8 其他方案与不采用的理由
+
+| 方案 | 不采用的理由 |
+|---|---|
+| 保留 PATHINFO，收窄 SSR 输入（禁止 `/`、`\`、纯点值、`suffixHide` 下含 `.html` 的值，并把长度压到组合 ≤ 1024） | 正常关键字（如 `AC/DC`、`Fate/Zero`、`1/2`）无法在 SSR 搜索；要让组合 ≤ 1024，SSR 的码点上限必须低于 API（例如 `class` 32 → 16 仍不够），造成两套长度；路径后缀剥离的歧义仍在 |
+| 在路径中编码 `/`、`.`（`%2F`、`%2E`）或二次编码 | 违反 `SitePaths` 的安全边界，任务明确禁止 |
+| 全局提高 `MAX_INPUT` 并继续用 PATHINFO | 解决不了 `/`、`\`、点段和 `.html` 改写；三页也不需要更长的输入 |
 
 #### 7.3 页面内容
 
 | 区域 | 方案 |
 |---|---|
-| 无任何条件（只有 `/index.php/vod/search.html`，或所有键归一后都是未传） | 200，显示搜索表单与提示，不查库 |
+| 无任何条件（只有搜索基址 B 而无查询串，或所有键归一后都是未传） | 200，显示搜索表单与提示，不查库 |
 | 有条件 | 一次 `listCategories()`（导航与候选值）+ 一次 `listVideos(filter, sort, order, page, 20)`；标题"搜索：<关键字>"或"筛选结果"，显示"共 N 条" |
-| 表单 | `GET`，`role="search"`，`<label>` 关联输入框，`name="wd"`、`maxlength="64"`，回显经校验的关键字（jte 转义）；当前筛选以隐藏字段保留，提交关键字时 `page` 重置为 1 |
-| 筛选链接 | 地区/语言/年份/扩展分类各一组普通 `<a href>`（无 JS 可用），候选值取所有可见分类 `extend` 中对应值的并集（去重、保持出现顺序、每组最多 30 个、跳过不满足第 4 节规则的值）；当前值 `aria-current="true"`，每组带"全部"链接（去掉该条件）。推荐等级首批不出筛选链接（仍可经 URL 使用） |
+| 表单 | `GET`，`role="search"`，`<label>` 关联输入框，`name="wd"`、`maxlength="64"`，回显经校验的关键字（jte 转义）；`action` 为 `publicPath(B)`，当前筛选（除 `wd`、`page`）以隐藏字段保留，提交关键字时 `page` 重置为 1（第 7.2.5 节） |
+| 筛选链接 | 地区/语言/年份/扩展分类各一组普通 `<a href>`（无 JS 可用），候选值取所有可见分类 `extend` 中对应值的并集（去重、保持出现顺序、每组最多 30 个、跳过不满足第 4 节规则的值以及 `''`、`'0'`、带首尾 W 字符的值，保证链接可回读，第 7.2.5 节）；当前值 `aria-current="true"`，每组带"全部"链接（去掉该条件）。推荐等级首批不出筛选链接（仍可经 URL 使用） |
 | 排序 | 时间 / 人气（`hits`）/ 评分 三个链接，其余 `by` 值仍可经 URL 使用 |
-| 结果与分页 | 复用 MACC-13 `backend/src/main/jte/site/components/videoCard.jte`、`backend/src/main/jte/site/components/pagination.jte`；所有链接由 `LegacyUrlBuilder.vodSearch` 生成（键排序、第 1 页不带页码），经 `publicPath` 输出 `SafeUrl` |
-| canonical | 自引用：`vodSearch(归一后的条件, page)` 经 `SiteSettings.canonical`；非规范形态（查询串、键顺序不同、`page/1`、首尾空白）照常渲染，只输出 canonical，不 301 |
+| 结果与分页 | 复用 MACC-13 `backend/src/main/jte/site/components/videoCard.jte`、`backend/src/main/jte/site/components/pagination.jte`；所有链接由新方法 `LegacyUrlBuilder.vodSearchLink` 生成固定路径 + 查询串（键排序、第 1 页不带页码，第 7.2.2 节），经 `SiteSettings.publicPath(SiteLink)` 输出 `SafeUrl`；现有 `vodSearch`（PATHINFO）不用于搜索页内链接 |
+| canonical | 自引用：`vodSearchLink(归一后的条件, page)` 经 `SiteSettings.canonical(SiteLink)`，即 `base-url + B + ?Q`；非规范请求（键顺序不同、小写十六进制、`page=1`、首尾空白、去掉 `/index.php` 的形态等，第 7.2.3 节步骤 9）照常渲染，只输出 canonical，不 301 |
 | robots | 所有搜索页（含无条件页）`<meta name="robots" content="noindex">` |
 | 缓存头 | `Cache-Control: no-store`（关键字在 URL 中，不进入共享缓存；生产 TTL 另议） |
 | 日志 | 不记录关键字、查询串、请求头；异常只经 `backend/src/main/java/com/maccms/backend/common/web/SafeExceptionLog.java`。部署时 nginx 访问日志会记录完整 URL（含关键字）——列入部署评审项 |
@@ -371,7 +492,7 @@ Java 只从本应用环境变量读取这些值，**不读取** `application/ext
 
 #### 7.6 继续留在 PHP
 
-`vod/show`（筛选页，见 D3）、`ajax_search`/`ajax_show`、`?s=` 形态的搜索、路由别名与 `-` 分隔符、第 7.2 节列出的未支持参数、`rnd`、文章/演员/专题等其他模块的搜索、热搜词（`search_hot`）与 `ajax/suggest`、带会员 cookie 的请求（`docs/architecture/03-frontend-readonly-plan.md` 第 2 节）。
+`vod/show`（筛选页，见 D3）、`ajax_search`/`ajax_show`、路径参数形式的搜索地址（`…/vod/search/wd/x.html` 等，即旧 `mac_url_search` 生成的形式，`application/common.php:2462-2465`）、查询串含 `s` 的请求、路由别名与 `-` 分隔符、第 7.2 节列出的未支持参数、`rnd`、文章/演员/专题等其他模块的搜索、热搜词（`search_hot`）与 `ajax/suggest`、带会员 cookie 的请求（`docs/architecture/03-frontend-readonly-plan.md` 第 2 节）。
 
 ### 8. 实施拆分
 
@@ -400,8 +521,8 @@ Java 只从本应用环境变量读取这些值，**不读取** `application/ext
 | 项 | 内容 |
 |---|---|
 | 前置 | T1 合入；T2 报告给出"可开启"或限定条件（页面可先实现，开关默认关闭） |
-| 文件 | `backend/src/main/java/com/maccms/backend/site/application/LegacyUrlParser.java`（`parseSearch`、旧站式归一）、`backend/src/main/java/com/maccms/backend/site/application/SiteRoute.java`（`VodSearch`）、`backend/src/main/java/com/maccms/backend/site/application/LegacyUrlBuilder.java`（`path` 分支）、`backend/src/main/java/com/maccms/backend/site/application/SiteProperties.java`（或新增搜索开关配置类）、`backend/src/main/java/com/maccms/backend/site/web/SiteContentController.java`（条件注册路由）、`backend/src/main/java/com/maccms/backend/site/web/ContentPages.java`、`backend/src/main/java/com/maccms/backend/site/web/view/` 下新增搜索页视图模型、`backend/src/main/jte/site/pages/search.jte`（新）、`backend/src/main/java/com/maccms/backend/site/web/SiteExceptionHandler.java`（搜索页 400 视图）、`backend/src/main/resources/application.yml`、`backend/config/maccms-backend.env.example`、`docs/architecture/08-site-pages.md` 或新文档、`docs/frontend/02-url-golden-vectors.md` |
-| 测试 | PHP 黄金向量扩展：`backend/src/test/php/mac_url_golden.php` 增加 `vod/search` 解析向量（只执行旧 URL/路由代码，不连库、不发请求），Java 对每条认得的向量与 PHP 调度及 `wd/area/lang/year/level/class/by/order/page` 一致；`backend/src/test/java/com/maccms/backend/site/application/LegacyUrlParserTest.java`（路径 + 查询串、重复/冲突、编码、`+`、`%2F`、首尾空白归一、`'0'` 归一、超长、不认识的键交 PHP、往返 `parse(build(x)) == x`）；`backend/src/test/java/com/maccms/backend/site/web/SiteSearchPagesMvcTest.java`（新；200/400/404/503/500、noindex、no-store、canonical、Host 注入、日志不含关键字）、`backend/src/test/java/com/maccms/backend/site/web/SiteContentHtmlStructureTest.java` 扩展（表单标签、筛选链接名称、`aria-current`）、`backend/src/test/java/com/maccms/backend/site/SiteContentRealHttpTest.java` 扩展；开关关闭时路由不存在 |
+| 文件 | `backend/src/main/java/com/maccms/backend/site/application/LegacyUrlParser.java`（`parseSearch`、`MAX_SEARCH_QUERY=2048`、旧站式归一；现有 `parse` 与 `MAX_INPUT` 不变）、`backend/src/main/java/com/maccms/backend/site/application/SiteRoute.java`（`VodSearch`）、`backend/src/main/java/com/maccms/backend/site/application/LegacyUrlBuilder.java`（新增 `vodSearchLink`；现有 `vodSearch`、`urlencode` 不变）、`backend/src/main/java/com/maccms/backend/site/application/SiteLink.java`（新，路径 + 查询串）、`backend/src/main/java/com/maccms/backend/site/application/SiteQueries.java`（新，查询串白名单校验）、`backend/src/main/java/com/maccms/backend/site/application/SiteSettings.java`（新增 `publicPath(SiteLink)`、`canonical(SiteLink)`；现有方法不变）、`backend/src/main/java/com/maccms/backend/site/application/SearchFilters.java`（新）、`backend/src/main/java/com/maccms/backend/site/application/SiteProperties.java`（或新增搜索开关配置类）、`backend/src/main/java/com/maccms/backend/site/web/SiteContentController.java`（条件注册路由）、`backend/src/main/java/com/maccms/backend/site/web/ContentPages.java`、`backend/src/main/java/com/maccms/backend/site/web/view/` 下新增搜索页视图模型、`backend/src/main/jte/site/pages/search.jte`（新）、`backend/src/main/java/com/maccms/backend/site/web/SiteExceptionHandler.java`（搜索页 400 视图）、`backend/src/main/resources/application.yml`、`backend/config/maccms-backend.env.example`、`docs/architecture/08-site-pages.md` 或新文档、`docs/frontend/02-url-golden-vectors.md` |
+| 测试 | PHP 黄金向量扩展：`backend/src/test/php/mac_url_golden.php` 增加 `vod/search` 解析向量（只执行旧 URL/路由代码，不连库、不发请求），Java 认得的每条向量在 PHP 中也调度到 `vod/search`，且对不含 `%`、`+` 的值，`wd/area/lang/year/level/class/by/order/page` 的取值一致（PHP 二次解码，含 `%`、`+` 的值按第 9 节差异处理，不比对）；`backend/src/test/java/com/maccms/backend/site/application/LegacyUrlParserTest.java`（第 7.2.7 节全部解析向量）；`backend/src/test/java/com/maccms/backend/site/application/SearchLinkRoundTripTest.java`（新；第 7.2.7 节生成与回读、四项上限组合、长度上限、200 字符子目录 base-url、固定种子随机 F）；`backend/src/test/java/com/maccms/backend/site/application/SiteQueriesTest.java`（新；拒绝 `?`、`#`、小写十六进制、`%00`–`%1F`、`%7F`、未知键、重复键）；`backend/src/test/java/com/maccms/backend/site/web/SiteSearchPagesMvcTest.java`（新；200/400/404/503/500、noindex、no-store、canonical、Host 注入、日志不含关键字）、`backend/src/test/java/com/maccms/backend/site/web/SiteContentHtmlStructureTest.java` 扩展（表单标签、筛选链接名称、`aria-current`）、`backend/src/test/java/com/maccms/backend/site/SiteContentRealHttpTest.java` 扩展；开关关闭时路由不存在 |
 | 浏览器验收 | `backend/src/test/browser/site-pages-check.mjs` 增加搜索页：320/360/1280 px 无横向溢出、Tab 可达所有筛选与分页、无 JS 可用、焦点可见 |
 | 只读证据 | 用合成库运行候选 jar，请求前后 26 张表 CHECKSUM 与行数不变（同父任务三页验收方法） |
 | 回滚 | `maccms.site.search.enabled=false` 即撤下路由；或 `git revert` |
@@ -427,9 +548,11 @@ Java 只从本应用环境变量读取这些值，**不读取** `application/ext
 | `%`/`_` | 通配符 | 字面字符 |
 | 多值 | `area/lang/class` 逗号多值；`wd` 逗号是字面字符 | `area/lang/classes` 含逗号 → 400（首批）；`keyword` 逗号仍是字面字符 |
 | 年份 | 4 位或 9 位区间，整数比较，其他长度不筛选 | 只接受 4 位，字符串比较 |
-| `level` | `intval`，0 视为未传 | 1..9（允许前导 0），其他 400 |
+| `level` | `intval`，0 视为未传 | 1..9（允许前导 0，原始值最多 10 个字符），其他 400；SSR 另把 `'0'` 视为未传，`00` 等仍 400 |
 | 重复/冲突参数 | 取后一个，查询串覆盖路径 | 400 |
-| 未知参数 | 忽略 | API 忽略；SSR 400 |
+| 参数位置 | 路径参数与查询串都接受，查询串覆盖路径 | API：查询串；SSR：只认固定路径 + 查询串，路径参数形式交 PHP（第 7.2.3 节） |
+| 搜索页内链接 | `mac_url` 生成 PATHINFO（`suffix_hide` 下值内的 `.html` 也被替换） | 固定路径 + 查询串，所有被接受的值都能生成并回读（第 7.2.5 节）；交给 PHP 处理时含 `%`、`+` 的值会被 PHP 二次解码成不同的值 |
+| 未知参数 | 忽略 | API 忽略；SSR 400（`s` 与首批不支持的旧键交 PHP） |
 | `rnd` 与暂缓参数 | 支持 | API 不支持；SSR 交 PHP |
 | 排序 | 单列，分页可能不稳定 | 追加 `vod_id`，稳定 |
 | 游客分类 | 仅 `popedom_filter=1` 时过滤 | 始终只列可见分类（与 1.0.0 一致） |
@@ -460,4 +583,5 @@ Java 只从本应用环境变量读取这些值，**不读取** `application/ext
 - 线上配置（`search`、`search_len`、`search_vod_rule`、`search_verify`、`search_timespan`、`show`、`popedom_filter`、`vod_search_optimise`、URL 形态）、MySQL 版本、数据量与分布、字段存储的实体形式均**【待核实】**。
 - 模板缺失：旧搜索页标签属性（每页条数、默认排序、是否带分类）**【待核实】**；新版每页固定 20、默认 `time desc`。
 - 关键字出现在 URL 中，部署时 nginx/CDN 访问日志会记录；需在部署评审中处理。
+- SSR 搜索链接是固定路径 + 查询串；将来若把这类请求交还 PHP，PHP 的二次解码会把含 `%`、`+` 的值解释成不同的值（第 7.2.2 节），交还方案须在部署评审中处理。浏览器、代理对 2048 字符以内的查询串是否有更短的限制**【待核实】**（与部署环境有关）。
 - 本方案只是设计；后端/前端实现由队长审查并确定方案后另行派发。

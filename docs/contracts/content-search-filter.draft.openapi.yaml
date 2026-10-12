@@ -1,9 +1,9 @@
 openapi: 3.0.3
 info:
   title: MacCMS 视频搜索与多条件筛选（草案，未实现）
-  version: 1.1.0-draft.2
+  version: 1.1.0-draft.3
   description: |
-    **状态：草案（MACC-16 第 2 版），未实现、未发布。** 本文件不是前后端契约，不能被当作已实现接口，也不会被任何契约测试加载；
+    **状态：草案（MACC-16 第 3 版），未实现、未发布。** 本文件不是前后端契约，不能被当作已实现接口，也不会被任何契约测试加载；
     已发布契约仍是 docs/contracts/content-read.openapi.yaml（1.0.0）。方案与依据见
     docs/architecture/09-content-search-filter-plan.md（以下简称"09 方案"）。
 
@@ -24,6 +24,10 @@ info:
       application/x-www-form-urlencoded 解码一次后的字符串。服务端**不做任何裁剪或改写**，校验规则与 schema 一一对应。
     - 唯一例外是 1.0.0 的通用约定：原始解码值为空字符串时按"未传"处理，不做 schema 校验。字符串参数的 pattern 本身接受空串；
       integer 参数（含 level 与 1.0.0 的 categoryId/page/pageSize）无法在 schema 中表达这一点，以本约定为准。
+    - integer 参数的 minimum/maximum **只约束数值**。服务端（VideoListQuery.parseInt）另对原始字符串有词法约束：
+      只含 ASCII 数字、最多 10 个字符（允许前导 0）；它不在 schema 的表达范围内，是 schema 之外的"原始字符串额外约束"。
+      level 在参数描述与扩展字段 `x-maccms-raw-pattern` 中写明（如 `00000000009` 数值为 9，但长度 11 → 400）；
+      1.0.0 的 categoryId/page/pageSize 有同一约束，为保持逐字沿用，不改它们的描述，以本条为准。
     - pattern 按 OpenAPI 3.0 规定的 ECMA-262 方言解释（字符串视为 UTF-16 码元序列）；maxLength 按 Unicode 码点计。
       由于 U+FFFF 以上字符（代理项）被禁用，两种计数一致。
 
@@ -35,7 +39,8 @@ info:
     - 每个新参数最多出现一次，重复出现（含空值）→ 400。area、lang、classes 含半角逗号 `,` → 400（首批不支持多值）；
       keyword 中的逗号是字面字符（与旧 wd 一致）。
     - 校验顺序：既有 5 个参数（不变）→ keyword → area → lang → year → level → classes；每个参数内依次为
-      重复 → 空串（未传）→ 开关（keyword/classes）→ 禁用字符 → 逗号 → 首尾空白 → 长度 → 格式（year/level）。
+      重复 → 空串（未传）→ 开关（keyword/classes）→ 禁用字符 → 逗号 → 首尾空白 → 长度 → 格式（year；level 为
+      先词法：只含 ASCII 数字且 ≤ 10 个字符，再数值：1..9，两步失败的文案相同）。
       只报第一个错误，fieldErrors 只有一项，message 为固定文案，不回显输入。
     - 输入 → 结果对照（与 09 方案第 4.4 节同表）：
       | 原始解码值 | keyword | area/lang/classes | year | level |
@@ -46,6 +51,8 @@ info:
       | "a,b" | 字面匹配 | 400 多值 | 400 年份格式 | 400 整数 |
       | 超长 | 400 长度 | 400 长度 | 400 年份格式 | 400 整数 |
       | "09" | 原样匹配 | 原样匹配 | 400 年份格式 | 9 |
+      | "0000000009"（10 位） | 原样匹配 | 原样匹配（lang 恰好 10 个码点，未超限） | 400 年份格式 | 9 |
+      | "00000000009"（11 位） | 原样匹配 | area/classes 原样匹配；lang 400 长度 | 400 年份格式 | 400 整数（词法长度） |
       | "0" | 原样匹配 | 字面值 0 | 400 年份格式 | 400 整数 |
     - 值原样比较，不做实体编码/解码以外的任何改写：不截断、不做大小写或全半角转换、不做 Unicode 规范化；
       大小写与尾随空格是否敏感由旧表列的排序规则（utf8_general_ci）决定。
@@ -60,6 +67,9 @@ info:
     - 带任一新参数的 count/分页语句有服务端执行时限（MAX_EXECUTION_TIME 3000 ms）；带 keyword/classes 的请求另有进程内
       并发上限 `maccms.content.search.max-concurrent`（默认 4）。超时或超过并发上限时返回 503 `SERVICE_UNAVAILABLE`，
       响应体与数据库不可用时逐字相同。不带新参数的请求不受这两项影响。
+
+    本草案只描述 JSON API。SSR 搜索页使用旧参数名（wd、class、by）、固定路径 + 查询串，并在交给本接口前裁掉首尾空白、
+    把 '0' 视为未传；两者的全部差异见 09 方案第 7.2.6 节。
 servers:
   - url: http://127.0.0.1:18280
     description: 本机开发（默认端口，见 backend/README.md）
@@ -150,13 +160,20 @@ paths:
           required: false
           description: |
             【新增】推荐等级，精确匹配 `vod_level`（旧 application/common/model/Vod.php:290-295；URL 中经 intval 只能是单值）。
-            解析规则与 1.0.0 的 page/pageSize 相同（VideoListQuery.parseInt）：空串 = 未传；否则只含 ASCII 数字、
-            最多 10 位、数值 1..9（允许前导 0，`09` 即 9）；带空白、正负号、小数点或 `all` → 400。
-            不传表示不筛选（等级 0 不能单独筛选）。
+            解析规则与 1.0.0 的 page/pageSize 相同（VideoListQuery.parseInt）。不传表示不筛选（等级 0 不能单独筛选）。
+            schema 的 minimum/maximum 只约束数值 1..9；**原始字符串额外约束**（schema 未覆盖）按以下顺序校验：
+            1. 原始解码值为空串 → 未传；
+            2. 词法：只含 ASCII 数字且最多 10 个字符（允许前导 0），否则 400；
+            3. 数值：按十进制取值须在 1..9，否则 400。
+            2、3 失败的 message 都是"必须是 1 到 9 之间的整数"。三步合起来等价于原始字符串匹配
+            `x-maccms-raw-pattern`（最多 9 个前导 0 加一个 1–9 数字；空串 = 未传）。
+            例：`9`、`09`、`0000000009` → 9；`00000000009`（数值 9，长度 11）→ 400；`0`、`10` → 400；
+            ` 9`、`+9`、`9.0`、`all` → 400。
           schema:
             type: integer
             minimum: 1
             maximum: 9
+          x-maccms-raw-pattern: '^(?:0{0,9}[1-9])?$'
           example: 9
         - name: classes
           in: query
@@ -272,7 +289,7 @@ paths:
           description: |
             参数不合法（code=INVALID_PARAMETER），fieldErrors 只含第一个出错的参数（校验顺序见 info.description）。
             新增的 400 情形只在带新参数时出现：重复、开关关闭时使用 keyword/classes、含禁用字符或非法 UTF-8、
-            area/lang/classes 含逗号、首尾空白（含仅空白）、超长、year/level 格式不符。message 为下列固定文案之一，不回显用户输入：
+            area/lang/classes 含逗号、首尾空白（含仅空白）、超长、year 格式不符、level 词法（非 ASCII 数字或原始字符串超过 10 个字符）或数值（不在 1..9）不符。message 为下列固定文案之一，不回显用户输入：
             参数不能重复 / 当前未开放关键字搜索 / 含不允许的字符 / 不支持多个取值 / 首尾不能有空白字符 /
             长度不能超过 N 个字符 / 必须是 4 位数字年份 / 必须是 1 到 9 之间的整数。
           content:
@@ -337,7 +354,15 @@ paths:
                       - field: year
                         message: 必须是 4 位数字年份
                 badLevel:
-                  summary: level=0 或 level=10
+                  summary: level=0 或 level=10（数值越界）
+                  value:
+                    code: INVALID_PARAMETER
+                    message: 请求参数不合法
+                    fieldErrors:
+                      - field: level
+                        message: 必须是 1 到 9 之间的整数
+                levelTooManyDigits:
+                  summary: level=00000000009（数值为 9，但原始字符串 11 个字符，超过词法上限 10，schema 的 minimum/maximum 不能表达）
                   value:
                     code: INVALID_PARAMETER
                     message: 请求参数不合法
