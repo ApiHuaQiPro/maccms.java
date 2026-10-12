@@ -74,6 +74,18 @@
             <version>${jte.version}</version>
         </dependency>
 
+        <!--
+          site 富文本白名单过滤（MACC-12，选型见 docs/architecture/07-rich-text-filter.md 第 2 节）：jsoup 固定 1.23.2，
+          MIT 许可，Boot 不管理其版本，无运行时传递依赖（re2j 为 optional、jspecify 为 provided）。
+          测试同时用它按 HTML 规则断言页面结构。site 只能用 nodes/parser/safety 包，禁止 Jsoup/Connection 等网络 API
+          （ModuleBoundaryTest）。
+        -->
+        <dependency>
+            <groupId>org.jsoup</groupId>
+            <artifactId>jsoup</artifactId>
+            <version>1.23.2</version>
+        </dependency>
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
@@ -89,13 +101,6 @@
             <groupId>gg.jte</groupId>
             <artifactId>jte</artifactId>
             <version>${jte.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <!-- 仅测试：用真实 HTML 解析器断言页面结构（MIT 许可，Boot 不管理其版本） -->
-        <dependency>
-            <groupId>org.jsoup</groupId>
-            <artifactId>jsoup</artifactId>
-            <version>1.23.2</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

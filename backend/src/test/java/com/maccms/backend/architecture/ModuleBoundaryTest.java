@@ -48,9 +48,13 @@ class ModuleBoundaryTest {
             "\\b(org\\.apache\\.ibatis|org\\.mybatis|java\\.sql|javax\\.sql|org\\.springframework\\.jdbc|"
                     + "com\\.zaxxer\\.hikari|com\\.mysql)\\.");
     private static final Pattern SITE_FORBIDDEN_EXTRA = Pattern.compile("\\b(org\\.springframework\\.dao)\\.");
-    /** site 不读文件/环境变量、不启动进程、不发起网络请求（MACC-9）。java.net.URI 允许（URL 白名单校验要用）。 */
+    /**
+     * site 不读文件/环境变量、不启动进程、不发起网络请求（MACC-9）。java.net.URI 允许（URL 白名单校验要用）。
+     * jsoup 只能用解析/节点/过滤等包（MACC-12 富文本过滤），禁止带网络功能的 Jsoup、Connection 与通配导入。
+     */
     private static final Pattern SITE_FORBIDDEN_IO = Pattern.compile(
             "\\b(java\\.nio\\.file\\.|java\\.io\\.File\\w*\\b|java\\.io\\.RandomAccessFile\\b|java\\.net\\.http\\."
+                    + "|org\\.jsoup\\.(?:Jsoup|Connection|helper\\.HttpConnection)\\b|org\\.jsoup\\.(?:helper\\.)?\\*"
                     + "|java\\.net\\.(?:URL|URLConnection|HttpURLConnection|Socket|ServerSocket)\\b"
                     + "|org\\.springframework\\.web\\.client\\.|org\\.springframework\\.web\\.reactive\\."
                     + "|org\\.springframework\\.core\\.io\\.|ProcessBuilder\\b|Runtime\\s*\\.\\s*getRuntime\\b"
@@ -101,6 +105,9 @@ class ModuleBoundaryTest {
                 import com.maccms.backend.site.application.UrlBuilder;
                 import java.net.URI;
                 import java.io.Serializable;
+                import org.jsoup.nodes.Document;
+                import org.jsoup.parser.Parser;
+                import org.jsoup.safety.Cleaner;
                 // 注释里提到 com.maccms.backend.content.infrastructure.VodMapper 不算依赖
                 class Ok { String s = "com.maccms.backend.content.api.VideoController java.sql.Connection"; }
                 """))).isEmpty();
@@ -128,6 +135,12 @@ class ModuleBoundaryTest {
                 "import java.net.http.HttpClient;",
                 "import java.net.URL;",
                 "import java.net.HttpURLConnection;",
+                "import org.jsoup.Jsoup;",
+                "import org.jsoup.Connection;",
+                "import org.jsoup.*;",
+                "import static org.jsoup.Jsoup.connect;",
+                "import org.jsoup.helper.HttpConnection;",
+                "class X { Object o = org.jsoup.Jsoup.connect(\"http://x.test\"); }",
                 "import org.springframework.web.client.RestClient;",
                 "import org.springframework.web.reactive.function.client.WebClient;",
                 "import org.springframework.core.io.ClassPathResource;",

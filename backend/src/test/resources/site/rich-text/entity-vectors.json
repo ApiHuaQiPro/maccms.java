@@ -1,0 +1,288 @@
+{
+    "meta": {
+        "description": "普通文本字段字符引用处理（site.application.LegacyTextEntities.decodeOnce）黄金向量。全部为合成值。",
+        "verification": "php_filter_xss / php_plain / php_decode 由同目录 entity_golden.php 从 application/common.php 原样取出 mac_filter_xss 后执行得到（php_plain = trim(strip_tags(input))，php_decode = html_entity_decode(input, ENT_QUOTES | ENT_HTML5, 'UTF-8')）。Java 侧 LegacyTextEntitiesGoldenTest 逐条断言 expect、compat 与往返关系；浏览器参照用 jsoup Parser.unescapeEntities(input, false)（HTML5 文本中的字符引用规则）。",
+        "compat_rules": {
+            "SAME": "expect 同时等于 PHP html_entity_decode 与浏览器（jsoup）解码结果",
+            "PHP_ONLY": "expect 等于 PHP 结果；浏览器会额外解码不带分号的引用，新版保留字面文本",
+            "BROWSER_ONLY": "expect 等于浏览器结果；PHP html_entity_decode 不解码该数字引用",
+            "NEITHER": "两者都不同（控制字符替换为 U+FFFD），note 说明原因"
+        },
+        "roundtrip": "对所有向量：decodeOnce(php_filter_xss) == php_plain，即经 mac_filter_xss 存库的值解码一次后恰好还原为录入文本（去标签、去首尾空白后），双重编码不会被多解一层"
+    },
+    "vectors": [
+        {
+            "id": "plain-cjk",
+            "input": "流浪地球 2：第一季",
+            "expect": "流浪地球 2：第一季",
+            "compat": "SAME",
+            "php_filter_xss": "流浪地球 2：第一季",
+            "php_plain": "流浪地球 2：第一季",
+            "php_decode": "流浪地球 2：第一季"
+        },
+        {
+            "id": "empty",
+            "input": "",
+            "expect": "",
+            "compat": "SAME",
+            "php_filter_xss": "",
+            "php_plain": "",
+            "php_decode": ""
+        },
+        {
+            "id": "encoded-amp",
+            "input": "Tom &amp; Jerry",
+            "expect": "Tom & Jerry",
+            "compat": "SAME",
+            "php_filter_xss": "Tom &amp;amp; Jerry",
+            "php_plain": "Tom &amp; Jerry",
+            "php_decode": "Tom & Jerry"
+        },
+        {
+            "id": "encoded-lt-gt",
+            "input": "a &lt; b &gt; c",
+            "expect": "a < b > c",
+            "compat": "SAME",
+            "php_filter_xss": "a &amp;lt; b &amp;gt; c",
+            "php_plain": "a &lt; b &gt; c",
+            "php_decode": "a < b > c"
+        },
+        {
+            "id": "encoded-tags-become-text",
+            "input": "&lt;b&gt;粗体&lt;/b&gt;",
+            "expect": "<b>粗体</b>",
+            "compat": "SAME",
+            "note": "解码后是文字，模板转义输出，显示为字面 <b>",
+            "php_filter_xss": "&amp;lt;b&amp;gt;粗体&amp;lt;/b&amp;gt;",
+            "php_plain": "&lt;b&gt;粗体&lt;/b&gt;",
+            "php_decode": "<b>粗体</b>"
+        },
+        {
+            "id": "encoded-script-becomes-text",
+            "input": "&lt;script&gt;alert(1)&lt;/script&gt;",
+            "expect": "<script>alert(1)</script>",
+            "compat": "SAME",
+            "note": "mac_filter_xss 存库的形式；解码后由模板转义，不会执行",
+            "php_filter_xss": "&amp;lt;script&amp;gt;alert(1)&amp;lt;/script&amp;gt;",
+            "php_plain": "&lt;script&gt;alert(1)&lt;/script&gt;",
+            "php_decode": "<script>alert(1)</script>"
+        },
+        {
+            "id": "double-encoded",
+            "input": "&amp;lt;",
+            "expect": "&lt;",
+            "compat": "SAME",
+            "note": "只解码一次：结果是字面 &lt;，不会继续变成 <",
+            "php_filter_xss": "&amp;amp;lt;",
+            "php_plain": "&amp;lt;",
+            "php_decode": "&lt;"
+        },
+        {
+            "id": "triple-encoded",
+            "input": "&amp;amp;amp;",
+            "expect": "&amp;amp;",
+            "compat": "SAME",
+            "php_filter_xss": "&amp;amp;amp;amp;",
+            "php_plain": "&amp;amp;amp;",
+            "php_decode": "&amp;amp;"
+        },
+        {
+            "id": "literal-amp",
+            "input": "AT&T",
+            "expect": "AT&T",
+            "compat": "SAME",
+            "php_filter_xss": "AT&amp;T",
+            "php_plain": "AT&T",
+            "php_decode": "AT&T"
+        },
+        {
+            "id": "literal-amp-semicolon",
+            "input": "Q&A; 问答",
+            "expect": "Q&A; 问答",
+            "compat": "SAME",
+            "note": "A 不是命名引用",
+            "php_filter_xss": "Q&amp;A; 问答",
+            "php_plain": "Q&A; 问答",
+            "php_decode": "Q&A; 问答"
+        },
+        {
+            "id": "unknown-named",
+            "input": "&foo; &nosuch;",
+            "expect": "&foo; &nosuch;",
+            "compat": "SAME",
+            "php_filter_xss": "&amp;foo; &amp;nosuch;",
+            "php_plain": "&foo; &nosuch;",
+            "php_decode": "&foo; &nosuch;"
+        },
+        {
+            "id": "quotes",
+            "input": "&quot;引号&quot; &#039;单引号&#039; &apos;",
+            "expect": "\"引号\" '单引号' '",
+            "compat": "SAME",
+            "php_filter_xss": "&amp;quot;引号&amp;quot; &amp;#039;单引号&amp;#039; &amp;apos;",
+            "php_plain": "&quot;引号&quot; &#039;单引号&#039; &apos;",
+            "php_decode": "\"引号\" '单引号' '"
+        },
+        {
+            "id": "numeric-dec-hex",
+            "input": "&#20013;&#x6587; &#x1F600;",
+            "expect": "中文 😀",
+            "compat": "SAME",
+            "php_filter_xss": "&amp;#20013;&amp;#x6587; &amp;#x1F600;",
+            "php_plain": "&#20013;&#x6587; &#x1F600;",
+            "php_decode": "中文 😀"
+        },
+        {
+            "id": "nbsp",
+            "input": "a&nbsp;b",
+            "expect": "a b",
+            "compat": "SAME",
+            "php_filter_xss": "a&amp;nbsp;b",
+            "php_plain": "a&nbsp;b",
+            "php_decode": "a b"
+        },
+        {
+            "id": "common-named",
+            "input": "&copy; &reg; &trade; &hellip; &mdash; &middot;",
+            "expect": "© ® ™ … — ·",
+            "compat": "SAME",
+            "php_filter_xss": "&amp;copy; &amp;reg; &amp;trade; &amp;hellip; &amp;mdash; &amp;middot;",
+            "php_plain": "&copy; &reg; &trade; &hellip; &mdash; &middot;",
+            "php_decode": "© ® ™ … — ·"
+        },
+        {
+            "id": "cjk-with-entity",
+            "input": "《星际穿越》&middot;导演剪辑版",
+            "expect": "《星际穿越》·导演剪辑版",
+            "compat": "SAME",
+            "php_filter_xss": "《星际穿越》&amp;middot;导演剪辑版",
+            "php_plain": "《星际穿越》&middot;导演剪辑版",
+            "php_decode": "《星际穿越》·导演剪辑版"
+        },
+        {
+            "id": "named-uppercase",
+            "input": "&AMP; &Amp;",
+            "expect": "& &Amp;",
+            "compat": "SAME",
+            "note": "AMP 在实体表中，Amp 不在",
+            "php_filter_xss": "&amp;AMP; &amp;Amp;",
+            "php_plain": "&AMP; &Amp;",
+            "php_decode": "& &Amp;"
+        },
+        {
+            "id": "multi-codepoint",
+            "input": "&NotEqualTilde;",
+            "expect": "≂̸",
+            "compat": "SAME",
+            "note": "一个引用解码为两个码点",
+            "php_filter_xss": "&amp;NotEqualTilde;",
+            "php_plain": "&NotEqualTilde;",
+            "php_decode": "≂̸"
+        },
+        {
+            "id": "leading-zeros",
+            "input": "&#00000000065;&#x0000041;",
+            "expect": "AA",
+            "compat": "SAME",
+            "php_filter_xss": "&amp;#00000000065;&amp;#x0000041;",
+            "php_plain": "&#00000000065;&#x0000041;",
+            "php_decode": "AA"
+        },
+        {
+            "id": "tab-lf",
+            "input": "a&#9;b&#10;c",
+            "expect": "a\tb\nc",
+            "compat": "SAME",
+            "php_filter_xss": "a&amp;#9;b&amp;#10;c",
+            "php_plain": "a&#9;b&#10;c",
+            "php_decode": "a\tb\nc"
+        },
+        {
+            "id": "bare-amp-forms",
+            "input": "a & b &; &# &#; &#x; &#xZZ;",
+            "expect": "a & b &; &# &#; &#x; &#xZZ;",
+            "compat": "SAME",
+            "php_filter_xss": "a &amp; b &amp;; &amp;# &amp;#; &amp;#x; &amp;#xZZ;",
+            "php_plain": "a & b &; &# &#; &#x; &#xZZ;",
+            "php_decode": "a & b &; &# &#; &#x; &#xZZ;"
+        },
+        {
+            "id": "raw-tags-kept",
+            "input": "<b>粗体</b> & <i>",
+            "expect": "<b>粗体</b> & <i>",
+            "compat": "SAME",
+            "note": "不解释标签：作为文字交给模板转义",
+            "php_filter_xss": "粗体 &amp;",
+            "php_plain": "粗体 &",
+            "php_decode": "<b>粗体</b> & <i>"
+        },
+        {
+            "id": "no-semicolon-legacy-named",
+            "input": "&copy 2026 &amp &lt",
+            "expect": "&copy 2026 &amp &lt",
+            "compat": "PHP_ONLY",
+            "note": "浏览器会解码为 © 2026 & <；新版只解码带分号的引用",
+            "php_filter_xss": "&amp;copy 2026 &amp;amp &amp;lt",
+            "php_plain": "&copy 2026 &amp &lt",
+            "php_decode": "&copy 2026 &amp &lt"
+        },
+        {
+            "id": "query-like-text",
+            "input": "a=1&times=2&lang=zh",
+            "expect": "a=1&times=2&lang=zh",
+            "compat": "PHP_ONLY",
+            "note": "浏览器在文本中把 &times 解码为 ×；新版保留字面文本",
+            "php_filter_xss": "a=1&amp;times=2&amp;lang=zh",
+            "php_plain": "a=1&times=2&lang=zh",
+            "php_decode": "a=1&times=2&lang=zh"
+        },
+        {
+            "id": "no-semicolon-numeric",
+            "input": "&#65 &#x41",
+            "expect": "&#65 &#x41",
+            "compat": "PHP_ONLY",
+            "note": "浏览器解码为 A A",
+            "php_filter_xss": "&amp;#65 &amp;#x41",
+            "php_plain": "&#65 &#x41",
+            "php_decode": "&#65 &#x41"
+        },
+        {
+            "id": "numeric-zero",
+            "input": "&#0;",
+            "expect": "�",
+            "compat": "BROWSER_ONLY",
+            "php_filter_xss": "&amp;#0;",
+            "php_plain": "&#0;",
+            "php_decode": "&#0;"
+        },
+        {
+            "id": "numeric-windows-1252",
+            "input": "&#x80;&#150;&#x9F;",
+            "expect": "€–Ÿ",
+            "compat": "BROWSER_ONLY",
+            "note": "0x80～0x9F 按 windows-1252 重映射（HTML 规范）",
+            "php_filter_xss": "&amp;#x80;&amp;#150;&amp;#x9F;",
+            "php_plain": "&#x80;&#150;&#x9F;",
+            "php_decode": "&#x80;&#150;&#x9F;"
+        },
+        {
+            "id": "numeric-out-of-range",
+            "input": "&#x110000; &#xD800; &#99999999999;",
+            "expect": "� � �",
+            "compat": "BROWSER_ONLY",
+            "php_filter_xss": "&amp;#x110000; &amp;#xD800; &amp;#99999999999;",
+            "php_plain": "&#x110000; &#xD800; &#99999999999;",
+            "php_decode": "&#x110000; &#xD800; &#99999999999;"
+        },
+        {
+            "id": "numeric-control",
+            "input": "&#1;&#x7F;&#x81;",
+            "expect": "���",
+            "compat": "NEITHER",
+            "note": "浏览器输出控制字符本身；新版替换为 U+FFFD，不把控制字符交给页面",
+            "php_filter_xss": "&amp;#1;&amp;#x7F;&amp;#x81;",
+            "php_plain": "&#1;&#x7F;&#x81;",
+            "php_decode": "&#1;&#x7F;&#x81;"
+        }
+    ]
+}

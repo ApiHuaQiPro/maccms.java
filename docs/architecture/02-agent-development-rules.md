@@ -19,7 +19,7 @@
   - `content` 的已发布只读类型（MACC-8 起）：`content.application.view` 下的 `CategoryListResponse`、`CategoryDto`、`CategoryExtendDto`、`CategoryRefDto`、`VideoSummaryDto`、`VideoDetailDto`，分别对应 `docs/contracts/content-read.openapi.yaml` 中的同名（去掉 `Dto`）schema，Controller 直接以它们作为响应。
   - 已发布只读类型与 `docs/contracts/` 中的 schema 一一对应时，修改它们等同修改契约，按第 1 节在同一提交里改 OpenAPI、类型与契约测试（`PublishedViewContractTest` 校验 record 组件与 schema 字段集合一致）。
   - 跨模块传入的查询参数类型自带校验：例如 `VideoListQuery` 的构造器与 `parse` 采用相同范围（`page` 1..1000、`pageSize` 1..100、`sort` 非空、`categoryId` 为 `null`（不筛选）或 1..65535），越界抛 `ApiException`（`INVALID_PARAMETER`）。调用方不能靠直接构造绕过上限。
-- `site` 模块（服务端页面，MACC-9 起为骨架，见 `05-site-skeleton.md`）只依赖 `content.application`（含 `.view`）与 `common`——`common` 中限 `common.web` 的 `PageResponse`、`ApiException`、`ErrorCode`、`SafeExceptionLog`，需要更多时在任务中说明并同步修改护栏；不拥有表、不新增 Mapper/SQL，不引用 MyBatis、JDBC、`javax.sql`、Spring JDBC/DAO 类型；不读文件、环境变量（只经 `maccms.site.*` 配置绑定），不启动进程，不发起 HTTP 请求（不回环调用旧 PHP 或本应用 API），模板表达式只读取视图模型；页面需要新字段时走契约变更。
+- `site` 模块（服务端页面，MACC-9 起为骨架，见 `05-site-skeleton.md`）只依赖 `content.application`（含 `.view`）与 `common`——`common` 中限 `common.web` 的 `PageResponse`、`ApiException`、`ErrorCode`、`SafeExceptionLog`，需要更多时在任务中说明并同步修改护栏；不拥有表、不新增 Mapper/SQL，不引用 MyBatis、JDBC、`javax.sql`、Spring JDBC/DAO 类型；不读文件、环境变量（只经 `maccms.site.*` 配置绑定），不启动进程，不发起 HTTP 请求（不回环调用旧 PHP 或本应用 API；jsoup 只能用解析/节点/过滤包，禁止 `Jsoup`、`Connection` 等网络 API），模板表达式只读取视图模型；页面需要新字段时走契约变更。
   - `site` 的每个 Spring 组件都带 `@ConditionalOnSiteEnabled`；`maccms.site.enabled` 默认关闭，关闭时不注册任何 site 组件与路由。
 - MyBatis/JDBC 类型只出现在各模块的 `infrastructure` 包（`common.config` 的数据源检查除外）。
 - 以上依赖规则由 `backend/src/test/java/com/maccms/backend/architecture/ModuleBoundaryTest.java` 扫描源码检查（注释和字符串不计），合成源码自检规则本身；`site` 的模板、构建与装配规则由 `backend/src/test/java/com/maccms/backend/site/SiteGuardrailsTest.java` 与 `SiteTemplatePolicyTest.java` 检查。
@@ -50,7 +50,7 @@
   - 一律先把整页渲染到缓冲区，成功后再写响应（带 `Content-Length`）；不使用边渲染边输出的视图路径，避免失败时返回 200 + 半页 HTML 被缓存。
   - 渲染或读取失败时由 `site` 自己的异常处理（`@ControllerAdvice(basePackages = "com.maccms.backend.site")`，优先于全局 JSON 处理）输出完整错误页并带 `Cache-Control: no-store`，不依赖 Boot 的 `/error` 转发；日志只用 `SafeExceptionLog` 记录类型链。
   - 模板引擎自身的错误日志不得输出异常 message（引擎会自行记录时须关闭对应 logger 并有测试）。
-  - 模板（jte 3.2.4，只放在 `backend/src/main/jte/site/`）：只通过生成的 `Templates` 接口与 `SiteHtmlRenderer` 渲染；不用 `$unsafe{}`/`@raw`/`!{}`；事件属性、`<script>`、`<style>`、`style` 属性中不放数据（严格策略直接禁止这些标签与属性）；URL 属性（`href`、`src` 等）的动态值只能是 `SafeUrl.href()`，模板不拼接 URL；库内图片字段（`vod_pic` 等）只经 `site.application.ImageUrlNormalizer` 转成 `SafeUrl`（MACC-11，`06-image-url-normalizer.md`），为空时显示占位图；默认转义不是富文本过滤，不得引用 `vod_content`/`content`。
+  - 模板（jte 3.2.4，只放在 `backend/src/main/jte/site/`）：只通过生成的 `Templates` 接口与 `SiteHtmlRenderer` 渲染；不用 `$unsafe{}`/`@raw`/`!{}`；事件属性、`<script>`、`<style>`、`style` 属性中不放数据（严格策略直接禁止这些标签与属性）；URL 属性（`href`、`src` 等）的动态值只能是 `SafeUrl.href()`，模板不拼接 URL；库内图片字段（`vod_pic` 等）只经 `site.application.ImageUrlNormalizer` 转成 `SafeUrl`（MACC-11，`06-image-url-normalizer.md`），为空时显示占位图；默认转义不是富文本过滤，不得引用 `vod_content`/`content`；富文本只经 `site.application.RichTextSanitizer` 得到 `SafeHtml`，包成 `gg.jte.Content` 放在元素内容位置输出，旧文本字段的字符引用只经 `LegacyTextEntities.decodeOnce` 按字段清单解码一次（MACC-12，`07-rich-text-filter.md`）。
 
 ### 5. 测试与完成条件
 

@@ -1,0 +1,734 @@
+{
+  "meta": {
+    "description": "公开详情富文本过滤（site.application.RichTextSanitizer）黄金向量。全部为合成值，域名使用保留的 .test 顶级域；没有可用的脱敏真实样本，覆盖范围与未覆盖项见 docs/architecture/07-rich-text-filter.md 第 6 节。",
+    "image_config": {
+      "base_url": "https://www.maccms.test/",
+      "protocol": "https",
+      "mode": "local",
+      "remoteurl": "",
+      "img_key": "cdn[.]maccms[.]test",
+      "img_api": "/img.php?url="
+    },
+    "verification": "expect 为新版输出的完整 HTML（逐字比较），findings 为 RichTextSanitizer.Finding 集合。RichTextSanitizerGoldenTest 另对每条向量断言：再过滤一次结果不变（稳定）、jsoup 重新解析后只含白名单元素与属性、URL 属性都能通过 SafeUrl。"
+  },
+  "vectors": [
+    {
+      "id": "tag/script",
+      "input": "<script>alert(1)</script><p>x</p>",
+      "expect": "<p>x</p>",
+      "findings": [
+        "DANGEROUS_ELEMENT_REMOVED"
+      ]
+    },
+    {
+      "id": "tag/script-uppercase-src",
+      "input": "<SCRIPT SRC=//evil.test/x.js></SCRIPT>正文",
+      "expect": "正文",
+      "findings": [
+        "DANGEROUS_ELEMENT_REMOVED"
+      ]
+    },
+    {
+      "id": "tag/script-unclosed",
+      "input": "<p>前</p><script>alert(1)",
+      "expect": "<p>前</p>",
+      "findings": [
+        "DANGEROUS_ELEMENT_REMOVED"
+      ]
+    },
+    {
+      "id": "tag/script-split-name",
+      "input": "<scr<script>ipt>alert(1)</script>",
+      "expect": "ipt&gt;alert(1)",
+      "findings": [
+        "ELEMENT_UNWRAPPED"
+      ],
+      "note": "HTML5 解析出名为 scr<script 的未知元素（去标签），其余是普通文字，没有 script 元素"
+    },
+    {
+      "id": "tag/svg-script",
+      "input": "<svg><script>alert(1)</script><a xlink:href=\"javascript:alert(1)\">s</a></svg>",
+      "expect": "",
+      "findings": [
+        "DANGEROUS_ELEMENT_REMOVED"
+      ]
+    },
+    {
+      "id": "tag/svg-onload",
+      "input": "<svg onload=alert(1)>",
+      "expect": "",
+      "findings": [
+        "DANGEROUS_ELEMENT_REMOVED"
+      ]
+    },
+    {
+      "id": "tag/math-href",
+      "input": "<math><mi xlink:href=\"javascript:alert(1)\">m</mi></math>",
+      "expect": "",
+      "findings": [
+        "DANGEROUS_ELEMENT_REMOVED"
+      ]
+    },
+    {
+      "id": "tag/template",
+      "input": "<template><img src=x onerror=alert(1)></template>t",
+      "expect": "t",
+      "findings": [
+        "DANGEROUS_ELEMENT_REMOVED"
+      ]
+    },
+    {
+      "id": "tag/noscript-mxss",
+      "input": "<noscript><p title=\"</noscript><img src=x onerror=alert(1)>\"></noscript>",
+      "expect": "",
+      "findings": [
+        "DANGEROUS_ELEMENT_REMOVED"
+      ],
+      "note": "整段删除 noscript，不依赖解析器对 noscript 的处理方式"
+    },
+    {
+      "id": "tag/textarea-mxss",
+      "input": "<textarea><img src=x onerror=alert(1)></textarea>",
+      "expect": "",
+      "findings": [
+        "DANGEROUS_ELEMENT_REMOVED"
+      ]
+    },
+    {
+      "id": "tag/title-xmp-plaintext",
+      "input": "<title><img src=x></title><xmp><img src=x></xmp>后",
+      "expect": "后",
+      "findings": [
+        "DANGEROUS_ELEMENT_REMOVED"
+      ]
+    },
+    {
+      "id": "tag/base-meta-link",
+      "input": "<base href=\"//evil.test/\"><meta http-equiv=refresh content=\"0;url=//evil.test\"><link rel=stylesheet href=//evil.test/x.css>内容",
+      "expect": "内容",
+      "findings": [
+        "DANGEROUS_ELEMENT_REMOVED"
+      ]
+    },
+    {
+      "id": "tag/form-controls",
+      "input": "<form action=\"/x\"><input name=a value=\"v\"><textarea>t</textarea><button formaction=\"javascript:alert(1)\">b</button><select><option>o</option></select></form>后",
+      "expect": "后",
+      "findings": [
+        "DANGEROUS_ELEMENT_REMOVED"
+      ]
+    },
+    {
+      "id": "tag/dialog-portal",
+      "input": "<dialog open>d</dialog><portal src=\"https://evil.test\"></portal>",
+      "expect": "",
+      "findings": [
+        "DANGEROUS_ELEMENT_REMOVED"
+      ]
+    },
+    {
+      "id": "tag/document-level",
+      "input": "<html><head><title>t</title></head><body onload=alert(1)><p>正文</p></body></html>",
+      "expect": "<p>正文</p>",
+      "findings": [
+        "DANGEROUS_ELEMENT_REMOVED"
+      ],
+      "note": "以 body 为上下文按 HTML5 片段规则解析：html/head/body 标签及其属性（onload）被解析器忽略，title 留在片段中后整段删除"
+    },
+    {
+      "id": "tag/unknown-unwrapped",
+      "input": "<font color=red><center>旧标签</center></font><my-el x=1>自定义</my-el><marquee>滚动</marquee>",
+      "expect": "旧标签自定义滚动",
+      "findings": [
+        "ATTRIBUTE_REMOVED",
+        "ELEMENT_UNWRAPPED"
+      ]
+    },
+    {
+      "id": "event/img-onerror",
+      "input": "<img src=x onerror=alert(1)>",
+      "expect": "<img src=\"/x\">",
+      "findings": [
+        "ATTRIBUTE_REMOVED"
+      ],
+      "note": "相对图片地址按 ImageUrlNormalizer 拼站点路径"
+    },
+    {
+      "id": "event/p-onclick",
+      "input": "<p onclick=\"z()\" onmouseover=1 ONFOCUS=x>s</p>",
+      "expect": "<p>s</p>",
+      "findings": [
+        "ATTRIBUTE_REMOVED"
+      ]
+    },
+    {
+      "id": "event/a-onfocus-autofocus",
+      "input": "<a href=\"/x\" onfocus=alert(1) autofocus tabindex=1>t</a>",
+      "expect": "<a href=\"/x\">t</a>",
+      "findings": [
+        "ATTRIBUTE_REMOVED"
+      ]
+    },
+    {
+      "id": "event/td-onmouseover",
+      "input": "<table><tr><td onmouseover=1>c</td></tr></table>",
+      "expect": "<table><tbody><tr><td>c</td></tr></tbody></table>",
+      "findings": [
+        "ATTRIBUTE_REMOVED"
+      ]
+    },
+    {
+      "id": "event/on-in-text",
+      "input": "<p>onerror=alert(1) 是文字</p>",
+      "expect": "<p>onerror=alert(1) 是文字</p>",
+      "findings": []
+    },
+    {
+      "id": "url/javascript",
+      "input": "<a href=\"javascript:alert(1)\">t</a>",
+      "expect": "t",
+      "findings": [
+        "LINK_REJECTED"
+      ]
+    },
+    {
+      "id": "url/javascript-mixed-case",
+      "input": "<a href=\"JaVaScRiPt:alert(1)\">t</a>",
+      "expect": "t",
+      "findings": [
+        "LINK_REJECTED"
+      ]
+    },
+    {
+      "id": "url/javascript-tab",
+      "input": "<a href=\"java\tscript:alert(1)\">t</a>",
+      "expect": "t",
+      "findings": [
+        "LINK_REJECTED"
+      ]
+    },
+    {
+      "id": "url/javascript-newline",
+      "input": "<a href=\"java\nscript:alert(1)\">t</a>",
+      "expect": "t",
+      "findings": [
+        "LINK_REJECTED"
+      ]
+    },
+    {
+      "id": "url/javascript-entity",
+      "input": "<a href=\"&#106;avascript:alert(1)\">t</a>",
+      "expect": "t",
+      "findings": [
+        "LINK_REJECTED"
+      ]
+    },
+    {
+      "id": "url/javascript-hex-entity-tab",
+      "input": "<a href=\"java&#x09;script:alert(1)\">t</a>",
+      "expect": "t",
+      "findings": [
+        "LINK_REJECTED"
+      ]
+    },
+    {
+      "id": "url/javascript-colon-entity",
+      "input": "<a href=\"javascript&colon;alert(1)\">t</a>",
+      "expect": "t",
+      "findings": [
+        "LINK_REJECTED"
+      ]
+    },
+    {
+      "id": "url/javascript-leading-control",
+      "input": "<a href=\" \u0001 javascript:alert(1)\">t</a>",
+      "expect": "t",
+      "findings": [
+        "LINK_REJECTED"
+      ]
+    },
+    {
+      "id": "url/vbscript",
+      "input": "<a href=\"vbscript:msgbox(1)\">t</a>",
+      "expect": "t",
+      "findings": [
+        "LINK_REJECTED"
+      ]
+    },
+    {
+      "id": "url/data",
+      "input": "<a href=\"data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg==\">t</a>",
+      "expect": "t",
+      "findings": [
+        "LINK_REJECTED"
+      ]
+    },
+    {
+      "id": "url/protocol-relative",
+      "input": "<a href=\"//evil.test/x\">t</a>",
+      "expect": "t",
+      "findings": [
+        "LINK_REJECTED"
+      ]
+    },
+    {
+      "id": "url/backslash-host",
+      "input": "<a href=\"/\\evil.test\">t</a><a href=\"\\\\evil.test\">u</a>",
+      "expect": "tu",
+      "findings": [
+        "LINK_REJECTED"
+      ]
+    },
+    {
+      "id": "url/userinfo",
+      "input": "<a href=\"https://www.maccms.test@evil.test/\">t</a>",
+      "expect": "t",
+      "findings": [
+        "LINK_REJECTED"
+      ]
+    },
+    {
+      "id": "url/opaque-https",
+      "input": "<a href=\"https:evil.test\">t</a>",
+      "expect": "t",
+      "findings": [
+        "LINK_REJECTED"
+      ]
+    },
+    {
+      "id": "url/ftp-mailto",
+      "input": "<a href=\"ftp://files.test/a\">f</a><a href=\"mailto:a@b.test\">m</a>",
+      "expect": "fm",
+      "findings": [
+        "LINK_REJECTED"
+      ]
+    },
+    {
+      "id": "url/relative",
+      "input": "<a href=\"detail.html\">相对</a><a href=\"#top\">锚点</a>",
+      "expect": "相对锚点",
+      "findings": [
+        "LINK_REJECTED"
+      ]
+    },
+    {
+      "id": "url/no-href",
+      "input": "<a>无地址</a><a name=\"x\">锚</a>",
+      "expect": "无地址锚",
+      "findings": [
+        "ATTRIBUTE_REMOVED"
+      ]
+    },
+    {
+      "id": "url/absolute-ok",
+      "input": "<a href=\"https://www.maccms.test/v/1.html\" target=\"_blank\" rel=\"opener\">外链</a>",
+      "expect": "<a href=\"https://www.maccms.test/v/1.html\" rel=\"nofollow noopener noreferrer\">外链</a>",
+      "findings": [
+        "ATTRIBUTE_REMOVED"
+      ],
+      "note": "外链统一 rel；target 不在白名单"
+    },
+    {
+      "id": "url/site-path-ok",
+      "input": "<a href=\"/vod/detail/id/1.html\" rel=\"nofollow\" title=\"详情\">站内</a>",
+      "expect": "<a href=\"/vod/detail/id/1.html\" title=\"详情\">站内</a>",
+      "findings": [],
+      "note": "站内链接去掉 rel"
+    },
+    {
+      "id": "url/href-trimmed",
+      "input": "<a href=\"  /vod/1.html\n\">t</a>",
+      "expect": "<a href=\"/vod/1.html\">t</a>",
+      "findings": []
+    },
+    {
+      "id": "img/mac-protocol",
+      "input": "<img src=\"mac://img.maccms.test/upload/vod/1.jpg\">",
+      "expect": "<img src=\"https://img.maccms.test/upload/vod/1.jpg\">",
+      "findings": [],
+      "note": "mac: 替换为 upload.protocol（向量配置为 https）"
+    },
+    {
+      "id": "img/img-key-api",
+      "input": "<img src=\"https://cdn.maccms.test/a.jpg\">",
+      "expect": "<img src=\"/img.php?url=https://cdn.maccms.test/a.jpg\">",
+      "findings": [],
+      "note": "命中 img_key，拼 img_api"
+    },
+    {
+      "id": "img/relative",
+      "input": "<img src=\"upload/vod/2.jpg\">",
+      "expect": "<img src=\"/upload/vod/2.jpg\">",
+      "findings": [],
+      "note": "旧版由浏览器按页面地址解析；新版按 mac_url_img 拼站点路径"
+    },
+    {
+      "id": "img/protocol-relative",
+      "input": "<img src=\"//img.maccms.test/a.png\">",
+      "expect": "<img src=\"https://img.maccms.test/a.png\">",
+      "findings": [],
+      "note": "按 base-url 的协议补全（与 vod_pic 规则一致），输出中不出现协议相对地址"
+    },
+    {
+      "id": "img/javascript",
+      "input": "<img src=\"javascript:alert(1)\">",
+      "expect": "",
+      "findings": [
+        "IMAGE_REJECTED"
+      ]
+    },
+    {
+      "id": "img/data",
+      "input": "<img src=\"data:image/png;base64,AAAA\">",
+      "expect": "",
+      "findings": [
+        "IMAGE_REJECTED"
+      ]
+    },
+    {
+      "id": "img/mac-javascript",
+      "input": "<img src=\"mac:javascript:alert(1)\">",
+      "expect": "",
+      "findings": [
+        "IMAGE_REJECTED"
+      ]
+    },
+    {
+      "id": "img/uppercase-scheme",
+      "input": "<img src=\"HTTPS://img.maccms.test/a.jpg\">",
+      "expect": "",
+      "findings": [
+        "IMAGE_REJECTED"
+      ],
+      "note": "旧分支区分大小写，新版不放行大写 scheme"
+    },
+    {
+      "id": "img/no-src",
+      "input": "<img alt=\"无图\"><img src=\"\"><img src=\"  \">",
+      "expect": "",
+      "findings": [
+        "IMAGE_REJECTED"
+      ]
+    },
+    {
+      "id": "img/quote-in-src",
+      "input": "<img src='/a\"b.jpg'>",
+      "expect": "",
+      "findings": [
+        "IMAGE_REJECTED"
+      ]
+    },
+    {
+      "id": "img/whitespace-trimmed",
+      "input": "<img src=\" /a b.jpg \">",
+      "expect": "<img src=\"/a%20b.jpg\">",
+      "findings": [],
+      "note": "首尾空白按浏览器规则去掉，中间空格编码为 %20"
+    },
+    {
+      "id": "img/double-encoded-query",
+      "input": "<img src=\"/a.jpg?x=1&amp;amp;y=2\">",
+      "expect": "<img src=\"/a.jpg?x=1&amp;amp;y=2\">",
+      "findings": [],
+      "note": "浏览器从旧输出得到 /a.jpg?x=1&amp;y=2；新版只解码一次，地址相同"
+    },
+    {
+      "id": "img/encoded-query",
+      "input": "<img src=\"/a.jpg?x=1&amp;y=2\">",
+      "expect": "<img src=\"/a.jpg?x=1&amp;y=2\">",
+      "findings": []
+    },
+    {
+      "id": "img/dimensions",
+      "input": "<img src=\"/a.jpg\" alt=\"海报\" width=\"300\" height=\"9999%\"><img src=\"/b.jpg\" width=\"0\" height=\"12345\"><img src=\"/c.jpg\" width=\" 10\">",
+      "expect": "<img src=\"/a.jpg\" alt=\"海报\" width=\"300\"><img src=\"/b.jpg\"><img src=\"/c.jpg\">",
+      "findings": [
+        "ATTRIBUTE_REMOVED"
+      ]
+    },
+    {
+      "id": "img/srcset-usemap",
+      "input": "<img src=\"/a.jpg\" srcset=\"javascript:alert(1) 1x\" usemap=\"#m\" ismap>",
+      "expect": "<img src=\"/a.jpg\">",
+      "findings": [
+        "ATTRIBUTE_REMOVED"
+      ]
+    },
+    {
+      "id": "css/style-attr",
+      "input": "<p style=\"background:url(javascript:alert(1))\" class=\"x\" id=\"y\">s</p>",
+      "expect": "<p>s</p>",
+      "findings": [
+        "ATTRIBUTE_REMOVED"
+      ]
+    },
+    {
+      "id": "css/style-tag",
+      "input": "<style>p{color:red}</style>text",
+      "expect": "text",
+      "findings": [
+        "DANGEROUS_ELEMENT_REMOVED"
+      ]
+    },
+    {
+      "id": "css/style-expression",
+      "input": "<div style=\"width:expression(alert(1))\">d</div>",
+      "expect": "<div>d</div>",
+      "findings": [
+        "ATTRIBUTE_REMOVED"
+      ]
+    },
+    {
+      "id": "css/iframe",
+      "input": "<iframe src=\"https://evil.test\">fallback</iframe>",
+      "expect": "",
+      "findings": [
+        "DANGEROUS_ELEMENT_REMOVED"
+      ]
+    },
+    {
+      "id": "css/iframe-srcdoc",
+      "input": "<iframe srcdoc=\"&lt;script&gt;alert(1)&lt;/script&gt;\"></iframe>后",
+      "expect": "后",
+      "findings": [
+        "DANGEROUS_ELEMENT_REMOVED"
+      ]
+    },
+    {
+      "id": "css/object-embed",
+      "input": "<object data=\"x.swf\"><param name=a value=b><embed src=\"x.swf\">obj</object>",
+      "expect": "",
+      "findings": [
+        "DANGEROUS_ELEMENT_REMOVED"
+      ]
+    },
+    {
+      "id": "css/media",
+      "input": "<video src=\"/v.mp4\" poster=\"javascript:x\"><source src=\"/v.mp4\"></video><audio src=\"/a.mp3\"></audio>后",
+      "expect": "后",
+      "findings": [
+        "DANGEROUS_ELEMENT_REMOVED"
+      ]
+    },
+    {
+      "id": "attr/alt-quote-injection",
+      "input": "<img src=\"/a.jpg\" alt=\"a&quot; onerror=&quot;alert(1)\">",
+      "expect": "<img src=\"/a.jpg\" alt=\"a&quot; onerror=&quot;alert(1)\">",
+      "findings": []
+    },
+    {
+      "id": "attr/title-markup",
+      "input": "<img src=\"/a.jpg\" title=\"&lt;/p&gt;&lt;script&gt;\">",
+      "expect": "<img src=\"/a.jpg\" title=\"&lt;/p&gt;&lt;script&gt;\">",
+      "findings": []
+    },
+    {
+      "id": "attr/single-quoted-unquoted",
+      "input": "<img src='/a.jpg' alt='单引号' title=无引号>",
+      "expect": "<img src=\"/a.jpg\" alt=\"单引号\" title=\"无引号\">",
+      "findings": []
+    },
+    {
+      "id": "attr/uppercase-names",
+      "input": "<IMG SRC=\"/a.jpg\" ALT=\"大写\">",
+      "expect": "<img src=\"/a.jpg\" alt=\"大写\">",
+      "findings": []
+    },
+    {
+      "id": "attr/duplicate-attr",
+      "input": "<img src=\"/a.jpg\" src=\"javascript:alert(1)\">",
+      "expect": "<img src=\"/a.jpg\">",
+      "findings": [],
+      "note": "重复属性按 HTML5 规则取第一个"
+    },
+    {
+      "id": "attr/title-too-long",
+      "input": "<img src=\"/a.jpg\" title=\"长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长\" alt=\"短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短\">",
+      "expect": "<img src=\"/a.jpg\" alt=\"短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短短\">",
+      "findings": [
+        "ATTRIBUTE_REMOVED"
+      ]
+    },
+    {
+      "id": "attr/span-values",
+      "input": "<table><tr><td colspan=\"2\" rowspan=\"x\">c</td><th colspan=\"1000\" rowspan=\"03\">h</th></tr></table>",
+      "expect": "<table><tbody><tr><td colspan=\"2\">c</td><th>h</th></tr></tbody></table>",
+      "findings": [
+        "ATTRIBUTE_REMOVED"
+      ]
+    },
+    {
+      "id": "attr/p-title-not-allowed",
+      "input": "<p title=\"a&quot;b\" lang=\"zh\" dir=\"rtl\">q</p>",
+      "expect": "<p>q</p>",
+      "findings": [
+        "ATTRIBUTE_REMOVED"
+      ]
+    },
+    {
+      "id": "entity/text-encoded",
+      "input": "<p>流浪地球 2：第一季 &amp; 特别篇 &lt;预告&gt;</p>",
+      "expect": "<p>流浪地球 2：第一季 &amp; 特别篇 &lt;预告&gt;</p>",
+      "findings": [],
+      "note": "浏览器显示与旧版相同：流浪地球 2：第一季 & 特别篇 <预告>"
+    },
+    {
+      "id": "entity/encoded-script-is-text",
+      "input": "a &lt;script&gt;alert(1)&lt;/script&gt; b",
+      "expect": "a &lt;script&gt;alert(1)&lt;/script&gt; b",
+      "findings": [],
+      "note": "编码过的标签仍是文字，不会被解码成标签"
+    },
+    {
+      "id": "entity/double-encoded",
+      "input": "&amp;lt; &amp;amp;",
+      "expect": "&amp;lt; &amp;amp;",
+      "findings": [],
+      "note": "显示为 &lt; &amp;，与旧版一致，不会多解一层"
+    },
+    {
+      "id": "entity/invalid-named",
+      "input": "&foo; &nosuch; AT&T",
+      "expect": "&amp;foo; &amp;nosuch; AT&amp;T",
+      "findings": []
+    },
+    {
+      "id": "entity/legacy-no-semicolon-text",
+      "input": "&copy 2026 &copy=2",
+      "expect": "© 2026 ©=2",
+      "findings": [],
+      "note": "正文按浏览器规则解析（与旧版显示一致），文本中不带分号的旧命名引用会被解码"
+    },
+    {
+      "id": "entity/legacy-no-semicolon-attr",
+      "input": "<a href=\"/s?a=1&copy=2\">q</a>",
+      "expect": "<a href=\"/s?a=1&amp;copy=2\">q</a>",
+      "findings": [],
+      "note": "属性值中后接 = 的不带分号引用不解码（HTML5 规则）"
+    },
+    {
+      "id": "entity/named-numeric",
+      "input": "&copy; &nbsp; &#x1F600; &#20013;&#x6587;",
+      "expect": "© &nbsp; 😀 中文",
+      "findings": []
+    },
+    {
+      "id": "entity/numeric-invalid",
+      "input": "[&#0;][&#x80;][&#x81;][&#1;][&#xD800;][&#x110000;]",
+      "expect": "[][€][�][�][�][�]",
+      "findings": [],
+      "note": "&#0;：jsoup 解码为 U+0000 后按正文规则忽略（规范与浏览器为 U+FFFD，差异只在显示一个替换符）；0x80～0x9F 按 windows-1252；控制字符、代理区、超出范围为 U+FFFD"
+    },
+    {
+      "id": "entity/attr-encoded",
+      "input": "<img src=\"/a.jpg\" alt=\"Tom &amp; Jerry &lt;3\">",
+      "expect": "<img src=\"/a.jpg\" alt=\"Tom &amp; Jerry &lt;3\">",
+      "findings": []
+    },
+    {
+      "id": "entity/href-encoded-query",
+      "input": "<a href=\"/s?a=1&amp;b=2\">q</a>",
+      "expect": "<a href=\"/s?a=1&amp;b=2\">q</a>",
+      "findings": []
+    },
+    {
+      "id": "entity/raw-control-chars",
+      "input": "a\u0001b\u0000cde",
+      "expect": "a�bc�d�e",
+      "findings": [],
+      "note": "原文中的控制字符替换为 U+FFFD；正文中的 NUL 按 HTML5 规则被解析器忽略"
+    },
+    {
+      "id": "struct/misnested",
+      "input": "<b>unclosed <i>nest</b> tail",
+      "expect": "<b>unclosed <i>nest</i></b><i> tail</i>",
+      "findings": []
+    },
+    {
+      "id": "struct/unclosed-tag",
+      "input": "<p>a<b",
+      "expect": "<p>a</p>",
+      "findings": []
+    },
+    {
+      "id": "struct/lt-in-text",
+      "input": "x<y z",
+      "expect": "x",
+      "findings": []
+    },
+    {
+      "id": "struct/lt-space",
+      "input": "1 < 2 且 3 > 2",
+      "expect": "1 &lt; 2 且 3 &gt; 2",
+      "findings": []
+    },
+    {
+      "id": "struct/comments-cdata",
+      "input": "<!-- 注释 --><p>after</p><![CDATA[x]]><?php echo 1; ?>",
+      "expect": "<p>after</p>",
+      "findings": [
+        "NON_CONTENT_REMOVED"
+      ]
+    },
+    {
+      "id": "struct/blocks",
+      "input": "<h1>标题</h1><h2>小标题</h2><blockquote>引用</blockquote><pre>  code\n line</pre><hr>",
+      "expect": "<h1>标题</h1><h2>小标题</h2><blockquote>引用</blockquote><pre>  code\n line</pre><hr>",
+      "findings": []
+    },
+    {
+      "id": "struct/lists-table",
+      "input": "<ul><li>一<li>二</ul><ol><li>1</li></ol><dl><dt>导演</dt><dd>某某</dd></dl><table><caption>表</caption><thead><tr><th>a</th></tr></thead><tbody><tr><td>b</td></tr></tbody></table>",
+      "expect": "<ul><li>一</li><li>二</li></ul><ol><li>1</li></ol><dl><dt>导演</dt><dd>某某</dd></dl><table><caption>表</caption><thead><tr><th>a</th></tr></thead><tbody><tr><td>b</td></tr></tbody></table>",
+      "findings": []
+    },
+    {
+      "id": "struct/inline-formatting",
+      "input": "<strong>粗</strong><em>斜</em><u>下</u><s>删</s><del>删</del><ins>增</ins><sub>下标</sub><sup>上标</sup><span>普通</span><small>小</small><code>c</code>",
+      "expect": "<strong>粗</strong><em>斜</em><u>下</u><s>删</s><del>删</del><ins>增</ins><sub>下标</sub><sup>上标</sup><span>普通</span><small>小</small><code>c</code>",
+      "findings": []
+    },
+    {
+      "id": "struct/br-variants",
+      "input": "line1<br>line2<br/>line3</br>",
+      "expect": "line1<br>line2<br>line3<br>",
+      "findings": []
+    },
+    {
+      "id": "struct/mac-prefix-in-text",
+      "input": "mac: 文字里的 mac:前缀",
+      "expect": "mac: 文字里的 mac:前缀",
+      "findings": [],
+      "note": "旧 mac_url_content_img 会替换正文中所有 mac:（包括文字），新版只处理图片地址"
+    },
+    {
+      "id": "struct/foster-parenting-regression",
+      "input": "&<table><![CDATA[ onerror=\n<![CDATA[data:<svg><a>x</noscript><i><a href=\n<p></b><a href=java\tscript:<base href= onclick=</p><form>><plaintext>w",
+      "expect": "&amp;x<i></i><i>&gt;</i><table></table>",
+      "findings": [
+        "ATTRIBUTE_REMOVED",
+        "DANGEROUS_ELEMENT_REMOVED",
+        "LINK_REJECTED",
+        "NON_CONTENT_REMOVED",
+        "STRUCTURE_NORMALIZED"
+      ],
+      "note": "随机输入发现：去掉标签后 i 留在 table 下，浏览器会把它移到表格前；输出按浏览器解析结果调整"
+    },
+    {
+      "id": "struct/pre-leading-newlines",
+      "input": "<pre>\n\n\ncode</pre><pre>\nx</pre>",
+      "expect": "<pre>\n\n\ncode</pre><pre>x</pre>",
+      "findings": [],
+      "note": "解析忽略 pre 开始标签后的第一个换行；序列化按 HTML 规范在以换行开头的 pre 文字前补一个换行，重新解析不丢换行"
+    },
+    {
+      "id": "struct/whitespace-only-result",
+      "input": "<script>x</script>   ",
+      "expect": "",
+      "findings": [
+        "DANGEROUS_ELEMENT_REMOVED"
+      ],
+      "note": "结果只有空白时按空片段处理"
+    }
+  ]
+}

@@ -86,7 +86,7 @@ curl -i http://127.0.0.1:18280/_site/placeholder
 
 ### 7. 三页任务的前置条件与遗留
 
-- 本骨架验收通过后再开始三页；三页仍需 URL 生成器/解析器与 PHP 黄金向量、图片地址规范化、富文本白名单过滤（`04-site-template-spike.md` 第 7 节 3～5）。图片地址规范化已由 MACC-11 实现（`06-image-url-normalizer.md`）；URL 生成器/解析器与黄金向量已由 MACC-10 完成（`docs/frontend/02-url-golden-vectors.md`）。两项配置绑定及 URL 页面路由接入随页面任务完成；富文本过滤仍待验收。
+- 本骨架验收通过后再开始三页；三页仍需 URL 生成器/解析器与 PHP 黄金向量、图片地址规范化、富文本白名单过滤（`04-site-template-spike.md` 第 7 节 3～5）。图片地址规范化已由 MACC-11 实现（`06-image-url-normalizer.md`）；URL 生成器/解析器与黄金向量已由 MACC-10 完成（`docs/frontend/02-url-golden-vectors.md`）。两项配置绑定及 URL 页面路由接入随页面任务完成；富文本白名单过滤与文本实体处理由 MACC-12 实现（`07-rich-text-filter.md`），待验收，接入随详情页任务完成。
 - 数据库不可用 → 503：`ContentReadService` 抛出的 Spring `DataAccessException` 在 site 中只能落到 500（site 禁止引用 `org.springframework.dao`）。三页任务需在 `content.application` 把连接类故障转换为 `ApiException(SERVICE_UNAVAILABLE)`，或经评审放宽护栏。
 - 观看密码/版权的交还 PHP、canonical 301、计数、生产缓存 TTL、访问日志字段（03 方案第 7.4 节）、nginx 分流均未实现。
 - 未测：性能与大页面内存、并发、真实数据中的实体与富文本、浏览器/移动端视觉、IDE 支持。
