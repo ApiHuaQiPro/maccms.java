@@ -140,9 +140,9 @@
       "input": "<font color=red><center>旧标签</center></font><my-el x=1>自定义</my-el><marquee>滚动</marquee>",
       "expect": "旧标签自定义滚动",
       "findings": [
-        "ATTRIBUTE_REMOVED",
         "ELEMENT_UNWRAPPED"
-      ]
+      ],
+      "note": "去掉标签的元素，其属性随标签丢弃，不另计 ATTRIBUTE_REMOVED"
     },
     {
       "id": "event/img-onerror",
@@ -315,9 +315,8 @@
       "id": "url/no-href",
       "input": "<a>无地址</a><a name=\"x\">锚</a>",
       "expect": "无地址锚",
-      "findings": [
-        "ATTRIBUTE_REMOVED"
-      ]
+      "findings": [],
+      "note": "没有 href 的 a 去掉标签（不算 LINK_REJECTED）"
     },
     {
       "id": "url/absolute-ok",
@@ -706,7 +705,6 @@
       "input": "&<table><![CDATA[ onerror=\n<![CDATA[data:<svg><a>x</noscript><i><a href=\n<p></b><a href=java\tscript:<base href= onclick=</p><form>><plaintext>w",
       "expect": "&amp;x<i></i><i>&gt;</i><table></table>",
       "findings": [
-        "ATTRIBUTE_REMOVED",
         "DANGEROUS_ELEMENT_REMOVED",
         "LINK_REJECTED",
         "NON_CONTENT_REMOVED",

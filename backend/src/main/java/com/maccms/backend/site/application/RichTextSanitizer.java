@@ -17,6 +17,8 @@ import org.jsoup.nodes.TextNode;
 import org.jsoup.parser.Parser;
 import org.jsoup.safety.Cleaner;
 import org.jsoup.safety.Safelist;
+import org.jsoup.select.NodeFilter;
+import org.jsoup.select.NodeTraversor;
 
 /**
  * 公开详情富文本（{@code vod_content} 等后台录入、采集写入的原始 HTML）的白名单过滤，结果是只能放在元素内容位置的
@@ -28,11 +30,11 @@ import org.jsoup.safety.Safelist;
  * <p>步骤：
  * <ol>
  * <li>jsoup 按 HTML5 规范解析（与浏览器解析旧版原样输出的结果一致，字符引用在这一步按浏览器规则解码一次）。</li>
- * <li>{@link #DROPPED_WITH_CONTENT} 中的元素连同内容整段删除（脚本、样式、嵌入、表单、svg/math 等）。</li>
- * <li>jsoup {@link Cleaner} 按 {@link #SAFELIST} 重建文档：白名单外的元素去掉标签、保留子节点；白名单外的属性
+ * <li>在解析得到的树上逐个元素判断（{@link #mark}）：{@link #DROPPED_WITH_CONTENT} 中的元素连同内容整段删除
+ * （脚本、样式、嵌入、表单、svg/math 等）；链接经 {@link SafeUrl}，不合格改为普通文字；图片经 {@link ImageUrlNormalizer}，
+ * 不合格整张删除；宽高、合并单元格只接受短十进制整数，文本属性限制长度。</li>
+ * <li>jsoup {@link Cleaner} 按 {@link #SAFELIST} 复制出新文档：白名单外的元素去掉标签、保留子节点；白名单外的属性
  * （事件属性、style、class、id 等）、注释一律丢弃。</li>
- * <li>属性取值校验：链接经 {@link SafeUrl}；图片经 {@link ImageUrlNormalizer}；宽高、合并单元格只接受短十进制整数；
- * 文本属性限制长度。不合格的链接改为普通文字，不合格的图片整张删除。</li>
  * <li>按 HTML 语法序列化：文本转义 {@code & < >} 与不换行空格，属性值加双引号并转义 {@code & " < >}，
  * 中文等非 ASCII 字符原样输出；控制字符与不成对的代理项替换为 U+FFFD。</li>
  * <li>按浏览器规则重新解析输出直到不再变化，再确认只含白名单内容（{@link #stabilize}）。</li>
@@ -40,11 +42,13 @@ import org.jsoup.safety.Safelist;
  */
 public final class RichTextSanitizer {
 
-    /** 输入超过该长度（UTF-16 单元）直接拒绝，不截断（截断会切开标签或实体）。旧库 vod_content 为 TEXT（≤ 65535 字节）。 */
-    static final int MAX_INPUT_LENGTH = 200_000;
+    /** 输入超过该长度（UTF-16 单元）直接拒绝，不截断（截断会切开标签或实体）。旧库 vod_content 为 MEDIUMTEXT，长度上限按耗时确定（07 文档第 3.1 节）。 */
+    static final int MAX_INPUT_LENGTH = 100_000;
+    /** 输出超过该长度时不输出。HTML5 的格式元素重建会让输出比输入长（实测最多约 5 倍）。 */
+    static final int MAX_OUTPUT_LENGTH = 500_000;
     /** alt/title 的最大长度，超过则删除该属性。 */
     static final int MAX_TEXT_ATTRIBUTE_LENGTH = 500;
-    /** 重新解析的最多次数；实测一次即收敛。 */
+    /** 重新解析的最多次数；正常输入一次即收敛。 */
     static final int MAX_REPARSE = 3;
 
     /** 过滤结果。 */
@@ -53,9 +57,12 @@ public final class RichTextSanitizer {
         SANITIZED,
         /** null、空串或只有空白。 */
         EMPTY,
-        /** 超过 {@link #MAX_INPUT_LENGTH}，不输出。 */
+        /** 输入超过 {@link #MAX_INPUT_LENGTH} 或输出超过 {@link #MAX_OUTPUT_LENGTH}，不输出。 */
         TOO_LONG,
-        /** 按浏览器规则重新解析后结构不收敛或超出白名单，不输出（防御性分支，测试与随机输入中未出现）。 */
+        /**
+         * 按浏览器规则重新解析后结构不收敛或超出白名单，不输出（防御性分支）。随机输入中未出现；
+         * 表格嵌套超过 jsoup 的 512 层深度上限时会出现。
+         */
         UNSTABLE
     }
 
@@ -65,7 +72,7 @@ public final class RichTextSanitizer {
         DANGEROUS_ELEMENT_REMOVED,
         /** 白名单外的元素去掉了标签，保留文字与子元素。 */
         ELEMENT_UNWRAPPED,
-        /** 删除了白名单外或取值不合格的属性（事件属性、style、class、超长 title 等）。 */
+        /** 保留的元素上删除了白名单外或取值不合格的属性（事件属性、style、class、超长 title 等）。 */
         ATTRIBUTE_REMOVED,
         /** 链接地址不在 {@link SafeUrl} 白名单内，链接改为普通文字。 */
         LINK_REJECTED,
@@ -89,7 +96,7 @@ public final class RichTextSanitizer {
             "label", "keygen", "isindex", "svg", "math", "audio", "video", "source", "track", "canvas", "map", "area",
             "link", "meta", "base", "head", "dialog", "slot");
 
-    /** 允许的元素与属性。属性取值另经 {@link #checkAttributes} 校验；{@code rel} 只由过滤器自己写入。 */
+    /** 允许的元素与属性。属性取值另经 {@link #checkElement} 校验；{@code rel} 只由过滤器自己写入。 */
     static final Safelist SAFELIST = Safelist.none()
             .addTags("p", "br", "hr", "div", "span", "b", "strong", "i", "em", "u", "s", "strike", "del", "ins",
                     "sub", "sup", "small", "big", "blockquote", "q", "cite", "pre", "code",
@@ -99,6 +106,10 @@ public final class RichTextSanitizer {
             .addAttributes("img", "src", "alt", "title", "width", "height")
             .addAttributes("td", "colspan", "rowspan")
             .addAttributes("th", "colspan", "rowspan");
+
+    /** 标记：整段丢弃、去掉标签保留子节点。不在白名单内，由 Cleaner 处理（见 {@link #mark}）。 */
+    private static final String DROP = "maccms-drop";
+    private static final String UNWRAP = "maccms-unwrap";
 
     /** 外链统一加的 rel：不传递权重、不给目标页 window.opener、不发 Referer。 */
     static final String EXTERNAL_REL = "nofollow noopener noreferrer";
@@ -132,17 +143,11 @@ public final class RichTextSanitizer {
         }
         EnumSet<Finding> findings = EnumSet.noneOf(Finding.class);
         Document dirty = Parser.parseBodyFragment(raw, "");
-        removeDangerous(dirty.body(), findings);
-        recordCleanerChanges(dirty.body(), findings);
+        mark(dirty.body(), findings);
 
         Document clean = new Cleaner(SAFELIST).clean(dirty);
         configureOutput(clean);
         Element body = clean.body();
-        for (Element el : new ArrayList<>(body.getAllElements())) {
-            if (el != body && el.parent() != null) {
-                checkAttributes(el, findings);
-            }
-        }
         for (Element el : body.getAllElements()) {
             for (TextNode t : el.textNodes()) {
                 String text = t.getWholeText();
@@ -158,6 +163,9 @@ public final class RichTextSanitizer {
         Optional<String> html = stabilize(serialize(body), findings);
         if (html.isEmpty()) {
             return new Result(SafeHtml.EMPTY, Outcome.UNSTABLE, Collections.unmodifiableSet(findings));
+        }
+        if (html.get().length() > MAX_OUTPUT_LENGTH) {
+            return new Result(SafeHtml.EMPTY, Outcome.TOO_LONG, Collections.unmodifiableSet(findings));
         }
         return new Result(html.get().isBlank() ? SafeHtml.EMPTY : new SafeHtml(html.get()), Outcome.SANITIZED,
                 Collections.unmodifiableSet(findings));
@@ -228,78 +236,79 @@ public final class RichTextSanitizer {
                 .escapeMode(Entities.EscapeMode.base);
     }
 
-    private static void removeDangerous(Element body, Set<Finding> findings) {
+    /**
+     * 在解析得到的树上逐个元素做决定，并记录改动。只改标签名、属性或清空子节点，不在兄弟列表中删除/插入节点
+     * （jsoup 每次删除/去标签都要重排其后的兄弟节点，几万个兄弟元素时是平方级耗时）；真正的删除与去标签由
+     * {@link Cleaner} 一次复制完成：{@link #DROP} 已清空子节点，复制时整段消失；{@link #UNWRAP} 只保留子节点。
+     */
+    private void mark(Element body, Set<Finding> findings) {
         List<Element> dropped = new ArrayList<>();
-        for (Element el : body.getAllElements()) {
-            if (el != body && DROPPED_WITH_CONTENT.contains(el.normalName())) {
-                dropped.add(el);
+        NodeTraversor.filter((node, depth) -> {
+            if (node == body) {
+                return NodeFilter.FilterResult.CONTINUE;
             }
-        }
-        for (Element el : dropped) {
-            // 祖先已被删除时 remove() 只作用在已脱离的子树上，没有副作用
-            el.remove();
-            findings.add(Finding.DANGEROUS_ELEMENT_REMOVED);
-        }
-    }
-
-    /** 只用于记录 Cleaner 将会做的改动；实际删除由 Cleaner 按同一份 {@link #SAFELIST} 完成。 */
-    private static void recordCleanerChanges(Element body, Set<Finding> findings) {
-        // 片段中的 <body onload=…> 等属性在解析时已被忽略（HTML5 片段解析规则），不会出现在这里
-        List<Node> stack = new ArrayList<>(body.childNodes());
-        while (!stack.isEmpty()) {
-            Node node = stack.remove(stack.size() - 1);
             if (node instanceof Element el) {
-                boolean safeTag = SAFELIST.isSafeTag(el.normalName());
-                if (!safeTag) {
-                    findings.add(Finding.ELEMENT_UNWRAPPED);
+                if (DROPPED_WITH_CONTENT.contains(el.normalName())) {
+                    dropped.add(el);
+                    findings.add(Finding.DANGEROUS_ELEMENT_REMOVED);
+                    return NodeFilter.FilterResult.SKIP_ENTIRELY;
                 }
-                for (Attribute attr : el.attributes()) {
-                    if (!safeTag || !SAFELIST.isSafeAttribute(el.normalName(), el, attr)) {
-                        findings.add(Finding.ATTRIBUTE_REMOVED);
-                    }
-                }
-                stack.addAll(el.childNodes());
+                checkElement(el, findings);
             } else if (!(node instanceof TextNode)) {
                 findings.add(Finding.NON_CONTENT_REMOVED);
             }
+            return NodeFilter.FilterResult.CONTINUE;
+        }, body);
+        for (Element el : dropped) {
+            el.empty();
+            el.clearAttributes();
+            el.tagName(DROP);
         }
     }
 
-    private void checkAttributes(Element el, Set<Finding> findings) {
-        switch (el.normalName()) {
-            case "a" -> checkLink(el, findings);
-            case "img" -> checkImage(el, findings);
-            default -> {
-            }
-        }
-        if (el.parent() == null) {
+    private void checkElement(Element el, Set<Finding> findings) {
+        String name = el.normalName();
+        if (!SAFELIST.isSafeTag(name)) {
+            // 去掉标签的元素，属性随标签一起丢弃，不另计 ATTRIBUTE_REMOVED
+            findings.add(Finding.ELEMENT_UNWRAPPED);
             return;
         }
-        for (Attribute attr : new ArrayList<>(el.attributes().asList())) {
-            String name = attr.getKey();
-            String value = attr.getValue();
-            boolean ok = switch (name) {
-                case "width", "height" -> DIMENSION.matcher(value).matches();
-                case "colspan", "rowspan" -> SPAN.matcher(value).matches();
-                case "alt", "title" -> value.length() <= MAX_TEXT_ATTRIBUTE_LENGTH;
-                default -> true;
-            };
-            if (!ok) {
-                el.removeAttr(name);
+        boolean kept = switch (name) {
+            case "a" -> checkLink(el, findings);
+            case "img" -> checkImage(el, findings);
+            default -> true;
+        };
+        if (!kept) {
+            return;
+        }
+        for (Attribute attr : el.attributes().asList()) {
+            if (!SAFELIST.isSafeAttribute(name, el, attr) || !isValidValue(attr.getKey(), attr.getValue())) {
+                el.removeAttr(attr.getKey());
                 findings.add(Finding.ATTRIBUTE_REMOVED);
             }
         }
     }
 
-    private static void checkLink(Element a, Set<Finding> findings) {
+    private static boolean isValidValue(String name, String value) {
+        return switch (name) {
+            case "width", "height" -> DIMENSION.matcher(value).matches();
+            case "colspan", "rowspan" -> SPAN.matcher(value).matches();
+            case "alt", "title" -> value.length() <= MAX_TEXT_ATTRIBUTE_LENGTH;
+            default -> true;
+        };
+    }
+
+    /** 链接地址合格时写回去掉首尾空白的地址并设置 rel；否则改为 {@link #UNWRAP}（保留文字）。 */
+    private static boolean checkLink(Element a, Set<Finding> findings) {
         String href = stripC0ControlOrSpace(a.attr("href"));
         Optional<SafeUrl> url = href.isEmpty() ? Optional.empty() : SafeUrl.parse(href);
         if (url.isEmpty()) {
             if (a.hasAttr("href")) {
                 findings.add(Finding.LINK_REJECTED);
             }
-            a.unwrap();
-            return;
+            a.clearAttributes();
+            a.tagName(UNWRAP);
+            return false;
         }
         a.attr("href", url.get().href());
         if (url.get().isAbsolute()) {
@@ -307,14 +316,15 @@ public final class RichTextSanitizer {
         } else {
             a.removeAttr("rel");
         }
+        return true;
     }
 
     /**
      * 图片地址：浏览器先去掉首尾空白；带 scheme 的只接受旧代码认识的 {@code http://}、{@code https://}、{@code mac:} 前缀
      * （区分大小写，与 mac_url_img 的分支一致），{@code javascript:}、{@code data:} 等直接拒绝，
-     * 不交给规范化器（它会把不以 http、/ 开头的值当作相对路径拼上站点路径）。
+     * 不交给规范化器（它会把不以 http、/ 开头的值当作相对路径拼上站点路径）。不合格时改为 {@link #DROP}（整张删除）。
      */
-    private void checkImage(Element img, Set<Finding> findings) {
+    private boolean checkImage(Element img, Set<Finding> findings) {
         String raw = stripC0ControlOrSpace(img.attr("src"));
         boolean schemeOk = !SCHEME.matcher(raw).lookingAt()
                 || raw.startsWith("http://") || raw.startsWith("https://") || raw.startsWith("mac:");
@@ -322,11 +332,13 @@ public final class RichTextSanitizer {
                 ? images.normalize(asLegacyAttributeText(raw))
                 : Optional.empty();
         if (src.isEmpty()) {
-            img.remove();
             findings.add(Finding.IMAGE_REJECTED);
-            return;
+            img.clearAttributes();
+            img.tagName(DROP);
+            return false;
         }
         img.attr("src", src.get().href());
+        return true;
     }
 
     /**

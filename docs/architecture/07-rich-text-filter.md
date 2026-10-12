@@ -43,14 +43,15 @@
 
 #### 3.1 流程
 
-1. 空/超长：null、空串、只有空白 → `EMPTY`；超过 200 000 个 UTF-16 单元 → `TOO_LONG`，整段不输出（**不截断**，截断会切开标签或实体）。旧库 `vod_content` 是 TEXT（≤ 65 535 字节）。
+1. 空/超长：null、空串、只有空白 → `EMPTY`；超过 100 000 个 UTF-16 单元 → `TOO_LONG`，整段不输出（**不截断**，截断会切开标签或实体）。旧库 `vod_content` 是 MEDIUMTEXT（`application/install/sql/install.sql:756`），列宽不构成限制，上限按第 3.5 节的耗时确定。
 2. jsoup 以 `<body>` 为上下文按 HTML5 片段规则解析。字符引用在这一步**按浏览器规则解码一次**。
-3. 整段删除（连同内容）：`script style template noscript noembed noframes xmp plaintext textarea title iframe frame frameset object embed applet param portal fencedframe form input button select option optgroup datalist output fieldset legend label keygen isindex svg math audio video source track canvas map area link meta base head dialog slot`。
-4. jsoup `Cleaner` 按白名单重建：白名单外的元素去掉标签、保留文字和子元素（如 `font`、`center`、自定义元素）；白名单外属性、注释、CDATA、处理指令一律丢弃。
-5. 属性取值校验（3.3 节）。
+3. 在解析得到的树上逐个元素判断（一次遍历，`mark`）。整段删除（连同内容）：`script style template noscript noembed noframes xmp plaintext textarea title iframe frame frameset object embed applet param portal fencedframe form input button select option optgroup datalist output fieldset legend label keygen isindex svg math audio video source track canvas map area link meta base head dialog slot`。
+4. 同一遍历中校验属性取值与地址（3.3 节）。被拒绝的元素只**改名为标记**（整段删除的先清空子节点），不在兄弟列表里逐个删除：jsoup 每次删除/去标签都要重排其后的兄弟节点，几万个兄弟元素时是平方级（实测 47 500 个未闭合 `<a>` 要 12 秒，改后 0.1 秒）。
+5. jsoup `Cleaner` 按白名单一次复制出新文档：标记与白名单外的元素去掉标签、保留文字和子元素（如 `font`、`center`、自定义元素；整段删除的已无子节点），白名单外属性、注释、CDATA、处理指令一律丢弃。
 6. 文字与属性值中的控制字符（制表、换行、换页、回车除外）与不成对的代理项替换为 U+FFFD。
 7. 序列化：`prettyPrint=false`、UTF-8、`EscapeMode.base`；文本转义 `& < >` 与 `&nbsp;`，属性值一律双引号并转义 `& " < >`；中文原样输出；`<pre>` 第一个文字以换行开头时按 HTML 序列化规范多写一个换行。
-8. **稳定化**：按浏览器规则重新解析输出、再序列化，直到不再变化（最多 3 次），再确认只含白名单元素/属性、`href`/`src` 都能通过 `SafeUrl`、没有注释。去掉标签后白名单元素可能落在 HTML 不允许的位置（如 `<table>` 下直接是 `<i>`，浏览器会把它移到表格前），这一步保证浏览器得到的 DOM 就是校验过的结构（`Finding.STRUCTURE_NORMALIZED`）。不收敛或检查不通过 → `UNSTABLE`，整段不输出（防御性分支；修复 `<pre>` 换行问题后，3 000 条测试内随机输入与 200 000 条一次性随机输入中均未出现）。
+8. **稳定化**：按浏览器规则重新解析输出、再序列化，直到不再变化（最多 3 次），再确认只含白名单元素/属性、`href`/`src` 都能通过 `SafeUrl`、没有注释。去掉标签后白名单元素可能落在 HTML 不允许的位置（如 `<table>` 下直接是 `<i>`，浏览器会把它移到表格前），这一步保证浏览器得到的 DOM 就是校验过的结构（`Finding.STRUCTURE_NORMALIZED`）。不收敛或检查不通过 → `UNSTABLE`，整段不输出（防御性分支；修复 `<pre>` 换行问题后，3 000 条测试内随机输入与 200 000 条一次性随机输入中均未出现；表格嵌套超过 jsoup 的 512 层深度上限时会出现，有测试）。
+9. 输出超过 500 000 个字符 → `TOO_LONG`。HTML5 的格式元素重建会放大输出（`<p><i>x` 重复时约 5 倍）。
 
 #### 3.2 白名单
 
@@ -72,10 +73,22 @@
 
 #### 3.4 结果模型
 
-- `Outcome`：`SANITIZED`（结果可能为空，如输入只有脚本）、`EMPTY`、`TOO_LONG`、`UNSTABLE`。后三者 `html` 为 `SafeHtml.EMPTY`；结果只有空白时也为 `SafeHtml.EMPTY`。
-- `Finding`（只用于统计/诊断，不含原文）：`DANGEROUS_ELEMENT_REMOVED`、`ELEMENT_UNWRAPPED`、`ATTRIBUTE_REMOVED`、`LINK_REJECTED`、`IMAGE_REJECTED`、`NON_CONTENT_REMOVED`、`STRUCTURE_NORMALIZED`。片段中 `<body onload>` 之类的属性由解析器按 HTML5 规则直接忽略，不计入 findings。
+- `Outcome`：`SANITIZED`（结果可能为空，如输入只有脚本）、`EMPTY`、`TOO_LONG`（输入或输出超限）、`UNSTABLE`。后三者 `html` 为 `SafeHtml.EMPTY`；结果只有空白时也为 `SafeHtml.EMPTY`。
+- `Finding`（只用于统计/诊断，不含原文）：`DANGEROUS_ELEMENT_REMOVED`、`ELEMENT_UNWRAPPED`、`ATTRIBUTE_REMOVED`、`LINK_REJECTED`、`IMAGE_REJECTED`、`NON_CONTENT_REMOVED`、`STRUCTURE_NORMALIZED`。`ATTRIBUTE_REMOVED` 只计保留下来的元素上删掉的属性；去掉标签或整段删除的元素，属性随之丢弃，不另计。片段中 `<body onload>` 之类的属性由解析器按 HTML5 规则直接忽略，不计入 findings。
 - 过滤器与结果都不写日志；`SafeHtml.toString()` 只给长度。页面任务若要记录，只能记录 `Outcome`/`Finding`，不得记录原文、cookie、凭证或 SQL 参数。
 - 不是授权、观看密码、版权或播放处理；这些仍按 `05-site-skeleton.md` 第 7 节由页面任务处理。
+
+#### 3.5 耗时（本机 JDK 21，单线程；预热后每种输入 5 次，取中位数/最大值；一次性程序测得，未提交）
+
+| 输入（接近 100 000 字符上限） | 中位数 / 最大 | 其中 jsoup 解析一次 | 结果 |
+|---|---|---|---|
+| 纯文字、大量 `&amp;`、`<pre>` 加换行 | 8～27 ms / ≤ 41 ms | ≤ 11 ms | SANITIZED |
+| 33 000 个未闭合 `<a>`、4 500 个被拒图片、5 800 个 `<script>`、3 900 个被拒链接、5 800 个 `<font>` | 27～67 ms / ≤ 180 ms | ≤ 48 ms | SANITIZED（有测试，上限 2 s） |
+| `<div>` 嵌套、`<i><table>` 交错、未闭合 `<b>`、`<li>` | 280～602 ms / ≤ 856 ms | 72～336 ms | SANITIZED |
+| `<p><i>x` 重复 | 221 ms / 257 ms | 33 ms | TOO_LONG（输出超限） |
+| `<table><td>` 嵌套 | 671 ms / 830 ms | 451 ms | UNSTABLE |
+
+最坏情况不到 1 s/次，主要花在 jsoup 自身的解析与稳定化时的重新解析（正常内容最多解析两次）。详情页接入时应缓存过滤结果（按 vod_id + vod_time），不在每次请求时重算；是否需要更低的上限随页面任务按真实样本决定。
 
 ### 4. 实体处理与字段编码约定
 
@@ -121,14 +134,14 @@
 | 测试 | 内容 |
 |---|---|
 | `RichTextSanitizerGoldenTest` | 95 条向量逐字比较输出与 findings；每条输出用 jsoup 按浏览器规则重新解析，断言只含白名单元素/属性、无 `on*`/`style`/注释/脚本数据、`href`/`src` 能通过 `SafeUrl`、外链 `rel` 正确、无控制字符与不成对代理项；再过滤一次不变且无改动；重新解析再序列化不变。8 类与 7 种 Finding 均有覆盖（测试检查）。img_api 前缀与旧 `mac_url_img` 一样不是幂等的（`/img.php?url=https://cdn…` 仍命中 img_key），稳定性检查用去掉 img_key 的同一配置，另有测试固定这一行为 |
-| `RichTextSanitizerTest` | null/空/全角空白；恰好上限与超出 1 个字符；15 000 层嵌套不栈溢出；不成对代理项 → U+FFFD 且可严格 UTF-8 编码；3 000 条固定种子随机输入（含 `<pre>`、表格、各种危险片段）不抛异常、满足不变量、稳定；200 次并行调用结果一致；合成标记不出现在日志与 `toString()`；`SafeHtml` 无公开构造器；稳定化的失败分支；pom 固定 jsoup 1.23.2 且没有其他过滤库 |
+| `RichTextSanitizerTest` | null/空/全角空白；恰好上限与超出 1 个字符；9 000 层嵌套不栈溢出；大量兄弟元素被删除时不超过 2 秒；输出超限；超深表格嵌套按 `UNSTABLE` 不输出；不成对代理项 → U+FFFD 且可严格 UTF-8 编码；3 000 条固定种子随机输入（含 `<pre>`、表格、各种危险片段）不抛异常、满足不变量、稳定；200 次并行调用结果一致；合成标记不出现在日志与 `toString()`；`SafeHtml` 无公开构造器；稳定化的失败分支；pom 固定 jsoup 1.23.2 且没有其他过滤库 |
 | `LegacyTextEntitiesTest` | 29 条实体向量（含往返）；只解一层；超长/未知名称；`&#0;`～`&#160;` 解码结果不含控制字符 |
 | `SiteRichTextTemplateTest` | 第 5 节的模板配合与属性误用 |
 | `ModuleBoundaryTest` | site 禁止 jsoup 网络 API（含合成违规样本自检） |
 
-另做过一次性随机测试（未提交）：4 个种子共 200 000 条输入，0 条违反安全不变量、0 条不幂等、0 条 `UNSTABLE`，377 条触发结构调整。
+另做过一次性随机测试（未提交）：4 个种子共 200 000 条输入，0 条违反安全不变量、0 条不幂等、0 条 `UNSTABLE`，377 条触发结构调整。这组随机测试先后发现并修复了两个问题：去掉标签后的 foster parenting（第 3.1 节第 8 步）与 `<pre>` 开头换行不收敛。另尝试用 Codex CLI 做独立安全评审，因其内容安全策略中断、未给出结论；它的探测中发现的 12 秒耗时输入已在第 3.1 节第 4 步修复。
 
-**未覆盖**：没有可用的脱敏真实 `vod_content` 样本，向量全部为合成值；真实数据中的编辑器产物（大量 `style`/`class`、`<font>`、表格布局、外链图片域名分布）、实体分布、超长正文比例都未知，接入详情页前应用脱敏样本跑一遍并统计 Finding；未用真实浏览器做 DOM 对比（以 jsoup 的 HTML5 解析为参照）；性能只做了单测量级（单条 20 万字符输入在测试中完成），没有压测。
+**未覆盖**：没有可用的脱敏真实 `vod_content` 样本，向量全部为合成值；真实数据中的编辑器产物（大量 `style`/`class`、`<font>`、表格布局、外链图片域名分布）、实体分布、超长正文比例都未知，接入详情页前应用脱敏样本跑一遍并统计 Finding；未用真实浏览器做 DOM 对比（以 jsoup 的 HTML5 解析为参照）；性能只有第 3.5 节的单次测量，没有并发压测。
 
 ### 7. 与旧版的差异
 
@@ -142,7 +155,7 @@
 | 协议相对正文图片 | 浏览器按页面协议补全 | 按 base-url 协议补全（同 3.3 节，待确认） |
 | 正文图片 img_key | `mac_url_content_img` 只匹配 `[\w/\-:.]*` 字符的地址并在全文 `str_replace` | 每个 `src` 单独按 `mac_url_img` 规则处理 |
 | 正文文字里的 `mac:` | `mac_url_content_img` 全文替换（`imac:` 会变成 `imhttp:`） | 只处理图片地址，文字不变 |
-| 超过 200 000 字符的正文 | 输出 | 不输出（`TOO_LONG`） |
+| 超过 100 000 字符的正文，或过滤后超过 500 000 字符 | 输出 | 不输出（`TOO_LONG`） |
 | 外链 | 原样 | 加 `rel="nofollow noopener noreferrer"` |
 | 普通文本中不带分号的引用（`&copy`、`&#65`） | 浏览器解码 | 原样显示 |
 | 普通文本中的标签（`<b>`） | 浏览器当作标签 | 显示为字面文字（采集数据已 `strip_tags`，后台录入的才可能有） |
@@ -153,3 +166,5 @@
 - 3.3 节协议相对图片的处理需要队长确认。
 - 页面任务：`SafeHtml` → `Content` 适配类、详情页视图模型、upload 配置绑定、按 4.3 节为文本字段接入 `decodeOnce`、用脱敏真实样本复核并决定是否需要放宽白名单（如 `style` 中的颜色/对齐，需要单独的 CSS 白名单评审）。
 - jsoup 升级时须重跑全部向量与随机测试；序列化细节（转义字符集、`<pre>` 换行）变化会改变输出字节。
+- 正文图片较多时，`ImageUrlNormalizer` 对每个地址执行后台配置的 `img_key` 正则；该正则由管理员配置（MACC-11 校验了语法，未限制回溯），与旧版 PCRE 相比没有回溯上限。正文中的图片数量远多于 `vod_pic`，建议页面任务评审是否限制 `img_key` 的写法。
+- `SafeUrl` 接受端口号超出 65535 的地址（如 `http://x.test:99999/`，`java.net.URI` 不检查范围）；浏览器视为无效地址、不会跳转，无安全影响，未改动（不属于本任务文件）。

@@ -59,13 +59,57 @@ class RichTextSanitizerTest {
 
     @Test
     void deepNestingDoesNotOverflowAndStaysSafe() {
-        String deep = "<div>".repeat(15_000) + "<script>alert(1)</script>深<img src=x onerror=1>"
-                + "</div>".repeat(15_000);
+        String deep = "<div>".repeat(9_000) + "<script>alert(1)</script>深<img src=x onerror=1>"
+                + "</div>".repeat(9_000);
         Result r = SANITIZER.sanitize(deep);
         assertThat(r.outcome()).isEqualTo(Outcome.SANITIZED);
         assertThat(r.html().html()).contains("深").doesNotContain("script").doesNotContain("onerror");
         RichTextSanitizerGoldenTest.assertSafe(r.html().html());
         RichTextSanitizerGoldenTest.assertStable(SANITIZER, r.html().html());
+    }
+
+    /**
+     * 大量兄弟元素被删除/去标签时不能是平方级：曾经逐个 unwrap/remove，20 000 个未闭合 {@code <a>x} 要 1.7 秒、
+     * 47 500 个要 12 秒；改为标记后由 Cleaner 一次复制，47 500 个约 0.1 秒。每种写法都接近输入上限，上限 2 秒留出机器差异。
+     */
+    @Test
+    void manySiblingRejectionsStayFast() {
+        List<String> inputs = List.of(
+                "<a>".repeat(33_000),
+                "<img src=javascript:x>".repeat(4_500),
+                "<script></script>".repeat(5_800),
+                "<a href=//evil.test>y</a>".repeat(3_900),
+                "<font color=red>z".repeat(5_800));
+        for (String input : inputs) {
+            assertThat(input.length()).isLessThanOrEqualTo(RichTextSanitizer.MAX_INPUT_LENGTH);
+            org.junit.jupiter.api.Assertions.assertTimeout(java.time.Duration.ofSeconds(2), () -> {
+                Result r = SANITIZER.sanitize(input);
+                assertThat(r.outcome()).isEqualTo(Outcome.SANITIZED);
+                assertThat(r.html().html()).doesNotContain("<a").doesNotContain("<img").doesNotContain("<script")
+                        .doesNotContain("<font");
+            });
+        }
+    }
+
+    /** 格式元素重建会放大输出（{@code <p><i>x} 约 5 倍）；超过输出上限时整段不输出。 */
+    @Test
+    void outputLimitStopsAmplification() {
+        String input = "<p><i>x".repeat(14_142);
+        assertThat(input.length()).isLessThanOrEqualTo(RichTextSanitizer.MAX_INPUT_LENGTH);
+        Result r = SANITIZER.sanitize(input);
+        assertThat(r.outcome()).isEqualTo(Outcome.TOO_LONG);
+        assertThat(r.html()).isSameAs(SafeHtml.EMPTY);
+        // 同样的写法规模小时正常输出
+        assertThat(SANITIZER.sanitize("<p><i>x".repeat(100)).outcome()).isEqualTo(Outcome.SANITIZED);
+    }
+
+    /** 表格嵌套超过 jsoup 的 512 层深度上限时，重新解析不收敛，按防御性分支整段不输出。 */
+    @Test
+    void absurdTableNestingFailsClosed() {
+        Result r = SANITIZER.sanitize("<table><td>".repeat(2_000) + "正文");
+        assertThat(r.outcome()).isEqualTo(Outcome.UNSTABLE);
+        assertThat(r.html()).isSameAs(SafeHtml.EMPTY);
+        assertThat(SANITIZER.sanitize("<table><td>".repeat(20) + "正文").outcome()).isEqualTo(Outcome.SANITIZED);
     }
 
     @Test
