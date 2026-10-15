@@ -11,17 +11,23 @@ import com.maccms.backend.content.application.view.CategoryRefDto;
 import com.maccms.backend.content.application.view.VideoDetailDto;
 import com.maccms.backend.content.application.view.VideoSummaryDto;
 import com.maccms.backend.content.infrastructure.GroupMapper;
+import com.maccms.backend.content.infrastructure.StatementTimeouts;
 import com.maccms.backend.content.infrastructure.TypeMapper;
 import com.maccms.backend.content.infrastructure.TypeRow;
 import com.maccms.backend.content.infrastructure.VodDetailRow;
+import com.maccms.backend.content.infrastructure.VodFilterCriteria;
 import com.maccms.backend.content.infrastructure.VodMapper;
 import com.maccms.backend.content.infrastructure.VodSummaryRow;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.Semaphore;
 import java.util.function.Supplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.dao.TransientDataAccessException;
 import org.springframework.stereotype.Service;
@@ -38,6 +44,11 @@ import tools.jackson.databind.json.JsonMapper;
  * 调用方（公开 API、site 页面）不需要、也不应依赖 Spring DAO 类型（MACC-14）。对外 JSON 与转换前相同：
  * {@code {"code":"SERVICE_UNAVAILABLE","message":"服务暂时不可用","fieldErrors":[]}}；日志沿用 "database unavailable"
  * + 类型链，不含 message。其他数据访问异常不转换，仍由全局处理返回 500。
+ *
+ * <p>搜索/筛选（契约 1.1.0，09 方案第 6.3 节）：带 keyword/classes 的请求要求 {@code maccms.content.search.enabled=true}
+ * （否则 400），并经进程内并发上限（{@code max-concurrent}，不等待）进入，拿不到许可即 503；带任一新条件的语句有服务端
+ * 执行时限，超时（MySQL 3024）同样归为 503。两种新 503 的响应体与数据库不可用时逐字相同，日志只有固定说明与类型链，
+ * 不记录条件值。不带新条件的请求不经过这两项，SQL 与 1.0.0 相同。
  */
 @Service
 public class ContentReadService {
@@ -51,13 +62,31 @@ public class ContentReadService {
     private final GroupMapper groupMapper;
     private final VodMapper vodMapper;
     private final ContentProperties properties;
+    private final SearchSettings search;
+    private final Semaphore searchPermits;
 
+    /** 连接池大小取 Hikari 的同一配置（application.yml 中 MACCMS_DB_POOL_SIZE，默认 10），用于校验并发上限。 */
+    @Autowired
     public ContentReadService(TypeMapper typeMapper, GroupMapper groupMapper, VodMapper vodMapper,
-                              ContentProperties properties) {
+                              ContentProperties properties,
+                              @Value("${spring.datasource.hikari.maximum-pool-size:10}") int poolSize) {
         this.typeMapper = typeMapper;
         this.groupMapper = groupMapper;
         this.vodMapper = vodMapper;
         this.properties = properties;
+        this.search = SearchSettings.from(properties.search(), poolSize);
+        this.searchPermits = new Semaphore(search.maxConcurrent());
+    }
+
+    /** 测试与无 Spring 场景：连接池按默认 10。 */
+    public ContentReadService(TypeMapper typeMapper, GroupMapper groupMapper, VodMapper vodMapper,
+                              ContentProperties properties) {
+        this(typeMapper, groupMapper, vodMapper, properties, 10);
+    }
+
+    /** 是否接受包含匹配参数 keyword、classes（{@code maccms.content.search.enabled}）。 */
+    public boolean searchEnabled() {
+        return search.enabled();
     }
 
     public CategoryListResponse listCategories() {
@@ -68,21 +97,50 @@ public class ContentReadService {
     }
 
     public PageResponse<VideoSummaryDto> listVideos(VideoListQuery query) {
-        return read(() -> doListVideos(query));
+        VideoFilter filter = query.filter();
+        if (!filter.usesContainsMatch()) {
+            return read(() -> doListVideos(query));
+        }
+        if (!search.enabled()) {
+            throw ApiException.invalidParameter(filter.keyword() != null ? "keyword" : "classes",
+                    VideoFilter.SEARCH_DISABLED);
+        }
+        if (!searchPermits.tryAcquire()) {
+            log.warn("content search rejected: concurrency limit reached");
+            throw unavailable();
+        }
+        try {
+            return read(() -> doListVideos(query));
+        } finally {
+            searchPermits.release();
+        }
     }
 
     public VideoDetailDto getVideo(long id) {
         return read(() -> doGetVideo(id));
     }
 
-    /** 执行一次只读查询，把数据库连接类故障转换为 SERVICE_UNAVAILABLE；其他异常原样抛出。 */
+    /**
+     * 执行一次只读查询，把数据库连接类故障与服务端执行时限超时（搜索/筛选语句的 MAX_EXECUTION_TIME）转换为
+     * SERVICE_UNAVAILABLE；其他异常原样抛出。
+     */
     static <T> T read(Supplier<T> query) {
         try {
             return query.get();
         } catch (DataAccessResourceFailureException | TransientDataAccessException e) {
             log.error("database unavailable: {}", SafeExceptionLog.typeChain(e));
-            throw new ApiException(ErrorCode.SERVICE_UNAVAILABLE, UNAVAILABLE_MESSAGE);
+            throw unavailable();
+        } catch (DataAccessException e) {
+            if (!StatementTimeouts.isServerTimeout(e)) {
+                throw e;
+            }
+            log.warn("database statement timeout: {}", SafeExceptionLog.typeChain(e));
+            throw unavailable();
         }
+    }
+
+    private static ApiException unavailable() {
+        return new ApiException(ErrorCode.SERVICE_UNAVAILABLE, UNAVAILABLE_MESSAGE);
     }
 
     private PageResponse<VideoSummaryDto> doListVideos(VideoListQuery query) {
@@ -99,14 +157,27 @@ public class ContentReadService {
         if (typeIds.isEmpty()) {
             return PageResponse.of(List.of(), query.page(), query.pageSize(), 0);
         }
-        long total = vodMapper.countPublished(typeIds);
+        VodFilterCriteria criteria = criteria(query.filter());
+        long total = criteria == null ? vodMapper.countPublished(typeIds)
+                : vodMapper.countPublishedMatching(typeIds, criteria);
         if (total == 0 || query.offset() >= total) {
             return PageResponse.of(List.of(), query.page(), query.pageSize(), total);
         }
-        List<VodSummaryRow> rows = vodMapper.selectPublishedPage(typeIds, query.sort(), query.descending(),
-                query.offset(), query.pageSize());
+        List<VodSummaryRow> rows = criteria == null
+                ? vodMapper.selectPublishedPage(typeIds, query.sort(), query.descending(), query.offset(),
+                        query.pageSize())
+                : vodMapper.selectPublishedMatchingPage(typeIds, criteria, query.sort(), query.descending(),
+                        query.offset(), query.pageSize());
         List<VideoSummaryDto> items = rows.stream().map(r -> toSummary(r, catalog)).toList();
         return PageResponse.of(items, query.page(), query.pageSize(), total);
+    }
+
+    /** 不带新条件时返回 null，使用与 1.0.0 相同的语句。 */
+    private static VodFilterCriteria criteria(VideoFilter f) {
+        if (f.isEmpty()) {
+            return null;
+        }
+        return new VodFilterCriteria(f.level(), f.year(), f.area(), f.lang(), f.classesPattern(), f.keywordPatterns());
     }
 
     private VideoDetailDto doGetVideo(long id) {

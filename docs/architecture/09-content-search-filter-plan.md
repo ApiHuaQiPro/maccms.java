@@ -1,7 +1,7 @@
 ## 视频搜索与多条件筛选：只读契约与下一批实施方案（MACC-16）
 
-> **状态：方案草案（第 4 版，按队长 2026-10-13 要求对齐已验收的 MACC-17 base-url 长度边界），待队长审查。** 本文只做设计，**不实现**任何代码；文中新接口、新参数、新配置、新页面全部是**拟实施**，不是已实现能力。
-> 配套接口草案：`docs/contracts/content-search-filter.draft.openapi.yaml`（以下简称"草案"）。已发布契约 `docs/contracts/content-read.openapi.yaml`（1.0.0，以下简称"契约"）不变。
+> **状态：第 4 版已验收（父任务 MACC-2 记录）。T1（content API/SQL 与真实 MySQL 验证）已由 MACC-18 实施**：6 个新参数、`maccms.content.search.*` 配置、执行时限与并发上限已是已实现能力，正式契约升为 `docs/contracts/content-read.openapi.yaml` 1.1.0，草案文件已合并后删除；实施与本方案的差异见第 12 节。T2（性能测量）、T3（SSR 搜索页）、T4（样式）**仍未实施**，文中这些部分仍是拟实施。以下第 0–11 节保持第 4 版原文（"草案"指已并入正式契约的那份接口草案）。
+> 配套接口草案（已并入契约 1.1.0 并删除）：`docs/contracts/content-search-filter.draft.openapi.yaml`（以下简称"草案"）。已发布契约 `docs/contracts/content-read.openapi.yaml`（以下简称"契约"）。
 >
 > 输入：父任务 MACC-2 评论、`AGENTS.md`、`docs/architecture/02-agent-development-rules.md`、`docs/architecture/03-frontend-readonly-plan.md`、`docs/architecture/08-site-pages.md`、`docs/frontend/02-url-golden-vectors.md`、契约，以及下文逐条引用的旧代码与 Java 代码。
 >
@@ -597,3 +597,21 @@ base-url 子目录：与三页相同，反向代理把前缀映射到应用根�
 - 关键字出现在 URL 中，部署时 nginx/CDN 访问日志会记录；需在部署评审中处理。
 - SSR 搜索链接是固定路径 + 查询串；将来若把这类请求交还 PHP，PHP 的二次解码会把含 `%`、`+` 的值解释成不同的值（第 7.2.2 节），交还方案须在部署评审中处理。浏览器、代理对 2048 字符以内的查询串是否有更短的限制**【待核实】**（与部署环境有关）。
 - 本方案只是设计；后端/前端实现由队长审查并确定方案后另行派发。
+
+### 12. T1 实施记录（MACC-18）
+
+按第 8 节 T1 实施，D1–D3 取第 10 节推荐值（关键字匹配 `vod_name`/`vod_sub`/`vod_en`；不复刻频率限制与验证码；不承接 `vod/show`）。包含匹配默认关闭，开启前仍须完成 T2 测量并结合线上配置评估。下表只列与方案文字不同或方案要求"实施时确认"的地方。
+
+| 项 | 方案 | 实施 | 原因 / 证据 |
+|---|---|---|---|
+| 无新参数时的 SQL | 在 `publishedInTypes` 中用 `<if test="filter != null">` 追加条件 | 不带新条件时仍调用原 `countPublished`/`selectPublishedPage`；带条件时调用新增的 `countPublishedMatching`/`selectPublishedMatchingPage`。四条语句共用 `publishedInTypes`、列清单与新抽出的排序/分页片段 `pageOrderAndLimit`，带条件的两条共用 `matchingConditions` 并带 `MAX_EXECUTION_TIME(3000)` | 原语句不经过任何新分支；`backend/src/test/java/com/maccms/backend/content/infrastructure/VodMapperBoundSqlTest.java` 以本任务修改 XML **之前**生成的黄金文件（count 1 条 + 11 种排序 × 2 方向 = 23 条，空白规范化后比较）锁定，且原有 Mockito 契约测试不必修改 |
+| 条件参数类型 | Mapper 使用 `VideoFilter` | Mapper 使用 infrastructure 层的 `VodFilterCriteria`（level/year/area/lang + 已转义的 LIKE 模式），由 `ContentReadService` 从 `VideoFilter` 构造 | `ModuleBoundaryTest` 禁止 infrastructure 新增对 application 的引用（已知例外只有 `VideoSort`） |
+| 超时异常翻译 | 实施时实测 | MySQL 5.7.44 实测：语句超过 `MAX_EXECUTION_TIME` 报 3024，Spring 翻译为 `UncategorizedSQLException <- SQLException`（不是 `TransientDataAccessException`），原样会是 500。`ContentReadService.read` 按错误码 3024（`content.infrastructure.StatementTimeouts`，只看错误码、不读 message）补一条 503 映射，日志 `database statement timeout: <类型链>` | `ContentSearchMySqlIT`：另一会话 `LOCK TABLES mac_vod WRITE` 时带 `area` 的请求约 3.7 s 后 503（说明时限也覆盖等锁时间，而不是 10 s JDBC 兜底） |
+| 非法 UTF-8 | 实施时实测容器处理 | Tomcat 11 遇到任一参数的百分号编码非法（`%FF`、`%`、`%E4%B8`）时**拒绝解析整个查询串**（`InvalidParameterException`），1.0.0 下即 500。列表接口改为在方法内读取参数（不再用 `@RequestParam`，否则在进入方法前就已失败）：先扫描原始查询串；只有非法编码全部出现在 6 个新参数中时，改用同一表单规则自行解码一次的结果，得到 400 + 该参数名；非法编码出现在既有参数、未知参数或键名中时原样抛出，**仍是 1.0.0 的 500** | `content.api.RawQueryParams`；`ContentSearchRealHttpTest`（真实 Tomcat、原始套接字）锁定两类行为。MockMvc 不经过容器解码，另以 `URI.create` 覆盖 |
+| 既有参数重复 | 实施时确认并锁定 | 与 1.0.0 相同：各值逗号连接后按原规则判错（`page=1&page=2` → 400 page，`order=&order=` → 400 order） | `ContentApiContractTest`、`ContentSearchRealHttpTest` |
+| 并发上限的位置 | `ContentReadService` 内 `Semaphore.tryAcquire()` | 同方案；许可覆盖整次读取（含分类目录），所以并发满时带不可见 `categoryId` 的包含匹配请求得到 503 而不是 404 | 503 与 404 都不泄露数据；客户端按契约稍后重试 |
+| 配置校验 | `max-concurrent` 1..连接池大小−1，启动校验 | `maccms.content.search.*` 按原始字符串绑定、`SearchSettings.from` 校验（与 site 配置相同做法），非法值启动失败，信息只列配置项名；连接池大小取 `spring.datasource.hikari.maximum-pool-size`（即 `MACCMS_DB_POOL_SIZE`） | `SearchSettingsTest`（含整应用启动失败且不回显取值） |
+| 集成测试 | 扩展既有 `ContentApiMySqlIT` | 新增 `ContentSearchMySqlIT`，流程与既有 IT 相同（一次性库、合成数据、请求前后全部表 CHECKSUM/行数不变、只删除该库并确认已不存在）；既有 IT 未改 | 既有 IT 对其数据集的完整列表逐项断言，加入搜索样本会改变那些断言 |
+| `utf8` 列与连接字符集 | 第 6.2 节要求 EXPLAIN 确认索引 | 未做（属于 T2）。正确性已在真实 MySQL 上验证：大小写不敏感、`%`/`_`/`!`/`\`/逗号字面匹配、实体变体 | — |
+
+与旧 PHP 的差异即第 9 节"新版"一列中 API 相关的各行（解码一次、不裁剪、`'0'` 字面值、超长 400、`%`/`_` 字面、单值、年份字符串比较、`level` 1..9、重复参数 400、实体两种形式 OR、追加 `vod_id` 稳定排序、只列可见分类、不复刻频率限制/验证码、无结果缓存、默认关闭）。SSR 相关各行要到 T3 才实现。
