@@ -83,10 +83,11 @@ class VodMapperBoundSqlTest {
             text = new String(in.readAllBytes(), StandardCharsets.UTF_8);
         }
         Map<String, String> out = new LinkedHashMap<>();
-        String[] lines = text.split("\n");
-        for (int i = 0; i + 1 < lines.length; i += 2) {
-            assertThat(lines[i]).startsWith("### ");
-            out.put(lines[i].substring(4), lines[i + 1]);
+        // lines() 同时识别 \n 与 \r\n：Windows 默认 core.autocrlf=true 检出时黄金文件为 CRLF
+        List<String> lines = text.lines().toList();
+        for (int i = 0; i + 1 < lines.size(); i += 2) {
+            assertThat(lines.get(i)).startsWith("### ");
+            out.put(lines.get(i).substring(4), lines.get(i + 1));
         }
         return out;
     }
