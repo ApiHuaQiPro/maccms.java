@@ -23,7 +23,7 @@
 |---|---|---|
 | `maccms.site.enabled` / `MACCMS_SITE_ENABLED` | `false` | 只接受 `true`/`false`（不区分大小写）；其他值启动失败。关闭时不注册任何 site 组件与路由，也不校验下列配置 |
 | `maccms.site.name` / `MACCMS_SITE_NAME` | 无，启用时必填 | 去首尾空白后 1～64 字符，无控制字符 |
-| `maccms.site.base-url` / `MACCMS_SITE_BASE_URL` | 无，启用时必填 | 小写 `http`/`https`，有主机名，无用户信息、查询串、片段、`%`、`.`/`..` 段、`//`、空白，路径以 `/` 结尾（允许子目录），≤200 字符 |
+| `maccms.site.base-url` / `MACCMS_SITE_BASE_URL` | 无，启用时必填 | 小写 `http`/`https`，有主机名，无用户信息、查询串、片段、`%`、`.`/`..` 段、`//`、空白，路径以 `/` 结尾（允许子目录），完整地址（协议、主机、端口、路径，去首尾空白后）≤768 字符，长度规则见下文 |
 | `maccms.site.keywords` / `description` / `icp` | 空 | ≤200 / ≤500 / ≤64 字符，无控制字符 |
 | `maccms.site.logo-url` | 空 | 空，或 `SafeUrl`：`http`/`https` 绝对地址（无用户信息），或以单个 `/` 开头的站内路径（拒绝 `//`、`/\`） |
 | `maccms.site.status` | `open` | `open` / `closed` |
@@ -33,6 +33,12 @@
 
 - 启用后配置缺失或不合法：启动失败，一次列出所有出错的**配置项名称与规则**，不回显取值（所有项按字符串绑定，Spring 的绑定错误分析不会打印取值）。
 - `base-url` 带子目录（如 `https://站点/sub/`）时：canonical、首页链接、样式表等页面内链接都按对外地址 `/sub/...` 生成（`SiteSettings.canonical` / `publicPath`），而本应用的路由仍挂在根路径，需要反向代理把 `/sub/` 前缀映射到本应用根路径。该映射未实现、未演练，随部署评审确定；本地只用根路径 `/`。
+- `base-url` 与生成地址的长度闭环（MACC-17）：输出到页面的 URL 都是 `SafeUrl`，总长上限 2048（`SafeUrl.MAX_LENGTH`，不变）。其中留给站内地址（相对站点根的路径，`SitePaths.MAX_LENGTH`）1280，`base-url` 得到其余的 768（`SiteSettings.MAX_BASE_URL_LENGTH = 2048 − 1280`）。因此：
+  - `base-url` ≤ 768 字符即可启动，根路径或子目录都可以，超过旧的 200 并不受限；769 字符起启动失败，错误信息给出"最多 768 个字符"，不回显取值。
+  - 任何通过 `SitePaths` 检查（≤1280 字符）的站内路径，canonical（`base-url` + 路径）≤ 768 + 1280 = 2048，页面内链接（`base-url` 的路径部分 + 路径）更短，都能构造 `SafeUrl`，不会在请求时因长度抛异常。超过 1280 的站内路径一律按"站内路径不合法"拒绝（与 `base-url` 长短无关）。
+  - 现有生成器最长的输出是旧搜索页 `vodSearch`：`wd`/`area`/`lang`/`class` 取公开接口码点上限（64/20/10/32，全为 3 字节汉字），另加 `year`/`level`/`by`/`order` 与第 1000 页，在所有支持的 URL 形态下为 1181～1235 字符，≤1280；拼上 768 字符的 `base-url` 后 canonical ≤ 2003。三页的请求路径由解析器限制在 1024 以内，生成的 canonical 路径更短。以上由 `SiteSettingsTest` 锁定（边界 199/200/201/512/767/768/769，最长 `base-url` + 最长站内路径恰为 2048，最长搜索地址）。
+  - 将来新增的站内地址（含 MACC-16 方案中的"路径 + 查询串"）也须在 1280 以内；超出时应调整预算并同步本节，不放宽 `SafeUrl`。
+  - 放宽长度不放宽其他规则：协议、主机名、用户信息、查询串、片段、`%`、`//`、`.`/`..` 段、空白与控制字符的检查对任意长度都相同（同一测试类覆盖 200 字符以上的这些非法输入）。
 - 本地合成值见 `backend/config/maccms-backend.env.example`：`MACCMS_SITE_NAME=MacCMS 本地站（合成）`、`MACCMS_SITE_BASE_URL=http://maccms.local.test/`。
 - 首批不支持：`site_tj` 统计代码、移动端独立模板、时区设置（暂无使用方）、生产缓存 TTL。
 
@@ -82,6 +88,7 @@ curl -i http://127.0.0.1:18280/_site/placeholder
 
 - 站点关闭：旧 PHP 输出关闭模板后 `die`，未设置状态码（`application/index/controller/Base.php:73-79`，代码阅读，未实测）；新版返回 503 + `Retry-After` + `no-store` + noindex。
 - 站点设置来源：旧版读 `application/extra/maccms.php` 的 `site.*`；新版只读 `maccms.site.*` 环境变量，两边由运维分别维护，并行期存在漂移风险。
+- 站点地址：旧版分为 `site.site_url`（主机名，协议取当前请求，`application/common/behavior/Init.php:64`）与 `site.install_dir`（`MAC_PATH`，同文件 `:48`），后台与安装程序都不校验格式和长度（`application/admin/view/system/config.html:29,91`、`application/install/controller/Index.php:200-212`，代码阅读）；新版合并为一个 `base-url`，要求格式合法，完整地址 ≤768 字符（见第 2 节）。这是有上限的兼容：正常的根路径与子目录（包括超过 200 字符的）都能配置，但超过 768 字符或格式不合法的旧值不能照搬。
 - 非白名单 URL（`javascript:`、协议相对地址等）的 Logo 配置在启动时被拒绝，不会输出。
 - 渲染失败返回完整 500 页（旧 PHP 的模板错误行为未核实）。
 - 没有旧版对应页面被替换：骨架只新增 `/_site/placeholder`，且默认关闭。
