@@ -236,6 +236,23 @@ class LegacyUrlParserSearchTest {
     }
 
     @Test
+    void percentEscapeDigitsMustBeAsciiHex() {
+        for (LegacyUrlStyle style : STYLES) {
+            // 全角 \uFF14\uFF11、阿拉伯-印度数字 \u0664\u0661 以及与 ASCII 混用：Character.digit 会认，%HH 语法不认
+            for (String bad : List.of("wd=%\uFF14\uFF11", "wd=%\u0664\u0661", "wd=%4\uFF11", "wd=%\u06F4a",
+                    "wd=%\uFF21\uFF11", "area=%\u0664\u0661&wd=x")) {
+                ApiException.FieldError e = invalid(style, bad);
+                assertThat(e.field()).as(bad).isEqualTo(bad.startsWith("area") ? "area" : "wd");
+                assertThat(e.message()).isEqualTo("含不允许的字符");
+            }
+            assertThat(filters(style, "wd=%41").keyword()).isEqualTo("A");
+            assertThat(filters(style, "wd=%4a").keyword()).isEqualTo("J");
+            assertThat(filters(style, "wd=%4A%4f%61").keyword()).isEqualTo("JOa");
+            assertThat(filters(style, "wd=%2541").keyword()).as("只解码一次").isEqualTo("%41");
+        }
+    }
+
+    @Test
     void unknownDuplicateAndHandoffKeys() {
         for (LegacyUrlStyle style : STYLES) {
             for (String q : List.of("foo=1", "keyword=x", "classes=x", "sort=hits", "pageSize=10", "categoryId=1",

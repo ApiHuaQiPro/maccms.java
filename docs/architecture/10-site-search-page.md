@@ -22,7 +22,7 @@
 2. 原始查询串 ≤ `MAX_SEARCH_QUERY` = 2048 → 否则 empty。三页仍是 1024 且仍拒绝查询串。
 3. 按 `&` 切分、跳过空项；键不解码、逐字比较（`WD`、`w%64`、`wd[]` 都不是 `wd`）。
 4. 出现 `s`（ThinkPHP 兼容模式）或 `actor/director/tag/letter/state/version/tid/name/ids/isend/ajax` → empty。
-5. 按出现顺序逐项：未知键 → 400 `field=query`；同键第二次出现 → 400；值按表单规则**只解码一次**（`+` 为空格，`%HH` 大小写均可），原始字符不在 0x21–0x7E、`%` 不完整或结果不是合法 UTF-8 → 400。
+5. 按出现顺序逐项：未知键 → 400 `field=query`；同键第二次出现 → 400；值按表单规则**只解码一次**（`+` 为空格，`%HH` 大小写均可，`H` 只认 ASCII `0-9`/`A-F`/`a-f`——全角 `%４１`、阿拉伯-印度数字 `%٤١` 不是转义，判 400；`?s=` 兼容路径同一解码规则，此类值交 PHP），原始字符不在 0x21–0x7E、`%` 不完整或结果不是合法 UTF-8 → 400。
 6. `by` 去首尾空白后为 `rnd` → empty。
 7. 旧站式归一：`wd/area/lang/year/level/class/by/order` 去掉首尾 W 字符（ECMAScript `\s` 集合，与 content 相同），结果为 `''` 或 `'0'` 按未传；`page` 为 `''` 按未传，否则 1..1000、无前导 0。
 8. 交给 content 的同一套校验：`VideoListQuery.parse`（`by`→`sort`、`order`）在前，`VideoFilter.parse`（`wd`→`keyword`、`class`→`classes`，码点上限、禁用字符、逗号、年份、`level` 词法与数值）在后；开关不在解析器判断，由页面在查库前判断。结果是 `SiteRoute.VodSearch(SearchFilters, page)`。
@@ -73,7 +73,7 @@
 | `SiteSearchMySqlIT`（`-Pmysql-it`） | 一次性库 `maccms_it_*`：可见范围、精确筛选、`%` 字面匹配、候选值来自 `type_extend`、分页与越界、400/404、全部表 CHECKSUM/行数前后不变、删除库并确认不存在 |
 | `backend/src/test/browser/site-search-check.mjs` | 无 JS：只用键盘 Tab 到搜索框输入并 Enter 提交、结果页 main 内每个链接都可 Tab 到达且焦点可见、Enter 筛选与下一页、400 提示关联（不在 verify 中运行） |
 
-本地浏览器实测（2026-10-16，Edge 无头，一次性库 `maccms_t3_*` + 候选 jar，结束后删库并确认不存在）：`site-search-check.mjs` 全部通过；`site-pages-check.mjs` 对三个搜索地址在 375/768/1280/1440/1920 px 无横向滚动、Tab 顺序与焦点可见、无脚本；请求前后 26 张表 CHECKSUM 与行数不变。
+本地浏览器实测（2026-10-16，Edge 无头，一次性库 `maccms_t3_*` + 候选 jar，结束后删库并确认不存在）：`site-search-check.mjs` 全部通过；`site-pages-check.mjs` 对三个搜索地址在 375/768/1280/1440/1920 px 无横向滚动、Tab 顺序与焦点可见、无脚本；请求前后 26 张表 CHECKSUM 与行数不变。MACC-20 修订（ASCII 十六进制）后于同日按同样方式重跑：一次性库 `maccms_t3_*`，关键字 `合成`/`分页样本`（含 Enter 下一页 → 第 2 / 2 页），三个地址五种视口无横向滚动，26 张表 CHECKSUM 与行数不变，删库后确认不存在。
 
 ### 6. 与旧 PHP 的差异（本任务实现的 SSR 部分；API 部分见 09 方案第 9、12 节）
 

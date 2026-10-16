@@ -5,6 +5,8 @@ import static com.maccms.backend.site.web.SiteSearchFixtures.SECRET_KEYWORD;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.maccms.backend.MaccmsBackendApplication;
@@ -115,7 +117,7 @@ class SiteSearchRealHttpTest {
     /** 非法百分号编码：Tomcat 不解析查询串参数（控制器不调用 getParameter），由解析器判 400，页面不回显。 */
     @ParameterizedTest
     @ValueSource(strings = {"?wd=%FF", "?wd=%E4%B8", "?wd=%", "?wd=%ZZ", "?foo=" + LEAK, "?wd=&wd=" + LEAK,
-            "?page=01", "?level=00000000009"})
+            "?page=01", "?level=00000000009", "?wd=%%EF%BC%94%EF%BC%91"})
     void invalidParametersAreComplete400(String query, CapturedOutput output) throws Exception {
         RawHttp.Response r = RawHttp.get(port, SEARCH + query);
         assertComplete(r, 400);
@@ -124,6 +126,19 @@ class SiteSearchRealHttpTest {
         assertThat(doc.select("link[rel=canonical]")).isEmpty();
         assertThat(r.body()).doesNotContain(LEAK);
         assertThat(output.getAll()).doesNotContain(LEAK);
+    }
+
+    /**
+     * %HH 只认 ASCII 十六进制。全角、阿拉伯-印度数字原样（UTF-8 字节）放进请求行时，Tomcat 先以 400 拒绝，请求到不了
+     * 控制器与 content；解析器自身对这些字符的拒绝见 LegacyUrlParserSearchTest#percentEscapeDigitsMustBeAsciiHex。
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {"?wd=%\uFF14\uFF11", "?wd=%\u0664\u0661"})
+    void rawNonAsciiInRequestLineIsRejectedByContainer(String query) throws Exception {
+        RawHttp.Response r = RawHttp.get(port, SEARCH + query);
+        assertThat(r.status()).isEqualTo(400);
+        assertThat(r.body()).doesNotContain("搜索");
+        verify(content, never()).listVideos(any());
     }
 
     @Test

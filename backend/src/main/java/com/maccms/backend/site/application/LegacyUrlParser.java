@@ -351,8 +351,8 @@ public final class LegacyUrlParser {
                 if (i + 2 >= s.length()) {
                     return Optional.empty();
                 }
-                int hi = Character.digit(s.charAt(i + 1), 16);
-                int lo = Character.digit(s.charAt(i + 2), 16);
+                int hi = hexDigit(s.charAt(i + 1));
+                int lo = hexDigit(s.charAt(i + 2));
                 if (hi < 0 || lo < 0) {
                     return Optional.empty();
                 }
@@ -371,5 +371,19 @@ public final class LegacyUrlParser {
         } catch (CharacterCodingException e) {
             return Optional.empty();
         }
+    }
+
+    /** %HH 的一位：只认 ASCII 0-9、A-F、a-f，否则 -1（Character.digit 还会认全角、阿拉伯-印度等 Unicode 数字）。 */
+    private static int hexDigit(char c) {
+        if (c >= '0' && c <= '9') {
+            return c - '0';
+        }
+        if (c >= 'A' && c <= 'F') {
+            return c - 'A' + 10;
+        }
+        if (c >= 'a' && c <= 'f') {
+            return c - 'a' + 10;
+        }
+        return -1;
     }
 }

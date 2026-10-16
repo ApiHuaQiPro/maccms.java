@@ -39,6 +39,7 @@ class LegacyUrlParserTest {
             "/index.php/vod/detail/id/9|NULL|detail 9|false",
             "/index.php/vod/detail/id/9/|NULL|detail 9|false",
             "/|s=%2Fvod%2Fdetail%2Fid%2F9|detail 9|false",
+            "/|s=%2fvod%2fdetail%2fid%2F%39|detail 9|false",
             "/index.php|s=vod/detail/id/9.html|detail 9|false",
             "/index.php/index/index.html|NULL|home|false"})
     void recognisedForms(String path, String query, String expected, boolean canonical) {
@@ -74,7 +75,9 @@ class LegacyUrlParserTest {
     @ValueSource(strings = {
             "s=//evil.invalid/vod/detail/id/1", "s=http://evil.invalid/", "s=javascript:alert(1)", "s=vod/detail/id/1%0A",
             "s=vod%5Cdetail/id/1", "s=vod/detail/id/1/../2", "s=%2E%2E/vod/detail/id/1", "s=%FF", "s=%E5%90", "s=%G0",
-            "s=%2", "s=vod-detail-id-1", "s=VOD/DETAIL/ID/1", "s=vod detail"})
+            "s=%2", "s=vod-detail-id-1", "s=VOD/DETAIL/ID/1", "s=vod detail",
+            // %HH 只认 ASCII 十六进制：全角、阿拉伯-印度数字不是转义
+            "s=vod/detail/id/%\uFF131", "s=vod/detail/id/%\u0663\u0661", "s=%\uFF12Fvod/detail/id/1"})
     void maliciousCompatParameterIsNotRecognised(String query) {
         assertThat(PARSER.parse("/", query)).as(query).isEmpty();
     }
