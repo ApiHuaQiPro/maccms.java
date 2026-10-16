@@ -157,7 +157,7 @@ function build_source($id)
  * $in: pathInfo（Web 服务器交给 PHP 的 PATH_INFO，已解码）| s（?s= 参数）；query（其余 GET 参数）。
  * CLI 下 Request::pathinfo() 读 argv[1]（Request.php:407-409），与 FPM 读 PATH_INFO 的效果相同。
  */
-function php_parse(array $in)
+function php_parse(array $in, array $keys = ['id', 'sid', 'nid', 'wd', 'area', 'year'])
 {
     \think\Request::destroy();
     $query = isset($in['query']) ? $in['query'] : [];
@@ -189,7 +189,7 @@ function php_parse(array $in)
         $p = mac_param_url();
         // 只记录本批相关且非空的参数（page 恒记录）
         $entry['param'] = ['page' => $p['page']];
-        foreach (['id', 'sid', 'nid', 'wd', 'area', 'year'] as $k) {
+        foreach ($keys as $k) {
             if ($p[$k] !== '' && $p[$k] !== 0) {
                 $entry['param'][$k] = $p[$k];
             }
@@ -389,13 +389,31 @@ $parseCases = [
     ['search.route', ['pathInfo' => '/vodsearch/合成关键词-------------.html']],
     ['show.route', ['pathInfo' => '/vodshow/1-大陆-------2---2020.html']],
     ['user.login', ['pathInfo' => '/user/login.html']],
+    // MACC-20：Java SSR 搜索页承接的"固定路径 + 查询串"形态。query 是 $_GET（Web 服务器已解码一次的值），
+    // mac_param_url 会再 urldecode 一次并 htmlspecialchars；含 % + & < > " ' 的值两边不同（09 方案第 9 节），只记录不比对。
+    ['search.q.base', ['pathInfo' => '/vod/search.html']],
+    ['search.q.wd', ['pathInfo' => '/vod/search.html', 'query' => ['wd' => '合成关键词']]],
+    ['search.q.multi', ['pathInfo' => '/vod/search.html', 'query' => ['wd' => '合成', 'area' => '大陆', 'lang' => '国语',
+        'year' => '2020', 'level' => '9', 'class' => '剧情', 'by' => 'hits', 'order' => 'asc', 'page' => '2']]],
+    ['search.q.slash', ['pathInfo' => '/vod/search/', 'query' => ['wd' => 'A/B']]],
+    ['search.q.nosuffix', ['pathInfo' => '/vod/search', 'query' => ['wd' => '..']]],
+    ['search.q.dothtml', ['pathInfo' => '/vod/search.html', 'query' => ['wd' => 'a.html']]],
+    ['search.q.backslash', ['pathInfo' => '/vod/search.html', 'query' => ['wd' => 'A\B', 'area' => '..']]],
+    ['search.q.trim', ['pathInfo' => '/vod/search.html', 'query' => ['wd' => ' a b ', 'year' => ' 2020 ']]],
+    ['search.q.zero', ['pathInfo' => '/vod/search.html', 'query' => ['wd' => '0', 'area' => '0', 'level' => '0']]],
+    ['search.q.levelpad', ['pathInfo' => '/vod/search.html', 'query' => ['level' => '0000000009', 'by' => 'time']]],
+    ['search.q.p1000', ['pathInfo' => '/vod/search.html', 'query' => ['wd' => 'x', 'page' => '1000']]],
+    ['search.q.pct', ['pathInfo' => '/vod/search.html', 'query' => ['wd' => '%41']]],
+    ['search.q.plus', ['pathInfo' => '/vod/search.html', 'query' => ['wd' => 'C++']]],
+    ['search.q.amp', ['pathInfo' => '/vod/search.html', 'query' => ['wd' => 'Tom & Jerry']]],
 ];
 
 foreach ($parseCases as $pc) {
     list($id, $in) = $pc;
     $result['parse'][] = array_merge(['id' => $id, 'input' => $in,
         'source' => 'App::routeCheck + mac_param_url（见 sources.routeCheck、sources.mac_param_url）',
-        'check' => 'php-executed'], php_parse($in));
+        'check' => 'php-executed'], strpos($id, 'search.q.') === 0
+        ? php_parse($in, ['wd', 'area', 'lang', 'year', 'level', 'class', 'by', 'order']) : php_parse($in));
 }
 
 echo json_encode($result, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);

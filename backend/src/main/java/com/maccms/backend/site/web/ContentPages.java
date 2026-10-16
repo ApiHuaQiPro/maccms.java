@@ -251,13 +251,13 @@ public class ContentPages {
         }
     }
 
-    private List<VideoCardView> cards(List<VideoSummaryDto> videos) {
+    List<VideoCardView> cards(List<VideoSummaryDto> videos) {
         return videos.stream().map(s -> new VideoCardView(text(s.name()), text(s.remarks()),
                 site.publicPath(urls.vodDetail(s.id())), images.normalize(s.pic()))).toList();
     }
 
     /** 顶级分类导航；currentId 等于某个顶级分类时标记为当前项（0 表示没有）。 */
-    private List<NavLink> nav(List<CategoryDto> roots, int currentId) {
+    List<NavLink> nav(List<CategoryDto> roots, int currentId) {
         return roots.stream().map(c -> new NavLink(text(c.name()), categoryUrl(c.id(), 1), c.id() == currentId))
                 .toList();
     }

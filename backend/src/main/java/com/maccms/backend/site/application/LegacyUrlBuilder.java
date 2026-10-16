@@ -31,6 +31,14 @@ public final class LegacyUrlBuilder {
     /** vod/show 可用的筛选参数（application/route.php 的 vodshow 变量，id、page 另行传入）。 */
     public static final List<String> SHOW_KEYS = List.of("area", "by", "class", "lang", "letter", "level", "order",
             "state", "tag", "year");
+    /** Java SSR 搜索页链接的查询串键（MACC-20），也是输出顺序（按键排序，与 mac_url 一致）。 */
+    public static final List<String> SEARCH_LINK_KEYS = List.of("area", "by", "class", "lang", "level", "order", "page",
+            "wd", "year");
+    /**
+     * 搜索链接查询串的最大长度：各值取 content 的码点上限、每个码点 3 字节（U+FFFF 以上字符被拒绝）编码为 9 个字符，
+     * 加上最长的 by、order、level、page 与 4 位年份（09 方案第 7.2.4 节）。
+     */
+    static final int MAX_SEARCH_LINK_QUERY = 1209;
 
     /** 仓库 application/route.php 中本批用到的路由；同名多条时按文件顺序尝试（Url::getRuleUrl）。 */
     private static final Map<String, List<String>> ROUTES = Map.of(
@@ -57,12 +65,16 @@ public final class LegacyUrlBuilder {
         return style;
     }
 
-    /** Java 承接页面的站内路径（canonical 用）。 */
+    /**
+     * Java 承接页面的站内路径（canonical 用）。搜索页只返回固定路径（搜索基址），完整地址（含查询串）用
+     * {@link #vodSearchLink}。
+     */
     public String path(SiteRoute route) {
         return switch (route) {
             case SiteRoute.Home h -> home();
             case SiteRoute.VodType t -> vodType(t.typeId(), t.page());
             case SiteRoute.VodDetail d -> vodDetail(d.vodId());
+            case SiteRoute.VodSearch s -> vodSearch(Map.of(), 1);
         };
     }
 
@@ -106,6 +118,38 @@ public final class LegacyUrlBuilder {
     public String vodSearch(Map<String, String> filters, int page) {
         Map<String, String> vars = filterVars(filters, SEARCH_KEYS, page);
         return macUrl("vod/search", vars);
+    }
+
+    /**
+     * Java SSR 搜索页的链接（09 方案第 7.2.2 节）：固定路径 B = {@code vodSearch(Map.of(), 1)}（搜索基址，现有表单
+     * {@code action}）+ 查询串 Q。Q 只含已设置的条件，键按 {@link #SEARCH_LINK_KEYS} 的顺序，页码只在 &gt; 1 时输出，
+     * 值用 PHP {@code urlencode}（所以 {@code / \ % + & =} 都被编码，{@code .} 原样）。无条件第 1 页时没有查询串。
+     *
+     * <p>不用 {@link #vodSearch} 的 PATHINFO 形态：路径段承载不了 {@code /}、{@code \}、点段与 {@code suffix_hide} 下的
+     * {@code .html}（第 7.2.1 节），而 {@link SitePaths} 的安全规则不能放宽。只支持 site 的 URL 形态（分隔符 /、不启用
+     * 路由别名），否则抛 {@link IllegalStateException}。
+     */
+    public SiteLink vodSearchLink(SearchFilters filters, int page) {
+        if (style.routeAliases() || style.depr() != '/') {
+            throw new IllegalStateException("搜索页链接只支持 pathinfo_depr=/、不启用路由别名的形态");
+        }
+        new SiteRoute.VodSearch(filters, page);
+        Map<String, String> vars = new TreeMap<>(filters.params());
+        if (page > 1) {
+            vars.put("page", Integer.toString(page));
+        }
+        StringBuilder q = new StringBuilder();
+        for (Map.Entry<String, String> e : vars.entrySet()) {
+            if (!q.isEmpty()) {
+                q.append('&');
+            }
+            q.append(e.getKey()).append('=').append(urlencode(e.getValue()));
+        }
+        if (q.length() > MAX_SEARCH_LINK_QUERY) {
+            // 由第 4 节的码点上限推出不可能发生（第 7.2.4 节）；发生即是编码或上限被改动
+            throw new IllegalStateException("搜索链接查询串超出上限");
+        }
+        return new SiteLink(vodSearch(Map.of(), 1), q.toString());
     }
 
     /** 旧筛选页（仍归 PHP），等价 {@code mac_url_type($info, $filters + ['page'=>$page], 'show')}。 */

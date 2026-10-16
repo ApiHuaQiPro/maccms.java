@@ -1,0 +1,65 @@
+## machine
+os	Windows 11 10.0
+cpu	AMD64 Family 25 Model 33 Stepping 0, AuthenticAMD; logical=16
+memory_total_mb	31961
+memory_free_mb	15648
+java	OpenJDK 64-Bit Server VM 21.0.11
+
+## mysql
+VERSION()	@@version_comment	@@character_set_connection	@@collation_connection	@@character_set_client
+5.7.44	MySQL Community Server (GPL)	utf8mb4	utf8mb4_general_ci	utf8mb4
+
+## variables
+Variable_name	Value
+character_set_server	utf8mb4
+collation_server	utf8mb4_general_ci
+concurrent_insert	AUTO
+datadir	D:\Tools\mysql\5.7\data\
+delay_key_write	ON
+eq_range_index_dive_limit	200
+internal_tmp_disk_storage_engine	InnoDB
+key_buffer_size	8388608
+key_cache_block_size	1024
+low_priority_updates	OFF
+max_connections	200
+max_execution_time	0
+max_heap_table_size	16777216
+max_length_for_sort_data	1024
+max_seeks_for_key	4294967295
+myisam_sort_buffer_size	8388608
+myisam_use_mmap	OFF
+optimizer_switch	index_merge=on,index_merge_union=on,index_merge_sort_union=on,index_merge_intersection=on,engine_condition_pushdown=on,index_condition_pushdown=on,mrr=on,mrr_cost_based=on,block_nested_loop=on,batched_key_access=off,materialization=on,semijoin=on,loosescan=on,firstmatch=on,duplicateweedout=on,subquery_materialization_cost_based=on,use_index_extensions=on,condition_fanout_filter=on,derived_merge=on,prefer_ordering_index=on
+performance_schema	ON
+query_cache_size	1048576
+query_cache_type	OFF
+read_buffer_size	131072
+read_rnd_buffer_size	262144
+sort_buffer_size	262144
+sql_mode	STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION
+table_open_cache	2000
+thread_cache_size	10
+tmp_table_size	16777216
+
+## mac_vod table status
+table_rows	avg_row_length	data_length	index_length	row_format	engine	table_collation
+100000	3653	365376392	28896256	Dynamic	MyISAM	utf8_general_ci
+
+## distribution
+total	status1	visible_type	candidates	avg_content_bytes	avg_play_url_bytes
+100000	94961	95007	90194	2031	1105
+high_kw	low_kw	none_kw	en_kw	amp_kw	cls_kehuan	area_jp	lang_yue	year_2020	level9
+9965	5	0	425	14	16685	10087	7972	7641	230
+
+## mac_vod indexes (cardinality)
+index_name	column_name	cardinality
+PRIMARY	vod_id	100000
+type_id	type_id	30
+vod_area	vod_area	16
+vod_class	vod_class	1351
+vod_en	vod_en	100000
+vod_hits	vod_hits	100000
+vod_lang	vod_lang	9
+vod_level	vod_level	10
+vod_name	vod_name	100000
+vod_time	vod_time	100000
+vod_year	vod_year	23

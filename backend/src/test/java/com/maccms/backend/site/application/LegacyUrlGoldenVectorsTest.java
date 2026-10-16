@@ -236,6 +236,8 @@ class LegacyUrlGoldenVectorsTest {
                 assertThat(php.get("dispatch").asString()).as(where).isEqualTo("vod/detail");
                 assertThat(param.get("id").asString()).as(where).isEqualTo(Long.toString(d.vodId()));
             }
+            // parse() 不产生搜索页路由（搜索页走 parseSearch，见 SearchLinkRoundTripTest）
+            case SiteRoute.VodSearch s -> throw new AssertionError(where + " parse() 不应识别搜索页");
         }
     }
 
@@ -259,7 +261,15 @@ class LegacyUrlGoldenVectorsTest {
             entry("detail.s.slash", "detail 123"), entry("detail.s.slash.html", "detail 123"),
             entry("detail.s.dash", "unsupported"), entry("detail.s.route", "unsupported"),
             entry("play", "unsupported"), entry("play.route", "unsupported"), entry("search", "unsupported"),
-            entry("search.route", "unsupported"), entry("show.route", "unsupported"), entry("user.login", "unsupported"));
+            entry("search.route", "unsupported"), entry("show.route", "unsupported"), entry("user.login", "unsupported"),
+            // MACC-20：搜索页的固定路径 + 查询串由 parseSearch 承接（SearchGoldenVectorsTest），parse() 仍不认识
+            entry("search.q.base", "unsupported"), entry("search.q.wd", "unsupported"),
+            entry("search.q.multi", "unsupported"), entry("search.q.slash", "unsupported"),
+            entry("search.q.nosuffix", "unsupported"), entry("search.q.dothtml", "unsupported"),
+            entry("search.q.backslash", "unsupported"), entry("search.q.trim", "unsupported"),
+            entry("search.q.zero", "unsupported"), entry("search.q.levelpad", "unsupported"),
+            entry("search.q.p1000", "unsupported"), entry("search.q.pct", "unsupported"),
+            entry("search.q.plus", "unsupported"), entry("search.q.amp", "unsupported"));
 
     private static final Map<String, String> PARSE_DASH = override(PARSE_SLASH, Map.of(
             "type.dash", "type 1 2", "detail.dash", "detail 123", "detail.s.dash", "detail 123"));
@@ -347,6 +357,7 @@ class LegacyUrlGoldenVectorsTest {
                 case SiteRoute.Home h -> "home";
                 case SiteRoute.VodType t -> "type " + t.typeId() + " " + t.page();
                 case SiteRoute.VodDetail d -> "detail " + d.vodId();
+                case SiteRoute.VodSearch s -> "search";
             };
         } catch (ApiException e) {
             assertThat(e.code()).isEqualTo(ErrorCode.INVALID_PARAMETER);

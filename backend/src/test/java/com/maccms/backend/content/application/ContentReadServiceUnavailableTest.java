@@ -27,6 +27,7 @@ import org.springframework.dao.QueryTimeoutException;
 import org.springframework.dao.RecoverableDataAccessException;
 import org.springframework.jdbc.BadSqlGrammarException;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
+import org.springframework.jdbc.UncategorizedSQLException;
 
 /**
  * content.application 把数据库连接类故障归一为 ApiException(SERVICE_UNAVAILABLE)（MACC-14），调用方不需要 Spring DAO 类型。
@@ -87,6 +88,22 @@ class ContentReadServiceUnavailableTest {
             assertThatThrownBy(service::listCategories).isInstanceOfSatisfying(ApiException.class,
                     a -> assertThat(a.code()).isEqualTo(ErrorCode.SERVICE_UNAVAILABLE));
         }
+    }
+
+    @Test
+    void serverTimeoutCodesAreServiceUnavailableWithTypeChainOnlyLog(CapturedOutput output) {
+        // 3024 与 1028（排序阶段中止）按错误码识别，不区分是否带新条件；message 不进日志
+        for (int code : new int[] {3024, 1028}) {
+            doThrow(new UncategorizedSQLException(LEAK, "SELECT " + LEAK, new SQLException(LEAK, "HY000", code)))
+                    .when(typeMapper).selectEnabledVodTypes();
+            assertThatThrownBy(service::listCategories).isInstanceOfSatisfying(ApiException.class, e -> {
+                assertThat(e.code()).isEqualTo(ErrorCode.SERVICE_UNAVAILABLE);
+                assertThat(e.getMessage()).isEqualTo("服务暂时不可用");
+                assertThat(e.getCause()).isNull();
+            });
+        }
+        assertThat(output.getAll()).contains("database statement timeout: org.springframework.jdbc"
+                + ".UncategorizedSQLException <- java.sql.SQLException").doesNotContain(LEAK);
     }
 
     @Test

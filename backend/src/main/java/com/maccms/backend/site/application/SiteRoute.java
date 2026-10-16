@@ -4,7 +4,7 @@ import com.maccms.backend.content.application.VideoId;
 import com.maccms.backend.content.application.VideoListQuery;
 
 /**
- * Java 页面承接的旧路由（首批：首页、分类页、详情页，只支持数字 id）。取值范围与公开 API 一致，越界抛
+ * Java 页面承接的旧路由（首批：首页、分类页、详情页，只支持数字 id；MACC-20 增加搜索页）。取值范围与公开 API 一致，越界抛
  * {@link IllegalArgumentException}；请求解析时由 {@link LegacyUrlParser} 先校验并转成 INVALID_PARAMETER。
  */
 public sealed interface SiteRoute {
@@ -36,6 +36,20 @@ public sealed interface SiteRoute {
         public VodDetail {
             if (vodId < 1 || vodId > VideoId.MAX) {
                 throw new IllegalArgumentException("视频 id 越界");
+            }
+        }
+    }
+
+    /**
+     * 搜索页（旧 {@code vod/search} 的固定路径 + 查询串形式，MACC-20），由 {@link LegacyUrlParser#parseSearch} 识别。
+     *
+     * @param filters 已归一、已校验的条件
+     * @param page    1..1000（与 API page 上限一致）
+     */
+    record VodSearch(SearchFilters filters, int page) implements SiteRoute {
+        public VodSearch {
+            if (filters == null || page < 1 || page > VideoListQuery.MAX_PAGE) {
+                throw new IllegalArgumentException("搜索条件缺失或页码越界");
             }
         }
     }
