@@ -7,9 +7,11 @@ import com.maccms.backend.common.web.ApiException;
  * 空字符串参数按"未传"处理。
  *
  * <p>紧凑构造器与 {@link #parse} 使用相同的取值范围和错误类型，其他模块直接构造时也不能越过页大小等上限；
- * {@code categoryId == null} 表示不按分类筛选。
+ * {@code categoryId == null} 表示不按分类筛选。{@code filter} 是契约 1.1.0 的搜索/筛选条件（{@link VideoFilter}），
+ * {@code null} 视为 {@link VideoFilter#NONE}；5 参数构造器与 {@link #parse} 不带新条件，行为与 1.0.0 相同。
  */
-public record VideoListQuery(Integer categoryId, VideoSort sort, boolean descending, int page, int pageSize) {
+public record VideoListQuery(Integer categoryId, VideoSort sort, boolean descending, int page, int pageSize,
+                             VideoFilter filter) {
 
     public static final int DEFAULT_PAGE_SIZE = 20;
     public static final int MAX_PAGE_SIZE = 100;
@@ -25,6 +27,13 @@ public record VideoListQuery(Integer categoryId, VideoSort sort, boolean descend
         }
         checkRange("page", page, 1, MAX_PAGE);
         checkRange("pageSize", pageSize, 1, MAX_PAGE_SIZE);
+        if (filter == null) {
+            filter = VideoFilter.NONE;
+        }
+    }
+
+    public VideoListQuery(Integer categoryId, VideoSort sort, boolean descending, int page, int pageSize) {
+        this(categoryId, sort, descending, page, pageSize, VideoFilter.NONE);
     }
 
     public static VideoListQuery parse(String categoryId, String sort, String order, String page, String pageSize) {
@@ -42,6 +51,11 @@ public record VideoListQuery(Integer categoryId, VideoSort sort, boolean descend
         int p = blank(page) ? 1 : parseInt("page", page, 1, MAX_PAGE);
         int size = blank(pageSize) ? DEFAULT_PAGE_SIZE : parseInt("pageSize", pageSize, 1, MAX_PAGE_SIZE);
         return new VideoListQuery(category, videoSort, descending, p, size);
+    }
+
+    /** 同一组分类/排序/分页参数，换成给定的搜索/筛选条件。 */
+    public VideoListQuery withFilter(VideoFilter newFilter) {
+        return new VideoListQuery(categoryId, sort, descending, page, pageSize, newFilter);
     }
 
     public long offset() {

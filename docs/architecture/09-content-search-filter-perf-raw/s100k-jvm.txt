@@ -1,0 +1,13 @@
+app_cpu_ms=13578 http_requests=440 cpu_ms_per_request=30.86
+--- heap before
+13512:
+ garbage-first heap   total 81920K, used 31642K [0x000000060c800000, 0x0000000800000000)
+  region size 4096K, 5 young (20480K), 2 survivors (8192K)
+ Metaspace       used 50394K, committed 51200K, reserved 1114112K
+  class space    used 6585K, committed 6912K, reserved 1048576K
+--- heap after
+13512:
+ garbage-first heap   total 81920K, used 56812K [0x000000060c800000, 0x0000000800000000)
+  region size 4096K, 9 young (36864K), 1 survivors (4096K)
+ Metaspace       used 55718K, committed 56640K, reserved 1114112K
+  class space    used 6861K, committed 7296K, reserved 1048576K
