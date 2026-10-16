@@ -19,6 +19,7 @@
   - `content` 的已发布只读类型（MACC-8 起）：`content.application.view` 下的 `CategoryListResponse`、`CategoryDto`、`CategoryExtendDto`、`CategoryRefDto`、`VideoSummaryDto`、`VideoDetailDto`，分别对应 `docs/contracts/content-read.openapi.yaml` 中的同名（去掉 `Dto`）schema，Controller 直接以它们作为响应。
   - 已发布只读类型与 `docs/contracts/` 中的 schema 一一对应时，修改它们等同修改契约，按第 1 节在同一提交里改 OpenAPI、类型与契约测试（`PublishedViewContractTest` 校验 record 组件与 schema 字段集合一致）。
   - 跨模块传入的查询参数类型自带校验：例如 `VideoListQuery` 的构造器与 `parse` 采用相同范围（`page` 1..1000、`pageSize` 1..100、`sort` 非空、`categoryId` 为 `null`（不筛选）或 1..65535），越界抛 `ApiException`（`INVALID_PARAMETER`）。调用方不能靠直接构造绕过上限。
+  - 搜索/筛选条件 `VideoFilter`（契约 1.1.0，MACC-18；`VideoListQuery.filter`，5 参数构造器为 `VideoFilter.NONE`）同样如此：构造器与 `parse` 使用同一套规则（`docs/architecture/09-content-search-filter-plan.md` 第 4 节）——值是解码一次后的原始字符串，不裁剪、不改写；`keyword` ≤ 64、`area` ≤ 20、`lang` ≤ 10、`classes` ≤ 32 个码点，不含 C0/C1 控制字符、代理项、U+FFFD，首尾不得为 ECMAScript `\s` 空白，`area/lang/classes` 不含半角逗号；`year` 恰为 4 位 ASCII 数字；`level` 1..9（原始字符串最多 10 位数字）。"参数重复""非法 UTF-8"只在 HTTP 层判断，由 `content.api` 从容器参数与原始查询串得到；搜索开关（`maccms.content.search.enabled`）由 `ContentReadService` 在查询前再检查一次，其他模块直接构造带 `keyword`/`classes` 的条件也绕不过。
 - `site` 模块（服务端页面，MACC-9 起为骨架，见 `05-site-skeleton.md`）只依赖 `content.application`（含 `.view`）与 `common`——`common` 中限 `common.web` 的 `PageResponse`、`ApiException`、`ErrorCode`、`SafeExceptionLog`，需要更多时在任务中说明并同步修改护栏；不拥有表、不新增 Mapper/SQL，不引用 MyBatis、JDBC、`javax.sql`、Spring JDBC/DAO 类型；不读文件、环境变量（只经 `maccms.site.*` 配置绑定），不启动进程，不发起 HTTP 请求（不回环调用旧 PHP 或本应用 API；jsoup 只能用解析/节点/过滤包，禁止 `Jsoup`、`Connection` 等网络 API），模板表达式只读取视图模型；页面需要新字段时走契约变更。
   - `site` 的每个 Spring 组件都带 `@ConditionalOnSiteEnabled`；`maccms.site.enabled` 默认关闭，关闭时不注册任何 site 组件与路由。
 - MyBatis/JDBC 类型只出现在各模块的 `infrastructure` 包（`common.config` 的数据源检查除外）。
@@ -32,6 +33,9 @@
 - **单一写入方**：任一"表 + 操作"在任一时刻只能有一个系统写入。新系统开始写某张表之前，旧系统对应入口必须已封住（03 第 3.4 节）。
 - SQL 规则：
   - 只用 `#{}` 参数绑定，禁止 `${}` 拼接；排序/筛选字段用枚举 + XML `<choose>` 生成固定列名（白名单）。
+  - 用户输入只能作为绑定值，不能决定列名、运算符或 SQL 片段：筛选条件的列名固定写在 XML 里，一个参数对应一个固定条件（`VodMapper.xml` 的 `matchingConditions`）。包含匹配一律 `col LIKE ? ESCAPE '!'`，模式在 application 层由已校验的值构造（`!`、`%`、`_` 前加 `!`），Mapper 不做字符串处理。
+  - 同一组条件的 count 与分页必须 `<include>` 同一个条件片段，保证 `total` 与列表一致；分页排序追加主键同向排序。
+  - 可能扫描大量行的查询（包含匹配等）要有服务端执行时限（MySQL `/*+ MAX_EXECUTION_TIME(n) */`，字面常量）与进程内并发上限，超限归为 503，并默认关闭、经合成库测量后再开启。不新增应用内结果缓存，不读写旧系统的缓存表（如 `mac_vod_search`）。
   - 明确列出列名，不写 `SELECT *`，不把数据库整行返回给前端。
   - 列表必须有 `LIMIT` 和页大小上限；不做无界全表读取。
   - 涉及旧表的每条规则在注释或文档中注明旧代码位置（`文件:行号`）。
