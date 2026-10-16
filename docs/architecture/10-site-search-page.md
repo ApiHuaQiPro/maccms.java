@@ -1,7 +1,7 @@
 ## SSR 搜索页：URL 解析与页面实现记录（MACC-20，09 方案 T3）
 
 > **状态：已在本地实现并通过自动测试与浏览器实测，未部署、未切流量，默认关闭。** 依据：`docs/architecture/09-content-search-filter-plan.md`（以下简称"09 方案"）第 7 节与第 8 节 T3；T2 测量（MACC-19，`docs/architecture/09-content-search-filter-perf-report.md`）结论为包含匹配**保持关闭**，本任务未改任何默认值。
-> 分支基于父任务主线 `agent/codex/macc-2@9122de9`（含 MACC-16/17/18/19），以合并提交并入；不含仍在验收中的 MACC-22（1028→503 修复）。
+> 分支基于父任务主线 `agent/codex/macc-2@670b052`（含 MACC-16/17/18/19/22），以合并提交并入。
 
 ### 1. 开关与路由
 
@@ -48,7 +48,7 @@
 | 越界页（`page>1` 且 `total=0`，或 `page>totalPages`） | 404 | 错误页 |
 | 参数不合法（解析器或 content 给出 `INVALID_PARAMETER`；含包含匹配开关关闭时的 `wd`/`class`，此时在查库前就判定） | **400** | 搜索页本身的错误状态：h1"搜索条件不合法"、固定提示、空白表单（输入框 `aria-describedby` 指向提示），**不回显任何输入**、无 canonical、无导航、不查库。三页的 `INVALID_PARAMETER → 404` 不变 |
 | 不认识的形态（第 2 节步骤 1、2、4、6） | 404 | 现有错误页（部署时应交 PHP） |
-| 503（数据库不可用、并发上限、语句时限）/ 500 | 503 / 500 | 现有错误页（`Retry-After: 120`）；500 页不含已取到的数据 |
+| 503（数据库不可用、并发上限、语句时限 3024/1028）/ 500 | 503 / 500 | 现有错误页（`Retry-After: 120`）；500 页不含已取到的数据 |
 
 - 所有搜索页（含 400）`Cache-Control: no-store`、`X-Robots-Tag: noindex` 与 `<meta name="robots" content="noindex">`（`SiteHtmlRenderer.noStore`）；404/503/500 沿用现有错误页（同样 no-store、noindex）。
 - 表单：`GET`、`role="search"`、`aria-label="搜索视频"`，`<label for>` 关联、`name="wd"`、`maxlength="64"`，回显经校验的关键字（jte 属性转义）；当前条件中除 `wd`、`page` 外以隐藏字段保留，提交后回到第 1 页。
@@ -66,6 +66,7 @@
 | `SiteQueriesTest` | 查询串白名单（拒绝 `?`、`#`、小写十六进制、控制字符、未知/重复键等），`SitePaths` 仍拒绝 `?` 与编码分隔符 |
 | `SearchGoldenVectorsTest` + PHP 黄金向量 `search.q.*` | 旧代码对同一请求也调度到 `vod/search`；不含 `% + & < > " '` 的值两边取值一致；`%41`、`C++`、`Tom & Jerry` 三条差异逐条锁定（见第 6 节） |
 | `SiteSearchPagesMvcTest` | 200/400/404/503/500、noindex/no-store、canonical、Host/Forwarded 注入、筛选/排序/分页链接、只读调用参数、开关、日志脱敏 |
+| `SiteSearchStatementTimeoutMvcTest` | 真实 `ContentReadService` + mapper 替身：MySQL 3024 与 1028（排序阶段中止，MACC-22）都成为 503 页，页面与日志不含错误 message、SQL 与筛选值 |
 | `SiteSearchSwitchMvcTest` | 默认与显式 false 不注册路由、取值校验、site 关闭时不校验、站点维护时 503 不查库 |
 | `SiteSearchHtmlStructureTest` | 唯一 h1、标题层级、label、GET 表单、无正 tabindex/伪按钮/脚本、nav 名称不重复、`aria-current`、错误提示关联、T4 class |
 | `SiteSearchRealHttpTest` | 真实 Tomcat + 原始套接字：完整缓冲、HEAD、非法编码由解析器判 400、交 PHP 与超长 404、503/500、子目录 base-url、连接池从未初始化 |
@@ -96,5 +97,5 @@
 
 - **未实施**：nginx 分流、交还 PHP（`X-Accel-Redirect`）、canonical 301、搜索页 CSS（T4）、`vod/show`、`tid` 分类参数、多值筛选、热搜/联想。
 - **未验证**：线上 URL 形态与 `search_*` 配置、真实数据下 `type_extend` 候选值分布、真实数据量下的耗时（T2 已测：包含匹配在 10 万行以上不满足参考目标，开关保持关闭）、反向代理子目录映射、浏览器/代理对 2048 字符查询串的限制。
-- **依赖**：MACC-22（MySQL 1028 → 503）合入前，排序阶段超时在包含匹配开启时会成为 500 页；开关默认关闭，未开启前不影响。
+- **依赖**：MACC-22（MySQL 1028 → 503）已并入本分支，排序阶段超时在搜索页上为 503 页（`SiteSearchStatementTimeoutMvcTest`）；包含匹配仍按 T2 结论默认关闭。
 - **回滚**：`MACCMS_SITE_SEARCH_ENABLED=false`（默认）即撤下路由；或 `git revert`。不写库，无数据回迁。
