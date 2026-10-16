@@ -12,7 +12,7 @@
 1. **每个包含匹配请求都要扫描两遍候选行**（count 一遍、分页一遍）。50 万、100 万行时 EXPLAIN 为 `type=ALL`（全表扫描）+ `Using filesort`；10 万行时优化器选 `type_id` 范围 + MRR 回表，同样逐行读取全部候选行（第 4 节）。
 2. **单个请求就超过参考目标**（方案 6.5："50 万行热态 p95 < 1 s"）：50 万行时有命中的关键字/`classes` 请求热态 p95 为 1.4–2.4 s（直连 DB 与经应用 HTTP 都是；无命中关键字只需 count，约 0.9–1.0 s；关键字+精确条件 `kw-low+area` 2.8–4.1 s），10 万行时也有 1.3–1.8 s；100 万行时 3.5–6.2 s，单条语句已接近 3 s 时限，**无并发时也会零星出现 503 和 500**（第 4 节）。
 3. **MyISAM 表锁使点击计数 `UPDATE` 明显变慢**：只有 1 个低频关键字读者时，UPDATE p95 在 10 万/50 万/100 万行分别为 0.7–0.8 s / 1.1–1.2 s / 2.0–2.4 s；4 个读者时为 1.5–1.6 s / 1.6–1.8 s / 2.8–2.9 s。参考目标（"并发 4 时 UPDATE 等待 p95 < 1 s"）**三档都没达到**。UPDATE 等待的上界约 3 s，由 `MAX_EXECUTION_TIME(3000)` 限住；同一时刻最多有 4–18 个会话在等表锁（第 5 节）。
-4. **发现缺陷：时限在 filesort 阶段触发时返回 HTTP 500 而不是 503**。MySQL 5.7.44 在排序阶段被 `MAX_EXECUTION_TIME` 中止时报 **1028**（`ER_FILSORT_ABORT`），不是 3024；`StatementTimeouts.isServerTimeout` 只认 3024，于是落到 `GlobalExceptionHandler` 变成 500。100 万行测量中出现 8 次 HTTP 500（基准 6 次、锁实验 2 次），直连同一类语句时至少记录到 9 次 1028（第 6.3 节）。开启前必须修复。
+4. **发现缺陷：时限在 filesort 阶段触发时返回 HTTP 500 而不是 503**。MySQL 5.7.44 在排序阶段被 `MAX_EXECUTION_TIME` 中止时报 **1028**（`ER_FILSORT_ABORT`），不是 3024；`StatementTimeouts.isServerTimeout` 只认 3024，于是落到 `GlobalExceptionHandler` 变成 500。100 万行测量中出现 8 次 HTTP 500（基准 6 次、锁实验 2 次），直连同一类语句时至少记录到 9 次 1028（第 6.3 节）。开启前必须修复。（已由 MACC-22 修复为 503，见第 6.3 节末尾；其余结论不变，包含匹配仍保持关闭。）
 5. 已在 1.0.0 上线的**不带条件的列表与分类列表也有同样的扫描与表锁问题**：100 万行时无条件列表 3.3–4.0 s、分类列表 2.9–3.3 s，且这两条语句没有 `MAX_EXECUTION_TIME`（只有 MyBatis 10 s 兜底），在写锁下要等到 10 s 才返回 503（第 4、6.1 节）。这不属于本任务范围，但影响 SSR 首页/分类页，建议队长另行评估。
 6. 精确筛选：`level` 很快（≤ 0.17 s，选择性高的索引）；`area`/`lang`/`year` 走单列索引 `ref`（utf8 列与 utf8mb4 连接比较时**能用索引**，`key_len` 62/32，回答了方案 6.2 的待核实项），100 万行时 1.2–2.5 s；三项组合用 `index_merge` 交集，0.7–1.3 s。
 
@@ -225,6 +225,8 @@
 | 应用日志：500 对应的 ERROR 为 `GlobalExceptionHandler: database access failed: UncategorizedSQLException`（不是 `ContentReadService` 的 `database statement timeout`），栈在 `ContentReadService.doListVideos`（分页语句） | 应用日志（未提交，`backend/target/perf/s1m-app.log`、`s1m-lock-app.log`） |
 
 根因：MySQL 5.7 在 filesort 期间被 `MAX_EXECUTION_TIME` 中止时报 1028 `ER_FILSORT_ABORT`（"Sort aborted"），而 `backend/src/main/java/com/maccms/backend/content/infrastructure/StatementTimeouts.java` 只识别 3024。MACC-18 的集成测试用 `LOCK TABLES … WRITE` 制造超时，语句在等锁阶段被中止，只会得到 3024，所以没有覆盖到。应用日志按设计不记录错误码与 message，500 与 1028 的对应是按"同一语句、同一时段、直连得到 1028 + 应用走了非 3024 分支"推断的；在本次未加负载的单独复现中（`s1m-timeout.txt` 末尾，kw-amp 分页语句各 6 次）语句都在 3 s 内完成，没有复现。修复建议（未实施）：`ContentReadService.read` 把 1028 也归为 503（或只在带时限的语句上这样做），并用"排序阶段被中止"的集成测试锁定。
+
+> **修复状态（MACC-22）**：`StatementTimeouts.isServerTimeout` 现按错误码 3024 或 1028 识别（不限于带时限的语句），1028 与 3024 返回同一 503 响应体、同一日志 `database statement timeout: <类型链>`。回归测试为异常链替身（`StatementTimeoutsTest`、`ContentSearchApiContractTest`、`ContentReadServiceUnavailableTest`）；"排序阶段被中止"的真实 MySQL 集成测试仍未做（本节单独复现未成功，无法稳定触发）。本节以上测量数据是修复前的记录，未重测。
 
 ### 7. Java 进程
 
