@@ -3,6 +3,7 @@ package com.maccms.backend.site.application;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -21,6 +22,11 @@ import java.util.regex.PatternSyntaxException;
  * 中间空格编码为 {@code %20}。含 {@code <} 时旧版 strip_tags 会改写地址，新版不模拟，直接拒绝。</li>
  * <li>协议相对地址（{@code //host/…}）按站点 base-url 的协议补全，等价于浏览器在 canonical 页面上的解析结果。</li>
  * <li>{@link SafeUrl} 白名单：只放行 http/https 绝对地址与以单个 / 开头的站内路径；其他一律拒绝，由页面显示占位图。</li>
+ * <li>浏览器侧外部地址放行（B02，W2，docs/architecture/11-guards-and-legacy-config.md 第 5 节）：
+ * {@link #withExternalImages(boolean) withExternalImages(false)} 时，主机不是本站（base-url 的主机）的绝对地址
+ * 归为 {@link Outcome#EXTERNAL_BLOCKED}，页面按空值处理（显示占位）；{@code img_key} 命中时不拼 {@code img_api}
+ * （它指向的代理脚本要由服务端去抓外部图片，属于 E02，新系统不提供），按原地址判断。
+ * 放行时（以及 {@link #create} 直接得到的实例）前 4 步不变，MACC-11 黄金向量照常成立。</li>
  * </ol>
  * 空值（null、空串、只有空白）直接返回 {@link Outcome#EMPTY}，不再像旧版那样输出站点根路径。
  */
@@ -50,7 +56,9 @@ public final class ImageUrlNormalizer {
         /** 含浏览器可能解码、但新版不支持的字符引用。 */
         UNSUPPORTED_CHAR_REF,
         /** 结果不在 {@link SafeUrl} 白名单内。 */
-        NOT_ALLOWED
+        NOT_ALLOWED,
+        /** 合法，但主机不是本站，且部署参数未放行外部图片（W2，B02）。不属于旧 mac_url_img 的结果。 */
+        EXTERNAL_BLOCKED
     }
 
     /** {@code url} 只在 {@link Outcome#ACCEPTED} 时有值。 */
@@ -66,9 +74,11 @@ public final class ImageUrlNormalizer {
     private final Pattern imgKey;
     private final String imgApi;
     private final String pageScheme;
+    private final String siteHost;
+    private final boolean externalAllowed;
 
     private ImageUrlNormalizer(String protocol, boolean remote, String remoteUrl, String localPrefix, Pattern imgKey,
-                               String imgApi, String pageScheme) {
+                               String imgApi, String pageScheme, String siteHost, boolean externalAllowed) {
         this.protocol = protocol;
         this.remote = remote;
         this.remoteUrl = remoteUrl;
@@ -76,10 +86,13 @@ public final class ImageUrlNormalizer {
         this.imgKey = imgKey;
         this.imgApi = imgApi;
         this.pageScheme = pageScheme;
+        this.siteHost = siteHost;
+        this.externalAllowed = externalAllowed;
     }
 
     /**
      * 校验配置并创建规范化器。旧版对任意配置值都照常拼接，新版在这里拒绝会产生非白名单地址或改变主机名的配置。
+     * 创建出的规范化器放行外部主机（与旧版一致）；页面用的实例由 {@link #withExternalImages(boolean)} 按部署参数收紧。
      * 不合法时抛 {@link IllegalStateException}，信息只列出配置项名称与规则，不回显取值。
      *
      * @param site 站点设置：{@code homePath} 代替旧 MAC_PATH，{@code baseUrl} 的协议用于补全协议相对地址
@@ -120,7 +133,17 @@ public final class ImageUrlNormalizer {
         if (!errors.isEmpty()) {
             throw new IllegalStateException("图片地址配置不合法：" + String.join("；", errors));
         }
-        return new ImageUrlNormalizer(protocol, remote, remoteUrl, site.homePath().href(), imgKey, imgApi, pageScheme);
+        return new ImageUrlNormalizer(protocol, remote, remoteUrl, site.homePath().href(), imgKey, imgApi, pageScheme,
+                hostOf(site.baseUrl()), true);
+    }
+
+    /**
+     * 返回只在外部主机放行与否上不同的规范化器。{@code allowed=false} 时，结果是绝对地址且主机（不区分大小写，忽略端口与协议）
+     * 不等于 base-url 的主机，就归为 {@link Outcome#EXTERNAL_BLOCKED}。"本站"只按配置的 base-url 判定，不看请求的 Host 头。
+     */
+    public ImageUrlNormalizer withExternalImages(boolean allowed) {
+        return new ImageUrlNormalizer(protocol, remote, remoteUrl, localPrefix, imgKey, imgApi, pageScheme, siteHost,
+                allowed);
     }
 
     /** 规范化库内图片字段（如 vod_pic），不合法或为空时返回空。 */
@@ -135,7 +158,7 @@ public final class ImageUrlNormalizer {
         if (phpTrim(s).isEmpty()) {
             return reject(branch, Outcome.EMPTY);
         }
-        String candidate = apply(branch, s);
+        String candidate = apply(!externalAllowed && branch == Branch.IMG_API ? Branch.UNCHANGED : branch, s);
         if (candidate.indexOf('<') >= 0) {
             return reject(branch, Outcome.TAG_LIKE);
         }
@@ -149,7 +172,19 @@ public final class ImageUrlNormalizer {
         }
         url = completeProtocolRelative(url.replace(" ", "%20"), pageScheme);
         Optional<SafeUrl> safe = SafeUrl.parse(url);
-        return safe.isPresent() ? new Resolution(branch, Outcome.ACCEPTED, safe) : reject(branch, Outcome.NOT_ALLOWED);
+        if (safe.isEmpty()) {
+            return reject(branch, Outcome.NOT_ALLOWED);
+        }
+        if (!externalAllowed && safe.get().isAbsolute() && !hostOf(safe.get()).equals(siteHost)) {
+            return reject(branch, Outcome.EXTERNAL_BLOCKED);
+        }
+        return new Resolution(branch, Outcome.ACCEPTED, safe);
+    }
+
+    /** 绝对地址的主机名，小写、去掉末尾的点（{@code a.test.} 与 {@code a.test} 是同一主机）。 */
+    private static String hostOf(SafeUrl url) {
+        String host = URI.create(url.href()).getHost().toLowerCase(Locale.ROOT);
+        return host.endsWith(".") ? host.substring(0, host.length() - 1) : host;
     }
 
     /** 旧代码在 mac_filter_xss 之前得到的字符串（application/common.php:1635-1652），测试用来对拍 PHP 输出。 */

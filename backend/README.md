@@ -19,6 +19,10 @@ MacCMS 重构的 Java 后端（模块化单体）。本批（MACC-4）只包含 
 错误/维护页）见 `docs/architecture/05-site-skeleton.md`；首页、分类列表（`vod/type`）、视频公开详情（`vod/detail`）三页（MACC-14，只读、
 只承接数字 id，路由与旧 URL 兼容规则、配置、与旧版差异）见 `docs/architecture/08-site-pages.md`。
 
+B02（MACC-26）加了四样东西，见 `docs/architecture/11-guards-and-legacy-config.md`：出站护栏、表结构与 SQL 入口护栏（静态测试 +
+`-Pmysql-it` 的 information_schema 比对）、旧配置只读层（`MACCMS_LEGACY_CONFIG_DIR`，只解析 `var_export`，不执行 PHP）、
+浏览器侧外部地址放行参数（`MACCMS_BROWSER_EXTERNAL_W1/W2/W3`，默认全关；W2 关闭时页面中的外部图片显示占位）。
+
 ### 环境
 
 - JDK 21（本机 `D:\Tools\Java\jdk-21`，`JAVA_HOME` 已指向它）。
@@ -48,6 +52,7 @@ export MACCMS_IT_ADMIN_PASSWORD=<密码>
   写入合成数据，通过真实 HTTP 调用全部接口，结束后**只删除这个库**。不读写 `maccms_dev` 或任何已有库。
 - 缺少上述环境变量时测试直接失败，不会回落到默认账号。
 - 管理账号只用于建库、灌数据、比对校验和；被测应用连接同一个一次性库时连接池是只读会话。
+- 每个集成测试在导入 `install.sql` 后记录 information_schema 指纹，删库前再比对，表结构有任何变化即失败（B02）。
 
 ### 本地运行
 
@@ -91,10 +96,11 @@ backend/
   mvnw, mvnw.cmd, .mvn/        Maven Wrapper
   config/*.env.example         运行配置样例（真实 *.env 不提交）
   src/main/java/com/maccms/backend/
-    common/                    公共支持：错误码、统一错误响应、分页、数据库账号检查
+    common/                    公共支持：错误码、统一错误响应、分页、数据库账号检查、浏览器侧外部地址放行开关（common/browser）
     content/api/               HTTP 层（Controller、DTO）
     content/application/       查询服务、可见性规则、参数校验
     content/infrastructure/    MyBatis Mapper 接口与行记录
+    legacyconfig/              旧配置只读层（var_export 解析、配置目录访问）
   src/main/resources/
     application.yml            默认配置（无凭证）
     mapper/content/*.xml       只读 SQL

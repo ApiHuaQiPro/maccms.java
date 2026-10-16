@@ -42,6 +42,16 @@ maccms:
       enabled: ${MACCMS_CONTENT_SEARCH_ENABLED:false}
       # 带 keyword/classes 的请求同时执行的上限（1 到连接池大小减 1），超过即 503，不排队
       max-concurrent: ${MACCMS_CONTENT_SEARCH_MAX_CONCURRENT:4}
+  # 旧配置只读层（B02，docs/architecture/11-guards-and-legacy-config.md 第 4 节）：旧站 application 目录（含 extra/*.php、route.php），
+  # 可以在仓库之外。留空表示未配置；只读解析 var_export 格式，不执行 PHP，不写回。不要指向线上目录。
+  legacy-config:
+    dir: ${MACCMS_LEGACY_CONFIG_DIR:}
+  # 浏览器侧外部地址放行（B02，路线图第 1.3、4.2 节）：部署级参数，不是站点配置项。默认全部关闭，关闭时页面不输出外部主机地址。
+  # w1 播放器解析与外部脚本（B05 前只能为 false）；w2 外链图片与外部播放/下载地址；w3 支付网关跳转（B24 前只能为 false）。
+  browser-external:
+    w1: ${MACCMS_BROWSER_EXTERNAL_W1:false}
+    w2: ${MACCMS_BROWSER_EXTERNAL_W2:false}
+    w3: ${MACCMS_BROWSER_EXTERNAL_W3:false}
   # site 服务端页面（MACC-9 骨架）：默认关闭，关闭时不注册任何 site 路由。
   # 启用时 name、base-url 必填并校验，缺失或不合法即启动失败（不回显取值）。规则见 docs/architecture/05-site-skeleton.md。
   # 只读本应用自己的环境变量，不读取 PHP 配置；canonical 只用 base-url，不从 Host 头推断。

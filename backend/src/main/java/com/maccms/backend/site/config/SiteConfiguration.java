@@ -1,5 +1,7 @@
 package com.maccms.backend.site.config;
 
+import com.maccms.backend.common.browser.BrowserExternalAccess;
+import com.maccms.backend.common.browser.BrowserExternalConfiguration;
 import com.maccms.backend.site.application.ImageUrlNormalizer;
 import com.maccms.backend.site.application.LegacyUrlBuilder;
 import com.maccms.backend.site.application.LegacyUrlParser;
@@ -16,6 +18,7 @@ import com.maccms.backend.site.web.jte.StaticTemplates;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -24,12 +27,16 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
  * {@code maccms.site.url.*} 与图片地址 {@code maccms.site.image.*}）在这里校验，缺失或不合法时启动失败，
  * 错误信息只列配置项名称（{@link SiteSettings#from}、{@link SiteUrlProperties#toStyle}、{@link SiteImageProperties#toNormalizer}）。
  *
+ * <p>页面用的图片规范化器按部署参数 {@code maccms.browser-external.w2}（{@link BrowserExternalAccess}，默认关闭）决定是否输出
+ * 外部主机的图片地址；关闭时外部图片按空值处理（显示占位），正文里的外部图片整张删除（B02，11 文档第 5 节）。
+ *
  * <p>模板使用构建期预编译的类（{@link StaticTemplates}），运行时不编译模板、不读取模板文件，
  * 不引入 jte 的 Spring Boot starter 与视图解析器（页面不走边渲染边输出的视图路径）。
  */
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnSiteEnabled
 @EnableConfigurationProperties({SiteProperties.class, SiteUrlProperties.class, SiteImageProperties.class})
+@Import(BrowserExternalConfiguration.class)
 public class SiteConfiguration {
 
     @Bean
@@ -48,8 +55,9 @@ public class SiteConfiguration {
     }
 
     @Bean
-    ImageUrlNormalizer siteImageUrlNormalizer(SiteImageProperties image, SiteSettings settings) {
-        return image.toNormalizer(settings);
+    ImageUrlNormalizer siteImageUrlNormalizer(SiteImageProperties image, SiteSettings settings,
+                                              BrowserExternalAccess external) {
+        return image.toNormalizer(settings).withExternalImages(external.w2());
     }
 
     @Bean

@@ -33,9 +33,13 @@ class ModuleBoundaryTest {
     private static final Path MAPPER_XML = Path.of("src", "main", "resources", "mapper");
     private static final String ROOT = "com.maccms.backend";
 
-    /** site 可用的 common 类型；扩充须在任务中说明并同步 02 规范。 */
+    /**
+     * site 可用的 common 类型；扩充须在任务中说明并同步 02 规范。
+     * B02（MACC-26）加入浏览器侧外部地址放行开关及其装配类（site 装配时引入，不读环境变量）。
+     */
     private static final Set<String> SITE_COMMON = Set.of(
-            "common.web.PageResponse", "common.web.ApiException", "common.web.ErrorCode", "common.web.SafeExceptionLog");
+            "common.web.PageResponse", "common.web.ApiException", "common.web.ErrorCode", "common.web.SafeExceptionLog",
+            "common.browser.BrowserExternalAccess", "common.browser.BrowserExternalConfiguration");
 
     /** 已存在、暂不调整的向上依赖：VodMapper 用排序枚举生成 ORDER BY 白名单（MACC-4）。不得新增。 */
     private static final Set<String> KNOWN_UPWARD = Set.of(
