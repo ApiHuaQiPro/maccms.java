@@ -1,0 +1,107 @@
+### base sort=time page=1
+count: type=ALL | key=null | key_len=null | rows=500000 | filtered=9.45 | possible_keys=type_id | Extra=Using where
+page:  type=ALL | key=null | key_len=null | rows=500000 | filtered=9.45 | possible_keys=type_id | Extra=Using where; Using filesort
+### base sort=time page=50
+page:  type=ALL | key=null | key_len=null | rows=500000 | filtered=9.45 | possible_keys=type_id | Extra=Using where; Using filesort
+### base sort=time page=1000
+page:  type=ALL | key=null | key_len=null | rows=500000 | filtered=9.45 | possible_keys=type_id | Extra=Using where; Using filesort
+### base sort=hits page=1
+page:  type=ALL | key=null | key_len=null | rows=500000 | filtered=9.45 | possible_keys=type_id | Extra=Using where; Using filesort
+### base sort=hits page=50
+page:  type=ALL | key=null | key_len=null | rows=500000 | filtered=9.45 | possible_keys=type_id | Extra=Using where; Using filesort
+### base sort=hits page=1000
+page:  type=ALL | key=null | key_len=null | rows=500000 | filtered=9.45 | possible_keys=type_id | Extra=Using where; Using filesort
+### category sort=time page=1
+count: type=range | key=type_id | key_len=2 | rows=94457 | filtered=10.0 | possible_keys=type_id | Extra=Using index condition; Using where
+page:  type=range | key=type_id | key_len=2 | rows=94457 | filtered=10.0 | possible_keys=type_id | Extra=Using index condition; Using where; Using filesort
+### category sort=hits page=1
+page:  type=range | key=type_id | key_len=2 | rows=94457 | filtered=10.0 | possible_keys=type_id | Extra=Using index condition; Using where; Using filesort
+### area sort=time page=1
+count: type=ref | key=vod_area | key_len=62 | rows=48673 | filtered=9.45 | possible_keys=type_id,vod_area | Extra=Using where
+page:  type=ref | key=vod_area | key_len=62 | rows=48673 | filtered=9.45 | possible_keys=type_id,vod_area | Extra=Using index condition; Using where; Using filesort
+### area sort=time page=50
+page:  type=ref | key=vod_area | key_len=62 | rows=48673 | filtered=9.45 | possible_keys=type_id,vod_area | Extra=Using index condition; Using where; Using filesort
+### area sort=time page=1000
+page:  type=ref | key=vod_area | key_len=62 | rows=48673 | filtered=9.45 | possible_keys=type_id,vod_area | Extra=Using index condition; Using where; Using filesort
+### area sort=hits page=1
+page:  type=ref | key=vod_area | key_len=62 | rows=48673 | filtered=9.45 | possible_keys=type_id,vod_area | Extra=Using index condition; Using where; Using filesort
+### area sort=hits page=50
+page:  type=ref | key=vod_area | key_len=62 | rows=48673 | filtered=9.45 | possible_keys=type_id,vod_area | Extra=Using index condition; Using where; Using filesort
+### area sort=hits page=1000
+page:  type=ref | key=vod_area | key_len=62 | rows=48673 | filtered=9.45 | possible_keys=type_id,vod_area | Extra=Using index condition; Using where; Using filesort
+### lang sort=time page=1
+count: type=ref | key=vod_lang | key_len=32 | rows=42349 | filtered=9.45 | possible_keys=type_id,vod_lang | Extra=Using where
+page:  type=ref | key=vod_lang | key_len=32 | rows=42349 | filtered=9.45 | possible_keys=type_id,vod_lang | Extra=Using index condition; Using where; Using filesort
+### lang sort=hits page=1
+page:  type=ref | key=vod_lang | key_len=32 | rows=42349 | filtered=9.45 | possible_keys=type_id,vod_lang | Extra=Using index condition; Using where; Using filesort
+### year sort=time page=1
+count: type=ref | key=vod_year | key_len=32 | rows=36306 | filtered=9.45 | possible_keys=type_id,vod_year | Extra=Using where
+page:  type=ref | key=vod_year | key_len=32 | rows=36306 | filtered=9.45 | possible_keys=type_id,vod_year | Extra=Using index condition; Using where; Using filesort
+### year sort=hits page=1
+page:  type=ref | key=vod_year | key_len=32 | rows=36306 | filtered=9.45 | possible_keys=type_id,vod_year | Extra=Using index condition; Using where; Using filesort
+### level sort=time page=1
+count: type=ref | key=vod_level | key_len=1 | rows=1277 | filtered=9.45 | possible_keys=type_id,vod_level | Extra=Using where
+page:  type=ref | key=vod_level | key_len=1 | rows=1277 | filtered=9.45 | possible_keys=type_id,vod_level | Extra=Using index condition; Using where; Using filesort
+### level sort=hits page=1
+page:  type=ref | key=vod_level | key_len=1 | rows=1277 | filtered=9.45 | possible_keys=type_id,vod_level | Extra=Using index condition; Using where; Using filesort
+### exact-combo sort=time page=1
+count: type=index_merge | key=vod_year,vod_area | key_len=32,62 | rows=10729 | filtered=3.34 | possible_keys=type_id,vod_year,vod_area,vod_lang | Extra=Using intersect(vod_year,vod_area); Using where
+page:  type=index_merge | key=vod_year,vod_area | key_len=32,62 | rows=10729 | filtered=3.34 | possible_keys=type_id,vod_year,vod_area,vod_lang | Extra=Using intersect(vod_year,vod_area); Using where; Using filesort
+### exact-combo sort=hits page=1
+page:  type=index_merge | key=vod_year,vod_area | key_len=32,62 | rows=10729 | filtered=3.34 | possible_keys=type_id,vod_year,vod_area,vod_lang | Extra=Using intersect(vod_year,vod_area); Using where; Using filesort
+### kw-high sort=time page=1
+count: type=ALL | key=null | key_len=null | rows=500000 | filtered=2.81 | possible_keys=type_id | Extra=Using where
+page:  type=ALL | key=null | key_len=null | rows=500000 | filtered=2.81 | possible_keys=type_id | Extra=Using where; Using filesort
+### kw-high sort=time page=50
+page:  type=ALL | key=null | key_len=null | rows=500000 | filtered=2.81 | possible_keys=type_id | Extra=Using where; Using filesort
+### kw-high sort=time page=1000
+page:  type=ALL | key=null | key_len=null | rows=500000 | filtered=2.81 | possible_keys=type_id | Extra=Using where; Using filesort
+### kw-high sort=hits page=1
+page:  type=ALL | key=null | key_len=null | rows=500000 | filtered=2.81 | possible_keys=type_id | Extra=Using where; Using filesort
+### kw-high sort=hits page=50
+page:  type=ALL | key=null | key_len=null | rows=500000 | filtered=2.81 | possible_keys=type_id | Extra=Using where; Using filesort
+### kw-high sort=hits page=1000
+page:  type=ALL | key=null | key_len=null | rows=500000 | filtered=2.81 | possible_keys=type_id | Extra=Using where; Using filesort
+### kw-low sort=time page=1
+count: type=ALL | key=null | key_len=null | rows=500000 | filtered=2.81 | possible_keys=type_id | Extra=Using where
+page:  type=ALL | key=null | key_len=null | rows=500000 | filtered=2.81 | possible_keys=type_id | Extra=Using where; Using filesort
+### kw-low sort=hits page=1
+page:  type=ALL | key=null | key_len=null | rows=500000 | filtered=2.81 | possible_keys=type_id | Extra=Using where; Using filesort
+### kw-none sort=time page=1
+count: type=ALL | key=null | key_len=null | rows=500000 | filtered=2.81 | possible_keys=type_id | Extra=Using where
+page:  type=ALL | key=null | key_len=null | rows=500000 | filtered=2.81 | possible_keys=type_id | Extra=Using where; Using filesort
+### kw-none sort=hits page=1
+page:  type=ALL | key=null | key_len=null | rows=500000 | filtered=2.81 | possible_keys=type_id | Extra=Using where; Using filesort
+### kw-en sort=time page=1
+count: type=ALL | key=null | key_len=null | rows=500000 | filtered=2.81 | possible_keys=type_id | Extra=Using where
+page:  type=ALL | key=null | key_len=null | rows=500000 | filtered=2.81 | possible_keys=type_id | Extra=Using where; Using filesort
+### kw-en sort=hits page=1
+page:  type=ALL | key=null | key_len=null | rows=500000 | filtered=2.81 | possible_keys=type_id | Extra=Using where; Using filesort
+### kw-amp sort=time page=1
+count: type=ALL | key=null | key_len=null | rows=500000 | filtered=4.79 | possible_keys=type_id | Extra=Using where
+page:  type=ALL | key=null | key_len=null | rows=500000 | filtered=4.79 | possible_keys=type_id | Extra=Using where; Using filesort
+### kw-amp sort=hits page=1
+page:  type=ALL | key=null | key_len=null | rows=500000 | filtered=4.79 | possible_keys=type_id | Extra=Using where; Using filesort
+### classes sort=time page=1
+count: type=ALL | key=null | key_len=null | rows=500000 | filtered=1.05 | possible_keys=type_id | Extra=Using where
+page:  type=ALL | key=null | key_len=null | rows=500000 | filtered=1.05 | possible_keys=type_id | Extra=Using where; Using filesort
+### classes sort=time page=50
+page:  type=ALL | key=null | key_len=null | rows=500000 | filtered=1.05 | possible_keys=type_id | Extra=Using where; Using filesort
+### classes sort=time page=1000
+page:  type=ALL | key=null | key_len=null | rows=500000 | filtered=1.05 | possible_keys=type_id | Extra=Using where; Using filesort
+### classes sort=hits page=1
+page:  type=ALL | key=null | key_len=null | rows=500000 | filtered=1.05 | possible_keys=type_id | Extra=Using where; Using filesort
+### classes sort=hits page=50
+page:  type=ALL | key=null | key_len=null | rows=500000 | filtered=1.05 | possible_keys=type_id | Extra=Using where; Using filesort
+### classes sort=hits page=1000
+page:  type=ALL | key=null | key_len=null | rows=500000 | filtered=1.05 | possible_keys=type_id | Extra=Using where; Using filesort
+### kw-high+cat sort=time page=1
+count: type=range | key=type_id | key_len=2 | rows=94457 | filtered=2.98 | possible_keys=type_id | Extra=Using index condition; Using where
+page:  type=range | key=type_id | key_len=2 | rows=94457 | filtered=2.98 | possible_keys=type_id | Extra=Using index condition; Using where; Using filesort
+### kw-high+cat sort=hits page=1
+page:  type=range | key=type_id | key_len=2 | rows=94457 | filtered=2.98 | possible_keys=type_id | Extra=Using index condition; Using where; Using filesort
+### kw-low+area sort=time page=1
+count: type=ref | key=vod_area | key_len=62 | rows=147771 | filtered=2.81 | possible_keys=type_id,vod_area | Extra=Using where
+page:  type=ref | key=vod_area | key_len=62 | rows=147771 | filtered=2.81 | possible_keys=type_id,vod_area | Extra=Using index condition; Using where; Using filesort
+### kw-low+area sort=hits page=1
+page:  type=ref | key=vod_area | key_len=62 | rows=147771 | filtered=2.81 | possible_keys=type_id,vod_area | Extra=Using index condition; Using where; Using filesort

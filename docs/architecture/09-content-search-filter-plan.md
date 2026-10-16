@@ -1,6 +1,8 @@
 ## 视频搜索与多条件筛选：只读契约与下一批实施方案（MACC-16）
 
 > **状态：第 4 版已验收（父任务 MACC-2 记录）。T1（content API/SQL 与真实 MySQL 验证）已由 MACC-18 实施**：6 个新参数、`maccms.content.search.*` 配置、执行时限与并发上限已是已实现能力，正式契约升为 `docs/contracts/content-read.openapi.yaml` 1.1.0，草案文件已合并后删除；实施与本方案的差异见第 12 节。T2（性能测量）、T3（SSR 搜索页）、T4（样式）**仍未实施**，文中这些部分仍是拟实施。以下第 0–11 节保持第 4 版原文（"草案"指已并入正式契约的那份接口草案）。
+>
+> **T2 已测量（MACC-19）**：一次性合成库 10 万/50 万/100 万行的 EXPLAIN、耗时、表锁与 503 证据见 `docs/architecture/09-content-search-filter-perf-report.md`；结论是包含匹配**保持关闭**（默认值未改），并发现时限在排序阶段触发时报 1028、被映射为 500 的缺陷（报告第 6.3 节，未修复）。下文第 6.2 节"定性分析，未测量"与第 11 节"全部未测量"以该报告为准。
 > 配套接口草案（已并入契约 1.1.0 并删除）：`docs/contracts/content-search-filter.draft.openapi.yaml`（以下简称"草案"）。已发布契约 `docs/contracts/content-read.openapi.yaml`（以下简称"契约"）。
 >
 > 输入：父任务 MACC-2 评论、`AGENTS.md`、`docs/architecture/02-agent-development-rules.md`、`docs/architecture/03-frontend-readonly-plan.md`、`docs/architecture/08-site-pages.md`、`docs/frontend/02-url-golden-vectors.md`、契约，以及下文逐条引用的旧代码与 Java 代码。
