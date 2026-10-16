@@ -47,7 +47,7 @@ import tools.jackson.databind.json.JsonMapper;
  *
  * <p>搜索/筛选（契约 1.1.0，09 方案第 6.3 节）：带 keyword/classes 的请求要求 {@code maccms.content.search.enabled=true}
  * （否则 400），并经进程内并发上限（{@code max-concurrent}，不等待）进入，拿不到许可即 503；带任一新条件的语句有服务端
- * 执行时限，超时（MySQL 3024）同样归为 503。两种新 503 的响应体与数据库不可用时逐字相同，日志只有固定说明与类型链，
+ * 执行时限，超时（MySQL 3024；排序阶段中止为 1028）同样归为 503。两种新 503 的响应体与数据库不可用时逐字相同，日志只有固定说明与类型链，
  * 不记录条件值。不带新条件的请求不经过这两项，SQL 与 1.0.0 相同。
  */
 @Service

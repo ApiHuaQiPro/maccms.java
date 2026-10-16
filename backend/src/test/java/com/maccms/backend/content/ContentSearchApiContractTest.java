@@ -180,16 +180,32 @@ class ContentSearchApiContractTest {
         // 真实 MySQL 5.7 下 MAX_EXECUTION_TIME 超时被 Spring 翻译为 UncategorizedSQLException <- SQLException(3024)
         // （ContentSearchMySqlIT 实测）；message 中的合成标记不得进入响应或日志
         SQLException cause = new SQLException(LEAK + " maximum statement execution time exceeded", "HY000", 3024);
-        when(vodMapper.countPublishedMatching(any(), any())).thenThrow(
-                new UncategorizedSQLException(LEAK + "-task", "SELECT /*+ MAX_EXECUTION_TIME(3000) */ " + LEAK, cause));
-        for (String p : List.of("area", "keyword")) {
+        assertTimeoutIs503(new UncategorizedSQLException(LEAK + "-task",
+                "SELECT /*+ MAX_EXECUTION_TIME(3000) */ " + LEAK, cause), output);
+    }
+
+    @Test
+    void filesortAbortedByStatementTimeoutReturnsTheSame503(CapturedOutput output) throws Exception {
+        // 时限在排序阶段触发时 MySQL 5.7.44 报 1028 ER_FILSORT_ABORT（MACC-19 性能报告第 6.3 节，修复前为 500）；
+        // 响应与日志须与 3024 分支逐字一致
+        SQLException cause = new SQLException(LEAK + " Sort aborted: Query execution was interrupted, "
+                + "maximum statement execution time exceeded", "HY000", 1028);
+        assertTimeoutIs503(new UncategorizedSQLException(LEAK + "-task",
+                "SELECT /*+ MAX_EXECUTION_TIME(3000) */ " + LEAK + " ORDER BY vod_time DESC", cause), output);
+    }
+
+    private void assertTimeoutIs503(UncategorizedSQLException timeout, CapturedOutput output) throws Exception {
+        when(vodMapper.countPublishedMatching(any(), any())).thenThrow(timeout);
+        for (String p : List.of("area", "keyword", "classes")) {
             MvcResult r = perform(get("/api/v1/videos").param(p, LEAK.substring(0, 10)));
             assertThat(r.getResponse().getStatus()).isEqualTo(503);
             assertThat(r.getResponse().getContentAsString(StandardCharsets.UTF_8)).isEqualTo(UNAVAILABLE);
         }
         assertThat(output.getAll()).contains("database statement timeout: org.springframework.jdbc"
                 + ".UncategorizedSQLException <- java.sql.SQLException").doesNotContain(LEAK)
-                .doesNotContain("MAX_EXECUTION_TIME");
+                .doesNotContain(LEAK.substring(0, 10)).doesNotContain("MAX_EXECUTION_TIME")
+                .doesNotContain("Sort aborted").doesNotContain("maximum statement execution time")
+                .doesNotContain("database access failed");
     }
 
     @Test
