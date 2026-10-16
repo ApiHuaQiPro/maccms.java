@@ -449,15 +449,18 @@ class ContentApiContractTest {
     }
 
     /**
-     * MACC-14：连接类故障改由 content.application 转换为 ApiException(SERVICE_UNAVAILABLE) 后，三个接口的 503 响应体
-     * 与转换前（GlobalExceptionHandler 的 DataAccessResourceFailureException 分支）逐字相同。
+     * MACC-14：连接类故障改由 content.application 转换为 ApiException(SERVICE_UNAVAILABLE)，三个接口的 503 响应体
+     * 与原 GlobalExceptionHandler 的 DataAccessResourceFailureException 分支逐字相同。真实连接失败被 MyBatis 包装后
+     * 外层是 MyBatisSystemException，改动前落到 500（与契约"数据库暂时不可用 → 503"不符），改动后为 503。
      */
     @ParameterizedTest
     @CsvSource({"/api/v1/video-categories", "/api/v1/videos", "/api/v1/videos?categoryId=1", "/api/v1/videos/1"})
     void connectionFailureKeepsExact503Body(String path, CapturedOutput output) throws Exception {
-        org.springframework.jdbc.CannotGetJdbcConnectionException e =
-                new org.springframework.jdbc.CannotGetJdbcConnectionException("jdbc:mysql://" + LEAK + "-host/db",
-                        new java.sql.SQLTransientConnectionException(LEAK));
+        // 与真实连接失败相同的包装：MyBatisSystemException <- PersistenceException <- CannotGetJdbcConnectionException
+        RuntimeException e = new org.mybatis.spring.MyBatisSystemException(LEAK,
+                new org.apache.ibatis.exceptions.PersistenceException(LEAK,
+                        new org.springframework.jdbc.CannotGetJdbcConnectionException("jdbc:mysql://" + LEAK + "-host/db",
+                                new java.sql.SQLTransientConnectionException(LEAK))));
         when(typeMapper.selectEnabledVodTypes()).thenThrow(e);
         when(vodMapper.selectPublishedDetail(anyLong())).thenThrow(e);
         MvcResult r = mvc.perform(get(path)).andReturn();
@@ -465,8 +468,8 @@ class ContentApiContractTest {
         assertThat(r.getResponse().getContentType()).startsWith("application/json");
         assertThat(r.getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8))
                 .isEqualTo("{\"code\":\"SERVICE_UNAVAILABLE\",\"message\":\"服务暂时不可用\",\"fieldErrors\":[]}");
-        assertThat(output.getAll()).contains("database unavailable: org.springframework.jdbc"
-                + ".CannotGetJdbcConnectionException <- java.sql.SQLTransientConnectionException").doesNotContain(LEAK);
+        assertThat(output.getAll()).contains("database unavailable: org.mybatis.spring.MyBatisSystemException")
+                .contains("org.springframework.jdbc.CannotGetJdbcConnectionException").doesNotContain(LEAK);
     }
 
     @Test

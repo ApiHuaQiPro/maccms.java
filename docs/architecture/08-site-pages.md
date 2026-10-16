@@ -68,9 +68,10 @@
 
 ### 5. content.application 的数据库故障归一
 
-`ContentReadService` 的三个公开方法在内部捕获 `DataAccessResourceFailureException`、`TransientDataAccessException`（与 `GlobalExceptionHandler` 原有 503 分支的判定相同），记录 `database unavailable: <类型链>`，抛出 `ApiException(SERVICE_UNAVAILABLE, "服务暂时不可用")`。
+`ContentReadService` 的三个公开方法在内部捕获 `DataAccessException`，当异常本身或其 cause 链（最多 8 层）中有 `DataAccessResourceFailureException`、`TransientDataAccessException`（与 `GlobalExceptionHandler` 原有 503 分支的类型相同）时，记录 `database unavailable: <类型链>`，抛出 `ApiException(SERVICE_UNAVAILABLE, "服务暂时不可用")`。不是连接类故障时，再按 MySQL 错误码 3024/1028 判定执行时限超时（MACC-18/22，日志 `database statement timeout: <类型链>`），同样为 503；两项都不是则原样抛出。
 
-- 公开 API 的 503 响应体逐字不变：`{"code":"SERVICE_UNAVAILABLE","message":"服务暂时不可用","fieldErrors":[]}`，日志行也相同（`ContentApiContractTest.connectionFailureKeepsExact503Body` 对改动前、后的实现都通过）。
+- 503 响应体与原 503 分支逐字相同：`{"code":"SERVICE_UNAVAILABLE","message":"服务暂时不可用","fieldErrors":[]}`。
+- **沿 cause 链判定的原因（实测）**：用不可达的数据库地址启动 jar，真实连接失败经 MyBatis 包装后是 `MyBatisSystemException ← PersistenceException ← CannotGetJdbcConnectionException ← …CommunicationsException`。外层不是连接类故障类型，所以只看外层时公开 API 对"数据库连不上"实际返回 **500 `INTERNAL_ERROR`**，与契约 `ServiceUnavailable`（"数据库暂时不可用 → 503"）不符；页面也只能是 500。改为沿 cause 链判定后公开 API 与各页都返回 503。这一修复最初在 MACC-14 分支（`a0f49e6`）上完成，未进入整合分支；MACC-25 在合入 MACC-18/22 之后的 `read` 上重新实现，测试见 `ContentReadServiceUnavailableTest`（含被 MyBatis 包装的 3024 仍记为时限超时、超过 8 层不识别两条新增用例）与 `ContentApiContractTest.connectionFailureKeepsExact503Body`。**这是公开 API 在该故障场景下的状态码变化（500 → 503，向契约对齐）**；其他场景的状态码与 JSON 不变。
 - 其他数据访问异常（如 `BadSqlGrammarException`）不转换，仍由全局处理返回 500；业务异常原样抛出。
 - site 因此不需要 Spring DAO 类型，`ModuleBoundaryTest` 对 site 的 `org.springframework.dao` 禁令保持不变。`GlobalExceptionHandler` 的 DAO 分支保留，作为其他调用路径的兜底。
 
@@ -119,6 +120,7 @@
 | 图片地址 | `mac_url_img` | 等价规范化（差异见 06 第 6 节）；`img_key` 只接受字面域名多选一 |
 | 时间显示 | 模板决定 | `Asia/Shanghai`，`yyyy-MM-dd` |
 | 站点关闭 | 输出关闭模板，未设状态码 | 503 维护页 |
+| 数据库连不上（公开 API 也受影响） | —（新系统修复前：API 实际返回 500） | 503 `SERVICE_UNAVAILABLE`，与契约一致（第 5 节） |
 
 ### 9. 本地运行与浏览器验收
 
@@ -129,7 +131,7 @@ MACCMS_SITE_ENABLED=true MACCMS_SITE_NAME='MacCMS 本地站（合成）' MACCMS_
 java -jar target/maccms-backend-0.1.0-SNAPSHOT.jar
 ```
 
-数据源指向不可达地址时三页都返回 503（验证故障路径）；要看到内容，需连接装有合成数据的一次性库（`maccms_it_*`），不要连接 `maccms_dev` 或其他已有库。浏览器验收脚本对一个运行中的站点检查 375/768/1280/1440/1920 px 下无横向滚动、键盘 Tab 顺序与焦点可见、无 JS 可用，并输出截图；使用方法见脚本头部注释。
+数据源指向不可达地址时三页都返回 503 + `Retry-After`（已实测，验证故障路径）；要看到内容，需连接装有合成数据的一次性库（`maccms_it_*`），不要连接 `maccms_dev` 或其他已有库。浏览器验收脚本对一个运行中的站点检查 375/768/1280/1440/1920 px 下无横向滚动、键盘 Tab 顺序与焦点可见、无 JS 可用，并输出截图；使用方法见脚本头部注释。
 
 ### 10. 交还边界、回滚与遗留
 

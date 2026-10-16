@@ -19,6 +19,8 @@ import com.maccms.backend.content.infrastructure.VodFilterCriteria;
 import com.maccms.backend.content.infrastructure.VodMapper;
 import com.maccms.backend.content.infrastructure.VodSummaryRow;
 import java.math.BigDecimal;
+import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Semaphore;
@@ -39,8 +41,9 @@ import tools.jackson.databind.json.JsonMapper;
  * content 模块的只读查询。只调用 Mapper 的 select，不写任何表，不写缓存。
  * 可见性规则见 CategoryCatalog 与 docs/architecture/01-batch1-content-read-plan.md 第 4 节。
  *
- * <p>数据库连接类故障（{@link DataAccessResourceFailureException}、{@link TransientDataAccessException}，
- * 与 GlobalExceptionHandler 原有的 503 判定相同）在这里统一转换为 {@code ApiException(SERVICE_UNAVAILABLE)}，
+ * <p>数据库连接类故障（异常本身或 cause 链中有 {@link DataAccessResourceFailureException}、
+ * {@link TransientDataAccessException}，类型与 GlobalExceptionHandler 原有的 503 判定相同）在这里统一转换为
+ * {@code ApiException(SERVICE_UNAVAILABLE)}，
  * 调用方（公开 API、site 页面）不需要、也不应依赖 Spring DAO 类型（MACC-14）。对外 JSON 与转换前相同：
  * {@code {"code":"SERVICE_UNAVAILABLE","message":"服务暂时不可用","fieldErrors":[]}}；日志沿用 "database unavailable"
  * + 类型链，不含 message。其他数据访问异常不转换，仍由全局处理返回 500。
@@ -57,6 +60,7 @@ public class ContentReadService {
     private static final JsonMapper JSON = JsonMapper.builder().build();
     /** 与 GlobalExceptionHandler 对连接类故障返回的 message 相同。 */
     static final String UNAVAILABLE_MESSAGE = "服务暂时不可用";
+    private static final int MAX_CAUSE_DEPTH = 8;
 
     private final TypeMapper typeMapper;
     private final GroupMapper groupMapper;
@@ -127,16 +131,32 @@ public class ContentReadService {
     static <T> T read(Supplier<T> query) {
         try {
             return query.get();
-        } catch (DataAccessResourceFailureException | TransientDataAccessException e) {
-            log.error("database unavailable: {}", SafeExceptionLog.typeChain(e));
-            throw unavailable();
         } catch (DataAccessException e) {
+            if (isConnectionFailure(e)) {
+                log.error("database unavailable: {}", SafeExceptionLog.typeChain(e));
+                throw unavailable();
+            }
             if (!StatementTimeouts.isServerTimeout(e)) {
                 throw e;
             }
             log.warn("database statement timeout: {}", SafeExceptionLog.typeChain(e));
             throw unavailable();
         }
+    }
+
+    /**
+     * 异常本身或其 cause 链（最多 8 层）中有连接类故障。真实的连接失败（连接被拒绝、连接池取不到连接）经 MyBatis 包装后是
+     * MyBatisSystemException ← PersistenceException ← CannotGetJdbcConnectionException，外层并不是连接类故障类型（MACC-14）。
+     */
+    static boolean isConnectionFailure(Throwable e) {
+        Set<Throwable> seen = Collections.newSetFromMap(new IdentityHashMap<>());
+        int depth = 0;
+        for (Throwable t = e; t != null && depth < MAX_CAUSE_DEPTH && seen.add(t); t = t.getCause(), depth++) {
+            if (t instanceof DataAccessResourceFailureException || t instanceof TransientDataAccessException) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static ApiException unavailable() {
