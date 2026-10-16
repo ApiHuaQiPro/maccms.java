@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+  只读映射：沿用旧表 mac_website（install.sql）。禁止在此文件加入写语句，禁止 ${} 拼接。
+  不查询的列：website_lock、website_tpl、website_time_make、website_time_hits、website_time_referer、type_id_1。
+  website_jumpurl 是网址本身（导航目标），作为 url 输出。旧规则依据：application/common/model/Website.php。
+-->
+<mapper namespace="com.maccms.backend.content.infrastructure.WebsiteMapper">
+
+    <!--
+      website_status=1（Website.php:233）；分类可见性由 content.application 给出 typeIds。
+      精确筛选：level（:234-239）、letter（:248-253）、area（:363-365）、lang（:366-368）；旧版 area/lang 逗号多值，新版单值。
+    -->
+    <sql id="publishedMatching">
+        website_status = 1
+        AND type_id IN
+        <foreach collection="typeIds" item="tid" open="(" separator="," close=")">#{tid}</foreach>
+        <if test="criteria.level != null">AND website_level = #{criteria.level}</if>
+        <if test="criteria.letters != null">
+            AND website_letter IN <foreach collection="criteria.letters" item="l" open="(" separator="," close=")">#{l}</foreach>
+        </if>
+        <if test="criteria.area != null">AND website_area = #{criteria.area}</if>
+        <if test="criteria.lang != null">AND website_lang = #{criteria.lang}</if>
+    </sql>
+
+    <select id="countPublished" resultType="long">
+        SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*)
+        FROM mac_website
+        WHERE <include refid="publishedMatching"/>
+    </select>
+
+    <!--
+      排序白名单对应旧 by（Website.php:393-399，不含 rnd、in；referer* 对应 website_referer* 列），
+      追加 website_id 同向排序保证分页稳定。
+    -->
+    <select id="selectPublishedPage" resultType="com.maccms.backend.content.infrastructure.WebsiteSummaryRow">
+        SELECT /*+ MAX_EXECUTION_TIME(3000) */
+               website_id               AS id,
+               type_id                  AS categoryId,
+               website_name             AS name,
+               website_sub              AS subTitle,
+               website_en               AS enName,
+               website_letter           AS letter,
+               website_color            AS color,
+               website_sort             AS sort,
+               website_jumpurl          AS url,
+               website_pic              AS pic,
+               website_logo             AS logo,
+               website_area             AS area,
+               website_lang             AS lang,
+               website_tag              AS tag,
+               website_class            AS classes,
+               website_blurb            AS blurb,
+               website_remarks          AS remarks,
+               website_level            AS level,
+               website_score            AS score,
+               website_score_num        AS scoreNum,
+               website_hits             AS hits,
+               website_hits_day         AS hitsDay,
+               website_hits_week        AS hitsWeek,
+               website_hits_month       AS hitsMonth,
+               website_up               AS up,
+               website_down             AS down,
+               website_referer          AS referer,
+               website_referer_day      AS refererDay,
+               website_referer_week     AS refererWeek,
+               website_referer_month    AS refererMonth,
+               website_time             AS updatedAt,
+               website_time_add         AS addedAt
+        FROM mac_website
+        WHERE <include refid="publishedMatching"/>
+        ORDER BY
+        <choose>
+            <when test="sort.name() == 'TIME'">website_time</when>
+            <when test="sort.name() == 'TIME_ADD'">website_time_add</when>
+            <when test="sort.name() == 'SCORE'">website_score</when>
+            <when test="sort.name() == 'HITS'">website_hits</when>
+            <when test="sort.name() == 'HITS_DAY'">website_hits_day</when>
+            <when test="sort.name() == 'HITS_WEEK'">website_hits_week</when>
+            <when test="sort.name() == 'HITS_MONTH'">website_hits_month</when>
+            <when test="sort.name() == 'UP'">website_up</when>
+            <when test="sort.name() == 'DOWN'">website_down</when>
+            <when test="sort.name() == 'LEVEL'">website_level</when>
+            <when test="sort.name() == 'REFERER'">website_referer</when>
+            <when test="sort.name() == 'REFERER_DAY'">website_referer_day</when>
+            <when test="sort.name() == 'REFERER_WEEK'">website_referer_week</when>
+            <when test="sort.name() == 'REFERER_MONTH'">website_referer_month</when>
+            <otherwise>website_id</otherwise>
+        </choose>
+        <choose>
+            <when test="descending">DESC, website_id DESC</when>
+            <otherwise>ASC, website_id ASC</otherwise>
+        </choose>
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- 对应旧 mac_label_website_detail 的 website_id + website_status=1 条件（application/common.php:2619-2637）。 -->
+    <select id="selectPublishedDetail" resultType="com.maccms.backend.content.infrastructure.WebsiteDetailRow">
+        SELECT website_id               AS id,
+               type_id                  AS categoryId,
+               website_name             AS name,
+               website_sub              AS subTitle,
+               website_en               AS enName,
+               website_letter           AS letter,
+               website_color            AS color,
+               website_sort             AS sort,
+               website_jumpurl          AS url,
+               website_pic              AS pic,
+               website_logo             AS logo,
+               website_area             AS area,
+               website_lang             AS lang,
+               website_tag              AS tag,
+               website_class            AS classes,
+               website_blurb            AS blurb,
+               website_remarks          AS remarks,
+               website_level            AS level,
+               website_score            AS score,
+               website_score_all        AS scoreAll,
+               website_score_num        AS scoreNum,
+               website_hits             AS hits,
+               website_hits_day         AS hitsDay,
+               website_hits_week        AS hitsWeek,
+               website_hits_month       AS hitsMonth,
+               website_up               AS up,
+               website_down             AS down,
+               website_referer          AS referer,
+               website_referer_day      AS refererDay,
+               website_referer_week     AS refererWeek,
+               website_referer_month    AS refererMonth,
+               website_time             AS updatedAt,
+               website_time_add         AS addedAt,
+               website_content          AS content,
+               website_pic_screenshot   AS screenshots
+        FROM mac_website
+        WHERE website_id = #{id}
+          AND website_status = 1
+    </select>
+</mapper>

@@ -35,4 +35,15 @@ public interface VodMapper {
                                                     @Param("limit") int limit);
 
     VodDetailRow selectPublishedDetail(@Param("id") long id);
+
+    /** 专题关联视频（MACC-27）：vod_id 在 ids 中，按 vod_time 倒序，最多 999 条（旧 Topic::infoData）。ids 非空。 */
+    List<VodSummaryRow> selectPublishedByIds(@Param("typeIds") Collection<Integer> typeIds,
+                                             @Param("ids") Collection<Long> ids);
+
+    /** 专题按标签关联视频（MACC-27）：vod_tag 包含任一模式（LIKE ... ESCAPE '!'），按 vod_time 倒序，最多 999 条。patterns 非空。 */
+    List<VodSummaryRow> selectPublishedByTagPatterns(@Param("typeIds") Collection<Integer> typeIds,
+                                                     @Param("patterns") Collection<String> patterns);
+
+    /** 角色所属视频的摘要（MACC-27）：已审核的视频，不按分类过滤（由调用方判定可见性）。ids 非空。 */
+    List<VodRefRow> selectPublishedRefs(@Param("ids") Collection<Long> ids);
 }
