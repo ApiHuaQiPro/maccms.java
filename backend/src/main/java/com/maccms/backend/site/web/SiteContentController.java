@@ -64,6 +64,8 @@ public class SiteContentController {
                 var page = pages.detail(d);
                 yield renderer.ok(tpl -> tpl.sitePagesDetail(page), false);
             }
+            // parse() 不认识 vod/search；搜索页只由 SiteSearchController 经 parseSearch 承接
+            case SiteRoute.VodSearch s -> throw new ApiException(ErrorCode.NOT_FOUND, "页面不存在");
         };
     }
 }

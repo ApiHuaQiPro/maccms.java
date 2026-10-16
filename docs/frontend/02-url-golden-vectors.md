@@ -76,6 +76,7 @@
 | `LegacyUrlParserTest` | 规范与非规范形态、`?s=`、恶意输入（协议相对、绝对形式、点段、编码斜线/点、控制字符、CRLF、反斜线、非法 UTF-8、`javascript:`）、参数错误的字段名、路由模式、canonical 只来自 `base-url`（含子目录）、超长输入、未覆盖的配置组合被拒绝 |
 | `LegacyUrlBuilderTest` | 越界与未知参数、`empty()` 语义、孤立代理项、`urlencode` 与 PHP 一致、恶意关键词在 4 种配置下仍是站内相对路径并通过 `SafeUrl` |
 | `SiteSettingsTest` | 站内路径规则扩展到旧编码形态后，仍拒绝 `%2F`/`%2f`、`%2E`、`%5C`、控制字符、小写或不完整的 `%` |
+| `SearchGoldenVectorsTest`（MACC-20） | 6 × 14 条 `search.q.*` 解析向量（搜索页的固定路径 + 查询串，`query` 为 Web 服务器已解码一次的 GET 值）：Java `parseSearch` 认得的每一条，旧代码都调度到 `vod/search`；值不含 `% + & < > " '` 时 `wd/area/lang/year/level/class/by/order/page` 取值一致（Java 未设置 ⇔ PHP 为 `''`/`'0'`）；`search.q.pct`（`%41` 对 `A`）、`search.q.plus`（`C++` 对 `C  `）、`search.q.amp`（`Tom & Jerry` 对 `Tom &amp; Jerry`）三条差异逐条锁定；`route_status=1`（旧站 404）与 `pathinfo_depr=-` 分支 Java 不承接。`LegacyUrlGoldenVectorsTest` 中这些向量对 `parse()` 的预期是 unsupported。新增向量只记录 `search.q.*` 的额外参数键，2026-10-16 用 PHP 8.0.30 重新生成，原有向量逐字不变 |
 
 运行：`cd backend && ./mvnw verify`（Git Bash）或 `.\mvnw.cmd verify`（PowerShell），不需要数据库环境变量。重新生成向量需要 PHP 7.2～8.0 的 CLI（8.2 的差异见第 1 节），不是构建的一部分。
 

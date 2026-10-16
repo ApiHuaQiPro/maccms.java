@@ -1,0 +1,27 @@
+table	engine	rows	data_length	index_length	update_time	checksum
+mac_actor	MyISAM	0	0	4096	2026-10-10 05:09:04	null
+mac_admin	MyISAM	0	52	3072	2026-10-10 05:22:43	null
+mac_annex	MyISAM	0	0	4096	2026-10-10 05:09:04	null
+mac_art	MyISAM	0	0	4096	2026-10-10 05:09:04	null
+mac_card	MyISAM	0	0	1024	2026-10-10 05:09:04	null
+mac_cash	MyISAM	0	0	1024	2026-10-10 05:09:04	null
+mac_cj_content	MyISAM	0	0	1024	2026-10-10 05:09:04	null
+mac_cj_history	MyISAM	0	0	1024	2026-10-10 05:09:04	null
+mac_cj_node	MyISAM	0	0	1024	2026-10-10 05:09:04	null
+mac_collect	MyISAM	0	0	1024	2026-10-10 05:09:04	null
+mac_comment	MyISAM	0	0	1024	2026-10-10 05:09:04	null
+mac_gbook	MyISAM	0	0	4096	2026-10-10 05:09:04	null
+mac_group	MyISAM	3	2516	3072	2026-10-10 05:09:04	null
+mac_link	MyISAM	0	0	1024	2026-10-10 05:09:04	null
+mac_msg	MyISAM	0	0	1024	2026-10-10 05:09:04	null
+mac_order	MyISAM	0	0	1024	2026-10-10 05:09:04	null
+mac_plog	MyISAM	0	0	1024	2026-10-10 05:09:04	null
+mac_role	MyISAM	0	0	4096	2026-10-10 05:09:04	null
+mac_topic	MyISAM	0	0	4096	2026-10-10 05:09:04	null
+mac_type	MyISAM	18	6960	7168	2026-10-10 05:09:04	null
+mac_ulog	MyISAM	0	0	1024	2026-10-10 05:09:04	null
+mac_user	MyISAM	0	128	5120	2026-10-10 05:11:43	null
+mac_visit	MyISAM	0	0	1024	2026-10-10 05:09:04	null
+mac_vod	MyISAM	0	0	4096	2026-10-10 05:09:04	null
+mac_vod_search	InnoDB	0	16384	65536	null	null
+mac_website	MyISAM	0	0	4096	2026-10-10 05:09:04	null

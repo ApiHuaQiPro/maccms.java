@@ -20,6 +20,7 @@ import com.maccms.backend.content.application.ContentReadService;
 import com.maccms.backend.content.application.VideoSort;
 import com.maccms.backend.content.infrastructure.GroupMapper;
 import com.maccms.backend.content.infrastructure.TypeMapper;
+import com.maccms.backend.content.infrastructure.VodFilterCriteria;
 import com.maccms.backend.content.infrastructure.VodMapper;
 import java.util.Collection;
 import java.util.List;
@@ -218,6 +219,127 @@ class ContentApiContractTest {
         assertThat(body.get("items").get(0).get("detailPasswordRequired").asBoolean()).isTrue();
     }
 
+    // ---------- 列表：契约 1.1.0 搜索/筛选（application.yml 默认 maccms.content.search.enabled=false） ----------
+
+    @Test
+    void requestsWithoutNewParametersNeverUseMatchingStatements() throws Exception {
+        when(vodMapper.countPublished(any())).thenReturn(1L);
+        when(vodMapper.selectPublishedPage(any(), any(), anyBoolean(), anyLong(), anyInt()))
+                .thenReturn(List.of(Fixtures.summary(1, 1)));
+        call(get("/api/v1/videos").param("categoryId", "1").param("sort", "hits").param("page", "1"),
+                "/api/v1/videos", "get", 200);
+        // 新参数为空串 = 未传
+        call(get("/api/v1/videos").param("keyword", "").param("area", "").param("lang", "").param("year", "")
+                .param("level", "").param("classes", ""), "/api/v1/videos", "get", 200);
+        verify(vodMapper, never()).countPublishedMatching(any(), any());
+        verify(vodMapper, never()).selectPublishedMatchingPage(any(), any(), any(), anyBoolean(), anyLong(), anyInt());
+    }
+
+    @Test
+    void legacyParameterNamesAreStillIgnored() throws Exception {
+        when(vodMapper.countPublished(any())).thenReturn(2L);
+        when(vodMapper.selectPublishedPage(any(), any(), anyBoolean(), anyLong(), anyInt()))
+                .thenReturn(List.of(Fixtures.summary(2, 6), Fixtures.summary(1, 1)));
+        String plain = mvc.perform(get("/api/v1/videos")).andReturn().getResponse()
+                .getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
+        String legacy = mvc.perform(get("/api/v1/videos?wd=x&class=y&tid=1&by=hits&actor=z")).andReturn()
+                .getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
+        assertThat(legacy).isEqualTo(plain);
+        verify(vodMapper, never()).countPublishedMatching(any(), any());
+    }
+
+    @Test
+    void exactFiltersWorkWhileSearchIsDisabled() throws Exception {
+        when(vodMapper.countPublishedMatching(any(), any())).thenReturn(1L);
+        when(vodMapper.selectPublishedMatchingPage(any(), any(), any(), anyBoolean(), anyLong(), anyInt()))
+                .thenReturn(List.of(Fixtures.summary(5, 6)));
+        JsonNode body = call(get("/api/v1/videos").param("categoryId", "1").param("area", "大陆").param("lang", "国语")
+                .param("year", "2024").param("level", "09").param("sort", "level").param("pageSize", "5"),
+                "/api/v1/videos", "get", 200);
+        assertThat(body.get("total").asLong()).isEqualTo(1);
+        VodFilterCriteria expected = new VodFilterCriteria(9, "2024", "大陆", "国语", null, null);
+        verify(vodMapper).countPublishedMatching(Set.of(1, 6, 7), expected);
+        verify(vodMapper).selectPublishedMatchingPage(Set.of(1, 6, 7), expected, VideoSort.LEVEL, true, 0L, 5);
+        verify(vodMapper, never()).countPublished(any());
+    }
+
+    @ParameterizedTest
+    @CsvSource({"keyword, 合成", "classes, 剧情", "keyword, ' x'", "classes, 'a,b'"})
+    void containsMatchParametersAreRejectedWhileSearchIsDisabled(String field, String value) throws Exception {
+        JsonNode body = call(get("/api/v1/videos").param(field, value), "/api/v1/videos", "get", 400);
+        assertThat(body.get("fieldErrors").get(0).get("field").asString()).isEqualTo(field);
+        assertThat(body.get("fieldErrors").get(0).get("message").asString()).isEqualTo("当前未开放关键字搜索");
+        verify(typeMapper, never()).selectEnabledVodTypes();
+    }
+
+    @Test
+    void malformedUtf8FilterValueIsA400ForThatParameter() throws Exception {
+        JsonNode body = call(get(java.net.URI.create("/api/v1/videos?keyword=%FF")), "/api/v1/videos", "get", 400);
+        assertThat(body.get("fieldErrors").get(0).get("field").asString()).isEqualTo("keyword");
+        body = call(get(java.net.URI.create("/api/v1/videos?area=%E4%B8")), "/api/v1/videos", "get", 400);
+        assertThat(body.get("fieldErrors").get(0).get("field").asString()).isEqualTo("area");
+        assertThat(body.get("fieldErrors").get(0).get("message").asString()).isEqualTo("含不允许的字符");
+    }
+
+    @ParameterizedTest
+    @CsvSource(delimiter = '|', value = {
+            "area     | a,b                   | 不支持多个取值",
+            "area     | ' a'                  | 首尾不能有空白字符",
+            "area     | '　a'                 | 首尾不能有空白字符",
+            "area     | 123456789012345678901 | 长度不能超过 20 个字符",
+            "lang     | 12345678901           | 长度不能超过 10 个字符",
+            "year     | 2020-2022             | 必须是 4 位数字年份",
+            "year     | ' 2020'               | 必须是 4 位数字年份",
+            "level    | 0                     | 必须是 1 到 9 之间的整数",
+            "level    | 10                    | 必须是 1 到 9 之间的整数",
+            "level    | 00000000009           | 必须是 1 到 9 之间的整数",
+    })
+    void invalidFilterParametersReturn400WithFixedMessage(String field, String value, String message)
+            throws Exception {
+        JsonNode body = call(get("/api/v1/videos").param(field, value), "/api/v1/videos", "get", 400);
+        assertThat(body.get("code").asString()).isEqualTo("INVALID_PARAMETER");
+        assertThat(body.get("fieldErrors")).hasSize(1);
+        assertThat(body.get("fieldErrors").get(0).get("field").asString()).isEqualTo(field);
+        assertThat(body.get("fieldErrors").get(0).get("message").asString()).isEqualTo(message);
+        verify(vodMapper, never()).countPublishedMatching(any(), any());
+    }
+
+    @Test
+    void controlCharacterInFilterIsRejected() throws Exception {
+        JsonNode body = call(get("/api/v1/videos").param("lang", "a\u0001"), "/api/v1/videos", "get", 400);
+        assertThat(body.get("fieldErrors").get(0).get("message").asString()).isEqualTo("含不允许的字符");
+    }
+
+    @ParameterizedTest
+    @CsvSource({"area", "lang", "year", "level", "keyword", "classes"})
+    void repeatedFilterParametersAreRejected(String field) throws Exception {
+        for (String q : List.of(field + "=1&" + field + "=2", field + "=&" + field + "=")) {
+            JsonNode body = call(get("/api/v1/videos?" + q), "/api/v1/videos", "get", 400);
+            assertThat(body.get("fieldErrors").get(0).get("field").asString()).isEqualTo(field);
+            assertThat(body.get("fieldErrors").get(0).get("message").asString()).isEqualTo("参数不能重复");
+        }
+    }
+
+    /** 1.0.0 的既有参数重复时维持原行为：逗号连接后按原规则判错（MACC-18 锁定）。 */
+    @ParameterizedTest
+    @CsvSource({"page=1&page=2, page", "pageSize=20&pageSize=, pageSize", "sort=time&sort=time, sort",
+            "order=&order=, order", "categoryId=&categoryId=, categoryId"})
+    void repeatedExistingParametersKeepContract100Behaviour(String query, String field) throws Exception {
+        JsonNode body = call(get("/api/v1/videos?" + query), "/api/v1/videos", "get", 400);
+        assertThat(body.get("fieldErrors").get(0).get("field").asString()).isEqualTo(field);
+    }
+
+    @Test
+    void existingParametersAreValidatedFirstAndParameterErrorsComeBeforeVisibility() throws Exception {
+        JsonNode body = call(get("/api/v1/videos").param("page", "0").param("area", "a,b"), "/api/v1/videos", "get",
+                400);
+        assertThat(body.get("fieldErrors").get(0).get("field").asString()).isEqualTo("page");
+        body = call(get("/api/v1/videos").param("categoryId", "3").param("area", "a,b"), "/api/v1/videos", "get", 400);
+        assertThat(body.get("fieldErrors").get(0).get("field").asString()).isEqualTo("area");
+        body = call(get("/api/v1/videos").param("categoryId", "3").param("area", "大陆"), "/api/v1/videos", "get", 404);
+        assertThat(body.get("code").asString()).isEqualTo("CATEGORY_NOT_FOUND");
+    }
+
     // ---------- 详情 ----------
 
     @Test
@@ -327,15 +449,18 @@ class ContentApiContractTest {
     }
 
     /**
-     * MACC-14：连接类故障改由 content.application 转换为 ApiException(SERVICE_UNAVAILABLE) 后，三个接口的 503 响应体
-     * 与转换前（GlobalExceptionHandler 的 DataAccessResourceFailureException 分支）逐字相同。
+     * MACC-14：连接类故障改由 content.application 转换为 ApiException(SERVICE_UNAVAILABLE)，三个接口的 503 响应体
+     * 与原 GlobalExceptionHandler 的 DataAccessResourceFailureException 分支逐字相同。真实连接失败被 MyBatis 包装后
+     * 外层是 MyBatisSystemException，改动前落到 500（与契约"数据库暂时不可用 → 503"不符），改动后为 503。
      */
     @ParameterizedTest
     @CsvSource({"/api/v1/video-categories", "/api/v1/videos", "/api/v1/videos?categoryId=1", "/api/v1/videos/1"})
     void connectionFailureKeepsExact503Body(String path, CapturedOutput output) throws Exception {
-        org.springframework.jdbc.CannotGetJdbcConnectionException e =
-                new org.springframework.jdbc.CannotGetJdbcConnectionException("jdbc:mysql://" + LEAK + "-host/db",
-                        new java.sql.SQLTransientConnectionException(LEAK));
+        // 与真实连接失败相同的包装：MyBatisSystemException <- PersistenceException <- CannotGetJdbcConnectionException
+        RuntimeException e = new org.mybatis.spring.MyBatisSystemException(LEAK,
+                new org.apache.ibatis.exceptions.PersistenceException(LEAK,
+                        new org.springframework.jdbc.CannotGetJdbcConnectionException("jdbc:mysql://" + LEAK + "-host/db",
+                                new java.sql.SQLTransientConnectionException(LEAK))));
         when(typeMapper.selectEnabledVodTypes()).thenThrow(e);
         when(vodMapper.selectPublishedDetail(anyLong())).thenThrow(e);
         MvcResult r = mvc.perform(get(path)).andReturn();
@@ -343,8 +468,8 @@ class ContentApiContractTest {
         assertThat(r.getResponse().getContentType()).startsWith("application/json");
         assertThat(r.getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8))
                 .isEqualTo("{\"code\":\"SERVICE_UNAVAILABLE\",\"message\":\"服务暂时不可用\",\"fieldErrors\":[]}");
-        assertThat(output.getAll()).contains("database unavailable: org.springframework.jdbc"
-                + ".CannotGetJdbcConnectionException <- java.sql.SQLTransientConnectionException").doesNotContain(LEAK);
+        assertThat(output.getAll()).contains("database unavailable: org.mybatis.spring.MyBatisSystemException")
+                .contains("org.springframework.jdbc.CannotGetJdbcConnectionException").doesNotContain(LEAK);
     }
 
     @Test

@@ -3,6 +3,9 @@ package com.maccms.backend.site.application;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.maccms.backend.content.application.VideoListQuery;
+import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -48,6 +51,122 @@ class SiteSettingsTest {
         assertThat(s.publicPath("site/site.css").href()).isEqualTo("/sub/site/site.css");
         assertThat(SiteSettings.from(props("合成站", "http://maccms.local.test/")).publicPath("site/site.css").href())
                 .isEqualTo("/site/site.css");
+    }
+
+    /** 由若干个 {@code seg/} 子目录拼出总长恰为 length 的 base-url。 */
+    private static String subdirectoryBaseUrl(String prefix, int length) {
+        StringBuilder sb = new StringBuilder(prefix);
+        while (length - sb.length() >= 63) {
+            sb.append("d".repeat(60)).append('/');
+        }
+        // 余下 2～62 个字符作最后一段，不会出现空段
+        sb.append("d".repeat(length - sb.length() - 1)).append('/');
+        assertThat(sb).hasSize(length);
+        return sb.toString();
+    }
+
+    @Test
+    void baseUrlLengthBoundaryIsDerivedFromSafeUrlBudget() {
+        assertThat(SiteSettings.MAX_BASE_URL_LENGTH).isEqualTo(768);
+        assertThat(SiteSettings.MAX_BASE_URL_LENGTH + SitePaths.MAX_LENGTH).isEqualTo(SafeUrl.MAX_LENGTH);
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {199, 200, 201, 512, 767, 768})
+    void subdirectoryBaseUrlUpToBudgetStartsAndLinks(int length) {
+        String base = subdirectoryBaseUrl("https://maccms.local.test:8443/sub/", length);
+        SiteSettings s = SiteSettings.from(props("合成站", base));
+        String home = base.substring("https://maccms.local.test:8443".length());
+        assertThat(s.baseUrl().href()).isEqualTo(base);
+        assertThat(s.homePath().href()).isEqualTo(home);
+        String detail = new LegacyUrlBuilder(LegacyUrlStyle.REPO_DEFAULT).vodDetail(4294967295L);
+        assertThat(s.canonical(detail).href()).isEqualTo(base + detail);
+        assertThat(s.publicPath(detail).href()).isEqualTo(home + detail);
+        assertThat(s.publicPath("site/site.css").href()).isEqualTo(home + "site/site.css");
+    }
+
+    @Test
+    void longRootBaseUrlWithinBudgetIsAccepted() {
+        // 根路径但主机名较长（各标签 ≤ 63），完整地址超过旧的 200 字符上限
+        String host = String.join(".", "a".repeat(63), "b".repeat(63), "c".repeat(63), "test");
+        SiteSettings s = SiteSettings.from(props("合成站", "https://" + host + ":8443/"));
+        assertThat(s.baseUrl().href()).hasSizeGreaterThan(200);
+        assertThat(s.homePath().href()).isEqualTo("/");
+    }
+
+    @Test
+    void baseUrlOverBudgetFailsWithoutEchoingValue() {
+        String base = subdirectoryBaseUrl("https://maccms.local.test/" + SECRET + "/", SiteSettings.MAX_BASE_URL_LENGTH + 1);
+        assertThatThrownBy(() -> SiteSettings.from(props("合成站", base)))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("maccms.site.base-url")
+                .hasMessageContaining("最多 768 个字符")
+                .hasMessageNotContaining(SECRET);
+        // 首尾空白先去掉再计长度
+        assertThat(SiteSettings.from(props("合成站", "  " + subdirectoryBaseUrl("https://maccms.local.test/", 768) + " "))
+                .baseUrl().href()).hasSize(768);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"?q=1/", "#f/", "a//", "../", "./", "%2e%2e/", "%41/", "a\tb/", "a\u0000b/", "a b/", "a\\b/",
+            "a\"b/", "a<b/", "a b/", "a b/"})
+    void longBaseUrlStillRejectsUnsafeParts(String tail) {
+        String base = subdirectoryBaseUrl("https://maccms.local.test/sub/", 300) + tail;
+        assertThat(base.length()).isGreaterThan(200).isLessThanOrEqualTo(SiteSettings.MAX_BASE_URL_LENGTH);
+        assertThatThrownBy(() -> SiteSettings.from(props("合成站", base)))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("maccms.site.base-url")
+                .hasMessageNotContaining(base);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"ftp://maccms.local.test/", "HTTPS://maccms.local.test/", "https://u:p@maccms.local.test/",
+            "https://@maccms.local.test/", "//maccms.local.test/", "https:///", "/sub/"})
+    void longBaseUrlStillRejectsSchemeAndAuthority(String prefix) {
+        String base = subdirectoryBaseUrl(prefix, 300);
+        assertThatThrownBy(() -> SiteSettings.from(props("合成站", base)))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("maccms.site.base-url");
+    }
+
+    @Test
+    void maximumBaseUrlAndMaximumSitePathStayWithinSafeUrl() {
+        String base = subdirectoryBaseUrl("https://maccms.local.test/", SiteSettings.MAX_BASE_URL_LENGTH);
+        SiteSettings s = SiteSettings.from(props("合成站", base));
+        String longest = subdirectoryBaseUrl("", SitePaths.MAX_LENGTH);
+        assertThat(s.canonical(longest).href()).hasSize(SafeUrl.MAX_LENGTH);
+        assertThat(s.publicPath(longest).href()).hasSizeLessThan(SafeUrl.MAX_LENGTH);
+        // 超出站内地址预算的路径按"站内路径不合法"拒绝，与 base-url 长短无关
+        String tooLong = subdirectoryBaseUrl("", SitePaths.MAX_LENGTH + 1);
+        SiteSettings root = SiteSettings.from(props("合成站", "http://maccms.local.test/"));
+        assertThatThrownBy(() -> root.canonical(tooLong)).isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("站内路径不合法");
+        assertThatThrownBy(() -> s.publicPath(tooLong)).isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("站内路径不合法");
+    }
+
+    /**
+     * 现有生成器的最长输出（旧搜索页，参数取公开接口的码点上限，全部为 3 字节汉字，页码取上限）在每种 URL 形态下都在
+     * 站内地址预算内，拼上最长 base-url 后仍是 SafeUrl。
+     */
+    @Test
+    void longestSearchUrlFitsWithMaximumBaseUrl() {
+        String base = subdirectoryBaseUrl("https://maccms.local.test/", SiteSettings.MAX_BASE_URL_LENGTH);
+        SiteSettings s = SiteSettings.from(props("合成站", base));
+        Map<String, String> filters = Map.of("wd", "汉".repeat(64), "area", "汉".repeat(20), "lang", "汉".repeat(10),
+                "class", "汉".repeat(32), "year", "2020", "level", "9", "by", "hits_month", "order", "desc");
+        int longest = 0;
+        for (LegacyUrlStyle style : List.of(new LegacyUrlStyle(false, false, false, '/'),
+                new LegacyUrlStyle(true, false, false, '/'), new LegacyUrlStyle(false, true, false, '/'),
+                new LegacyUrlStyle(true, true, false, '/'), new LegacyUrlStyle(false, false, true, '/'),
+                new LegacyUrlStyle(true, true, true, '/'), new LegacyUrlStyle(false, false, false, '-'),
+                new LegacyUrlStyle(true, true, false, '-'))) {
+            String path = new LegacyUrlBuilder(style).vodSearch(filters, VideoListQuery.MAX_PAGE);
+            longest = Math.max(longest, path.length());
+            assertThat(s.canonical(path).href()).isEqualTo(base + path).hasSizeLessThanOrEqualTo(SafeUrl.MAX_LENGTH);
+            assertThat(s.publicPath(path).href()).endsWith(path);
+        }
+        assertThat(longest).isEqualTo(1235);
     }
 
     @Test

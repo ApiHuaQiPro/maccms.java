@@ -28,7 +28,8 @@ public class SitePages {
 
     public SitePages(SiteSettings site, LegacyUrlBuilder urls) {
         this.site = site;
-        // 搜索、登录仍归旧 PHP（03 方案第 3.1、6.1 节）：只是页面级链接，不调用 ajax/suggest 等接口
+        // 登录仍归旧 PHP（03 方案第 3.1、6.1 节）：只是页面级链接，不调用 ajax/suggest 等接口。搜索表单地址不变
+        // （旧 vod/search 基址）：maccms.site.search.enabled=true 时由 Java 搜索页处理，否则仍归 PHP（09 方案第 7.1 节）
         this.searchAction = site.publicPath(urls.vodSearch(Map.of(), 1));
         this.loginUrl = site.publicPath(urls.user("login"));
     }
@@ -70,6 +71,16 @@ public class SitePages {
     PageChrome content(String fullTitle, String description, String keywords, SafeUrl canonical, List<NavLink> nav) {
         return chrome(fullTitle, description.isEmpty() ? site.description() : description,
                 keywords.isEmpty() ? site.keywords() : keywords, Optional.of(canonical), false, nav);
+    }
+
+    /**
+     * 搜索页外壳（MACC-20）：一律 noindex；description/keywords 用站点值。
+     *
+     * @param canonical 自引用 canonical；参数不合法的 400 页没有
+     * @param nav       顶级分类导航；不查库的页面（无条件、400）为空
+     */
+    PageChrome search(String fullTitle, Optional<SafeUrl> canonical, List<NavLink> nav) {
+        return chrome(fullTitle, site.description(), site.keywords(), canonical, true, nav);
     }
 
     private ErrorPage error(String heading, String message) {

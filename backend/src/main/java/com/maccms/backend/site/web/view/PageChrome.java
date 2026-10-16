@@ -18,7 +18,7 @@ import java.util.Optional;
  * @param canonical    canonical 绝对地址（只由配置的 base-url 生成）；错误页没有
  * @param noindex      是否输出 robots noindex
  * @param nav          页眉的顶级分类导航；错误页与维护页为空（它们不查库）
- * @param searchAction 搜索表单提交地址（旧 PHP vod/search，GET）
+ * @param searchAction 搜索表单提交地址（旧 vod/search 基址，GET；搜索页开启时由 Java 处理，否则归 PHP）
  * @param loginUrl     登录 / 会员中心链接（旧 PHP user/login）
  */
 public record PageChrome(String title, String siteName, SafeUrl home, SafeUrl stylesheet, Optional<SafeUrl> logo,

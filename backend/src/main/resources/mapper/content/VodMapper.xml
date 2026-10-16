@@ -14,6 +14,24 @@
         <foreach collection="typeIds" item="tid" open="(" separator="," close=")">#{tid}</foreach>
     </sql>
 
+    <!--
+      搜索/筛选条件（契约 1.1.0，docs/architecture/09-content-search-filter-plan.md 第 4、6.1 节），只追加在 publishedInTypes 之后，
+      只能在可见范围内收窄。列名固定，值只经 #{} 绑定；LIKE 模式由 content.application 构造并以 '!' 转义 %、_、!，
+      反斜线按普通字符（不受 NO_BACKSLASH_ESCAPES 影响）。旧规则：level/year/area/lang 见 application/common/model/Vod.php:290-304
+      （旧版逗号多值、year 整数比较，新版单值、字符串比较）；wd 见 :462-468（vod_name 加 search_vod_rule 列，仓库值 vod_en|vod_sub，
+      application/extra/maccms.php:70）；class 见 :475-477。
+    -->
+    <sql id="matchingConditions">
+        <if test="filter.level != null">AND vod_level = #{filter.level}</if>
+        <if test="filter.year != null">AND vod_year = #{filter.year}</if>
+        <if test="filter.area != null">AND vod_area = #{filter.area}</if>
+        <if test="filter.lang != null">AND vod_lang = #{filter.lang}</if>
+        <if test="filter.classesPattern != null">AND vod_class LIKE #{filter.classesPattern} ESCAPE '!'</if>
+        <if test="filter.keywordPatterns != null">
+            AND (<foreach collection="filter.keywordPatterns" item="p" separator=" OR ">vod_name LIKE #{p} ESCAPE '!' OR vod_sub LIKE #{p} ESCAPE '!' OR vod_en LIKE #{p} ESCAPE '!'</foreach>)
+        </if>
+    </sql>
+
     <sql id="summaryColumns">
         vod_id                   AS id,
         type_id                  AS categoryId,
@@ -61,13 +79,37 @@
     </select>
 
     <!--
-      排序白名单对应旧 Vod::listCacheData 的 by 取值（common/model/Vod.php:539），rnd 暂不支持；
-      追加 vod_id 同向排序保证分页稳定。
+      带搜索/筛选条件的 count 与分页共用 publishedInTypes + matchingConditions，保证 total 与列表条件一致。
+      MAX_EXECUTION_TIME(3000) 是服务端执行时限（MySQL 5.7.8+ 对 SELECT 生效，超时报 3024，ContentReadService 归为 503）；
+      字面常量，不经参数。MyBatis 全局 10 秒 JDBC 超时仍作兜底。
     -->
+    <select id="countPublishedMatching" resultType="long">
+        SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*)
+        FROM mac_vod
+        WHERE <include refid="publishedInTypes"/>
+        <include refid="matchingConditions"/>
+    </select>
+
     <select id="selectPublishedPage" resultType="com.maccms.backend.content.infrastructure.VodSummaryRow">
         SELECT <include refid="summaryColumns"/>
         FROM mac_vod
         WHERE <include refid="publishedInTypes"/>
+        <include refid="pageOrderAndLimit"/>
+    </select>
+
+    <select id="selectPublishedMatchingPage" resultType="com.maccms.backend.content.infrastructure.VodSummaryRow">
+        SELECT /*+ MAX_EXECUTION_TIME(3000) */ <include refid="summaryColumns"/>
+        FROM mac_vod
+        WHERE <include refid="publishedInTypes"/>
+        <include refid="matchingConditions"/>
+        <include refid="pageOrderAndLimit"/>
+    </select>
+
+    <!--
+      排序白名单对应旧 Vod::listCacheData 的 by 取值（common/model/Vod.php:539），rnd 暂不支持；
+      追加 vod_id 同向排序保证分页稳定（带不带搜索/筛选条件都一样）。
+    -->
+    <sql id="pageOrderAndLimit">
         ORDER BY
         <choose>
             <when test="sort.name() == 'TIME'">vod_time</when>
@@ -87,7 +129,7 @@
             <otherwise>ASC, vod_id ASC</otherwise>
         </choose>
         LIMIT #{offset}, #{limit}
-    </select>
+    </sql>
 
     <!-- 对应旧 mac_label_vod_detail 的 vod_id + vod_status=1 条件（application/common.php:2715-2728）。 -->
     <select id="selectPublishedDetail" resultType="com.maccms.backend.content.infrastructure.VodDetailRow">

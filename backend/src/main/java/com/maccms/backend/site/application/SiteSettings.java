@@ -15,6 +15,12 @@ public record SiteSettings(String name, SafeUrl baseUrl, SafeUrl homePath, Strin
 
     public static final String DEFAULT_CLOSED_MESSAGE = "站点维护中，请稍后访问。";
 
+    /**
+     * base-url 完整字符串（协议、主机、端口、路径）的最大长度：{@link SafeUrl#MAX_LENGTH} 减去站内地址预算
+     * {@link SitePaths#MAX_LENGTH}，即 768。旧版 site_url/install_dir 没有长度限制；这里只为保证拼接结果仍是 SafeUrl。
+     */
+    static final int MAX_BASE_URL_LENGTH = SafeUrl.MAX_LENGTH - SitePaths.MAX_LENGTH;
+
     public static SiteSettings from(SiteProperties p) {
         List<String> errors = new ArrayList<>();
 
@@ -25,7 +31,7 @@ public record SiteSettings(String name, SafeUrl baseUrl, SafeUrl homePath, Strin
         SafeUrl baseUrl = parseBaseUrl(trim(p.baseUrl()));
         if (baseUrl == null) {
             errors.add("maccms.site.base-url（必填，http/https 绝对地址，有主机名，不含用户信息、查询串、片段，"
-                    + "路径以 / 结尾）");
+                    + "路径以 / 结尾，最多 " + MAX_BASE_URL_LENGTH + " 个字符）");
         }
         String keywords = text(p.keywords(), "maccms.site.keywords", 200, errors);
         String description = text(p.description(), "maccms.site.description", 500, errors);
@@ -67,6 +73,8 @@ public record SiteSettings(String name, SafeUrl baseUrl, SafeUrl homePath, Strin
     /**
      * 由配置的 base-url 生成 canonical 绝对地址，不使用 Host、X-Forwarded-Host 等请求头。
      *
+     * <p>合法的 sitePath 拼接后总长不超过 {@link SafeUrl#MAX_LENGTH}（见 {@link #MAX_BASE_URL_LENGTH}），不会因长度失败。
+     *
      * @param sitePath 相对站点根的路径，规则见 {@link SitePaths}（旧 URL 由 {@link LegacyUrlBuilder} 生成）
      */
     public SafeUrl canonical(String sitePath) {
@@ -81,9 +89,23 @@ public record SiteSettings(String name, SafeUrl baseUrl, SafeUrl homePath, Strin
         return new SafeUrl(homePath.href() + SitePaths.check(sitePath));
     }
 
+    /**
+     * 带查询串的站内地址的 canonical（SSR 搜索页，MACC-20）：base-url + {@code path?query}。{@link SiteLink} 构造时已按
+     * {@link SitePaths}、{@link SiteQueries} 校验且总长不超过 {@link SitePaths#MAX_LENGTH}，拼接结果不会超过
+     * {@link SafeUrl#MAX_LENGTH}。
+     */
+    public SafeUrl canonical(SiteLink link) {
+        return new SafeUrl(baseUrl.href() + link.relative());
+    }
+
+    /** 带查询串的页面内链接：base-url 的路径部分 + {@code path?query}。 */
+    public SafeUrl publicPath(SiteLink link) {
+        return new SafeUrl(homePath.href() + link.relative());
+    }
+
     private static SafeUrl parseBaseUrl(String raw) {
         Optional<SafeUrl> url = SafeUrl.parse(raw);
-        if (url.isEmpty() || !url.get().isAbsolute() || raw.length() > 200) {
+        if (url.isEmpty() || !url.get().isAbsolute() || raw.length() > MAX_BASE_URL_LENGTH) {
             return null;
         }
         URI uri = URI.create(raw);
