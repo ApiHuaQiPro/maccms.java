@@ -63,6 +63,15 @@ public class SiteHtmlRenderer {
         return respond(HttpStatus.OK, body, CacheControl.noCache(), noindex, null);
     }
 
+    /**
+     * 搜索页（含其 400 页）：noindex、no-store——关键字在 URL 中，不进入共享缓存（09 方案第 7.3 节）。
+     * 渲染失败抛 {@link PageRenderException}，由 SiteExceptionHandler 输出 500 页。
+     */
+    public ResponseEntity<String> noStore(HttpStatus status, Function<Templates, JteModel> page) {
+        String body = render(page);
+        return respond(status, body, CacheControl.noStore(), true, null);
+    }
+
     /** 错误页与维护页：noindex、no-store；503 带 Retry-After。 */
     public ResponseEntity<String> error(HttpStatus status, ErrorPage page, Duration retryAfter) {
         String body;

@@ -1,6 +1,7 @@
 package com.maccms.backend.site.application;
 
 import com.maccms.backend.common.web.ApiException;
+import com.maccms.backend.content.application.VideoFilter;
 import com.maccms.backend.content.application.VideoId;
 import com.maccms.backend.content.application.VideoListQuery;
 import java.io.ByteArrayOutputStream;
@@ -8,9 +9,12 @@ import java.nio.ByteBuffer;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -28,6 +32,9 @@ import java.util.regex.Pattern;
  * site 把它当 404（SiteExceptionHandler）。</li>
  * </ul>
  * 输入是原始请求路径与查询串（未解码），不读取 Host、X-Forwarded-*、Forwarded 或请求协议。
+ *
+ * <p>搜索页（MACC-20）另用 {@link #parseSearch}：只认固定路径 + 查询串，参数不合法时搜索页显示 400（不是 404）。
+ * {@link #parse} 仍不认识 {@code vod/search}。
  */
 public final class LegacyUrlParser {
 
@@ -36,6 +43,16 @@ public final class LegacyUrlParser {
     private static final Pattern DIGITS = Pattern.compile("[0-9]{1,20}");
     private static final Pattern ROUTE_TYPE = Pattern.compile("vodtype/([0-9]{1,20})(?:-([0-9]{1,20}))?");
     private static final Pattern ROUTE_DETAIL = Pattern.compile("voddetail/([0-9]{1,20})");
+    /** 搜索页原始查询串的上限（只用于 {@link #parseSearch}；三页仍是 {@link #MAX_INPUT} 且拒绝查询串）。 */
+    static final int MAX_SEARCH_QUERY = 2048;
+    /** 搜索页的固定路径（PATHINFO 部分），对应 {@code .html}、{@code suffix_hide} 与无后缀三种。 */
+    private static final List<String> SEARCH_PATHS = List.of("vod/search.html", "vod/search/", "vod/search");
+    /** 搜索页接受的查询串键（旧参数名）。 */
+    private static final Set<String> SEARCH_REQUEST_KEYS = Set.of("wd", "area", "lang", "year", "level", "class",
+            "by", "order", "page");
+    /** 出现即交 PHP 的键：兼容模式 s，以及旧站支持、首批不承接的参数（09 方案第 7.2.3 节步骤 4）。 */
+    private static final Set<String> SEARCH_HANDOFF_KEYS = Set.of("s", "actor", "director", "tag", "letter", "state",
+            "version", "tid", "name", "ids", "isend", "ajax");
 
     private final LegacyUrlStyle style;
     private final LegacyUrlBuilder builder;
@@ -97,6 +114,110 @@ public final class LegacyUrlParser {
         String path = builder.path(route.get());
         boolean canonical = query.isEmpty() && rawPath.equals("/" + path);
         return Optional.of(new Match(route.get(), path, canonical));
+    }
+
+    /**
+     * SSR 搜索页（旧 {@code vod/search} 的固定路径 + 查询串形式），规则见 09 方案第 7.2.3 节，按其中的步骤顺序处理。
+     *
+     * <p>只认路径 {@code /index.php/vod/search.html}、{@code /index.php/vod/search/}、{@code /index.php/vod/search}
+     * （{@code rewrite} 时另加去掉 {@code /index.php} 的三种）；路径参数形式、别名、{@code -} 分隔符、大写、其他后缀，
+     * 查询串超过 {@link #MAX_SEARCH_QUERY}，含 {@code s} 或旧站支持而首批不支持的键，以及 {@code by=rnd} → empty（交 PHP）。
+     * 未知键、重复键、值不能按表单规则解码一次为合法 UTF-8、页码不合法、条件不满足 content 的规则（{@link VideoFilter}、
+     * {@link VideoListQuery}）→ INVALID_PARAMETER（搜索页显示 400，不回显输入）。值只解码一次，不做二次解码。
+     */
+    public Optional<Match> parseSearch(String rawPath, String rawQuery) {
+        if (rawPath == null || rawPath.length() > MAX_INPUT || !isSearchPath(rawPath)) {
+            return Optional.empty();
+        }
+        String query = rawQuery == null ? "" : rawQuery;
+        if (query.length() > MAX_SEARCH_QUERY) {
+            return Optional.empty();
+        }
+        // 步骤 3：按 & 切分，跳过空项；键不解码，逐字比较
+        List<String[]> items = new ArrayList<>();
+        for (String item : query.split("&", -1)) {
+            if (item.isEmpty()) {
+                continue;
+            }
+            int eq = item.indexOf('=');
+            items.add(eq < 0 ? new String[] {item, ""} : new String[] {item.substring(0, eq), item.substring(eq + 1)});
+        }
+        // 步骤 4：ThinkPHP 兼容模式 s（会覆盖路径，Request.php:403-406）与暂不承接的旧键
+        for (String[] kv : items) {
+            if (SEARCH_HANDOFF_KEYS.contains(kv[0])) {
+                return Optional.empty();
+            }
+        }
+        // 步骤 5：按出现顺序逐项检查，只报第一个错误
+        Map<String, String> decoded = new HashMap<>();
+        for (String[] kv : items) {
+            String key = kv[0];
+            if (!SEARCH_REQUEST_KEYS.contains(key)) {
+                throw ApiException.invalidParameter("query", "不支持的参数");
+            }
+            if (decoded.containsKey(key)) {
+                throw ApiException.invalidParameter(key, "参数重复");
+            }
+            decoded.put(key, formDecode(kv[1])
+                    .orElseThrow(() -> ApiException.invalidParameter(key, "含不允许的字符")));
+        }
+        // 步骤 6：rnd（随机页/随机 id 段）留在 PHP
+        if (decoded.containsKey("by") && SearchFilters.stripW(decoded.get("by")).equals("rnd")) {
+            return Optional.empty();
+        }
+        // 步骤 7：旧站式归一（trim + !empty()），页码另按现有解析器的规则
+        String wd = normalized(decoded.get("wd"));
+        String area = normalized(decoded.get("area"));
+        String lang = normalized(decoded.get("lang"));
+        String year = normalized(decoded.get("year"));
+        String level = normalized(decoded.get("level"));
+        String cls = normalized(decoded.get("class"));
+        String by = normalized(decoded.get("by"));
+        String order = normalized(decoded.get("order"));
+        String rawPage = decoded.get("page");
+        int page = 1;
+        if (rawPage != null && !rawPage.isEmpty()) {
+            if (!DIGITS.matcher(rawPage).matches()) {
+                throw ApiException.invalidParameter("page", pageRule());
+            }
+            page = (int) number("page", rawPage, VideoListQuery.MAX_PAGE);
+        }
+        // 步骤 8：交给 content 的同一套校验（既有参数在前，与 API 的顺序一致）；开关由 content 在查询时判断
+        VideoListQuery sorting = VideoListQuery.parse(null, by, order, null, null);
+        VideoFilter filter = VideoFilter.parse(wd, area, lang, year, level, cls, true);
+        SearchFilters filters = new SearchFilters(filter.keyword(), filter.area(), filter.lang(), filter.year(),
+                filter.level(), filter.classes(), by == null ? null : sorting.sort(),
+                order == null ? null : sorting.descending() ? SearchFilters.SortOrder.DESC : SearchFilters.SortOrder.ASC);
+        SiteRoute.VodSearch route = new SiteRoute.VodSearch(filters, page);
+        // 步骤 9：canonical = 路径是搜索基址且查询串与生成结果逐字相同
+        String path = builder.path(route);
+        boolean canonical = rawPath.equals("/" + path) && query.equals(builder.vodSearchLink(filters, page).query());
+        return Optional.of(new Match(route, path, canonical));
+    }
+
+    private boolean isSearchPath(String rawPath) {
+        if (style.routeAliases() || style.depr() != '/') {
+            return false;
+        }
+        for (String p : SEARCH_PATHS) {
+            if (rawPath.equals(ENTRY + "/" + p) || (style.rewrite() && rawPath.equals("/" + p))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** 去掉首尾 W 字符；结果为 {@code ''} 或 {@code '0'} 时按未传（{@code null}）。 */
+    private static String normalized(String v) {
+        if (v == null) {
+            return null;
+        }
+        String s = SearchFilters.stripW(v);
+        return s.isEmpty() || s.equals("0") ? null : s;
+    }
+
+    private static String pageRule() {
+        return "必须是 1 到 " + VideoListQuery.MAX_PAGE + " 之间、没有前导 0 的整数";
     }
 
     private static boolean isEntry(String rawPath) {

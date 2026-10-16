@@ -89,6 +89,20 @@ public record SiteSettings(String name, SafeUrl baseUrl, SafeUrl homePath, Strin
         return new SafeUrl(homePath.href() + SitePaths.check(sitePath));
     }
 
+    /**
+     * 带查询串的站内地址的 canonical（SSR 搜索页，MACC-20）：base-url + {@code path?query}。{@link SiteLink} 构造时已按
+     * {@link SitePaths}、{@link SiteQueries} 校验且总长不超过 {@link SitePaths#MAX_LENGTH}，拼接结果不会超过
+     * {@link SafeUrl#MAX_LENGTH}。
+     */
+    public SafeUrl canonical(SiteLink link) {
+        return new SafeUrl(baseUrl.href() + link.relative());
+    }
+
+    /** 带查询串的页面内链接：base-url 的路径部分 + {@code path?query}。 */
+    public SafeUrl publicPath(SiteLink link) {
+        return new SafeUrl(homePath.href() + link.relative());
+    }
+
     private static SafeUrl parseBaseUrl(String raw) {
         Optional<SafeUrl> url = SafeUrl.parse(raw);
         if (url.isEmpty() || !url.get().isAbsolute() || raw.length() > MAX_BASE_URL_LENGTH) {

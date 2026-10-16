@@ -134,6 +134,6 @@ java -jar target/maccms-backend-0.1.0-SNAPSHOT.jar
 ### 10. 交还边界、回滚与遗留
 
 - **回滚**：本地阶段 `git revert` 本任务提交即可；不写库，没有数据回迁。关闭 `MACCMS_SITE_ENABLED` 时不注册任何 site 路由。
-- **仍交给 PHP**：观看密码、版权（需交还机制）、播放/下载、搜索、筛选（`vod/show`）、登录/会员、评论、计数、拼音/编码 id、路由别名与 `-` 分隔符形态、带查询串的请求。
+- **仍交给 PHP**：观看密码、版权（需交还机制）、播放/下载、搜索（MACC-20 已实现 Java SSR 搜索页，默认关闭，见 `docs/architecture/10-site-search-page.md`）、筛选（`vod/show`）、登录/会员、评论、计数、拼音/编码 id、路由别名与 `-` 分隔符形态、带查询串的请求。
 - **未实现**：交还 PHP 的 `X-Accel-Redirect`、canonical 301、点击计数、生产缓存 TTL、访问日志字段（03 方案 7.4）、nginx 分流、剧集索引。
 - **未验证**：线上 URL/图片配置、线上模板与视觉、真实数据中的实体与正文分布（正文可能自带 `<h1>`，导致页面出现多个 h1）、首页多查询在真实数据量下的耗时、并发与内存、nginx 与 base-url 子目录映射。

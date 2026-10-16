@@ -58,6 +58,10 @@ maccms:
     # canonical 301（D4）与点击计数（D5）未批准，只接受 false
     canonical-redirect: ${MACCMS_SITE_CANONICAL_REDIRECT:false}
     hit-counter-enabled: ${MACCMS_SITE_HIT_COUNTER_ENABLED:false}
+    # SSR 搜索页（MACC-20，09 方案第 7 节）：true 时注册旧 vod/search 固定路径 + 查询串形式的页面，默认关闭（关闭时路由不存在）。
+    # 关键字 wd、扩展分类 class 仍受 maccms.content.search.enabled 控制（关闭时搜索页对它们返回 400）。
+    search:
+      enabled: ${MACCMS_SITE_SEARCH_ENABLED:false}
     # 旧站 URL 形态（MACC-14，对应旧 rewrite.status / rewrite.suffix_hide），只接受 true/false；
     # pathinfo_depr 固定 /、不启用路由别名。规则见 docs/architecture/08-site-pages.md。
     url:
