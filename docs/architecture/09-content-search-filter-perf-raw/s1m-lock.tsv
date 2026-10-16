@@ -1,0 +1,21 @@
+mode	readers	seconds	updates	update_latency_ms	update_sched_lag_ms	update_errors	reads_done	read_latency_ms	read_status	table_locks_waited	table_locks_immediate	max_waiting_lock	avg_waiting_lock	max_running_select	app_cpu_ms
+update-only	0	30.0	151	n=151 p50=0.8 p95=1.6 max=8.0	n=151 p50=0.9 p95=2.0 max=9.8	0	0	n=0 p50=0.0 p95=0.0 max=0.0	{}	0	152	0	0.00	0	0
+jdbc	1	32.5	150	n=150 p50=1030.8 p95=1957.6 max=2335.6	n=150 p50=1030.9 p95=1958.1 max=2336.1	0	8	n=8 p50=4002.5 p95=4491.8 max=4491.8	{ok=8}	164	3	12	4.87	1	0
+jdbc	4	32.8	150	n=150 p50=1547.7 p95=2931.9 max=2994.2	n=150 p50=1547.8 p95=2932.6 max=2994.3	0	36	n=36 p50=3013.7 p95=5923.9 max=5939.1	{E1028=6, E3024=28, ok=2}	186	9	15	7.80	4	0
+jdbc	8	33.0	150	n=150 p50=1565.4 p95=2921.8 max=2997.5	n=150 p50=1565.5 p95=2922.4 max=2997.5	0	88	n=88 p50=3011.7 p95=3015.4 max=3016.7	{E3024=88}	230	9	15	7.97	8	0
+http	1	30.3	150	n=150 p50=1244.4 p95=2444.0 max=2823.9	n=150 p50=1244.5 p95=2444.1 max=2823.9	0	6	n=6 p50=5052.5 p95=5774.7 max=5774.7	{200=6}	149	26	14	6.15	1	1750
+http	4	32.4	151	n=151 p50=1376.9 p95=2768.8 max=2975.6	n=151 p50=1377.0 p95=2768.8 max=2975.6	0	32	n=32 p50=3022.0 p95=6207.7 max=6207.9	{200=8, 500=2, 503=22}	177	81	17	7.87	4	2781
+http	8	30.3	151	n=151 p50=1532.1 p95=2907.8 max=3006.9	n=151 p50=1532.2 p95=2908.6 max=3007.0	0	1945	n=1945 p50=4.0 p95=6.6 max=3038.0	{503=1945}	154	118	15	7.69	4	10078
+
+--- heap before
+23044:
+ garbage-first heap   total 90112K, used 55296K [0x000000060c800000, 0x0000000800000000)
+  region size 4096K, 10 young (40960K), 2 survivors (8192K)
+ Metaspace       used 50419K, committed 51200K, reserved 1114112K
+  class space    used 6590K, committed 6912K, reserved 1048576K
+--- heap after
+23044:
+ garbage-first heap   total 90112K, used 36690K [0x000000060c800000, 0x0000000800000000)
+  region size 4096K, 5 young (20480K), 2 survivors (8192K)
+ Metaspace       used 57840K, committed 58816K, reserved 1114112K
+  class space    used 7094K, committed 7552K, reserved 1048576K

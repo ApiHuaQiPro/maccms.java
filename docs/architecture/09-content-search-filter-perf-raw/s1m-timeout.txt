@@ -1,0 +1,20 @@
+jdbc count kw-low under WRITE lock: 3037 ms error=E3024
+http kw-low x8 concurrent (max-concurrent=4) under WRITE lock: [503@3545ms, 503@3482ms, 503@3416ms, 503@3354ms, 503@45ms, 503@12ms, 503@10ms, 503@8ms]
+http area (exact, hinted) under WRITE lock: 503 @ 3040 ms body={"code":"SERVICE_UNAVAILABLE","message":"服务暂时不可用","fieldErrors":[]}
+write lock held 9648 ms
+http base (no filter, no hint) under WRITE lock: 503 @ 10022 ms body={"code":"SERVICE_UNAVAILABLE","message":"服务暂时不可用","fieldErrors":[]}
+write lock held 10022 ms
+http kw-low after unlock: 200 @ 4350 ms
+jdbc kw-amp page statement x12 (time/hits): {ok=12}
+http kw-amp x12 (time/hits): {200=12}
+--- app log lines (WARN/ERROR)
+2026-10-15T19:37:46.643-07:00  WARN 24284 --- [maccms-backend] [.1-63098-exec-6] c.m.b.c.application.ContentReadService   : content search rejected: concurrency limit reached
+2026-10-15T19:37:46.704-07:00  WARN 24284 --- [maccms-backend] [.1-63098-exec-7] c.m.b.c.application.ContentReadService   : content search rejected: concurrency limit reached
+2026-10-15T19:37:46.767-07:00  WARN 24284 --- [maccms-backend] [.1-63098-exec-8] c.m.b.c.application.ContentReadService   : content search rejected: concurrency limit reached
+2026-10-15T19:37:46.828-07:00  WARN 24284 --- [maccms-backend] [.1-63098-exec-9] c.m.b.c.application.ContentReadService   : content search rejected: concurrency limit reached
+2026-10-15T19:37:49.925-07:00  WARN 24284 --- [maccms-backend] [.1-63098-exec-4] c.m.b.c.application.ContentReadService   : database statement timeout: org.springframework.jdbc.UncategorizedSQLException <- java.sql.SQLException
+2026-10-15T19:37:49.925-07:00  WARN 24284 --- [maccms-backend] [.1-63098-exec-3] c.m.b.c.application.ContentReadService   : database statement timeout: org.springframework.jdbc.UncategorizedSQLException <- java.sql.SQLException
+2026-10-15T19:37:49.925-07:00  WARN 24284 --- [maccms-backend] [.1-63098-exec-2] c.m.b.c.application.ContentReadService   : database statement timeout: org.springframework.jdbc.UncategorizedSQLException <- java.sql.SQLException
+2026-10-15T19:37:49.925-07:00  WARN 24284 --- [maccms-backend] [.1-63098-exec-5] c.m.b.c.application.ContentReadService   : database statement timeout: org.springframework.jdbc.UncategorizedSQLException <- java.sql.SQLException
+2026-10-15T19:37:52.969-07:00  WARN 24284 --- [maccms-backend] [1-63098-exec-10] c.m.b.c.application.ContentReadService   : database statement timeout: org.springframework.jdbc.UncategorizedSQLException <- java.sql.SQLException
+2026-10-15T19:38:02.994-07:00 ERROR 24284 --- [maccms-backend] [.1-63098-exec-1] c.m.b.c.application.ContentReadService   : database unavailable: org.springframework.dao.QueryTimeoutException <- com.mysql.cj.jdbc.exceptions.MySQLTimeoutException

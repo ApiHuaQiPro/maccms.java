@@ -1,0 +1,107 @@
+### base sort=time page=1
+count: type=range | key=type_id | key_len=2 | rows=94664 | filtered=10.0 | possible_keys=type_id | Extra=Using index condition; Using where; Using MRR
+page:  type=range | key=type_id | key_len=2 | rows=94664 | filtered=10.0 | possible_keys=type_id | Extra=Using index condition; Using where; Using MRR; Using filesort
+### base sort=time page=50
+page:  type=range | key=type_id | key_len=2 | rows=94664 | filtered=10.0 | possible_keys=type_id | Extra=Using index condition; Using where; Using MRR; Using filesort
+### base sort=time page=1000
+page:  type=range | key=type_id | key_len=2 | rows=94664 | filtered=10.0 | possible_keys=type_id | Extra=Using index condition; Using where; Using MRR; Using filesort
+### base sort=hits page=1
+page:  type=range | key=type_id | key_len=2 | rows=94664 | filtered=10.0 | possible_keys=type_id | Extra=Using index condition; Using where; Using MRR; Using filesort
+### base sort=hits page=50
+page:  type=range | key=type_id | key_len=2 | rows=94664 | filtered=10.0 | possible_keys=type_id | Extra=Using index condition; Using where; Using MRR; Using filesort
+### base sort=hits page=1000
+page:  type=range | key=type_id | key_len=2 | rows=94664 | filtered=10.0 | possible_keys=type_id | Extra=Using index condition; Using where; Using MRR; Using filesort
+### category sort=time page=1
+count: type=range | key=type_id | key_len=2 | rows=18892 | filtered=10.0 | possible_keys=type_id | Extra=Using index condition; Using where; Using MRR
+page:  type=range | key=type_id | key_len=2 | rows=18892 | filtered=10.0 | possible_keys=type_id | Extra=Using index condition; Using where; Using MRR; Using filesort
+### category sort=hits page=1
+page:  type=range | key=type_id | key_len=2 | rows=18892 | filtered=10.0 | possible_keys=type_id | Extra=Using index condition; Using where; Using MRR; Using filesort
+### area sort=time page=1
+count: type=ref | key=vod_area | key_len=62 | rows=9295 | filtered=9.47 | possible_keys=type_id,vod_area | Extra=Using where
+page:  type=ref | key=vod_area | key_len=62 | rows=9295 | filtered=9.47 | possible_keys=type_id,vod_area | Extra=Using index condition; Using where; Using filesort
+### area sort=time page=50
+page:  type=ref | key=vod_area | key_len=62 | rows=9295 | filtered=9.47 | possible_keys=type_id,vod_area | Extra=Using index condition; Using where; Using filesort
+### area sort=time page=1000
+page:  type=ref | key=vod_area | key_len=62 | rows=9295 | filtered=9.47 | possible_keys=type_id,vod_area | Extra=Using index condition; Using where; Using filesort
+### area sort=hits page=1
+page:  type=ref | key=vod_area | key_len=62 | rows=9295 | filtered=9.47 | possible_keys=type_id,vod_area | Extra=Using index condition; Using where; Using filesort
+### area sort=hits page=50
+page:  type=ref | key=vod_area | key_len=62 | rows=9295 | filtered=9.47 | possible_keys=type_id,vod_area | Extra=Using index condition; Using where; Using filesort
+### area sort=hits page=1000
+page:  type=ref | key=vod_area | key_len=62 | rows=9295 | filtered=9.47 | possible_keys=type_id,vod_area | Extra=Using index condition; Using where; Using filesort
+### lang sort=time page=1
+count: type=ref | key=vod_lang | key_len=32 | rows=7448 | filtered=9.47 | possible_keys=type_id,vod_lang | Extra=Using where
+page:  type=ref | key=vod_lang | key_len=32 | rows=7448 | filtered=9.47 | possible_keys=type_id,vod_lang | Extra=Using index condition; Using where; Using filesort
+### lang sort=hits page=1
+page:  type=ref | key=vod_lang | key_len=32 | rows=7448 | filtered=9.47 | possible_keys=type_id,vod_lang | Extra=Using index condition; Using where; Using filesort
+### year sort=time page=1
+count: type=ref | key=vod_year | key_len=32 | rows=5766 | filtered=9.47 | possible_keys=type_id,vod_year | Extra=Using where
+page:  type=ref | key=vod_year | key_len=32 | rows=5766 | filtered=9.47 | possible_keys=type_id,vod_year | Extra=Using index condition; Using where; Using filesort
+### year sort=hits page=1
+page:  type=ref | key=vod_year | key_len=32 | rows=5766 | filtered=9.47 | possible_keys=type_id,vod_year | Extra=Using index condition; Using where; Using filesort
+### level sort=time page=1
+count: type=ref | key=vod_level | key_len=1 | rows=297 | filtered=9.47 | possible_keys=type_id,vod_level | Extra=Using where
+page:  type=ref | key=vod_level | key_len=1 | rows=297 | filtered=9.47 | possible_keys=type_id,vod_level | Extra=Using index condition; Using where; Using filesort
+### level sort=hits page=1
+page:  type=ref | key=vod_level | key_len=1 | rows=297 | filtered=9.47 | possible_keys=type_id,vod_level | Extra=Using index condition; Using where; Using filesort
+### exact-combo sort=time page=1
+count: type=ref | key=vod_year | key_len=32 | rows=5766 | filtered=0.91 | possible_keys=type_id,vod_year,vod_area,vod_lang | Extra=Using where
+page:  type=ref | key=vod_year | key_len=32 | rows=5766 | filtered=0.91 | possible_keys=type_id,vod_year,vod_area,vod_lang | Extra=Using index condition; Using where; Using filesort
+### exact-combo sort=hits page=1
+page:  type=ref | key=vod_year | key_len=32 | rows=5766 | filtered=0.91 | possible_keys=type_id,vod_year,vod_area,vod_lang | Extra=Using index condition; Using where; Using filesort
+### kw-high sort=time page=1
+count: type=range | key=type_id | key_len=2 | rows=94664 | filtered=2.98 | possible_keys=type_id | Extra=Using index condition; Using where; Using MRR
+page:  type=range | key=type_id | key_len=2 | rows=94664 | filtered=2.98 | possible_keys=type_id | Extra=Using index condition; Using where; Using MRR; Using filesort
+### kw-high sort=time page=50
+page:  type=range | key=type_id | key_len=2 | rows=94664 | filtered=2.98 | possible_keys=type_id | Extra=Using index condition; Using where; Using MRR; Using filesort
+### kw-high sort=time page=1000
+page:  type=range | key=type_id | key_len=2 | rows=94664 | filtered=2.98 | possible_keys=type_id | Extra=Using index condition; Using where; Using MRR; Using filesort
+### kw-high sort=hits page=1
+page:  type=range | key=type_id | key_len=2 | rows=94664 | filtered=2.98 | possible_keys=type_id | Extra=Using index condition; Using where; Using MRR; Using filesort
+### kw-high sort=hits page=50
+page:  type=range | key=type_id | key_len=2 | rows=94664 | filtered=2.98 | possible_keys=type_id | Extra=Using index condition; Using where; Using MRR; Using filesort
+### kw-high sort=hits page=1000
+page:  type=range | key=type_id | key_len=2 | rows=94664 | filtered=2.98 | possible_keys=type_id | Extra=Using index condition; Using where; Using MRR; Using filesort
+### kw-low sort=time page=1
+count: type=range | key=type_id | key_len=2 | rows=94664 | filtered=2.98 | possible_keys=type_id | Extra=Using index condition; Using where; Using MRR
+page:  type=range | key=type_id | key_len=2 | rows=94664 | filtered=2.98 | possible_keys=type_id | Extra=Using index condition; Using where; Using MRR; Using filesort
+### kw-low sort=hits page=1
+page:  type=range | key=type_id | key_len=2 | rows=94664 | filtered=2.98 | possible_keys=type_id | Extra=Using index condition; Using where; Using MRR; Using filesort
+### kw-none sort=time page=1
+count: type=range | key=type_id | key_len=2 | rows=94664 | filtered=2.98 | possible_keys=type_id | Extra=Using index condition; Using where; Using MRR
+page:  type=range | key=type_id | key_len=2 | rows=94664 | filtered=2.98 | possible_keys=type_id | Extra=Using index condition; Using where; Using MRR; Using filesort
+### kw-none sort=hits page=1
+page:  type=range | key=type_id | key_len=2 | rows=94664 | filtered=2.98 | possible_keys=type_id | Extra=Using index condition; Using where; Using MRR; Using filesort
+### kw-en sort=time page=1
+count: type=range | key=type_id | key_len=2 | rows=94664 | filtered=2.98 | possible_keys=type_id | Extra=Using index condition; Using where; Using MRR
+page:  type=range | key=type_id | key_len=2 | rows=94664 | filtered=2.98 | possible_keys=type_id | Extra=Using index condition; Using where; Using MRR; Using filesort
+### kw-en sort=hits page=1
+page:  type=range | key=type_id | key_len=2 | rows=94664 | filtered=2.98 | possible_keys=type_id | Extra=Using index condition; Using where; Using MRR; Using filesort
+### kw-amp sort=time page=1
+count: type=range | key=type_id | key_len=2 | rows=94664 | filtered=5.07 | possible_keys=type_id | Extra=Using index condition; Using where; Using MRR
+page:  type=range | key=type_id | key_len=2 | rows=94664 | filtered=5.07 | possible_keys=type_id | Extra=Using index condition; Using where; Using MRR; Using filesort
+### kw-amp sort=hits page=1
+page:  type=range | key=type_id | key_len=2 | rows=94664 | filtered=5.07 | possible_keys=type_id | Extra=Using index condition; Using where; Using MRR; Using filesort
+### classes sort=time page=1
+count: type=range | key=type_id | key_len=2 | rows=94664 | filtered=1.11 | possible_keys=type_id | Extra=Using index condition; Using where; Using MRR
+page:  type=range | key=type_id | key_len=2 | rows=94664 | filtered=1.11 | possible_keys=type_id | Extra=Using index condition; Using where; Using MRR; Using filesort
+### classes sort=time page=50
+page:  type=range | key=type_id | key_len=2 | rows=94664 | filtered=1.11 | possible_keys=type_id | Extra=Using index condition; Using where; Using MRR; Using filesort
+### classes sort=time page=1000
+page:  type=range | key=type_id | key_len=2 | rows=94664 | filtered=1.11 | possible_keys=type_id | Extra=Using index condition; Using where; Using MRR; Using filesort
+### classes sort=hits page=1
+page:  type=range | key=type_id | key_len=2 | rows=94664 | filtered=1.11 | possible_keys=type_id | Extra=Using index condition; Using where; Using MRR; Using filesort
+### classes sort=hits page=50
+page:  type=range | key=type_id | key_len=2 | rows=94664 | filtered=1.11 | possible_keys=type_id | Extra=Using index condition; Using where; Using MRR; Using filesort
+### classes sort=hits page=1000
+page:  type=range | key=type_id | key_len=2 | rows=94664 | filtered=1.11 | possible_keys=type_id | Extra=Using index condition; Using where; Using MRR; Using filesort
+### kw-high+cat sort=time page=1
+count: type=range | key=type_id | key_len=2 | rows=18892 | filtered=2.98 | possible_keys=type_id | Extra=Using index condition; Using where; Using MRR
+page:  type=range | key=type_id | key_len=2 | rows=18892 | filtered=2.98 | possible_keys=type_id | Extra=Using index condition; Using where; Using MRR; Using filesort
+### kw-high+cat sort=hits page=1
+page:  type=range | key=type_id | key_len=2 | rows=18892 | filtered=2.98 | possible_keys=type_id | Extra=Using index condition; Using where; Using MRR; Using filesort
+### kw-low+area sort=time page=1
+count: type=ref | key=vod_area | key_len=62 | rows=29515 | filtered=2.82 | possible_keys=type_id,vod_area | Extra=Using where
+page:  type=ref | key=vod_area | key_len=62 | rows=29515 | filtered=2.82 | possible_keys=type_id,vod_area | Extra=Using index condition; Using where; Using filesort
+### kw-low+area sort=hits page=1
+page:  type=ref | key=vod_area | key_len=62 | rows=29515 | filtered=2.82 | possible_keys=type_id,vod_area | Extra=Using index condition; Using where; Using filesort

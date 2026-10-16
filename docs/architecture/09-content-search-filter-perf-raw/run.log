@@ -1,0 +1,234 @@
+[perf 18:26:11.8390115] created disposable database maccms_perf_20261015182611_e8dfd14e
+[perf 18:26:12.1223573] schema imported from application/install/sql/install.sql; 30 categories seeded
+[perf 18:26:34.7181354] inserted up to 100000
+[perf 18:26:48.7880458] analyze: status Table is already up to date
+[perf 18:26:48.7900455] grow 0 -> 100000: insert 18.4s, enable keys 14.1s, analyze 0.0s
+[perf 18:26:53.6221979] wrote target\perf\s100k-context.tsv
+[perf 18:26:57.1562749] bench s100k on 100000 rows
+[perf 18:27:08.8822522] app pid 13512 listening on 127.0.0.1:54857 (max-concurrent=4)
+[perf 18:27:26.3071559] base         time p1    total=90194   cold=1907ms hot[n=5 p50=1617.5 p95=1837.9 max=1837.9] http[n=5 p50=1410.1 p95=1606.4 max=1606.4 {200=5}]
+[perf 18:27:44.845316] base         time p50   total=90194   cold=1667ms hot[n=5 p50=1868.7 p95=2020.2 max=2020.2] http[n=5 p50=1455.1 p95=1981.4 max=1981.4 {200=5}]
+[perf 18:28:03.3189913] base         time p1000 total=90194   cold=1449ms hot[n=5 p50=1626.9 p95=2070.2 max=2070.2] http[n=5 p50=1679.1 p95=1773.3 max=1773.3 {200=5}]
+[perf 18:28:19.1689556] base         hits p1    total=90194   cold=1419ms hot[n=5 p50=1403.1 p95=1477.9 max=1477.9] http[n=5 p50=1496.9 p95=1586.9 max=1586.9 {200=5}]
+[perf 18:28:36.6138978] base         hits p50   total=90194   cold=1561ms hot[n=5 p50=1416.8 p95=1627.9 max=1627.9] http[n=5 p50=1670.2 p95=1839.5 max=1839.5 {200=5}]
+[perf 18:28:55.9399589] base         hits p1000 total=90194   cold=1830ms hot[n=5 p50=1857.5 p95=2099.8 max=2099.8] http[n=5 p50=1646.3 p95=1824.1 max=1824.1 {200=5}]
+[perf 18:29:01.8536997] category     time p1    total=17987   cold=248ms hot[n=10 p50=265.9 p95=315.1 max=315.1] http[n=10 p50=279.7 p95=376.1 max=376.1 {200=10}]
+[perf 18:29:09.0561264] category     hits p1    total=17987   cold=305ms hot[n=10 p50=337.9 p95=387.7 max=387.7] http[n=10 p50=355.1 p95=380.4 max=380.4 {200=10}]
+[perf 18:29:12.6539713] area         time p1    total=9091    cold=181ms hot[n=10 p50=175.2 p95=209.1 max=209.1] http[n=10 p50=156.5 p95=185.0 max=185.0 {200=10}]
+[perf 18:29:16.594885] area         time p50   total=9091    cold=150ms hot[n=10 p50=169.2 p95=225.0 max=225.0] http[n=10 p50=196.4 p95=273.1 max=273.1 {200=10}]
+[perf 18:29:21.8516326] area         time p1000 total=9091    cold=72ms hot[n=30 p50=83.2 p95=106.3 max=117.9] http[n=30 p50=87.2 p95=101.8 max=103.6 {200=30}]
+[perf 18:29:25.5221377] area         hits p1    total=9091    cold=212ms hot[n=10 p50=161.8 p95=191.5 max=191.5] http[n=10 p50=164.8 p95=201.7 max=201.7 {200=10}]
+[perf 18:29:29.1696501] area         hits p50   total=9091    cold=212ms hot[n=10 p50=158.8 p95=193.0 max=193.0] http[n=10 p50=172.3 p95=213.9 max=213.9 {200=10}]
+[perf 18:29:34.3341386] area         hits p1000 total=9091    cold=70ms hot[n=30 p50=73.2 p95=91.4 max=94.3] http[n=30 p50=90.6 p95=123.2 max=140.4 {200=30}]
+[perf 18:29:37.5646062] lang         time p1    total=7191    cold=168ms hot[n=10 p50=149.5 p95=163.8 max=163.8] http[n=10 p50=148.0 p95=201.1 max=201.1 {200=10}]
+[perf 18:29:40.5834917] lang         hits p1    total=7191    cold=120ms hot[n=10 p50=140.9 p95=164.5 max=164.5] http[n=10 p50=146.8 p95=176.9 max=176.9 {200=10}]
+[perf 18:29:43.4658873] year         time p1    total=6886    cold=116ms hot[n=10 p50=127.2 p95=138.4 max=138.4] http[n=10 p50=148.1 p95=169.8 max=169.8 {200=10}]
+[perf 18:29:46.3823249] year         hits p1    total=6886    cold=134ms hot[n=10 p50=134.5 p95=182.1 max=182.1] http[n=10 p50=134.8 p95=152.8 max=152.8 {200=10}]
+[perf 18:29:46.9439857] level        time p1    total=205     cold=6ms hot[n=30 p50=5.2 p95=6.3 max=14.4] http[n=30 p50=12.2 p95=18.4 max=18.6 {200=30}]
+[perf 18:29:47.5338112] level        hits p1    total=205     cold=5ms hot[n=30 p50=4.8 p95=5.7 max=6.1] http[n=30 p50=12.7 p95=20.2 max=27.9 {200=30}]
+[perf 18:29:50.2955343] exact-combo  time p1    total=964     cold=173ms hot[n=10 p50=120.1 p95=139.3 max=139.3] http[n=10 p50=130.8 p95=168.8 max=168.8 {200=10}]
+[perf 18:29:53.2171742] exact-combo  hits p1    total=964     cold=169ms hot[n=10 p50=123.8 p95=152.8 max=152.8] http[n=10 p50=138.9 p95=202.6 max=202.6 {200=10}]
+[perf 18:30:10.5329255] kw-high      time p1    total=8947    cold=1522ms hot[n=5 p50=1567.7 p95=1660.8 max=1660.8] http[n=5 p50=1563.3 p95=1637.9 max=1637.9 {200=5}]
+[perf 18:30:27.0334235] kw-high      time p50   total=8947    cold=1446ms hot[n=5 p50=1621.4 p95=1653.9 max=1653.9] http[n=5 p50=1475.8 p95=1514.7 max=1514.7 {200=5}]
+[perf 18:30:41.3735606] kw-high      time p1000 total=8947    cold=614ms hot[n=10 p50=665.4 p95=697.1 max=697.1] http[n=10 p50=666.7 p95=800.3 max=800.3 {200=10}]
+[perf 18:30:56.3481455] kw-high      hits p1    total=8947    cold=1315ms hot[n=5 p50=1338.9 p95=1378.7 max=1378.7] http[n=5 p50=1376.0 p95=1509.5 max=1509.5 {200=5}]
+[perf 18:31:11.899908] kw-high      hits p50   total=8947    cold=1460ms hot[n=5 p50=1514.6 p95=1624.5 max=1624.5] http[n=5 p50=1313.0 p95=1409.9 max=1409.9 {200=5}]
+[perf 18:31:26.4746444] kw-high      hits p1000 total=8947    cold=683ms hot[n=10 p50=649.1 p95=888.8 max=888.8] http[n=10 p50=676.2 p95=767.5 max=767.5 {200=10}]
+[perf 18:31:41.0154495] kw-low       time p1    total=5       cold=1227ms hot[n=5 p50=1402.4 p95=1462.1 max=1462.1] http[n=5 p50=1262.8 p95=1304.6 max=1304.6 {200=5}]
+[perf 18:31:55.1336685] kw-low       hits p1    total=5       cold=1227ms hot[n=5 p50=1236.3 p95=1298.4 max=1298.4] http[n=5 p50=1324.6 p95=1405.3 max=1405.3 {200=5}]
+[perf 18:32:10.229338] kw-none      time p1    total=0       cold=670ms hot[n=10 p50=753.3 p95=891.9 max=891.9] http[n=10 p50=633.3 p95=808.8 max=808.8 {200=10}]
+[perf 18:32:24.8384276] kw-none      hits p1    total=0       cold=609ms hot[n=10 p50=728.5 p95=908.3 max=908.3] http[n=10 p50=644.8 p95=711.7 max=711.7 {200=10}]
+[perf 18:32:39.0165839] kw-en        time p1    total=387     cold=1357ms hot[n=5 p50=1267.6 p95=1303.4 max=1303.4] http[n=5 p50=1307.8 p95=1353.6 max=1353.6 {200=5}]
+[perf 18:32:53.1825536] kw-en        hits p1    total=387     cold=1340ms hot[n=5 p50=1262.1 p95=1377.9 max=1377.9] http[n=5 p50=1278.5 p95=1363.6 max=1363.6 {200=5}]
+[perf 18:33:08.5711463] kw-amp       time p1    total=12      cold=1393ms hot[n=5 p50=1335.4 p95=1412.8 max=1412.8] http[n=5 p50=1380.5 p95=1606.8 max=1606.8 {200=5}]
+[perf 18:33:24.5917853] kw-amp       hits p1    total=12      cold=1365ms hot[n=5 p50=1357.3 p95=1378.3 max=1378.3] http[n=5 p50=1674.4 p95=1774.1 max=1774.1 {200=5}]
+[perf 18:33:38.9271616] classes      time p1    total=15077   cold=1269ms hot[n=5 p50=1298.5 p95=1329.3 max=1329.3] http[n=5 p50=1286.1 p95=1459.1 max=1459.1 {200=5}]
+[perf 18:33:54.4135361] classes      time p50   total=15077   cold=1399ms hot[n=5 p50=1199.9 p95=1304.9 max=1304.9] http[n=5 p50=1577.7 p95=1713.9 max=1713.9 {200=5}]
+[perf 18:34:10.9147442] classes      time p1000 total=15077   cold=764ms hot[n=10 p50=779.9 p95=840.8 max=840.8] http[n=10 p50=785.5 p95=882.8 max=882.8 {200=10}]
+[perf 18:34:28.2407522] classes      hits p1    total=15077   cold=1520ms hot[n=5 p50=1563.7 p95=1608.0 max=1608.0] http[n=5 p50=1575.9 p95=1810.7 max=1810.7 {200=5}]
+[perf 18:34:44.6082859] classes      hits p50   total=15077   cold=2066ms hot[n=5 p50=1495.6 p95=1717.9 max=1717.9] http[n=5 p50=1312.6 p95=1411.0 max=1411.0 {200=5}]
+[perf 18:34:58.2175305] classes      hits p1000 total=15077   cold=649ms hot[n=10 p50=682.7 p95=752.8 max=752.8] http[n=10 p50=600.7 p95=680.8 max=680.8 {200=10}]
+[perf 18:35:04.0928317] kw-high+cat  time p1    total=1764    cold=276ms hot[n=10 p50=258.7 p95=337.9 max=337.9] http[n=10 p50=276.1 p95=360.4 max=360.4 {200=10}]
+[perf 18:35:10.8924015] kw-high+cat  hits p1    total=1764    cold=253ms hot[n=10 p50=253.9 p95=371.1 max=371.1] http[n=10 p50=373.9 p95=417.9 max=417.9 {200=10}]
+[perf 18:35:22.1442497] kw-low+area  time p1    total=2       cold=536ms hot[n=10 p50=562.1 p95=602.1 max=602.1] http[n=10 p50=500.0 p95=651.3 max=651.3 {200=10}]
+[perf 18:35:32.3381566] kw-low+area  hits p1    total=2       cold=532ms hot[n=10 p50=449.7 p95=512.3 max=512.3] http[n=10 p50=505.3 p95=551.3 max=551.3 {200=10}]
+[perf 18:35:32.4884013] app_cpu_ms=13578 http_requests=440 cpu_ms_per_request=30.86
+[perf 18:35:32.4904153] app pid 13512 stopped
+[perf 18:35:32.4924138] wrote target\perf\s100k-bench.tsv
+[perf 18:35:35.0378421] sqlcheck ok=58 bad=0 skipped=2
+[perf 18:35:48.5980333] app pid 6888 listening on 127.0.0.1:57766 (max-concurrent=4)
+[perf 18:36:18.9536395] lock update-only	0	30.0	150	n=150 p50=0.7 p95=1.5 max=7.6	n=150 p50=0.8 p95=1.9 max=9.9	0	0	n=0 p50=0.0 p95=0.0 max=0.0	{}	0	151	0	0.00	0	0
+[perf 18:36:49.3858265] lock jdbc	1	30.3	150	n=150 p50=372.4 p95=684.4 max=883.2	n=150 p50=372.5 p95=684.7 max=883.3	0	21	n=21 p50=1438.7 p95=1665.5 max=1774.4	{ok=21}	152	41	4	1.75	1	0
+[perf 18:37:20.4906978] lock jdbc	4	31.0	150	n=150 p50=784.3 p95=1538.7 max=1902.2	n=150 p50=784.4 p95=1538.9 max=1902.3	0	40	n=40 p50=3050.4 p95=3798.0 max=3838.1	{ok=40}	226	5	11	4.21	4	0
+[perf 18:37:53.6205517] lock jdbc	8	33.0	151	n=151 p50=1573.8 p95=2936.4 max=2994.4	n=151 p50=1573.9 p95=2937.0 max=2994.5	0	85	n=85 p50=3009.9 p95=3017.9 max=5959.4	{E1028=2, E3024=83}	230	9	17	7.95	8	0
+[perf 18:38:24.0916333] lock http	1	30.4	150	n=150 p50=382.2 p95=796.6 max=957.7	n=150 p50=382.6 p95=796.6 max=958.4	0	19	n=19 p50=1511.6 p95=2318.0 max=2318.0	{200=19}	148	79	5	2.03	1	2312
+[perf 18:38:56.7788046] lock http	4	32.5	151	n=151 p50=848.0 p95=1643.8 max=1914.2	n=151 p50=848.1 p95=1644.4 max=1914.3	0	38	n=38 p50=3306.0 p95=3949.2 max=4538.5	{200=38}	201	103	12	4.39	4	2125
+[perf 18:39:27.9136868] lock http	8	31.0	151	n=151 p50=890.3 p95=1732.8 max=1872.1	n=151 p50=890.4 p95=1732.9 max=1872.6	0	1954	n=1954 p50=2.4 p95=4.8 max=3823.7	{200=36, 503=1918}	200	96	10	4.33	4	11859
+[perf 18:39:28.0824669] app pid 6888 stopped
+[perf 18:39:28.0846716] wrote target\perf\s100k-lock.tsv
+[perf 18:39:49.488142] inserted up to 200000
+[perf 18:40:04.7939786] inserted up to 300000
+[perf 18:40:21.3698283] inserted up to 400000
+[perf 18:40:39.6475211] inserted up to 500000
+[perf 18:42:20.8508247] analyze: status Table is already up to date
+[perf 18:42:20.851826] grow 100000 -> 500000: insert 68.0s, enable keys 101.2s, analyze 0.0s
+[perf 18:42:28.7449807] wrote target\perf\s500k-context.tsv
+[perf 18:42:33.5404321] bench s500k on 500000 rows
+[perf 18:42:46.8633354] app pid 10404 listening on 127.0.0.1:56238 (max-concurrent=4)
+[perf 18:43:13.8011901] base         time p1    total=451218  cold=2450ms hot[n=5 p50=2309.8 p95=2541.5 max=2541.5] http[n=5 p50=2474.9 p95=2775.9 max=2775.9 {200=5}]
+[perf 18:43:41.3206569] base         time p50   total=451218  cold=2436ms hot[n=5 p50=2419.9 p95=2498.4 max=2498.4] http[n=5 p50=2599.8 p95=2729.0 max=2729.0 {200=5}]
+[perf 18:44:16.8541437] base         time p1000 total=451218  cold=3361ms hot[n=5 p50=3332.5 p95=3635.0 max=3635.0] http[n=5 p50=3036.2 p95=3302.7 max=3302.7 {200=5}]
+[perf 18:44:45.9086887] base         hits p1    total=451218  cold=2739ms hot[n=5 p50=2471.1 p95=2821.7 max=2821.7] http[n=5 p50=2661.0 p95=2929.3 max=2929.3 {200=5}]
+[perf 18:45:15.9259727] base         hits p50   total=451218  cold=2793ms hot[n=5 p50=2771.5 p95=3030.1 max=3030.1] http[n=5 p50=2544.7 p95=3076.3 max=3076.3 {200=5}]
+[perf 18:45:50.2744609] base         hits p1000 total=451218  cold=2759ms hot[n=5 p50=2927.5 p95=3264.1 max=3264.1] http[n=5 p50=3413.2 p95=3429.0 max=3429.0 {200=5}]
+[perf 18:46:15.4301534] category     time p1    total=90211   cold=2489ms hot[n=5 p50=2315.7 p95=2358.1 max=2358.1] http[n=5 p50=2171.4 p95=2531.6 max=2531.6 {200=5}]
+[perf 18:46:42.6664794] category     hits p1    total=90211   cold=2906ms hot[n=5 p50=2545.8 p95=2653.7 max=2653.7] http[n=5 p50=2385.9 p95=2673.4 max=2673.4 {200=5}]
+[perf 18:46:56.4548522] area         time p1    total=45155   cold=1072ms hot[n=5 p50=1133.4 p95=1234.2 max=1234.2] http[n=5 p50=1372.0 p95=1508.0 max=1508.0 {200=5}]
+[perf 18:47:09.4786287] area         time p50   total=45155   cold=1212ms hot[n=5 p50=1260.4 p95=1308.8 max=1308.8] http[n=5 p50=1105.2 p95=1253.4 max=1253.4 {200=5}]
+[perf 18:47:22.6673495] area         time p1000 total=45155   cold=1197ms hot[n=5 p50=1150.0 p95=1256.5 max=1256.5] http[n=5 p50=1354.2 p95=1414.3 max=1414.3 {200=5}]
+[perf 18:47:33.705761] area         hits p1    total=45155   cold=1095ms hot[n=5 p50=990.9 p95=1018.5 max=1018.5] http[n=5 p50=976.4 p95=1064.2 max=1064.2 {200=5}]
+[perf 18:47:46.1265071] area         hits p50   total=45155   cold=1323ms hot[n=5 p50=988.2 p95=1182.2 max=1182.2] http[n=5 p50=1167.7 p95=1408.2 max=1408.2 {200=5}]
+[perf 18:48:00.4972466] area         hits p1000 total=45155   cold=1046ms hot[n=5 p50=1347.8 p95=1461.0 max=1461.0] http[n=5 p50=1339.6 p95=1448.5 max=1448.5 {200=5}]
+[perf 18:48:17.6972256] lang         time p1    total=36274   cold=939ms hot[n=10 p50=835.1 p95=1028.5 max=1028.5] http[n=10 p50=760.7 p95=936.4 max=936.4 {200=10}]
+[perf 18:48:33.5202587] lang         hits p1    total=36274   cold=869ms hot[n=10 p50=753.5 p95=892.9 max=892.9] http[n=10 p50=716.5 p95=938.9 max=938.9 {200=10}]
+[perf 18:48:49.3603942] year         time p1    total=34800   cold=583ms hot[n=10 p50=722.8 p95=834.7 max=834.7] http[n=10 p50=785.8 p95=832.9 max=832.9 {200=10}]
+[perf 18:49:04.4313504] year         hits p1    total=34800   cold=660ms hot[n=10 p50=720.2 p95=768.5 max=768.5] http[n=10 p50=715.7 p95=774.5 max=774.5 {200=10}]
+[perf 18:49:06.2781434] level        time p1    total=998     cold=24ms hot[n=30 p50=21.6 p95=27.8 max=28.9] http[n=30 p50=33.4 p95=55.3 max=64.4 {200=30}]
+[perf 18:49:07.8904448] level        hits p1    total=998     cold=20ms hot[n=30 p50=24.9 p95=29.5 max=29.8] http[n=30 p50=27.2 p95=35.2 max=35.9 {200=30}]
+[perf 18:49:16.2773593] exact-combo  time p1    total=4813    cold=394ms hot[n=10 p50=397.8 p95=424.3 max=424.3] http[n=10 p50=395.2 p95=446.5 max=446.5 {200=10}]
+[perf 18:49:24.9011242] exact-combo  hits p1    total=4813    cold=400ms hot[n=10 p50=384.5 p95=410.8 max=410.8] http[n=10 p50=438.5 p95=530.3 max=530.3 {200=10}]
+[perf 18:49:45.0174097] kw-high      time p1    total=45079   cold=2131ms hot[n=5 p50=1884.8 p95=2360.0 max=2360.0] http[n=5 p50=1614.8 p95=1743.5 max=1743.5 {200=5}]
+[perf 18:50:02.9233789] kw-high      time p50   total=45079   cold=1582ms hot[n=5 p50=1631.6 p95=1841.8 max=1841.8] http[n=5 p50=1621.2 p95=1683.5 max=1683.5 {200=5}]
+[perf 18:50:23.7875854] kw-high      time p1000 total=45079   cold=1821ms hot[n=5 p50=1820.9 p95=1935.3 max=1935.3] http[n=5 p50=1926.3 p95=2309.5 max=2309.5 {200=5}]
+[perf 18:50:43.9815349] kw-high      hits p1    total=45079   cold=1743ms hot[n=5 p50=1895.1 p95=1958.1 max=1958.1] http[n=5 p50=1842.1 p95=1899.0 max=1899.0 {200=5}]
+[perf 18:51:03.0161952] kw-high      hits p50   total=45079   cold=1856ms hot[n=5 p50=1673.9 p95=1750.4 max=1750.4] http[n=5 p50=1732.6 p95=1851.4 max=1851.4 {200=5}]
+[perf 18:51:24.3586524] kw-high      hits p1000 total=45079   cold=2000ms hot[n=5 p50=1885.0 p95=2052.9 max=2052.9] http[n=5 p50=1991.9 p95=2142.4 max=2142.4 {200=5}]
+[perf 18:51:43.2038509] kw-low       time p1    total=23      cold=1688ms hot[n=5 p50=1734.3 p95=1980.2 max=1980.2] http[n=5 p50=1670.5 p95=1672.6 max=1672.6 {200=5}]
+[perf 18:52:01.7408271] kw-low       hits p1    total=23      cold=1740ms hot[n=5 p50=1646.1 p95=1731.0 max=1731.0] http[n=5 p50=1698.6 p95=1760.7 max=1760.7 {200=5}]
+[perf 18:52:20.4485921] kw-none      time p1    total=0       cold=924ms hot[n=10 p50=849.6 p95=957.9 max=957.9] http[n=10 p50=890.1 p95=992.8 max=992.8 {200=10}]
+[perf 18:52:38.7029443] kw-none      hits p1    total=0       cold=912ms hot[n=10 p50=895.9 p95=948.2 max=948.2] http[n=10 p50=838.8 p95=897.0 max=897.0 {200=10}]
+[perf 18:52:56.9262484] kw-en        time p1    total=1861    cold=1576ms hot[n=5 p50=1615.1 p95=1656.0 max=1656.0] http[n=5 p50=1687.2 p95=1782.7 max=1782.7 {200=5}]
+[perf 18:53:15.5230416] kw-en        hits p1    total=1861    cold=1675ms hot[n=5 p50=1646.4 p95=1808.5 max=1808.5] http[n=5 p50=1734.2 p95=1753.1 max=1753.1 {200=5}]
+[perf 18:53:35.8477165] kw-amp       time p1    total=87      cold=1940ms hot[n=5 p50=1836.2 p95=2064.9 max=2064.9] http[n=5 p50=1818.0 p95=1878.5 max=1878.5 {200=5}]
+[perf 18:53:57.5929856] kw-amp       hits p1    total=87      cold=1870ms hot[n=5 p50=1889.2 p95=2206.3 max=2206.3] http[n=5 p50=1962.2 p95=2391.9 max=2391.9 {200=5}]
+[perf 18:54:14.2840142] classes      time p1    total=76312   cold=1328ms hot[n=5 p50=1511.8 p95=1596.8 max=1596.8] http[n=5 p50=1570.8 p95=1628.8 max=1628.8 {200=5}]
+[perf 18:54:31.2030038] classes      time p50   total=76312   cold=1501ms hot[n=5 p50=1552.0 p95=1574.7 max=1574.7] http[n=5 p50=1597.9 p95=1626.0 max=1626.0 {200=5}]
+[perf 18:54:49.4779006] classes      time p1000 total=76312   cold=1672ms hot[n=5 p50=1616.3 p95=1740.3 max=1740.3] http[n=5 p50=1706.8 p95=1752.0 max=1752.0 {200=5}]
+[perf 18:55:05.321185] classes      hits p1    total=76312   cold=1452ms hot[n=5 p50=1469.0 p95=1484.5 max=1484.5] http[n=5 p50=1427.8 p95=1446.9 max=1446.9 {200=5}]
+[perf 18:55:21.9636551] classes      hits p50   total=76312   cold=1468ms hot[n=5 p50=1435.9 p95=1515.2 max=1515.2] http[n=5 p50=1534.4 p95=1725.5 max=1725.5 {200=5}]
+[perf 18:55:40.6089817] classes      hits p1000 total=76312   cold=1668ms hot[n=5 p50=1660.2 p95=1854.0 max=1854.0] http[n=5 p50=1718.1 p95=1759.9 max=1759.9 {200=5}]
+[perf 18:55:57.6038736] kw-high+cat  time p1    total=9054    cold=1503ms hot[n=5 p50=1451.6 p95=1627.0 max=1627.0] http[n=5 p50=1593.6 p95=1767.7 max=1767.7 {200=5}]
+[perf 18:56:14.7286943] kw-high+cat  hits p1    total=9054    cold=1428ms hot[n=5 p50=1504.2 p95=1575.9 max=1575.9] http[n=5 p50=1586.4 p95=1850.0 max=1850.0 {200=5}]
+[perf 18:56:52.5475152] kw-low+area  time p1    total=10      cold=3252ms hot[n=5 p50=3580.2 p95=4054.2 max=4054.2] http[n=5 p50=3246.8 p95=4042.4 max=4042.4 {200=5}]
+[perf 18:57:22.5947553] kw-low+area  hits p1    total=10      cold=2613ms hot[n=5 p50=2627.1 p95=2805.1 max=2805.1] http[n=5 p50=2808.9 p95=3188.0 max=3188.0 {200=5}]
+[perf 18:57:22.79545] app_cpu_ms=14250 http_requests=320 cpu_ms_per_request=44.53
+[perf 18:57:22.7974481] app pid 10404 stopped
+[perf 18:57:22.7994525] wrote target\perf\s500k-bench.tsv
+[perf 18:57:25.7671048] sqlcheck ok=58 bad=0 skipped=2
+[perf 18:57:40.2829905] app pid 23144 listening on 127.0.0.1:55199 (max-concurrent=4)
+[perf 18:58:10.6295789] lock update-only	0	30.0	151	n=151 p50=0.9 p95=1.8 max=7.1	n=151 p50=1.0 p95=2.2 max=8.6	0	0	n=0 p50=0.0 p95=0.0 max=0.0	{}	0	152	0	0.00	0	0
+[perf 18:58:42.6563146] lock jdbc	1	31.9	151	n=151 p50=578.3 p95=1117.2 max=1276.9	n=151 p50=579.5 p95=1117.3 max=1277.4	0	14	n=14 p50=2286.0 p95=2700.6 max=2700.6	{ok=14}	171	9	6	2.72	1	0
+[perf 18:59:15.2084213] lock jdbc	4	32.4	150	n=150 p50=842.5 p95=1580.5 max=1784.5	n=150 p50=842.7 p95=1580.6 max=1784.6	0	40	n=40 p50=3238.5 p95=3499.5 max=3513.2	{ok=40}	225	6	12	4.05	4	0
+[perf 18:59:50.4230607] lock jdbc	8	35.1	150	n=150 p50=1238.5 p95=2372.4 max=2633.3	n=150 p50=1239.2 p95=2372.4 max=2634.2	0	56	n=56 p50=4933.5 p95=5273.6 max=5278.8	{ok=56}	246	17	18	6.43	8	0
+[perf 19:00:21.0796065] lock http	1	30.6	150	n=150 p50=608.1 p95=1196.6 max=1350.7	n=150 p50=608.1 p95=1197.2 max=1350.7	0	12	n=12 p50=2537.9 p95=2758.6 max=2758.6	{200=12}	147	52	7	3.03	1	2812
+[perf 19:00:53.0354127] lock http	4	31.8	150	n=150 p50=869.7 p95=1797.1 max=2203.6	n=150 p50=869.8 p95=1797.2 max=2203.7	0	33	n=33 p50=3631.9 p95=4585.7 max=4677.3	{200=32, 503=1}	181	101	12	4.50	4	3156
+[perf 19:01:25.4900211] lock http	8	32.3	151	n=151 p50=1033.0 p95=1955.5 max=2176.4	n=151 p50=1033.0 p95=1955.6 max=2176.4	0	1957	n=1957 p50=3.6 p95=6.3 max=4553.4	{200=32, 503=1925}	191	89	13	5.10	4	18250
+[perf 19:01:25.7376765] app pid 23144 stopped
+[perf 19:01:25.7418983] wrote target\perf\s500k-lock.tsv
+[perf 19:01:54.8010317] inserted up to 600000
+[perf 19:02:14.8166149] inserted up to 700000
+[perf 19:02:36.8779117] inserted up to 800000
+[perf 19:02:57.0063036] inserted up to 900000
+[perf 19:03:16.4530359] inserted up to 1000000
+[perf 19:06:23.34111] analyze: status Table is already up to date
+[perf 19:06:23.342109] grow 500000 -> 1000000: insert 106.0s, enable keys 186.9s, analyze 0.0s
+[perf 19:06:32.9323692] wrote target\perf\s1m-context.tsv
+[perf 19:06:36.7250154] bench s1m on 1000000 rows
+[perf 19:06:49.1619698] app pid 7760 listening on 127.0.0.1:64789 (max-concurrent=4)
+[perf 19:07:29.3241124] base         time p1    total=902474  cold=3819ms hot[n=5 p50=3650.0 p95=3830.6 max=3830.6] http[n=5 p50=3593.7 p95=3652.1 max=3652.1 {200=5}]
+[perf 19:08:10.0601566] base         time p50   total=902474  cold=3404ms hot[n=5 p50=3666.2 p95=4077.8 max=4077.8] http[n=5 p50=3722.8 p95=4005.2 max=4005.2 {200=5}]
+[perf 19:08:54.5157638] base         time p1000 total=902474  cold=3818ms hot[n=5 p50=3973.1 p95=4925.0 max=4925.0] http[n=5 p50=3995.3 p95=4066.2 max=4066.2 {200=5}]
+[perf 19:09:33.2648024] base         hits p1    total=902474  cold=3428ms hot[n=5 p50=3310.2 p95=3633.8 max=3633.8] http[n=5 p50=3758.9 p95=3788.9 max=3788.9 {200=5}]
+[perf 19:10:15.9652042] base         hits p50   total=902474  cold=4160ms hot[n=5 p50=3943.6 p95=4195.9 max=4195.9] http[n=5 p50=3876.0 p95=3923.8 max=3923.8 {200=5}]
+[perf 19:10:57.582181] base         hits p1000 total=902474  cold=3987ms hot[n=5 p50=3824.2 p95=4042.7 max=4042.7] http[n=5 p50=3606.4 p95=4226.7 max=4226.7 {200=5}]
+[perf 19:11:31.7444365] category     time p1    total=180463  cold=2871ms hot[n=5 p50=3160.9 p95=3326.3 max=3326.3] http[n=5 p50=3051.2 p95=3320.2 max=3320.2 {200=5}]
+[perf 19:12:03.9077074] category     hits p1    total=180463  cold=2943ms hot[n=5 p50=2894.8 p95=3184.3 max=3184.3] http[n=5 p50=2879.2 p95=2969.9 max=2969.9 {200=5}]
+[perf 19:12:21.6416099] area         time p1    total=90383   cold=1570ms hot[n=5 p50=1564.4 p95=1740.1 max=1740.1] http[n=5 p50=1605.2 p95=1767.2 max=1767.2 {200=5}]
+[perf 19:12:40.2140132] area         time p50   total=90383   cold=1456ms hot[n=5 p50=1589.8 p95=1913.1 max=1913.1] http[n=5 p50=1843.1 p95=1871.5 max=1871.5 {200=5}]
+[perf 19:13:01.5610166] area         time p1000 total=90383   cold=1750ms hot[n=5 p50=2029.4 p95=2058.5 max=2058.5] http[n=5 p50=1915.6 p95=2041.1 max=2041.1 {200=5}]
+[perf 19:13:19.1310106] area         hits p1    total=90383   cold=1653ms hot[n=5 p50=1546.1 p95=1666.9 max=1666.9] http[n=5 p50=1595.9 p95=1664.4 max=1664.4 {200=5}]
+[perf 19:13:38.1092784] area         hits p50   total=90383   cold=1729ms hot[n=5 p50=1722.7 p95=1844.0 max=1844.0] http[n=5 p50=1681.1 p95=1768.6 max=1768.6 {200=5}]
+[perf 19:13:57.9614369] area         hits p1000 total=90383   cold=1935ms hot[n=5 p50=1795.3 p95=1937.5 max=1937.5] http[n=5 p50=1707.3 p95=1922.9 max=1922.9 {200=5}]
+[perf 19:14:12.7031852] lang         time p1    total=72326   cold=1364ms hot[n=5 p50=1319.4 p95=1358.6 max=1358.6] http[n=5 p50=1352.0 p95=1395.2 max=1395.2 {200=5}]
+[perf 19:14:26.4525605] lang         hits p1    total=72326   cold=1345ms hot[n=5 p50=1245.1 p95=1434.9 max=1434.9] http[n=5 p50=1187.2 p95=1344.3 max=1344.3 {200=5}]
+[perf 19:14:39.740358] year         time p1    total=69220   cold=1165ms hot[n=5 p50=1192.0 p95=1267.9 max=1267.9] http[n=5 p50=1223.7 p95=1331.8 max=1331.8 {200=5}]
+[perf 19:14:57.1397734] year         hits p1    total=69220   cold=1259ms hot[n=5 p50=1376.1 p95=1843.0 max=1843.0] http[n=5 p50=1637.2 p95=2475.7 max=2475.7 {200=5}]
+[perf 19:15:03.2210355] level        time p1    total=1930    cold=56ms hot[n=30 p50=86.6 p95=126.2 max=130.4] http[n=30 p50=115.0 p95=148.9 max=163.5 {200=30}]
+[perf 19:15:09.1284955] level        hits p1    total=1930    cold=93ms hot[n=30 p50=99.2 p95=131.5 max=154.5] http[n=30 p50=86.0 p95=166.7 max=191.0 {200=30}]
+[perf 19:15:27.4262251] exact-combo  time p1    total=9560    cold=999ms hot[n=10 p50=914.1 p95=1314.8 max=1314.8] http[n=10 p50=719.3 p95=976.6 max=976.6 {200=10}]
+[perf 19:15:43.1950362] exact-combo  hits p1    total=9560    cold=833ms hot[n=10 p50=726.8 p95=795.6 max=795.6] http[n=10 p50=729.0 p95=859.0 max=859.0 {200=10}]
+[perf 19:16:24.3010912] kw-high      time p1    total=90169   cold=4008ms hot[n=5 p50=3707.4 p95=3862.5 max=3862.5] http[n=5 p50=3653.0 p95=4023.6 max=4023.6 {200=5}]
+[perf 19:17:03.590536] kw-high      time p50   total=90169   cold=3673ms hot[n=5 p50=3543.0 p95=3857.1 max=3857.1] http[n=5 p50=3440.5 p95=3646.6 max=3646.6 {200=5}]
+[perf 19:17:46.2079958] kw-high      time p1000 total=90169   cold=3949ms hot[n=5 p50=3712.0 p95=4003.4 max=4003.4] http[n=5 p50=4001.6 p95=4053.4 max=4053.4 {200=5}]
+[perf 19:18:27.3224488] kw-high      hits p1    total=90169   cold=4212ms hot[n=5 p50=3767.2 p95=3848.0 max=3848.0] http[n=5 p50=3718.9 p95=3737.8 max=3737.8 {200=5}]
+[perf 19:19:08.5758067] kw-high      hits p50   total=90169   cold=3802ms hot[n=5 p50=3646.2 p95=4271.3 max=4271.3] http[n=5 p50=3691.0 p95=3922.5 max=3922.5 {200=5}]
+[perf 19:19:53.3229918] kw-high      hits p1000 total=90169   cold=3868ms hot[n=5 p50=3951.5 p95=4181.9 max=4181.9] http[n=5 p50=4166.4 p95=4474.4 max=4474.4 {200=5}]
+[perf 19:20:36.8371087] kw-low       time p1    total=46      cold=4075ms hot[n=5 p50=3735.2 p95=4211.1 max=4211.1] http[n=5 p50=3946.5 p95=4482.7 max=4482.7 {200=5}]
+[perf 19:21:23.5091907] kw-low       hits p1    total=46      cold=3537ms hot[n=5 p50=3753.0 p95=4213.9 max=4213.9] http[n=5 p50=4391.3 p95=6187.3 max=6187.3 {200=4, 500=1}]
+[perf 19:21:46.6255301] kw-none      time p1    total=0       cold=2091ms hot[n=5 p50=2116.5 p95=2194.4 max=2194.4] http[n=5 p50=2123.5 p95=2381.0 max=2381.0 {200=5}]
+[perf 19:22:11.954525] kw-none      hits p1    total=0       cold=2188ms hot[n=5 p50=2044.1 p95=2477.5 max=2477.5] http[n=5 p50=2542.2 p95=3012.1 max=3012.1 {200=4, 503=1}]
+[perf 19:23:00.8247763] kw-en        time p1    total=3773    cold=4707ms hot[n=5 p50=4495.8 p95=4724.9 max=4724.9] http[n=5 p50=4422.6 p95=4549.1 max=4549.1 {200=5}]
+[perf 19:23:53.6027966] kw-en        hits p1    total=3773    cold=4625ms hot[n=5 p50=4546.1 p95=4755.5 max=4755.5] http[n=5 p50=4758.0 p95=5976.3 max=5976.3 {200=4, 500=1}]
+[perf 19:25:01.0987751] kw-amp       time p1    total=168     cold=5241ms hot[n=5 p50=6013.9 p95=6027.4 max=6027.4] http[n=5 p50=5540.6 p95=6014.9 max=6014.9 {200=3, 500=1, 503=1}]
+[perf 19:25:48.3361872] kw-amp       hits p1    total=168     cold=3010ms(count:E3024) hot[n=5 p50=3007.6 p95=3015.6 max=3015.6] http[n=5 p50=4749.7 p95=4939.7 max=4939.7 {200=5}]
+[perf 19:26:26.9730826] classes      time p1    total=152657  cold=3440ms hot[n=5 p50=3509.1 p95=3665.9 max=3665.9] http[n=5 p50=3552.2 p95=3933.8 max=3933.8 {200=5}]
+[perf 19:27:06.1564552] classes      time p50   total=152657  cold=3427ms hot[n=5 p50=3587.9 p95=3597.7 max=3597.7] http[n=5 p50=3634.2 p95=3874.7 max=3874.7 {200=5}]
+[perf 19:27:49.5949695] classes      time p1000 total=152657  cold=3730ms hot[n=5 p50=4011.2 p95=4380.1 max=4380.1] http[n=5 p50=3841.7 p95=4339.9 max=4339.9 {200=5}]
+[perf 19:28:32.5276057] classes      hits p1    total=152657  cold=3370ms hot[n=5 p50=3920.8 p95=4593.9 max=4593.9] http[n=5 p50=3945.1 p95=4885.8 max=4885.8 {200=5}]
+[perf 19:29:17.2449761] classes      hits p50   total=152657  cold=5197ms hot[n=5 p50=3734.2 p95=3929.9 max=3929.9] http[n=5 p50=4285.1 p95=4384.1 max=4384.1 {200=5}]
+[perf 19:30:06.6516117] classes      hits p1000 total=152657  cold=5351ms hot[n=5 p50=4596.4 p95=4732.8 max=4732.8] http[n=5 p50=4231.5 p95=4648.9 max=4648.9 {200=5}]
+[perf 19:30:46.1101137] kw-high+cat  time p1    total=18113   cold=3987ms hot[n=5 p50=3664.4 p95=3762.2 max=3762.2] http[n=5 p50=3554.3 p95=3897.3 max=3897.3 {200=5}]
+[perf 19:31:25.6034195] kw-high+cat  hits p1    total=18113   cold=3522ms hot[n=5 p50=3716.5 p95=3924.3 max=3924.3] http[n=5 p50=3599.5 p95=4062.8 max=4062.8 {200=5}]
+[perf 19:32:30.6514439] kw-low+area  time p1    total=15      cold=5977ms(page:E1028) hot[n=5 p50=5822.1 p95=6022.9 max=6022.9] http[n=5 p50=5723.0 p95=5863.1 max=5863.1 {200=2, 500=1, 503=2}]
+[perf 19:33:21.4795255] kw-low+area  hits p1    total=15      cold=3004ms(count:E3024) hot[n=5 p50=3002.2 p95=3015.0 max=3015.0] http[n=5 p50=5444.5 p95=5734.3 max=5734.3 {200=3, 500=2}]
+[perf 19:33:21.7142451] app_cpu_ms=16265 http_requests=290 cpu_ms_per_request=56.09
+[perf 19:33:21.7162457] app pid 7760 stopped
+[perf 19:33:21.719246] wrote target\perf\s1m-bench.tsv
+[perf 19:33:25.7375823] sqlcheck ok=58 bad=0 skipped=2
+[perf 19:33:41.5078051] app pid 23044 listening on 127.0.0.1:56383 (max-concurrent=4)
+[perf 19:34:11.8363832] lock update-only	0	30.0	151	n=151 p50=0.8 p95=1.6 max=8.0	n=151 p50=0.9 p95=2.0 max=9.8	0	0	n=0 p50=0.0 p95=0.0 max=0.0	{}	0	152	0	0.00	0	0
+[perf 19:34:44.5064845] lock jdbc	1	32.5	150	n=150 p50=1030.8 p95=1957.6 max=2335.6	n=150 p50=1030.9 p95=1958.1 max=2336.1	0	8	n=8 p50=4002.5 p95=4491.8 max=4491.8	{ok=8}	164	3	12	4.87	1	0
+[perf 19:35:17.4277539] lock jdbc	4	32.8	150	n=150 p50=1547.7 p95=2931.9 max=2994.2	n=150 p50=1547.8 p95=2932.6 max=2994.3	0	36	n=36 p50=3013.7 p95=5923.9 max=5939.1	{E1028=6, E3024=28, ok=2}	186	9	15	7.80	4	0
+[perf 19:35:50.5664575] lock jdbc	8	33.0	150	n=150 p50=1565.4 p95=2921.8 max=2997.5	n=150 p50=1565.5 p95=2922.4 max=2997.5	0	88	n=88 p50=3011.7 p95=3015.4 max=3016.7	{E3024=88}	230	9	15	7.97	8	0
+[perf 19:36:20.9128238] lock http	1	30.3	150	n=150 p50=1244.4 p95=2444.0 max=2823.9	n=150 p50=1244.5 p95=2444.1 max=2823.9	0	6	n=6 p50=5052.5 p95=5774.7 max=5774.7	{200=6}	149	26	14	6.15	1	1750
+[perf 19:36:53.4188688] lock http	4	32.4	151	n=151 p50=1376.9 p95=2768.8 max=2975.6	n=151 p50=1377.0 p95=2768.8 max=2975.6	0	32	n=32 p50=3022.0 p95=6207.7 max=6207.9	{200=8, 500=2, 503=22}	177	81	17	7.87	4	2781
+[perf 19:37:23.9033103] lock http	8	30.3	151	n=151 p50=1532.1 p95=2907.8 max=3006.9	n=151 p50=1532.2 p95=2908.6 max=3007.0	0	1945	n=1945 p50=4.0 p95=6.6 max=3038.0	{503=1945}	154	118	15	7.69	4	10078
+[perf 19:37:24.300448] app pid 23044 stopped
+[perf 19:37:24.3029793] wrote target\perf\s1m-lock.tsv
+[perf 19:37:42.937377] app pid 24284 listening on 127.0.0.1:63098 (max-concurrent=4)
+[perf 19:39:38.1063352] app pid 24284 stopped
+[perf 19:39:38.1354285] wrote target\perf\s1m-timeout.txt
+jdbc count kw-low under WRITE lock: 3037 ms error=E3024
+http kw-low x8 concurrent (max-concurrent=4) under WRITE lock: [503@3545ms, 503@3482ms, 503@3416ms, 503@3354ms, 503@45ms, 503@12ms, 503@10ms, 503@8ms]
+http area (exact, hinted) under WRITE lock: 503 @ 3040 ms body={"code":"SERVICE_UNAVAILABLE","message":"???????","fieldErrors":[]}
+write lock held 9648 ms
+http base (no filter, no hint) under WRITE lock: 503 @ 10022 ms body={"code":"SERVICE_UNAVAILABLE","message":"???????","fieldErrors":[]}
+write lock held 10022 ms
+http kw-low after unlock: 200 @ 4350 ms
+jdbc kw-amp page statement x12 (time/hits): {ok=12}
+http kw-amp x12 (time/hits): {200=12}
+--- app log lines (WARN/ERROR)
+2026-10-15T19:37:46.643-07:00  WARN 24284 --- [maccms-backend] [.1-63098-exec-6] c.m.b.c.application.ContentReadService   : content search rejected: concurrency limit reached
+2026-10-15T19:37:46.704-07:00  WARN 24284 --- [maccms-backend] [.1-63098-exec-7] c.m.b.c.application.ContentReadService   : content search rejected: concurrency limit reached
+2026-10-15T19:37:46.767-07:00  WARN 24284 --- [maccms-backend] [.1-63098-exec-8] c.m.b.c.application.ContentReadService   : content search rejected: concurrency limit reached
+2026-10-15T19:37:46.828-07:00  WARN 24284 --- [maccms-backend] [.1-63098-exec-9] c.m.b.c.application.ContentReadService   : content search rejected: concurrency limit reached
+2026-10-15T19:37:49.925-07:00  WARN 24284 --- [maccms-backend] [.1-63098-exec-4] c.m.b.c.application.ContentReadService   : database statement timeout: org.springframework.jdbc.UncategorizedSQLException <- java.sql.SQLException
+2026-10-15T19:37:49.925-07:00  WARN 24284 --- [maccms-backend] [.1-63098-exec-3] c.m.b.c.application.ContentReadService   : database statement timeout: org.springframework.jdbc.UncategorizedSQLException <- java.sql.SQLException
+2026-10-15T19:37:49.925-07:00  WARN 24284 --- [maccms-backend] [.1-63098-exec-2] c.m.b.c.application.ContentReadService   : database statement timeout: org.springframework.jdbc.UncategorizedSQLException <- java.sql.SQLException
+2026-10-15T19:37:49.925-07:00  WARN 24284 --- [maccms-backend] [.1-63098-exec-5] c.m.b.c.application.ContentReadService   : database statement timeout: org.springframework.jdbc.UncategorizedSQLException <- java.sql.SQLException
+2026-10-15T19:37:52.969-07:00  WARN 24284 --- [maccms-backend] [1-63098-exec-10] c.m.b.c.application.ContentReadService   : database statement timeout: org.springframework.jdbc.UncategorizedSQLException <- java.sql.SQLException
+2026-10-15T19:38:02.994-07:00 ERROR 24284 --- [maccms-backend] [.1-63098-exec-1] c.m.b.c.application.ContentReadService   : database unavailable: org.springframework.dao.QueryTimeoutException <- com.mysql.cj.jdbc.exceptions.MySQLTimeoutException
+[perf 19:39:43.2240192] remaining maccms_perf_* schemas: 0
+[perf 19:39:43.2613972] dropped disposable database maccms_perf_20261015182611_e8dfd14e (verified absent)
+[perf 19:39:43.2623979] maccms_dev information_schema snapshot unchanged: true
+EXIT=0
