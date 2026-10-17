@@ -60,7 +60,10 @@
 
 复核对象：`jte/site/layout/page.jte` 与 `site.web.view.PageChrome`（代码阅读 + fixture 键盘遍历）：
 
-- **Logo**：`chrome.logo()` 为 `Optional<SafeUrl>`，由后端 `SiteSettings` 经 `SafeUrl.parse` 过滤（W2 关闭时外链图片地址不输出由后端保证，属 `SiteExternalImages*Test` 范围）；模板仅在存在时输出 `<img class="site-brand__logo" alt="">` 并始终带站点名文本，装饰图 alt 为空符合无障碍惯例。✅
+- **Logo**：`chrome.logo()` 为 `Optional<SafeUrl>`；模板仅在存在时输出 `<img class="site-brand__logo" alt="">` 并始终带站点名文本，装饰图 alt 为空符合无障碍惯例。✅
+  - **更正（B05 整合，MACC-29）**：本节原写"W2 关闭时外链 Logo 不输出由后端保证，属 `SiteExternalImages*Test` 范围"，与固定树 `3100239` 不符：当时 `SiteSettings.from()` 只做 `SafeUrl.parse`，`SitePages.chrome()` 直接输出 `site.logo()`，W2 只传给 `ImageUrlNormalizer`，**并不过滤 Logo**。
+  - 现由后端 `SitePages`（`backend/src/main/java/com/maccms/backend/site/web/SitePages.java`）按 W2 过滤：W2 关时，主机不是 base-url 主机的绝对地址不输出，页眉只显示站名；站内路径（以单个 `/` 开头）与 base-url 同主机的绝对地址照常输出；根路径与子目录部署规则相同；W1 不影响 Logo。`SafeUrl` 防护保留。
+  - 测试：`SitePagesLogoTest`（根/子目录 × 外站/仿冒主机/站内 × W2 开关）、`PlaybackSwitchCases.logoFollowsW2`（W1/W2=00/01/10/11 真实 MockMvc 响应），以及 B05 最终真实 HTTP 检查（15 文档第 10 节）。布局签名与前端静态目录未改。
 - **导航**：`chrome.nav()` 为视频分类，无全局"播放"导航项；按裁定不新增。✅
 - **键盘顺序**：skip-link → 品牌 → 分类导航 → 搜索表单 → 登录链接 → 主内容 → 页脚，DOM 顺序即焦点顺序，fixture Tab 遍历验证可达性与焦点可见。✅
 - **品牌样式**：`.site-brand` / `.site-brand__logo` / `.site-brand__name` 既有规则正常，未改 layout 签名。✅
