@@ -7,12 +7,17 @@ MacCMS 重构的 Java 后端（模块化单体）。本批（MACC-4）只包含 
 | `GET /api/v1/video-categories` | 视频分类树 |
 | `GET /api/v1/videos` | 视频分页列表，可按分类筛选；契约 1.1.0（MACC-18）起可按关键字、地区、语言、年份、推荐等级、扩展分类查询 |
 | `GET /api/v1/videos/{id}` | 视频公开详情元数据（不含播放/下载地址） |
+| `GET /api/v1/videos/{id}/plots` | 契约 1.2.0（MACC-27）：视频分集剧情，可见性同视频详情 |
+| `GET /api/v1/{article,actor,website}-categories` | 1.2.0：文章、演员、网址分类树（规则同视频分类） |
+| `GET /api/v1/{articles,topics,actors,roles,websites}`、`…/{id}` | 1.2.0：文章、专题、演员、角色、网址的分页列表与公开详情 |
+| `GET /api/v1/links` | 1.2.0：友情链接列表 |
 | `GET /actuator/health` | 健康检查，只返回 `{"status":"UP"}` / `DOWN` |
 
 正式契约：`docs/contracts/content-read.openapi.yaml`。设计与验收：`docs/architecture/01-batch1-content-read-plan.md`；
 搜索/筛选（1.1.0）的规则与实施记录见 `docs/architecture/09-content-search-filter-plan.md`（第 4、6、12 节）。
 关键字与扩展分类（`keyword`、`classes`）是包含匹配，默认关闭（`MACCMS_CONTENT_SEARCH_ENABLED=false`，关闭时这两个参数返回 400）；
 开启后受并发上限 `MACCMS_CONTENT_SEARCH_MAX_CONCURRENT`（默认 4）与 3 秒服务端执行时限约束，超限返回 503。开启前须先按 09 方案第 6.5 节做合成库测量。
+1.2.0（文章/专题/演员/角色/网址/友链与多值字段解码）的规则、与旧版差异和 PHP 黄金样本见 `docs/architecture/11-content-read-completion.md`。
 开发规范：`docs/architecture/02-agent-development-rules.md`。
 
 另有 `site` 服务端渲染页面（jte 3.2.4）：默认关闭（`MACCMS_SITE_ENABLED=false`）。骨架（MACC-9，占位页 `GET /_site/placeholder`、

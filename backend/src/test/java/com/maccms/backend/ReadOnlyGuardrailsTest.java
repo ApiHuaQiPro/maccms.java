@@ -68,6 +68,36 @@ class ReadOnlyGuardrailsTest {
         assertThat(sqlOnly(MAPPERS.resolve("content/GroupMapper.xml"))).contains("FROM mac_group");
     }
 
+    /**
+     * 契约 1.2.0（MACC-27）的 Mapper：访问密码、积分只以 SQL 计算的布尔结果出现；模板、锁定、生成时间、关联、会员组等内部列不查询。
+     * website_jumpurl 是网址本身（导航目标）属于公开字段；topic_rel_vod/topic_rel_art 只在专题详情中读出用于查询关联内容。
+     */
+    @Test
+    void libraryMappersNeverSelectInternalColumns() throws IOException {
+        Pattern internal = Pattern.compile("\\b((art|topic|actor|role|website)_(tpl|lock|time_make|time_hits)|"
+                + "(art|actor|role)_jumpurl|art_rel_\\w+|art_pwd_url|topic_extend|website_time_referer|group_id|"
+                + "type_id_1|vod_play_\\w+|vod_down_\\w+|vod_points\\w*|vod_trysee|vod_pwd_\\w+)\\b");
+        for (String file : List.of("ArtMapper.xml", "TopicMapper.xml", "ActorMapper.xml", "RoleMapper.xml",
+                "WebsiteMapper.xml", "LinkMapper.xml", "VodPlotMapper.xml")) {
+            Matcher m = internal.matcher(sqlOnly(MAPPERS.resolve("content/" + file)));
+            assertThat(m.find()).as(file + " 不应查询内部列" + (m.hitEnd() ? "" : "：" + m.group())).isFalse();
+        }
+        String art = sqlOnly(MAPPERS.resolve("content/ArtMapper.xml"));
+        Matcher secret = Pattern.compile("\\b(art_pwd|art_points|art_points_detail)\\b").matcher(art);
+        while (secret.find()) {
+            String around = art.substring(Math.max(0, secret.start() - 12), Math.min(art.length(), secret.end() + 8));
+            assertThat(around).as("ArtMapper 只能以布尔结果使用 " + secret.group())
+                    .containsAnyOf("CHAR_LENGTH(art_pwd)", "&gt; 0");
+        }
+        String plot = sqlOnly(MAPPERS.resolve("content/VodPlotMapper.xml"));
+        Matcher pwd = Pattern.compile("\\bvod_pwd\\b").matcher(plot);
+        while (pwd.find()) {
+            assertThat(plot.substring(Math.max(0, pwd.start() - 12), pwd.end())).contains("CHAR_LENGTH(vod_pwd");
+        }
+        // vod_plot* 只出现在 VodPlotMapper.xml（mappersNeverSelectSensitiveVodColumns 仍禁止它出现在 VodMapper.xml）
+        assertThat(plot).contains("vod_plot_name", "vod_plot_detail");
+    }
+
     @Test
     void mainResourcesContainNoCredentials() throws IOException {
         try (Stream<Path> s = Files.walk(MAIN_RESOURCES)) {

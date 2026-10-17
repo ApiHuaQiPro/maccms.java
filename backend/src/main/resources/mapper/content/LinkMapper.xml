@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+  只读映射：沿用旧表 mac_link（install.sql）。禁止在此文件加入写语句，禁止 ${} 拼接。
+  友链没有状态列，旧 Link::listCacheData 列出全部行（application/common/model/Link.php:31-82）。
+-->
+<mapper namespace="com.maccms.backend.content.infrastructure.LinkMapper">
+
+    <!-- type=font/pic → link_type 0/1（Link.php:59-62） -->
+    <sql id="matching">
+        <where>
+            <if test="criteria.linkType != null">link_type = #{criteria.linkType}</if>
+        </where>
+    </sql>
+
+    <select id="count" resultType="long">
+        SELECT COUNT(*)
+        FROM mac_link
+        <include refid="matching"/>
+    </select>
+
+    <!-- 排序白名单 id/sort（Link.php:53-58，默认 link_id asc），追加 link_id 同向排序保证分页稳定。 -->
+    <select id="selectPage" resultType="com.maccms.backend.content.infrastructure.LinkRow">
+        SELECT link_id       AS id,
+               link_type     AS type,
+               link_name     AS name,
+               link_sort     AS sort,
+               link_url      AS url,
+               link_logo     AS logo,
+               link_add_time AS addedAt,
+               link_time     AS updatedAt
+        FROM mac_link
+        <include refid="matching"/>
+        ORDER BY
+        <choose>
+            <when test="sort.name() == 'SORT'">link_sort</when>
+            <otherwise>link_id</otherwise>
+        </choose>
+        <choose>
+            <when test="descending">DESC, link_id DESC</when>
+            <otherwise>ASC, link_id ASC</otherwise>
+        </choose>
+        LIMIT #{offset}, #{limit}
+    </select>
+</mapper>

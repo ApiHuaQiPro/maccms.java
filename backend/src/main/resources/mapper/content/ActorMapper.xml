@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+  只读映射：沿用旧表 mac_actor（install.sql）。禁止在此文件加入写语句，禁止 ${} 拼接。
+  不查询的列：actor_lock、actor_tpl、actor_jumpurl、actor_time_make、actor_time_hits、type_id_1。
+  旧规则依据：application/common/model/Actor.php。
+-->
+<mapper namespace="com.maccms.backend.content.infrastructure.ActorMapper">
+
+    <!--
+      actor_status=1（Actor.php:179）；分类可见性由 content.application 给出 typeIds。
+      精确筛选：level（:180-185）、sex（:194-196）、letter（:197-202）、area（:276-278）、starsign（:279-281）、
+      blood（:282-284）；旧版 area/starsign/blood 逗号多值，新版单值。列名固定，值只经 #{} 绑定。
+    -->
+    <sql id="publishedMatching">
+        actor_status = 1
+        AND type_id IN
+        <foreach collection="typeIds" item="tid" open="(" separator="," close=")">#{tid}</foreach>
+        <if test="criteria.level != null">AND actor_level = #{criteria.level}</if>
+        <if test="criteria.sex != null">AND actor_sex = #{criteria.sex}</if>
+        <if test="criteria.letters != null">
+            AND actor_letter IN <foreach collection="criteria.letters" item="l" open="(" separator="," close=")">#{l}</foreach>
+        </if>
+        <if test="criteria.area != null">AND actor_area = #{criteria.area}</if>
+        <if test="criteria.starSign != null">AND actor_starsign = #{criteria.starSign}</if>
+        <if test="criteria.blood != null">AND actor_blood = #{criteria.blood}</if>
+    </sql>
+
+    <select id="countPublished" resultType="long">
+        SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*)
+        FROM mac_actor
+        WHERE <include refid="publishedMatching"/>
+    </select>
+
+    <!-- 排序白名单对应旧 by（Actor.php:304-310，不含 rnd、in），追加 actor_id 同向排序保证分页稳定。 -->
+    <select id="selectPublishedPage" resultType="com.maccms.backend.content.infrastructure.ActorSummaryRow">
+        SELECT /*+ MAX_EXECUTION_TIME(3000) */
+               actor_id                 AS id,
+               type_id                  AS categoryId,
+               actor_name               AS name,
+               actor_en                 AS enName,
+               actor_alias              AS alias,
+               actor_letter             AS letter,
+               actor_color              AS color,
+               actor_sex                AS sex,
+               actor_pic                AS pic,
+               actor_blurb              AS blurb,
+               actor_remarks            AS remarks,
+               actor_area               AS area,
+               actor_height             AS height,
+               actor_weight             AS weight,
+               actor_birthday           AS birthday,
+               actor_birtharea          AS birthArea,
+               actor_blood              AS blood,
+               actor_starsign           AS starSign,
+               actor_school             AS school,
+               actor_works              AS works,
+               actor_tag                AS tag,
+               actor_class              AS classes,
+               actor_level              AS level,
+               actor_score              AS score,
+               actor_score_num          AS scoreNum,
+               actor_hits               AS hits,
+               actor_hits_day           AS hitsDay,
+               actor_hits_week          AS hitsWeek,
+               actor_hits_month         AS hitsMonth,
+               actor_up                 AS up,
+               actor_down               AS down,
+               actor_time               AS updatedAt,
+               actor_time_add           AS addedAt
+        FROM mac_actor
+        WHERE <include refid="publishedMatching"/>
+        ORDER BY
+        <choose>
+            <when test="sort.name() == 'TIME'">actor_time</when>
+            <when test="sort.name() == 'TIME_ADD'">actor_time_add</when>
+            <when test="sort.name() == 'SCORE'">actor_score</when>
+            <when test="sort.name() == 'HITS'">actor_hits</when>
+            <when test="sort.name() == 'HITS_DAY'">actor_hits_day</when>
+            <when test="sort.name() == 'HITS_WEEK'">actor_hits_week</when>
+            <when test="sort.name() == 'HITS_MONTH'">actor_hits_month</when>
+            <when test="sort.name() == 'UP'">actor_up</when>
+            <when test="sort.name() == 'DOWN'">actor_down</when>
+            <when test="sort.name() == 'LEVEL'">actor_level</when>
+            <otherwise>actor_id</otherwise>
+        </choose>
+        <choose>
+            <when test="descending">DESC, actor_id DESC</when>
+            <otherwise>ASC, actor_id ASC</otherwise>
+        </choose>
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- 对应旧 mac_label_actor_detail 的 actor_id + actor_status=1 条件（application/common.php:2638-2656）。 -->
+    <select id="selectPublishedDetail" resultType="com.maccms.backend.content.infrastructure.ActorDetailRow">
+        SELECT actor_id                 AS id,
+               type_id                  AS categoryId,
+               actor_name               AS name,
+               actor_en                 AS enName,
+               actor_alias              AS alias,
+               actor_letter             AS letter,
+               actor_color              AS color,
+               actor_sex                AS sex,
+               actor_pic                AS pic,
+               actor_blurb              AS blurb,
+               actor_remarks            AS remarks,
+               actor_area               AS area,
+               actor_height             AS height,
+               actor_weight             AS weight,
+               actor_birthday           AS birthday,
+               actor_birtharea          AS birthArea,
+               actor_blood              AS blood,
+               actor_starsign           AS starSign,
+               actor_school             AS school,
+               actor_works              AS works,
+               actor_tag                AS tag,
+               actor_class              AS classes,
+               actor_level              AS level,
+               actor_score              AS score,
+               actor_score_all          AS scoreAll,
+               actor_score_num          AS scoreNum,
+               actor_hits               AS hits,
+               actor_hits_day           AS hitsDay,
+               actor_hits_week          AS hitsWeek,
+               actor_hits_month         AS hitsMonth,
+               actor_up                 AS up,
+               actor_down               AS down,
+               actor_time               AS updatedAt,
+               actor_time_add           AS addedAt,
+               actor_content            AS content
+        FROM mac_actor
+        WHERE actor_id = #{id}
+          AND actor_status = 1
+    </select>
+</mapper>
