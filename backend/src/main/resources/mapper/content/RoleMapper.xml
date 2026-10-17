@@ -21,6 +21,8 @@
         -->
         <if test="criteria.keywordPatterns != null">AND (<foreach collection="criteria.keywordPatterns" item="p" separator=" OR ">role_name LIKE #{p} ESCAPE '!' OR role_en LIKE #{p} ESCAPE '!'</foreach>)</if>
         <if test="criteria.ids != null">AND role_id IN <foreach collection="criteria.ids" item="id" open="(" separator="," close=")">#{id}</foreach></if>
+        <!-- level：旧 intval 后 role_level IN (那个整数)；rid 的 intval 用 videoId（负数照常比较），Role.php:154-176 -->
+        <if test="criteria.legacyLevel != null">AND role_level = #{criteria.legacyLevel}</if>
     </sql>
 
     <select id="countPublished" resultType="long">

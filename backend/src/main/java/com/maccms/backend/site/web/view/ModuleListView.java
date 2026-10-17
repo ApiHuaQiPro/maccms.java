@@ -23,11 +23,12 @@ import java.util.Optional;
  * @param filters      筛选与排序链接组
  * @param cards        当前页的卡片
  * @param empty        有查询而没有内容时的提示
- * @param pagination   多于一页时的分页
+ * @param pagination   多于一页时的分页（随机排序时没有）
+ * @param random       随机排序（旧 by=rnd）：每次取的页不同，不显示分页，另有固定说明
  */
 public record ModuleListView(PageChrome chrome, String pageClass, String siteKind, String heading,
                              List<NavLink> breadcrumb, List<NavLink> categories, boolean invalid, SafeUrl formAction,
                              String formLabel, String keyword, List<HiddenField> hiddenFields, Optional<Long> total,
                              List<FilterGroup> filters, List<ContentCard> cards, String empty,
-                             Optional<PaginationView> pagination) {
+                             Optional<PaginationView> pagination, boolean random) {
 }

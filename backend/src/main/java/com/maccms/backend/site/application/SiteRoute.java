@@ -76,7 +76,8 @@ public sealed interface SiteRoute {
      * {@link LegacyUrlParser#parseModuleList} 识别。
      *
      * @param page       页面
-     * @param categoryId 筛选页的分类（1..65535）；搜索页为 null；演员筛选页未给出时为 null（旧版取第一个演员分类，Actor.php:24-35）
+     * @param categoryId 带分类的筛选页的分类（1..65535）；搜索页与角色筛选页为 null；演员筛选页未给出时为 null（旧版取第一个演员分类，
+     *                   Actor.php:24-35）
      * @param filters    已归一、已校验的条件（模块与页面相同）
      * @param pageNo     1..1000
      */
@@ -87,8 +88,8 @@ public sealed interface SiteRoute {
                 throw new IllegalArgumentException("页面、条件或页码不合法");
             }
             boolean categoryOk = categoryId == null
-                    ? !page.show() || page.module().equals("actor")
-                    : page.show() && categoryId >= 1 && categoryId <= VideoListQuery.MAX_CATEGORY_ID;
+                    ? !page.categorized() || page.module().equals("actor")
+                    : page.categorized() && categoryId >= 1 && categoryId <= VideoListQuery.MAX_CATEGORY_ID;
             if (!categoryOk) {
                 throw new IllegalArgumentException("分类不合法");
             }

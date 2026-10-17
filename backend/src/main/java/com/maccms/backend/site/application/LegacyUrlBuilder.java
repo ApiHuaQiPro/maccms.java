@@ -38,10 +38,10 @@ public final class LegacyUrlBuilder {
     public static final List<String> SEARCH_LINK_KEYS = List.of("actor", "area", "by", "class", "director", "ids",
             "lang", "letter", "level", "name", "order", "page", "state", "tag", "tid", "version", "wd", "year");
     /**
-     * 模块筛选/搜索页（B05 D-B05-5，{@link #moduleListLink}）另用的查询串键：演员的 sex/starsign/blood、角色的 rid
+     * 模块筛选/搜索页（B05 D-B05-5，{@link #moduleListLink}）另用的查询串键：演员的 sex/starsign/blood、角色的 rid、专题的 id
      * （其余键与 {@link #SEARCH_LINK_KEYS} 相同）。
      */
-    public static final List<String> MODULE_LINK_KEYS = List.of("blood", "rid", "sex", "starsign");
+    public static final List<String> MODULE_LINK_KEYS = List.of("blood", "id", "rid", "sex", "starsign");
     /**
      * 搜索链接查询串的最大长度：MACC-20 的 wd/area/lang/class 各取 content 的码点上限、每个码点 3 字节（U+FFFF 以上字符被拒绝）
      * 编码为 9 个字符，加上最长的 by、order、level、page 与 4 位年份（09 方案第 7.2.4 节）。B05 起这是预算而不是推论：

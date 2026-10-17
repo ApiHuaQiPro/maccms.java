@@ -78,6 +78,11 @@ public final class LegacyUrlParser {
         show.add("id");
         SHOW_REQUEST_KEYS = Set.copyOf(show);
     }
+    /**
+     * 模块筛选/搜索页按旧 {@code intval} 归一的键：mac_param_url 的 level/tid/rid（application/common.php:1569-1577）与专题 paging
+     * 分支的 {@code ids = intval($param['id'])}。
+     */
+    private static final Set<String> INTVAL_MODULE_KEYS = Set.of("level", "tid", "rid", "id");
     /** 按旧站 trim + {@code !empty()} 归一的文本键（application/common.php:1580-1604；Vod.php:167-247 只在非空时覆盖）。 */
     private static final List<String> SEARCH_TEXT_KEYS = List.of("wd", "area", "lang", "year", "class", "letter",
             "state", "version", "actor", "director", "tag", "name", "ids", "by", "order");
@@ -234,6 +239,16 @@ public final class LegacyUrlParser {
 
     /** 已解码的条件与页码。 */
     private record Conditions(SearchFilters filters, int page) {
+    }
+
+    /**
+     * 视频搜索页的归一与校验（不含页码），供剧情搜索页（旧 plot/search 经视频标签链读取 URL，{@link ModuleFilters}）使用：
+     * 与 {@link #parseSearch} 同一套规则，参数不合法时抛 INVALID_PARAMETER。
+     */
+    static SearchFilters searchFilters(Map<String, String> decoded) {
+        Map<String, String> m = new HashMap<>(decoded);
+        m.remove("page");
+        return conditions(m).filters();
     }
 
     /** 步骤 7、8：旧站式归一与 content 的同一套校验（{@link #parseSearch} 与 {@link #parseVodList} 共用）。 */
@@ -411,12 +426,14 @@ public final class LegacyUrlParser {
      * <ul>
      * <li>搜索页 {@code <模块>/search}、{@code <模块>/ajax_search}：只认固定路径（{@code .html}、{@code /}、无后缀）+ 查询串
      * （与视频搜索页相同，路径参数形式不认）；</li>
-     * <li>筛选页 {@code <模块>/show/id/<分类>[/键/值…]}、{@code <模块>/ajax_show/…}：路径参数按 PATH_INFO 解码一次，查询串覆盖同名值。</li>
+     * <li>筛选页 {@code <模块>/show/id/<分类>[/键/值…]}、{@code <模块>/ajax_show/…}、角色的 {@code role/show[/键/值…]}（没有分类）：
+     * 路径参数按 PATH_INFO 解码一次，查询串覆盖同名值。</li>
      * </ul>
-     * 键为该模块的旧参数名（{@link ModuleListPage#keys()}）与 {@code page}、{@code ajax}（D-B05-6，接受并忽略）、筛选页的 {@code id}；
-     * 未知键、重复键、解码失败、条件不满足 content 规则或超出链接预算 → INVALID_PARAMETER（页面 400）；分类格式不对 → empty（404）；
-     * 查询串含兼容模式 {@code s} → empty。值的归一与视频搜索页相同：文本键去首尾 W 后 {@code ''}/{@code '0'} 为未传，
-     * {@code level}/{@code tid}/{@code rid} 为旧 intval，结果为 0 时未传。
+     * 键为该模块的旧参数名（{@link ModuleListPage#keys()}）与 {@code page}、{@code ajax}（D-B05-6，接受并忽略）、带分类筛选页的
+     * {@code id}；未知键、重复键、解码失败、条件不满足 content 规则或超出链接预算 → INVALID_PARAMETER（页面 400）；分类格式不对 →
+     * empty（404）；查询串含兼容模式 {@code s} → empty。值的归一与视频搜索页相同：文本键去首尾 W 后 {@code ''}/{@code '0'} 为未传，
+     * {@code level}/{@code tid}/{@code rid}/专题的 {@code id} 为旧 intval，结果为 0 时未传（负数照常筛选）；剧情的键与视频搜索页
+     * 完全相同（{@link #searchFilters}）。
      */
     public Optional<ModuleMatch> parseModuleList(String rawPath, String rawQuery) {
         if (rawPath == null || rawPath.length() > MAX_INPUT || style.routeAliases() || style.depr() != '/') {
@@ -450,7 +467,7 @@ public final class LegacyUrlParser {
         Set<String> allowed = new HashSet<>(page.keys());
         allowed.add("page");
         allowed.add("ajax");
-        if (page.show()) {
+        if (page.categorized()) {
             allowed.add("id");
         }
         Map<String, String> preset = new HashMap<>();
@@ -469,7 +486,7 @@ public final class LegacyUrlParser {
         }
         Map<String, String> decoded = decodeQuery(items, allowed, preset);
         Integer categoryId = null;
-        if (page.show()) {
+        if (page.categorized()) {
             String id = decoded.get("id");
             if (id == null || id.isEmpty()) {
                 if (!page.module().equals("actor")) {
@@ -482,14 +499,6 @@ public final class LegacyUrlParser {
                 categoryId = Integer.parseInt(id);
             }
         }
-        Map<String, String> values = new HashMap<>();
-        for (String key : page.keys()) {
-            String v = key.equals("level") || key.equals("tid") || key.equals("rid") ? intvalNonZero(decoded.get(key))
-                    : normalized(decoded.get(key));
-            if (v != null) {
-                values.put(key, v);
-            }
-        }
         int pageNo = 1;
         String rawPage = decoded.get("page");
         if (rawPage != null && !rawPage.isEmpty()) {
@@ -497,6 +506,18 @@ public final class LegacyUrlParser {
                 throw ApiException.invalidParameter("page", pageRule());
             }
             pageNo = (int) number("page", rawPage, VideoListQuery.MAX_PAGE);
+        }
+        Map<String, String> values = new HashMap<>();
+        if (page.kind() == null) {
+            // 剧情：旧 plot/search 经视频标签链读取 URL（Vod.php:167-247），与视频搜索页同一套归一（含 year、tid、by=rnd）
+            values.putAll(searchFilters(decoded).params());
+        } else {
+            for (String key : page.keys()) {
+                String v = INTVAL_MODULE_KEYS.contains(key) ? intvalNonZero(decoded.get(key)) : normalized(decoded.get(key));
+                if (v != null) {
+                    values.put(key, v);
+                }
+            }
         }
         ModuleFilters filters = new ModuleFilters(page.module(), values);
         SiteRoute.ModuleList route = new SiteRoute.ModuleList(page, categoryId, filters, pageNo);

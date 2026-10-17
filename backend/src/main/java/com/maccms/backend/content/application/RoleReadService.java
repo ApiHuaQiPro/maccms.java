@@ -15,6 +15,7 @@ import com.maccms.backend.content.infrastructure.ContentCriteria;
 import com.maccms.backend.content.infrastructure.RoleDetailRow;
 import com.maccms.backend.content.infrastructure.RoleMapper;
 import com.maccms.backend.content.infrastructure.RoleSummaryRow;
+import com.maccms.backend.content.infrastructure.SortColumn;
 import com.maccms.backend.content.infrastructure.VodMapper;
 import com.maccms.backend.content.infrastructure.VodRefRow;
 import java.util.HashMap;
@@ -46,27 +47,36 @@ public class RoleReadService {
         return read(() -> page(query, query.filter().toCriteria()));
     }
 
-    /** 一页（异常转换由调用方的 read 负责）；B05 的 LibrarySearchService 以并入 LibraryMatch 的条件调用。 */
+    /** 一页（异常转换由调用方的 read 负责）。 */
     PageResponse<RoleSummaryDto> page(ContentListQuery query, ContentCriteria criteria) {
         if (query.kind() != ContentKind.ROLE) {
             throw new IllegalArgumentException("kind");
         }
-        long total = roleMapper.countPublished(criteria);
-        if (total == 0 || query.offset() >= total) {
-            return PageResponse.of(List.of(), query.page(), query.pageSize(), total);
-        }
-        List<RoleSummaryRow> rows = roleMapper.selectPublishedPage(criteria, query.sort(), query.descending(),
-                query.offset(), query.pageSize());
-        Set<Long> videoIds = new LinkedHashSet<>();
-        rows.forEach(r -> {
-            if (nz(r.videoId()) > 0) {
-                videoIds.add(r.videoId());
+        return LibrarySlice.page(slice(criteria), query.sort(), query.descending(), query.page(), query.pageSize());
+    }
+
+    /** 条件下的切片（角色没有分类）；B05 的 LibrarySearchService 以 SSR 内部条件调用。 */
+    LibrarySlice<RoleSummaryDto> slice(ContentCriteria criteria) {
+        return new LibrarySlice<>() {
+            @Override
+            public long count() {
+                return roleMapper.countPublished(criteria);
             }
-        });
-        Map<Long, RoleVideoDto> refs = videoRefs(videoIds);
-        List<RoleSummaryDto> items = rows.stream()
-                .map(r -> toSummary(r, refs.getOrDefault(nz(r.videoId()), RoleVideoDto.NONE))).toList();
-        return PageResponse.of(items, query.page(), query.pageSize(), total);
+
+            @Override
+            public List<RoleSummaryDto> rows(SortColumn sort, boolean descending, long offset, int limit) {
+                List<RoleSummaryRow> rows = roleMapper.selectPublishedPage(criteria, sort, descending, offset, limit);
+                Set<Long> videoIds = new LinkedHashSet<>();
+                rows.forEach(r -> {
+                    if (nz(r.videoId()) > 0) {
+                        videoIds.add(r.videoId());
+                    }
+                });
+                Map<Long, RoleVideoDto> refs = videoRefs(videoIds);
+                return rows.stream().map(r -> toSummary(r, refs.getOrDefault(nz(r.videoId()), RoleVideoDto.NONE)))
+                        .toList();
+            }
+        };
     }
 
     public RoleDetailDto getRole(long id) {

@@ -33,6 +33,8 @@
         <if test="criteria.classPatterns != null">AND (<foreach collection="criteria.classPatterns" item="p" separator=" OR ">art_class LIKE #{p} ESCAPE '!'</foreach>)</if>
         <if test="criteria.ids != null">AND art_id IN <foreach collection="criteria.ids" item="id" open="(" separator="," close=")">#{id}</foreach></if>
         <if test="criteria.tid != null">AND (type_id = #{criteria.tid} OR type_id_1 = #{criteria.tid})</if>
+        <!-- level：旧 mac_param_url 的 intval（application/common.php:1577）后 art_level IN (那个整数)，Art.php:230-235 -->
+        <if test="criteria.legacyLevel != null">AND art_level = #{criteria.legacyLevel}</if>
     </sql>
 
     <sql id="summaryColumns">
@@ -77,7 +79,7 @@
         <include refid="criteriaConditions"/>
     </select>
 
-    <!-- 排序白名单对应旧 by（Art.php:370-376，不含 rnd），追加 art_id 同向排序保证分页稳定。 -->
+    <!-- 排序白名单对应旧 by（Art.php:370-376）；by=rnd 由 content.application 换成 hits_week desc 的随机页。追加 art_id 同向排序保证分页稳定。 -->
     <select id="selectPublishedPage" resultType="com.maccms.backend.content.infrastructure.ArtSummaryRow">
         SELECT /*+ MAX_EXECUTION_TIME(3000) */ <include refid="summaryColumns"/>
         FROM mac_art

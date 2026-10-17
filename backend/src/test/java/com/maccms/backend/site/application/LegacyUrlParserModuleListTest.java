@@ -49,11 +49,30 @@ class LegacyUrlParserModuleListTest {
         assertThat(route("/index.php/actor/search.html", "sex=%E5%A5%B3&starsign=x&blood=O").filters().params())
                 .containsOnlyKeys("blood", "sex", "starsign");
         assertThat(route("/index.php/role/search.html", "rid=101").filters().params()).containsEntry("rid", "101");
-        // content 的同一套规则：排序白名单（不含 rnd）、letter 单值、level 1..9、重复键
-        assertThat(field("/index.php/art/search.html", "by=rnd")).isEqualTo("sort");
-        assertThat(field("/index.php/art/search.html", "by=foo")).isEqualTo("sort");
-        assertThat(field("/index.php/art/search.html", "letter=AB")).isEqualTo("letter");
-        assertThat(field("/index.php/art/search.html", "level=10")).isEqualTo("level");
+        // 旧 URL 语义（独立验收返工第 2 项）：各模型 by 白名单含 rnd（演员/网址另有 in、网址有 referer*）；letter 为 explode 多值；
+        // level 为 intval 后的任意非 0 整数（多值取首段，all 为未传）；专题的 id 为 intval
+        assertThat(route("/index.php/art/search.html", "by=rnd&letter=X%2CC&level=10").filters().params())
+                .containsExactly(Map.entry("by", "rnd"), Map.entry("letter", "X,C"), Map.entry("level", "10"));
+        assertThat(route("/index.php/art/search.html", "level=1%2C2&wd=x").filters().params()).containsEntry("level", "1");
+        assertThat(route("/index.php/art/search.html", "level=all&wd=x").filters().params()).doesNotContainKey("level");
+        assertThat(route("/index.php/art/search.html", "level=-1").filters().params()).containsEntry("level", "-1");
+        assertThat(route("/index.php/topic/search.html", "id=2abc").filters().params()).containsEntry("id", "2");
+        assertThat(route("/index.php/topic/search.html", "id=abc&letter=X").filters().params()).doesNotContainKey("id");
+        assertThat(route("/index.php/actor/search.html", "by=in&area=%E6%97%A5%E6%9C%AC%2C").filters().params())
+                .containsEntry("by", "in").containsEntry("area", "日本,");
+        assertThat(route("/index.php/website/search.html", "by=referer_week&lang=a%2Cb").filters().params())
+                .containsEntry("by", "referer_week");
+        assertThat(field("/index.php/art/search.html", "by=foo")).isEqualTo("by");
+        assertThat(field("/index.php/art/search.html", "by=in")).isEqualTo("by");
+        assertThat(field("/index.php/role/search.html", "by=referer")).isEqualTo("by");
+        assertThat(field("/index.php/art/search.html", "order=up")).isEqualTo("order");
+        assertThat(field("/index.php/art/search.html", "letter=" + "A".repeat(65))).isEqualTo("letter");
+        // 剧情：视频搜索页的同一组键（tid、year、area 多值、by=rnd），isend 读不到 → 未知参数
+        assertThat(route("/index.php/plot/search.html", "tid=1&year=2020&area=a%2C&by=rnd").filters().params())
+                .containsExactly(Map.entry("area", "a,"), Map.entry("by", "rnd"), Map.entry("tid", "1"),
+                        Map.entry("year", "2020"));
+        assertThat(field("/index.php/plot/search.html", "isend=1")).isEqualTo("query");
+        assertThat(route("/index.php/plot/search.html", "year=0000&wd=x").filters().params()).doesNotContainKey("year");
         assertThat(field("/index.php/art/search.html", "wd=a&wd=b")).isEqualTo("wd");
         assertThat(field("/index.php/art/search.html", "wd=%FF")).isEqualTo("wd");
         assertThat(field("/index.php/art/search.html", "page=0")).isEqualTo("page");
@@ -63,11 +82,28 @@ class LegacyUrlParserModuleListTest {
     @Test
     void searchPathParameterFormsAndUnknownPagesAreNotRecognized() {
         for (String path : List.of("/index.php/art/search/wd/x.html", "/index.php/topic/show/id/1.html",
-                "/index.php/role/show/id/1.html", "/index.php/plot/show/id/1.html", "/index.php/art/searchx.html",
-                "/art/search.html", "/index.php/ART/search.html")) {
+                "/index.php/plot/show/id/1.html", "/index.php/art/searchx.html", "/art/search.html",
+                "/index.php/ART/search.html")) {
             assertThat(P.parseModuleList(path, null)).as(path).isEmpty();
         }
         assertThat(P.parseModuleList("/index.php/art/search.html", "s=art/search")).isEmpty();
+    }
+
+    @Test
+    void roleShowHasNoCategoryAndReadsTheSameKeysAsTheRoleSearch() {
+        SiteRoute.ModuleList r = route("/index.php/role/show/rid/101/letter/X.html", "letter=F");
+        assertThat(r.page()).isEqualTo(ModuleListPage.ROLE_SHOW);
+        assertThat(r.categoryId()).isNull();
+        assertThat(r.filters().params()).containsExactly(Map.entry("letter", "F"), Map.entry("rid", "101"));
+        assertThat(route("/index.php/role/show.html", null).filters().isEmpty()).isTrue();
+        assertThat(route("/index.php/role/ajax_show.html", "rid=-1").page()).isEqualTo(ModuleListPage.ROLE_AJAX_SHOW);
+        assertThat(field("/index.php/role/show/id/1.html", null)).isEqualTo("id");
+        assertThat(field("/index.php/role/show.html", "tid=1")).isEqualTo("query");
+        assertThat(ModuleListPage.ROLE_SHOW.show()).isTrue();
+        assertThat(ModuleListPage.ROLE_SHOW.categorized()).isFalse();
+        assertThat(new LegacyUrlBuilder(LegacyUrlStyle.REPO_DEFAULT).moduleListLink(ModuleListPage.ROLE_AJAX_SHOW, null,
+                ModuleFilters.none("role").with("rid", "101"), 2).relative())
+                .isEqualTo("index.php/role/show.html?page=2&rid=101");
     }
 
     @Test
@@ -93,7 +129,8 @@ class LegacyUrlParserModuleListTest {
     @Test
     void generatedLinksParseBackToTheSameConditionsInEverySiteStyle() {
         Random rnd = new Random(20261017);
-        List<String> values = List.of("星", "a b", "100%", "x/y", "A", "0-9", "1", "-2", "科幻,太空", "a_b");
+        List<String> values = List.of("星", "a b", "100%", "x/y", "A", "0-9", "1", "-2", "科幻,太空", "a_b", "X,C,",
+                "rnd", "in", "hits", "2020", "asc");
         int checked = 0;
         for (LegacyUrlStyle style : LegacyUrlParserSearchTest.STYLES) {
             LegacyUrlBuilder b = new LegacyUrlBuilder(style);
@@ -110,7 +147,7 @@ class LegacyUrlParserModuleListTest {
                             }
                         }
                     }
-                    Integer category = page.show() ? 21 : null;
+                    Integer category = page.categorized() ? 21 : null;
                     int pageNo = 1 + rnd.nextInt(3);
                     SiteLink link = b.moduleListLink(page, category, f, pageNo);
                     LegacyUrlParser.ModuleMatch m = p.parseModuleList("/" + link.path(),

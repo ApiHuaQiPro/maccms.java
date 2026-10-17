@@ -87,8 +87,11 @@ public class SiteModuleListController {
         "/index.php/art/show/**", "/index.php/actor/show/**", "/index.php/website/show/**",
         "/index.php/art/ajax_show/**", "/index.php/actor/ajax_show/**", "/index.php/website/ajax_show/**",
         "/index.php/actor/show.html", "/index.php/actor/ajax_show.html",
+        "/index.php/role/show/**", "/index.php/role/ajax_show/**", "/index.php/role/show.html",
+        "/index.php/role/ajax_show.html",
         "/art/show/**", "/actor/show/**", "/website/show/**", "/art/ajax_show/**", "/actor/ajax_show/**",
-        "/website/ajax_show/**", "/actor/show.html", "/actor/ajax_show.html"})
+        "/website/ajax_show/**", "/actor/show.html", "/actor/ajax_show.html", "/role/show/**", "/role/ajax_show/**",
+        "/role/show.html", "/role/ajax_show.html"})
     public ResponseEntity<String> list(HttpServletRequest request) {
         // getRequestURI / getQueryString 都是未解码的原始值；应用挂在根路径（base-url 子目录由反向代理映射）
         String rawPath = request.getRequestURI().substring(request.getContextPath().length());
