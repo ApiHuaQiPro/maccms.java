@@ -22,16 +22,22 @@
   - 搜索/筛选条件 `VideoFilter`（契约 1.1.0，MACC-18；`VideoListQuery.filter`，5 参数构造器为 `VideoFilter.NONE`）同样如此：构造器与 `parse` 使用同一套规则（`docs/architecture/09-content-search-filter-plan.md` 第 4 节）——值是解码一次后的原始字符串，不裁剪、不改写；`keyword` ≤ 64、`area` ≤ 20、`lang` ≤ 10、`classes` ≤ 32 个码点，不含 C0/C1 控制字符、代理项、U+FFFD，首尾不得为 ECMAScript `\s` 空白，`area/lang/classes` 不含半角逗号；`year` 恰为 4 位 ASCII 数字；`level` 1..9（原始字符串最多 10 位数字）。"参数重复""非法 UTF-8"只在 HTTP 层判断，由 `content.api` 从容器参数与原始查询串得到；搜索开关（`maccms.content.search.enabled`）由 `ContentReadService` 在查询前再检查一次，其他模块直接构造带 `keyword`/`classes` 的条件也绕不过。
 - `site` 模块（服务端页面，MACC-9 起为骨架，见 `05-site-skeleton.md`）只依赖 `content.application`（含 `.view`）与 `common`——`common` 中限 `common.web` 的 `PageResponse`、`ApiException`、`ErrorCode`、`SafeExceptionLog`，以及 `common.browser` 的 `BrowserExternalAccess`、`BrowserExternalConfiguration`（B02，浏览器侧外部地址放行开关）；另可引用 `legacyconfig.application` 的 `LegacyConfigService`、`LegacyConfigFile`、`LegacyConfigException`、`LegacyConfigConfiguration` 与 `.view` 的 `PhpArray`、`PhpValue`（B02，启动时读旧 `extra/maccms.php` 并按字段并入站点设置，见 `11-guards-and-legacy-config.md` 第 4.4 节），不能引用 `LegacyConfigProperties` 与 `legacyconfig.infrastructure`。需要更多时在任务中说明并同步修改护栏；不拥有表、不新增 Mapper/SQL，不引用 MyBatis、JDBC、`javax.sql`、Spring JDBC/DAO 类型；不读文件、环境变量（只经 `maccms.site.*` 配置绑定与 `LegacyConfigService`），不启动进程，不发起 HTTP 请求（不回环调用旧 PHP 或本应用 API；jsoup 只能用解析/节点/过滤包，禁止 `Jsoup`、`Connection` 等网络 API），模板表达式只读取视图模型；页面需要新字段时走契约变更。
   - `site` 的每个 Spring 组件都带 `@ConditionalOnSiteEnabled`；`maccms.site.enabled` 默认关闭，关闭时不注册任何 site 组件与路由。
-- MyBatis/JDBC 类型只出现在各模块的 `infrastructure` 包（`common.config` 的数据源检查除外）。
+- MyBatis/JDBC 类型只出现在各模块的 `infrastructure` 包（例外只有两个包本身：`common.config` 的数据源检查、`common.write` 的可写数据源与写入护栏（B07））。
 - 旧配置文件（`application/extra/*.php`、`application/route.php`）只经 `legacyconfig.application.LegacyConfigService` 读取（B02，`11-guards-and-legacy-config.md` 第 4 节）：只解析 `var_export` 数据，不执行 PHP，不读 `database.php` 等其他文件；其他模块不自己读这些文件。
 - 以上依赖规则由 `backend/src/test/java/com/maccms/backend/architecture/ModuleBoundaryTest.java` 扫描源码检查（注释和字符串不计），合成源码自检规则本身；`site` 的模板、构建与装配规则由 `backend/src/test/java/com/maccms/backend/site/SiteGuardrailsTest.java` 与 `SiteTemplatePolicyTest.java` 检查。
 - `common` 只放与业务无关的支持代码（错误处理、分页、配置检查），不得引用业务模块。
 
 ### 3. 数据库
 
-- **每一批数据库变化都要独立评审**：DDL、新表/新列/新索引、引擎或字符集转换、账号与权限变更，都要单独的任务或提交，附迁移脚本、反向脚本、对旧 PHP 的影响和演练记录，评审通过后由人工执行。应用代码里不得包含自动执行的 DDL、`schema.sql`/`data.sql`、Flyway/Liquibase 自动迁移或任何初始化器。
-- 旧表 `mac_*` 当前**只读**。任何对旧表的写入都必须先按 `docs/analysis/03-migration-plan-draft.md` 第 3 节确定该"表 + 操作"的唯一写入方，并经用户批准对应阶段。
-- **单一写入方**：任一"表 + 操作"在任一时刻只能有一个系统写入。新系统开始写某张表之前，旧系统对应入口必须已封住（03 第 3.4 节）。
+- **禁止 DDL**（路线图第 1.2 节"零结构变更"，B07 起取代原"DDL 独立评审"）：不建表、不加/改/删列与索引、不转引擎或字符集，不建触发器、存储过程、视图、事件；不执行表维护语句与账号/权限语句；应用代码与资源中不得有 `schema.sql`/`data.sql`、Flyway/Liquibase 或任何初始化器。数据库账号由数据库管理员在获批部署时创建，代码不建、不改账号。没有结构迁移，旧数据不需要迁移；回滚只用 DML（`12-write-infrastructure.md` 第 6 节）。
+- **整体切换（D3 已决）**：上线时在一个窗口内停止旧 PHP 的全部写入，由新系统一次接管；不修改旧 PHP、不做分阶段（按表或按功能）的写入方切换。切换前的整个并行开发期，新系统对生产**只读**、不连接生产；写入只发生在本地一次性库 `maccms_it_*`（或经确认的本地开发库副本）。方案见 `13-cutover-plan.md`。
+- **写入只经 B07 写入基础设施**（`12-write-infrastructure.md`）：
+  - 可写数据源 `common.write.WriteDatabase` 默认关闭（`MACCMS_WRITE_ENABLED=false`），打开时地址与凭证经 `MACCMS_WRITE_DB_*` 单独提供；它不是 `DataSource` Bean，写 Mapper 只能经 `WriteDatabase.mapper()` 取得。
+  - 写 SQL 只写在 `src/main/resources/mapper-write/<模块>/*.xml`，接口在 `<模块>.infrastructure`、标 `@WriteMapper`（不标 `@Mapper`）；不用 MyBatis 写注解，不在 Java 里写 SQL 文本。
+  - 每个"模块 + 表 + 操作"先在 `WriteRegistry.REGISTERED` 登记（表与批次须符合路线图写入方矩阵），由 `WriteGuardTest`（静态）与 `WriteGuardInterceptor`（运行期）检查；未登记的写入在执行前被拒。
+  - 写语句只能是单表 `INSERT`（含 `INSERT … SELECT … WHERE NOT EXISTS` 条件插入）、带顶层 `WHERE` 的单表 `UPDATE`/`DELETE`；不允许 `REPLACE`、`IGNORE`、`ON DUPLICATE KEY UPDATE`、多语句、多表写、写 Mapper 中的 `<where>`/`<sql>`/`<include>`/`${}`。
+  - 数值变化用原子表达式，前置条件写进 `WHERE`，检查**匹配**行数（`useAffectedRows=false`）；多表写入用 `WriteSequence`（认领 → 转移 → 记录，失败按相反顺序条件补偿，补偿失败或结果不确定时上报人工对账）。旧表是 MyISAM、没有事务：不用 `@Transactional`/`setAutoCommit(false)`。
+  - 写库批次另加：每个"先查后写"、认领、条件扣减、条件插入都有并发测试（`writedrill.ConcurrentWrites`，一次性库）；回滚演练（快照 → 本批写操作 → `DmlRestore` → diff 为空 → 表结构指纹不变）。
 - SQL 规则：
   - 只用 `#{}` 参数绑定，禁止 `${}` 拼接；排序/筛选字段用枚举 + XML `<choose>` 生成固定列名（白名单）。
   - 用户输入只能作为绑定值，不能决定列名、运算符或 SQL 片段：筛选条件的列名固定写在 XML 里，一个参数对应一个固定条件（`VodMapper.xml` 的 `matchingConditions`）。包含匹配一律 `col LIKE ? ESCAPE '!'`，模式在 application 层由已校验的值构造（`!`、`%`、`_` 前加 `!`），Mapper 不做字符串处理。
@@ -40,13 +46,13 @@
   - 明确列出列名，不写 `SELECT *`，不把数据库整行返回给前端。
   - 列表必须有 `LIMIT` 和页大小上限；不做无界全表读取。
   - 涉及旧表的每条规则在注释或文档中注明旧代码位置（`文件:行号`）。
-- 只读连接：`spring.datasource.hikari.read-only: true` 不得移除。生产使用只授予 SELECT 的专用账号。
+- 只读连接：`spring.datasource.hikari.read-only: true` 不得移除。生产使用只授予 SELECT 的专用账号；写账号（若获批）只授予 `mac_*` 的 SELECT/INSERT/UPDATE/DELETE。
 - 零结构变更由护栏锁定（B02，`11-guards-and-legacy-config.md` 第 3 节）：`SchemaGuardTest`（任何位置不出现 DDL、表维护、账号语句、SQL 脚本与自动迁移）、`SqlEntryGuardTest`（SQL 执行入口只接受常量 SQL；`${}` 只允许在 `REGISTERED_DOLLAR` 登记、经白名单校验的标识符，登记写进本批文档）、`-Pmysql-it` 结束时比对 information_schema 指纹（新增 `*MySqlIT` 照 `SchemaGuardMySqlIT` 与现有 IT 的做法，导入后取指纹、删库前比对）。
 
 ### 4. 配置与密钥
 
 - 仓库、日志、测试输出、提交信息、任务评论中**不得出现**真实密码、密钥、token、带凭证的 URL。
-- 数据库等凭证只从环境变量读取，`application.yml` 中不写默认值；缺失时必须启动失败，不能回落到任何默认库或 root。
+- 数据库等凭证只从环境变量读取，`application.yml` 中不写默认值；缺失时必须启动失败，不能回落到任何默认库或 root。可写数据源（B07）默认关闭，所以 `MACCMS_WRITE_DB_*` 的占位符带空默认值；打开时三项缺一即启动失败，不回落到只读池的配置，错误信息与日志不回显地址、账号、密码。
 - 样例配置只用占位符（`config/*.env.example`）；真实 `*.env` 已被忽略，不提交。
 - 不读取仓库外的线上配置（`D:\Ai\MACCMS\prod-config\`），不连接线上库或服务器。
 - 运行时出站网络 API（HTTP、SMTP、FTP、套接字、DNS 查询等）只允许出现在 `OutboundNetworkGuardTest.REGISTERED` 登记的 `integration` 子包（B02 起；登记表为空，B23 起按批登记，路线图第 4.3 节）。
@@ -67,7 +73,7 @@
 | 命令 | 何时必须通过 |
 |---|---|
 | `./mvnw verify` | 每次提交 |
-| `./mvnw verify -Pmysql-it` | 改动 Mapper/SQL、可见性规则、数据访问配置时 |
+| `./mvnw verify -Pmysql-it` | 改动 Mapper/SQL（含写 Mapper）、可见性规则、数据访问配置、写入基础设施时 |
 
 - MySQL 相关验证必须使用**独立的一次性库**（集成测试自动创建 `maccms_it_*` 并在结束时删除）和合成数据。**不得清空、改写或导入到 `maccms_dev` 等已有库。不得用 H2 或 Mock 冒充 MySQL 验证。**
 - 编译通过不等于验收通过。无法执行的检查（缺工具、缺环境）必须在交付评论中如实列出。
@@ -78,7 +84,7 @@
 1. 需求中的每条验收标准都有对应的自动测试或明确的手工验证记录。
 2. 上表中适用的命令全部通过。
 3. OpenAPI、DTO、测试一致；与旧 PHP 的行为差异写进对应的 `docs/architecture/` 文档。
-4. 没有新增写库路径（除非该批次已获批准）。
+4. 写库路径只经 B07 写入基础设施并已登记（第 3 节）；写库批次附并发写测试与回滚演练结果。
 5. 提交范围符合第 6 节。
 6. 交付评论包含：提交 SHA、改动要点、运行过的命令与结果、未运行的检查、与旧版差异、遗留问题。
 
