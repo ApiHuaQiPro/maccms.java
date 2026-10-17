@@ -5,6 +5,7 @@ import static com.maccms.backend.site.web.SiteContentFixtures.ref;
 import static com.maccms.backend.site.web.SiteContentFixtures.summaries;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -187,7 +188,8 @@ class SiteSearchB05PagesMvcTest {
 
     @Test
     void randomSortBeyondTheResultsIsStill200() throws Exception {
-        when(content.listVideos(any())).thenAnswer(inv -> page(List.of(), 7, 20, 0));
+        // doAnswer：when(content.listVideos(any())) 会以 null 调用 @BeforeEach 中已有的应答
+        doAnswer(inv -> page(List.of(), 7, 20, 0)).when(content).listVideos(any());
         Document doc = ok(SEARCH + "?by=rnd&page=7");
         assertThat(doc.select(".search-empty")).hasSize(1);
     }
