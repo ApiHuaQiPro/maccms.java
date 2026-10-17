@@ -1,6 +1,6 @@
 <?php
 return array (
-  'db' => 
+  'db' =>
   array (
     'type' => 'mysql',
     'path' => '',
@@ -15,7 +15,7 @@ return array (
     'compress' => 1,
     'compress_level' => 4,
   ),
-  'site' => 
+  'site' =>
   array (
     'site_name' => '',
     'site_url' => '',
@@ -42,7 +42,7 @@ return array (
     'ads_dir' => 'ads',
     'mob_ads_dir' => 'ads',
   ),
-  'app' => 
+  'app' =>
   array (
     'pathinfo_depr' => '/',
     'suffix' => 'html',
@@ -96,7 +96,7 @@ return array (
     'lang' => 'zh-cn',
     'vod_search_optimise' => '',
   ),
-  'user' => 
+  'user' =>
   array (
     'status' => '1',
     'reg_open' => '1',
@@ -124,7 +124,7 @@ return array (
     'portrait_size' => '100x100',
     'filter_words' => 'admin,cao,sex,xxx',
   ),
-  'gbook' => 
+  'gbook' =>
   array (
     'status' => '1',
     'audit' => '0',
@@ -133,7 +133,7 @@ return array (
     'pagesize' => '20',
     'timespan' => '3',
   ),
-  'comment' => 
+  'comment' =>
   array (
     'status' => '1',
     'audit' => '0',
@@ -142,7 +142,7 @@ return array (
     'pagesize' => '20',
     'timespan' => '3',
   ),
-  'upload' => 
+  'upload' =>
   array (
     'img_key' => '',
     'img_api' => '/img.php?url=',
@@ -157,9 +157,9 @@ return array (
     'protocol' => 'http',
     'mode' => 'local',
     'remoteurl' => 'http://img.test.com/',
-    'api' => 
+    'api' =>
     array (
-      'ftp' => 
+      'ftp' =>
       array (
         'host' => '',
         'port' => '21',
@@ -168,27 +168,27 @@ return array (
         'path' => '/',
         'url' => '',
       ),
-      'qiniu' => 
+      'qiniu' =>
       array (
         'bucket' => '',
         'accesskey' => '',
         'secretkey' => '',
         'url' => '',
       ),
-      'uomg' => 
+      'uomg' =>
       array (
         'openid' => '',
         'key' => '',
         'type' => 'sogou',
       ),
-      'upyun' => 
+      'upyun' =>
       array (
         'bucket' => '',
         'username' => '',
         'pwd' => '',
         'url' => '',
       ),
-      'weibo' => 
+      'weibo' =>
       array (
         'user' => '',
         'pwd' => '',
@@ -198,7 +198,7 @@ return array (
       ),
     ),
   ),
-  'interface' => 
+  'interface' =>
   array (
     'status' => 0,
     'pass' => '',
@@ -207,34 +207,34 @@ return array (
     'actortype' => '',
     'websitetype' => '',
   ),
-  'pay' => 
+  'pay' =>
   array (
     'min' => '10',
     'scale' => '1',
-    'card' => 
+    'card' =>
     array (
       'url' => '',
     ),
-    'alipay' => 
+    'alipay' =>
     array (
       'account' => '111',
       'appid' => '',
       'appkey' => '',
     ),
-    'codepay' => 
+    'codepay' =>
     array (
       'appid' => '',
       'appkey' => '',
       'type' => '1,2',
       'act' => '0',
     ),
-    'weixin' => 
+    'weixin' =>
     array (
       'appid' => '',
       'mchid' => '',
       'appkey' => '',
     ),
-    'zhapay' => 
+    'zhapay' =>
     array (
       'appid' => '',
       'appkey' => '',
@@ -242,9 +242,9 @@ return array (
       'act' => '2',
     ),
   ),
-  'collect' => 
+  'collect' =>
   array (
-    'vod' => 
+    'vod' =>
     array (
       'status' => '1',
       'hits_start' => '1',
@@ -266,7 +266,7 @@ return array (
       'thesaurus' => ' =',
       'words' => 'aaa#bbb#ccc#ddd#eee',
     ),
-    'art' => 
+    'art' =>
     array (
       'status' => '1',
       'hits_start' => '1',
@@ -284,7 +284,7 @@ return array (
       'thesaurus' => '',
       'words' => '',
     ),
-    'actor' => 
+    'actor' =>
     array (
       'status' => '0',
       'hits_start' => '1',
@@ -301,7 +301,7 @@ return array (
       'words' => '',
       'inrule' => ',a',
     ),
-    'role' => 
+    'role' =>
     array (
       'status' => '0',
       'hits_start' => '1',
@@ -318,7 +318,7 @@ return array (
       'words' => '',
       'inrule' => ',a',
     ),
-    'website' => 
+    'website' =>
     array (
       'status' => '0',
       'hits_start' => '',
@@ -335,7 +335,7 @@ return array (
       'inrule' => ',a',
       'uprule' => ',',
     ),
-    'comment' => 
+    'comment' =>
     array (
       'status' => '0',
       'updown_start' => '1',
@@ -349,9 +349,9 @@ return array (
       'uprule' => ',',
     ),
   ),
-  'api' => 
+  'api' =>
   array (
-    'vod' => 
+    'vod' =>
     array (
       'status' => 0,
       'charge' => '0',
@@ -364,7 +364,7 @@ return array (
       'from' => '',
       'auth' => '',
     ),
-    'art' => 
+    'art' =>
     array (
       'status' => 0,
       'charge' => '0',
@@ -375,7 +375,7 @@ return array (
       'cachetime' => '',
       'auth' => '',
     ),
-    'actor' => 
+    'actor' =>
     array (
       'status' => '0',
       'charge' => '0',
@@ -386,7 +386,7 @@ return array (
       'cachetime' => '',
       'auth' => '',
     ),
-    'role' => 
+    'role' =>
     array (
       'status' => '0',
       'charge' => '0',
@@ -397,7 +397,7 @@ return array (
       'cachetime' => '',
       'auth' => '',
     ),
-    'website' => 
+    'website' =>
     array (
       'status' => '0',
       'charge' => '0',
@@ -409,22 +409,22 @@ return array (
       'auth' => '',
     ),
   ),
-  'connect' => 
+  'connect' =>
   array (
-    'qq' => 
+    'qq' =>
     array (
       'status' => '0',
       'key' => '',
       'secret' => '',
     ),
-    'weixin' => 
+    'weixin' =>
     array (
       'status' => '0',
       'key' => '',
       'secret' => '',
     ),
   ),
-  'weixin' => 
+  'weixin' =>
   array (
     'status' => '1',
     'duijie' => 'wx.test.com',
@@ -452,7 +452,7 @@ return array (
     'gjci4' => 'http://img.aolusb.com/im/201601/201612723554344882.jpg',
     'gjcl4' => 'http://www.loldytt.com/Xijudianying/WPDWP/',
   ),
-  'view' => 
+  'view' =>
   array (
     'index' => '0',
     'map' => '0',
@@ -470,7 +470,7 @@ return array (
     'vod_down' => '0',
     'art_detail' => '0',
   ),
-  'path' => 
+  'path' =>
   array (
     'topic_index' => 'topic/index',
     'topic_detail' => 'topic/{id}/index',
@@ -483,7 +483,7 @@ return array (
     'page_sp' => '_',
     'suffix' => 'html',
   ),
-  'rewrite' => 
+  'rewrite' =>
   array (
     'suffix_hide' => '0',
     'route_status' => '0',
@@ -552,13 +552,13 @@ label-<file> => label/index
 plotdetail/<id>-<page?>   => plot/plot
 plotdetail/<id>   => plot/detail',
   ),
-  'email' => 
+  'email' =>
   array (
     'type' => 'Phpmailer',
     'time' => '5',
     'nick' => 'test',
     'test' => 'test@qq.com',
-    'tpl' => 
+    'tpl' =>
     array (
       'test_title' => '【{$maccms.site_name}】测试邮件标题',
       'test_body' => '【{$maccms.site_name}】当您看到这封邮件说明邮件配置正确了！感谢支持开源程序！',
@@ -569,7 +569,7 @@ plotdetail/<id>   => plot/detail',
       'user_findpass_title' => '【{$maccms.site_name}】的会员您好，请认真阅读邮件正文并按要求操作完成找回',
       'user_findpass_body' => '【{$maccms.site_name}】的会员您好，找回验证码为：{$code}，请在{$time}分钟内完成验证。',
     ),
-    'phpmailer' => 
+    'phpmailer' =>
     array (
       'host' => 'smtp.qq.com',
       'port' => '587',
@@ -578,7 +578,7 @@ plotdetail/<id>   => plot/detail',
       'password' => '',
     ),
   ),
-  'play' => 
+  'play' =>
   array (
     'width' => '100%',
     'height' => '100%',
@@ -596,67 +596,67 @@ plotdetail/<id>   => plot/detail',
     'flag' => '0',
     'colors' => '000000,F6F6F6,F6F6F6,333333,666666,FFFFF,FF0000,2c2c2c,ffffff,a3a3a3,2c2c2c,adadad,adadad,48486c,fcfcfc',
   ),
-  'sms' => 
+  'sms' =>
   array (
     'type' => '',
     'sign' => '我的网站',
     'tpl_code_reg' => 'SMS_144850895',
     'tpl_code_bind' => 'SMS_144940283',
     'tpl_code_findpass' => 'SMS_144851023',
-    'aliyun' => 
+    'aliyun' =>
     array (
       'appid' => '',
       'appkey' => '',
     ),
-    'qcloud' => 
+    'qcloud' =>
     array (
       'appid' => '',
       'appkey' => '',
     ),
   ),
-  'extra' => 
+  'extra' =>
   array (
   ),
-  'seo' => 
+  'seo' =>
   array (
-    'vod' => 
+    'vod' =>
     array (
       'name' => '视频首页',
       'key' => '',
       'des' => '提供最新最快的视频分享数据',
     ),
-    'art' => 
+    'art' =>
     array (
       'name' => '文章首页',
       'key' => '',
       'des' => '提供最新最快的新闻资讯',
     ),
-    'actor' => 
+    'actor' =>
     array (
       'name' => '演员首页',
       'key' => '',
       'des' => '明星个人信息介绍',
     ),
-    'role' => 
+    'role' =>
     array (
       'name' => '角色首页',
       'key' => '',
       'des' => '角色人物介绍',
     ),
-    'plot' => 
+    'plot' =>
     array (
       'name' => '剧情首页',
       'key' => '',
       'des' => '提供最新的剧情信息',
     ),
   ),
-  'urlsend' => 
+  'urlsend' =>
   array (
-    'baidu' => 
+    'baidu' =>
     array (
       'token' => '',
     ),
-    'baidufast' => 
+    'baidufast' =>
     array (
       'token' => '',
     ),

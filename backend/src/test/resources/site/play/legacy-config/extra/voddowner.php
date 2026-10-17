@@ -1,6 +1,6 @@
 <?php
 return array (
-  'http' => 
+  'http' =>
   array (
     'status' => '1',
     'from' => 'http',
@@ -12,7 +12,7 @@ return array (
     'tip' => 'tip提示信息',
     'id' => 'http',
   ),
-  'xunlei' => 
+  'xunlei' =>
   array (
     'status' => '1',
     'from' => 'xunlei',

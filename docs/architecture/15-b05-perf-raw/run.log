@@ -7,36 +7,36 @@
 [b05perf 02:04:06.5125085] grow 0 -> 300000: insert 165.6s, enable keys 144.7s, analyze 0.0s
 [b05perf 02:05:21.6402128] wrote target\perf-b05\s300k-context.tsv
 [b05perf 02:05:39.1452363] bench s300k-smoke on 300000 rows, vod_id 1..300000
-[b05perf 02:06:04.6437086] base                     time off=0      values=270766,20 cold=3446ms hot p50/p95=3349.4/3808.8 ms 
-[b05perf 02:06:31.9423018] base                     time off=10000  values=270766,20 cold=3919ms hot p50/p95=3812.1/3899.4 ms 
-[b05perf 02:06:57.0647106] base                     hits off=0      values=270766,20 cold=3652ms hot p50/p95=3636.5/4174.2 ms 
-[b05perf 02:07:28.4675006] base                     hits off=10000  values=270766,20 cold=3724ms hot p50/p95=4512.6/5100.5 ms 
-[b05perf 02:07:34.2379588] d.rnd1-area-letter       rnd  off=random values=601,20 cold=424ms hot p50/p95=423.3/611.8 ms 
-[b05perf 02:07:40.3852756] d.rnd1-area-letter       rnd  off=0      values=601,20 cold=412ms hot p50/p95=478.3/709.1 ms 
-[b05perf 02:07:46.3314257] d.rnd1-area-letter       rnd  off=600    values=601,1 cold=461ms hot p50/p95=468.8/706.1 ms 
-[b05perf 02:08:00.5936397] d.rnd2-none              rnd  off=0      values=270766,300000,901,20 cold=2033ms hot p50/p95=1688.9/1873.2 ms 
-[b05perf 02:08:14.4052065] d.rnd2-none              rnd  off=20     values=270766,300000,901,20 cold=1957ms hot p50/p95=1971.1/2088.3 ms 
+[b05perf 02:06:04.6437086] base                     time off=0      values=270766,20 cold=3446ms hot p50/p95=3349.4/3808.8 ms
+[b05perf 02:06:31.9423018] base                     time off=10000  values=270766,20 cold=3919ms hot p50/p95=3812.1/3899.4 ms
+[b05perf 02:06:57.0647106] base                     hits off=0      values=270766,20 cold=3652ms hot p50/p95=3636.5/4174.2 ms
+[b05perf 02:07:28.4675006] base                     hits off=10000  values=270766,20 cold=3724ms hot p50/p95=4512.6/5100.5 ms
+[b05perf 02:07:34.2379588] d.rnd1-area-letter       rnd  off=random values=601,20 cold=424ms hot p50/p95=423.3/611.8 ms
+[b05perf 02:07:40.3852756] d.rnd1-area-letter       rnd  off=0      values=601,20 cold=412ms hot p50/p95=478.3/709.1 ms
+[b05perf 02:07:46.3314257] d.rnd1-area-letter       rnd  off=600    values=601,1 cold=461ms hot p50/p95=468.8/706.1 ms
+[b05perf 02:08:00.5936397] d.rnd2-none              rnd  off=0      values=270766,300000,901,20 cold=2033ms hot p50/p95=1688.9/1873.2 ms
+[b05perf 02:08:14.4052065] d.rnd2-none              rnd  off=20     values=270766,300000,901,20 cold=1957ms hot p50/p95=1971.1/2088.3 ms
 Exception in thread "main" java.lang.IllegalStateException: d.rnd2-area ?? -1 ?????
 	at B05Perf.bench(B05Perf.java:838)
 	at B05Perf.main(B05Perf.java:78)
 [b05perf 02:11:27.4453329] bench s300k-1 on 300000 rows, vod_id 1..300000
-[b05perf 02:11:47.1440017] base                     hits off=0      values=270766,20 cold=2365ms hot p50/p95=2980.4/3102.0 ms cpu=0.72   
-[b05perf 02:12:08.6153791] base                     time off=0      values=270766,20 cold=3532ms hot p50/p95=3656.1/4010.9 ms cpu=0.89   
-[b05perf 02:12:35.9599802] base                     time off=10000  values=270766,20 cold=3953ms hot p50/p95=4583.0/5318.8 ms cpu=0.91   
-[b05perf 02:12:43.2942442] d.rnd1-area-letter       rnd  off=random values=601,20 cold=691ms hot p50/p95=540.3/820.4 ms cpu=0.96   
-[b05perf 02:12:49.8406918] d.rnd1-area-letter       rnd  off=0      values=601,20 cold=691ms hot p50/p95=485.6/738.1 ms cpu=0.95   
-[b05perf 02:12:56.670345] d.rnd1-area-letter       rnd  off=600    values=601,1 cold=563ms hot p50/p95=537.4/819.3 ms cpu=0.92   
-[b05perf 02:13:10.6731735] d.rnd2-none              rnd  off=0      values=270766,300000,901,20 cold=2281ms hot p50/p95=1874.6/2019.4 ms cpu=0.77   
-[b05perf 02:13:19.7840085] d.rnd2-none              rnd  off=20     values=270766,300000,901,20 cold=1631ms hot p50/p95=1520.5/1629.5 ms cpu=0.68   
+[b05perf 02:11:47.1440017] base                     hits off=0      values=270766,20 cold=2365ms hot p50/p95=2980.4/3102.0 ms cpu=0.72
+[b05perf 02:12:08.6153791] base                     time off=0      values=270766,20 cold=3532ms hot p50/p95=3656.1/4010.9 ms cpu=0.89
+[b05perf 02:12:35.9599802] base                     time off=10000  values=270766,20 cold=3953ms hot p50/p95=4583.0/5318.8 ms cpu=0.91
+[b05perf 02:12:43.2942442] d.rnd1-area-letter       rnd  off=random values=601,20 cold=691ms hot p50/p95=540.3/820.4 ms cpu=0.96
+[b05perf 02:12:49.8406918] d.rnd1-area-letter       rnd  off=0      values=601,20 cold=691ms hot p50/p95=485.6/738.1 ms cpu=0.95
+[b05perf 02:12:56.670345] d.rnd1-area-letter       rnd  off=600    values=601,1 cold=563ms hot p50/p95=537.4/819.3 ms cpu=0.92
+[b05perf 02:13:10.6731735] d.rnd2-none              rnd  off=0      values=270766,300000,901,20 cold=2281ms hot p50/p95=1874.6/2019.4 ms cpu=0.77
+[b05perf 02:13:19.7840085] d.rnd2-none              rnd  off=20     values=270766,300000,901,20 cold=1631ms hot p50/p95=1520.5/1629.5 ms cpu=0.68
 [b05perf 02:13:41.5712757] d.rnd2-area              rnd  off=0      values=95002,300000,324,20 cold=3207ms hot p50/p95=2548.9/3102.5 ms cpu=0.74 step0:E3024 1xstep0:E3024 2963.4
 [b05perf 02:14:00.6937162] d.rnd2-area              rnd  off=20     values=95002,300000,324,20 cold=3171ms hot p50/p95=2694.4/2991.1 ms cpu=0.74 step0:E3024  2485.9
-[b05perf 02:14:11.2022114] d.rnd2-class             rnd  off=0      values=45761,300000,145,20 cold=1767ms hot p50/p95=1471.4/1614.0 ms cpu=0.58   
-[b05perf 02:14:21.2653114] d.rnd2-class             rnd  off=20     values=45761,300000,145,20 cold=1506ms hot p50/p95=1734.5/1859.9 ms cpu=0.64   
+[b05perf 02:14:11.2022114] d.rnd2-class             rnd  off=0      values=45761,300000,145,20 cold=1767ms hot p50/p95=1471.4/1614.0 ms cpu=0.58
+[b05perf 02:14:21.2653114] d.rnd2-class             rnd  off=20     values=45761,300000,145,20 cold=1506ms hot p50/p95=1734.5/1859.9 ms cpu=0.64
 [b05perf 02:14:21.2873374] wrote target\perf-b05\s300k-1-bench.tsv
 [b05perf 02:14:37.3466289] bench s300k-2 on 300000 rows, vod_id 1..300000
-[b05perf 02:14:49.5148019] a.area1                  hits off=0      values=27194,20 cold=1540ms hot p50/p95=1522.0/2495.1 ms cpu=0.74   
-[b05perf 02:14:59.559395] a.area1                  time off=0      values=27194,20 cold=1703ms hot p50/p95=1564.0/1955.9 ms cpu=0.74   
-[b05perf 02:15:11.3554697] a.area1                  time off=10000  values=27194,20 cold=2253ms hot p50/p95=1876.8/2162.1 ms cpu=0.66   
+[b05perf 02:14:49.5148019] a.area1                  hits off=0      values=27194,20 cold=1540ms hot p50/p95=1522.0/2495.1 ms cpu=0.74
+[b05perf 02:14:59.559395] a.area1                  time off=0      values=27194,20 cold=1703ms hot p50/p95=1564.0/1955.9 ms cpu=0.74
+[b05perf 02:15:11.3554697] a.area1                  time off=10000  values=27194,20 cold=2253ms hot p50/p95=1876.8/2162.1 ms cpu=0.66
 [b05perf 02:15:54.9550475] a.area3                  hits off=0      values=94639,-1 cold=6100ms hot p50/p95=5823.0/6029.6 ms cpu=0.70 step0:E3024 4xstep1:E1028 5064.0
 [b05perf 02:16:41.9330611] a.area3                  time off=0      values=-1,-1 cold=5371ms hot p50/p95=5674.0/6350.4 ms cpu=0.77  4xstep0:E3024 14977.9
 [b05perf 02:17:32.5242075] a.area3                  time off=10000  values=-1,-1 cold=6406ms hot p50/p95=6254.7/6461.6 ms cpu=1.00 step0:E3024 10xstep0:E3024 12842.6
@@ -46,74 +46,74 @@ Exception in thread "main" java.lang.IllegalStateException: d.rnd2-area ?? -1 ??
 [b05perf 02:21:08.622987] a.area10                 hits off=0      values=-1,-1 cold=6015ms hot p50/p95=6026.5/6043.5 ms cpu=0.99 step0:E3024 10xstep0:E3024 12578.8
 [b05perf 02:21:58.0930159] a.area10                 time off=0      values=-1,-1 cold=6036ms hot p50/p95=6025.1/6029.4 ms cpu=0.94 step0:E3024 10xstep0:E3024 13282.8
 [b05perf 02:22:44.4548157] a.area10                 time off=10000  values=-1,-1 cold=6031ms hot p50/p95=6024.6/6038.9 ms cpu=0.99 step0:E3024 10xstep0:E3024 10175.5
-[b05perf 02:23:15.7507824] a.lang3                  hits off=0      values=75753,20 cold=4226ms hot p50/p95=4779.5/5549.3 ms cpu=0.95   
-[b05perf 02:23:41.2765378] a.lang3                  time off=0      values=75753,20 cold=4620ms hot p50/p95=4376.0/4947.8 ms cpu=0.78   
-[b05perf 02:24:01.4179544] a.lang3                  time off=10000  values=75753,20 cold=3630ms hot p50/p95=3244.0/3906.7 ms cpu=0.58   
+[b05perf 02:23:15.7507824] a.lang3                  hits off=0      values=75753,20 cold=4226ms hot p50/p95=4779.5/5549.3 ms cpu=0.95
+[b05perf 02:23:41.2765378] a.lang3                  time off=0      values=75753,20 cold=4620ms hot p50/p95=4376.0/4947.8 ms cpu=0.78
+[b05perf 02:24:01.4179544] a.lang3                  time off=10000  values=75753,20 cold=3630ms hot p50/p95=3244.0/3906.7 ms cpu=0.58
 [b05perf 02:24:01.4362337] wrote target\perf-b05\s300k-2-bench.tsv
 [b05perf 02:24:25.9861715] bench s300k-3 on 300000 rows, vod_id 1..300000
-[b05perf 02:24:37.371615] a.letter3                time off=0      values=29634,20 cold=1844ms hot p50/p95=1365.1/1965.0 ms cpu=0.73   
-[b05perf 02:24:46.0142908] a.letter3                hits off=0      values=29634,20 cold=1697ms hot p50/p95=1481.7/1588.7 ms cpu=0.66   
-[b05perf 02:24:53.2382766] a.letter3                time off=10000  values=29634,20 cold=1283ms hot p50/p95=1168.0/1243.8 ms cpu=0.42   
-[b05perf 02:25:00.3940647] a.letter0-9              time off=0      values=13420,20 cold=540ms hot p50/p95=560.8/712.8 ms cpu=0.46   
-[b05perf 02:25:05.0450052] a.letter0-9              hits off=0      values=13420,20 cold=1042ms hot p50/p95=720.6/795.9 ms cpu=0.67   
+[b05perf 02:24:37.371615] a.letter3                time off=0      values=29634,20 cold=1844ms hot p50/p95=1365.1/1965.0 ms cpu=0.73
+[b05perf 02:24:46.0142908] a.letter3                hits off=0      values=29634,20 cold=1697ms hot p50/p95=1481.7/1588.7 ms cpu=0.66
+[b05perf 02:24:53.2382766] a.letter3                time off=10000  values=29634,20 cold=1283ms hot p50/p95=1168.0/1243.8 ms cpu=0.42
+[b05perf 02:25:00.3940647] a.letter0-9              time off=0      values=13420,20 cold=540ms hot p50/p95=560.8/712.8 ms cpu=0.46
+[b05perf 02:25:05.0450052] a.letter0-9              hits off=0      values=13420,20 cold=1042ms hot p50/p95=720.6/795.9 ms cpu=0.67
 [b05perf 02:25:33.8470736] a.letter0-9              time off=10000  values=13420,20 cold=848ms hot p50/p95=2005.3/4070.3 ms cpu=0.99  1xstep1:E3024 1517.9
-[b05perf 02:25:44.1838937] a.state2                 time off=0      values=32815,20 cold=1665ms hot p50/p95=1444.4/1850.2 ms cpu=0.68   
-[b05perf 02:25:54.8149248] a.state2                 hits off=0      values=32815,20 cold=1330ms hot p50/p95=1497.1/3168.3 ms cpu=0.72   
-[b05perf 02:26:02.2922433] a.state2                 time off=10000  values=32815,20 cold=2216ms hot p50/p95=1525.1/2412.9 ms cpu=0.63   
-[b05perf 02:26:12.363893] a.version2               time off=0      values=40457,20 cold=1514ms hot p50/p95=1517.8/1740.0 ms cpu=0.49   
-[b05perf 02:26:22.4010961] a.version2               hits off=0      values=40457,20 cold=1349ms hot p50/p95=1685.3/2014.2 ms cpu=0.61   
-[b05perf 02:26:33.2511958] a.version2               time off=10000  values=40457,20 cold=2612ms hot p50/p95=2803.8/2889.0 ms cpu=0.79   
-[b05perf 02:26:33.5392687] a.ids100                 time off=0      values=90,20 cold=15ms hot p50/p95=10.9/12.6 ms cpu=0.79   
-[b05perf 02:26:33.7858146] a.ids100                 hits off=0      values=90,20 cold=17ms hot p50/p95=9.4/11.6 ms cpu=0.86   
-[b05perf 02:26:38.2925276] c.year1                  time off=0      values=9692,20 cold=511ms hot p50/p95=290.7/477.3 ms cpu=0.36   
-[b05perf 02:26:41.6834347] c.year1                  hits off=0      values=9692,20 cold=314ms hot p50/p95=273.7/312.7 ms cpu=0.26   
-[b05perf 02:26:57.5186647] c.year2000-2010          time off=0      values=93582,20 cold=3156ms hot p50/p95=3754.0/4249.6 ms cpu=0.46   
-[b05perf 02:27:16.4473344] c.year2000-2010          hits off=0      values=93582,20 cold=4984ms hot p50/p95=5030.9/5819.1 ms cpu=0.58   
-[b05perf 02:27:28.4811868] c.year2000-2010          time off=10000  values=93582,20 cold=2922ms hot p50/p95=3062.1/3165.4 ms cpu=0.25   
-[b05perf 02:27:39.6045859] c.year1990-2021          time off=0      values=265339,20 cold=1592ms hot p50/p95=1736.0/2050.1 ms cpu=0.28   
-[b05perf 02:27:50.3867777] c.year1990-2021          hits off=0      values=265339,20 cold=1690ms hot p50/p95=1744.8/2090.6 ms cpu=0.39   
-[b05perf 02:28:01.1396337] c.year1990-2021          time off=10000  values=265339,20 cold=1998ms hot p50/p95=1756.0/1945.7 ms cpu=0.21   
+[b05perf 02:25:44.1838937] a.state2                 time off=0      values=32815,20 cold=1665ms hot p50/p95=1444.4/1850.2 ms cpu=0.68
+[b05perf 02:25:54.8149248] a.state2                 hits off=0      values=32815,20 cold=1330ms hot p50/p95=1497.1/3168.3 ms cpu=0.72
+[b05perf 02:26:02.2922433] a.state2                 time off=10000  values=32815,20 cold=2216ms hot p50/p95=1525.1/2412.9 ms cpu=0.63
+[b05perf 02:26:12.363893] a.version2               time off=0      values=40457,20 cold=1514ms hot p50/p95=1517.8/1740.0 ms cpu=0.49
+[b05perf 02:26:22.4010961] a.version2               hits off=0      values=40457,20 cold=1349ms hot p50/p95=1685.3/2014.2 ms cpu=0.61
+[b05perf 02:26:33.2511958] a.version2               time off=10000  values=40457,20 cold=2612ms hot p50/p95=2803.8/2889.0 ms cpu=0.79
+[b05perf 02:26:33.5392687] a.ids100                 time off=0      values=90,20 cold=15ms hot p50/p95=10.9/12.6 ms cpu=0.79
+[b05perf 02:26:33.7858146] a.ids100                 hits off=0      values=90,20 cold=17ms hot p50/p95=9.4/11.6 ms cpu=0.86
+[b05perf 02:26:38.2925276] c.year1                  time off=0      values=9692,20 cold=511ms hot p50/p95=290.7/477.3 ms cpu=0.36
+[b05perf 02:26:41.6834347] c.year1                  hits off=0      values=9692,20 cold=314ms hot p50/p95=273.7/312.7 ms cpu=0.26
+[b05perf 02:26:57.5186647] c.year2000-2010          time off=0      values=93582,20 cold=3156ms hot p50/p95=3754.0/4249.6 ms cpu=0.46
+[b05perf 02:27:16.4473344] c.year2000-2010          hits off=0      values=93582,20 cold=4984ms hot p50/p95=5030.9/5819.1 ms cpu=0.58
+[b05perf 02:27:28.4811868] c.year2000-2010          time off=10000  values=93582,20 cold=2922ms hot p50/p95=3062.1/3165.4 ms cpu=0.25
+[b05perf 02:27:39.6045859] c.year1990-2021          time off=0      values=265339,20 cold=1592ms hot p50/p95=1736.0/2050.1 ms cpu=0.28
+[b05perf 02:27:50.3867777] c.year1990-2021          hits off=0      values=265339,20 cold=1690ms hot p50/p95=1744.8/2090.6 ms cpu=0.39
+[b05perf 02:28:01.1396337] c.year1990-2021          time off=10000  values=265339,20 cold=1998ms hot p50/p95=1756.0/1945.7 ms cpu=0.21
 [b05perf 02:28:01.1539784] wrote target\perf-b05\s300k-3-bench.tsv
 [b05perf 02:28:14.5837281] bench s300k-4 on 300000 rows, vod_id 1..300000
-[b05perf 02:28:24.2679688] b.class1                 time off=0      values=45761,20 cold=1443ms hot p50/p95=1365.9/1680.9 ms cpu=0.23   
-[b05perf 02:28:32.5142226] b.class1                 hits off=0      values=45761,20 cold=1089ms hot p50/p95=1456.7/1724.3 ms cpu=0.30   
-[b05perf 02:28:42.2199187] b.class1                 time off=10000  values=45761,20 cold=1689ms hot p50/p95=1620.4/1805.7 ms cpu=0.29   
-[b05perf 02:28:51.7686478] b.class3                 time off=0      values=95746,20 cold=1442ms hot p50/p95=1483.1/1514.6 ms cpu=0.26   
-[b05perf 02:29:00.5435423] b.class3                 hits off=0      values=95746,20 cold=1409ms hot p50/p95=1452.6/1531.6 ms cpu=0.21   
-[b05perf 02:29:11.6216274] b.class3                 time off=10000  values=95746,20 cold=1700ms hot p50/p95=1765.3/2241.3 ms cpu=0.34   
-[b05perf 02:29:30.8915951] b.actor2                 time off=0      values=50620,20 cold=4333ms hot p50/p95=3932.5/5457.4 ms cpu=0.98   
-[b05perf 02:29:45.225853] b.actor2                 hits off=0      values=50620,20 cold=3832ms hot p50/p95=3296.5/4027.8 ms cpu=1.00   
-[b05perf 02:29:59.0472916] b.actor2                 time off=10000  values=50620,20 cold=3479ms hot p50/p95=3499.2/3682.7 ms cpu=0.99   
-[b05perf 02:30:16.3705039] b.director2              time off=0      values=17939,20 cold=3742ms hot p50/p95=4191.9/4231.8 ms cpu=0.99   
-[b05perf 02:30:30.2489729] b.director2              hits off=0      values=17939,20 cold=3926ms hot p50/p95=3153.9/3643.4 ms cpu=0.98   
-[b05perf 02:30:48.1937891] b.director2              time off=10000  values=17939,20 cold=4889ms hot p50/p95=4377.4/4951.3 ms cpu=1.00   
-[b05perf 02:31:03.6738788] b.tid-top                time off=0      values=54076,20 cold=2857ms hot p50/p95=3778.3/3914.8 ms cpu=0.98   
-[b05perf 02:31:15.4847356] b.tid-top                hits off=0      values=54076,20 cold=3434ms hot p50/p95=2690.6/2991.7 ms cpu=0.97   
-[b05perf 02:31:28.5681811] b.tid-top                time off=10000  values=54076,20 cold=3162ms hot p50/p95=3165.5/3687.4 ms cpu=0.94   
-[b05perf 02:31:37.4265749] b.tid-child              time off=0      values=13042,20 cold=808ms hot p50/p95=682.5/829.2 ms cpu=0.90   
-[b05perf 02:31:47.5240361] b.tid-child              hits off=0      values=13042,20 cold=786ms hot p50/p95=816.1/1037.3 ms cpu=0.95   
-[b05perf 02:31:54.156591] b.tid-child              time off=10000  values=13042,20 cold=1050ms hot p50/p95=1160.0/1352.8 ms cpu=0.91   
+[b05perf 02:28:24.2679688] b.class1                 time off=0      values=45761,20 cold=1443ms hot p50/p95=1365.9/1680.9 ms cpu=0.23
+[b05perf 02:28:32.5142226] b.class1                 hits off=0      values=45761,20 cold=1089ms hot p50/p95=1456.7/1724.3 ms cpu=0.30
+[b05perf 02:28:42.2199187] b.class1                 time off=10000  values=45761,20 cold=1689ms hot p50/p95=1620.4/1805.7 ms cpu=0.29
+[b05perf 02:28:51.7686478] b.class3                 time off=0      values=95746,20 cold=1442ms hot p50/p95=1483.1/1514.6 ms cpu=0.26
+[b05perf 02:29:00.5435423] b.class3                 hits off=0      values=95746,20 cold=1409ms hot p50/p95=1452.6/1531.6 ms cpu=0.21
+[b05perf 02:29:11.6216274] b.class3                 time off=10000  values=95746,20 cold=1700ms hot p50/p95=1765.3/2241.3 ms cpu=0.34
+[b05perf 02:29:30.8915951] b.actor2                 time off=0      values=50620,20 cold=4333ms hot p50/p95=3932.5/5457.4 ms cpu=0.98
+[b05perf 02:29:45.225853] b.actor2                 hits off=0      values=50620,20 cold=3832ms hot p50/p95=3296.5/4027.8 ms cpu=1.00
+[b05perf 02:29:59.0472916] b.actor2                 time off=10000  values=50620,20 cold=3479ms hot p50/p95=3499.2/3682.7 ms cpu=0.99
+[b05perf 02:30:16.3705039] b.director2              time off=0      values=17939,20 cold=3742ms hot p50/p95=4191.9/4231.8 ms cpu=0.99
+[b05perf 02:30:30.2489729] b.director2              hits off=0      values=17939,20 cold=3926ms hot p50/p95=3153.9/3643.4 ms cpu=0.98
+[b05perf 02:30:48.1937891] b.director2              time off=10000  values=17939,20 cold=4889ms hot p50/p95=4377.4/4951.3 ms cpu=1.00
+[b05perf 02:31:03.6738788] b.tid-top                time off=0      values=54076,20 cold=2857ms hot p50/p95=3778.3/3914.8 ms cpu=0.98
+[b05perf 02:31:15.4847356] b.tid-top                hits off=0      values=54076,20 cold=3434ms hot p50/p95=2690.6/2991.7 ms cpu=0.97
+[b05perf 02:31:28.5681811] b.tid-top                time off=10000  values=54076,20 cold=3162ms hot p50/p95=3165.5/3687.4 ms cpu=0.94
+[b05perf 02:31:37.4265749] b.tid-child              time off=0      values=13042,20 cold=808ms hot p50/p95=682.5/829.2 ms cpu=0.90
+[b05perf 02:31:47.5240361] b.tid-child              hits off=0      values=13042,20 cold=786ms hot p50/p95=816.1/1037.3 ms cpu=0.95
+[b05perf 02:31:54.156591] b.tid-child              time off=10000  values=13042,20 cold=1050ms hot p50/p95=1160.0/1352.8 ms cpu=0.91
 [b05perf 02:31:54.1826573] wrote target\perf-b05\s300k-4-bench.tsv
 [b05perf 02:32:12.0923167] bench s300k-5 on 300000 rows, vod_id 1..300000
 [b05perf 02:32:46.4313503] e.hits-between           time off=0      values=-1,-1 cold=6088ms hot p50/p95=6025.3/6025.4 ms cpu=0.91 step0:E3024 5xstep0:E3024 5458.7
-[b05perf 02:33:04.6328143] e.hits-between           hits off=0      values=79560,20 cold=5181ms hot p50/p95=4485.1/4599.1 ms cpu=0.59   
-[b05perf 02:33:21.1042636] e.hits-between           time off=10000  values=79560,20 cold=4432ms hot p50/p95=3918.8/4191.1 ms cpu=0.45   
-[b05perf 02:33:37.7896585] e.hits-gt                time off=0      values=90307,20 cold=4150ms hot p50/p95=3369.1/3788.1 ms cpu=0.28   
+[b05perf 02:33:04.6328143] e.hits-between           hits off=0      values=79560,20 cold=5181ms hot p50/p95=4485.1/4599.1 ms cpu=0.59
+[b05perf 02:33:21.1042636] e.hits-between           time off=10000  values=79560,20 cold=4432ms hot p50/p95=3918.8/4191.1 ms cpu=0.45
+[b05perf 02:33:37.7896585] e.hits-gt                time off=0      values=90307,20 cold=4150ms hot p50/p95=3369.1/3788.1 ms cpu=0.28
 [b05perf 02:34:12.2248241] e.hits-gt                hits off=0      values=-1,-1 cold=5097ms hot p50/p95=6056.3/6069.6 ms cpu=0.98 step1:E1028 6xstep0:E3024 11140.9
 [b05perf 02:34:46.5262786] e.hits-gt                time off=10000  values=-1,-1 cold=6026ms hot p50/p95=6054.2/6168.6 ms cpu=0.99 step0:E3024 6xstep0:E3024 9988.6
-[b05perf 02:34:47.353112] e.timeadd-30d            time off=0      values=182,20 cold=31ms hot p50/p95=27.8/59.4 ms cpu=1.00   
-[b05perf 02:34:47.8633902] e.timeadd-30d            hits off=0      values=182,20 cold=23ms hot p50/p95=18.5/30.1 ms cpu=1.00   
-[b05perf 02:35:01.4493352] e.timeadd-365d           time off=0      values=27046,20 cold=3320ms hot p50/p95=2918.6/3195.6 ms cpu=1.00   
-[b05perf 02:35:12.8268779] e.timeadd-365d           hits off=0      values=27046,20 cold=3067ms hot p50/p95=2787.9/2833.0 ms cpu=1.00   
-[b05perf 02:35:25.4034235] e.timeadd-365d           time off=10000  values=27046,20 cold=3258ms hot p50/p95=3114.3/3278.9 ms cpu=1.00   
+[b05perf 02:34:47.353112] e.timeadd-30d            time off=0      values=182,20 cold=31ms hot p50/p95=27.8/59.4 ms cpu=1.00
+[b05perf 02:34:47.8633902] e.timeadd-30d            hits off=0      values=182,20 cold=23ms hot p50/p95=18.5/30.1 ms cpu=1.00
+[b05perf 02:35:01.4493352] e.timeadd-365d           time off=0      values=27046,20 cold=3320ms hot p50/p95=2918.6/3195.6 ms cpu=1.00
+[b05perf 02:35:12.8268779] e.timeadd-365d           hits off=0      values=27046,20 cold=3067ms hot p50/p95=2787.9/2833.0 ms cpu=1.00
+[b05perf 02:35:25.4034235] e.timeadd-365d           time off=10000  values=27046,20 cold=3258ms hot p50/p95=3114.3/3278.9 ms cpu=1.00
 [b05perf 02:36:04.1749389] e.isend1                 time off=0      values=-1,-1 cold=6045ms hot p50/p95=6034.1/6067.7 ms cpu=0.99 step0:E3024 6xstep0:E3024 9697.9
 [b05perf 02:36:36.4536278] e.isend1                 hits off=0      values=-1,-1 cold=6029ms hot p50/p95=6049.6/6083.8 ms cpu=1.00 step0:E3024 6xstep0:E3024 8046.9
 [b05perf 02:37:09.8805305] e.isend1                 time off=10000  values=-1,-1 cold=6015ms hot p50/p95=6022.6/6022.9 ms cpu=0.97 step0:E3024 6xstep0:E3024 9316.9
-[b05perf 02:37:23.4299768] e.notin100               time off=0      values=270676,20 cold=3122ms hot p50/p95=3100.4/3275.8 ms cpu=0.75   
-[b05perf 02:37:33.2537288] e.notin100               hits off=0      values=270676,20 cold=2506ms hot p50/p95=2355.5/2599.5 ms cpu=0.60   
-[b05perf 02:37:43.1249834] e.notin100               time off=10000  values=270676,20 cold=2909ms hot p50/p95=2230.5/2505.6 ms cpu=0.42   
-[b05perf 02:37:52.364234] e.combo-isend-hits-time  time off=0      values=4893,20 cold=1319ms hot p50/p95=1359.5/1640.7 ms cpu=0.47   
-[b05perf 02:38:00.1653628] e.combo-isend-hits-time  hits off=0      values=4893,20 cold=1283ms hot p50/p95=1315.9/1421.8 ms cpu=0.32   
+[b05perf 02:37:23.4299768] e.notin100               time off=0      values=270676,20 cold=3122ms hot p50/p95=3100.4/3275.8 ms cpu=0.75
+[b05perf 02:37:33.2537288] e.notin100               hits off=0      values=270676,20 cold=2506ms hot p50/p95=2355.5/2599.5 ms cpu=0.60
+[b05perf 02:37:43.1249834] e.notin100               time off=10000  values=270676,20 cold=2909ms hot p50/p95=2230.5/2505.6 ms cpu=0.42
+[b05perf 02:37:52.364234] e.combo-isend-hits-time  time off=0      values=4893,20 cold=1319ms hot p50/p95=1359.5/1640.7 ms cpu=0.47
+[b05perf 02:38:00.1653628] e.combo-isend-hits-time  hits off=0      values=4893,20 cold=1283ms hot p50/p95=1315.9/1421.8 ms cpu=0.32
 [b05perf 02:38:00.1810808] wrote target\perf-b05\s300k-5-bench.tsv
 [b05perf 02:39:10.7553447] app pid 14612 on 127.0.0.1:55979
 [b05perf 02:39:21.0094361] http base                   /api/v1/videos?sort=time&page=1          {200=5} total=0 p50/p95=2035.8/2326.6 ms sql=2/2
@@ -141,14 +141,14 @@ Exception in thread "main" java.lang.IllegalStateException: d.rnd2-area ?? -1 ??
 [b05perf 02:43:58.8310312] http d.rnd2-none            /api/v1/videos?sort=rnd&page=1           {200=5} total=varies p50/p95=1480.9/1725.3 ms sql=4/4
 [b05perf 02:43:58.8362996] app pid 23652 stopped
 [b05perf 02:44:49.2135236] bench s300k-rerun on 300000 rows, vod_id 1..300000
-[b05perf 02:45:00.986364] base                     hits off=0      values=270766,20 cold=2476ms hot p50/p95=2386.1/2439.0 ms cpu=0.60   
-[b05perf 02:45:12.3663752] base                     time off=0      values=270766,20 cold=2953ms hot p50/p95=2824.6/2922.7 ms cpu=0.76   
-[b05perf 02:45:24.4417065] base                     time off=10000  values=270766,20 cold=2986ms hot p50/p95=2983.5/3146.7 ms cpu=0.75   
+[b05perf 02:45:00.986364] base                     hits off=0      values=270766,20 cold=2476ms hot p50/p95=2386.1/2439.0 ms cpu=0.60
+[b05perf 02:45:12.3663752] base                     time off=0      values=270766,20 cold=2953ms hot p50/p95=2824.6/2922.7 ms cpu=0.76
+[b05perf 02:45:24.4417065] base                     time off=10000  values=270766,20 cold=2986ms hot p50/p95=2983.5/3146.7 ms cpu=0.75
 [b05perf 02:45:55.0815235] a.area3                  hits off=0      values=-1,-1 cold=5326ms hot p50/p95=6015.2/6065.0 ms cpu=0.93  5xstep0:E3024 5023.3
 [b05perf 02:46:18.4326698] a.area3                  time off=0      values=94639,20 cold=4610ms hot p50/p95=4796.8/5163.2 ms cpu=0.65  1xstep0:E3024 5156.9
 [b05perf 02:46:52.1004978] a.area3                  time off=10000  values=-1,-1 cold=6028ms hot p50/p95=6034.7/6042.0 ms cpu=1.00 step0:E3024 6xstep0:E3024 9459.7
 [b05perf 02:47:34.5157019] e.isend1                 hits off=0      values=-1,-1 cold=6070ms hot p50/p95=6028.9/6035.3 ms cpu=1.00 step0:E3024 6xstep0:E3024 11640.9
 [b05perf 02:48:05.0607672] e.isend1                 time off=0      values=-1,-1 cold=6007ms hot p50/p95=6033.3/6034.9 ms cpu=0.84 step0:E3024 6xstep0:E3024 6424.3
-[b05perf 02:48:24.5334766] e.isend1                 time off=10000  values=149048,20 cold=4981ms hot p50/p95=4886.0/5698.2 ms cpu=0.44   
+[b05perf 02:48:24.5334766] e.isend1                 time off=10000  values=149048,20 cold=4981ms hot p50/p95=4886.0/5698.2 ms cpu=0.44
 [b05perf 02:48:24.559116] wrote target\perf-b05\s300k-rerun-bench.tsv
 [b05perf 02:49:00.4684146] dropped disposable database maccms_it_20261017015845_4804bd6c (information_schema.schemata count = 0, verified absent)

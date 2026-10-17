@@ -1,6 +1,6 @@
 <?php
 return array (
-  'dplayer' => 
+  'dplayer' =>
   array (
     'status' => '1',
     'from' => 'dplayer',
@@ -13,7 +13,7 @@ return array (
     'tip' => '无需安装任何插件',
     'id' => 'dplayer',
   ),
-  'videojs' => 
+  'videojs' =>
   array (
     'status' => '1',
     'sort' => '907',
@@ -25,7 +25,7 @@ return array (
     'tip' => '无需安装任何插件',
     'id' => 'videojs',
   ),
-  'iva' => 
+  'iva' =>
   array (
     'status' => '1',
     'from' => 'iva',
@@ -38,7 +38,7 @@ return array (
     'tip' => '无需安装任何插件',
     'id' => 'iva',
   ),
-  'iframe' => 
+  'iframe' =>
   array (
     'status' => '1',
     'from' => 'iframe',
@@ -50,7 +50,7 @@ return array (
     'tip' => '无需安装任何插件',
     'id' => 'iframe',
   ),
-  'link' => 
+  'link' =>
   array (
     'status' => '1',
     'sort' => '904',
@@ -62,7 +62,7 @@ return array (
     'tip' => '无需安装任何插件',
     'id' => 'link',
   ),
-  'swf' => 
+  'swf' =>
   array (
     'status' => '1',
     'sort' => '903',
@@ -74,7 +74,7 @@ return array (
     'tip' => '无需安装任何插件',
     'id' => 'swf',
   ),
-  'flv' => 
+  'flv' =>
   array (
     'status' => '1',
     'from' => 'flv',
@@ -87,7 +87,7 @@ return array (
     'tip' => '无需安装任何插件	',
     'id' => 'flv',
   ),
-  'jxglobal' => 
+  'jxglobal' =>
   array (
     'status' => '1',
     'from' => 'jxglobal',
@@ -100,7 +100,7 @@ return array (
     'tip' => '',
     'id' => 'jxglobal',
   ),
-  'jxown' => 
+  'jxown' =>
   array (
     'status' => '1',
     'from' => 'jxown',
@@ -113,7 +113,7 @@ return array (
     'tip' => '',
     'id' => 'jxown',
   ),
-  'jxlocal' => 
+  'jxlocal' =>
   array (
     'status' => '1',
     'from' => 'jxlocal',
@@ -126,7 +126,7 @@ return array (
     'tip' => '',
     'id' => 'jxlocal',
   ),
-  'offplayer' => 
+  'offplayer' =>
   array (
     'status' => '0',
     'from' => 'offplayer',
