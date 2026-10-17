@@ -34,19 +34,21 @@
 - **详情页**：title = 视频名 + ` - ` + 站名；description = 简介去掉多余空白后前 150 字；keywords = 标签（为空用站点值）。元数据只列非空项：分类、类型、主演、导演、编剧、地区、语言、年份、上映、片长、状态、集数（`total>0`）、标签、评分（`scoreNum>0`）、豆瓣评分（>0）、更新时间（`Asia/Shanghai`，`yyyy-MM-dd`）。
 - 语义 class（MACC-15 样式任务约定）：`site-home`、`category-page`、`category-grid`、`video-grid`、`video-card`（组件）、`pagination`（组件）、`video-detail`、`metadata-list`、`detail-content`。另有 BEM 子类与 `site-nav`、`site-search`、`site-login`、`breadcrumb`，供样式任务按需使用。
 
-### 3. 配置（仍只来自 `maccms.site.*` 环境变量）
+### 3. 配置（`maccms.site.*` 环境变量；B02 起可按字段取旧配置）
+
+> B02（MACC-26）起：设置了 `MACCMS_LEGACY_CONFIG_DIR` 时，下表中留空的站点项在启动时按字段取旧 `extra/maccms.php` 的值（环境变量非空优先，`base-url` 仍必填），规则与换算见 `11-guards-and-legacy-config.md` 第 4.4 节。下表的"默认"指两者都没有时的取值。
 
 | 配置项 / 环境变量 | 默认 | 规则 |
 |---|---|---|
-| `maccms.site.url.rewrite` / `MACCMS_SITE_URL_REWRITE` | `false` | true/false（不区分大小写），对应旧 `rewrite.status` |
-| `maccms.site.url.suffix-hide` / `MACCMS_SITE_URL_SUFFIX_HIDE` | `false` | true/false，对应旧 `rewrite.suffix_hide` |
+| `maccms.site.url.rewrite` / `MACCMS_SITE_URL_REWRITE` | 空，按 `false` | true/false（不区分大小写），对应旧 `rewrite.status` |
+| `maccms.site.url.suffix-hide` / `MACCMS_SITE_URL_SUFFIX_HIDE` | 空，按 `false` | true/false，对应旧 `rewrite.suffix_hide` |
 | `maccms.site.image.protocol` / `MACCMS_SITE_IMAGE_PROTOCOL` | 空（按 http） | 对应旧 `upload.protocol`，校验见 06 第 4 节 |
 | `maccms.site.image.mode` / `…_MODE` | 空（本地） | `remote` 时相对路径拼 `remote-url` |
 | `maccms.site.image.remote-url` / `…_REMOTE_URL` | 空 | 远程模式必填，规则见 06 第 4 节 |
 | `maccms.site.image.img-key` / `…_IMG_KEY` | 空 | 留空不启用；**只接受字母、数字与 `. - _ \| \ /`**（字面域名多选一） |
 | `maccms.site.image.img-api` / `…_IMG_API` | 空 | 规则见 06 第 4 节 |
 
-- `pathinfo_depr` 固定 `/`、路由别名固定关闭（首批不承接这两类形态）。
+- `pathinfo_depr` 固定 `/`、路由别名固定关闭（首批不承接这两类形态）；从旧配置读取时，旧值是这两类形态（以及子目录安装、拼音/加密 id、静态页）就启动失败（B02）。
 - 校验失败时启动失败，一次列出所有出错的配置项名称，不回显取值（`SiteUrlProperties.toStyle`、`SiteImageProperties.toNormalizer`；后者把 `ImageUrlNormalizer` 的 `upload.*` 名称换成本应用的配置项名）。
 - `img-key` 的额外限制是对 07 文档第 8 节"正则回溯"风险的处理：不允许量词、分组、字符类，匹配耗时与地址长度成线性关系。
 

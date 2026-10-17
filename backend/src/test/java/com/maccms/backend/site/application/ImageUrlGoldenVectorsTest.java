@@ -103,6 +103,24 @@ class ImageUrlGoldenVectorsTest {
             assertThat(normalizer.normalize(input)).isEmpty();
         }
 
+        // B02（W2，11 文档第 5 节）：放行时结果与上面完全相同；关闭时外部主机的结果变为 EXTERNAL_BLOCKED，
+        // img_key 命中时不拼 img_api、按原地址判断；无论哪种，关闭时都不会输出外部主机
+        String siteHost = URI.create(config.get("java").get("base_url").stringValue()).getHost();
+        assertThat(normalizer.withExternalImages(true).resolve(input)).as("W2 放行").isEqualTo(r);
+        ImageUrlNormalizer.Resolution closed = normalizer.withExternalImages(false).resolve(input);
+        assertThat(closed.branch()).isEqualTo(r.branch());
+        closed.url().ifPresent(u -> assertThat(!u.isAbsolute()
+                || URI.create(u.href()).getHost().equalsIgnoreCase(siteHost)).as("W2 关闭时不输出外部主机").isTrue());
+        if (r.branch() != ImageUrlNormalizer.Branch.IMG_API) {
+            boolean external = r.url().isPresent() && r.url().get().isAbsolute()
+                    && !URI.create(r.url().get().href()).getHost().equalsIgnoreCase(siteHost);
+            if (external) {
+                assertThat(closed.outcome()).isEqualTo(ImageUrlNormalizer.Outcome.EXTERNAL_BLOCKED);
+            } else {
+                assertThat(closed).as("W2 关闭时非外部结果不变").isEqualTo(r);
+            }
+        }
+
         // 兼容关系
         String browser = browserView(php);
         switch (compat) {
@@ -138,6 +156,8 @@ class ImageUrlGoldenVectorsTest {
         assertThat(branches).as("覆盖旧代码全部分支").containsExactlyInAnyOrderElementsOf(allBranches);
         Set<String> allOutcomes = new HashSet<>(Set.of("CONFIG_ERROR"));
         EnumSet.allOf(ImageUrlNormalizer.Outcome.class).forEach(o -> allOutcomes.add(o.name()));
+        // EXTERNAL_BLOCKED 是 B02 的外部图片放行判断（W2），不是旧 mac_url_img 的结果，由 ExternalImageGateTest 覆盖
+        allOutcomes.remove(ImageUrlNormalizer.Outcome.EXTERNAL_BLOCKED.name());
         assertThat(outcomes).as("覆盖全部结果").containsExactlyInAnyOrderElementsOf(allOutcomes);
         assertThat(compats).containsExactlyInAnyOrder("SAME", "PROTOCOL_RELATIVE_COMPLETED", "REJECTED", "CONFIG_REJECTED");
     }

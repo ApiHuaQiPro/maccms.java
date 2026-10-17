@@ -20,9 +20,10 @@
   - 已发布只读类型与 `docs/contracts/` 中的 schema 一一对应时，修改它们等同修改契约，按第 1 节在同一提交里改 OpenAPI、类型与契约测试（`PublishedViewContractTest` 校验 record 组件与 schema 字段集合一致）。
   - 跨模块传入的查询参数类型自带校验：例如 `VideoListQuery` 的构造器与 `parse` 采用相同范围（`page` 1..1000、`pageSize` 1..100、`sort` 非空、`categoryId` 为 `null`（不筛选）或 1..65535），越界抛 `ApiException`（`INVALID_PARAMETER`）。调用方不能靠直接构造绕过上限。
   - 搜索/筛选条件 `VideoFilter`（契约 1.1.0，MACC-18；`VideoListQuery.filter`，5 参数构造器为 `VideoFilter.NONE`）同样如此：构造器与 `parse` 使用同一套规则（`docs/architecture/09-content-search-filter-plan.md` 第 4 节）——值是解码一次后的原始字符串，不裁剪、不改写；`keyword` ≤ 64、`area` ≤ 20、`lang` ≤ 10、`classes` ≤ 32 个码点，不含 C0/C1 控制字符、代理项、U+FFFD，首尾不得为 ECMAScript `\s` 空白，`area/lang/classes` 不含半角逗号；`year` 恰为 4 位 ASCII 数字；`level` 1..9（原始字符串最多 10 位数字）。"参数重复""非法 UTF-8"只在 HTTP 层判断，由 `content.api` 从容器参数与原始查询串得到；搜索开关（`maccms.content.search.enabled`）由 `ContentReadService` 在查询前再检查一次，其他模块直接构造带 `keyword`/`classes` 的条件也绕不过。
-- `site` 模块（服务端页面，MACC-9 起为骨架，见 `05-site-skeleton.md`）只依赖 `content.application`（含 `.view`）与 `common`——`common` 中限 `common.web` 的 `PageResponse`、`ApiException`、`ErrorCode`、`SafeExceptionLog`，需要更多时在任务中说明并同步修改护栏；不拥有表、不新增 Mapper/SQL，不引用 MyBatis、JDBC、`javax.sql`、Spring JDBC/DAO 类型；不读文件、环境变量（只经 `maccms.site.*` 配置绑定），不启动进程，不发起 HTTP 请求（不回环调用旧 PHP 或本应用 API；jsoup 只能用解析/节点/过滤包，禁止 `Jsoup`、`Connection` 等网络 API），模板表达式只读取视图模型；页面需要新字段时走契约变更。
+- `site` 模块（服务端页面，MACC-9 起为骨架，见 `05-site-skeleton.md`）只依赖 `content.application`（含 `.view`）与 `common`——`common` 中限 `common.web` 的 `PageResponse`、`ApiException`、`ErrorCode`、`SafeExceptionLog`，以及 `common.browser` 的 `BrowserExternalAccess`、`BrowserExternalConfiguration`（B02，浏览器侧外部地址放行开关）；另可引用 `legacyconfig.application` 的 `LegacyConfigService`、`LegacyConfigFile`、`LegacyConfigException`、`LegacyConfigConfiguration` 与 `.view` 的 `PhpArray`、`PhpValue`（B02，启动时读旧 `extra/maccms.php` 并按字段并入站点设置，见 `11-guards-and-legacy-config.md` 第 4.4 节），不能引用 `LegacyConfigProperties` 与 `legacyconfig.infrastructure`。需要更多时在任务中说明并同步修改护栏；不拥有表、不新增 Mapper/SQL，不引用 MyBatis、JDBC、`javax.sql`、Spring JDBC/DAO 类型；不读文件、环境变量（只经 `maccms.site.*` 配置绑定与 `LegacyConfigService`），不启动进程，不发起 HTTP 请求（不回环调用旧 PHP 或本应用 API；jsoup 只能用解析/节点/过滤包，禁止 `Jsoup`、`Connection` 等网络 API），模板表达式只读取视图模型；页面需要新字段时走契约变更。
   - `site` 的每个 Spring 组件都带 `@ConditionalOnSiteEnabled`；`maccms.site.enabled` 默认关闭，关闭时不注册任何 site 组件与路由。
 - MyBatis/JDBC 类型只出现在各模块的 `infrastructure` 包（`common.config` 的数据源检查除外）。
+- 旧配置文件（`application/extra/*.php`、`application/route.php`）只经 `legacyconfig.application.LegacyConfigService` 读取（B02，`11-guards-and-legacy-config.md` 第 4 节）：只解析 `var_export` 数据，不执行 PHP，不读 `database.php` 等其他文件；其他模块不自己读这些文件。
 - 以上依赖规则由 `backend/src/test/java/com/maccms/backend/architecture/ModuleBoundaryTest.java` 扫描源码检查（注释和字符串不计），合成源码自检规则本身；`site` 的模板、构建与装配规则由 `backend/src/test/java/com/maccms/backend/site/SiteGuardrailsTest.java` 与 `SiteTemplatePolicyTest.java` 检查。
 - `common` 只放与业务无关的支持代码（错误处理、分页、配置检查），不得引用业务模块。
 
@@ -40,6 +41,7 @@
   - 列表必须有 `LIMIT` 和页大小上限；不做无界全表读取。
   - 涉及旧表的每条规则在注释或文档中注明旧代码位置（`文件:行号`）。
 - 只读连接：`spring.datasource.hikari.read-only: true` 不得移除。生产使用只授予 SELECT 的专用账号。
+- 零结构变更由护栏锁定（B02，`11-guards-and-legacy-config.md` 第 3 节）：`SchemaGuardTest`（任何位置不出现 DDL、表维护、账号语句、SQL 脚本与自动迁移）、`SqlEntryGuardTest`（SQL 执行入口只接受常量 SQL；`${}` 只允许在 `REGISTERED_DOLLAR` 登记、经白名单校验的标识符，登记写进本批文档）、`-Pmysql-it` 结束时比对 information_schema 指纹（新增 `*MySqlIT` 照 `SchemaGuardMySqlIT` 与现有 IT 的做法，导入后取指纹、删库前比对）。
 
 ### 4. 配置与密钥
 
@@ -47,6 +49,8 @@
 - 数据库等凭证只从环境变量读取，`application.yml` 中不写默认值；缺失时必须启动失败，不能回落到任何默认库或 root。
 - 样例配置只用占位符（`config/*.env.example`）；真实 `*.env` 已被忽略，不提交。
 - 不读取仓库外的线上配置（`D:\Ai\MACCMS\prod-config\`），不连接线上库或服务器。
+- 运行时出站网络 API（HTTP、SMTP、FTP、套接字、DNS 查询等）只允许出现在 `OutboundNetworkGuardTest.REGISTERED` 登记的 `integration` 子包（B02 起；登记表为空，B23 起按批登记，路线图第 4.3 节）。
+- 页面不输出让浏览器访问外部主机的地址，除非对应的部署参数 `maccms.browser-external.w1/w2/w3` 已打开（B02；按路线图第五轮 W1/W2 默认打开、W3 默认关闭）；"本站"只按 `maccms.site.base-url` 的主机判定。
 - 日志不记录 cookie、session、会员身份、密码；异常处理只返回错误码与通用说明。
 - 请求处理中的异常**不得**把 Throwable 或 `getMessage()` 交给日志框架（message 可能含 SQL 参数、连接串、账号）；统一用 `common.web.SafeExceptionLog` 只记录类型与栈帧。新增异常分支要补日志捕获测试（`OutputCaptureExtension` + 合成标记，不用真实密钥）。
   - `SafeExceptionLog` 已公开（MACC-8），只公开 `typeChain`（单行类型链）与 `describe`（类型 + 栈帧）两个方法，其他模块直接复用，不要自行拼接异常信息。

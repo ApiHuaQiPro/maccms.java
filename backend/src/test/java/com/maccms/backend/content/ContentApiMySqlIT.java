@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import com.maccms.backend.MaccmsBackendApplication;
 import com.maccms.backend.contract.OpenApiContract;
+import com.maccms.backend.schema.SchemaFingerprint;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -61,6 +62,8 @@ class ContentApiMySqlIT {
     private static String adminPassword;
     private static String dbName;
     private static boolean dbCreated;
+    /** 导入 install.sql 后的表结构指纹，删库前再比对一次（B02 表结构护栏）。 */
+    private static Map<String, String> schemaAtImport;
     private static ConfigurableApplicationContext app;
     private static String baseUrl;
     private static OpenApiContract contract;
@@ -89,6 +92,7 @@ class ContentApiMySqlIT {
                 st.execute(sql);
             }
             seed(st);
+            schemaAtImport = SchemaFingerprint.of(c, dbName);
         }
 
         String appUrl = jdbcUrlFor(dbName);
@@ -116,14 +120,28 @@ class ContentApiMySqlIT {
         } finally {
             System.clearProperty("spring.datasource.password");
             if (dbCreated && DB_NAME.matcher(dbName).matches()) {
+                List<String> schemaDiff = schemaDiffSinceImport();
                 try (Connection c = admin(null); Statement st = c.createStatement()) {
                     st.execute("DROP DATABASE `" + dbName + "`");
                 }
+                assertThat(schemaDiff).as("B02 表结构护栏：测试结束时表结构与导入 install.sql 时一致").isEmpty();
             }
         }
     }
 
     // ------------------------------------------------------------------ 数据
+
+    /** 当前表结构与导入时的差异；读取失败也记为差异（不影响随后删库）。 */
+    private static List<String> schemaDiffSinceImport() {
+        if (schemaAtImport == null) {
+            return List.of();
+        }
+        try (Connection c = admin(dbName)) {
+            return SchemaFingerprint.diff(schemaAtImport, SchemaFingerprint.of(c, dbName));
+        } catch (SQLException e) {
+            return List.of("读取表结构指纹失败：" + e.getClass().getSimpleName());
+        }
+    }
 
     private static String requiredEnv(String name) {
         String v = System.getenv(name);
