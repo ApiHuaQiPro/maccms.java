@@ -106,12 +106,32 @@ class ProvideRealHttpTest {
     }
 
     @Test
-    void invalidForwardedValuesFallBackToTheNearestKnownHop() throws Exception {
-        // 不能解析的项：取它右边最近的一跳（这里是对端 127.0.0.1，旧版内置白名单）
-        assertAllowed(get(LIST, "X-Forwarded-For: unknown"));
-        assertAllowed(get(LIST, "X-Forwarded-For: 198.51.100.7:443"));
+    void forwardedValuesThatNameNoClientAreDeniedInsteadOfFallingBackToTheProxy() throws Exception {
+        // 对端 127.0.0.1 是可信代理，也在旧版内置白名单里：头给不出客户端时结果是 0.0.0.0，不退回 127.0.0.1
+        for (String bad : List.of("unknown", "198.51.100.7:443", "[2001:db8::7]", "whitelisted.example.test", "198.51.100.7,",
+                ", ", "0.0.0.0", "::")) {
+            assertDenied(get(LIST, "X-Forwarded-For: " + bad));
+        }
         // 非法项右边是不在白名单中的客户端：用那个客户端
         assertDenied(get(LIST, "X-Forwarded-For: unknown, 203.0.113.9"));
+        // 非法项左边的白名单地址不被采用
+        assertDenied(get(LIST, "X-Forwarded-For: 198.51.100.7, unknown"));
+    }
+
+    @Test
+    void oversizedForwardedChainsCannotBypassTheWhitelist() throws Exception {
+        // 独立验收复现：超过 32 跳或 2048 字节曾让整个头作废并退回对端 127.0.0.1（命中内置白名单）
+        String hops33 = String.join(", ", java.util.Collections.nCopies(33, "203.0.113.9"));
+        assertDenied(get(LIST, "X-Forwarded-For: " + hops33));
+        String trusted33 = String.join(", ", java.util.Collections.nCopies(33, "127.0.0.1"));
+        assertDenied(get(LIST, "X-Forwarded-For: " + trusted33));
+        assertDenied(get(LIST, "X-Forwarded-For: " + "x".repeat(3000)));
+        assertDenied(get(LIST, "X-Forwarded-For: " + "x".repeat(3000) + ", 203.0.113.9"));
+        // 左边填满白名单地址也不行：只看最右边，代理追加的真实客户端不在白名单
+        assertDenied(get(LIST, "X-Forwarded-For: " + String.join(",", java.util.Collections.nCopies(200, "198.51.100.7"))
+                + ", 203.0.113.9"));
+        // 反过来，白名单客户端在左边填垃圾仍被识别
+        assertAllowed(get(LIST, "X-Forwarded-For: " + "x".repeat(3000) + ", 198.51.100.7"));
     }
 
     @Test

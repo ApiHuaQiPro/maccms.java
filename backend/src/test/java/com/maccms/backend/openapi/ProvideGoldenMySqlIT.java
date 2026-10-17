@@ -429,15 +429,27 @@ class ProvideGoldenMySqlIT {
                 assertThat(rows.get(34L).get("vod_content").asString()).isEmpty();
                 assertThat(rows.get(34L).get("vod_play_url").asString()).isEmpty();
                 assertThat(rows.get(34L).get("vod_down_url").asString()).isEmpty();
+                // 详情密码：分集剧情与正文一样只在详情页出现，置空（旧版原样输出）
+                assertThat(rows.get(34L).get("vod_plot_name").asString()).isEmpty();
+                assertThat(rows.get(34L).get("vod_plot_detail").asString()).isEmpty();
                 assertThat(rows.get(35L).get("vod_down_url").asString()).isEmpty();
                 assertThat(rows.get(35L).get("vod_play_url").asString()).isNotEmpty();
                 // 其余字段与旧版相同
                 Map<Long, JsonNode> old = rowsById(JSON.readTree(phpText), "vod_id");
                 assertThat(old.keySet()).contains(30L, 31L, 32L);
+                assertThat(old.get(34L).get("vod_plot_detail").asString()).contains("详情密码剧情1");
+                assertThat(old.get(34L).get("vod_plot_name").asString()).isEqualTo("第1集$$$第2集");
                 for (long vid : rows.keySet()) {
                     assertSameExcept(old.get(vid), rows.get(vid), Set.of("vod_pwd", "vod_pwd_url", "vod_pwd_play",
                             "vod_pwd_play_url", "vod_pwd_down", "vod_pwd_down_url", "vod_content", "vod_play_url",
-                            "vod_down_url"));
+                            "vod_down_url", "vod_plot_name", "vod_plot_detail"));
+                }
+                // 只有播放密码时剧情照常输出
+                assertThat(rows.get(33L).get("vod_plot_detail").asString()).isEqualTo("<p>播放密码剧情</p>")
+                        .isEqualTo(old.get(33L).get("vod_plot_detail").asString());
+                for (long vid : List.of(33L, 35L, 36L)) {
+                    assertThat(rows.get(vid).get("vod_plot_name")).isEqualTo(old.get(vid).get("vod_plot_name"));
+                    assertThat(rows.get(vid).get("vod_plot_detail")).isEqualTo(old.get(vid).get("vod_plot_detail"));
                 }
                 assertThat(rows.get(36L).get("vod_content").asString()).isEqualTo(old.get(36L).get("vod_content").asString());
             }
@@ -464,6 +476,13 @@ class ProvideGoldenMySqlIT {
             case "diff.art.detail" -> {
                 JsonNode row = JSON.readTree(r.text()).get("list").get(0);
                 assertThat(row.get("art_content").asString()).isEmpty();
+                // 分页标题与备注只在详情页出现，随正文置空（旧版原样输出）
+                assertThat(row.get("art_title").asString()).isEmpty();
+                assertThat(row.get("art_note").asString()).isEmpty();
+                JsonNode oldArt = JSON.readTree(phpText).get("list").get(0);
+                assertThat(oldArt.get("art_title").asString()).isEqualTo("第一页$$$第二页");
+                assertThat(oldArt.get("art_note").asString()).isEqualTo("页备注1$$$页备注2");
+                assertSameExcept(oldArt, row, Set.of("art_pwd", "art_pwd_url", "art_content", "art_title", "art_note"));
                 assertThat(row.has("art_pwd")).isFalse();
                 assertThat(row.has("art_pwd_url")).isFalse();
                 assertThat(JSON.readTree(phpText).get("list").get(0).get("art_pwd").asString()).isEqualTo("p4");

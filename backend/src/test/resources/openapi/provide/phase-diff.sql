@@ -9,12 +9,12 @@ INSERT INTO mac_vod (vod_id,type_id,type_id_1,vod_name,vod_en,vod_status,vod_let
 (30,6,0,'会员分类视频','huiyuanshipin',1,'H','',1700030000,1690030000,'','','','<p>会员</p>','aaa','no','','x$http://media.example.test/30.mp4','','','','','','','','2015'),
 (31,5,0,'停用分类视频','tingyongshipin',1,'T','',1700031000,1690031000,'','','','','aaa','no','','x$http://media.example.test/31.mp4','','','','','','','','2015'),
 (32,99,0,'无分类视频','wufenlei',1,'W','',1700032000,1690032000,'','','','','aaa','no','','x$http://media.example.test/32.mp4','','','','','','','','2015'),
-(33,2,1,'播放密码视频','bofangmima',1,'B','',1700033000,1690033000,'','p1','','<p>播放密码</p>','aaa','no','','x$http://media.example.test/33.mp4','dl','no','','d$http://media.example.test/33.zip','','','','2015'),
-(34,2,1,'详情密码视频','xiangqingmima',1,'X','',1700034000,1690034000,'p2','','','<p>详情密码正文</p>','aaa','no','','x$http://media.example.test/34.mp4','dl','no','','d$http://media.example.test/34.zip','','','','2015'),
+(33,2,1,'播放密码视频','bofangmima',1,'B','',1700033000,1690033000,'','p1','','<p>播放密码</p>','aaa','no','','x$http://media.example.test/33.mp4','dl','no','','d$http://media.example.test/33.zip','第1集','<p>播放密码剧情</p>','','2015'),
+(34,2,1,'详情密码视频','xiangqingmima',1,'X','',1700034000,1690034000,'p2','','','<p>详情密码正文</p>','aaa','no','','x$http://media.example.test/34.mp4','dl','no','','d$http://media.example.test/34.zip','第1集$$$第2集','<p>详情密码剧情1</p>$$$<p>详情密码剧情2</p>','','2015'),
 (35,2,1,'下载密码视频','xiazaimima',1,'X','',1700035000,1690035000,'','','p3','<p>下载</p>','aaa','no','','x$http://media.example.test/35.mp4','dl','no','','d$http://media.example.test/35.zip','','','','2015'),
 (36,7,0,'特殊]]>字符<名>','teshu',1,'T','',1700036000,1690036000,'','','','<p>]]> 正文</p>','a&b','no','','x$http://media.example.test/36.mp4?a=1&b=2','','','','','','','A&B<','2015');
 INSERT INTO mac_art (art_id,type_id,type_id_1,art_name,art_en,art_status,art_letter,art_pic_screenshot,art_time,art_time_add,art_pwd,art_title,art_note,art_content) VALUES
-(10,21,0,'密码文章','mimawenzhang',1,'M','',1700040000,1690040000,'p4','','','<p>密码文章正文</p>');
+(10,21,0,'密码文章','mimawenzhang',1,'M','',1700040000,1690040000,'p4','第一页$$$第二页','页备注1$$$页备注2','<p>密码文章正文1</p>$$$<p>密码文章正文2</p>');
 INSERT INTO mac_role (role_id,role_rid,role_name,role_en,role_status,role_letter,role_time,role_time_add,role_content) VALUES
 (3,30,'不可见视频角色','bukejian',1,'B',1700041000,1690041000,''),
 (4,1,'未审核角色','weishenhejuese',0,'W',1700042000,1690042000,'');

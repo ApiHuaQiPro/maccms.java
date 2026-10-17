@@ -25,9 +25,10 @@ import org.springframework.stereotype.Service;
  * <ul>
  * <li>行范围始终是"已审核（{@code <前缀>_status = 1}）+ 可见分类"（视频/文章/演员/网址按 {@link CategoryCatalog}，与 content API 相同；
  * 专题、角色没有分类，只看状态）。调用方的条件只能再收窄。可见分类为空时直接返回空页，不查库。</li>
- * <li>访问密码列从不读出；{@code vod_pwd} 非空时 {@code vod_content/vod_play_url/vod_down_url} 置空串，{@code vod_pwd_play}
- * 非空时 {@code vod_play_url} 置空串，{@code vod_pwd_down} 非空时 {@code vod_down_url} 置空串，{@code art_pwd} 非空时
- * {@code art_content} 置空串（16 文档第 3.6 节）。</li>
+ * <li>访问密码列从不读出；{@code vod_pwd} 非空时只在详情页出现的内容 {@code vod_content/vod_plot_name/vod_plot_detail} 与
+ * {@code vod_play_url/vod_down_url} 置空串，{@code vod_pwd_play} 非空时 {@code vod_play_url} 置空串，{@code vod_pwd_down} 非空时
+ * {@code vod_down_url} 置空串，{@code art_pwd} 非空时 {@code art_content/art_title/art_note}（分页正文、页标题、页备注）置空串
+ * （16 文档第 3.6 节）。</li>
  * <li>包含匹配（名称、英文名、播放组）按字面值匹配（{@code ESCAPE '!'}），与搜索/筛选共用进程内并发许可（用尽 → 503）与 Mapper 的
  * 执行时限（超时 → 503）；搜索开关由调用方决定（ajax/suggest 受它约束，Provide 不受，16 文档 D-B06-6）。</li>
  * </ul>
@@ -145,6 +146,8 @@ public class LegacyRowReadService {
         if (table == LegacyTable.VOD) {
             if (detail) {
                 blank(m, "vod_content");
+                blank(m, "vod_plot_name");
+                blank(m, "vod_plot_detail");
             }
             if (detail || play) {
                 blank(m, "vod_play_url");
@@ -154,6 +157,8 @@ public class LegacyRowReadService {
             }
         } else if (table == LegacyTable.ART && detail) {
             blank(m, "art_content");
+            blank(m, "art_title");
+            blank(m, "art_note");
         }
         return m;
     }

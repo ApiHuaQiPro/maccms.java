@@ -80,32 +80,56 @@ class ClientIpResolverTest {
 
     @ParameterizedTest
     @CsvSource(delimiter = '|', value = {
-            // 头值 | 期望（对端 10.0.0.1，可信 10.0.0.0/8）
-            "unknown | 10.0.0.1",
-            "198.51.100.9, unknown | 10.0.0.1",
-            "unknown, 10.2.2.2 | 10.2.2.2",
-            "198.51.100.9:443 | 10.0.0.1",
-            "[2001:db8::1] | 10.0.0.1",
-            "example.test | 10.0.0.1",
-            "198.51.100.9,, 10.2.2.2 | 10.2.2.2",
-            "' ' | 10.0.0.1",
-            "01.2.3.4 | 10.0.0.1",
-            "256.1.1.1 | 10.0.0.1",
-            "fe80::1%eth0 | 10.0.0.1",
+            // 头值 | 期望（对端 10.0.0.1，可信 10.0.0.0/8）。检查到不能解析的项 → 未知，不退回对端或右边的可信代理
+            "unknown | 0.0.0.0",
+            "198.51.100.9, unknown | 0.0.0.0",
+            "unknown, 10.2.2.2 | 0.0.0.0",
+            "198.51.100.9:443 | 0.0.0.0",
+            "[2001:db8::1] | 0.0.0.0",
+            "example.test | 0.0.0.0",
+            "198.51.100.9,, 10.2.2.2 | 0.0.0.0",
+            "'198.51.100.9, ' | 0.0.0.0",
+            "' ' | 0.0.0.0",
+            "01.2.3.4 | 0.0.0.0",
+            "256.1.1.1 | 0.0.0.0",
+            "fe80::1%eth0 | 0.0.0.0",
+            "0.0.0.0 | 0.0.0.0",
+            // 找到客户端之后，更左边的内容不检查
+            "unknown, 198.51.100.9 | 198.51.100.9",
+            "garbage:1, 127.0.0.1, 198.51.100.9, 10.2.2.2 | 198.51.100.9",
             "1.2.3.4, 2001:DB8:0:0:0:0:0:1 | 2001:db8::1",
     })
-    void invalidEntriesStopTheWalkAtTheNearestKnownHop(String header, String expected) {
+    void invalidEntriesReachedByTheWalkYieldUnknown(String header, String expected) {
         ClientIpResolver r = resolver("10.0.0.0/8", "X-Forwarded-For");
         assertThat(resolve(r, "10.0.0.1", headers("X-Forwarded-For", header.strip()))).isEqualTo(expected);
     }
 
     @Test
-    void oversizedHeadersAreIgnored() {
+    void paddingOnTheLeftCannotChangeTheResult() {
         ClientIpResolver r = resolver("10.0.0.0/8", "");
-        String many = String.join(",", java.util.Collections.nCopies(ClientIpResolver.MAX_HOPS + 1, "198.51.100.9"));
-        assertThat(resolve(r, "10.0.0.1", headers("X-Forwarded-For", many))).isEqualTo("10.0.0.1");
-        String longValue = "198.51.100.9" + " ".repeat(ClientIpResolver.MAX_HEADER_LENGTH);
-        assertThat(resolve(r, "10.0.0.1", headers("X-Forwarded-For", longValue))).isEqualTo("10.0.0.1");
+        // 客户端在左边填满白名单地址或垃圾：只检查最右边的项，结果仍是代理追加的真实客户端
+        String padded = String.join(",", java.util.Collections.nCopies(ClientIpResolver.MAX_HOPS * 4, "127.0.0.1"));
+        assertThat(resolve(r, "10.0.0.1", headers("X-Forwarded-For", padded + ", 203.0.113.9"))).isEqualTo("203.0.113.9");
+        assertThat(resolve(r, "10.0.0.1", headers("X-Forwarded-For", "x".repeat(10_000) + ", 203.0.113.9, 10.2.2.2")))
+                .isEqualTo("203.0.113.9");
+        assertThat(resolve(r, "10.0.0.1", headers("X-Forwarded-For", padded, "X-Forwarded-For", "203.0.113.9")))
+                .isEqualTo("203.0.113.9");
+        // 整个头只有一个超长的垃圾项 → 未知
+        assertThat(resolve(r, "10.0.0.1", headers("X-Forwarded-For", "x".repeat(10_000)))).isEqualTo(ClientIpResolver.UNKNOWN);
+    }
+
+    @Test
+    void chainsLongerThanTheHopLimitYieldUnknown() {
+        ClientIpResolver r = resolver("10.0.0.0/8", "");
+        String full = String.join(",", java.util.Collections.nCopies(ClientIpResolver.MAX_HOPS, "10.2.2.2"));
+        // 恰好 MAX_HOPS 项且全部可信：取最左项
+        assertThat(resolve(r, "10.0.0.1", headers("X-Forwarded-For", full))).isEqualTo("10.2.2.2");
+        // 检查满 MAX_HOPS 项仍全是可信代理 → 未知（不退回对端）
+        assertThat(resolve(r, "10.0.0.1", headers("X-Forwarded-For", "203.0.113.9," + full))).isEqualTo(ClientIpResolver.UNKNOWN);
+        // 多个同名头合计计数
+        Map<String, List<String>> many = new HashMap<>();
+        many.put("x-forwarded-for", java.util.Collections.nCopies(ClientIpResolver.MAX_HOPS + 1, "10.2.2.2"));
+        assertThat(resolve(r, "10.0.0.1", many)).isEqualTo(ClientIpResolver.UNKNOWN);
     }
 
     @Test
@@ -113,13 +137,18 @@ class ClientIpResolverTest {
         ClientIpResolver r = resolver("127.0.0.1", "cf-connecting-ip");
         assertThat(r.headerName()).isEqualTo("cf-connecting-ip");
         assertThat(resolve(r, "127.0.0.1", headers("CF-Connecting-IP", " 198.51.100.9 "))).isEqualTo("198.51.100.9");
-        // 只认配置的头：XFF 不看
+        // 只认配置的头：XFF 不看；没有配置的头 → 对端
         assertThat(resolve(r, "127.0.0.1", headers("X-Forwarded-For", "198.51.100.9"))).isEqualTo("127.0.0.1");
-        // 出现多次、不合法、列表形式 → 对端
+        // 出现多次、不合法、列表形式、空值、超长 → 未知（不退回对端）
         assertThat(resolve(r, "127.0.0.1", headers("CF-Connecting-IP", "198.51.100.9", "CF-Connecting-IP", "1.1.1.1")))
-                .isEqualTo("127.0.0.1");
-        assertThat(resolve(r, "127.0.0.1", headers("CF-Connecting-IP", "198.51.100.9, 1.1.1.1"))).isEqualTo("127.0.0.1");
-        assertThat(resolve(r, "127.0.0.1", headers("CF-Connecting-IP", "evil"))).isEqualTo("127.0.0.1");
+                .isEqualTo(ClientIpResolver.UNKNOWN);
+        assertThat(resolve(r, "127.0.0.1", headers("CF-Connecting-IP", "198.51.100.9, 1.1.1.1")))
+                .isEqualTo(ClientIpResolver.UNKNOWN);
+        assertThat(resolve(r, "127.0.0.1", headers("CF-Connecting-IP", "evil"))).isEqualTo(ClientIpResolver.UNKNOWN);
+        assertThat(resolve(r, "127.0.0.1", headers("CF-Connecting-IP", ""))).isEqualTo(ClientIpResolver.UNKNOWN);
+        assertThat(resolve(r, "127.0.0.1", headers("CF-Connecting-IP", " ".repeat(5000) + "198.51.100.9")))
+                .isEqualTo("198.51.100.9");
+        assertThat(resolve(r, "127.0.0.1", headers("CF-Connecting-IP", "9".repeat(5000)))).isEqualTo(ClientIpResolver.UNKNOWN);
     }
 
     @Test
@@ -170,6 +199,15 @@ class ClientIpResolverTest {
             "::1.2.3", "1.2.3.4::", "localhost", "0x7f.0.0.1", "2130706433"})
     void invalidLiterals(String input) {
         assertThat(IpAddress.parse(input)).isEmpty();
+    }
+
+    @Test
+    void unspecifiedAddresses() {
+        assertThat(IpAddress.parse("0.0.0.0").orElseThrow().isUnspecified()).isTrue();
+        assertThat(IpAddress.parse("::").orElseThrow().isUnspecified()).isTrue();
+        assertThat(IpAddress.parse("::ffff:0.0.0.0").orElseThrow().isUnspecified()).isTrue();
+        assertThat(IpAddress.parse("0.0.0.1").orElseThrow().isUnspecified()).isFalse();
+        assertThat(IpAddress.parse("::1").orElseThrow().isUnspecified()).isFalse();
     }
 
     @Test

@@ -44,6 +44,16 @@ public final class IpAddress {
         return bytes.length == 4;
     }
 
+    /** {@code 0.0.0.0} 或 {@code ::}（{@link ClientIpResolver#UNKNOWN} 的取值），不代表任何客户端。 */
+    public boolean isUnspecified() {
+        for (byte b : bytes) {
+            if (b != 0) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     /** 地址的字节（IPv4 为 4 字节，IPv6 为 16 字节）的副本。 */
     byte[] bytes() {
         return bytes.clone();

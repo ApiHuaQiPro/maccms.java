@@ -124,8 +124,9 @@ public class ProvideService {
         }
     }
 
+    /** 客户端 IP 未知（{@code 0.0.0.0}/{@code ::}）时一律不放行，即使白名单里配置了它。 */
     static boolean allowed(ModuleSettings ms, String clientIp) {
-        return IpAddress.parse(clientIp).map(ms.auth()::contains).orElse(false);
+        return IpAddress.parse(clientIp).filter(a -> !a.isUnspecified()).map(ms.auth()::contains).orElse(false);
     }
 
     // ------------------------------------------------------------------ 查询

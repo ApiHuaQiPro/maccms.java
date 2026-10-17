@@ -17,9 +17,12 @@ import java.util.function.Function;
  * <ol>
  * <li>默认只用连接对端。对端不能解析为 IP 字面量时结果为 {@value #UNKNOWN}。</li>
  * <li>对端不在可信网段内（含未配置可信代理）时结果就是对端，任何请求头都不看。</li>
- * <li>对端在可信网段内时只看配置的一个头：{@code X-Forwarded-For} 按列表处理（多次出现按顺序以逗号连接，从右往左跳过可信代理，
- * 第一个非可信的合法地址即客户端；遇到不能解析的项立即停止，取它右边最近的一跳；全部可信时取最左项；超过 {@value #MAX_HOPS} 项或
- * {@value #MAX_HEADER_LENGTH} 字节整个头无效）；单值头恰好出现一次且整值合法时采用，否则用对端。</li>
+ * <li>对端在可信网段内时只看配置的一个头；没有该头时结果是对端（代理没有声明转发）。{@code X-Forwarded-For} 按列表处理（多次出现按顺序
+ * 以逗号连接）：从右往左跳过可信代理，第一个非可信的合法地址即客户端；全部可信时取最左项；最多检查最右边 {@value #MAX_HOPS} 项，更左边的
+ * 内容（客户端可以随意填写）不看。单值头恰好出现一次且整值合法时采用。</li>
+ * <li>对端在可信网段内但头给不出客户端（检查到不能解析的项、检查满 {@value #MAX_HOPS} 项仍全是可信代理、单值头出现多次或不合法）时结果为
+ * {@value #UNKNOWN}，<b>不退回对端或任何可信代理的地址</b>：可信代理的地址可能在白名单里（旧版内置 127.0.0.1），退回它等于让访问者用
+ * 畸形头冒充白名单。</li>
  * </ol>
  * 结果是 {@link IpAddress} 的规范形式。本类不记录任何地址。
  */
@@ -30,7 +33,6 @@ public final class ClientIpResolver {
     public static final String DEFAULT_HEADER = "X-Forwarded-For";
     static final int MAX_PROXIES = 64;
     static final int MAX_HOPS = 32;
-    static final int MAX_HEADER_LENGTH = 2048;
     /** 可配置的单值头（不区分大小写）。 */
     static final Set<String> SINGLE_VALUE_HEADERS = Set.of("x-real-ip", "cf-connecting-ip", "true-client-ip",
             "ali-cdn-real-ip");
@@ -114,41 +116,44 @@ public final class ClientIpResolver {
         if (values == null || values.isEmpty()) {
             return peerAddr.toString();
         }
-        return list ? fromList(values, peerAddr).toString() : fromSingle(values, peerAddr).toString();
+        Optional<IpAddress> client = list ? fromList(values) : fromSingle(values);
+        return client.map(IpAddress::toString).orElse(UNKNOWN);
     }
 
-    private IpAddress fromSingle(List<String> values, IpAddress peer) {
-        if (values.size() != 1 || values.get(0) == null || values.get(0).length() > MAX_HEADER_LENGTH) {
-            return peer;
+    private static Optional<IpAddress> fromSingle(List<String> values) {
+        if (values.size() != 1 || values.get(0) == null) {
+            return Optional.empty();
         }
-        return IpAddress.parse(values.get(0).strip()).orElse(peer);
+        return IpAddress.parse(values.get(0).strip());
     }
 
-    private IpAddress fromList(List<String> values, IpAddress peer) {
-        int length = 0;
-        for (String v : values) {
-            length += v == null ? 0 : v.length() + 1;
-        }
-        if (length > MAX_HEADER_LENGTH + 1) {
-            return peer;
-        }
-        String joined = String.join(",", values.stream().map(v -> v == null ? "" : v).toList());
-        String[] hops = joined.split(",", -1);
-        if (hops.length > MAX_HOPS) {
-            return peer;
-        }
-        IpAddress nearest = peer;
-        for (int i = hops.length - 1; i >= 0; i--) {
-            Optional<IpAddress> hop = IpAddress.parse(hops[i].strip());
-            if (hop.isEmpty()) {
-                return nearest;
+    /** 从最后一个头的最右项开始往左检查；只切出被检查的项，左侧不检查的部分不解析。 */
+    private Optional<IpAddress> fromList(List<String> values) {
+        int checked = 0;
+        IpAddress leftmost = null;
+        for (int v = values.size() - 1; v >= 0; v--) {
+            String value = values.get(v) == null ? "" : values.get(v);
+            int end = value.length();
+            while (true) {
+                if (++checked > MAX_HOPS) {
+                    return Optional.empty();
+                }
+                int comma = value.lastIndexOf(',', end - 1);
+                Optional<IpAddress> hop = IpAddress.parse(value.substring(comma + 1, end).strip());
+                if (hop.isEmpty()) {
+                    return Optional.empty();
+                }
+                if (!isTrusted(hop.get())) {
+                    return hop;
+                }
+                leftmost = hop.get();
+                if (comma < 0) {
+                    break;
+                }
+                end = comma;
             }
-            if (!isTrusted(hop.get())) {
-                return hop.get();
-            }
-            nearest = hop.get();
         }
-        return nearest;
+        return Optional.ofNullable(leftmost);
     }
 
     private boolean isTrusted(IpAddress a) {

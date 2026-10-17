@@ -43,10 +43,13 @@
 1. **对端** = 连接的对端地址（Servlet `getRemoteAddr()`）。对端不能解析为 IP 字面量时结果为 `0.0.0.0`（与旧版"无合法 IP"时相同）。
 2. 对端**不在**可信网段内（含未配置可信代理）→ 结果就是对端；任何请求头都不看。`CF-Connecting-IP`、`Ali-CDN-Real-IP`、`Client-IP`、`Proxy-User`、`X-Real-IP`、`X-Forwarded-For`、`Forwarded`、`True-Client-IP` 全部忽略。
 3. 对端在可信网段内，只看配置的那一个头：
-   - **`X-Forwarded-For`（列表）**：同名头出现多次时按出现顺序以逗号连接；按逗号切分、每项去掉前后空白；**从右往左**逐项检查：是可信代理就继续向左；遇到第一个不是可信代理的合法地址，它就是客户端；遇到不能解析的项（空项、端口、方括号、域名、`unknown` 等）立即停止，结果取它右边最近的一跳（它就是最右项时取对端）；全部是可信代理时取最左项。项数超过 32 或头总长超过 2048 字节时整个头视为无效，结果为对端。
-   - **单值头**：恰好出现一次且整值（去首尾空白）是合法地址 → 采用；缺失、出现多次、不合法 → 对端。
+   - 没有该头 → 对端（代理没有声明转发，请求就来自代理所在主机）。
+   - **`X-Forwarded-For`（列表）**：同名头出现多次时按出现顺序以逗号连接；按逗号切分、每项去掉前后空白；**从右往左**逐项检查：是可信代理就继续向左；遇到第一个不是可信代理的合法地址，它就是客户端；全部是可信代理时取最左项。**最多检查最右边 32 项**，更左边的内容（客户端可以随意填写）既不检查也不计入长度，所以在左边填充任何内容都改变不了结果。
+   - **单值头**：恰好出现一次且整值（去首尾空白）是合法地址 → 采用。
+   - **头给不出客户端 → `0.0.0.0`（未知），不退回对端或任何可信代理的地址**：检查到不能解析的项（空项、端口、方括号、域名、`unknown` 等）、检查满 32 项仍全是可信代理、单值头出现多次或不合法。可信代理的地址可能就在白名单里（旧版内置 `127.0.0.1`），退回它等于让访问者用畸形或超长的头冒充白名单。
 4. 地址规范化（`IpAddress`）：IPv4 为点分十进制（每段 0–255、不允许前导 0）；IPv6 按 RFC 5952 小写压缩形式；IPv4 映射的 IPv6（`::ffff:1.2.3.4`）归一为 IPv4；区域标识（`%eth0`）、方括号、端口不合法。**只做字面量解析，从不做 DNS 查询**（不调用 `InetAddress.getByName` 处理非字面量）。
 5. 组件不记录任何地址；启动时只记录"可信代理项数与头名"。
+6. `0.0.0.0`/`::` 不代表任何客户端：Provide 白名单对它一律拒绝，即使 `auth` 里写了它。B08/B09/B11 复用本组件时，同样不能把"未知"当成某个具体访问者放行。
 
 **无可信代理时的局限（部署说明）**：部署在 CDN/反向代理后面而未配置 `MACCMS_TRUSTED_PROXIES` 时，所有请求的客户端 IP 都是代理地址；Provide 白名单只能按代理地址判断（等于对所有经代理的访问者一起放行或拒绝）。把宽网段（如 `0.0.0.0/0`）设为可信会让任何人伪造 `X-Forwarded-For`，只能填写自己的代理出口网段。环境变量样例与说明见 `backend/config/maccms-backend.env.example`。
 
@@ -126,7 +129,7 @@
 
 - 行范围：`<前缀>_status = 1` **且**所属分类可见（`CategoryCatalog`：分类启用、游客有列表权限位、上级链可见；与 content API 相同）；专题、角色没有分类，只看状态。旧版只由 `datafilter` 决定。
 - 角色的 `douban_id/vod_name/vod_director` 只在关联视频已审核且分类可见时给出，否则为 `null`（旧版取任意状态的视频，`Role.php:49-61`）。
-- 受访问密码保护的内容：`vod_pwd` 非空的行，`vod_content`、`vod_play_url`、`vod_down_url` 为空串；`vod_pwd_play` 非空时 `vod_play_url` 为空串（XML `<dl>` 各组 CDATA 为空）；`vod_pwd_down` 非空时 `vod_down_url` 为空串；`art_pwd` 非空时 `art_content` 为空串。密码列本身从不读出（SQL 中只有 `CHAR_LENGTH(...) > 0`）。积分、会员组权限不改变 Provide 输出（与旧版相同，D-B06-3）。
+- 受访问密码保护的内容：`vod_pwd` 非空的行，只在详情页出现的 `vod_content`、`vod_plot_name`、`vod_plot_detail`（分集剧情，旧剧情页同样要求详情权限）以及 `vod_play_url`、`vod_down_url` 为空串；`vod_pwd_play` 非空时 `vod_play_url` 为空串（XML `<dl>` 各组 CDATA 为空）；`vod_pwd_down` 非空时 `vod_down_url` 为空串；`art_pwd` 非空时 `art_content`、`art_title`、`art_note`（分页正文、页标题、页备注，都只在详情页出现）为空串。列表也展示的字段（名称、简介、`vod_plot` 标记等）不变。密码列本身从不读出（SQL 中只有 `CHAR_LENGTH(...) > 0`）。积分、会员组权限不改变 Provide 输出（与旧版相同，D-B06-3）。
 - 数据库错误不回显：只有第 3.2 节的固定文本。
 
 ### 4. 杂项页与 ajax 接口（`site` 模块）
@@ -208,10 +211,10 @@
 
 | 旧入口 / 参数 | Java 入口 | 测试 |
 |---|---|---|
-| `mac_get_client_ip`（伪造头、可信代理、无代理、IPv4/IPv6、多跳、多个头、无效头、配置校验） | `common.clientip.ClientIpResolver`、`IpAddress`、`IpNetwork` | `ClientIpResolverTest`（单元）、`ProvideRealHttpTest`（真实 HTTP，可信代理 127.0.0.1：放行/拒绝/伪造六种头/多跳/多个头/无效项/IPv6/HEAD）、`ProvideRealHttpNoProxyTest`（真实 HTTP，应用只监听 `::1`、不配可信代理：任何头都不能冒充白名单） |
+| `mac_get_client_ip`（伪造头、可信代理、无代理、IPv4/IPv6、多跳、多个头、无效头、配置校验） | `common.clientip.ClientIpResolver`、`IpAddress`、`IpNetwork` | `ClientIpResolverTest`（单元）、`ProvideRealHttpTest`（真实 HTTP，可信代理 127.0.0.1：放行/拒绝/伪造六种头/多跳/多个头/无效项/超过 32 跳与超长头/左侧填充/IPv6/HEAD）、`ProvideRealHttpNoProxyTest`（真实 HTTP，应用只监听 `::1`、不配可信代理：任何头都不能冒充白名单） |
 | Provide 路由、后缀、路径参数、参数优先级、`comment/index`、开关、`closed`、503 | `openapi.api.ProvideController` → `openapi.application.ProvideService` | `ProvideApiTest`（MockMvc，查询参数语义逐项断言）、`ProvideGoldenMySqlIT` |
 | Provide 参数 `ac at ids t isend h wd year from pg pagesize sort_direction`、`typefilter`、`imgurl`、`upload.protocol`、`cachetime`、`charge`、`auth`、`datafilter` | 同上 + `content.application.LegacyRowReadService`（`LegacyRowMapper.xml`） | `ProvideGoldenMySqlIT`（142 个 api 用例：95 个逐字节相同，47 个按第 7 节差异断言）、`ProvideApiTest`、`ProvideSettingsTest`、`ProvideGoldenVersionsTest`（PHP 8.0 与 7.3 黄金一致性） |
-| Provide 受限内容（不可见分类、未审核、访问密码、XML 特殊字符、角色关联视频） | 同上 | `ProvideGoldenMySqlIT` 的 `diff.*`（phase-diff.sql）、`ReadOnlyGuardrailsTest.legacyRowMapperNeverSelectsPasswords`、`ProvideGoldenMySqlIT.fullColumnListsMatchInformationSchema` |
+| Provide 受限内容（不可见分类、未审核、访问密码、XML 特殊字符、角色关联视频） | 同上 | `ProvideGoldenMySqlIT` 的 `diff.*`（phase-diff.sql；详情密码视频与文章带分集剧情、分页标题与备注）、`LegacyRowProtectTest`、`ReadOnlyGuardrailsTest.legacyRowMapperNeverSelectsPasswords`、`ProvideGoldenMySqlIT.fullColumnListsMatchInformationSchema` |
 | `map/index`（含单段、兼容模式） | `site.web.SiteMiscController` → `MiscPages` | `SiteMiscPagesMvcTest`、`b06_site_check.py` |
 | `rss/index`、`baidu/google/so/sogou/bing/sm` | 同上 → `SiteFeeds` | `SiteMiscPagesMvcTest`（XML 可解析、转义、命名空间、条目数）、`b06_site_check.py`（8 组部署） |
 | `label/<file>` | `site.web.SiteAjaxController` | `SiteMiscPagesMvcTest`、`b06_site_check.py` |
@@ -228,14 +231,14 @@ PHP 黄金样本：`backend/src/test/php/provide_golden.php` 以 php-cgi 执行 
 
 | 方面 | 旧 PHP | 新 |
 |---|---|---|
-| 客户端 IP | 依次信任 CF-Connecting-IP、Ali-CDN-Real-IP、Client-IP、Proxy-User、X-Real-IP，伪造即可冒充白名单；IPv6 对端为 `0.0.0.0` | 只信连接对端；可信代理网段内才采用一个配置的转发头（第 2 节）；IPv6 正常解析 |
+| 客户端 IP | 依次信任 CF-Connecting-IP、Ali-CDN-Real-IP、Client-IP、Proxy-User、X-Real-IP，伪造即可冒充白名单；IPv6 对端为 `0.0.0.0` | 只信连接对端；可信代理网段内才采用一个配置的转发头（第 2 节），头给不出客户端时为 `0.0.0.0`（白名单拒绝）；IPv6 正常解析 |
 | Provide 白名单的域名项 | `gethostbyname` 解析（DNS） | 不解析，永不命中（启动日志提示项数） |
 | Provide 白名单拒绝 | 200 `域名未授权` | 403 同一文本（D-B06-5） |
 | Provide/ajax 的 MIME | `text/html`（`api.php:9`、`index.php:9`） | JSON `application/json`、XML `text/xml`、文本 `text/plain`，均 `nosniff`（D-B06-1）；快捷方式为 `application/octet-stream`（旧版声明了但被 ThinkPHP 覆盖成 `text/html`） |
 | Provide 行范围 | 只由 `datafilter` 决定（为空时含未审核；不看分类可见性）；角色忽略 datafilter | 始终"已审核 + 可见分类"（D-B06-2） |
 | Provide `datafilter` | 任意 SQL | 白名单语法，否则启动失败 |
 | Provide `total`（art/actor/website/role） | 不带 datafilter（`Art.php:50-53` 等），未审核行也计入，与列表不一致 | 与列表同一条件（`pagecount` 随之变化） |
-| 访问密码 | 整行输出密码列与受保护的正文/地址 | 不输出密码列；受保护的正文/地址为空串（D-B06-3） |
+| 访问密码 | 整行输出密码列与受保护的正文/地址 | 不输出密码列；受保护的正文、分集剧情、文章分页标题/备注与地址为空串（D-B06-3） |
 | 角色关联视频 | 任意状态 | 已审核且分类可见，否则 `null` |
 | `cachetime` | 服务端缓存整段输出（期间返回旧数据） | 不做服务端缓存，转为 HTTP 缓存头（`charge=1` 时 private）（D-B06-4） |
 | `wd`/`from`/联想词的 LIKE | 不转义 `%`、`_`（`wd=%` 命中全部） | 按字面值匹配 |
