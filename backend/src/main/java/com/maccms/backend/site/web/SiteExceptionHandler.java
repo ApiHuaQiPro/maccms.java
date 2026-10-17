@@ -49,14 +49,16 @@ public class SiteExceptionHandler {
     public ResponseEntity<String> api(ApiException e) {
         return switch (e.code()) {
             // 页面语义下参数不合法（越界页码、非法 id 等）等同于资源不存在（04 报告第 5.3 节）
-            case INVALID_PARAMETER, CATEGORY_NOT_FOUND, VIDEO_NOT_FOUND, NOT_FOUND, METHOD_NOT_ALLOWED -> notFound();
+            case INVALID_PARAMETER, CATEGORY_NOT_FOUND, VIDEO_NOT_FOUND, NOT_FOUND, METHOD_NOT_ALLOWED,
+                 ARTICLE_NOT_FOUND, TOPIC_NOT_FOUND, ACTOR_NOT_FOUND, ROLE_NOT_FOUND, WEBSITE_NOT_FOUND -> notFound();
             case SERVICE_UNAVAILABLE -> {
                 log.warn("site page unavailable: {}", SafeExceptionLog.typeChain(e));
                 yield unavailable();
             }
             // 观看密码、版权：按 03 方案第 4.2 节应交还 PHP（X-Accel-Redirect），交还机制需与部署一起评审，尚未批准。
             // 详情页（MACC-14）仍返回 503（no-store、noindex），不渲染详情、不泄露原因；批准后再替换为交还响应。
-            case VIDEO_PASSWORD_REQUIRED, VIDEO_COPYRIGHT_RESTRICTED -> {
+            // 文章访问密码、积分（契约 1.2.0）同理；文章页在 B05 实现，届时与交还机制一起评审。
+            case VIDEO_PASSWORD_REQUIRED, VIDEO_COPYRIGHT_RESTRICTED, ARTICLE_PASSWORD_REQUIRED, ARTICLE_POINTS_REQUIRED -> {
                 log.warn("site handoff not implemented: {}", e.code());
                 yield unavailable();
             }

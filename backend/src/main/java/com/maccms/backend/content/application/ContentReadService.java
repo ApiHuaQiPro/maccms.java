@@ -125,6 +125,18 @@ public class ContentReadService {
     }
 
     /**
+     * 包含匹配查询的进程内并发许可（与带 keyword/classes 的视频列表共用同一个上限，契约 1.2.0 专题按标签关联内容也经过这里）。
+     * 搜索开关关闭时调用方不应进入包含匹配查询。拿到许可后必须调用 {@link #releaseSearchPermit()}。
+     */
+    boolean tryAcquireSearchPermit() {
+        return searchPermits.tryAcquire();
+    }
+
+    void releaseSearchPermit() {
+        searchPermits.release();
+    }
+
+    /**
      * 执行一次只读查询，把数据库连接类故障与服务端执行时限超时（搜索/筛选语句的 MAX_EXECUTION_TIME）转换为
      * SERVICE_UNAVAILABLE；其他异常原样抛出。
      */
@@ -159,7 +171,7 @@ public class ContentReadService {
         return false;
     }
 
-    private static ApiException unavailable() {
+    static ApiException unavailable() {
         return new ApiException(ErrorCode.SERVICE_UNAVAILABLE, UNAVAILABLE_MESSAGE);
     }
 
@@ -241,7 +253,8 @@ public class ContentReadService {
         return CategoryCatalog.build(typeMapper.selectEnabledVodTypes(), guest, properties.enforceGuestPopedom());
     }
 
-    private static List<CategoryDto> toTree(CategoryCatalog catalog, List<TypeRow> rows) {
+    /** 分类树（文章/演员/网址分类经 ContentCatalogs 复用）。 */
+    static List<CategoryDto> toTree(CategoryCatalog catalog, List<TypeRow> rows) {
         return rows.stream().map(r -> new CategoryDto(
                 r.id(), str(r.name()), str(r.enName()), nz(r.sort()), nz(r.parentId()),
                 str(r.title()), str(r.keywords()), str(r.description()), str(r.logo()), str(r.pic()),
@@ -279,7 +292,8 @@ public class ContentReadService {
         return new CategoryRefDto(t.id(), str(t.name()), str(t.enName()), nz(t.parentId()));
     }
 
-    private static VideoSummaryDto toSummary(VodSummaryRow r, CategoryCatalog catalog) {
+    /** 视频列表项（专题关联视频经 TopicReadService 复用）。 */
+    static VideoSummaryDto toSummary(VodSummaryRow r, CategoryCatalog catalog) {
         return new VideoSummaryDto(r.id(), str(r.name()), str(r.subTitle()), str(r.enName()), str(r.letter()),
                 str(r.color()), ref(catalog, nz(r.categoryId())), str(r.classes()), str(r.tag()), str(r.pic()),
                 str(r.picThumb()), str(r.picSlide()), str(r.actor()), str(r.director()), str(r.blurb()),

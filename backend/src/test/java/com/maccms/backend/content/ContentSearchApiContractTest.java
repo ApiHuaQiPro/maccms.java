@@ -15,6 +15,7 @@ import com.maccms.backend.content.api.VideoCategoryController;
 import com.maccms.backend.content.api.VideoController;
 import com.maccms.backend.content.application.ContentProperties;
 import com.maccms.backend.content.application.ContentReadService;
+import com.maccms.backend.content.application.VideoPlotReadService;
 import com.maccms.backend.content.application.VideoSort;
 import com.maccms.backend.content.infrastructure.GroupMapper;
 import com.maccms.backend.content.infrastructure.TypeMapper;
@@ -76,6 +77,9 @@ class ContentSearchApiContractTest {
     GroupMapper groupMapper;
     @MockitoBean
     VodMapper vodMapper;
+    /** VideoController 的分集剧情端点（契约 1.2.0）由 LibraryApiContractTest 覆盖，这里只需占位。 */
+    @MockitoBean
+    VideoPlotReadService videoPlotReadService;
 
     @BeforeAll
     static void loadContract() {

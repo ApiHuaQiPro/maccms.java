@@ -5,7 +5,9 @@ import com.maccms.backend.content.application.ContentReadService;
 import com.maccms.backend.content.application.VideoFilter;
 import com.maccms.backend.content.application.VideoId;
 import com.maccms.backend.content.application.VideoListQuery;
+import com.maccms.backend.content.application.VideoPlotReadService;
 import com.maccms.backend.content.application.view.VideoDetailDto;
+import com.maccms.backend.content.application.view.VideoPlotListResponse;
 import com.maccms.backend.content.application.view.VideoSummaryDto;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,15 +15,17 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-/** 契约：docs/contracts/content-read.openapi.yaml 中 /api/v1/videos 与 /api/v1/videos/{id}。 */
+/** 契约：docs/contracts/content-read.openapi.yaml 中 /api/v1/videos、/api/v1/videos/{id} 与 /api/v1/videos/{id}/plots（1.2.0）。 */
 @RestController
 @RequestMapping("/api/v1/videos")
 public class VideoController {
 
     private final ContentReadService service;
+    private final VideoPlotReadService plots;
 
-    public VideoController(ContentReadService service) {
+    public VideoController(ContentReadService service, VideoPlotReadService plots) {
         this.service = service;
+        this.plots = plots;
     }
 
     /**
@@ -44,5 +48,10 @@ public class VideoController {
     @GetMapping("/{id}")
     public VideoDetailDto detail(@PathVariable String id) {
         return service.getVideo(VideoId.parse(id));
+    }
+
+    @GetMapping("/{id}/plots")
+    public VideoPlotListResponse plots(@PathVariable String id) {
+        return plots.getPlots(VideoId.parse(id));
     }
 }

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+  只读映射：mac_vod 的分集剧情（旧 plot/detail 页，application/index/controller/Plot.php:38-42 → Vod::infoData 的 vod_plot_list，
+  application/common/model/Vod.php:600-602）。禁止加入写语句，禁止 ${} 拼接。
+  只允许出现 vod_plot_name、vod_plot_detail 与可见性判定列；vod_pwd 只以 CHAR_LENGTH(vod_pwd) > 0 的布尔结果出现。
+-->
+<mapper namespace="com.maccms.backend.content.infrastructure.VodPlotMapper">
+
+    <select id="selectPublishedPlot" resultType="com.maccms.backend.content.infrastructure.VodPlotRow">
+        SELECT vod_id                   AS id,
+               type_id                  AS categoryId,
+               vod_plot_name            AS plotNames,
+               vod_plot_detail          AS plotDetails,
+               (CHAR_LENGTH(vod_pwd) &gt; 0) AS detailPasswordRequired,
+               vod_copyright            AS copyright
+        FROM mac_vod
+        WHERE vod_id = #{id}
+          AND vod_status = 1
+    </select>
+</mapper>
