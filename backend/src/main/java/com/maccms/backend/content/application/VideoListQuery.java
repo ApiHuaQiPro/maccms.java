@@ -14,9 +14,14 @@ import com.maccms.backend.common.web.ApiException;
  * 按旧版的随机页/随机 ID 段算法取一页，此时 {@code sort} 固定为 {@link VideoSort#HITS_WEEK}、{@code descending} 为
  * {@code true}（旧版改写为 hits_week desc，与请求的 order 无关）。规则见 {@link ContentReadService} 与
  * docs/architecture/14-video-list-filter-completion.md 第 4 节。
+ *
+ * <p>{@code legacy}（B05）：旧模板标签专属条件与 SSR 的 tid（{@link VideoLegacyConditions}），只由其他模块构造，公开 API
+ * 一律为 {@link VideoLegacyConditions#NONE}（{@link #parse}）。与 {@code categoryId}、{@code filter} 的覆盖关系见该类；
+ * 构造时拒绝旧版中同一个变量的两种写法（{@code categoryId} 与 {@code types}、{@code filter.level} 与 {@code levels}）。
+ * 旧 {@code start} 只改变 {@link #offset()}。
  */
 public record VideoListQuery(Integer categoryId, VideoSort sort, boolean descending, int page, int pageSize,
-                             VideoFilter filter, boolean random) {
+                             VideoFilter filter, boolean random, VideoLegacyConditions legacy) {
 
     /** 随机排序的对外取值（不在 {@link VideoSort} 中：它不是一个排序列）。 */
     public static final String RANDOM_SORT = "rnd";
@@ -41,6 +46,20 @@ public record VideoListQuery(Integer categoryId, VideoSort sort, boolean descend
         if (random && (sort != VideoSort.HITS_WEEK || !descending)) {
             throw new IllegalArgumentException("随机排序固定按 hits_week 倒序取页");
         }
+        if (legacy == null) {
+            legacy = VideoLegacyConditions.NONE;
+        }
+        if (categoryId != null && legacy.types() != null) {
+            throw new IllegalArgumentException("categoryId 与 types 是旧版同一个 type 变量，只能设置一个");
+        }
+        if (filter.level() != null && legacy.levels() != null) {
+            throw new IllegalArgumentException("level 与 levels 是旧版同一个 level 变量，只能设置一个");
+        }
+    }
+
+    public VideoListQuery(Integer categoryId, VideoSort sort, boolean descending, int page, int pageSize,
+                          VideoFilter filter, boolean random) {
+        this(categoryId, sort, descending, page, pageSize, filter, random, VideoLegacyConditions.NONE);
     }
 
     public VideoListQuery(Integer categoryId, VideoSort sort, boolean descending, int page, int pageSize) {
@@ -68,16 +87,28 @@ public record VideoListQuery(Integer categoryId, VideoSort sort, boolean descend
         int p = blank(page) ? 1 : parseInt("page", page, 1, MAX_PAGE);
         int size = blank(pageSize) ? DEFAULT_PAGE_SIZE : parseInt("pageSize", pageSize, 1, MAX_PAGE_SIZE);
         // rnd：order 照常校验，但不影响结果（旧版固定 hits_week desc）
-        return new VideoListQuery(category, videoSort, random || descending, p, size, VideoFilter.NONE, random);
+        return new VideoListQuery(category, videoSort, random || descending, p, size, VideoFilter.NONE, random,
+                VideoLegacyConditions.NONE);
     }
 
     /** 同一组分类/排序/分页参数，换成给定的搜索/筛选条件。 */
     public VideoListQuery withFilter(VideoFilter newFilter) {
-        return new VideoListQuery(categoryId, sort, descending, page, pageSize, newFilter, random);
+        return new VideoListQuery(categoryId, sort, descending, page, pageSize, newFilter, random, legacy);
     }
 
+    /** 同一组参数，换成给定的旧标签条件（B05）。 */
+    public VideoListQuery withLegacy(VideoLegacyConditions newLegacy) {
+        return new VideoListQuery(categoryId, sort, descending, page, pageSize, filter, random, newLegacy);
+    }
+
+    /** 分页偏移：(page − 1) × pageSize，另加旧 start 的偏移（{@link VideoLegacyConditions#startOffset()}）。 */
     public long offset() {
-        return (long) (page - 1) * pageSize;
+        return offsetOf(page);
+    }
+
+    /** 给定页码的分页偏移（随机排序取随机页时使用）。 */
+    long offsetOf(long anyPage) {
+        return (anyPage - 1) * pageSize + legacy.startOffset();
     }
 
     private static boolean blank(String s) {

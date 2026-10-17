@@ -55,7 +55,19 @@ class ReadOnlyGuardrailsTest {
         Pattern col = Pattern.compile("\\b(vod_pwd\\w*|vod_play_\\w+|vod_down_\\w+|vod_points\\w*|vod_trysee|"
                 + "group_id|vod_lock|vod_tpl\\w*|vod_reurl|vod_jumpurl|vod_author|vod_rel_\\w+|vod_plot\\w*|"
                 + "vod_pic_screenshot|type_tpl\\w*|type_jumpurl|type_union)\\b");
-        String vod = sqlOnly(MAPPERS.resolve("content/VodMapper.xml"));
+        String vodXml = sqlOnly(MAPPERS.resolve("content/VodMapper.xml"));
+        // B05：legacyConditions 片段只把 vod_rel_vod、vod_plot 用作 WHERE 条件（旧模板标签 rel、plot），单独检查后从其余 SQL 中去掉
+        Matcher fragment = Pattern.compile("(?s)<sql id=\"legacyConditions\">(.*?)</sql>").matcher(vodXml);
+        assertThat(fragment.find()).as("VodMapper 的 legacyConditions 片段").isTrue();
+        Matcher inFragment = col.matcher(fragment.group(1));
+        while (inFragment.find()) {
+            String after = fragment.group(1).substring(inFragment.start(), Math.min(fragment.group(1).length(),
+                    inFragment.end() + 6));
+            assertThat(after).as("legacyConditions 只能以条件使用 " + inFragment.group())
+                    .matches("(?s)(vod_rel_vod LIKE|vod_plot = ).*");
+        }
+        String vod = vodXml.substring(0, fragment.start()) + vodXml.substring(fragment.end());
+        assertThat(vod).as("其余语句只经 include 引用该片段").contains("<include refid=\"legacyConditions\"/>");
         Matcher m = col.matcher(vod);
         while (m.find()) {
             // 唯一允许的出现：CHAR_LENGTH(vod_pwd) 的布尔结果

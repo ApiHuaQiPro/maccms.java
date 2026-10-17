@@ -92,7 +92,10 @@
         LIMIT #{offset}, #{limit}
     </select>
 
-    <!-- 对应旧 mac_label_art_detail 的 art_id + art_status=1 条件（application/common.php:2693-2713）。 -->
+    <!--
+      对应旧 mac_label_art_detail 的 art_id + art_status=1 条件（application/common.php:2693-2713）。积分两列分别给出布尔值，
+      由 content.application 按 user.art_points_type 取其一（index/controller/Base.php:108-111，B05）。
+    -->
     <select id="selectPublishedDetail" resultType="com.maccms.backend.content.infrastructure.ArtDetailRow">
         SELECT art_id                   AS id,
                type_id                  AS categoryId,
@@ -127,7 +130,8 @@
                art_content              AS content,
                art_pic_screenshot       AS screenshots,
                (CHAR_LENGTH(art_pwd) &gt; 0) AS detailPasswordRequired,
-               (art_points &gt; 0 OR art_points_detail &gt; 0) AS pointsRequired
+               (art_points &gt; 0)        AS pointsRequired,
+               (art_points_detail &gt; 0) AS pointsDetailRequired
         FROM mac_art
         WHERE art_id = #{id}
           AND art_status = 1

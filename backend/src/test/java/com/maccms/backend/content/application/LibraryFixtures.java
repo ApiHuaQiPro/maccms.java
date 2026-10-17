@@ -57,10 +57,16 @@ final class LibraryFixtures {
     }
 
     static ArtDetailRow artDetail(long id, int categoryId, int passwordRequired, int pointsRequired) {
+        return artDetail(id, categoryId, passwordRequired, pointsRequired, 0);
+    }
+
+    /** pointsRequired 为 art_points &gt; 0，pointsDetailRequired 为 art_points_detail &gt; 0（B05 按 art_points_type 取其一）。 */
+    static ArtDetailRow artDetail(long id, int categoryId, int passwordRequired, int pointsRequired,
+                                  int pointsDetailRequired) {
         return new ArtDetailRow(id, categoryId, "文章" + id, "副标题", "wenzhang" + id, "W", "", "来源", "作者", "标签",
                 "资讯", "upload/art/" + id + ".jpg", "", "", "简介", "备注", 1, new BigDecimal("7.5"), 22, 3, 100, 1,
                 7, 30, 2, 1, 1_700_000_000L, 1_690_000_000L, "第一页$$$第二页", "注1", "<p>一</p>$$$<p>二</p>",
-                "截图1$upload/s1.jpg#upload/s2.jpg", passwordRequired, pointsRequired);
+                "截图1$upload/s1.jpg#upload/s2.jpg", passwordRequired, pointsRequired, pointsDetailRequired);
     }
 
     static TopicSummaryRow topicSummary(int id) {

@@ -404,20 +404,26 @@ class LibraryMySqlIT {
                 .asInt()).isEqualTo(31);
     }
 
-    /** 最后执行：追加文章分类 21 下需要密码/积分的文章（会改变列表结果，所以排在旧版对照之后）。 */
+    /**
+     * 最后执行：追加文章分类 21 下需要密码/积分的文章（会改变列表结果，所以排在旧版对照之后）。本测试的应用按默认配置运行，
+     * user.art_points_type 为仓库值 1：只看 art_points（整篇收费，index/controller/Base.php:108-111，B05）；为 0 时只看
+     * art_points_detail 的情形由 ArticlePointsTypeTest 覆盖。
+     */
     @Test
     @Order(5)
     void articlePasswordAndPointsGates() throws Exception {
         try (Connection c = admin(dbName); Statement st = c.createStatement()) {
             st.execute("INSERT INTO mac_art (art_id,type_id,art_name,art_status,art_pwd,art_points,art_points_detail,"
                     + "art_title,art_note,art_content) VALUES (15,21,'密码文章',1,'" + SENTINEL + "',0,0,'','','" + SENTINEL
-                    + "'),(16,21,'积分文章',1,'',0,5,'','','" + SENTINEL + "'),(17,21,'双重',1,'x',3,0,'','','" + SENTINEL + "')");
+                    + "'),(16,21,'按页积分',1,'',0,5,'','','<p>按页积分</p>'),(17,21,'双重',1,'x',3,0,'','','" + SENTINEL + "')");
         }
         Map<String, String> before = snapshot();
         assertThat(checked("/api/v1/articles/{id}", "/api/v1/articles/15", 403).body().get("code").asString())
                 .isEqualTo("ARTICLE_PASSWORD_REQUIRED");
-        assertThat(checked("/api/v1/articles/{id}", "/api/v1/articles/16", 403).body().get("code").asString())
-                .isEqualTo("ARTICLE_POINTS_REQUIRED");
+        // art_points_type=1 时只看 art_points：只有 art_points_detail 大于 0 的文章不需要积分（旧版直接显示）
+        assertThat(checked("/api/v1/articles/{id}", "/api/v1/articles/16", 200).body().get("pages").get(0)
+                .get("content").asString()).isEqualTo("<p>按页积分</p>");
+        // 积分先于密码
         assertThat(checked("/api/v1/articles/{id}", "/api/v1/articles/17", 403).body().get("code").asString())
                 .isEqualTo("ARTICLE_POINTS_REQUIRED");
         // 列表照常列出，只标记需要密码，不返回密码与积分

@@ -76,9 +76,11 @@ public class ArticleReadService {
             if (!catalog.isVisible(categoryId) || !catalogs.guestMayViewDetail(guest, categoryId)) {
                 throw notFound();
             }
-            // 旧版游客（group_id<3）访问 art_points/art_points_detail>0 的文章时改为显示扣积分确认页（index/controller/Base.php:105-112、:118-142）；
-            // user.status=0 时不检查（:115-117）
-            if (catalogs.enforceGuestPopedom() && nz(row.pointsRequired()) != 0) {
+            // 旧版游客（group_id<3）访问需积分的文章时改为显示扣积分确认页（index/controller/Base.php:105-112、:118-142）：
+            // 积分列由 user.art_points_type 决定，'1' 时为 art_points（整篇），否则为 art_points_detail（按页，:108-111）；
+            // user.status=0 时不检查（:115-117）。B05 起按配置取列（此前两列任一大于 0 即拒绝）
+            int points = catalogs.artPointsWholeArticle() ? nz(row.pointsRequired()) : nz(row.pointsDetailRequired());
+            if (catalogs.enforceGuestPopedom() && points != 0) {
                 throw new ApiException(ErrorCode.ARTICLE_POINTS_REQUIRED, "该文章需要积分才能查看");
             }
             // 旧版 art_pwd 非空且本会话未验证时显示密码页（index/controller/Art.php:56-61）

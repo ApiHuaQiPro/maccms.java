@@ -45,6 +45,8 @@ maccms:
     enforce-guest-popedom: ${MACCMS_CONTENT_ENFORCE_GUEST_POPEDOM:true}
     # 对齐 PHP 配置 app.copyright_status==2（内容页跳转）：vod_copyright=1 的视频详情返回 403
     copyright-hides-detail: ${MACCMS_CONTENT_COPYRIGHT_HIDES_DETAIL:true}
+    # 对齐 PHP 配置 user.art_points_type（B05）：1 按 art_points（整篇收费），0 按 art_points_detail（按页收费），留空按仓库值 1
+    art-points-type: ${MACCMS_CONTENT_ART_POINTS_TYPE:}
     # 视频搜索（契约 1.1.0，docs/architecture/09-content-search-filter-plan.md 第 6.3-6.4 节）。只读本应用环境变量，不读取 PHP 配置。
     search:
       # 是否接受包含匹配参数 keyword、classes（true/false），默认关闭；area/lang/year/level 精确筛选不受影响。

@@ -166,6 +166,12 @@ public record VideoFilter(String keyword, String area, String lang, String year,
                 && (ids == null || ALL_IDS.equals(ids));
     }
 
+    /** 同一组条件去掉 ids（B05：旧标签的 not、数字 rel 覆盖 ids 时使用）。 */
+    public VideoFilter withoutIds() {
+        return new VideoFilter(keyword, area, lang, year, level, classes, letter, state, version, actor, director, tag,
+                name, null);
+    }
+
     /** 带包含匹配条件（受搜索开关与并发上限约束）：keyword、classes、actor、director、tag、name。 */
     public boolean usesContainsMatch() {
         return keyword != null || classes != null || usesListContainsMatch();
