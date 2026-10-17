@@ -184,4 +184,41 @@
         WHERE vod_id = #{id}
           AND vod_status = 1
     </select>
+
+    <!--
+      专题关联视频（MACC-27，application/common/model/Topic.php:291-301）：vod_id IN (topic_rel_vod) + vod_status=1，按 vod_time 倒序
+      取前 999 条；新增分类可见性条件，追加 vod_id 倒序使并列时结果确定。
+    -->
+    <select id="selectPublishedByIds" resultType="com.maccms.backend.content.infrastructure.VodSummaryRow">
+        SELECT /*+ MAX_EXECUTION_TIME(3000) */ <include refid="summaryColumns"/>
+        FROM mac_vod
+        WHERE <include refid="publishedInTypes"/>
+          AND vod_id IN <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
+        ORDER BY vod_time DESC, vod_id DESC
+        LIMIT 999
+    </select>
+
+    <!-- 专题按标签关联视频（MACC-27，Topic.php:314-323）：vod_tag LIKE 任一模式（由 content.application 构造并以 '!' 转义）。 -->
+    <select id="selectPublishedByTagPatterns" resultType="com.maccms.backend.content.infrastructure.VodSummaryRow">
+        SELECT /*+ MAX_EXECUTION_TIME(3000) */ <include refid="summaryColumns"/>
+        FROM mac_vod
+        WHERE <include refid="publishedInTypes"/>
+          AND (<foreach collection="patterns" item="p" separator=" OR ">vod_tag LIKE #{p} ESCAPE '!'</foreach>)
+        ORDER BY vod_time DESC, vod_id DESC
+        LIMIT 999
+    </select>
+
+    <!--
+      角色所属视频（MACC-27）：旧 Role::listData/infoData 按 role_rid 取视频（application/common/model/Role.php:41-51、:296-303，
+      不看 vod_status）；新版只取已审核的视频，分类可见性由 content.application 判定。
+    -->
+    <select id="selectPublishedRefs" resultType="com.maccms.backend.content.infrastructure.VodRefRow">
+        SELECT vod_id   AS id,
+               type_id  AS categoryId,
+               vod_name AS name,
+               vod_en   AS enName
+        FROM mac_vod
+        WHERE vod_status = 1
+          AND vod_id IN <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
+    </select>
 </mapper>

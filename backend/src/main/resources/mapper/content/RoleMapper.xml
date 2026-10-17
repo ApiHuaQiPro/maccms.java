@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+  只读映射：沿用旧表 mac_role（install.sql）。禁止在此文件加入写语句，禁止 ${} 拼接。
+  不查询的列：role_lock、role_tpl、role_jumpurl、role_time_make、role_time_hits。旧规则依据：application/common/model/Role.php。
+-->
+<mapper namespace="com.maccms.backend.content.infrastructure.RoleMapper">
+
+    <!-- role_status=1（Role.php:153）；level（:154-159，新版单值）、letter（:168-173）、rid（:174-176） -->
+    <sql id="publishedMatching">
+        role_status = 1
+        <if test="criteria.level != null">AND role_level = #{criteria.level}</if>
+        <if test="criteria.letters != null">
+            AND role_letter IN <foreach collection="criteria.letters" item="l" open="(" separator="," close=")">#{l}</foreach>
+        </if>
+        <if test="criteria.videoId != null">AND role_rid = #{criteria.videoId}</if>
+    </sql>
+
+    <select id="countPublished" resultType="long">
+        SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*)
+        FROM mac_role
+        WHERE <include refid="publishedMatching"/>
+    </select>
+
+    <!-- 排序白名单对应旧 by（Role.php:247-253，不含 rnd），追加 role_id 同向排序保证分页稳定。 -->
+    <select id="selectPublishedPage" resultType="com.maccms.backend.content.infrastructure.RoleSummaryRow">
+        SELECT /*+ MAX_EXECUTION_TIME(3000) */
+               role_id                  AS id,
+               role_rid                 AS videoId,
+               role_name                AS name,
+               role_en                  AS enName,
+               role_letter              AS letter,
+               role_color               AS color,
+               role_actor               AS actor,
+               role_remarks             AS remarks,
+               role_pic                 AS pic,
+               role_sort                AS sort,
+               role_level               AS level,
+               role_score               AS score,
+               role_score_num           AS scoreNum,
+               role_hits                AS hits,
+               role_hits_day            AS hitsDay,
+               role_hits_week           AS hitsWeek,
+               role_hits_month          AS hitsMonth,
+               role_up                  AS up,
+               role_down                AS down,
+               role_time                AS updatedAt,
+               role_time_add            AS addedAt
+        FROM mac_role
+        WHERE <include refid="publishedMatching"/>
+        ORDER BY
+        <choose>
+            <when test="sort.name() == 'TIME'">role_time</when>
+            <when test="sort.name() == 'TIME_ADD'">role_time_add</when>
+            <when test="sort.name() == 'SCORE'">role_score</when>
+            <when test="sort.name() == 'HITS'">role_hits</when>
+            <when test="sort.name() == 'HITS_DAY'">role_hits_day</when>
+            <when test="sort.name() == 'HITS_WEEK'">role_hits_week</when>
+            <when test="sort.name() == 'HITS_MONTH'">role_hits_month</when>
+            <when test="sort.name() == 'UP'">role_up</when>
+            <when test="sort.name() == 'DOWN'">role_down</when>
+            <when test="sort.name() == 'LEVEL'">role_level</when>
+            <otherwise>role_id</otherwise>
+        </choose>
+        <choose>
+            <when test="descending">DESC, role_id DESC</when>
+            <otherwise>ASC, role_id ASC</otherwise>
+        </choose>
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- 对应旧 mac_label_role_detail 的 role_id + role_status=1 条件（application/common.php:2657-2676）。 -->
+    <select id="selectPublishedDetail" resultType="com.maccms.backend.content.infrastructure.RoleDetailRow">
+        SELECT role_id                  AS id,
+               role_rid                 AS videoId,
+               role_name                AS name,
+               role_en                  AS enName,
+               role_letter              AS letter,
+               role_color               AS color,
+               role_actor               AS actor,
+               role_remarks             AS remarks,
+               role_pic                 AS pic,
+               role_sort                AS sort,
+               role_level               AS level,
+               role_score               AS score,
+               role_score_all           AS scoreAll,
+               role_score_num           AS scoreNum,
+               role_hits                AS hits,
+               role_hits_day            AS hitsDay,
+               role_hits_week           AS hitsWeek,
+               role_hits_month          AS hitsMonth,
+               role_up                  AS up,
+               role_down                AS down,
+               role_time                AS updatedAt,
+               role_time_add            AS addedAt,
+               role_content             AS content
+        FROM mac_role
+        WHERE role_id = #{id}
+          AND role_status = 1
+    </select>
+</mapper>

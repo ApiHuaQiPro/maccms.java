@@ -2,11 +2,27 @@ package com.maccms.backend.content;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.maccms.backend.content.application.view.ActorDetailDto;
+import com.maccms.backend.content.application.view.ActorSummaryDto;
+import com.maccms.backend.content.application.view.ArticleContentPageDto;
+import com.maccms.backend.content.application.view.ArticleDetailDto;
+import com.maccms.backend.content.application.view.ArticleSummaryDto;
 import com.maccms.backend.content.application.view.CategoryDto;
 import com.maccms.backend.content.application.view.CategoryExtendDto;
 import com.maccms.backend.content.application.view.CategoryListResponse;
 import com.maccms.backend.content.application.view.CategoryRefDto;
+import com.maccms.backend.content.application.view.LinkDto;
+import com.maccms.backend.content.application.view.PlotDto;
+import com.maccms.backend.content.application.view.RoleDetailDto;
+import com.maccms.backend.content.application.view.RoleSummaryDto;
+import com.maccms.backend.content.application.view.RoleVideoDto;
+import com.maccms.backend.content.application.view.ScreenshotDto;
+import com.maccms.backend.content.application.view.TopicDetailDto;
+import com.maccms.backend.content.application.view.TopicSummaryDto;
 import com.maccms.backend.content.application.view.VideoDetailDto;
+import com.maccms.backend.content.application.view.VideoPlotListResponse;
+import com.maccms.backend.content.application.view.WebsiteDetailDto;
+import com.maccms.backend.content.application.view.WebsiteSummaryDto;
 import com.maccms.backend.content.application.view.VideoSummaryDto;
 import com.maccms.backend.contract.OpenApiContract;
 import java.lang.reflect.Constructor;
@@ -42,7 +58,24 @@ class PublishedViewContractTest {
                 Arguments.of(CategoryExtendDto.class, "CategoryExtend"),
                 Arguments.of(CategoryRefDto.class, "CategoryRef"),
                 Arguments.of(VideoSummaryDto.class, "VideoSummary"),
-                Arguments.of(VideoDetailDto.class, "VideoDetail"));
+                Arguments.of(VideoDetailDto.class, "VideoDetail"),
+                // 契约 1.2.0（MACC-27）
+                Arguments.of(VideoPlotListResponse.class, "VideoPlotListResponse"),
+                Arguments.of(PlotDto.class, "Plot"),
+                Arguments.of(ArticleContentPageDto.class, "ArticleContentPage"),
+                Arguments.of(ScreenshotDto.class, "Screenshot"),
+                Arguments.of(ArticleSummaryDto.class, "ArticleSummary"),
+                Arguments.of(ArticleDetailDto.class, "ArticleDetail"),
+                Arguments.of(TopicSummaryDto.class, "TopicSummary"),
+                Arguments.of(TopicDetailDto.class, "TopicDetail"),
+                Arguments.of(ActorSummaryDto.class, "ActorSummary"),
+                Arguments.of(ActorDetailDto.class, "ActorDetail"),
+                Arguments.of(RoleVideoDto.class, "RoleVideo"),
+                Arguments.of(RoleSummaryDto.class, "RoleSummary"),
+                Arguments.of(RoleDetailDto.class, "RoleDetail"),
+                Arguments.of(WebsiteSummaryDto.class, "WebsiteSummary"),
+                Arguments.of(WebsiteDetailDto.class, "WebsiteDetail"),
+                Arguments.of(LinkDto.class, "Link"));
     }
 
     @ParameterizedTest(name = "{1}")
