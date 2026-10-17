@@ -55,6 +55,23 @@ public sealed interface SiteRoute {
     }
 
     /**
+     * 分类筛选页（旧 {@code vod/show}，Vod.php:23-28；B05，队长裁定 D-B05-7）：分类本身 + 直接子分类（与 API categoryId 相同），
+     * 叠加与搜索页相同的条件（不含 {@code tid}）。由 {@link LegacyUrlParser#parseVodList} 识别。
+     *
+     * @param categoryId 1..65535
+     * @param filters    已归一、已校验的条件（{@code tid} 为 null）
+     * @param page       1..1000
+     */
+    record VodShow(int categoryId, SearchFilters filters, int page) implements SiteRoute {
+        public VodShow {
+            if (categoryId < 1 || categoryId > VideoListQuery.MAX_CATEGORY_ID || filters == null || filters.tid() != null
+                    || page < 1 || page > VideoListQuery.MAX_PAGE) {
+                throw new IllegalArgumentException("分类、条件或页码越界");
+            }
+        }
+    }
+
+    /**
      * B05 承接的"模块/操作 + 数字参数"页面（{@link LegacyPage}）：播放/下载四个入口、内容页、单条 RSS、ajax_detail。
      *
      * @param page 页面

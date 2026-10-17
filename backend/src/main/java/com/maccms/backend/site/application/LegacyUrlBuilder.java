@@ -79,6 +79,7 @@ public final class LegacyUrlBuilder {
             case SiteRoute.VodType t -> vodType(t.typeId(), t.page());
             case SiteRoute.VodDetail d -> vodDetail(d.vodId());
             case SiteRoute.VodSearch s -> vodSearch(Map.of(), 1);
+            case SiteRoute.VodShow s -> vodShowLink(s.categoryId(), SearchFilters.NONE, 1).path();
             case SiteRoute.Legacy l -> legacy(l);
         };
     }
@@ -157,6 +158,26 @@ public final class LegacyUrlBuilder {
             throw new IllegalStateException("搜索页链接只支持 pathinfo_depr=/、不启用路由别名的形态");
         }
         new SiteRoute.VodSearch(filters, page);
+        return new SiteLink(vodSearch(Map.of(), 1), searchQuery(filters, page));
+    }
+
+    /**
+     * Java SSR 分类筛选页（旧 {@code vod/show}，B05 D-B05-7）的链接：固定路径 {@code vod/show/id/<分类>}（{@code mac_url} 的
+     * 写法，与 {@link #vodShow} 无筛选条件时相同）+ 与 {@link #vodSearchLink} 相同的查询串（不含 tid）。旧版的路径参数形式
+     * （{@code vod/show/area/…/id/1.html}）与 {@code vodshow/…} 位置参数形式只作为输入被认可（{@link LegacyUrlParser#parseVodList}）。
+     */
+    public SiteLink vodShowLink(int categoryId, SearchFilters filters, int page) {
+        if (style.routeAliases() || style.depr() != '/') {
+            throw new IllegalStateException("筛选页链接只支持 pathinfo_depr=/、不启用路由别名的形态");
+        }
+        new SiteRoute.VodShow(categoryId, filters, page);
+        Map<String, String> vars = new LinkedHashMap<>();
+        vars.put("id", Integer.toString(categoryId));
+        return new SiteLink(macUrl("vod/show", vars), searchQuery(filters, page));
+    }
+
+    /** 搜索/筛选页链接的查询串：已设置的条件按键排序（mac_url 的 ksort），页码只在 &gt; 1 时输出，值用 PHP urlencode。 */
+    private static String searchQuery(SearchFilters filters, int page) {
         Map<String, String> vars = new TreeMap<>(filters.params());
         if (page > 1) {
             vars.put("page", Integer.toString(page));
@@ -172,7 +193,7 @@ public final class LegacyUrlBuilder {
             // SearchFilters 的不变式保证不会发生（含 page=1000 的预算）；发生即是编码或上限被改动
             throw new IllegalStateException("搜索链接查询串超出上限");
         }
-        return new SiteLink(vodSearch(Map.of(), 1), q.toString());
+        return q.toString();
     }
 
     /** 旧筛选页（仍归 PHP），等价 {@code mac_url_type($info, $filters + ['page'=>$page], 'show')}。 */

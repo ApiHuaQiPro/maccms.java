@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 /**
@@ -81,61 +82,107 @@ public class SearchPages {
         this.contentPages = contentPages;
     }
 
+    /**
+     * 页面的基址：搜索页（{@code show == null}）或分类筛选页（旧 vod/show，D-B05-7）。所有链接（canonical、表单、筛选、分页）
+     * 都由同一个函数生成，所以后续筛选与翻页始终保留分类与其余条件。
+     */
+    private record Base(Integer show, BiFunction<SearchFilters, Integer, SiteLink> links) {
+
+        SiteLink link(SearchFilters f, int page) {
+            return links.apply(f, page);
+        }
+    }
+
     public SearchPage search(SiteRoute.VodSearch route) {
+        Base base = new Base(null, urls::vodSearchLink);
         SearchFilters f = route.filters();
         int page = route.page();
-        SafeUrl canonical = site.canonical(urls.vodSearchLink(f, page));
         if (f.isEmpty()) {
             if (page > 1) {
                 throw new ApiException(ErrorCode.NOT_FOUND, "页面不存在");
             }
-            return new SearchPage(pages.search("搜索视频 - " + site.name(), Optional.of(canonical), List.of()),
-                    "搜索视频", false, formAction(), "", List.of(), Optional.empty(), List.of(), List.of(),
-                    Optional.empty(), false);
+            return new SearchPage(pages.search("搜索视频 - " + site.name(),
+                    Optional.of(site.canonical(base.link(f, page))), List.of()), "search", "搜索视频", false,
+                    formAction(base), "", List.of(), Optional.empty(), List.of(), List.of(), Optional.empty(), false);
         }
+        List<CategoryDto> roots = checkedRoots(f);
+        String heading = f.keyword() != null ? "搜索：" + f.keyword() : "筛选结果";
+        return render(base, f, page, null, roots, heading, 0, extendOf(roots));
+    }
+
+    /**
+     * 分类筛选页（旧 vod/show，Vod.php:23-28；D-B05-7）：分类本身 + 直接子分类（与 API categoryId、分类页相同，可见性与发布约束不变），
+     * 叠加搜索页的条件；无条件时列出该分类的全部内容。分类不存在或不可见 → 404。开关（旧 app.show）由 Controller 判断。
+     */
+    public SearchPage show(SiteRoute.VodShow route) {
+        int category = route.categoryId();
+        Base base = new Base(category, (f, page) -> urls.vodShowLink(category, f, page));
+        SearchFilters f = route.filters();
+        List<CategoryDto> roots = checkedRoots(f);
+        List<CategoryDto> chain = ContentPages.chain(roots, category);
+        if (chain.isEmpty()) {
+            throw new ApiException(ErrorCode.CATEGORY_NOT_FOUND, "分类不存在");
+        }
+        String name = LegacyTextEntities.decodeOnce(chain.getLast().name());
+        String heading = f.keyword() != null ? name + "：" + f.keyword() : name;
+        // 旧筛选页的候选值来自当前分类的扩展字段（模板读 $obj.type_extend）；没有时用其上级分类的
+        List<CategoryExtendDto> extend = new ArrayList<>();
+        for (int i = chain.size() - 1; i >= 0 && extend.isEmpty(); i--) {
+            if (chain.get(i).extend() != null) {
+                extend.add(chain.get(i).extend());
+            }
+        }
+        return render(base, f, route.page(), category, roots, heading, chain.getFirst().id(), extend);
+    }
+
+    /** 包含匹配条件而搜索开关关闭 → 400（与 content 的判断相同，提前到查库之前）；否则读一次分类（导航与候选值）。 */
+    private List<CategoryDto> checkedRoots(SearchFilters f) {
         if (f.usesContainsMatch() && !content.searchEnabled()) {
-            // 与 content 的判断相同（ContentReadService.listVideos），这里提前到查库之前
             throw ApiException.invalidParameter(f.firstContainsMatchParameter(), "当前未开放关键字搜索");
         }
-        List<CategoryDto> roots = content.listCategories().items();
+        return content.listCategories().items();
+    }
+
+    private SearchPage render(Base base, SearchFilters f, int page, Integer categoryId, List<CategoryDto> roots,
+                              String heading, int currentNav, List<CategoryExtendDto> extend) {
         // 随机排序：旧版改写为 hits_week desc（Vod.php:532-535），契约 1.3.0 的 VideoListQuery.random 照搬两种取页算法
         VideoSort sort = f.random() ? VideoSort.HITS_WEEK : f.sort() == null ? VideoSort.TIME : f.sort();
         boolean descending = f.random() || f.order() != SearchFilters.SortOrder.ASC;
-        PageResponse<VideoSummaryDto> result = content.listVideos(new VideoListQuery(null, sort, descending, page,
+        PageResponse<VideoSummaryDto> result = content.listVideos(new VideoListQuery(categoryId, sort, descending, page,
                 PAGE_SIZE, f.toVideoFilter(), f.random(), f.toLegacyConditions()));
         boolean outOfRange = result.total() == 0 ? page > 1 : page > result.totalPages();
         if (outOfRange && !f.random()) {
             throw new ApiException(ErrorCode.NOT_FOUND, "页面不存在");
         }
-
-        String heading = f.keyword() != null ? "搜索：" + f.keyword() : "筛选结果";
         String title = heading + (page > 1 ? " - 第" + page + "页" : "") + " - " + site.name();
         int pageCount = (int) Math.min(result.totalPages(), VideoListQuery.MAX_PAGE);
         Optional<PaginationView> pagination = Optional.empty();
         // 随机排序每次取的页不同，上一页/下一页没有意义（旧版同样以随机页覆盖请求的页码），不显示分页
         if (pageCount > 1 && !f.random()) {
             pagination = Optional.of(new PaginationView(page, pageCount,
-                    page > 1 ? Optional.of(link(f, page - 1)) : Optional.empty(),
-                    page < pageCount ? Optional.of(link(f, page + 1)) : Optional.empty()));
+                    page > 1 ? Optional.of(link(base, f, page - 1)) : Optional.empty(),
+                    page < pageCount ? Optional.of(link(base, f, page + 1)) : Optional.empty()));
         }
-        return new SearchPage(pages.search(title, Optional.of(canonical), contentPages.nav(roots, 0)), heading, false,
-                formAction(), f.keyword() == null ? "" : f.keyword(), hiddenFields(f), Optional.of(result.total()),
-                filterGroups(f, roots), contentPages.cards(result.items()), pagination, f.random());
+        SafeUrl canonical = site.canonical(base.link(f, page));
+        return new SearchPage(pages.search(title, Optional.of(canonical), contentPages.nav(roots, currentNav)),
+                base.show() == null ? "search" : "show", heading, false, formAction(base),
+                f.keyword() == null ? "" : f.keyword(), hiddenFields(f), Optional.of(result.total()),
+                filterGroups(base, f, roots, extend), contentPages.cards(result.items()), pagination, f.random());
     }
 
     /** 参数不合法（400）：固定提示、空白表单；不查库、不回显输入、没有 canonical。 */
     public SearchPage invalid() {
         return new SearchPage(pages.search("搜索条件不合法 - " + site.name(), Optional.empty(), List.of()),
-                "搜索条件不合法", true, formAction(), "", List.of(), Optional.empty(), List.of(), List.of(),
-                Optional.empty(), false);
+                "search", "搜索条件不合法", true, formAction(new Base(null, urls::vodSearchLink)), "", List.of(),
+                Optional.empty(), List.of(), List.of(), Optional.empty(), false);
     }
 
-    private SafeUrl formAction() {
-        return site.publicPath(urls.vodSearchLink(SearchFilters.NONE, 1));
+    private SafeUrl formAction(Base base) {
+        return site.publicPath(base.link(SearchFilters.NONE, 1));
     }
 
-    private SafeUrl link(SearchFilters f, int page) {
-        return site.publicPath(urls.vodSearchLink(f, page));
+    private SafeUrl link(Base base, SearchFilters f, int page) {
+        return site.publicPath(base.link(f, page));
     }
 
     /** 当前条件中除 wd 外的值（page 不保留：提交关键字回到第 1 页，09 方案第 7.2.5 节）。 */
@@ -149,38 +196,43 @@ public class SearchPages {
         return List.copyOf(out);
     }
 
-    private List<FilterGroup> filterGroups(SearchFilters f, List<CategoryDto> roots) {
+    private static List<CategoryExtendDto> extendOf(List<CategoryDto> roots) {
         List<CategoryExtendDto> extend = new ArrayList<>();
         collectExtend(roots, extend);
+        return extend;
+    }
+
+    private List<FilterGroup> filterGroups(Base base, SearchFilters f, List<CategoryDto> roots,
+                                           List<CategoryExtendDto> extend) {
         List<FilterGroup> groups = new ArrayList<>();
-        addGroup(groups, f, "area", "地区", f.area(), candidates(extend, CategoryExtendDto::area));
-        addGroup(groups, f, "lang", "语言", f.lang(), candidates(extend, CategoryExtendDto::lang));
-        addGroup(groups, f, "year", "年份", f.year(), candidates(extend, CategoryExtendDto::year));
-        addGroup(groups, f, "letter", "首字母", f.letter(), LETTERS);
-        addGroup(groups, f, "state", "状态", f.state(), candidates(extend, CategoryExtendDto::state));
-        addGroup(groups, f, "version", "版本", f.version(), candidates(extend, CategoryExtendDto::version));
+        addGroup(base, groups, f, "area", "地区", f.area(), candidates(extend, CategoryExtendDto::area));
+        addGroup(base, groups, f, "lang", "语言", f.lang(), candidates(extend, CategoryExtendDto::lang));
+        addGroup(base, groups, f, "year", "年份", f.year(), candidates(extend, CategoryExtendDto::year));
+        addGroup(base, groups, f, "letter", "首字母", f.letter(), LETTERS);
+        addGroup(base, groups, f, "state", "状态", f.state(), candidates(extend, CategoryExtendDto::state));
+        addGroup(base, groups, f, "version", "版本", f.version(), candidates(extend, CategoryExtendDto::version));
         if (content.searchEnabled()) {
             // 包含匹配，开关关闭时点了只会得到 400，不提供链接
-            addGroup(groups, f, "class", "类型", f.classes(), candidates(extend, CategoryExtendDto::classes));
-            addGroup(groups, f, "actor", "主演", f.actor(), candidates(extend, CategoryExtendDto::star));
-            addGroup(groups, f, "director", "导演", f.director(), candidates(extend, CategoryExtendDto::director));
+            addGroup(base, groups, f, "class", "类型", f.classes(), candidates(extend, CategoryExtendDto::classes));
+            addGroup(base, groups, f, "actor", "主演", f.actor(), candidates(extend, CategoryExtendDto::star));
+            addGroup(base, groups, f, "director", "导演", f.director(), candidates(extend, CategoryExtendDto::director));
         }
         // 没有候选值的条件：只在已设置时显示"全部 + 当前值"，便于去掉（开关关闭时这些包含匹配条件在查库前已是 400）
-        addGroup(groups, f, "tag", "标签", f.tag(), List.of());
-        addGroup(groups, f, "name", "片名", f.name(), List.of());
-        addGroup(groups, f, "ids", "指定视频", f.ids(), List.of());
+        addGroup(base, groups, f, "tag", "标签", f.tag(), List.of());
+        addGroup(base, groups, f, "name", "片名", f.name(), List.of());
+        addGroup(base, groups, f, "ids", "指定视频", f.ids(), List.of());
         if (f.tid() != null) {
             groups.add(new FilterGroup("tid", "分类", List.of(
-                    new FilterChip("全部", link(f.with("tid", null), 1), false),
-                    new FilterChip(tidLabel(roots, f.tid()), link(f, 1), true))));
+                    new FilterChip("全部", link(base, f.with("tid", null), 1), false),
+                    new FilterChip(tidLabel(roots, f.tid()), link(base, f, 1), true))));
         }
         List<FilterChip> sorts = new ArrayList<>();
         for (VideoSort s : SORT_LINKS) {
             boolean current = !f.random() && (f.sort() == null ? s == VideoSort.TIME : f.sort() == s);
-            sorts.add(new FilterChip(sortLabel(s), link(f.withSort(s), 1), current));
+            sorts.add(new FilterChip(sortLabel(s), link(base, f.withSort(s), 1), current));
         }
         if (f.random()) {
-            sorts.add(new FilterChip("随机", link(f, 1), true));
+            sorts.add(new FilterChip("随机", link(base, f, 1), true));
         }
         groups.add(new FilterGroup("by", "排序", List.copyOf(sorts)));
         return List.copyOf(groups);
@@ -217,8 +269,8 @@ public class SearchPages {
      * 一组候选值：跳过不能作为条件回读的值（''、'0'、首尾空白、不满足 content 规则或超出链接预算——09 方案第 7.2.5 节）；
      * 最多 {@link #MAX_CHOICES} 个。当前值不在候选中时也列出（标记为当前）。没有任何链接（除"全部"）时不显示该组。
      */
-    private void addGroup(List<FilterGroup> groups, SearchFilters f, String key, String label, String current,
-                          List<String> choices) {
+    private void addGroup(Base base, List<FilterGroup> groups, SearchFilters f, String key, String label,
+                          String current, List<String> choices) {
         Set<String> values = new LinkedHashSet<>();
         for (String v : choices) {
             if (values.size() >= MAX_CHOICES) {
@@ -230,15 +282,15 @@ public class SearchPages {
         }
         List<FilterChip> chips = new ArrayList<>();
         if (current != null && !values.contains(current)) {
-            chips.add(new FilterChip(current, link(f, 1), true));
+            chips.add(new FilterChip(current, link(base, f, 1), true));
         }
         for (String v : values) {
-            chips.add(new FilterChip(v, link(f.with(key, v), 1), v.equals(current)));
+            chips.add(new FilterChip(v, link(base, f.with(key, v), 1), v.equals(current)));
         }
         if (chips.isEmpty()) {
             return;
         }
-        chips.addFirst(new FilterChip("全部", link(f.with(key, null), 1), current == null));
+        chips.addFirst(new FilterChip("全部", link(base, f.with(key, null), 1), current == null));
         groups.add(new FilterGroup(key, label, List.copyOf(chips)));
     }
 
