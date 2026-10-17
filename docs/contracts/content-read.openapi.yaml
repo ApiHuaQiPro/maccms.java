@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: MacCMS 内容只读接口
-  version: 1.2.0
+  version: 1.3.0
   description: |
     MacCMS 重构首批对外接口（MACC-4）：视频分类、视频分页列表、视频公开详情元数据、健康检查。
     1.1.0（MACC-18，方案 docs/architecture/09-content-search-filter-plan.md，以下简称"09 方案"）在
@@ -11,6 +11,12 @@ info:
     视频分集剧情 `/api/v1/videos/{id}/plots`；文章、专题、演员、角色、网址的列表与详情，文章/演员/网址分类树，友情链接列表；
     对应的 schema 与错误码 ARTICLE_NOT_FOUND、ARTICLE_PASSWORD_REQUIRED、ARTICLE_POINTS_REQUIRED、TOPIC_NOT_FOUND、
     ACTOR_NOT_FOUND、ROLE_NOT_FOUND、WEBSITE_NOT_FOUND。1.1.0 已有的路径、参数、响应与行为完全不变。
+    1.3.0（路线图 B04，说明 docs/architecture/14-video-list-filter-completion.md，以下简称"14 文档"）在 `GET /api/v1/videos` 上
+    向后兼容地新增：逗号多值筛选 letter、state、version（精确匹配）与 actor、director、tag、name（包含匹配，受搜索开关控制），
+    ids（`all` 或最多 100 个视频 ID），year 的 9 字符区间写法（如 `2018-2020`，旧版两端颠倒时交换），以及 `sort=rnd`（旧版的
+    随机取页算法）。此前合法的请求结果不变；此前因 year 区间写法、`sort=rnd` 返回 400 的请求现在按上述规则处理；
+    1.2.0 下被忽略的同名参数（letter、state、version、actor、director、tag、name、ids）从 1.3.0 起生效。
+    其余路径、所有响应 schema 与错误码不变；area、lang、classes 仍为单值（含逗号 → 400）。
 
     本文件是前后端契约，后端实现位于 backend/ 的 content 模块，HTTP 契约测试
     （backend/src/test/java/com/maccms/backend/content/ContentApiContractTest.java）逐字段比对响应与本文件中的 schema。
@@ -25,7 +31,8 @@ info:
     - 未声明的查询参数会被忽略；值为空字符串的参数按"未传"处理。
     - 访问者一律按旧系统的游客（会员组 group_id=1）身份判定可见性；本批不识别登录态。
     - 不提供：播放/下载地址与授权、观看密码校验、收费/积分（1.2.0 的文章详情只判断"是否需要积分"）、会员、Provide 资源站协议、
-      采集、后台写入、全文检索/相关度排序、演员/导演/标签等其他视频搜索条件。
+      采集、后台写入、全文检索/相关度排序；视频列表不提供旧模板标签专属的条件（isend、timeadd/timehits/time、点击数范围、
+      not/rel/typenot/tv/weekday/plot、start/half 等，由路线图 B05 作为内部查询能力承接，见 14 文档第 2 节）。
 
     参数取值的约定（1.1.0 起写明，1.0.0 的既有参数行为不变）：
     - 每个参数的 schema（maxLength、pattern、minimum/maximum）**直接作用于原始解码值**——查询串按
@@ -44,10 +51,12 @@ info:
     - 空白字符 W = ECMAScript `\s`（U+0009–U+000D、U+0020、U+00A0、U+1680、U+2000–U+200A、U+2028、U+2029、U+202F、U+205F、U+3000、U+FEFF）。
       文本参数首尾不得为 W 字符（因此仅含空白的值也 → 400）；中间的空白原样保留。去首尾空白由调用方（如 SSR 页面）负责。
     - 每个新参数最多出现一次，重复出现（含空值，如 `area=&area=`）→ 400。area、lang、classes 含半角逗号 `,` → 400（不支持多值）；
-      keyword 中的逗号是字面字符（与旧 wd 一致）。
-    - 校验顺序：既有 5 个参数（不变）→ keyword → area → lang → year → level → classes；每个参数内依次为
-      重复 → 空串（未传）→ 搜索开关（keyword/classes）→ 禁用字符/非法 UTF-8 → 逗号 → 首尾空白 → 长度 → 格式（year；level 为
-      先词法：只含 ASCII 数字且 ≤ 10 个字符，再数值：1..9，两步失败的文案相同）。
+      keyword 中的逗号是字面字符（与旧 wd 一致）。1.3.0 的 letter、state、version、actor、director、tag、name、ids 与旧版一样
+      以半角逗号分隔多值（PHP explode，保留空项，见各参数说明）。以上规则（重复、禁用字符、非法 UTF-8、首尾空白）同样适用于 1.3.0 新参数。
+    - 校验顺序：既有 5 个参数（不变）→ keyword → area → lang → year → level → classes → letter → state → version → actor
+      → director → tag → name → ids；每个参数内依次为
+      重复 → 空串（未传）→ 搜索开关（keyword/classes/actor/director/tag/name）→ 禁用字符/非法 UTF-8 → 逗号（area/lang/classes）
+      → 首尾空白 → 长度 → 格式（year；level 为先词法：只含 ASCII 数字且 ≤ 10 个字符，再数值：1..9，两步失败的文案相同；ids）。
       只报第一个错误，fieldErrors 只有一项，message 为固定文案，不回显输入。参数错误（400）先于分类可见性检查（404）。
     - 输入 → 结果对照（与 09 方案第 4.4 节同表）：
       | 原始解码值 | keyword | area/lang/classes | year | level |
@@ -65,16 +74,18 @@ info:
     - 值原样比较，不做实体编码/解码以外的任何改写：不截断、不做大小写或全半角转换、不做 Unicode 规范化；
       大小写与尾随空格是否敏感由旧表列的排序规则（utf8_general_ci，不敏感）决定。
     - 所有条件之间为 AND；可见性（vod_status=1、分类可见、游客列表权限）与 1.0.0 相同，任何条件都不能扩大可见范围。
-    - 包含匹配（keyword、classes）中的 `%`、`_`、`!` 按字面匹配，反斜线也是普通字符；用户输入从不作为列名、排序表达式或 SQL 片段。
+    - 包含匹配（keyword、classes、actor、director、tag、name）中的 `%`、`_`、`!` 按字面匹配，反斜线也是普通字符；
+      用户输入从不作为列名、排序表达式或 SQL 片段。
     - 1.0.0 下被忽略的同名参数（如误传的 `keyword=x`）从 1.1.0 起生效；旧站参数名（wd、tid、by、class 等）仍属未声明参数，
       继续被忽略，不做别名。
 
     运行开关与成本控制（09 方案第 6 节）：
-    - 后端开关 `maccms.content.search.enabled`（默认 **false**）控制包含匹配参数 keyword、classes；关闭时传入非空值 → 400。
+    - 后端开关 `maccms.content.search.enabled`（默认 **false**）控制包含匹配参数 keyword、classes（1.3.0 起另有 actor、director、
+      tag、name）；关闭时传入非空值 → 400（message "当前未开放关键字搜索"）。
       1.2.0 起它同时控制专题详情中"按标签关联内容"的包含匹配（关闭时不执行，见 `/api/v1/topics/{id}`）。
-      精确匹配参数 area、lang、year、level 不受该开关影响。
-    - 带任一新参数的 count/分页语句有服务端执行时限（MAX_EXECUTION_TIME 3000 ms）；带 keyword/classes 的请求另有进程内
-      并发上限 `maccms.content.search.max-concurrent`（默认 4，不排队）。超时或超过并发上限时返回 503 `SERVICE_UNAVAILABLE`，
+      精确匹配参数 area、lang、year、level（1.3.0 起另有 letter、state、version、ids）与 `sort=rnd` 不受该开关影响。
+    - 带任一新参数的 count/分页语句有服务端执行时限（MAX_EXECUTION_TIME 3000 ms）；带包含匹配参数的请求另有进程内
+      并发上限 `maccms.content.search.max-concurrent`（默认 4，不排队，keyword/classes/actor/director/tag/name 共用）。超时或超过并发上限时返回 503 `SERVICE_UNAVAILABLE`，
       响应体与数据库不可用时逐字相同。不带新参数的请求不受这两项影响。
     1.2.0 新列表（articles、topics、actors、roles、websites、links）的参数规则（11 文档第 4.2 节）：
     - 读取方式与 1.0.0 的既有参数相同：每个参数多次出现时各值以逗号连接后校验（因此文本参数重复出现 → 400 "不支持多个取值"，
@@ -193,13 +204,17 @@ paths:
           in: query
           required: false
           description: |
-            【1.1.0】年份，精确匹配 `vod_year`（按字符串比较；旧 application/common/model/Vod.php:183-186,296-298）。
-            schema 作用于原始解码值（不裁剪）：空串 = 未传；否则必须恰为 4 位 ASCII 数字，带首尾空白、全角数字、
-            旧站的 `YYYY-YYYY` 区间写法均 → 400（message "必须是 4 位数字年份"）。
+            【1.1.0；区间写法 1.3.0】年份，精确匹配 `vod_year`（按字符串比较；旧 application/common/model/Vod.php:183-201,296-298）。
+            schema 作用于原始解码值（不裁剪）：空串 = 未传；否则为以下两种之一，其他（带首尾空白、全角数字、`2020年` 等）→ 400
+            （message "必须是 4 位数字年份"）：
+            1. 恰为 4 位 ASCII 数字：`vod_year` 等于该值；
+            2. 【1.3.0】9 个字符的区间：前 4 位与后 4 位为 ASCII 数字，第 5 个字符为任一可打印 ASCII 字符（旧版只看长度为 9 并取
+               前后两段，如 `2018-2020`、`2018~2020`、`2018,2020`）。两端前大后小时交换，逐年展开为 4 位字符串（不足补 0），
+               `vod_year` 等于其中任一项；最多 10000 项（`0000-9999`）。
           schema:
             type: string
-            pattern: '^(?:[0-9]{4})?$'
-          example: '2020'
+            pattern: '^(?:[0-9]{4}|[0-9]{4}[\x20-\x7E][0-9]{4})?$'
+          example: '2018-2020'
         - name: level
           in: query
           required: false
@@ -233,16 +248,117 @@ paths:
             maxLength: 32
             pattern: '^(?:[^\s,\x00-\x1F\x7F-\x9F\uD800-\uDFFF\uFFFD](?:[^,\x00-\x1F\x7F-\x9F\uD800-\uDFFF\uFFFD]*[^\s,\x00-\x1F\x7F-\x9F\uD800-\uDFFF\uFFFD])?)?$'
           example: 剧情
+        - name: letter
+          in: query
+          required: false
+          description: |
+            【1.3.0】首字母，精确匹配 `vod_letter`（旧 application/common/model/Vod.php:330-335）。schema 作用于原始解码值（不裁剪）：
+            空串 = 未传；否则最多 64 个码点，首尾不得为空白字符，不得含禁用字符。取值（与旧版相同）：
+            - 原始值的 UTF-8 第 1 个字节为 `0` 且第 3 个字节为 `9`（在 htmlspecialchars 之后的形式上判断，如 `0-9`、`0x9`、`0,9`）
+              → 匹配 `0`..`9` 十个数字（其余部分被忽略，`0-9,A` 也只匹配数字）；
+            - 否则按半角逗号拆分（保留空项），`vod_letter` 等于任一项（空项命中首字母为空的视频）。
+            大小写是否敏感由列排序规则（utf8_general_ci，不敏感）决定。与旧版的差异：`0` 是字面值（旧版 `0` 视为未传），见 14 文档。
+          schema:
+            type: string
+            maxLength: 64
+            pattern: '^(?:[^\s\x00-\x1F\x7F-\x9F\uD800-\uDFFF\uFFFD](?:[^\x00-\x1F\x7F-\x9F\uD800-\uDFFF\uFFFD]*[^\s\x00-\x1F\x7F-\x9F\uD800-\uDFFF\uFFFD])?)?$'
+          example: 0-9
+        - name: state
+          in: query
+          required: false
+          description: |
+            【1.3.0】资源类别（`vod_state`，如"正片""预告片"），精确匹配任一项（旧 Vod.php:305-307）。按半角逗号拆分多值，保留空项
+            （空项命中该列为空的视频），各项不再裁剪。原始值规则：空串 = 未传；否则最多 64 个码点，首尾不得为空白字符，不得含禁用字符。
+          schema:
+            type: string
+            maxLength: 64
+            pattern: '^(?:[^\s\x00-\x1F\x7F-\x9F\uD800-\uDFFF\uFFFD](?:[^\x00-\x1F\x7F-\x9F\uD800-\uDFFF\uFFFD]*[^\s\x00-\x1F\x7F-\x9F\uD800-\uDFFF\uFFFD])?)?$'
+          example: 正片
+        - name: version
+          in: query
+          required: false
+          description: |
+            【1.3.0】版本（`vod_version`，如"高清版"），精确匹配任一项（旧 Vod.php:308-310）。多值、空项与原始值规则同 state。
+          schema:
+            type: string
+            maxLength: 64
+            pattern: '^(?:[^\s\x00-\x1F\x7F-\x9F\uD800-\uDFFF\uFFFD](?:[^\x00-\x1F\x7F-\x9F\uD800-\uDFFF\uFFFD]*[^\s\x00-\x1F\x7F-\x9F\uD800-\uDFFF\uFFFD])?)?$'
+          example: 高清版
+        - name: actor
+          in: query
+          required: false
+          description: |
+            【1.3.0，受 maccms.content.search.enabled 控制】主演，包含匹配 `vod_actor`（旧 Vod.php:478-480，mac_like_arr）：
+            按半角逗号拆分，任一项包含即命中（项之间 OR）。空项按旧版生成 `%%`，命中全部（如 `甲,` 等于不按主演筛选，但仍受开关、
+            时限与并发上限约束）。每项含 `& " ' < >` 时另以其 HTML 实体形式各匹配一次（规则同 keyword）。
+            原始值规则：空串 = 未传；否则最多 64 个码点，首尾不得为空白字符，不得含禁用字符。
+          schema:
+            type: string
+            maxLength: 64
+            pattern: '^(?:[^\s\x00-\x1F\x7F-\x9F\uD800-\uDFFF\uFFFD](?:[^\x00-\x1F\x7F-\x9F\uD800-\uDFFF\uFFFD]*[^\s\x00-\x1F\x7F-\x9F\uD800-\uDFFF\uFFFD])?)?$'
+          example: 合成演员甲,合成演员乙
+        - name: director
+          in: query
+          required: false
+          description: |
+            【1.3.0，受 maccms.content.search.enabled 控制】导演，包含匹配 `vod_director`（旧 Vod.php:481-483），规则同 actor。
+          schema:
+            type: string
+            maxLength: 64
+            pattern: '^(?:[^\s\x00-\x1F\x7F-\x9F\uD800-\uDFFF\uFFFD](?:[^\x00-\x1F\x7F-\x9F\uD800-\uDFFF\uFFFD]*[^\s\x00-\x1F\x7F-\x9F\uD800-\uDFFF\uFFFD])?)?$'
+          example: 合成导演
+        - name: tag
+          in: query
+          required: false
+          description: |
+            【1.3.0，受 maccms.content.search.enabled 控制】标签，包含匹配 `vod_tag`（旧 Vod.php:472-474），规则同 actor。
+          schema:
+            type: string
+            maxLength: 64
+            pattern: '^(?:[^\s\x00-\x1F\x7F-\x9F\uD800-\uDFFF\uFFFD](?:[^\x00-\x1F\x7F-\x9F\uD800-\uDFFF\uFFFD]*[^\s\x00-\x1F\x7F-\x9F\uD800-\uDFFF\uFFFD])?)?$'
+          example: 标签甲
+        - name: name
+          in: query
+          required: false
+          description: |
+            【1.3.0，受 maccms.content.search.enabled 控制】片名，包含匹配 `vod_name`（只此一列；旧 Vod.php:469-471），规则同 actor。
+            与 keyword 不同：keyword 不拆分逗号且同时匹配副标题、英文名。
+          schema:
+            type: string
+            maxLength: 64
+            pattern: '^(?:[^\s\x00-\x1F\x7F-\x9F\uD800-\uDFFF\uFFFD](?:[^\x00-\x1F\x7F-\x9F\uD800-\uDFFF\uFFFD]*[^\s\x00-\x1F\x7F-\x9F\uD800-\uDFFF\uFFFD])?)?$'
+          example: 合成影片
+        - name: ids
+          in: query
+          required: false
+          description: |
+            【1.3.0】按视频 ID 筛选（旧 Vod.php:273-277）。空串 = 未传；`all` = 不筛选（旧版同名写法）；否则按半角逗号拆分为
+            最多 100 项（超出 → 400 "最多 100 个 ID"），每项为空或 1..10 位 ASCII 数字且不超过 4294967295（否则 → 400
+            "必须是 all 或以逗号分隔的视频 ID"）；`vod_id` 等于任一项。空项与 `0` 命中不了任何视频（旧版 `IN ('')` 同样如此）。
+            ids 只是筛选条件，结果仍按 sort/order 排序，不按传入顺序。首尾不得为空白字符，不得含禁用字符。
+            100 项上限是新版的请求大小上限，与旧版 VodSearch 缓存的 1000 个 ID 阈值（application/common/model/VodSearch.php:11）无关。
+          schema:
+            type: string
+            pattern: '^(?:all|[0-9]{0,10}(?:,[0-9]{0,10}){0,99})?$'
+          example: 9001,9002,9003
         - name: sort
           in: query
           required: false
           description: |
             排序字段，默认 `time`（更新时间）。对应旧库列：time=vod_time，time_add=vod_time_add，id=vod_id，
             score=vod_score，hits=vod_hits，hits_day/hits_week/hits_month=对应点击数，up=vod_up，down=vod_down，
-            level=vod_level（推荐等级）。不支持旧系统的 rnd（随机）。
+            level=vod_level（推荐等级）。
+            【1.3.0】`rnd`：旧版的随机取页（application/common/model/Vod.php:500-537），结果按 hits_week 倒序（再按 id 倒序），
+            `order` 照常校验但不起作用。先按全部条件计数 c：
+            - c ≤ 2000：随机页 = 1..(c ÷ pageSize 取整 + 1) 中的一个，**忽略请求的 page**，响应的 `page` 为实际取的随机页，
+              `total` 为 c（c 恰为 pageSize 的整数倍时最后一个随机页为空，与旧版相同）；
+            - c > 2000：取全表（不带任何条件）最小、最大视频 ID，从 0..(最大−最小) 中随机取 1000 个数作为候选视频 ID
+              （与旧版相同：旧版取的是区间数组的下标而不是 ID 本身，ID 不从 1 开始或很稀疏时命中会很少甚至为 0），与其他条件同时满足；
+              按请求的 page 分页，`total` 为加上候选条件后的计数。全表最小 ID 为 0 或最大不大于最小时按前一种处理。
+            每次请求结果不同，不适合缓存；与 page 配合不能遍历全部结果。
           schema:
             type: string
-            enum: [time, time_add, id, score, hits, hits_day, hits_week, hits_month, up, down, level]
+            enum: [time, time_add, id, score, hits, hits_day, hits_week, hits_month, up, down, level, rnd]
             default: time
         - name: order
           in: query

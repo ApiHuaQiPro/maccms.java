@@ -136,7 +136,7 @@ class VideoFilterTest {
         for (P p : List.of(P.KEYWORD, P.AREA, P.LANG, P.CLASSES)) {
             assertThat(value(p, one(p, "2020-2022"))).isEqualTo("2020-2022");
         }
-        rejects(P.YEAR, "2020-2022", YEAR);
+        assertThat(one(P.YEAR, "2020-2022").year()).as("契约 1.3.0：9 字符年份区间").isEqualTo("2020-2022");
         rejects(P.LEVEL, "2020-2022", LEVEL);
     }
 
@@ -264,9 +264,35 @@ class VideoFilterTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"202", "20201", "２０２０", "2020年", "-202", "2020-2022", "20 0"})
+    @ValueSource(strings = {"202", "20201", "２０２０", "2020年", "-202", "2020-202", "20 0", "2020-20222", "202a-2022",
+            "2020-202a", "2020年2022", "2020 2022", "2020　2022", "２０２０-2022", "-2020-2022"})
     void yearRejected(String raw) {
         rejects(P.YEAR, raw, YEAR);
+    }
+
+    @ParameterizedTest
+    @CsvSource(delimiter = '|', value = {
+            "2018-2020 | 2018,2019,2020",
+            "2020-2018 | 2018,2019,2020",
+            "2018~2020 | 2018,2019,2020",
+            "2018,2020 | 2018,2019,2020",
+            "'2018 2020' | 2018,2019,2020",
+            "201812020 | 2018,2019,2020",
+            "2020-2020 | 2020",
+            "0005-0003 | 0003,0004,0005",
+            "2020 | 2020",
+            "0000 | 0000",
+    })
+    void yearRangeExpandsLikeLegacy(String raw, String expected) {
+        // 旧 Vod.php:187-200：strlen==9 时取 substr(0,4)、substr(5,4)，前大后小交换后逐年展开；新版展开为 4 位字符串
+        assertThat(one(P.YEAR, raw).years()).containsExactly(expected.split(","));
+    }
+
+    @Test
+    void yearRangeUpperBoundIsTenThousandValues() {
+        assertThat(one(P.YEAR, "0000-9999").years()).hasSize(10000).startsWith("0000", "0001").endsWith("9999");
+        assertThat(one(P.YEAR, "9999-0000").years()).hasSize(10000);
+        assertThat(VideoFilter.NONE.years()).isNull();
     }
 
     @Test

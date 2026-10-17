@@ -5,6 +5,7 @@
 > **T2 已测量（MACC-19）**：一次性合成库 10 万/50 万/100 万行的 EXPLAIN、耗时、表锁与 503 证据见 `docs/architecture/09-content-search-filter-perf-report.md`；结论是包含匹配**保持关闭**（默认值未改），并发现时限在排序阶段触发时报 1028、被映射为 500 的缺陷（报告第 6.3 节；已由 MACC-22 修复为 503，见第 12 节"超时异常翻译"行）。下文第 6.2 节"定性分析，未测量"与第 11 节"全部未测量"以该报告为准。
 >
 > **T3 已实施（MACC-20）**：SSR 搜索页（固定路径 + 查询串、`parseSearch`、`vodSearchLink`、`SiteLink`/`SiteQueries`、400 页、`maccms.site.search.enabled` 默认关闭）的实现记录、测试与差异见 `docs/architecture/10-site-search-page.md`；第 7 节规则按原文实现，补充决定只有一处：无条件而 `page>1` 时返回 404（不查库）。
+> **B04 已实施（MACC-28，契约 1.3.0）**：第 3 节"暂缓"一行中 URL 可达的参数（`letter/state/version/actor/director/tag/name/ids`）、年份区间与 `rnd` 已实现，记录见 `docs/architecture/14-video-list-filter-completion.md`；`isend`、`timeadd` 等是旧模板标签专属条件，移交 B05。该文档第 3.2 节依据 PHP 黄金样本**更正**本文第 4.5、9 节"旧版 `year` 以整数比较"的描述：旧版实际按字符串比较（ThinkPHP 按 varchar 列以字符串绑定）。
 > 配套接口草案（已并入契约 1.1.0 并删除）：`docs/contracts/content-search-filter.draft.openapi.yaml`（以下简称"草案"）。已发布契约 `docs/contracts/content-read.openapi.yaml`（以下简称"契约"）。
 >
 > 输入：父任务 MACC-2 评论、`AGENTS.md`、`docs/architecture/02-agent-development-rules.md`、`docs/architecture/03-frontend-readonly-plan.md`、`docs/architecture/08-site-pages.md`、`docs/frontend/02-url-golden-vectors.md`、契约，以及下文逐条引用的旧代码与 Java 代码。

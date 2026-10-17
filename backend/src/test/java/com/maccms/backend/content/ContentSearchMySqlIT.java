@@ -435,7 +435,7 @@ class ContentSearchMySqlIT {
         // 参数错误（真实 Tomcat）：非法 UTF-8、多值、首尾空白、重复
         for (String[] bad : new String[][]{{"keyword=%FF", "keyword"}, {"keyword=%E4%B8", "keyword"},
                 {"area=%FF", "area"}, {"area=a,b", "area"}, {"keyword=%20x", "keyword"}, {"area=&area=", "area"},
-                {"year=2020-2022", "year"}, {"level=00000000009", "level"}, {"classes=a%2Cb", "classes"}}) {
+                {"year=2020-202", "year"}, {"level=00000000009", "level"}, {"classes=a%2Cb", "classes"}}) {
             Resp r = checked(bad[0], 400);
             assertThat(r.body().get("fieldErrors").get(0).get("field").asString()).as(bad[0]).isEqualTo(bad[1]);
         }

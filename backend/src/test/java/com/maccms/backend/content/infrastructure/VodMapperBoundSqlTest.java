@@ -204,4 +204,105 @@ class VodMapperBoundSqlTest {
     private static String escaped(String v) {
         return v.replace("!", "!!").replace("%", "!%").replace("_", "!_");
     }
+
+    // ------------------------------------------------------------------ 契约 1.3.0（B04）
+
+    private static VodFilterCriteria lists(List<String> years, List<String> letters, List<String> states,
+                                           List<String> versions, List<String> actor, List<String> director,
+                                           List<String> tag, List<String> name, List<Long> ids, List<Long> candidates) {
+        return new VodFilterCriteria(null, null, null, null, null, null, years, letters, states, versions, actor,
+                director, tag, name, ids, candidates);
+    }
+
+    @Test
+    void contract130ConditionsUseFixedColumnsAndBindVariablesOnly() {
+        VodFilterCriteria c = lists(List.of("2018", "2019"), List.of("A"), List.of("正片", ""), List.of("v"),
+                List.of("%甲%", "%%"), List.of("%乙%"), List.of("%丙%"), List.of("%丁%"), List.of(5L, 0L),
+                List.of(1L, 2L, 3L));
+        String conditions = VISIBLE + " AND vod_year IN ( ? , ? ) AND vod_letter IN ( ? )"
+                + " AND vod_state IN ( ? , ? ) AND vod_version IN ( ? )"
+                + " AND ( vod_actor LIKE ? ESCAPE '!' OR vod_actor LIKE ? ESCAPE '!' )"
+                + " AND ( vod_director LIKE ? ESCAPE '!' ) AND ( vod_tag LIKE ? ESCAPE '!' )"
+                + " AND ( vod_name LIKE ? ESCAPE '!' ) AND vod_id IN ( ? , ? ) AND vod_id IN ( ? , ? , ? )";
+        BoundSql count = bound("countPublishedMatching", TYPE_IDS, c);
+        assertThat(sql(count)).isEqualTo("SELECT " + HINT + " COUNT(*) FROM mac_vod WHERE " + conditions);
+        List<Object> expected = List.of(1, 6, 7, "2018", "2019", "A", "正片", "", "v", "%甲%", "%%", "%乙%", "%丙%",
+                "%丁%", 5L, 0L, 1L, 2L, 3L);
+        assertThat(values(count)).isEqualTo(expected);
+
+        BoundSql page = bound("selectPublishedMatchingPage", TYPE_IDS, c, VideoSort.HITS_WEEK, true, 20L, 10);
+        assertThat(sql(page)).startsWith("SELECT " + HINT + " vod_id AS id,")
+                .endsWith(" FROM mac_vod WHERE " + conditions + " ORDER BY vod_hits_week DESC, vod_id DESC LIMIT ?, ?");
+        List<Object> pageValues = new ArrayList<>(expected);
+        pageValues.addAll(List.of(20L, 10));
+        assertThat(values(page)).as("count 与分页的条件与绑定值相同").isEqualTo(pageValues);
+    }
+
+    @Test
+    void contract110ConditionsComeFirstAndKeepTheirText() {
+        // 1.1.0 条件与 1.3.0 条件同时出现时，1.1.0 部分的 SQL 文本与单独出现时相同，1.3.0 条件追加在后
+        VodFilterCriteria c = new VodFilterCriteria(9, "2020", "大陆", null, null, null, null, List.of("A"), null,
+                null, null, null, null, null, null, null);
+        assertThat(sql(bound("countPublishedMatching", TYPE_IDS, c))).isEqualTo("SELECT " + HINT
+                + " COUNT(*) FROM mac_vod WHERE " + VISIBLE
+                + " AND vod_level = ? AND vod_year = ? AND vod_area = ? AND vod_letter IN ( ? )");
+    }
+
+    @ParameterizedTest
+    @EnumSource(Single130.class)
+    void eachContract130ConditionAloneAddsExactlyItsPredicate(Single130 single) {
+        BoundSql count = bound("countPublishedMatching", TYPE_IDS, single.criteria);
+        assertThat(sql(count)).isEqualTo("SELECT " + HINT + " COUNT(*) FROM mac_vod WHERE " + VISIBLE + " "
+                + single.predicate);
+        assertThat(values(count).subList(3, values(count).size())).isEqualTo(single.values);
+    }
+
+    enum Single130 {
+        YEARS(lists(List.of("1", "2"), null, null, null, null, null, null, null, null, null),
+                "AND vod_year IN ( ? , ? )", List.of("1", "2")),
+        LETTERS(lists(null, List.of("a"), null, null, null, null, null, null, null, null),
+                "AND vod_letter IN ( ? )", List.of("a")),
+        STATES(lists(null, null, List.of("a"), null, null, null, null, null, null, null),
+                "AND vod_state IN ( ? )", List.of("a")),
+        VERSIONS(lists(null, null, null, List.of("a"), null, null, null, null, null, null),
+                "AND vod_version IN ( ? )", List.of("a")),
+        ACTOR(lists(null, null, null, null, List.of("%a%"), null, null, null, null, null),
+                "AND ( vod_actor LIKE ? ESCAPE '!' )", List.of("%a%")),
+        DIRECTOR(lists(null, null, null, null, null, List.of("%a%"), null, null, null, null),
+                "AND ( vod_director LIKE ? ESCAPE '!' )", List.of("%a%")),
+        TAG(lists(null, null, null, null, null, null, List.of("%a%"), null, null, null),
+                "AND ( vod_tag LIKE ? ESCAPE '!' )", List.of("%a%")),
+        NAME(lists(null, null, null, null, null, null, null, List.of("%a%"), null, null),
+                "AND ( vod_name LIKE ? ESCAPE '!' )", List.of("%a%")),
+        IDS(lists(null, null, null, null, null, null, null, null, List.of(7L), null),
+                "AND vod_id IN ( ? )", List.of(7L)),
+        CANDIDATES(VodFilterCriteria.candidatesOnly(List.of(0L, 9L)), "AND vod_id IN ( ? , ? )", List.of(0L, 9L));
+
+        final VodFilterCriteria criteria;
+        final String predicate;
+        final List<Object> values;
+
+        Single130(VodFilterCriteria criteria, String predicate, List<Object> values) {
+            this.criteria = criteria;
+            this.predicate = predicate;
+            this.values = values;
+        }
+    }
+
+    @Test
+    void hostileListInputNeverReachesSqlText() {
+        String h = "x' OR '1'='1";
+        VodFilterCriteria c = lists(List.of(h), List.of(h), List.of(h), List.of(h), List.of("%" + h + "%"),
+                List.of(h), List.of(h), List.of(h), null, null);
+        BoundSql b = bound("selectPublishedMatchingPage", TYPE_IDS, c, VideoSort.TIME, true, 0L, 20);
+        assertThat(b.getSql()).doesNotContain(h).doesNotContain("'1'");
+        assertThat(values(b)).contains(h, "%" + h + "%");
+    }
+
+    @Test
+    void idRangeIsAWholeTableMinMaxWithoutParameters() {
+        BoundSql b = bound("selectIdRange");
+        assertThat(sql(b)).isEqualTo("SELECT " + HINT + " MIN(vod_id) AS minId, MAX(vod_id) AS maxId FROM mac_vod");
+        assertThat(b.getParameterMappings()).isEmpty();
+    }
 }

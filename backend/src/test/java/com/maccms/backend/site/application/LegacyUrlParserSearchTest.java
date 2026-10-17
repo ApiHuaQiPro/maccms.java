@@ -213,7 +213,9 @@ class LegacyUrlParserSearchTest {
             assertThat(filters(style, "wd=a%2Cb").keyword()).as("关键字中的逗号是字面字符").isEqualTo("a,b");
             assertThat(invalid(style, "lang=" + "a".repeat(11)).field()).isEqualTo("lang");
             assertThat(invalid(style, "year=20").field()).isEqualTo("year");
-            assertThat(invalid(style, "year=2020-2022").field()).isEqualTo("year");
+            assertThat(invalid(style, "year=2020-202").field()).isEqualTo("year");
+            // 契约 1.3.0（B04）：9 字符年份区间由 content 接受，搜索页随之接受（旧站同样接受）
+            assertThat(filters(style, "year=2020-2022").year()).isEqualTo("2020-2022");
             assertThat(filters(style, "year=+2020+").year()).isEqualTo("2020");
             assertThat(invalid(style, "class=" + "a".repeat(33)).field()).isEqualTo("classes");
             assertThat(invalid(style, "wd=a%00b").field()).as("控制字符").isEqualTo("keyword");

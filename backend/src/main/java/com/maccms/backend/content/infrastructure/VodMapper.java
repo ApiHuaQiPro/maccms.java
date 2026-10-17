@@ -34,6 +34,12 @@ public interface VodMapper {
                                                     @Param("offset") long offset,
                                                     @Param("limit") int limit);
 
+    /**
+     * 随机排序（契约 1.3.0 sort=rnd）的 ID 段：全表 MIN/MAX(vod_id)，不带任何条件（与旧 Vod.php:509 相同——ThinkPHP 每次查询后
+     * 清空条件，thinkphp/library/think/db/Query.php:3013，所以旧版这条语句不含前一次 count 的 where）。
+     */
+    VodIdRange selectIdRange();
+
     VodDetailRow selectPublishedDetail(@Param("id") long id);
 
     /** 专题关联视频（MACC-27）：vod_id 在 ids 中，按 vod_time 倒序，最多 999 条（旧 Topic::infoData）。ids 非空。 */

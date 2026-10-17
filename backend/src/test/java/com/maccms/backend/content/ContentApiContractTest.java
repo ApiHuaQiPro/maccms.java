@@ -191,7 +191,8 @@ class ContentApiContractTest {
             "categoryId, 0", "categoryId, -1", "categoryId, abc", "categoryId, 65536", "categoryId, 1.5",
             "page, 0", "page, 1001", "page, x", "page, 99999999999",
             "pageSize, 0", "pageSize, 101", "pageSize, ' 5'",
-            "sort, rnd", "sort, vod_time", "sort, TIME", "sort, 'time;drop'",
+            // sort=rnd 从契约 1.3.0（B04）起是合法取值，见 VideoRandomListTest
+            "sort, RND", "sort, vod_time", "sort, TIME", "sort, 'time;drop'",
             "order, DESC", "order, up"
     })
     void invalidListParametersReturn400(String field, String value) throws Exception {
@@ -246,7 +247,8 @@ class ContentApiContractTest {
                 .thenReturn(List.of(Fixtures.summary(2, 6), Fixtures.summary(1, 1)));
         String plain = mvc.perform(get("/api/v1/videos")).andReturn().getResponse()
                 .getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
-        String legacy = mvc.perform(get("/api/v1/videos?wd=x&class=y&tid=1&by=hits&actor=z")).andReturn()
+        // actor 从契约 1.3.0（B04）起是正式参数，这里换成仍未声明的旧标签参数 isend
+        String legacy = mvc.perform(get("/api/v1/videos?wd=x&class=y&tid=1&by=hits&isend=1")).andReturn()
                 .getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
         assertThat(legacy).isEqualTo(plain);
         verify(vodMapper, never()).countPublishedMatching(any(), any());
@@ -292,7 +294,7 @@ class ContentApiContractTest {
             "area     | '　a'                 | 首尾不能有空白字符",
             "area     | 123456789012345678901 | 长度不能超过 20 个字符",
             "lang     | 12345678901           | 长度不能超过 10 个字符",
-            "year     | 2020-2022             | 必须是 4 位数字年份",
+            "year     | 2020-202              | 必须是 4 位数字年份",
             "year     | ' 2020'               | 必须是 4 位数字年份",
             "level    | 0                     | 必须是 1 到 9 之间的整数",
             "level    | 10                    | 必须是 1 到 9 之间的整数",

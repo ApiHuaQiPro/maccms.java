@@ -38,6 +38,11 @@ class SearchLinkRoundTripTest {
         }
         out.add(SearchFilters.NONE.with("area", "..").with("wd", "x"));
         out.add(SearchFilters.NONE.with("area", "大陆").with("lang", "国语").with("year", "2020"));
+        // 契约 1.3.0（B04）：content 接受 9 字符年份区间，搜索页随之接受，链接同样能生成并回读
+        for (String range : List.of("2018-2020", "2020-2018", "2018~2020", "2018 2020", "2018,2020", "2018+2020",
+                "2018%2020", "0000-9999")) {
+            out.add(SearchFilters.NONE.with("year", range));
+        }
         out.add(new SearchFilters(null, null, null, null, 9, null, null, null));
         out.add(new SearchFilters(null, null, null, null, null, null, VideoSort.HITS, SearchFilters.SortOrder.ASC));
         out.add(new SearchFilters(null, "a/b", "%2E", "2026", 1, "剧情/动作", VideoSort.TIME_ADD,
