@@ -50,9 +50,10 @@ import tools.jackson.databind.json.JsonMapper;
 /**
  * 播放/下载四个入口（B05，15 文档第 6 节；D-B05-1～4）的 MockMvc 测试：content 服务是替身（合成数据），播放器配置取合成的旧配置目录
  * （src/test/resources/site/play/legacy-config，app.player_sort=1，含外部解析地址）。W1、W2 都打开（生产默认）；关闭态见
- * {@link SitePlaybackSwitchesMvcTest}。player_aaaa 与 PHP 黄金样本的逐字段对照见 PlaybackGoldenMySqlIT。
+ * {@link PlaybackSwitchCases}（SitePlaybackSwitch00/01/10/11MvcTest）。player_aaaa 与 PHP 黄金样本的逐字段对照见 PlaybackGoldenMySqlIT。
  */
-@WebMvcTest(controllers = {SitePlaybackController.class, PlayerConfigController.class}, properties = {
+@WebMvcTest(controllers = {SitePlaybackController.class, PlayerConfigController.class, SiteContentController.class},
+        properties = {
         "maccms.site.enabled=true",
         "maccms.site.name=合成站",
         "maccms.site.base-url=http://maccms.local.test/",
@@ -126,6 +127,23 @@ class SitePlaybackPagesMvcTest {
         assertThat(doc.selectFirst("a.player-page__next").attr("href")).isEqualTo("/index.php/vod/play/id/1/sid/1/nid/3.html");
         assertThat(doc.select(".breadcrumb__item").eachText()).containsExactly("首页", "电影", "动作片", "播放样本 <b>&", "第2集");
         assertThat(doc.select(".player-page__trial")).isEmpty();
+    }
+
+    /** ThinkPHP 兼容模式（?s=，入口路径）：交给播放页 Controller，按同一请求解析，canonical 指向路径形式。 */
+    @Test
+    void compatModeOnTheEntryPathReachesThePlaybackPages() throws Exception {
+        for (String s : List.of("vod/play/id/1/sid/1/nid/2.html", "/vod/play/id/1/sid/1/nid/2.html")) {
+            MvcResult r = fetch("/index.php?s=" + s);
+            assertThat(r.getResponse().getStatus()).as(s).isEqualTo(200);
+            assertThat(r.getResponse().getHeader("Content-Security-Policy")).isEqualTo(STRICT);
+            assertThat(html(r).selectFirst("link[rel=canonical]").attr("href")).isEqualTo("http://maccms.local.test" + PLAY);
+            assertThat(html(r).selectFirst("iframe.player-frame__iframe").attr("src")).isEqualTo(PLAYER);
+        }
+        MvcResult inner = fetch("/index.php?s=vod/player/id/1/nid/2/sid/1.html");
+        assertThat(inner.getResponse().getStatus()).isEqualTo(200);
+        assertThat(inner.getResponse().getHeader("Content-Security-Policy")).contains("'nonce-");
+        assertThat(fetch("/index.php?s=vod/play/id/1/sid/1/nid/9.html").getResponse().getStatus()).isEqualTo(404);
+        assertThat(fetch("/index.php?s=vod/play/id/1/sid/1/nid/2.html&x=1").getResponse().getStatus()).isEqualTo(404);
     }
 
     @Test

@@ -184,6 +184,54 @@ class SiteSearchB05PagesMvcTest {
         assertThat(doc.selectFirst("ul[aria-labelledby=search-filter-by] a").attr("href"))
                 .as("换成时间排序时去掉 rnd").isEqualTo(SEARCH + "?by=time&letter=A");
         assertThat(doc.selectFirst("form.search-form input[name=by]").attr("value")).isEqualTo("rnd");
+        assertThat(doc.select("p.search-random-notice.notice").eachText())
+                .containsExactly("随机排序每次显示不同的结果，不提供翻页。");
+        // 非随机排序没有该说明
+        assertThat(ok(SEARCH + "?by=time&letter=A").select(".search-random-notice")).isEmpty();
+    }
+
+    /** D-B05-6：ajax 接受并忽略（旧 intval），查询、canonical、链接与隐藏字段都与不带 ajax 时相同。 */
+    @ParameterizedTest
+    @ValueSource(strings = {"ajax=1", "ajax=0", "ajax=abc", "ajax=-1", "ajax="})
+    void ajaxIsAcceptedAndIgnored(String ajax) throws Exception {
+        Document with = ok(SEARCH + "?letter=A&" + ajax);
+        VideoListQuery q = lastQuery();
+        assertThat(q.filter().letter()).isEqualTo("A");
+        Document without = ok(SEARCH + "?letter=A");
+        assertThat(with.selectFirst("link[rel=canonical]").attr("href"))
+                .isEqualTo(without.selectFirst("link[rel=canonical]").attr("href"))
+                .isEqualTo("http://maccms.local.test/index.php/vod/search.html?letter=A");
+        assertThat(with.select("form.search-form input[type=hidden]").eachAttr("name")).containsExactly("letter");
+        assertThat(with.select("a[href]").eachAttr("href")).noneMatch(h -> h.contains("ajax"));
+        assertThat(call(SEARCH + "?letter=A&ajax=1&ajax=1").getResponse().getStatus()).isEqualTo(400);
+        assertThat(call(SEARCH + "?ajax=1&isend=1").getResponse().getStatus()).isEqualTo(400);
+    }
+
+    /** ThinkPHP 兼容模式：s 指向搜索页时入口路径与搜索路径都按搜索页处理（非规范地址，canonical 指向查询串形式）。 */
+    @ParameterizedTest
+    @ValueSource(strings = {"/index.php?s=vod/search&letter=A", "/index.php?s=%2Fvod%2Fsearch.html&letter=A",
+        "/?s=vod/search/&letter=A", "/index.php/?letter=A&s=vod/search", SEARCH + "?letter=A&s=vod/search"})
+    void compatModeSearchIsTheSearchPage(String pathAndQuery) throws Exception {
+        Document doc = ok(pathAndQuery);
+        assertThat(lastQuery().filter().letter()).isEqualTo("A");
+        assertThat(doc.selectFirst("link[rel=canonical]").attr("href"))
+                .isEqualTo("http://maccms.local.test/index.php/vod/search.html?letter=A");
+        assertThat(doc.select("form.search-form input[type=hidden]").eachAttr("name")).containsExactly("letter");
+    }
+
+    @Test
+    void compatModeSearchWithInvalidParametersIsThe400Page() throws Exception {
+        for (String q : List.of("/index.php?s=vod/search&foo=1", "/index.php?s=vod/search&s=vod/search",
+                "/index.php?s=vod/search&page=0")) {
+            MvcResult r = call(q);
+            assertThat(r.getResponse().getStatus()).as(q).isEqualTo(400);
+            assertThat(r.getResponse().getContentAsString(StandardCharsets.UTF_8)).contains("搜索条件不合法");
+        }
+        // s 指向其他页面、或入口路径与其他查询串混用：不是搜索页
+        for (String q : List.of("/index.php?s=vod/searchx&letter=A", "/index.php?letter=A", "/index.php?ids=1")) {
+            assertThat(call(q).getResponse().getStatus()).as(q).isEqualTo(404);
+        }
+        verifyNoInteractions(content);
     }
 
     @Test

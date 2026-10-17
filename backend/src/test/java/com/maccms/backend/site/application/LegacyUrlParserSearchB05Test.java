@@ -102,16 +102,68 @@ class LegacyUrlParserSearchB05Test {
         }
     }
 
-    /** ThinkPHP 兼容模式 s 仍交 PHP；isend、ajax 旧代码读不到或不使用，按未知参数 400（不静默丢弃）。 */
+    /**
+     * ThinkPHP 兼容模式 s：值是搜索页路径时按搜索页处理（入口路径与搜索路径都可），指向其他页面时交还 PHP；isend 旧代码读不到，
+     * 按未知参数 400（不静默丢弃）；ajax 按 D-B05-6 接受并忽略（见 {@link #ajaxIsAcceptedAndIgnoredLikeLegacyIntval}）。
+     */
     @Test
-    void onlyCompatModeIsHandedOffAndUnusedLegacyKeysAre400() {
+    void compatModeAndUnusedLegacyKeys() {
         for (LegacyUrlStyle style : STYLES) {
-            assertThat(parser(style).parseSearch(base(style), "s=vod/search&wd=x")).isEmpty();
-            for (String q : List.of("isend=1", "ajax=1", "isend=0&wd=x", "mid=1", "sid=1", "nid=1", "starsign=x")) {
+            LegacyUrlParser p = parser(style);
+            var viaSearchPath = p.parseSearch(base(style), "s=vod/search&wd=x").orElseThrow();
+            assertThat(((SiteRoute.VodSearch) viaSearchPath.route()).filters().keyword()).isEqualTo("x");
+            assertThat(viaSearchPath.canonical()).isFalse();
+            for (String s : List.of("s=vod/search", "s=%2Fvod%2Fsearch.html", "s=vod/search/")) {
+                var m = p.parseSearch("/index.php", s + "&wd=y&page=2").orElseThrow();
+                assertThat(((SiteRoute.VodSearch) m.route()).filters().keyword()).as(s).isEqualTo("y");
+                assertThat(((SiteRoute.VodSearch) m.route()).page()).isEqualTo(2);
+            }
+            assertThat(p.parseSearch("/", "s=vod/search&wd=y")).isPresent();
+            // 入口路径没有 s、s 指向其他页面：不是搜索页
+            assertThat(p.parseSearch("/index.php", "wd=y")).isEmpty();
+            for (String q : List.of("s=vod/detail/id/1&wd=x", "s=/vod/searchx", "s=%FF", "wd=x&s=vod/type/id/1")) {
+                assertThat(p.parseSearch(base(style), q)).as(q).isEmpty();
+                assertThat(p.parseSearch("/index.php", q)).as(q).isEmpty();
+            }
+            assertThat(invalid(style, "s=vod/search&s=vod/search").field()).isEqualTo("s");
+            for (String q : List.of("isend=1", "isend=0&wd=x", "mid=1", "sid=1", "nid=1", "starsign=x")) {
                 ApiException.FieldError e = invalid(style, q);
                 assertThat(e.field()).as(q).isEqualTo("query");
                 assertThat(e.message()).isEqualTo("不支持的参数");
             }
+        }
+    }
+
+    /**
+     * D-B05-6：旧 mac_param_url 对 ajax 只做 intval（application/common.php:1568），不进 listCacheData。新版接受任意取值（0、非数字、负数）
+     * 并忽略：条件、链接、canonical、隐藏字段都与不带 ajax 时相同；重复、非法编码、总长度限制照旧；不因此放宽其他未知键。
+     */
+    @ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"ajax=1", "ajax=0", "ajax=abc", "ajax=-1", "ajax=", "ajax"})
+    void ajaxIsAcceptedAndIgnoredLikeLegacyIntval(String ajax) {
+        for (LegacyUrlStyle style : STYLES) {
+            LegacyUrlParser p = parser(style);
+            var with = p.parseSearch(base(style), "wd=x&" + ajax + "&page=2").orElseThrow();
+            var without = p.parseSearch(base(style), "wd=x&page=2").orElseThrow();
+            assertThat(with.route()).isEqualTo(without.route());
+            assertThat(with.canonical()).isFalse();
+            assertThat(with.path()).isEqualTo(without.path());
+            SearchFilters f = ((SiteRoute.VodSearch) with.route()).filters();
+            assertThat(f.params()).doesNotContainKey("ajax");
+            // 只有 ajax 时是无条件页
+            assertThat(((SiteRoute.VodSearch) p.parseSearch(base(style), ajax).orElseThrow().route()).filters().isEmpty())
+                    .isTrue();
+        }
+    }
+
+    @Test
+    void ajaxKeepsDuplicateEncodingAndUnknownKeyRules() {
+        for (LegacyUrlStyle style : STYLES) {
+            assertThat(invalid(style, "ajax=1&ajax=1").field()).isEqualTo("ajax");
+            assertThat(invalid(style, "ajax=%FF").field()).isEqualTo("ajax");
+            assertThat(invalid(style, "ajax=1&isend=1").field()).isEqualTo("query");
+            assertThat(invalid(style, "ajax=1&foo=1").message()).isEqualTo("不支持的参数");
+            assertThat(parser(style).parseSearch(base(style), "ajax=" + "1".repeat(2050))).isEmpty();
         }
     }
 

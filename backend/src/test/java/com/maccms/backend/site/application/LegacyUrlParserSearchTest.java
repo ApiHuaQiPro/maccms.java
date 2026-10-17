@@ -285,10 +285,12 @@ class LegacyUrlParserSearchTest {
             assertThat(invalid(style, "wd=a&wd=%FF").field()).isEqualTo("wd");
             // 交 PHP：只剩兼容模式 s（任何位置）；B05 起 actor 等旧键、tid、by=rnd 由 Java 承接（LegacyUrlParserSearchB05Test），
             // isend、ajax 旧代码读不到或不使用，按未知参数 400
-            for (String q : List.of("s=/vod/detail/id/1", "wd=x&s=vod/search", "foo=1&s=x", "wd=%FF&s=x")) {
+            for (String q : List.of("s=/vod/detail/id/1", "foo=1&s=x", "wd=%FF&s=x")) {
                 assertThat(parser(style).parseSearch(base(style), q)).as(q).isEmpty();
             }
-            for (String q : List.of("isend=1", "ajax=1", "foo=1&actor=x")) {
+            // B05：s 指向搜索页时按搜索页处理（LegacyUrlParserSearchB05Test）；ajax 接受并忽略（D-B05-6）
+            assertThat(parser(style).parseSearch(base(style), "wd=x&s=vod/search")).isPresent();
+            for (String q : List.of("isend=1", "foo=1&actor=x")) {
                 assertThat(invalid(style, q).field()).as(q).isEqualTo("query");
             }
             assertThat(invalid(style, "foo=1&by=rnd").field()).isEqualTo("query");

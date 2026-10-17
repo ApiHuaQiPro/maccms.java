@@ -50,7 +50,7 @@ import org.springframework.test.web.servlet.MvcResult;
  * 越界取末页、只渲染当前页）、六类正文的富文本过滤（脚本、事件属性、危险 URL、style 删除，合法段落/列表/表格/链接/图片保留）、
  * 文章积分与密码（签名票据）、列表与分页、单条 RSS、ajax_detail 默认关闭。
  */
-@WebMvcTest(controllers = SiteLibraryController.class, properties = {
+@WebMvcTest(controllers = {SiteLibraryController.class, SiteContentController.class}, properties = {
         "maccms.site.enabled=true",
         "maccms.site.name=合成站 & <b>",
         "maccms.site.base-url=http://maccms.local.test/",
@@ -151,6 +151,19 @@ class SiteLibraryPagesMvcTest {
             assertThat(fetch(p).getResponse().getStatus()).as(p).isEqualTo(404);
         }
         assertThat(mvc.perform(get(ART + "?page=2")).andReturn().getResponse().getStatus()).isEqualTo(404);
+    }
+
+    /** ThinkPHP 兼容模式（?s=，入口路径）：交给内容页 Controller，canonical 指向路径形式。 */
+    @Test
+    void compatModeOnTheEntryPathReachesTheContentPages() throws Exception {
+        MvcResult r = fetch("/index.php?s=art/detail/id/55/page/2.html");
+        assertThat(r.getResponse().getStatus()).isEqualTo(200);
+        Document doc = html(r);
+        assertThat(doc.text()).contains("PAGE-2-BODY").doesNotContain("PAGE-1-BODY");
+        assertThat(doc.selectFirst("link[rel=canonical]").attr("href"))
+                .isEqualTo("http://maccms.local.test/index.php/art/detail/id/55/page/2.html");
+        assertThat(fetch("/index.php?s=/art/detail/id/55.html").getResponse().getStatus()).isEqualTo(200);
+        assertThat(fetch("/index.php?s=art/detail/id/055.html").getResponse().getStatus()).isEqualTo(404);
     }
 
     @Test

@@ -362,9 +362,12 @@ class SiteSearchPagesMvcTest {
 
     // ---------------------------------------------------------------- 交 PHP（本地 404）
 
-    /** B05 起只有兼容模式 s 交 PHP；actor、tid、by=rnd、letter 等由 Java 承接（SiteSearchB05PagesMvcTest）。 */
+    /**
+     * B05 起只有指向其他页面的兼容模式 s 交 PHP；s 指向搜索页、actor、tid、by=rnd、letter 等由 Java 承接
+     * （SiteSearchB05PagesMvcTest）。
+     */
     @ParameterizedTest
-    @ValueSource(strings = {"?s=/vod/detail/id/1", "?wd=x&s=vod/search"})
+    @ValueSource(strings = {"?s=/vod/detail/id/1", "?wd=x&s=vod/type/id/1"})
     void handedOffQueriesAre404WithoutQueries(String query) throws Exception {
         assertErrorPage(call(SEARCH + query), 404, "页面不存在");
         verifyNoInteractions(content);
