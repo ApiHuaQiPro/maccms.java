@@ -334,7 +334,7 @@ K1–K5 由 MACC-54 交付，队长阶段审阅通过后以普通 merge `d4262ea
 | 单元/契约/MockMvc | `./mvnw clean verify` | 交付评论 |
 | MySQL 集成与黄金向量 | `./mvnw verify -Pmysql-it`：`ModuleSearchGoldenMySqlIT`（第 7.5 节，124 例）、`PlaybackGoldenMySqlIT`、`VideoTagGoldenMySqlIT`、`VideoListGoldenMySqlIT`、`SiteSearchMySqlIT`、`LibraryMySqlIT` 等 | 交付评论 |
 | PHP 黄金向量 | `module_search_golden.php`（PHP 8.0.30 与 7.3.33 逐项相同）、`vod_play_golden.php`、`b05_url_golden.php`、`vod_tag_golden.php`、`content/vodlist` 的 `urls[vodsearch.*/vodshow.*]` | 资源文件 + 上列测试 |
-| 前端试看脚本 | `node --test backend/src/test/js/`（MACC-54） | 交付评论 |
+| 前端试看脚本 | `node --test backend/src/test/js/site/trial.test.js`（MACC-54；Node 24 不接受目录参数） | 交付评论 |
 | 真实 HTTP + 浏览器 | `python backend/src/test/browser/b05_site_check.py --out docs/architecture/15-b05-site-check`：已打包应用 × W1/W2 = 00/01/10/11 × 根路径 / 子目录 `/sub/`（本地反向代理）共 8 组；Chromium（Playwright） | `15-b05-site-check/summary.json`、`screenshots/` |
 | 中规模合成库测量 | `B05SsrPerfRun`（最终树、真实 SSR HTTP 与实际内部标签服务/Mapper，记录生成的 SQL/绑定、EXPLAIN、耗时、状态与清理） | `15-b05-perf-report.md` 第 10 节、`15-b05-perf-raw/ssr-*` |
 
