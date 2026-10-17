@@ -248,6 +248,52 @@ class VodMapperBoundSqlTest {
                 + " AND vod_level = ? AND vod_year = ? AND vod_area = ? AND vod_letter IN ( ? )");
     }
 
+    private static VodFilterCriteria multi(List<String> areas, List<String> langs, List<String> classesPatterns) {
+        return new VodFilterCriteria(null, null, null, null, null, null, null, null, null, null, null, null, null,
+                null, null, null, areas, langs, classesPatterns);
+    }
+
+    /** 契约 1.3.0（MACC-28 Q1）：area/lang 逗号多值为 IN，classes 为各项 LIKE 的 OR；1.1.0 条件文本不变、在前。 */
+    @Test
+    void multiValueAreaLangAndClassesUseFixedColumnsAndBindVariablesOnly() {
+        VodFilterCriteria c = new VodFilterCriteria(9, "2020", null, null, null, null, null, List.of("A"), null, null,
+                null, null, null, null, null, null, List.of("大陆", "香港", ""), List.of("", ""), List.of("%动作%", "%%"));
+        String conditions = VISIBLE + " AND vod_level = ? AND vod_year = ? AND vod_area IN ( ? , ? , ? )"
+                + " AND vod_lang IN ( ? , ? ) AND ( vod_class LIKE ? ESCAPE '!' OR vod_class LIKE ? ESCAPE '!' )"
+                + " AND vod_letter IN ( ? )";
+        BoundSql count = bound("countPublishedMatching", TYPE_IDS, c);
+        assertThat(sql(count)).isEqualTo("SELECT " + HINT + " COUNT(*) FROM mac_vod WHERE " + conditions);
+        List<Object> expected = List.of(1, 6, 7, 9, "2020", "大陆", "香港", "", "", "", "%动作%", "%%", "A");
+        assertThat(values(count)).isEqualTo(expected);
+
+        BoundSql page = bound("selectPublishedMatchingPage", TYPE_IDS, c, VideoSort.TIME, true, 0L, 20);
+        assertThat(sql(page)).endsWith(" FROM mac_vod WHERE " + conditions + " ORDER BY vod_time DESC, vod_id DESC"
+                + " LIMIT ?, ?");
+        List<Object> pageValues = new ArrayList<>(expected);
+        pageValues.addAll(List.of(0L, 20));
+        assertThat(values(page)).as("count 与分页的条件与绑定值相同").isEqualTo(pageValues);
+
+        String h = "x' OR '1'='1";
+        BoundSql hostile = bound("selectPublishedMatchingPage", TYPE_IDS, multi(List.of(h, h), List.of(h, ""),
+                List.of("%" + h + "%", "%%")), VideoSort.TIME, true, 0L, 20);
+        assertThat(hostile.getSql()).doesNotContain(h).doesNotContain("'1'");
+        assertThat(values(hostile)).contains(h, "%" + h + "%");
+    }
+
+    @Test
+    void singleAndMultiValueFormsAreExclusive() {
+        for (Runnable bad : List.<Runnable>of(
+                () -> new VodFilterCriteria(null, null, "a", null, null, null, null, null, null, null, null, null,
+                        null, null, null, null, List.of("a", "b"), null, null),
+                () -> new VodFilterCriteria(null, null, null, "a", null, null, null, null, null, null, null, null,
+                        null, null, null, null, null, List.of("a", "b"), null),
+                () -> new VodFilterCriteria(null, null, null, null, "%a%", null, null, null, null, null, null, null,
+                        null, null, null, null, null, null, List.of("%a%", "%b%")),
+                () -> multi(List.of(), null, null))) {
+            org.assertj.core.api.Assertions.assertThatThrownBy(bad::run).isInstanceOf(IllegalArgumentException.class);
+        }
+    }
+
     @ParameterizedTest
     @EnumSource(Single130.class)
     void eachContract130ConditionAloneAddsExactlyItsPredicate(Single130 single) {
@@ -276,7 +322,11 @@ class VodMapperBoundSqlTest {
                 "AND ( vod_name LIKE ? ESCAPE '!' )", List.of("%a%")),
         IDS(lists(null, null, null, null, null, null, null, null, List.of(7L), null),
                 "AND vod_id IN ( ? )", List.of(7L)),
-        CANDIDATES(VodFilterCriteria.candidatesOnly(List.of(0L, 9L)), "AND vod_id IN ( ? , ? )", List.of(0L, 9L));
+        CANDIDATES(VodFilterCriteria.candidatesOnly(List.of(0L, 9L)), "AND vod_id IN ( ? , ? )", List.of(0L, 9L)),
+        AREAS(multi(List.of("a", ""), null, null), "AND vod_area IN ( ? , ? )", List.of("a", "")),
+        LANGS(multi(null, List.of("a", "b"), null), "AND vod_lang IN ( ? , ? )", List.of("a", "b")),
+        CLASSES_LIST(multi(null, null, List.of("%a%", "%%")),
+                "AND ( vod_class LIKE ? ESCAPE '!' OR vod_class LIKE ? ESCAPE '!' )", List.of("%a%", "%%"));
 
         final VodFilterCriteria criteria;
         final String predicate;

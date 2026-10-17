@@ -16,7 +16,9 @@ info:
     ids（`all` 或最多 100 个视频 ID），year 的 9 字符区间写法（如 `2018-2020`，旧版两端颠倒时交换），以及 `sort=rnd`（旧版的
     随机取页算法）。此前合法的请求结果不变；此前因 year 区间写法、`sort=rnd` 返回 400 的请求现在按上述规则处理；
     1.2.0 下被忽略的同名参数（letter、state、version、actor、director、tag、name、ids）从 1.3.0 起生效。
-    其余路径、所有响应 schema 与错误码不变；area、lang、classes 仍为单值（含逗号 → 400）。
+    1.3.0 另让 area、lang（精确匹配任一项）与 classes（任一项包含匹配）与旧版一样接受半角逗号分隔的多值（PHP explode，保留空项；
+    14 文档第 3.1 节，MACC-28 队长裁定 Q1）：此前因含逗号返回 400 的请求现在按多值处理，不含逗号的请求结果不变。
+    其余路径、所有响应 schema 与错误码不变。
 
     本文件是前后端契约，后端实现位于 backend/ 的 content 模块，HTTP 契约测试
     （backend/src/test/java/com/maccms/backend/content/ContentApiContractTest.java）逐字段比对响应与本文件中的 schema。
@@ -50,21 +52,23 @@ info:
       查询串中非法 UTF-8 的百分号编码（如 `keyword=%FF`、`keyword=%`）同样 → 400（field 为该参数）。
     - 空白字符 W = ECMAScript `\s`（U+0009–U+000D、U+0020、U+00A0、U+1680、U+2000–U+200A、U+2028、U+2029、U+202F、U+205F、U+3000、U+FEFF）。
       文本参数首尾不得为 W 字符（因此仅含空白的值也 → 400）；中间的空白原样保留。去首尾空白由调用方（如 SSR 页面）负责。
-    - 每个新参数最多出现一次，重复出现（含空值，如 `area=&area=`）→ 400。area、lang、classes 含半角逗号 `,` → 400（不支持多值）；
-      keyword 中的逗号是字面字符（与旧 wd 一致）。1.3.0 的 letter、state、version、actor、director、tag、name、ids 与旧版一样
-      以半角逗号分隔多值（PHP explode，保留空项，见各参数说明）。以上规则（重复、禁用字符、非法 UTF-8、首尾空白）同样适用于 1.3.0 新参数。
+    - 每个新参数最多出现一次，重复出现（含空值，如 `area=&area=`）→ 400。keyword 中的逗号是字面字符（与旧 wd 一致）。
+      1.1.0 中 area、lang、classes 含半角逗号 `,` → 400（不支持多值）；1.3.0 起这三个参数与 1.3.0 的 letter、state、version、
+      actor、director、tag、name、ids 一样以半角逗号分隔多值（PHP explode，保留空项，见各参数说明），长度上限仍作用于整个原始值。
+      以上规则（重复、禁用字符、非法 UTF-8、首尾空白）同样适用于 1.3.0 新参数。
     - 校验顺序：既有 5 个参数（不变）→ keyword → area → lang → year → level → classes → letter → state → version → actor
       → director → tag → name → ids；每个参数内依次为
-      重复 → 空串（未传）→ 搜索开关（keyword/classes/actor/director/tag/name）→ 禁用字符/非法 UTF-8 → 逗号（area/lang/classes）
+      重复 → 空串（未传）→ 搜索开关（keyword/classes/actor/director/tag/name）→ 禁用字符/非法 UTF-8
       → 首尾空白 → 长度 → 格式（year；level 为先词法：只含 ASCII 数字且 ≤ 10 个字符，再数值：1..9，两步失败的文案相同；ids）。
+      （1.1.0 在禁用字符之后另有"逗号（area/lang/classes）"一步，1.3.0 起取消。）
       只报第一个错误，fieldErrors 只有一项，message 为固定文案，不回显输入。参数错误（400）先于分类可见性检查（404）。
-    - 输入 → 结果对照（与 09 方案第 4.4 节同表）：
+    - 输入 → 结果对照（与 09 方案第 4.4 节同表；"a,b" 一行按 1.3.0 更新）：
       | 原始解码值 | keyword | area/lang/classes | year | level |
       | "" | 未传 | 未传 | 未传 | 未传 |
       | "   "（仅空白） | 400 首尾空白 | 400 首尾空白 | 400 年份格式 | 400 整数 |
       | " 2020" / "2020 " | 400 首尾空白 | 400 首尾空白 | 400 年份格式 | 400 整数 |
       | "a b" | 原样匹配 | 原样匹配 | 400 年份格式 | 400 整数 |
-      | "a,b" | 字面匹配 | 400 多值 | 400 年份格式 | 400 整数 |
+      | "a,b" | 字面匹配 | 多值 a、b（1.1.0 为 400 多值） | 400 年份格式 | 400 整数 |
       | 超长 | 400 长度 | 400 长度 | 400 年份格式 | 400 整数 |
       | "09" | 原样匹配 | 原样匹配 | 400 年份格式 | 9 |
       | "0000000009"（10 位） | 原样匹配 | 原样匹配（lang 恰好 10 个码点，未超限） | 400 年份格式 | 9 |
@@ -179,26 +183,28 @@ paths:
           in: query
           required: false
           description: |
-            【1.1.0】地区，精确匹配 `vod_area`（旧 application/common/model/Vod.php:299-301）。候选值可取自分类的
-            `extend.area`（CategoryExtend，逗号分隔）。schema 作用于原始解码值（不裁剪）：空串 = 未传；否则单值，
-            最多 20 个码点（列宽 varchar(20)，application/install/sql/install.sql:713），首尾不得为空白字符，
-            不得含半角逗号或禁用字符。
+            【1.1.0；1.3.0 起多值】地区，精确匹配 `vod_area`（旧 application/common/model/Vod.php:299-301）。候选值可取自分类的
+            `extend.area`（CategoryExtend，逗号分隔）。schema 作用于原始解码值（不裁剪）：空串 = 未传；否则最多 20 个码点
+            （列宽 varchar(20)，application/install/sql/install.sql:713，作用于整个原始值），首尾不得为空白字符，不得含禁用字符。
+            1.3.0 起按半角逗号拆分多值（旧版 `IN explode`），`vod_area` 等于任一项即命中；保留空项（空项命中地区为空的视频，
+            如 `香港,`），各项不再裁剪（`大陆, 香港` 的第二项是 ` 香港`），全角逗号是普通字符。不含逗号时与 1.1.0 相同。
+            1.1.0 中含半角逗号 → 400。
           schema:
             type: string
             maxLength: 20
-            pattern: '^(?:[^\s,\x00-\x1F\x7F-\x9F\uD800-\uDFFF\uFFFD](?:[^,\x00-\x1F\x7F-\x9F\uD800-\uDFFF\uFFFD]*[^\s,\x00-\x1F\x7F-\x9F\uD800-\uDFFF\uFFFD])?)?$'
+            pattern: '^(?:[^\s\x00-\x1F\x7F-\x9F\uD800-\uDFFF\uFFFD](?:[^\x00-\x1F\x7F-\x9F\uD800-\uDFFF\uFFFD]*[^\s\x00-\x1F\x7F-\x9F\uD800-\uDFFF\uFFFD])?)?$'
           example: 大陆
         - name: lang
           in: query
           required: false
           description: |
-            【1.1.0】语言，精确匹配 `vod_lang`（旧 application/common/model/Vod.php:302-304）。schema 作用于原始解码值
-            （不裁剪）：空串 = 未传；否则单值，最多 10 个码点（varchar(10)，application/install/sql/install.sql:714），
-            首尾不得为空白字符，不得含半角逗号或禁用字符。
+            【1.1.0；1.3.0 起多值】语言，精确匹配 `vod_lang`（旧 application/common/model/Vod.php:302-304）。schema 作用于
+            原始解码值（不裁剪）：空串 = 未传；否则最多 10 个码点（varchar(10)，application/install/sql/install.sql:714，作用于
+            整个原始值），首尾不得为空白字符，不得含禁用字符。1.3.0 起多值、空项与各项规则同 area。1.1.0 中含半角逗号 → 400。
           schema:
             type: string
             maxLength: 10
-            pattern: '^(?:[^\s,\x00-\x1F\x7F-\x9F\uD800-\uDFFF\uFFFD](?:[^,\x00-\x1F\x7F-\x9F\uD800-\uDFFF\uFFFD]*[^\s,\x00-\x1F\x7F-\x9F\uD800-\uDFFF\uFFFD])?)?$'
+            pattern: '^(?:[^\s\x00-\x1F\x7F-\x9F\uD800-\uDFFF\uFFFD](?:[^\x00-\x1F\x7F-\x9F\uD800-\uDFFF\uFFFD]*[^\s\x00-\x1F\x7F-\x9F\uD800-\uDFFF\uFFFD])?)?$'
           example: 国语
         - name: year
           in: query
@@ -242,11 +248,14 @@ paths:
             【1.1.0，受 maccms.content.search.enabled 控制】扩展分类（剧情类型），包含匹配 `vod_class`（与旧
             `vod_class LIKE '%值%'` 语义一致，application/common/model/Vod.php:475-477；例如 `动作` 也会命中 `动作冒险`）。
             与响应字段 `classes`、CategoryExtend.classes 同名。schema 作用于原始解码值（不裁剪）：空串 = 未传；
-            否则单值，最多 32 个码点，首尾不得为空白字符，不得含半角逗号或禁用字符。
+            否则最多 32 个码点（作用于整个原始值），首尾不得为空白字符，不得含禁用字符。
+            1.3.0 起按半角逗号拆分多值（旧 mac_like_arr），任一项包含即命中（项之间 OR）；空项按旧版生成 `%%`，命中全部（如 `剧情,`
+            等于不按扩展分类筛选），但多值与空项仍是包含匹配，同样受开关、时限与并发上限约束；各项不做实体变体（与 1.1.0 单值相同），
+            `%`、`_`、`!` 按字面匹配；全角逗号是普通字符。不含逗号时与 1.1.0 相同。1.1.0 中含半角逗号 → 400。
           schema:
             type: string
             maxLength: 32
-            pattern: '^(?:[^\s,\x00-\x1F\x7F-\x9F\uD800-\uDFFF\uFFFD](?:[^,\x00-\x1F\x7F-\x9F\uD800-\uDFFF\uFFFD]*[^\s,\x00-\x1F\x7F-\x9F\uD800-\uDFFF\uFFFD])?)?$'
+            pattern: '^(?:[^\s\x00-\x1F\x7F-\x9F\uD800-\uDFFF\uFFFD](?:[^\x00-\x1F\x7F-\x9F\uD800-\uDFFF\uFFFD]*[^\s\x00-\x1F\x7F-\x9F\uD800-\uDFFF\uFFFD])?)?$'
           example: 剧情
         - name: letter
           in: query
@@ -450,8 +459,9 @@ paths:
           description: |
             参数不合法（code=INVALID_PARAMETER），fieldErrors 只含第一个出错的参数（校验顺序见 info.description）。
             新增的 400 情形只在带新参数时出现：重复、开关关闭时使用 keyword/classes、含禁用字符或非法 UTF-8、
-            area/lang/classes 含逗号、首尾空白（含仅空白）、超长、year 格式不符、level 词法（非 ASCII 数字或原始字符串超过 10 个字符）或数值（不在 1..9）不符。message 为下列固定文案之一，不回显用户输入：
-            参数不能重复 / 当前未开放关键字搜索 / 含不允许的字符 / 不支持多个取值 / 首尾不能有空白字符 /
+            首尾空白（含仅空白）、超长、year 格式不符、level 词法（非 ASCII 数字或原始字符串超过 10 个字符）或数值（不在 1..9）不符。
+            （1.1.0 另有"area/lang/classes 含逗号 → 不支持多个取值"，1.3.0 起改为多值，不再出现该文案。）message 为下列固定文案之一，不回显用户输入：
+            参数不能重复 / 当前未开放关键字搜索 / 含不允许的字符 / 首尾不能有空白字符 /
             长度不能超过 N 个字符 / 必须是 4 位数字年份 / 必须是 1 到 9 之间的整数。
             既有参数的 400 与 1.0.0 相同（如 pageSize 越界）。
           content:
@@ -491,14 +501,6 @@ paths:
                     fieldErrors:
                       - field: keyword
                         message: 含不允许的字符
-                multiValue:
-                  summary: lang 含半角逗号（首批不支持多值）
-                  value:
-                    code: INVALID_PARAMETER
-                    message: 请求参数不合法
-                    fieldErrors:
-                      - field: lang
-                        message: 不支持多个取值
                 surroundingWhitespace:
                   summary: keyword 仅含空白，或首尾带空白（如 " 合成"）
                   value:

@@ -269,8 +269,22 @@ class ContentApiContractTest {
         verify(vodMapper, never()).countPublished(any());
     }
 
+    /** 契约 1.3.0（MACC-28 Q1）：area/lang 逗号多值是精确匹配，开关关闭时也可用；只有一项时仍是 1.1.0 的单值条件。 */
+    @Test
+    void multiValueAreaAndLangWorkWhileSearchIsDisabled() throws Exception {
+        when(vodMapper.countPublishedMatching(any(), any())).thenReturn(1L);
+        when(vodMapper.selectPublishedMatchingPage(any(), any(), any(), anyBoolean(), anyLong(), anyInt()))
+                .thenReturn(List.of(Fixtures.summary(5, 6)));
+        call(get("/api/v1/videos").param("area", "大陆,香港,").param("lang", "国语").param("pageSize", "5"),
+                "/api/v1/videos", "get", 200);
+        VodFilterCriteria expected = new VodFilterCriteria(null, null, null, "国语", null, null, null, null, null, null,
+                null, null, null, null, null, null, List.of("大陆", "香港", ""), null, null);
+        verify(vodMapper).countPublishedMatching(any(), eq(expected));
+        verify(vodMapper).selectPublishedMatchingPage(any(), eq(expected), eq(VideoSort.TIME), eq(true), eq(0L), eq(5));
+    }
+
     @ParameterizedTest
-    @CsvSource({"keyword, 合成", "classes, 剧情", "keyword, ' x'", "classes, 'a,b'"})
+    @CsvSource({"keyword, 合成", "classes, 剧情", "keyword, ' x'", "classes, 'a,b'", "classes, ','", "classes, '剧情,'"})
     void containsMatchParametersAreRejectedWhileSearchIsDisabled(String field, String value) throws Exception {
         JsonNode body = call(get("/api/v1/videos").param(field, value), "/api/v1/videos", "get", 400);
         assertThat(body.get("fieldErrors").get(0).get("field").asString()).isEqualTo(field);
@@ -289,7 +303,9 @@ class ContentApiContractTest {
 
     @ParameterizedTest
     @CsvSource(delimiter = '|', value = {
-            "area     | a,b                   | 不支持多个取值",
+            "area     | 'a,b '                | 首尾不能有空白字符",
+            "lang     | ',a '                 | 首尾不能有空白字符",
+            "lang     | 'a,b,c,d,e,f'         | 长度不能超过 10 个字符",
             "area     | ' a'                  | 首尾不能有空白字符",
             "area     | '　a'                 | 首尾不能有空白字符",
             "area     | 123456789012345678901 | 长度不能超过 20 个字符",
@@ -337,10 +353,10 @@ class ContentApiContractTest {
 
     @Test
     void existingParametersAreValidatedFirstAndParameterErrorsComeBeforeVisibility() throws Exception {
-        JsonNode body = call(get("/api/v1/videos").param("page", "0").param("area", "a,b"), "/api/v1/videos", "get",
+        JsonNode body = call(get("/api/v1/videos").param("page", "0").param("area", " a"), "/api/v1/videos", "get",
                 400);
         assertThat(body.get("fieldErrors").get(0).get("field").asString()).isEqualTo("page");
-        body = call(get("/api/v1/videos").param("categoryId", "3").param("area", "a,b"), "/api/v1/videos", "get", 400);
+        body = call(get("/api/v1/videos").param("categoryId", "3").param("area", " a"), "/api/v1/videos", "get", 400);
         assertThat(body.get("fieldErrors").get(0).get("field").asString()).isEqualTo("area");
         body = call(get("/api/v1/videos").param("categoryId", "3").param("area", "大陆"), "/api/v1/videos", "get", 404);
         assertThat(body.get("code").asString()).isEqualTo("CATEGORY_NOT_FOUND");

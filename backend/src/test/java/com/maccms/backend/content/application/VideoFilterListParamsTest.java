@@ -259,4 +259,25 @@ class VideoFilterListParamsTest {
         assertThat(c.candidateIds()).isNull();
         assertThat(c.withCandidates(List.of(1L)).candidateIds()).containsExactly(1L);
     }
+
+    /** 契约 1.3.0（MACC-28 Q1）：area/lang/classes 只有一项时仍是 1.1.0 的单值条件，逗号多值时为列表条件。 */
+    @Test
+    void criteriaUsesSingleValueFormsUnlessAreaLangOrClassesHaveSeveralItems() {
+        assertThat(ContentReadService.criteria(parse(Map.of("area", "大陆", "lang", "国语", "classes", "动作"), true)))
+                .isEqualTo(new VodFilterCriteria(null, null, "大陆", "国语", "%动作%", null));
+        VodFilterCriteria c = ContentReadService.criteria(parse(Map.of("area", "大陆,香港", "lang", "国语,",
+                "classes", ",动作"), true));
+        assertThat(c.area()).isNull();
+        assertThat(c.lang()).isNull();
+        assertThat(c.classesPattern()).isNull();
+        assertThat(c.areas()).containsExactly("大陆", "香港");
+        assertThat(c.langs()).containsExactly("国语", "");
+        assertThat(c.classesPatterns()).containsExactly("%%", "%动作%");
+        VodFilterCriteria withCandidates = c.withCandidates(List.of(3L));
+        assertThat(withCandidates.areas()).isEqualTo(c.areas());
+        assertThat(withCandidates.langs()).isEqualTo(c.langs());
+        assertThat(withCandidates.classesPatterns()).isEqualTo(c.classesPatterns());
+        assertThat(ContentReadService.criteria(parse(Map.of("area", "大陆，香港"), true)).area())
+                .as("全角逗号不拆分").isEqualTo("大陆，香港");
+    }
 }

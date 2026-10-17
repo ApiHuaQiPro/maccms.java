@@ -379,7 +379,7 @@ class VideoListGoldenMySqlIT {
                 assertThat(ids(p2.body().get("items"))).as(id + " 第 2 页（每页 7 条）").isEqualTo(longs(c.get("page2Ids")));
                 assertThat(p2.body().get("total").asLong()).isEqualTo(c.get("total").asLong());
             }
-            assertThat(equal).as(file + " equal 用例数").isGreaterThanOrEqualTo(45);
+            assertThat(equal).as(file + " equal 用例数").isGreaterThanOrEqualTo(63);
         }
         assertThat(snapshot()).as("请求前后一次性库所有表未变").isEqualTo(before);
     }

@@ -282,17 +282,29 @@ public class ContentReadService {
 
     /**
      * 不带新条件时返回 null，使用与 1.0.0 相同的语句。单个年份仍用 {@code year}（1.1.0 的 SQL 文本不变），区间展开为多项时用
-     * {@code years}。
+     * {@code years}；area、lang、classes 同理，只有一项时用 1.1.0 的单值形式，逗号多值时用 {@code areas}/{@code langs}/
+     * {@code classesPatterns}。
      */
     static VodFilterCriteria criteria(VideoFilter f) {
         if (f.isEmpty()) {
             return null;
         }
         List<String> years = f.years();
-        String year = years != null && years.size() == 1 ? years.get(0) : null;
-        return new VodFilterCriteria(f.level(), year, f.area(), f.lang(), f.classesPattern(), f.keywordPatterns(),
-                year == null ? years : null, f.letters(), f.states(), f.versions(), f.actorPatterns(),
-                f.directorPatterns(), f.tagPatterns(), f.namePatterns(), f.idList(), null);
+        List<String> areas = f.areas();
+        List<String> langs = f.langs();
+        List<String> classes = f.classesPatterns();
+        return new VodFilterCriteria(f.level(), single(years), single(areas), single(langs), single(classes),
+                f.keywordPatterns(), multiple(years), f.letters(), f.states(), f.versions(), f.actorPatterns(),
+                f.directorPatterns(), f.tagPatterns(), f.namePatterns(), f.idList(), null, multiple(areas),
+                multiple(langs), multiple(classes));
+    }
+
+    private static String single(List<String> values) {
+        return values != null && values.size() == 1 ? values.get(0) : null;
+    }
+
+    private static List<String> multiple(List<String> values) {
+        return values != null && values.size() > 1 ? values : null;
     }
 
     private VideoDetailDto doGetVideo(long id) {

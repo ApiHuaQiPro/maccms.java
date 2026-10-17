@@ -144,6 +144,33 @@ class VideoListFilterApiContractTest {
         verify(vodMapper, never()).countPublished(any());
     }
 
+    /** 契约 1.3.0（MACC-28 Q1）：area/lang/classes 的逗号多值成为列表条件；单值时仍是 1.1.0 的单值条件。 */
+    @Test
+    void multiValueAreaLangAndClassesBecomeListConditions() throws Exception {
+        when(vodMapper.countPublishedMatching(any(), any())).thenReturn(1L);
+        when(vodMapper.selectPublishedMatchingPage(any(), any(), any(), anyBoolean(), anyLong(), anyInt()))
+                .thenReturn(List.of(Fixtures.summary(9, 13)));
+        call(get("/api/v1/videos").param("area", "大陆,香港,").param("lang", ",").param("classes", "动作,10%,"), 200);
+        VodFilterCriteria c = capturedCriteria();
+        assertThat(c.areas()).containsExactly("大陆", "香港", "");
+        assertThat(c.langs()).containsExactly("", "");
+        assertThat(c.classesPatterns()).containsExactly("%动作%", "%10!%%", "%%");
+        assertThat(c.area()).isNull();
+        assertThat(c.lang()).isNull();
+        assertThat(c.classesPattern()).isNull();
+        verify(vodMapper).selectPublishedMatchingPage(VISIBLE, c, VideoSort.TIME, true, 0L, 20);
+
+        org.mockito.Mockito.clearInvocations(vodMapper);
+        call(get("/api/v1/videos").param("area", "大陆，香港").param("lang", "国语").param("classes", "动作"), 200);
+        VodFilterCriteria single = capturedCriteria();
+        assertThat(single.area()).as("全角逗号不拆分，仍是单值").isEqualTo("大陆，香港");
+        assertThat(single.lang()).isEqualTo("国语");
+        assertThat(single.classesPattern()).isEqualTo("%动作%");
+        assertThat(single.areas()).isNull();
+        assertThat(single.langs()).isNull();
+        assertThat(single.classesPatterns()).isNull();
+    }
+
     @Test
     void contract110ParametersKeepTheirCriteriaWhenCombined() throws Exception {
         when(vodMapper.countPublishedMatching(any(), any())).thenReturn(0L);
@@ -248,9 +275,14 @@ class VideoListFilterApiContractTest {
                 assertThat(second.getResponse().getStatus()).as(p).isEqualTo(503);
                 assertThat(second.getResponse().getContentAsString(StandardCharsets.UTF_8)).isEqualTo(UNAVAILABLE);
             }
-            // 精确条件与随机排序不受并发上限约束
+            // classes 的逗号多值与空项同样是包含匹配，占同一许可
+            for (String v : List.of(LEAK + ",x", ",", LEAK + ",")) {
+                MvcResult second = perform(get("/api/v1/videos").param("classes", v));
+                assertThat(second.getResponse().getStatus()).as(v).isEqualTo(503);
+            }
+            // 精确条件（含 area/lang 逗号多值）与随机排序不受并发上限约束
             for (String[] q : new String[][]{{"letter", "A"}, {"state", "正片"}, {"version", "v"}, {"ids", "1"},
-                    {"year", "2018-2020"}}) {
+                    {"year", "2018-2020"}, {"area", "大陆,香港"}, {"lang", "国语,"}}) {
                 call(get("/api/v1/videos").param(q[0], q[1]), 200);
             }
             when(vodMapper.countPublished(any())).thenReturn(0L);
@@ -273,7 +305,8 @@ class VideoListFilterApiContractTest {
         when(vodMapper.countPublishedMatching(any(), any())).thenThrow(new UncategorizedSQLException(LEAK,
                 "SELECT /*+ MAX_EXECUTION_TIME(3000) */ " + LEAK, cause));
         for (String[] q : new String[][]{{"letter", "A"}, {"state", "s"}, {"version", "v"}, {"actor", "a"},
-                {"director", "d"}, {"tag", "t"}, {"name", "n"}, {"ids", "1"}, {"year", "2018-2020"}}) {
+                {"director", "d"}, {"tag", "t"}, {"name", "n"}, {"ids", "1"}, {"year", "2018-2020"},
+                {"area", "a,b"}, {"lang", "l,"}, {"classes", "c,d"}, {"classes", ","}}) {
             MvcResult r = perform(get("/api/v1/videos").param(q[0], q[1]));
             assertThat(r.getResponse().getStatus()).as(q[0]).isEqualTo(503);
             assertThat(r.getResponse().getContentAsString(StandardCharsets.UTF_8)).isEqualTo(UNAVAILABLE);
@@ -283,6 +316,7 @@ class VideoListFilterApiContractTest {
         // 许可在超时后同样归还
         doReturn(0L).when(vodMapper).countPublishedMatching(any(), any());
         call(get("/api/v1/videos").param("actor", "a"), 200);
+        call(get("/api/v1/videos").param("classes", "c,d"), 200);
     }
 
     @Test

@@ -19,6 +19,8 @@ import java.util.function.Function;
  * <p>匹配规则：keyword 在 vod_name/vod_sub/vod_en 中包含匹配（旧 wd，application/common/model/Vod.php:462-468），
  * classes 在 vod_class 中包含匹配（旧 class，Vod.php:475-477），area/lang/level 精确匹配（Vod.php:290-304），
  * year 为 4 位单值或 9 字符区间（Vod.php:183-201，区间两端颠倒时交换后展开）。
+ * 1.3.0 起 area、lang、classes 与旧版一样按半角逗号分多值（保留空项）：area/lang 精确匹配任一项（{@code IN explode}），
+ * classes 包含匹配任一项（{@code mac_like_arr}）；不含逗号时与 1.1.0 相同。
  * 1.3.0 新增参数沿用旧版的逗号多值（{@code explode(',')}，保留空项）：letter（Vod.php:330-335，含 {@code 0?9} 展开）、
  * state、version（:305-310）精确匹配任一项；actor、director、tag、name（:469-483，{@code mac_like_arr}，
  * application/common.php:1284-1292）包含匹配任一项；ids（:273-277）为 {@code all}（不筛选）或逗号分隔的视频 ID。
@@ -49,6 +51,7 @@ public record VideoFilter(String keyword, String area, String lang, String year,
     static final String DUPLICATE = "参数不能重复";
     static final String SEARCH_DISABLED = "当前未开放关键字搜索";
     static final String BAD_CHARACTER = "含不允许的字符";
+    /** 1.2.0 其他列表的精确筛选参数（{@link ContentFilter}）仍为单值；视频列表 1.3.0 起不再产生这一文案。 */
     static final String MULTI_VALUE = "不支持多个取值";
     static final String SURROUNDING_WHITESPACE = "首尾不能有空白字符";
     static final String BAD_YEAR = "必须是 4 位数字年份";
@@ -63,13 +66,13 @@ public record VideoFilter(String keyword, String area, String lang, String year,
 
     public VideoFilter {
         keyword = text("keyword", keyword, MAX_KEYWORD_LENGTH, true);
-        area = text("area", area, MAX_AREA_LENGTH, false);
-        lang = text("lang", lang, MAX_LANG_LENGTH, false);
+        area = text("area", area, MAX_AREA_LENGTH, true);
+        lang = text("lang", lang, MAX_LANG_LENGTH, true);
         year = year(year);
         if (level != null && (level < MIN_LEVEL || level > MAX_LEVEL)) {
             throw levelError();
         }
-        classes = text("classes", classes, MAX_CLASSES_LENGTH, false);
+        classes = text("classes", classes, MAX_CLASSES_LENGTH, true);
         letter = text("letter", letter, MAX_LIST_LENGTH, true);
         state = text("state", state, MAX_LIST_LENGTH, true);
         version = text("version", version, MAX_LIST_LENGTH, true);
@@ -120,13 +123,13 @@ public record VideoFilter(String keyword, String area, String lang, String year,
 
     /**
      * 按 {@link #PARAMETERS} 的固定顺序读取并校验；{@code param} 返回参数的原始情况（不得为 {@code null}）。
-     * 每个参数内：重复 → 空串（未传）→ 开关（包含匹配参数）→ 禁用字符/非法 UTF-8 → 逗号（area/lang/classes）→ 首尾空白
-     * → 长度 → 格式（year、level、ids）。只报第一个错误。
+     * 每个参数内：重复 → 空串（未传）→ 开关（包含匹配参数）→ 禁用字符/非法 UTF-8 → 首尾空白 → 长度 → 格式（year、level、ids）。
+     * 只报第一个错误。
      */
     public static VideoFilter parse(Function<String, RawParam> param, boolean searchEnabled) {
         String k = rawText("keyword", param.apply("keyword"), MAX_KEYWORD_LENGTH, true, searchEnabled);
-        String a = rawText("area", param.apply("area"), MAX_AREA_LENGTH, false, true);
-        String l = rawText("lang", param.apply("lang"), MAX_LANG_LENGTH, false, true);
+        String a = rawText("area", param.apply("area"), MAX_AREA_LENGTH, true, true);
+        String l = rawText("lang", param.apply("lang"), MAX_LANG_LENGTH, true, true);
         RawParam year = param.apply("year");
         String y = present("year", year) ? (year.malformed() ? fail("year", BAD_YEAR) : year(year.value())) : null;
         Integer lv = null;
@@ -137,7 +140,7 @@ public record VideoFilter(String keyword, String area, String lang, String year,
             }
             lv = VideoListQuery.parseInt("level", level.value(), MIN_LEVEL, MAX_LEVEL);
         }
-        String c = rawText("classes", param.apply("classes"), MAX_CLASSES_LENGTH, false, searchEnabled);
+        String c = rawText("classes", param.apply("classes"), MAX_CLASSES_LENGTH, true, searchEnabled);
         String letter = rawText("letter", param.apply("letter"), MAX_LIST_LENGTH, true, true);
         String state = rawText("state", param.apply("state"), MAX_LIST_LENGTH, true, true);
         String version = rawText("version", param.apply("version"), MAX_LIST_LENGTH, true, true);
@@ -192,9 +195,30 @@ public record VideoFilter(String keyword, String area, String lang, String year,
         return keyword == null ? null : withEntityForm(keyword);
     }
 
-    /** classes 的 LIKE 模式（不做实体变体）。未设置时为 {@code null}。 */
+    /**
+     * classes 为单值（不含半角逗号）时的 LIKE 模式（不做实体变体）；未设置或多值时为 {@code null}，多值见
+     * {@link #classesPatterns()}。
+     */
     public String classesPattern() {
-        return classes == null ? null : contains(classes);
+        return classes == null || classes.indexOf(',') >= 0 ? null : contains(classes);
+    }
+
+    /**
+     * classes 按半角逗号拆分后各项的 LIKE 模式（保留空项，空项为 {@code %%}、命中全部，与旧 mac_like_arr 相同；不做实体变体），
+     * 单值时只有一项。未设置时为 {@code null}。
+     */
+    public List<String> classesPatterns() {
+        return classes == null ? null : items(classes).stream().map(VideoFilter::contains).toList();
+    }
+
+    /** area 按半角逗号拆分的各项（保留空项，空项命中地区为空的行），单值时只有一项。未设置时为 {@code null}。 */
+    public List<String> areas() {
+        return area == null ? null : items(area);
+    }
+
+    /** lang 按半角逗号拆分的各项（保留空项），单值时只有一项。未设置时为 {@code null}。 */
+    public List<String> langs() {
+        return lang == null ? null : items(lang);
     }
 
     /**

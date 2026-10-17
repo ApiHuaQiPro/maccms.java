@@ -80,11 +80,23 @@ class VideoListFilterSearchOffApiTest {
         verify(vodMapper, never()).countPublishedMatching(any(), any());
     }
 
+    /** 契约 1.3.0（MACC-28 Q1）：classes 的逗号多值、空项、尾逗号都不能绕过开关。 */
+    @ParameterizedTest
+    @ValueSource(strings = {"a,b", ",", "a,", ",,", "a，b"})
+    void multiValueClassesNeedTheSearchSwitch(String value) throws Exception {
+        JsonNode body = call(get("/api/v1/videos").param("classes", value).param("area", "大陆,香港"), 400);
+        assertThat(body.get("fieldErrors").get(0).get("field").asString()).isEqualTo("classes");
+        assertThat(body.get("fieldErrors").get(0).get("message").asString()).isEqualTo("当前未开放关键字搜索");
+        verify(typeMapper, never()).selectEnabledVodTypes();
+        verify(vodMapper, never()).countPublishedMatching(any(), any());
+    }
+
     @Test
     void exactParametersAndRandomSortWorkWithTheSwitchOff() throws Exception {
         when(vodMapper.countPublishedMatching(any(), any())).thenReturn(0L);
         call(get("/api/v1/videos").param("letter", "0-9").param("state", "正片").param("version", "v")
-                .param("ids", "1,2").param("year", "2018-2020").param("sort", "rnd"), 200);
+                .param("ids", "1,2").param("year", "2018-2020").param("area", "大陆,香港,").param("lang", "国语,粤语")
+                .param("sort", "rnd"), 200);
         verify(vodMapper).countPublishedMatching(any(), any());
     }
 }

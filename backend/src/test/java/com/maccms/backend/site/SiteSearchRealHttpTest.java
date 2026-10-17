@@ -100,6 +100,18 @@ class SiteSearchRealHttpTest {
                 "http://maccms.local.test/sub/index.php/vod/search.html?area=%E5%A4%A7%E9%99%86&page=2&wd=a%2Fb%5C..%25");
     }
 
+    /** 契约 1.3.0（MACC-28 Q1）：真实 Tomcat 下未编码与编码的逗号多值都被接受，canonical 统一为 %2C。 */
+    @Test
+    void multiValueFiltersAreAcceptedAndCanonicalEncodesTheComma() throws Exception {
+        for (String q : new String[] {"?class=a,&area=%e5%a4%a7%e9%99%86,b&wd=x",
+                "?wd=x&class=a%2C&area=%E5%A4%A7%E9%99%86%2Cb"}) {
+            RawHttp.Response r = RawHttp.get(port, SEARCH + q);
+            assertComplete(r, 200);
+            assertThat(Jsoup.parse(r.body()).select("link[rel=canonical]").attr("href")).as(q).isEqualTo(
+                    "http://maccms.local.test/sub/index.php/vod/search.html?area=%E5%A4%A7%E9%99%86%2Cb&class=a%2C&wd=x");
+        }
+    }
+
     @Test
     void headHasSameHeadersWithoutBody() throws Exception {
         RawHttp.Response get = RawHttp.get(port, SEARCH + "?wd=x");

@@ -43,6 +43,13 @@ class SearchLinkRoundTripTest {
                 "2018%2020", "0000-9999")) {
             out.add(SearchFilters.NONE.with("year", range));
         }
+        // 契约 1.3.0（MACC-28 Q1）：area/lang/class 的逗号多值（含空项、尾逗号、全角逗号、项内空白）同样能生成并回读
+        out.add(SearchFilters.NONE.with("area", "大陆,香港").with("lang", "国语,粤语,").with("class", "动作,喜剧"));
+        for (String v : List.of(",", ",,", "大陆,", ",香港", "大陆，香港", "大陆, 香港", "a,0", "0,", "%2C,&")) {
+            out.add(SearchFilters.NONE.with("area", v));
+            out.add(SearchFilters.NONE.with("class", v).with("wd", "x"));
+        }
+        out.add(SearchFilters.NONE.with("lang", ",".repeat(10)));
         out.add(new SearchFilters(null, null, null, null, 9, null, null, null));
         out.add(new SearchFilters(null, null, null, null, null, null, VideoSort.HITS, SearchFilters.SortOrder.ASC));
         out.add(new SearchFilters(null, "a/b", "%2E", "2026", 1, "剧情/动作", VideoSort.TIME_ADD,
@@ -154,9 +161,10 @@ class SearchLinkRoundTripTest {
         int accepted = 0;
         for (int i = 0; i < 2000; i++) {
             String wd = randomText(rnd, alphabet, 1 + rnd.nextInt(64));
-            String area = rnd.nextBoolean() ? null : randomText(rnd, alphabet.replace(",", ""), 1 + rnd.nextInt(20));
-            String lang = rnd.nextBoolean() ? null : randomText(rnd, alphabet.replace(",", ""), 1 + rnd.nextInt(10));
-            String cls = rnd.nextBoolean() ? null : randomText(rnd, alphabet.replace(",", ""), 1 + rnd.nextInt(32));
+            // 1.3.0 起 area/lang/class 允许半角逗号（多值），字母表与 wd 相同
+            String area = rnd.nextBoolean() ? null : randomText(rnd, alphabet, 1 + rnd.nextInt(20));
+            String lang = rnd.nextBoolean() ? null : randomText(rnd, alphabet, 1 + rnd.nextInt(10));
+            String cls = rnd.nextBoolean() ? null : randomText(rnd, alphabet, 1 + rnd.nextInt(32));
             String year = rnd.nextBoolean() ? null : String.format("%04d", rnd.nextInt(10000));
             Integer level = rnd.nextBoolean() ? null : 1 + rnd.nextInt(9);
             VideoSort sort = rnd.nextBoolean() ? null : VideoSort.values()[rnd.nextInt(VideoSort.values().length)];
@@ -189,7 +197,10 @@ class SearchLinkRoundTripTest {
             assertThatThrownBy(() -> SearchFilters.NONE.with("wd", v)).as("[" + v + "]")
                     .isInstanceOf(IllegalArgumentException.class);
         }
-        assertThatThrownBy(() -> SearchFilters.NONE.with("area", "a,b")).isInstanceOf(IllegalArgumentException.class);
+        assertThat(SearchFilters.NONE.with("area", "a,b").area()).as("1.3.0 起逗号多值可回读").isEqualTo("a,b");
+        assertThatThrownBy(() -> SearchFilters.NONE.with("area", "a, ")).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> SearchFilters.NONE.with("lang", ",".repeat(11)))
+                .isInstanceOf(IllegalArgumentException.class).hasMessage("搜索条件不合法");
         assertThatThrownBy(() -> SearchFilters.NONE.with("year", "20")).isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> SearchFilters.NONE.with("wd", "x".repeat(65)))
                 .isInstanceOf(IllegalArgumentException.class).hasMessage("搜索条件不合法");

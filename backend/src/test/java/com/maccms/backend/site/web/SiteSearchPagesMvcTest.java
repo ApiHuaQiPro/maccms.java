@@ -249,6 +249,33 @@ class SiteSearchPagesMvcTest {
                 new VideoFilter(null, null, null, "2026", 9, null)));
     }
 
+    /**
+     * 契约 1.3.0（MACC-28 Q1）：area/lang/class 的逗号多值整个交给 content（不拆分、不改写），作为当前值显示；表单隐藏字段、
+     * 分页与筛选链接原样保留该值（逗号编码为 %2C），点候选值时替换为该单值。
+     */
+    @Test
+    void multiValueFiltersArePassedThroughAndKeptInFormAndLinks() throws Exception {
+        String area = "%E5%A4%A7%E9%99%86%2C%E9%A6%99%E6%B8%AF";
+        String lang = "%E5%9B%BD%E8%AF%AD%2C";
+        String cls = "%2C%E5%8A%A8%E4%BD%9C";
+        Document doc = ok(call(SEARCH + "?class=" + cls + "&area=%E5%A4%A7%E9%99%86,%E9%A6%99%E6%B8%AF&lang=" + lang));
+        String q = "area=" + area + "&class=" + cls + "&lang=" + lang;
+        assertThat(canonical(doc)).isEqualTo(BASE + "index.php/vod/search.html?" + q);
+        assertThat(doc.selectFirst("h1").text()).isEqualTo("筛选结果");
+        Element form = doc.selectFirst("form.search-form");
+        assertThat(form.select("input[type=hidden]").eachAttr("name")).containsExactly("area", "class", "lang");
+        assertThat(form.select("input[type=hidden]").eachAttr("value")).containsExactly("大陆,香港", ",动作", "国语,");
+        assertThat(doc.select("ul[aria-labelledby=search-filter-area] a[aria-current=true]").eachText())
+                .containsExactly("大陆,香港");
+        assertThat(href(doc, "area", "大陆,香港")).isEqualTo(SEARCH + "?" + q);
+        assertThat(href(doc, "area", "香港")).isEqualTo(SEARCH + "?area=%E9%A6%99%E6%B8%AF&class=" + cls + "&lang=" + lang);
+        assertThat(href(doc, "area", "全部")).isEqualTo(SEARCH + "?class=" + cls + "&lang=" + lang);
+        assertThat(doc.selectFirst("a.pagination__link--next").attr("href"))
+                .isEqualTo(SEARCH + "?area=" + area + "&class=" + cls + "&lang=" + lang + "&page=2");
+        verify(content).listVideos(new VideoListQuery(null, VideoSort.TIME, true, 1, 20,
+                new VideoFilter(null, "大陆,香港", "国语,", null, null, ",动作")));
+    }
+
     @Test
     void currentValueOutsideCandidatesIsStillShownAsCurrent() throws Exception {
         Document doc = ok(call(SEARCH + "?area=%E7%81%AB%E6%98%9F"));
@@ -290,7 +317,7 @@ class SiteSearchPagesMvcTest {
     @ParameterizedTest
     @ValueSource(strings = {"?foo=" + "SYNTHETIC-LEAK-7f3a", "?wd=%FF" + "SYNTHETIC-LEAK-7f3a", "?wd=%E4%B8", "?wd=%",
             "?wd=&wd=SYNTHETIC-LEAK-7f3a", "?page=01", "?page=0", "?level=00000000009", "?level=10",
-            "?year=SYNTHETIC-LEAK-7f3a", "?area=a%2Cb", "?by=SYNTHETIC-LEAK-7f3a", "?order=up",
+            "?year=SYNTHETIC-LEAK-7f3a", "?area=a%2CSYNTHETIC-LEAK-7f3a", "?by=SYNTHETIC-LEAK-7f3a", "?order=up",
             "?wd=SYNTHETIC-LEAK-7f3axxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", "?keyword=x", "?pageSize=5", "?categoryId=1"})
     void invalidParametersAre400WithoutEcho(String query, CapturedOutput output) throws Exception {
         MvcResult r = call(SEARCH + query);

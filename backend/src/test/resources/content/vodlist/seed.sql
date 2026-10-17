@@ -4,6 +4,8 @@
 -- 取值互不相同（旧版不追加主键排序，并列时顺序不确定）。批量行 id 1001..3001 共 2001 行（分类 2，首字母 R，最后一行为 S），
 -- 用于随机排序 2000 行阈值两侧；vod_hits_week 都大于基础行。type_id_1 与上级分类一致（旧 tid 条件用到）。
 -- 年份样本：35 为 '5'、36 为 ' 2020'、37 为 '2020 '、38 为 '2020年'，用于核定旧版 vod_year 的比较方式（字符串 / 整数）。
+-- 扩展分类（vod_class，契约 1.3.0 补充 / MACC-28 Q1 的 class 逗号多值）：基础行按 id 取 动作/喜剧/动作,喜剧/爱情/空，
+-- 7 为 '动作冒险'（包含匹配），9 为全角逗号的 '动作，喜剧'（不拆分）；批量行为空。见文件末尾的 UPDATE。
 -- 所有行都属于对游客可见的分类。不含任何真实数据、域名或凭证。
 DELETE FROM mac_type;
 INSERT INTO mac_type (type_id,type_name,type_en,type_sort,type_mid,type_pid,type_status,type_extend) VALUES (1,'电影','en1',1,1,0,1,'');
@@ -61,3 +63,5 @@ FROM (SELECT a.d + b.d * 10 + c.d * 100 + e.d * 1000 + 1 AS n
       CROSS JOIN (SELECT 0 AS d UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9) c
       CROSS JOIN (SELECT 0 AS d UNION ALL SELECT 1 UNION ALL SELECT 2) e) t
 WHERE t.n <= 2001;
+UPDATE mac_vod SET vod_class = CASE WHEN vod_id = 7 THEN '动作冒险' WHEN vod_id = 9 THEN '动作，喜剧'
+    ELSE ELT(MOD(vod_id, 5) + 1, '动作', '喜剧', '动作,喜剧', '爱情', '') END WHERE vod_id <= 40;
