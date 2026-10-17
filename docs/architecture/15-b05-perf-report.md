@@ -1,5 +1,7 @@
 ## B05 中规模合成库测量：IN/OR 多值、年份区间、随机候选与旧标签条件（MACC-29）
 
+> **返工补充（2026-10-17 11:57–12:15）：第 10 节是在修复后的代码上，经真实 SSR HTTP 与实际内部标签服务/Mapper 的测量（SQL 与绑定值取自实际执行，不是照抄 XML）。第 0–9 节是中断前一次运行的直连测量，数字与结论保留不改；两次的超时/503 结论按第 10.5 节合读。**
+
 > 依据：MACC-29 补充验收"增加一次中规模合成库测量，记录 IN/OR、年份区间和随机候选的耗时/EXPLAIN"。被测 SQL 是分支 `agent/claude/macc-29` 提交 `6f5e2af` 的 `backend/src/main/resources/mapper/content/VodMapper.xml`（`publishedInTypes` + `matchingConditions` + `legacyConditions` + `pageOrderAndLimit`），条件构造照 `VideoFilter`、`VideoLegacyConditions`、`ContentReadService.criteria/randomPage`。本次没有修改任何业务代码、配置默认值、契约、PHP、DDL 或账号。
 > 测量脚本：`backend/src/test/perf/B05Perf.java`（Java 单文件，不进 `./mvnw verify`，用法见文件头注释；风格与约束同 `SearchPerf.java`）。
 > 原始结果：`docs/architecture/15-b05-perf-raw/`（下文数字都可以在那里查到）。
@@ -240,7 +242,7 @@ $P drop                      # 失败时也要执行；删除后查 information_
 
 ### 9. 复核（2026-10-17 恢复运行，交付时）
 
-本报告是中断前一次运行的测量，复核时**没有重跑**，结论按以下口径使用，不作为"性能验收通过"：
+本报告第 0–8 节是中断前一次运行的测量，复核时没有重跑，结论按以下口径使用，不作为"性能验收通过"（其中"未测量项"已由第 10 节补测）：
 
 - **未通过项**：第 0 节第 2 条及第 5、6 节中报 3024/1028 或经应用返回 503 的形态（`area` 3/7/10 项、`isend=1`、`hits` 区间/`gt`、`year=2000-2010`
   等）在 30 万行、本机负载下**超过 3 s 时限**；护栏按设计返回 503（没有 500、没有越过时限），但这些形态在该数据规模下不可用。是否采用
@@ -251,3 +253,187 @@ $P drop                      # 失败时也要执行；删除后查 information_
 - **SQL 文本**：自 `6f5e2af` 起 `VodMapper.xml` 的被测片段没有修改；模块列表的条件只追加在各 Mapper 的 `criteriaConditions`/
   `publishedMatching` 之后（不设置时 SQL 文本不变），沿用相同的 `MAX_EXECUTION_TIME(3000)`。
 - 原始结果中的 `run.log` 只做了行尾空白清理（`diff --check`），数值未改。
+
+### 10. 返工补充：修复后代码上经真实 SSR HTTP 与实际内部标签服务的测量（2026-10-17）
+
+队长独立验收返工第 4 项要求：在修复后的最终代码上，以一次性合成库经**真实 SSR HTTP** 与**实际内部标签服务/Mapper** 测量，记录生成的 SQL/绑定、count/list、EXPLAIN、耗时、状态与清理结果，覆盖第 9 节列为"未测量"的入口（SSR `tid`/`rnd`、`vod/show`、模块筛选/搜索页、内部标签 SQL）以及 IN/OR、年份区间、随机候选。本节只陈述测得的数据与限制；**不是性能验收通过的结论**。
+
+#### 10.1 方法、范围与安全证据
+
+| 项 | 内容 |
+|---|---|
+| 被测代码 | 分支 `agent/claude/macc-29` 提交 `b628af0`（返工第 1、2 项之后）的 `backend/src/main`；测量期间之后的提交只改验证码开关（`SiteFeatures`）、测试与文档，不改任何查询路径 |
+| 运行器 | `backend/src/test/java/com/maccms/backend/perf/B05SsrPerfRun.java`（类名不匹配 `*Test`/`*IT`，不进 `./mvnw verify`；`./mvnw -o -Pmysql-it verify -Dtest=none -Dit.test=B05SsrPerfRun` 显式运行）。在同一 JVM 中以真实 HTTP 启动应用（端口随机，只听 127.0.0.1），请求 SSR 页面；内部标签条件没有 URL 入口，直接调用应用上下文中的 `ContentReadService.listVideos` |
+| SQL 与绑定 | 测试侧注册的 MyBatis 拦截器（只在本次运行的上下文里）从实际执行的 `MappedStatement`/`BoundSql` 取 SQL 文本与绑定值（与 `DefaultParameterHandler` 相同的取值顺序），逐条计时并记录 MySQL 错误码；EXPLAIN 在另一连接上以**同一组绑定值**执行。全部语句与 EXPLAIN 见 `15-b05-perf-raw/ssr-sql-explain.txt`（长列清单、长 IN 列表在文件中缩写，EXPLAIN 用原文） |
+| 每个形态 | 第 1 次（冷）+ 5 次热态；记录每次的 HTTP 状态与耗时、页面"共 N 条"（或服务返回的 total）；SQL 取热态第 1 次 |
+| 一次性库 | `maccms_it_20261017115756_6b2125e7`：`B05Perf.java create` 校验库名、导入 `install.sql`，`grow 300000`（与第 2 节同一生成器，插入 210 s、`ENABLE KEYS` 186 s）；运行器另在库中补齐模块数据（70.8 s）；`B05Perf.java drop` 删除后查 `information_schema.schemata` 为 0，另用 mysql 客户端复查 `maccms_it_%` 剩余 0（`ssr-run.log` 末行） |
+| 其他库 | 没有连接、读取或修改 `maccms_dev` 或其他任何库；没有改服务器全局变量；DDL 只有 `install.sql` 原样导入与一次性库内的 `DISABLE/ENABLE KEYS`、`ANALYZE` |
+| 开关 | 只在被测应用实例上打开 `maccms.site.search.enabled`、`maccms.content.search.enabled`、`maccms.site.features.show/ajax-page`；仓库默认值没有改，没有加索引或 IGNORE INDEX |
+| 进程 | 应用在测试 JVM 内启动与关闭，没有子进程；没有按进程名结束任何进程 |
+
+#### 10.2 数据规模（`ssr-context.txt`）
+
+| 表 | 行数 | 平均行长 | 数据 / 索引 | 已审核 / 可见 |
+|---|---|---|---|---|
+| `mac_vod` | 300000 | 3654 B | 1.10 GB / 84 MB | 可见 270766；`vod_plot=1` 28540（每 10 行 1 行，`vod_id % 97 = 0` 另有周几/电视台） |
+| `mac_art` | 100000 | 2445 B | 245 MB / 19 MB | 41：29831、42（41 的子类）：50174、43：14847 |
+| `mac_role` | 100000 | 1627 B | 163 MB / 13 MB | 94852 |
+| `mac_actor` | 50000 | 1652 B | 83 MB / 7 MB | 51：31791、52（子类）：15675 |
+| `mac_website` | 50000 | 1660 B | 83 MB / 12 MB | 61：31791、62（子类）：15675 |
+| `mac_topic` | 20000 | 1642 B | 33 MB / 3 MB | 18988 |
+
+模块数据只依赖行号的 CRC32：名称由 40 个词组合（约 1/20 含"星"）、`letter` 均匀分布于 A–Z/0–9、`level` 0–9、地区/语言/星座/血型有偏斜，`*_time` 在 5 年内、`*_hits_week` 0–49999；全部合成，不含真实数据、域名或凭证。
+
+#### 10.3 结果（`ssr-bench.tsv`；ms 为端到端耗时：SSR 为 HTTP 往返，`t.*` 为服务调用）
+
+每个 SSR 请求的前几条语句是分类与游客组（`mac_type`/`mac_group`，各 1–6 ms）；耗时集中在最后的 count 与分页两条。
+
+**a. IN 多值 / ids / 深分页**
+
+| 形态 | 入口 / 条件 | 状态（6 次） | 冷 ms | 热 p50 / max ms | total | 语句数：各条耗时 ms（热态第 1 次） |
+|---|---|---|---|---|---|---|
+| v.area1 | `/vod/search.html?area=日本` | 200×6 | 1981 | 999 / 1126 | 27194 | 6：3.2+5.6+2.1+6.5+435.5+508.7 |
+| v.area3 | `/vod/search.html?area=日本,韩国,美国` | 200×6 | 3242 | 3520 / 3650 | 94639 | 6：2.7+4.2+3.6+4.5+1758.5+1639.1 |
+| v.lang3 | `/vod/search.html?lang=粤语,韩语,日语` | 200×6 | 3021 | 2500 / 2741 | 75753 | 6：2.4+3.9+4.5+4.4+1417.1+1291.2 |
+| v.letter3 | `/vod/search.html?letter=A,B,C` | 200×6 | 821 | 905 / 975 | 29634 | 6：1.4+2.4+1.4+3.3+427.1+443.9 |
+| v.ids50 | `/vod/search.html?ids=997,1994,2991,3988,4985,5982,6979,7976,8973,99…` | 200×6 | 32 | 61 / 154 | 46 | 6：1.3+2.0+1.3+2.0+2.8+33.2 |
+
+**b. OR（LIKE、SSR tid）**
+
+| 形态 | 入口 / 条件 | 状态（6 次） | 冷 ms | 热 p50 / max ms | total | 语句数：各条耗时 ms（热态第 1 次） |
+|---|---|---|---|---|---|---|
+| v.class3 | `/vod/search.html?class=科幻,战争,武侠` | 200×6 | 2122 | 1622 / 1938 | 95746 | 6：1.7+3.4+1.2+3.0+953.4+730.3 |
+| v.actor2 | `/vod/search.html?actor=张伟,王芳` | 200×6 | 1737 | 1728 / 1856 | 50620 | 6：0.8+1.2+0.5+1.4+832.2+669.7 |
+| v.tid-top | `/vod/search.html?tid=1` | 200×6 | 1669 | 1439 / 1897 | 54076 | 6：1.7+2.7+1.0+2.0+793.7+608.4 |
+| v.tid-child | `/vod/search.html?tid=7` | 200×6 | 535 | 408 / 546 | 13042 | 6：1.1+2.0+0.8+2.1+180.5+195.4 |
+
+**c. 年份区间**
+
+| 形态 | 入口 / 条件 | 状态（6 次） | 冷 ms | 热 p50 / max ms | total | 语句数：各条耗时 ms（热态第 1 次） |
+|---|---|---|---|---|---|---|
+| v.year1 | `/vod/search.html?year=2010` | 200×6 | 356 | 406 / 433 | 9692 | 6：1.1+1.7+0.7+1.7+147.1+190.7 |
+| v.year2000-2010 | `/vod/search.html?year=2000-2010` | 200×6 | 3131 | 3247 / 3768 | 93582 | 6：1.0+1.7+0.8+1.6+1647.1+1570.0 |
+| v.year1990-2021 | `/vod/search.html?year=1990-2021` | 200×6 | 2012 | 2105 / 2292 | 265339 | 6：1.1+2.1+0.7+2.4+1227.3+1048.8 |
+
+**d. 随机排序**
+
+| 形态 | 入口 / 条件 | 状态（6 次） | 冷 ms | 热 p50 / max ms | total | 语句数：各条耗时 ms（热态第 1 次） |
+|---|---|---|---|---|---|---|
+| v.rnd1 | `/vod/search.html?by=rnd&area=新加坡,印度&letter=Q,X,Z` | 200×6 | 226 | 261 / 291 | 601 | 6：1.1+2.0+1.1+2.3+115.5+112.8 |
+| v.rnd2-letter | `/vod/search.html?by=rnd&letter=A` | 200×6 | 342 | 273 / 287 | 27 | 8：1.6+2.6+1.1+1.9+185.4+1.5+37.8+33.7 |
+| v.rnd2-class | `/vod/search.html?by=rnd&class=科幻` | 200×6 | 1018 | 1006 / 1146 | 144 | 8：0.9+2.0+0.7+1.6+852.5+1.2+30.6+41.8 |
+| v.rnd2-tid | `/vod/search.html?by=rnd&tid=7` | 200×6 | 317 | 316 / 359 | 44 | 8：1.0+1.9+0.6+1.7+216.7+1.1+31.6+44.1 |
+
+**a. IN 多值 / ids / 深分页**
+
+| 形态 | 入口 / 条件 | 状态（6 次） | 冷 ms | 热 p50 / max ms | total | 语句数：各条耗时 ms（热态第 1 次） |
+|---|---|---|---|---|---|---|
+| v.deep | `/vod/search.html?letter=A&page=500` | 404×6 | 316 | 227 / 247 | — | 5：2.1+3.4+1.6+3.5+226.9 |
+
+**f. vod/show**
+
+| 形态 | 入口 / 条件 | 状态（6 次） | 冷 ms | 热 p50 / max ms | total | 语句数：各条耗时 ms（热态第 1 次） |
+|---|---|---|---|---|---|---|
+| v.show-top | `/vod/show/id/1.html` | 200×6 | 1820 | 1696 / 1909 | 54076 | 6：0.9+1.7+0.8+1.7+984.0+910.8 |
+| v.show-child-area | `/vod/show/id/7.html?area=大陆` | 200×6 | 462 | 431 / 463 | 4608 | 6：1.0+2.4+0.6+2.2+222.2+207.7 |
+| v.show-rnd | `/vod/show/id/1.html?by=rnd` | 200×6 | 785 | 813 / 977 | 183 | 8：0.9+2.1+0.6+1.8+770.6+0.5+20.3+26.2 |
+
+**m. 模块筛选/搜索页与剧情搜索**
+
+| 形态 | 入口 / 条件 | 状态（6 次） | 冷 ms | 热 p50 / max ms | total | 语句数：各条耗时 ms（热态第 1 次） |
+|---|---|---|---|---|---|---|
+| art.wd | `/art/search.html?wd=星` | 200×6 | 424 | 498 / 591 | 9841 | 4：0.7+0.8+144.8+190.1 |
+| art.letter3 | `/art/search.html?letter=A,B,C` | 200×6 | 261 | 266 / 272 | 7984 | 4：1.0+1.1+88.7+78.8 |
+| art.tag2 | `/art/search.html?tag=科幻,战争` | 200×6 | 338 | 364 / 398 | 29023 | 4：0.5+0.7+129.5+199.3 |
+| art.tid | `/art/search.html?tid=41` | 200×6 | 1702 | 3338 / 4768 | 72880 | 4：0.9+1.1+957.4+1987.7 |
+| art.level | `/art/search.html?level=5` | 200×6 | 1551 | 526 / 1320 | 9368 | 4：38.7+2.2+721.9+506.4 |
+| art.show | `/art/show/id/41.html` | 200×6 | 493 | 541 / 700 | 80005 | 6：1.0+1.0+0.8+1.0+229.4+225.1 |
+| art.show-rnd | `/art/show/id/41.html?by=rnd` | 200×6 | 2106 | 2122 / 2703 | 80005 | 6：1.3+1.3+0.8+1.2+235.4+1870.5 |
+| actor.area3 | `/actor/search.html?area=大陆,香港,日本` | 200×6 | 268 | 255 / 277 | 29502 | 4：1.5+1.2+123.7+120.5 |
+| actor.show-starsign | `/actor/show/id/51.html?starsign=白羊座,双子座` | 200×6 | 228 | 227 / 252 | 7896 | 6：1.2+1.2+1.0+1.1+100.2+104.7 |
+| actor.show-rnd | `/actor/show/id/51.html?by=rnd` | 200×6 | 393 | 1044 / 1278 | 47466 | 6：1.0+0.9+0.8+1.3+86.3+1180.3 |
+| role.show | `/role/show.html` | 200×6 | 328 | 352 / 399 | 94852 | 5：129.8+122.4+0.9+2.3+1.8 |
+| role.show-deep | `/role/show.html?page=1000` | 200×6 | 1033 | 829 / 846 | 94852 | 5：136.6+586.0+1.2+2.6+2.5 |
+| role.show-rnd | `/role/show.html?by=rnd` | 200×6 | 2017 | 685 / 2001 | 94852 | 5：136.2+1851.7+1.0+2.4+1.8 |
+| role.rid | `/role/search.html?rid=1234` | 200×6 | 7 | 7 / 8 | 0 | 1：1.0 |
+| role.wd | `/role/search.html?wd=星` | 200×6 | 449 | 481 / 520 | 4495 | 5：192.2+266.0+1.1+3.5+1.9 |
+| website.area-lang | `/website/search.html?area=大陆,香港&lang=国语,粤语` | 200×6 | 243 | 313 / 330 | 23783 | 4：1.3+1.2+83.4+98.7 |
+| website.in | `/website/search.html?by=in&name=剑客站0,山河站2,夜行站3` | 200×6 | 22 | 17 / 22 | 3 | 4：1.2+1.5+1.6+4.0 |
+| website.referer | `/website/show/id/61.html?by=referer` | 200×6 | 237 | 194 / 223 | 47466 | 6：1.5+1.6+1.1+1.6+108.1+100.5 |
+| topic.wd | `/topic/search.html?wd=专题` | 200×6 | 91 | 75 / 83 | 18988 | 2：33.5+43.0 |
+| topic.rnd | `/topic/search.html?by=rnd&letter=A,B` | 200×6 | 68 | 80 / 100 | 1113 | 2：32.5+42.0 |
+| plot.letter | `/plot/search.html?letter=A,B` | 200×6 | 927 | 848 / 953 | 2018 | 4：1.5+3.4+463.6+473.0 |
+| plot.tid | `/plot/search.html?tid=7` | 200×6 | 492 | 429 / 481 | 1309 | 4：1.2+2.0+200.7+214.9 |
+| plot.rnd | `/plot/search.html?by=rnd&letter=A` | 200×6 | 102 | 128 / 142 | 983 | 4：0.7+1.7+29.2+49.7 |
+
+**t. 内部标签条件（ContentReadService.listVideos，第 1 页 time desc）**
+
+| 形态 | 入口 / 条件 | 状态（6 次） | 冷 ms | 热 p50 / max ms | total | 语句数：各条耗时 ms（热态第 1 次） |
+|---|---|---|---|---|---|---|
+| t.isend1 | `isEnd=1` | 200×6 | 4585 | 4633 / 4826 | 149048 | 4：0.7+1.4+2234.3+2173.5 |
+| t.hits-between | `hits BETWEEN 1000 AND 50000` | 200×6 | 3536 | 3228 / 3562 | 79560 | 4：1.0+1.9+1556.6+1601.0 |
+| t.hits-gt | `hits > 200000` | 200×6 | 4534 | 4395 / 4875 | 90307 | 4：1.0+1.9+2178.0+2386.8 |
+| t.hitsweek-in | `hitsWeek IN (0,1,2,3)` | 200×6 | 844 | 1018 / 1071 | 25668 | 4：0.6+1.7+383.8+480.7 |
+| t.timeadd-30d | `addedAfter = NOW−30 天` | 200×6 | 22 | 21 / 24 | 182 | 4：0.7+1.8+4.5+10.7 |
+| t.timeadd-365d | `addedAfter = NOW−365 天` | 200×6 | 986 | 1052 / 1166 | 27046 | 4：0.7+1.4+555.0+606.6 |
+| t.not100 | `notIds 100 个` | 200×6 | 1996 | 1706 / 1758 | 270675 | 4：0.6+1.4+813.4+891.7 |
+| t.rel-ids | `relIds 30 个` | 200×6 | 17 | 13 / 14 | 29 | 4：0.6+1.8+1.9+7.3 |
+| t.rel-text | `rel=星辰（vod_rel_vod LIKE）` | 200×6 | 912 | 867 / 942 | 0 | 3：0.7+1.6+863.7 |
+| t.weekday | `weekday=一,三（LIKE OR）` | 200×6 | 2029 | 2421 / 4476 | 2753 | 4：0.6+1.1+979.1+1095.1 |
+| t.type-current | `types=[1]（本身 + 子类）` | 200×6 | 2031 | 2435 / 2961 | 54076 | 4：2.4+2.5+1442.7+1512.7 |
+| t.typenot | `typeNot=[1,2,3]` | 200×6 | 2380 | 1944 / 2026 | 265621 | 4：0.8+2.4+948.4+991.8 |
+| t.tv | `tvs=[CCTV1, 空]` | 200×6 | 1526 | 1698 / 1839 | 270766 | 4：0.7+1.7+829.4+848.4 |
+| t.plot | `plot=1` | 200×6 | 901 | 769 / 817 | 27119 | 4：0.8+2.3+415.1+396.3 |
+| t.level-multi | `levels=1..9` | 200×6 | 181 | 193 / 261 | 5441 | 4：0.7+1.3+123.7+133.4 |
+| t.start | `start=50 + isEnd=0` | 200×6 | 2600 | 2893 / 5123 | 121718 | 4：0.7+1.3+1418.6+1470.8 |
+| t.tid | `tid=1（type_id OR type_id_1）` | 200×6 | 1657 | 3613 / 4916 | 54076 | 4：0.7+1.9+791.8+956.2 |
+| t.combo | `addedAfter 365 天 + hits > 200000 + isEnd=1` | 200×6 | 2006 | 1639 / 2481 | 4893 | 4：1.3+3.6+1114.2+1352.0 |
+
+`v.deep`（`letter=A&page=500`）的计数小于偏移 9980（`letter=A` 约 1 万行），按设计 404（只执行 count，0.23 s）；深偏移由 `role.show-deep`（偏移 19980）测量。`role.rid`（`rid=1234`）合成数据无命中，count 为 0 后不取行。`sys_cpu_load` 列是写文件时的单次采样（1.00），不能当作各行测量时的负载。
+
+#### 10.4 EXPLAIN 摘要（count 语句；分页另加 `Using filesort`，全部见 `ssr-sql-explain.txt`）
+
+| 形态 | 实际执行的条件（绑定值） | type | key | rows | Extra |
+|---|---|---|---|---|---|
+| v.area3 | `vod_area IN ('日本','韩国','美国')` | range | vod_area | 103644 | Using index condition; Using where |
+| v.tid-top / t.tid | `(type_id = 1 OR type_id_1 = 1)` | index_merge | type_id,type_id_1 | 56677 | Using union(type_id,type_id_1) |
+| v.show-top | `type_id IN (1,6,7,8,9)`（分类本身 + 直接子分类，1.0.0 语句，无时限提示） | range | type_id | 56677 | Using index condition |
+| v.year2000-2010 | `vod_year IN (11 项)` | range | vod_year | 107089 | Using index condition（与第 4 节相同） |
+| v.rnd2-* | 计数后 `selectIdRange`（Select tables optimized away）→ 原条件 `AND vod_id IN (1000 个候选)` | range | PRIMARY | 1000 | Using MRR（候选段 count + 分页 30–45 ms） |
+| art.tid | `(type_id = 41 OR type_id_1 = 41)` | index_merge | type_id,type_id_1 | 72541 | Using union |
+| art.show-rnd / role.show-rnd | 无条件 + `ORDER BY *_hits_week DESC, *_id DESC LIMIT 68840/77780, 20` | ALL | — | 100000 | Using where; Using filesort |
+| actor.area3 | `actor_area IN ('大陆','香港','日本')` | ALL | — | 50000 | Using where（5 万行全表扫描 0.12 s） |
+| website.in | `website_name IN (3 项)` + `ORDER BY FIND_IN_SET(website_name, ?) ASC, website_id ASC` | range | website_name | 3 | Using index condition; Using filesort |
+| plot.letter | `vod_letter IN ('A','B') AND vod_plot = 1` | range | vod_letter | 21576 | Using index condition; Using where |
+| t.isend1 | `vod_isend = 1` | ref | vod_isend | 168276 | Using where |
+| t.hits-gt | `vod_hits > 200000` | range | vod_hits | 101789 | Using index condition; Using where |
+
+所有值都经绑定参数传入（`binds:` 行），条件片段与列名来自 Mapper XML；与第 4 节相同形态的访问路径一致，说明第 0–9 节"照抄 XML"的语句与实际执行的语句同形。
+
+#### 10.5 结论与限制（诚实陈述，不是通过结论）
+
+1. **本次没有出现 503**：61 个形态 × 6 次全部 200（`v.deep` 为设计的 404），但这**不推翻**第 0–9 节在更高负载下测得的 3024/1028 与 503。单条语句最长约 2.4 s（`t.hits-gt` 分页 2387 ms、`t.isend1` count 2234 ms），离 3 s 时限只差 20%–30%；第 0–9 节的同形态在负载 0.7–1.0 时已经超时。**结论不变：30 万行下这些形态处在时限边缘，负载升高时会按设计返回 503。**
+2. **端到端超过 3 s 的形态**（count 与分页两条语句各自在时限内，合计超过 3 s）：`v.area3`（p50 3.5 s）、`v.year2000-2010`（3.2 s）、`art.tid`（3.3 s，max 4.8 s）、`t.isend1`（4.6 s）、`t.hits-gt`（4.4 s）、`t.hits-between`（3.2 s）、`t.tid`（3.6 s，max 4.9 s）、`t.start`（2.9 s，max 5.1 s）、`t.weekday`（max 4.5 s）。执行时限是每条语句 3 s，不是每个请求，页面因此可能等待 5–6 s 才返回 200 或 503。
+3. **SSR `tid`**（视频与文章）用 `index_merge union`，回表行数等于命中行数：顶级分类 5.4 万/7.3 万行时 0.8–2.0 s 每条；子分类 1.3 万行时 0.2 s。
+4. **模块随机页**：旧算法的随机页在 `1..floor(c/20)+1` 中取，无条件时偏移可达数万（本次 68840、77780），`ORDER BY *_hits_week DESC` 走全表 filesort，分页语句约 1.9 s（`art.show-rnd`、`role.show-rnd`）；随机落到前面的页时只需 0.1–0.6 s（`role.show-rnd` 6 次中 3 次 < 0.7 s）。耗时随表行数线性增长，是旧算法本身的成本，新版没有改变取页方式。
+5. **低成本形态**：`ids`、`rel` 数字、`timeadd` 30 天、`website.in`（name IN）、专题（2 万行）、`plot.rnd`、`v.rnd1`、`v.rnd2-*`（候选段）都在 0.3 s 以内；`role.show` 无条件全表 count + 第 1 页 0.35 s。
+6. **视频随机算法二**（`v.rnd2-letter/class/tid`）：耗时几乎全部在第一条计数（0.19–0.85 s），`selectIdRange` 约 1 ms，候选段 count + 分页 60–80 ms；与第 5.4 节一致。
+
+**限制**：只测了一个规模（视频 30 万、模块 2 万–10 万）与一台不空闲的机器（同时有其他智能体与 Defender 运行；没有逐行负载采样）；每个形态热态只有 5 次；没有测并发、与 PHP 写入的表锁交互、空闲机器上的基线；线上行数、行体积与分布**待核实**。没有做任何 SQL 调优、索引或 `IGNORE INDEX` 实验（按返工决定，本轮不要求）。
+
+**处置**：维持既有护栏不放宽——包含匹配与模块/视频搜索默认关闭（`maccms.site.search.enabled`、`maccms.content.search.enabled` 仓库值关）、并发许可、每条语句 3 s 时限与 503；筛选页随 `app.show`（仓库值关）。上述边缘形态的调优（访问路径、按比例改写、索引）需要队长另行裁定与单独测量，建议在 B21（线上数据规模核实）之前完成评估；本批不加索引、不做 DDL。
+
+#### 10.6 复现
+
+```bash
+cd backend
+export MACCMS_IT_ADMIN_URL='jdbc:mysql://127.0.0.1:3306/?characterEncoding=UTF-8&useSSL=false'
+export MACCMS_IT_ADMIN_USERNAME=<有建库/删库权限的本机账号>
+export MACCMS_IT_ADMIN_PASSWORD=<密码>
+P="java -cp $HOME/.m2/repository/com/mysql/mysql-connector-j/8.2.0/mysql-connector-j-8.2.0.jar src/test/perf/B05Perf.java"
+$P create && $P grow 300000
+./mvnw -o -Pmysql-it verify -Dtest=none -Dsurefire.failIfNoSpecifiedTests=false -Dit.test=B05SsrPerfRun -Djacoco.skip=true
+$P drop          # 失败时也要执行；删除后查 information_schema.schemata 确认不存在
+```
+
+输出写到 `backend/target/perf-b05-ssr/`（已被忽略），复制到 `docs/architecture/15-b05-perf-raw/ssr-*`（只去掉了行尾空白）。

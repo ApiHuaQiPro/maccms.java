@@ -31,8 +31,9 @@ import org.springframework.web.bind.annotation.GetMapping;
  *
  * <p>开关（与旧 Base.php:27-79 的 check_show/check_ajax/check_search 对应）：搜索页随视频搜索页
  * （{@code maccms.site.search.enabled}，旧 app.search）；筛选页随旧 {@code app.show}（{@link SiteFeatures#show()}，默认关闭）；
- * ajax 入口另需旧 {@code app.ajax_page}。关闭时 404，不查库。旧版的搜索频率限制（search_timespan）与验证码（search_verify、
- * show_verify）新版不提供（15 文档第 11 节）。
+ * ajax 入口另需旧 {@code app.ajax_page}。关闭时 404，不查库。旧版的验证码（search_verify、show_verify）在 B08/B11 接线前按临时关闭处理
+ * （{@link SiteFeatures}，不能被环境变量绕过）；搜索频率限制（search_timespan，会话计时 mac_get_time_span）随 B08 的会话接线
+ * （15 文档第 11 节）。
  *
  * <p>状态：不认识的形态、分类不存在或不可见、越界页 → 404；参数不合法 → 400（固定提示页或空片段，不回显输入）；
  * 503/500 与站点关闭沿用 SiteExceptionHandler 与 SiteStatusInterceptor。页面 noindex、no-store。
@@ -96,9 +97,11 @@ public class SiteModuleListController {
         // getRequestURI / getQueryString 都是未解码的原始值；应用挂在根路径（base-url 子目录由反向代理映射）
         String rawPath = request.getRequestURI().substring(request.getContextPath().length());
         ModuleListPage requested = requested(rawPath);
-        if (requested == null || (requested.show() ? !features.show() : !searchEnabled)
+        if (requested == null
+                || (requested.show() ? !features.show() : !searchEnabled || features.searchPageClosed(requested.ajax()))
                 || (requested.ajax() && !features.ajaxPage())) {
-            // 旧版 app.show/app.search/app.ajax_page 关闭时报"…功能关闭中"（Base.php:27-79）；新版不提供该入口
+            // 旧版 app.show/app.search/app.ajax_page 关闭时报"…功能关闭中"（Base.php:27-79）；旧 show_verify/search_verify=1
+            // 要求验证码，验证码接线（B08/B11）之前临时关闭（SiteFeatures）。新版不提供该入口
             throw new ApiException(ErrorCode.NOT_FOUND, "页面不存在");
         }
         ModuleListView view;

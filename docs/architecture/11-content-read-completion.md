@@ -167,7 +167,7 @@ php backend/src/test/php/content_library_golden.php > backend/src/test/resources
 |---|---|---|
 | 播放/下载分组的对外接口、`player_aaaa`、`playerconfig.js` | 需要旧配置读取（vodplayer/voddowner/vodserver，B02）与 W2 外部地址放行参数；解码函数已就绪 | B05 |
 | 包含匹配参数 wd、tag、class、name（文章） | 全表 LIKE，须按 02 规范第 3 节先定开关、时限、并发与测量（视频的同类参数用了整个 MACC-16～19） | 与 B04 的筛选框架一起，或单列批次 |
-| ids、tid、not、rel、typenot、timeadd/timehits/time、hits*/referer* 范围、start、rnd、in、level=all、逗号多值 | 多为模板标签参数（模板来源 D9 待定），请求参数中可到达的 ids/tid/rnd 需与 B04 统一设计 | B04/B05 |
+| ids、tid、not、rel、typenot、timeadd/timehits/time、hits*/referer* 范围、start、rnd、in、level=all、逗号多值 | 多为模板标签参数（模板来源 D9 待定），请求参数中可到达的部分需与 B04 统一设计 | **B05 已承接 URL 可达的部分**（15 文档第 7.3 节）：各模块 SSR 筛选/搜索页的 ids、文章 tid、专题 id、rid、letter/area/lang/starsign/blood 逗号多值、by=rnd/in/referer*；URL 的 level 经 mac_param_url 先 intval（多值取首段、all 为不筛选），level 多值/all 与其余标签专属条件只来自模板，不是 URL 输入；公开 API 1.2.0 仍为单值，不变 |
 | 编码（写入）方向：把分组拼回 `$$$`/`#` 串 | 只在后台保存时使用 | B13 |
 | 文章积分按 art_points_type 精确判断 | 需要旧配置读取 | B02 之后 |
 

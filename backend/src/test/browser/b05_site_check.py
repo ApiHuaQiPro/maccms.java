@@ -216,6 +216,9 @@ PAGES = {
     'plot': 'index.php/plot/detail/id/101.html', 'art-index': 'index.php/art/index.html',
     'rss': 'index.php/vod/rss/id/1.html', 'ajax-detail': 'index.php/vod/ajax_detail/id/1.html',
     'ajax-search': 'index.php/art/ajax_search.html?wd=%E6%98%9F', 'playerconfig': 'static/js/playerconfig.js',
+    # 返工第 1、2 项：角色筛选页（无分类）、模块随机页（分类 21 只有一个随机页，结果确定）、剧情搜索的视频键与多值 letter
+    'role-show': 'index.php/role/show.html?letter=X%2CF', 'art-show-rnd': 'index.php/art/show/id/21.html?by=rnd',
+    'plot-search': 'index.php/plot/search.html?letter=X%2CH&tid=1',
 }
 EXPECTED = {'pwd-player': 403, 'art-pwd': 403}
 
@@ -346,7 +349,7 @@ def layout_checks(ctx, base, shots, result):
         p = ctx.new_page()
         p.set_viewport_size({'width': width, 'height': 900})
         for name in ('home', 'search', 'show', 'detail', 'play', 'down', 'art', 'art-search', 'actor', 'website',
-                     'art-pwd'):
+                     'art-pwd', 'role-show', 'art-show-rnd'):
             p.goto(base + PAGES[name], wait_until='load')
             over = p.evaluate('() => document.documentElement.scrollWidth - document.documentElement.clientWidth')
             out['%s@%d' % (name, width)] = over

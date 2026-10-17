@@ -60,8 +60,9 @@ public class SiteSearchController {
         // getRequestURI / getQueryString 都是未解码的原始值；应用挂在根路径（base-url 子目录由反向代理映射）
         String rawPath = request.getRequestURI().substring(request.getContextPath().length());
         boolean ajax = rawPath.contains("/ajax_search");
-        if (ajax && !features.ajaxPage()) {
-            // 旧版 app.ajax_page=0 时报"ajax页功能关闭中"（Base.php:45-51）；新版不提供该入口
+        if ((ajax && !features.ajaxPage()) || features.searchPageClosed(ajax)) {
+            // 旧版 app.ajax_page=0 时报"ajax页功能关闭中"（Base.php:45-51）；旧 search_verify=1 要求验证码，验证码接线（B08/B11）
+            // 之前搜索页临时关闭（SiteFeatures）。新版不提供该入口
             throw new ApiException(ErrorCode.NOT_FOUND, "页面不存在");
         }
         SearchPage page;
