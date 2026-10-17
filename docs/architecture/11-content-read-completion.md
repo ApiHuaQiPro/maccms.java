@@ -125,7 +125,7 @@ php backend/src/test/php/content_multivalue_golden.php > backend/src/test/resour
 | 3 | 多值筛选 | level/area/lang/starsign/blood 支持逗号多值，level 支持 all | 单值；逗号 → 400；all → 400 | 与 1.1.0 视频筛选一致 |
 | 4 | 未实现的列表参数 | ids、tid、wd、name、tag、class、rnd、in、timeadd、hits* 范围、not、rel、typenot 等 | 被忽略（未声明参数） | 见第 7 节 |
 | 5 | 友链 type 取值 | font/pic 以外的值被忽略（列出全部） | 400 | 契约明确取值 |
-| 6 | 文章积分判断 | 按 `user.art_points_type`（仓库 '1'，`application/extra/maccms.php:122`）只看 art_points 或 art_points_detail 之一，游客且积分>0 显示扣积分确认页 | 两列任一大于 0 即 403 `ARTICLE_POINTS_REQUIRED` | 本批不读取旧配置（B02），取更严格的一侧；B02 接入后可按配置收窄 |
+| 6 | 文章积分判断 | 按 `user.art_points_type`（仓库 '1'，`application/extra/maccms.php:122`）只看 art_points 或 art_points_detail 之一，游客且积分>0 显示扣积分确认页 | 两列任一大于 0 即 403 `ARTICLE_POINTS_REQUIRED` | 本批不读取旧配置（B02），取更严格的一侧；B02 接入后可按配置收窄。**B05 起已按配置**（`maccms.content.art-points-type`，15 文档第 4 节） |
 | 7 | 无权限/需密码/需积分 | HTML 提示页、密码页、确认页 | 404 / 403 + 固定错误码，不返回任何字段 | API 契约；与视频详情一致 |
 | 8 | 分集剧情页的密码与版权 | plot/detail 只检查权限，不检查 vod_pwd 与版权（`Plot.php:38-42`） | 与视频详情相同，有密码或版权限制时 403 | 剧情页展示的是同一视频的内容，取更严格的一侧 |
 | 9 | 角色所属视频 | 不看视频状态（`Role.php:41-51、296-303`） | 只在视频已审核且分类可见时给出摘要，否则 id=0 | 不暴露隐藏视频的名称 |

@@ -29,6 +29,11 @@ class ContentCatalogs {
         return properties.enforceGuestPopedom();
     }
 
+    /** user.art_points_type（{@link ContentProperties#artPointsWholeArticle()}）。 */
+    boolean artPointsWholeArticle() {
+        return properties.artPointsWholeArticle();
+    }
+
     GuestPermission guest() {
         if (!properties.enforceGuestPopedom()) {
             return GuestPermission.from(null);

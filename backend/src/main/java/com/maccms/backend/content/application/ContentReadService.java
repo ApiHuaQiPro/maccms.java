@@ -17,12 +17,15 @@ import com.maccms.backend.content.infrastructure.TypeRow;
 import com.maccms.backend.content.infrastructure.VodDetailRow;
 import com.maccms.backend.content.infrastructure.VodFilterCriteria;
 import com.maccms.backend.content.infrastructure.VodIdRange;
+import com.maccms.backend.content.infrastructure.VodLegacyCriteria;
 import com.maccms.backend.content.infrastructure.VodMapper;
+import com.maccms.backend.content.infrastructure.VodRangeCriteria;
 import com.maccms.backend.content.infrastructure.VodSummaryRow;
 import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.IdentityHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Semaphore;
@@ -128,11 +131,15 @@ public class ContentReadService {
 
     public PageResponse<VideoSummaryDto> listVideos(VideoListQuery query) {
         VideoFilter filter = query.filter();
-        if (!filter.usesContainsMatch()) {
+        VideoLegacyConditions legacy = query.legacy();
+        // B05：旧标签的包含匹配条件（weekday、文本 rel）与 keyword 等共用开关、并发许可与执行时限，内部能力不绕过成本护栏
+        if (!filter.usesContainsMatch() && !legacy.usesContainsMatch()) {
             return read(() -> doListVideos(query));
         }
         if (!search.enabled()) {
-            throw ApiException.invalidParameter(filter.firstContainsMatchParameter(), VideoFilter.SEARCH_DISABLED);
+            String field = filter.usesContainsMatch() ? filter.firstContainsMatchParameter()
+                    : legacy.firstContainsMatchParameter();
+            throw ApiException.invalidParameter(field, VideoFilter.SEARCH_DISABLED);
         }
         if (!searchPermits.tryAcquire()) {
             log.warn("content search rejected: concurrency limit reached");
@@ -202,19 +209,11 @@ public class ContentReadService {
 
     private PageResponse<VideoSummaryDto> doListVideos(VideoListQuery query) {
         CategoryCatalog catalog = loadCatalog(loadGuest());
-        Set<Integer> typeIds;
-        if (query.categoryId() != null) {
-            if (!catalog.isVisible(query.categoryId())) {
-                throw new ApiException(ErrorCode.CATEGORY_NOT_FOUND, "分类不存在");
-            }
-            typeIds = catalog.idsForFilter(query.categoryId());
-        } else {
-            typeIds = catalog.allIds();
-        }
+        Set<Integer> typeIds = typeIds(catalog, query);
         if (typeIds.isEmpty()) {
             return PageResponse.of(List.of(), query.page(), query.pageSize(), 0);
         }
-        VodFilterCriteria criteria = criteria(query.filter());
+        VodFilterCriteria criteria = criteria(query.filter(), query.legacy());
         if (query.random()) {
             return randomPage(catalog, typeIds, criteria, query);
         }
@@ -230,6 +229,40 @@ public class ContentReadService {
                         query.offset(), query.pageSize());
         List<VideoSummaryDto> items = rows.stream().map(r -> toSummary(r, catalog)).toList();
         return PageResponse.of(items, query.page(), query.pageSize(), total);
+    }
+
+    /**
+     * 本次查询的分类范围（始终在可见分类内）。旧版 {@code $where['type_id']} 只有一个：typenot（Vod.php:352-354）覆盖 type
+     * 与当前分类（:337-351；对应 {@code categoryId} 与 {@link VideoLegacyConditions#types()}），二者都是"本身与直接子分类"。
+     * {@code categoryId} 不可见时为 CATEGORY_NOT_FOUND（1.0.0 起的公开 API 规则）；types 中不可见的项只是不命中。
+     */
+    static Set<Integer> typeIds(CategoryCatalog catalog, VideoListQuery query) {
+        VideoLegacyConditions legacy = query.legacy();
+        if (legacy.typeNot() != null) {
+            Set<Integer> out = new LinkedHashSet<>(catalog.allIds());
+            out.removeAll(legacy.typeNot());
+            return out;
+        }
+        if (query.categoryId() != null) {
+            if (!catalog.isVisible(query.categoryId())) {
+                throw new ApiException(ErrorCode.CATEGORY_NOT_FOUND, "分类不存在");
+            }
+            return catalog.idsForFilter(query.categoryId());
+        }
+        if (legacy.types() != null) {
+            Set<Integer> out = new LinkedHashSet<>();
+            for (int t : legacy.types()) {
+                if (catalog.isVisible(t)) {
+                    out.add(t);
+                }
+                // 旧版 type_pid 命中即列入：0 即全部顶级分类；不可见分类的子分类本身也不可见（上级链不完整）
+                for (TypeRow child : catalog.childrenOf(t)) {
+                    out.add(child.id());
+                }
+            }
+            return out;
+        }
+        return catalog.allIds();
     }
 
     /**
@@ -267,7 +300,7 @@ public class ContentReadService {
             }
         }
         long page = random.pageBetweenOneAnd(count / query.pageSize() + 1);
-        long offset = (page - 1) * query.pageSize();
+        long offset = query.offsetOf(page);
         int responsePage = Math.toIntExact(page);
         if (count == 0 || offset >= count) {
             return PageResponse.of(List.of(), responsePage, query.pageSize(), count);
@@ -286,7 +319,19 @@ public class ContentReadService {
      * {@code classesPatterns}。
      */
     static VodFilterCriteria criteria(VideoFilter f) {
-        if (f.isEmpty()) {
+        return criteria(f, VideoLegacyConditions.NONE);
+    }
+
+    /**
+     * 同上，另加 B05 的旧标签条件。旧版 ids、not、数字 rel 写入同一个 {@code $where['vod_id']}（Vod.php:273-284，后写的覆盖先写的）：
+     * 数字 rel 设置时 {@code vod_id IN (rel)}；否则 not 设置时 {@code vod_id NOT IN (not)}；否则才是 ids。
+     */
+    static VodFilterCriteria criteria(VideoFilter f, VideoLegacyConditions l) {
+        boolean idsOverridden = l.relIds() != null || l.notIds() != null;
+        List<Long> ids = l.relIds() != null ? l.relIds() : idsOverridden ? null : f.idList();
+        VodLegacyCriteria legacy = legacyCriteria(l);
+        VideoFilter rest = idsOverridden ? f.withoutIds() : f;
+        if (rest.isEmpty() && legacy == null && ids == null) {
             return null;
         }
         List<String> years = f.years();
@@ -295,8 +340,25 @@ public class ContentReadService {
         List<String> classes = f.classesPatterns();
         return new VodFilterCriteria(f.level(), single(years), single(areas), single(langs), single(classes),
                 f.keywordPatterns(), multiple(years), f.letters(), f.states(), f.versions(), f.actorPatterns(),
-                f.directorPatterns(), f.tagPatterns(), f.namePatterns(), f.idList(), null, multiple(areas),
-                multiple(langs), multiple(classes));
+                f.directorPatterns(), f.tagPatterns(), f.namePatterns(), ids, null, multiple(areas),
+                multiple(langs), multiple(classes), legacy);
+    }
+
+    private static VodLegacyCriteria legacyCriteria(VideoLegacyConditions l) {
+        List<Long> notIn = l.relIds() != null ? null : l.notIds();
+        if (l.tid() == null && notIn == null && l.rel() == null && l.levels() == null && l.weekday() == null
+                && l.tvs() == null && l.addedAfter() == null && l.hitsTimeAfter() == null && l.updatedAfter() == null
+                && l.hitsMonth() == null && l.hitsWeek() == null && l.hitsDay() == null && l.hits() == null
+                && l.isEnd() == null && l.plot() == null) {
+            return null;
+        }
+        return new VodLegacyCriteria(l.tid(), notIn, l.relPatterns(), l.levels(), l.weekdayPatterns(), l.tvs(),
+                l.addedAfter(), l.hitsTimeAfter(), l.updatedAfter(), range(l.hitsMonth()), range(l.hitsWeek()),
+                range(l.hitsDay()), range(l.hits()), l.isEnd(), l.plot());
+    }
+
+    private static VodRangeCriteria range(LegacyRange r) {
+        return r == null ? null : new VodRangeCriteria(r.op().name(), r.values());
     }
 
     private static String single(List<String> values) {

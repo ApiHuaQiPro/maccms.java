@@ -366,7 +366,11 @@ class SiteSearchMySqlIT {
         Page bad = get(SEARCH + "?wd=%FF");
         assertThat(bad.status()).isEqualTo(400);
         assertThat(bad.doc().selectFirst("h1").text()).isEqualTo("搜索条件不合法");
-        assertThat(get(SEARCH + "?by=rnd").status()).isEqualTo(404);
+        // B05 起 by=rnd 由 Java 承接（旧版随机取页算法，契约 1.3.0）：200、不显示分页；tid 等新键见 VideoTagGoldenMySqlIT
+        Page random = get(SEARCH + "?by=rnd");
+        assertThat(random.status()).isEqualTo(200);
+        assertThat(random.doc().select("nav.pagination")).isEmpty();
+        assertThat(random.doc().selectFirst("a.filter-chip--current[href$=\"by=rnd\"]")).isNotNull();
         Page none = get(SEARCH + "?wd=" + enc("不存在的关键字"));
         assertThat(none.status()).isEqualTo(200);
         assertThat(none.doc().select(".search-empty")).hasSize(1);

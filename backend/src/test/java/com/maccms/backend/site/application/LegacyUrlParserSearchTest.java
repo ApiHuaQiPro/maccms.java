@@ -181,10 +181,12 @@ class LegacyUrlParserSearchTest {
         for (LegacyUrlStyle style : STYLES) {
             assertThat(filters(style, "level=0000000009").level()).isEqualTo(9);
             assertThat(filters(style, "level=09").level()).isEqualTo(9);
-            assertThat(invalid(style, "level=00000000009").field()).isEqualTo("level");
-            assertThat(invalid(style, "level=00").field()).isEqualTo("level");
+            // B05 逐键零值归一（Q2）：level 按旧 mac_param_url 的 intval（application/common.php:1576），结果为 0 时不筛选；
+            // 范围外的非 0 值仍按 content 规则 400（旧版筛选 vod_level IN (10)，无结果）。更多向量见 LegacyUrlParserSearchB05Test
+            assertThat(filters(style, "level=00000000009").level()).isEqualTo(9);
+            assertThat(filters(style, "level=00").level()).as("intval 为 0").isNull();
             assertThat(invalid(style, "level=10").field()).isEqualTo("level");
-            assertThat(invalid(style, "level=%2B9").field()).isEqualTo("level");
+            assertThat(filters(style, "level=%2B9").level()).as("intval(\"+9\")").isEqualTo(9);
             assertThat(filters(style, "level=+9+").level()).as("首尾空白先裁掉").isEqualTo(9);
             SearchFilters s = filters(style, "by=hits_month&order=asc");
             assertThat(s.sort()).isEqualTo(VideoSort.HITS_MONTH);
@@ -281,13 +283,14 @@ class LegacyUrlParserSearchTest {
             assertThat(invalid(style, "foo=1&wd=%FF").field()).isEqualTo("query");
             assertThat(invalid(style, "wd=%FF&foo=1").field()).isEqualTo("wd");
             assertThat(invalid(style, "wd=a&wd=%FF").field()).isEqualTo("wd");
-            // 交 PHP：兼容模式 s、首批不承接的旧键、rnd（任何位置）
-            for (String q : List.of("s=/vod/detail/id/1", "wd=x&s=vod/search", "actor=x", "director=x", "tag=x",
-                    "letter=A", "state=x", "version=x", "tid=1", "name=x", "ids=1", "isend=1", "ajax=1", "by=rnd",
-                    "by=+rnd+", "foo=1&actor=x", "wd=%FF&tid=1")) {
+            // 交 PHP：只剩兼容模式 s（任何位置）；B05 起 actor 等旧键、tid、by=rnd 由 Java 承接（LegacyUrlParserSearchB05Test），
+            // isend、ajax 旧代码读不到或不使用，按未知参数 400
+            for (String q : List.of("s=/vod/detail/id/1", "wd=x&s=vod/search", "foo=1&s=x", "wd=%FF&s=x")) {
                 assertThat(parser(style).parseSearch(base(style), q)).as(q).isEmpty();
             }
-            // rnd 判断在第 5 步之后：前面的错误先报
+            for (String q : List.of("isend=1", "ajax=1", "foo=1&actor=x")) {
+                assertThat(invalid(style, q).field()).as(q).isEqualTo("query");
+            }
             assertThat(invalid(style, "foo=1&by=rnd").field()).isEqualTo("query");
         }
     }

@@ -25,13 +25,14 @@ import java.util.List;
  * @param areas            vod_area IN（area 逗号多值的各项；单值用 {@code area}，保持 1.1.0 的 SQL 文本）
  * @param langs            vod_lang IN（lang 逗号多值的各项；单值用 {@code lang}）
  * @param classesPatterns  vod_class 的 LIKE 模式（classes 逗号多值的各项，项之间 OR；单值用 {@code classesPattern}）
+ * @param legacy           旧模板标签专属条件与 SSR 的 tid（B05，{@link VodLegacyCriteria}），追加在以上条件之后；{@code null} 时 SQL 文本不变
  */
 public record VodFilterCriteria(Integer level, String year, String area, String lang, String classesPattern,
                                 List<String> keywordPatterns, List<String> years, List<String> letters,
                                 List<String> states, List<String> versions, List<String> actorPatterns,
                                 List<String> directorPatterns, List<String> tagPatterns, List<String> namePatterns,
                                 List<Long> ids, List<Long> candidateIds, List<String> areas, List<String> langs,
-                                List<String> classesPatterns) {
+                                List<String> classesPatterns, VodLegacyCriteria legacy) {
 
     public VodFilterCriteria {
         if (keywordPatterns != null) {
@@ -63,9 +64,21 @@ public record VodFilterCriteria(Integer level, String year, String area, String 
         if (level == null && year == null && area == null && lang == null && classesPattern == null
                 && keywordPatterns == null && years == null && letters == null && states == null && versions == null
                 && actorPatterns == null && directorPatterns == null && tagPatterns == null && namePatterns == null
-                && ids == null && candidateIds == null && areas == null && langs == null && classesPatterns == null) {
+                && ids == null && candidateIds == null && areas == null && langs == null && classesPatterns == null
+                && legacy == null) {
             throw new IllegalArgumentException("没有任何条件时应使用不带条件的查询");
         }
+    }
+
+    /** 不含 B05 旧标签条件（{@code legacy} 为 {@code null}）。 */
+    public VodFilterCriteria(Integer level, String year, String area, String lang, String classesPattern,
+                             List<String> keywordPatterns, List<String> years, List<String> letters,
+                             List<String> states, List<String> versions, List<String> actorPatterns,
+                             List<String> directorPatterns, List<String> tagPatterns, List<String> namePatterns,
+                             List<Long> ids, List<Long> candidateIds, List<String> areas, List<String> langs,
+                             List<String> classesPatterns) {
+        this(level, year, area, lang, classesPattern, keywordPatterns, years, letters, states, versions, actorPatterns,
+                directorPatterns, tagPatterns, namePatterns, ids, candidateIds, areas, langs, classesPatterns, null);
     }
 
     /** 契约 1.1.0 的 6 个条件。 */
@@ -95,7 +108,7 @@ public record VodFilterCriteria(Integer level, String year, String area, String 
     public VodFilterCriteria withCandidates(List<Long> newCandidateIds) {
         return new VodFilterCriteria(level, year, area, lang, classesPattern, keywordPatterns, years, letters, states,
                 versions, actorPatterns, directorPatterns, tagPatterns, namePatterns, ids, newCandidateIds, areas,
-                langs, classesPatterns);
+                langs, classesPatterns, legacy);
     }
 
     private static <T> List<T> nonEmpty(String field, List<T> v) {

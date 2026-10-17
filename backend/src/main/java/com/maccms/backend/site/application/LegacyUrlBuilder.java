@@ -31,12 +31,16 @@ public final class LegacyUrlBuilder {
     /** vod/show 可用的筛选参数（application/route.php 的 vodshow 变量，id、page 另行传入）。 */
     public static final List<String> SHOW_KEYS = List.of("area", "by", "class", "lang", "letter", "level", "order",
             "state", "tag", "year");
-    /** Java SSR 搜索页链接的查询串键（MACC-20），也是输出顺序（按键排序，与 mac_url 一致）。 */
-    public static final List<String> SEARCH_LINK_KEYS = List.of("area", "by", "class", "lang", "level", "order", "page",
-            "wd", "year");
     /**
-     * 搜索链接查询串的最大长度：各值取 content 的码点上限、每个码点 3 字节（U+FFFF 以上字符被拒绝）编码为 9 个字符，
-     * 加上最长的 by、order、level、page 与 4 位年份（09 方案第 7.2.4 节）。
+     * Java SSR 搜索页链接的查询串键（MACC-20；B05 加入 B04 的新键与 tid），也是输出顺序（按键排序，与 mac_url 一致，
+     * docs/architecture/15-b05-readonly-pages.md 第 3.3 节）。
+     */
+    public static final List<String> SEARCH_LINK_KEYS = List.of("actor", "area", "by", "class", "director", "ids",
+            "lang", "letter", "level", "name", "order", "page", "state", "tag", "tid", "version", "wd", "year");
+    /**
+     * 搜索链接查询串的最大长度：MACC-20 的 wd/area/lang/class 各取 content 的码点上限、每个码点 3 字节（U+FFFF 以上字符被拒绝）
+     * 编码为 9 个字符，加上最长的 by、order、level、page 与 4 位年份（09 方案第 7.2.4 节）。B05 起这是预算而不是推论：
+     * 新键会占用同一预算，超出预算的条件组合在 {@link SearchFilters} 中被拒绝（搜索页 400），所以生成的链接仍在 {@link SafeUrl} 上限内。
      */
     static final int MAX_SEARCH_LINK_QUERY = 1209;
 
@@ -146,7 +150,7 @@ public final class LegacyUrlBuilder {
             q.append(e.getKey()).append('=').append(urlencode(e.getValue()));
         }
         if (q.length() > MAX_SEARCH_LINK_QUERY) {
-            // 由第 4 节的码点上限推出不可能发生（第 7.2.4 节）；发生即是编码或上限被改动
+            // SearchFilters 的不变式保证不会发生（含 page=1000 的预算）；发生即是编码或上限被改动
             throw new IllegalStateException("搜索链接查询串超出上限");
         }
         return new SiteLink(vodSearch(Map.of(), 1), q.toString());
