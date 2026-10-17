@@ -1,5 +1,6 @@
 package com.maccms.backend.site.web;
 
+import com.maccms.backend.site.application.BrowserAddress;
 import com.maccms.backend.site.application.LegacyUrlBuilder;
 import com.maccms.backend.site.application.SafeUrl;
 import com.maccms.backend.site.application.SiteSettings;
@@ -21,13 +22,31 @@ public class SitePages {
     public static final String PLACEHOLDER_PATH = "_site/placeholder";
     /** 样式表（src/main/resources/static/site/site.css）的站内路径。 */
     static final String STYLESHEET_PATH = "site/site.css";
+    /** 播放器内页的引导脚本（src/main/resources/static/site-player/player-boot.js，Java 维护）。 */
+    static final String PLAYER_BOOT_PATH = "site-player/player-boot.js";
+    /** 由旧配置生成的播放器配置脚本（PlayerConfigController，旧路径）。 */
+    static final String PLAYER_CONFIG_PATH = "static/js/playerconfig.js";
+    /** 试看计时脚本（src/main/resources/static/site/trial.js，前端维护，MACC-54）。 */
+    static final String TRIAL_SCRIPT_PATH = "site/trial.js";
 
     private final SiteSettings site;
     private final SafeUrl searchAction;
     private final SafeUrl loginUrl;
+    private final Optional<SafeUrl> logo;
 
     public SitePages(SiteSettings site, LegacyUrlBuilder urls) {
+        this(site, urls, true);
+    }
+
+    /**
+     * @param externalLogo 浏览器侧外部地址放行 W2（B05，K5）：关闭时 Logo 是外部主机（不是 base-url 的主机）的绝对地址就不输出，
+     *                     页眉只显示站名
+     */
+    public SitePages(SiteSettings site, LegacyUrlBuilder urls, boolean externalLogo) {
         this.site = site;
+        String siteHost = BrowserAddress.hostOf(site.baseUrl());
+        this.logo = site.logo().filter(l -> externalLogo
+                || BrowserAddress.classify(l.href(), siteHost).kind() == BrowserAddress.Kind.LOCAL);
         // 登录仍归旧 PHP（03 方案第 3.1、6.1 节）：只是页面级链接，不调用 ajax/suggest 等接口。搜索表单地址不变
         // （旧 vod/search 基址）：maccms.site.search.enabled=true 时由 Java 搜索页处理，否则仍归 PHP（09 方案第 7.1 节）
         this.searchAction = site.publicPath(urls.vodSearch(Map.of(), 1));
@@ -90,7 +109,7 @@ public class SitePages {
 
     private PageChrome chrome(String fullTitle, String description, String keywords, Optional<SafeUrl> canonical,
                               boolean noindex, List<NavLink> nav) {
-        return new PageChrome(fullTitle, site.name(), site.homePath(), site.publicPath(STYLESHEET_PATH), site.logo(),
+        return new PageChrome(fullTitle, site.name(), site.homePath(), site.publicPath(STYLESHEET_PATH), logo,
                 site.icp(), description, keywords, canonical, noindex, List.copyOf(nav), searchAction, loginUrl);
     }
 }

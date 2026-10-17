@@ -60,7 +60,7 @@ public class SiteHtmlRenderer {
     /** 200 页面。生产缓存 TTL 未定（04 报告第 6.2 节），先发 no-cache。 */
     public ResponseEntity<String> ok(Function<Templates, JteModel> page, boolean noindex) {
         String body = render(page);
-        return respond(HttpStatus.OK, body, CacheControl.noCache(), noindex, null);
+        return respond(HttpStatus.OK, body, CacheControl.noCache(), noindex, null, CONTENT_SECURITY_POLICY);
     }
 
     /**
@@ -69,7 +69,16 @@ public class SiteHtmlRenderer {
      */
     public ResponseEntity<String> noStore(HttpStatus status, Function<Templates, JteModel> page) {
         String body = render(page);
-        return respond(status, body, CacheControl.noStore(), true, null);
+        return respond(status, body, CacheControl.noStore(), true, null, CONTENT_SECURITY_POLICY);
+    }
+
+    /**
+     * 同源播放器内页（B05，D-B05-1）：noindex、no-store，使用该响应专用的内容安全策略（{@code PlayerFramePolicy}，每个响应一个 nonce）。
+     * 其余页面一律是 {@link #CONTENT_SECURITY_POLICY}。
+     */
+    public ResponseEntity<String> playerFrame(HttpStatus status, Function<Templates, JteModel> page, String policy) {
+        String body = render(page);
+        return respond(status, body, CacheControl.noStore(), true, null, policy);
     }
 
     /** 错误页与维护页：noindex、no-store；503 带 Retry-After。 */
@@ -81,17 +90,17 @@ public class SiteHtmlRenderer {
             log.error("site error page render failed: {}", SafeExceptionLog.typeChain(e));
             body = FALLBACK_ERROR_HTML;
         }
-        return respond(status, body, CacheControl.noStore(), true, retryAfter);
+        return respond(status, body, CacheControl.noStore(), true, retryAfter, CONTENT_SECURITY_POLICY);
     }
 
     private static ResponseEntity<String> respond(HttpStatus status, String body, CacheControl cache, boolean noindex,
-                                                  Duration retryAfter) {
+                                                  Duration retryAfter, String policy) {
         ResponseEntity.BodyBuilder b = ResponseEntity.status(status)
                 .contentType(HTML_UTF8)
                 .contentLength(body.getBytes(StandardCharsets.UTF_8).length)
                 .cacheControl(cache)
                 .header("X-Content-Type-Options", "nosniff")
-                .header("Content-Security-Policy", CONTENT_SECURITY_POLICY);
+                .header("Content-Security-Policy", policy);
         if (noindex) {
             b.header("X-Robots-Tag", "noindex");
         }

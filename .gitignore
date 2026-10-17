@@ -16,3 +16,8 @@ upload/*
 Thumbs.db
 .idea/
 .vscode/
+
+# Agent run scratch files (never part of a delivery)
+.agent_*
+.claude/worktrees/
+__pycache__/

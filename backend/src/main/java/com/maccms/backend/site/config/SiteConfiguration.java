@@ -7,13 +7,19 @@ import com.maccms.backend.legacyconfig.application.LegacyConfigException;
 import com.maccms.backend.legacyconfig.application.LegacyConfigFile;
 import com.maccms.backend.legacyconfig.application.LegacyConfigService;
 import com.maccms.backend.legacyconfig.application.view.PhpArray;
+import com.maccms.backend.site.application.BrowserAddress;
 import com.maccms.backend.site.application.ImageUrlNormalizer;
 import com.maccms.backend.site.application.LegacyUrlBuilder;
 import com.maccms.backend.site.application.LegacyUrlParser;
+import com.maccms.backend.site.application.PasswordAttempts;
+import com.maccms.backend.site.application.PasswordTickets;
+import com.maccms.backend.site.application.PlayerSettings;
 import com.maccms.backend.site.application.RichTextCache;
 import com.maccms.backend.site.application.RichTextSanitizer;
+import com.maccms.backend.site.application.SiteFeatures;
 import com.maccms.backend.site.application.SiteImageProperties;
 import com.maccms.backend.site.application.SiteLegacyConfig;
+import com.maccms.backend.site.application.SitePasswordProperties;
 import com.maccms.backend.site.application.SiteProperties;
 import com.maccms.backend.site.application.SiteSettings;
 import com.maccms.backend.site.application.SiteUrlProperties;
@@ -21,6 +27,9 @@ import com.maccms.backend.site.web.SiteHtmlRenderer;
 import com.maccms.backend.site.web.SitePages;
 import com.maccms.backend.site.web.SiteStatusInterceptor;
 import com.maccms.backend.site.web.jte.StaticTemplates;
+import java.time.Clock;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -42,9 +51,12 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
  */
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnSiteEnabled
-@EnableConfigurationProperties({SiteProperties.class, SiteUrlProperties.class, SiteImageProperties.class})
+@EnableConfigurationProperties({SiteProperties.class, SiteUrlProperties.class, SiteImageProperties.class,
+        SitePasswordProperties.class, SiteFeatures.Properties.class})
 @Import({BrowserExternalConfiguration.class, LegacyConfigConfiguration.class})
 public class SiteConfiguration {
+
+    private static final Logger log = LoggerFactory.getLogger(SiteConfiguration.class);
 
     /**
      * 站点设置的来源：设置了 {@code maccms.legacy-config.dir} 时，启动时读一次旧配置 {@code extra/maccms.php}，
@@ -95,8 +107,63 @@ public class SiteConfiguration {
     }
 
     @Bean
-    SitePages sitePages(SiteSettings settings, LegacyUrlBuilder urls) {
-        return new SitePages(settings, urls);
+    SitePages sitePages(SiteSettings settings, LegacyUrlBuilder urls, BrowserExternalAccess external) {
+        return new SitePages(settings, urls, external.w2());
+    }
+
+    /**
+     * 旧播放器配置（B05）：配置了旧配置目录时启动时读一次 {@code extra/maccms.php}、{@code vodplayer.php}、{@code voddowner.php}、
+     * {@code vodserver.php}（读取或解析失败、取值不受支持时启动失败，信息不含文件内容）；没有配置时播放/下载页不可用。
+     */
+    @Bean
+    PlayerSettings sitePlayerSettings(LegacyConfigService legacy, SiteSettings settings, BrowserExternalAccess external) {
+        if (!legacy.isConfigured()) {
+            return PlayerSettings.unavailable();
+        }
+        PhpArray maccms;
+        PhpArray players;
+        PhpArray downers;
+        PhpArray servers;
+        try {
+            maccms = legacy.read(LegacyConfigFile.MACCMS);
+            players = legacy.read(LegacyConfigFile.VODPLAYER);
+            downers = legacy.read(LegacyConfigFile.VODDOWNER);
+            servers = legacy.read(LegacyConfigFile.VODSERVER);
+        } catch (LegacyConfigException e) {
+            if (e.reason() == LegacyConfigException.Reason.NOT_FOUND) {
+                // 旧配置目录里没有播放器配置文件：播放/下载页不可用（404），其余页面照常；格式错误仍启动失败
+                log.warn("legacy player config not found; play and download pages are unavailable");
+                return PlayerSettings.unavailable();
+            }
+            throw new IllegalStateException("site 已启用但旧播放器配置读取失败：" + e.getMessage(), null);
+        }
+        return PlayerSettings.from(maccms, players, downers, servers, external.w1(),
+                BrowserAddress.hostOf(settings.baseUrl()));
+    }
+
+    /** 旧 app.ajax_page、app.show 两个页面开关（B05）：环境变量优先，其次旧配置，都没有时关闭。 */
+    @Bean
+    SiteFeatures siteFeatures(SiteFeatures.Properties properties, LegacyConfigService legacy) {
+        PhpArray maccms = null;
+        if (legacy.isConfigured()) {
+            try {
+                maccms = legacy.read(LegacyConfigFile.MACCMS);
+            } catch (LegacyConfigException e) {
+                throw new IllegalStateException("site 已启用但旧配置 extra/maccms.php 读取失败：" + e.getMessage(), null);
+            }
+        }
+        return SiteFeatures.from(properties, maccms);
+    }
+
+    /** 访问密码签名票据（B05，D-B05-3）：部署密钥只来自环境变量，留空时不提供在线验证。 */
+    @Bean
+    PasswordTickets sitePasswordTickets(SitePasswordProperties properties) {
+        return PasswordTickets.from(properties.secret(), Clock.systemUTC());
+    }
+
+    @Bean
+    PasswordAttempts sitePasswordAttempts() {
+        return new PasswordAttempts(Clock.systemUTC());
     }
 
     @Bean

@@ -16,6 +16,7 @@ import com.maccms.backend.content.infrastructure.ActorDetailRow;
 import com.maccms.backend.content.infrastructure.ActorMapper;
 import com.maccms.backend.content.infrastructure.ActorSummaryRow;
 import com.maccms.backend.content.infrastructure.ContentCriteria;
+import com.maccms.backend.content.infrastructure.SortColumn;
 import java.util.List;
 import java.util.Set;
 import org.springframework.stereotype.Service;
@@ -42,25 +43,37 @@ public class ActorReadService {
     }
 
     public PageResponse<ActorSummaryDto> listActors(ContentListQuery query) {
+        return read(() -> page(query, query.filter().toCriteria()));
+    }
+
+    /** 一页（异常转换由调用方的 read 负责）。 */
+    PageResponse<ActorSummaryDto> page(ContentListQuery query, ContentCriteria criteria) {
         if (query.kind() != ContentKind.ACTOR) {
             throw new IllegalArgumentException("kind");
         }
-        return read(() -> {
-            CategoryCatalog catalog = catalogs.catalog(TYPE_MID, catalogs.guest());
-            Set<Integer> typeIds = ArticleReadService.typeIds(catalog, query.categoryId());
-            if (typeIds.isEmpty()) {
-                return PageResponse.of(List.of(), query.page(), query.pageSize(), 0);
+        return LibrarySlice.page(slice(query.categoryId(), criteria), query.sort(), query.descending(), query.page(),
+                query.pageSize());
+    }
+
+    /** 分类范围（categoryId 为 null 时是全部可见分类）与条件下的切片；B05 的 LibrarySearchService 以 SSR 内部条件调用。 */
+    LibrarySlice<ActorSummaryDto> slice(Integer categoryId, ContentCriteria criteria) {
+        CategoryCatalog catalog = catalogs.catalog(TYPE_MID, catalogs.guest());
+        Set<Integer> typeIds = ArticleReadService.typeIds(catalog, categoryId);
+        if (typeIds.isEmpty()) {
+            return LibrarySlice.empty();
+        }
+        return new LibrarySlice<>() {
+            @Override
+            public long count() {
+                return actorMapper.countPublished(typeIds, criteria);
             }
-            ContentCriteria criteria = query.filter().toCriteria();
-            long total = actorMapper.countPublished(typeIds, criteria);
-            if (total == 0 || query.offset() >= total) {
-                return PageResponse.of(List.of(), query.page(), query.pageSize(), total);
+
+            @Override
+            public List<ActorSummaryDto> rows(SortColumn sort, boolean descending, long offset, int limit) {
+                return actorMapper.selectPublishedPage(typeIds, criteria, sort, descending, offset, limit).stream()
+                        .map(r -> toSummary(r, catalog)).toList();
             }
-            List<ActorSummaryDto> items = actorMapper.selectPublishedPage(typeIds, criteria, query.sort(),
-                    query.descending(), query.offset(), query.pageSize()).stream()
-                    .map(r -> toSummary(r, catalog)).toList();
-            return PageResponse.of(items, query.page(), query.pageSize(), total);
-        });
+        };
     }
 
     public ActorDetailDto getActor(long id) {

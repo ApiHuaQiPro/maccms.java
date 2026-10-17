@@ -17,6 +17,10 @@ public final class GuestPermission {
 
     public static final String LIST = "1";
     public static final String DETAIL = "2";
+    /** 播放、下载、试看（B05，Base.php:143-227）。 */
+    public static final String PLAY = "3";
+    public static final String DOWN = "4";
+    public static final String TRY_SEE = "5";
 
     private static final JsonMapper JSON = JsonMapper.builder().build();
     private static final GuestPermission NONE = new GuestPermission(Set.of(), null);

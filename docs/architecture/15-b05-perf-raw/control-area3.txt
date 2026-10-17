@@ -1,0 +1,12 @@
+|    94639 |
+1 row in set (1.69 sec)
+|    94639 |
+1 row in set (0.97 sec)
+|    94639 |
+1 row in set (1.81 sec)
+|    94639 |
+1 row in set (1.20 sec)
+|    94639 |
+1 row in set (2.45 sec)
+|    94639 |
+1 row in set (1.26 sec)

@@ -206,7 +206,10 @@ class SearchLinkRoundTripTest {
                 .isInstanceOf(IllegalArgumentException.class).hasMessage("搜索条件不合法");
         assertThatThrownBy(() -> new SearchFilters(null, null, null, null, 0, null, null, null))
                 .isInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(() -> SearchFilters.NONE.with("tag", "x")).isInstanceOf(IllegalArgumentException.class);
+        // B05 起 tag 等新键可回读（LegacyUrlParserSearchB05Test）；未知键仍拒绝，tid 只能去掉
+        assertThat(SearchFilters.NONE.with("tag", "x").tag()).isEqualTo("x");
+        assertThatThrownBy(() -> SearchFilters.NONE.with("isend", "1")).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> SearchFilters.NONE.with("tid", "1")).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test

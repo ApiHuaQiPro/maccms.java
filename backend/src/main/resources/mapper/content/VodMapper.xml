@@ -5,6 +5,8 @@
   不查询的列（不得出现在任何 select 中）：vod_pwd 及 vod_pwd_*（只以 CHAR_LENGTH(vod_pwd) > 0 的布尔结果出现；比 PHP 的 !empty 更严：值为 "0" 也视为有密码）、
   vod_play_* / vod_down_*（播放与下载地址）、vod_points*、vod_trysee、group_id、vod_lock、vod_tpl*、
   vod_reurl、vod_jumpurl、vod_author、vod_time_make、vod_time_hits、vod_rel_*、vod_plot*、vod_pic_screenshot。
+  例外（B05）：legacyConditions 片段把 vod_rel_vod、vod_plot、vod_time_hits 只用作 WHERE 条件（旧模板标签的 rel、plot、timehits），
+  从不出现在 select 列中（ReadOnlyGuardrailsTest 检查）。
 -->
 <mapper namespace="com.maccms.backend.content.infrastructure.VodMapper">
 
@@ -50,6 +52,85 @@
         <if test="filter.namePatterns != null">AND (<foreach collection="filter.namePatterns" item="p" separator=" OR ">vod_name LIKE #{p} ESCAPE '!'</foreach>)</if>
         <if test="filter.ids != null">AND vod_id IN <foreach collection="filter.ids" item="id" open="(" separator="," close=")">#{id}</foreach></if>
         <if test="filter.candidateIds != null">AND vod_id IN <foreach collection="filter.candidateIds" item="id" open="(" separator="," close=")">#{id}</foreach></if>
+        <if test="filter.legacy != null"><include refid="legacyConditions"/></if>
+    </sql>
+
+    <!--
+      B05（docs/architecture/15-b05-readonly-pages.md 第 2 节）：旧模板标签专属条件与 SSR 的 tid，只由 site 经 content.application 构造，
+      公开 API 从不设置。旧规则：tid application/common/model/Vod.php:180-182,356-358（type_id|type_id_1 = intval）；not :278-280；
+      rel 非数字 :281-288（mac_like_arr）；level 多值/all :285-290；weekday :311-314；tv :315-317；timeadd/timehits/time :318-329
+      （intval(strtotime()) 后 gt，时间点由调用方给出）；hitsmonth/hitsweek/hitsday/hits :363-394（运算符白名单，值整数）；
+      isend :396-398；plot :484-486。旧版 not 与数字 rel 写入同一个 vod_id 键（后者覆盖前者、二者覆盖 ids），覆盖关系由
+      content.application 在构造时处理，这里只按给定的绑定值生成条件。运算符由下面的 choose 写死，值只经 #{} 绑定。
+    -->
+    <sql id="legacyConditions">
+        <if test="filter.legacy.tid != null">AND (type_id = #{filter.legacy.tid} OR type_id_1 = #{filter.legacy.tid})</if>
+        <if test="filter.legacy.idsNotIn != null">AND vod_id NOT IN <foreach collection="filter.legacy.idsNotIn" item="id" open="(" separator="," close=")">#{id}</foreach></if>
+        <if test="filter.legacy.relPatterns != null">AND (<foreach collection="filter.legacy.relPatterns" item="p" separator=" OR ">vod_rel_vod LIKE #{p} ESCAPE '!'</foreach>)</if>
+        <if test="filter.legacy.levels != null">AND vod_level IN <foreach collection="filter.legacy.levels" item="v" open="(" separator="," close=")">#{v}</foreach></if>
+        <if test="filter.legacy.weekdayPatterns != null">AND (<foreach collection="filter.legacy.weekdayPatterns" item="p" separator=" OR ">vod_weekday LIKE #{p} ESCAPE '!'</foreach>)</if>
+        <if test="filter.legacy.tvs != null">AND vod_tv IN <foreach collection="filter.legacy.tvs" item="v" open="(" separator="," close=")">#{v}</foreach></if>
+        <if test="filter.legacy.addedAfter != null">AND vod_time_add &gt; #{filter.legacy.addedAfter}</if>
+        <if test="filter.legacy.hitsTimeAfter != null">AND vod_time_hits &gt; #{filter.legacy.hitsTimeAfter}</if>
+        <if test="filter.legacy.updatedAfter != null">AND vod_time &gt; #{filter.legacy.updatedAfter}</if>
+        <if test="filter.legacy.hitsMonth != null">
+            <choose>
+                <when test="filter.legacy.hitsMonth.op == 'EQ'">AND vod_hits_month = #{filter.legacy.hitsMonth.value}</when>
+                <when test="filter.legacy.hitsMonth.op == 'NEQ'">AND vod_hits_month &lt;&gt; #{filter.legacy.hitsMonth.value}</when>
+                <when test="filter.legacy.hitsMonth.op == 'GT'">AND vod_hits_month &gt; #{filter.legacy.hitsMonth.value}</when>
+                <when test="filter.legacy.hitsMonth.op == 'EGT'">AND vod_hits_month &gt;= #{filter.legacy.hitsMonth.value}</when>
+                <when test="filter.legacy.hitsMonth.op == 'LT'">AND vod_hits_month &lt; #{filter.legacy.hitsMonth.value}</when>
+                <when test="filter.legacy.hitsMonth.op == 'ELT'">AND vod_hits_month &lt;= #{filter.legacy.hitsMonth.value}</when>
+                <when test="filter.legacy.hitsMonth.op == 'BETWEEN'">AND vod_hits_month BETWEEN #{filter.legacy.hitsMonth.low} AND #{filter.legacy.hitsMonth.high}</when>
+                <when test="filter.legacy.hitsMonth.op == 'NOT_BETWEEN'">AND vod_hits_month NOT BETWEEN #{filter.legacy.hitsMonth.low} AND #{filter.legacy.hitsMonth.high}</when>
+                <when test="filter.legacy.hitsMonth.op == 'IN'">AND vod_hits_month IN <foreach collection="filter.legacy.hitsMonth.values" item="v" open="(" separator="," close=")">#{v}</foreach></when>
+                <otherwise>AND vod_hits_month NOT IN <foreach collection="filter.legacy.hitsMonth.values" item="v" open="(" separator="," close=")">#{v}</foreach></otherwise>
+            </choose>
+        </if>
+        <if test="filter.legacy.hitsWeek != null">
+            <choose>
+                <when test="filter.legacy.hitsWeek.op == 'EQ'">AND vod_hits_week = #{filter.legacy.hitsWeek.value}</when>
+                <when test="filter.legacy.hitsWeek.op == 'NEQ'">AND vod_hits_week &lt;&gt; #{filter.legacy.hitsWeek.value}</when>
+                <when test="filter.legacy.hitsWeek.op == 'GT'">AND vod_hits_week &gt; #{filter.legacy.hitsWeek.value}</when>
+                <when test="filter.legacy.hitsWeek.op == 'EGT'">AND vod_hits_week &gt;= #{filter.legacy.hitsWeek.value}</when>
+                <when test="filter.legacy.hitsWeek.op == 'LT'">AND vod_hits_week &lt; #{filter.legacy.hitsWeek.value}</when>
+                <when test="filter.legacy.hitsWeek.op == 'ELT'">AND vod_hits_week &lt;= #{filter.legacy.hitsWeek.value}</when>
+                <when test="filter.legacy.hitsWeek.op == 'BETWEEN'">AND vod_hits_week BETWEEN #{filter.legacy.hitsWeek.low} AND #{filter.legacy.hitsWeek.high}</when>
+                <when test="filter.legacy.hitsWeek.op == 'NOT_BETWEEN'">AND vod_hits_week NOT BETWEEN #{filter.legacy.hitsWeek.low} AND #{filter.legacy.hitsWeek.high}</when>
+                <when test="filter.legacy.hitsWeek.op == 'IN'">AND vod_hits_week IN <foreach collection="filter.legacy.hitsWeek.values" item="v" open="(" separator="," close=")">#{v}</foreach></when>
+                <otherwise>AND vod_hits_week NOT IN <foreach collection="filter.legacy.hitsWeek.values" item="v" open="(" separator="," close=")">#{v}</foreach></otherwise>
+            </choose>
+        </if>
+        <if test="filter.legacy.hitsDay != null">
+            <choose>
+                <when test="filter.legacy.hitsDay.op == 'EQ'">AND vod_hits_day = #{filter.legacy.hitsDay.value}</when>
+                <when test="filter.legacy.hitsDay.op == 'NEQ'">AND vod_hits_day &lt;&gt; #{filter.legacy.hitsDay.value}</when>
+                <when test="filter.legacy.hitsDay.op == 'GT'">AND vod_hits_day &gt; #{filter.legacy.hitsDay.value}</when>
+                <when test="filter.legacy.hitsDay.op == 'EGT'">AND vod_hits_day &gt;= #{filter.legacy.hitsDay.value}</when>
+                <when test="filter.legacy.hitsDay.op == 'LT'">AND vod_hits_day &lt; #{filter.legacy.hitsDay.value}</when>
+                <when test="filter.legacy.hitsDay.op == 'ELT'">AND vod_hits_day &lt;= #{filter.legacy.hitsDay.value}</when>
+                <when test="filter.legacy.hitsDay.op == 'BETWEEN'">AND vod_hits_day BETWEEN #{filter.legacy.hitsDay.low} AND #{filter.legacy.hitsDay.high}</when>
+                <when test="filter.legacy.hitsDay.op == 'NOT_BETWEEN'">AND vod_hits_day NOT BETWEEN #{filter.legacy.hitsDay.low} AND #{filter.legacy.hitsDay.high}</when>
+                <when test="filter.legacy.hitsDay.op == 'IN'">AND vod_hits_day IN <foreach collection="filter.legacy.hitsDay.values" item="v" open="(" separator="," close=")">#{v}</foreach></when>
+                <otherwise>AND vod_hits_day NOT IN <foreach collection="filter.legacy.hitsDay.values" item="v" open="(" separator="," close=")">#{v}</foreach></otherwise>
+            </choose>
+        </if>
+        <if test="filter.legacy.hits != null">
+            <choose>
+                <when test="filter.legacy.hits.op == 'EQ'">AND vod_hits = #{filter.legacy.hits.value}</when>
+                <when test="filter.legacy.hits.op == 'NEQ'">AND vod_hits &lt;&gt; #{filter.legacy.hits.value}</when>
+                <when test="filter.legacy.hits.op == 'GT'">AND vod_hits &gt; #{filter.legacy.hits.value}</when>
+                <when test="filter.legacy.hits.op == 'EGT'">AND vod_hits &gt;= #{filter.legacy.hits.value}</when>
+                <when test="filter.legacy.hits.op == 'LT'">AND vod_hits &lt; #{filter.legacy.hits.value}</when>
+                <when test="filter.legacy.hits.op == 'ELT'">AND vod_hits &lt;= #{filter.legacy.hits.value}</when>
+                <when test="filter.legacy.hits.op == 'BETWEEN'">AND vod_hits BETWEEN #{filter.legacy.hits.low} AND #{filter.legacy.hits.high}</when>
+                <when test="filter.legacy.hits.op == 'NOT_BETWEEN'">AND vod_hits NOT BETWEEN #{filter.legacy.hits.low} AND #{filter.legacy.hits.high}</when>
+                <when test="filter.legacy.hits.op == 'IN'">AND vod_hits IN <foreach collection="filter.legacy.hits.values" item="v" open="(" separator="," close=")">#{v}</foreach></when>
+                <otherwise>AND vod_hits NOT IN <foreach collection="filter.legacy.hits.values" item="v" open="(" separator="," close=")">#{v}</foreach></otherwise>
+            </choose>
+        </if>
+        <if test="filter.legacy.isEnd != null">AND vod_isend = #{filter.legacy.isEnd}</if>
+        <if test="filter.legacy.plot != null">AND vod_plot = #{filter.legacy.plot}</if>
     </sql>
 
     <sql id="summaryColumns">
@@ -250,5 +331,78 @@
         FROM mac_vod
         WHERE vod_status = 1
           AND vod_id IN <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
+    </select>
+
+    <!--
+      播放/下载入口（B05，docs/architecture/15-b05-readonly-pages.md 第 6 节）：旧 label_vod_play 经 mac_label_vod_detail 取
+      vod_status=1 的整行（application/common.php:2715-2733、common/controller/All.php:442-563）。新版只取授权判定与播放器所需的列；
+      密码列只以布尔表达式出现：是否非空（CHAR_LENGTH，与详情的 detailPasswordRequired 相同，"0" 也算有密码，B03 已登记差异），
+      以及凭据是否与当前密码一致（SHA2(CONCAT(salt, 密码列), 256) = hash；salt 与 hash 都是 64 位十六进制，由 content.application 校验）。
+      down=false 取 vod_play_* 与 vod_points_play、vod_pwd_play；down=true 取 vod_down_* 与 vod_points_down、vod_pwd_down。
+    -->
+    <select id="selectPlayback" resultType="com.maccms.backend.content.infrastructure.VodPlaybackRow">
+        SELECT vod_id                   AS id,
+               type_id                  AS categoryId,
+               vod_name                 AS name,
+               vod_actor                AS actor,
+               vod_director             AS director,
+               vod_class                AS classes,
+               vod_copyright            AS copyright,
+               vod_trysee               AS trySee,
+               vod_points               AS pointsWhole,
+        <choose>
+            <when test="down">
+               vod_points_down          AS pointsKind,
+               vod_down_from            AS sourceFrom,
+               vod_down_url             AS sourceUrl,
+               vod_down_server          AS sourceServer,
+               vod_down_note            AS sourceNote,
+               (CHAR_LENGTH(vod_pwd_down) &gt; 0) AS passwordRequired,
+            </when>
+            <otherwise>
+               vod_points_play          AS pointsKind,
+               vod_play_from            AS sourceFrom,
+               vod_play_url             AS sourceUrl,
+               vod_play_server          AS sourceServer,
+               vod_play_note            AS sourceNote,
+               (CHAR_LENGTH(vod_pwd_play) &gt; 0) AS passwordRequired,
+            </otherwise>
+        </choose>
+        <choose>
+            <when test="proofSalt != null and proofHash != null and down">
+               (SHA2(CONCAT(#{proofSalt}, vod_pwd_down), 256) = #{proofHash}) AS passwordProven,
+            </when>
+            <when test="proofSalt != null and proofHash != null">
+               (SHA2(CONCAT(#{proofSalt}, vod_pwd_play), 256) = #{proofHash}) AS passwordProven,
+            </when>
+            <otherwise>
+               0                        AS passwordProven,
+            </otherwise>
+        </choose>
+               vod_time                 AS updatedAt
+        FROM mac_vod
+        WHERE vod_id = #{id}
+          AND vod_status = 1
+    </select>
+
+    <!--
+      访问密码校验（B05，旧 ajax/pwd 的 1-4、1-5，application/index/controller/Ajax.php:421-442）：旧版按 id 取视频（不看 vod_status）后
+      以 PHP != 宽松比较；新版只认已审核的视频，密码列非空且与输入逐字节相等（BINARY，不做 PHP 数字字符串的宽松相等），只返回 0/1。
+    -->
+    <select id="countPasswordMatch" resultType="int">
+        SELECT COUNT(*)
+        FROM mac_vod
+        WHERE vod_id = #{id}
+          AND vod_status = 1
+        <choose>
+            <when test="down">
+          AND CHAR_LENGTH(vod_pwd_down) &gt; 0
+          AND BINARY vod_pwd_down = BINARY #{candidate}
+            </when>
+            <otherwise>
+          AND CHAR_LENGTH(vod_pwd_play) &gt; 0
+          AND BINARY vod_pwd_play = BINARY #{candidate}
+            </otherwise>
+        </choose>
     </select>
 </mapper>

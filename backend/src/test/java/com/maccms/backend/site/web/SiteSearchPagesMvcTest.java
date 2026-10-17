@@ -316,7 +316,7 @@ class SiteSearchPagesMvcTest {
     /** 参数不合法：400 搜索错误页，固定文案、空白表单、不回显输入、没有 canonical、不查库。 */
     @ParameterizedTest
     @ValueSource(strings = {"?foo=" + "SYNTHETIC-LEAK-7f3a", "?wd=%FF" + "SYNTHETIC-LEAK-7f3a", "?wd=%E4%B8", "?wd=%",
-            "?wd=&wd=SYNTHETIC-LEAK-7f3a", "?page=01", "?page=0", "?level=00000000009", "?level=10",
+            "?wd=&wd=SYNTHETIC-LEAK-7f3a", "?page=01", "?page=0", "?level=-9", "?level=10",
             "?year=SYNTHETIC-LEAK-7f3a", "?area=a%2CSYNTHETIC-LEAK-7f3a", "?by=SYNTHETIC-LEAK-7f3a", "?order=up",
             "?wd=SYNTHETIC-LEAK-7f3axxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", "?keyword=x", "?pageSize=5", "?categoryId=1"})
     void invalidParametersAre400WithoutEcho(String query, CapturedOutput output) throws Exception {
@@ -362,8 +362,12 @@ class SiteSearchPagesMvcTest {
 
     // ---------------------------------------------------------------- 交 PHP（本地 404）
 
+    /**
+     * B05 起只有指向其他页面的兼容模式 s 交 PHP；s 指向搜索页、actor、tid、by=rnd、letter 等由 Java 承接
+     * （SiteSearchB05PagesMvcTest）。
+     */
     @ParameterizedTest
-    @ValueSource(strings = {"?s=/vod/detail/id/1", "?actor=x", "?tid=1", "?by=rnd", "?wd=x&letter=A"})
+    @ValueSource(strings = {"?s=/vod/detail/id/1", "?wd=x&s=vod/type/id/1"})
     void handedOffQueriesAre404WithoutQueries(String query) throws Exception {
         assertErrorPage(call(SEARCH + query), 404, "页面不存在");
         verifyNoInteractions(content);

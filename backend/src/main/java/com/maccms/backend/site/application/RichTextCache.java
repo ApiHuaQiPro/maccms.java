@@ -6,7 +6,8 @@ import java.util.Map;
 /**
  * 详情正文过滤结果的进程内缓存（07 文档第 3.5 节建议：最坏输入单次接近 1 秒，不在每次请求时重算）。
  *
- * <p>键是视频 id + 更新时间（vod_time）；同时核对原文的长度与哈希，原文变了但 vod_time 没变时重新过滤，
+ * <p>键是内容类型 + id + 分段（文章分页、剧情序号）+ 更新时间（B05 起覆盖文章、专题、演员、角色、网址与剧情）；同时核对原文的长度与哈希，
+ * 原文变了但更新时间没变时重新过滤，
  * 不会把旧结果当成新正文的结果。按最近使用淘汰，条数与缓存的过滤结果总字符数都有上限。
  * 只缓存过滤器的输出（{@link SafeHtml}），不缓存原文；不写日志。线程安全：过滤在锁外进行，并发重复过滤只多算一次。
  */
@@ -17,7 +18,7 @@ public final class RichTextCache {
     /** 默认缓存的过滤结果总字符数上限（约 16 MB 的 UTF-16）。 */
     public static final long DEFAULT_MAX_CHARS = 8_000_000L;
 
-    private record Key(long vodId, long updatedAt) {
+    private record Key(String kind, long id, int part, long updatedAt) {
     }
 
     private record Entry(int rawLength, int rawHash, RichTextSanitizer.Result result) {
@@ -41,10 +42,20 @@ public final class RichTextCache {
         this.maxChars = maxChars;
     }
 
-    /** 过滤一段正文，命中缓存时直接返回上次的结果。 */
+    /** 过滤一段视频正文（vod_content），命中缓存时直接返回上次的结果。 */
     public RichTextSanitizer.Result sanitize(long vodId, long updatedAt, String raw) {
+        return sanitize("vod", vodId, 0, updatedAt, raw);
+    }
+
+    /**
+     * 过滤一段正文（B05）。
+     *
+     * @param kind 内容类型（如 art、topic、actor、role、website、plot），与 id 一起区分不同表的同号内容
+     * @param part 同一内容中的第几段（文章分页、剧情序号），整篇为 0
+     */
+    public RichTextSanitizer.Result sanitize(String kind, long id, int part, long updatedAt, String raw) {
         String text = raw == null ? "" : raw;
-        Key key = new Key(vodId, updatedAt);
+        Key key = new Key(kind, id, part, updatedAt);
         synchronized (this) {
             Entry e = entries.get(key);
             if (e != null && e.rawLength() == text.length() && e.rawHash() == text.hashCode()) {

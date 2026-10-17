@@ -21,6 +21,20 @@
         </if>
         <if test="criteria.area != null">AND website_area = #{criteria.area}</if>
         <if test="criteria.lang != null">AND website_lang = #{criteria.lang}</if>
+        <!--
+          B05 SSR 筛选/搜索页（docs/architecture/15-b05-readonly-pages.md 第 7.2 节，LibraryMatch）：只由 site 经
+          content.application.LibrarySearchService 构造，公开 API 从不设置（不设置时上面的 SQL 文本不变）。列名固定，
+          LIKE 模式已按 ESCAPE '!' 转义。旧规则：wd Website.php:372-374（website_name|website_en）；name :369-371（精确 IN）；tag/class :375-380；ids :240-244。
+        -->
+        <if test="criteria.keywordPatterns != null">AND (<foreach collection="criteria.keywordPatterns" item="p" separator=" OR ">website_name LIKE #{p} ESCAPE '!' OR website_en LIKE #{p} ESCAPE '!'</foreach>)</if>
+        <if test="criteria.names != null">AND website_name IN <foreach collection="criteria.names" item="v" open="(" separator="," close=")">#{v}</foreach></if>
+        <if test="criteria.tagPatterns != null">AND (<foreach collection="criteria.tagPatterns" item="p" separator=" OR ">website_tag LIKE #{p} ESCAPE '!'</foreach>)</if>
+        <if test="criteria.classPatterns != null">AND (<foreach collection="criteria.classPatterns" item="p" separator=" OR ">website_class LIKE #{p} ESCAPE '!'</foreach>)</if>
+        <if test="criteria.ids != null">AND website_id IN <foreach collection="criteria.ids" item="id" open="(" separator="," close=")">#{id}</foreach></if>
+        <!-- level 为旧 intval；area/lang 为 explode(',') 的各项（保留空项）IN，Website.php:363-368 -->
+        <if test="criteria.legacyLevel != null">AND website_level = #{criteria.legacyLevel}</if>
+        <if test="criteria.areas != null">AND website_area IN <foreach collection="criteria.areas" item="v" open="(" separator="," close=")">#{v}</foreach></if>
+        <if test="criteria.langs != null">AND website_lang IN <foreach collection="criteria.langs" item="v" open="(" separator="," close=")">#{v}</foreach></if>
     </sql>
 
     <select id="countPublished" resultType="long">
@@ -85,6 +99,8 @@
             <when test="sort.name() == 'REFERER_DAY'">website_referer_day</when>
             <when test="sort.name() == 'REFERER_WEEK'">website_referer_week</when>
             <when test="sort.name() == 'REFERER_MONTH'">website_referer_month</when>
+            <!-- SSR by=in（Website.php:288-291）：名单位置，名单只经 #{} 绑定；方向固定为升序（旧版忽略 order） -->
+            <when test="sort.name() == 'NAME_ORDER'">FIND_IN_SET(website_name, #{criteria.nameOrder})</when>
             <otherwise>website_id</otherwise>
         </choose>
         <choose>

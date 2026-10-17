@@ -55,7 +55,38 @@ class ReadOnlyGuardrailsTest {
         Pattern col = Pattern.compile("\\b(vod_pwd\\w*|vod_play_\\w+|vod_down_\\w+|vod_points\\w*|vod_trysee|"
                 + "group_id|vod_lock|vod_tpl\\w*|vod_reurl|vod_jumpurl|vod_author|vod_rel_\\w+|vod_plot\\w*|"
                 + "vod_pic_screenshot|type_tpl\\w*|type_jumpurl|type_union)\\b");
-        String vod = sqlOnly(MAPPERS.resolve("content/VodMapper.xml"));
+        String vodXml = sqlOnly(MAPPERS.resolve("content/VodMapper.xml"));
+        // B05：legacyConditions 片段只把 vod_rel_vod、vod_plot 用作 WHERE 条件（旧模板标签 rel、plot），单独检查后从其余 SQL 中去掉
+        Matcher fragment = Pattern.compile("(?s)<sql id=\"legacyConditions\">(.*?)</sql>").matcher(vodXml);
+        assertThat(fragment.find()).as("VodMapper 的 legacyConditions 片段").isTrue();
+        Matcher inFragment = col.matcher(fragment.group(1));
+        while (inFragment.find()) {
+            String after = fragment.group(1).substring(inFragment.start(), Math.min(fragment.group(1).length(),
+                    inFragment.end() + 6));
+            assertThat(after).as("legacyConditions 只能以条件使用 " + inFragment.group())
+                    .matches("(?s)(vod_rel_vod LIKE|vod_plot = ).*");
+        }
+        String vod = vodXml.substring(0, fragment.start()) + vodXml.substring(fragment.end());
+        assertThat(vod).as("其余语句只经 include 引用该片段").contains("<include refid=\"legacyConditions\"/>");
+        // B05：播放/下载入口的两条语句（selectPlayback、countPasswordMatch）是唯一读取播放/下载分组、积分与试看列的地方；
+        // 密码列只能出现在布尔表达式中（是否非空、凭据 SHA2 比较、BINARY 逐字节相等），单独检查后从其余 SQL 中去掉
+        for (String id : List.of("selectPlayback", "countPasswordMatch")) {
+            Matcher stmt = Pattern.compile("(?s)<select id=\"" + id + "\".*?</select>").matcher(vod);
+            assertThat(stmt.find()).as("VodMapper 的 " + id).isTrue();
+            String body = stmt.group();
+            Matcher pwd = Pattern.compile("\\bvod_pwd\\w*\\b").matcher(body);
+            while (pwd.find()) {
+                String around = body.substring(Math.max(0, pwd.start() - 32), Math.min(body.length(), pwd.end() + 32));
+                assertThat(around).as(id + " 只能以布尔表达式使用 " + pwd.group())
+                        .containsAnyOf("CHAR_LENGTH(" + pwd.group() + ") &gt; 0",
+                                "SHA2(CONCAT(#{proofSalt}, " + pwd.group() + "), 256) = #{proofHash}",
+                                "BINARY " + pwd.group() + " = BINARY #{candidate}");
+            }
+            assertThat(body).as(id + " 不读取其他内部列")
+                    .doesNotContainPattern("\\b(group_id|vod_lock|vod_tpl\\w*|vod_reurl|vod_jumpurl|vod_author|vod_rel_\\w+|"
+                            + "vod_plot\\w*|vod_pic_screenshot|vod_pwd_url|vod_pwd_play_url|vod_pwd_down_url)\\b");
+            vod = vod.substring(0, stmt.start()) + vod.substring(stmt.end());
+        }
         Matcher m = col.matcher(vod);
         while (m.find()) {
             // 唯一允许的出现：CHAR_LENGTH(vod_pwd) 的布尔结果
@@ -79,15 +110,23 @@ class ReadOnlyGuardrailsTest {
                 + "type_id_1|vod_play_\\w+|vod_down_\\w+|vod_points\\w*|vod_trysee|vod_pwd_\\w+)\\b");
         for (String file : List.of("ArtMapper.xml", "TopicMapper.xml", "ActorMapper.xml", "RoleMapper.xml",
                 "WebsiteMapper.xml", "LinkMapper.xml", "VodPlotMapper.xml")) {
-            Matcher m = internal.matcher(sqlOnly(MAPPERS.resolve("content/" + file)));
+            String sql = sqlOnly(MAPPERS.resolve("content/" + file));
+            if (file.equals("ArtMapper.xml")) {
+                // B05（15 文档第 7.2 节）：type_id_1 只允许出现在 SSR 搜索页的 tid 条件中，作 WHERE 比较，不是查询列
+                String tid = "type_id = #{criteria.tid} OR type_id_1 = #{criteria.tid}";
+                assertThat(sql.split(Pattern.quote(tid), -1)).as("ArtMapper 的 tid 条件只有一处").hasSize(2);
+                sql = sql.replace(tid, "");
+            }
+            Matcher m = internal.matcher(sql);
             assertThat(m.find()).as(file + " 不应查询内部列" + (m.hitEnd() ? "" : "：" + m.group())).isFalse();
         }
         String art = sqlOnly(MAPPERS.resolve("content/ArtMapper.xml"));
         Matcher secret = Pattern.compile("\\b(art_pwd|art_points|art_points_detail)\\b").matcher(art);
         while (secret.find()) {
-            String around = art.substring(Math.max(0, secret.start() - 12), Math.min(art.length(), secret.end() + 8));
+            String around = art.substring(Math.max(0, secret.start() - 26), Math.min(art.length(), secret.end() + 16));
             assertThat(around).as("ArtMapper 只能以布尔结果使用 " + secret.group())
-                    .containsAnyOf("CHAR_LENGTH(art_pwd)", "&gt; 0");
+                    .containsAnyOf("CHAR_LENGTH(art_pwd)", "&gt; 0", "SHA2(CONCAT(#{proofSalt}, art_pwd)",
+                            "BINARY art_pwd = BINARY");
         }
         String plot = sqlOnly(MAPPERS.resolve("content/VodPlotMapper.xml"));
         Matcher pwd = Pattern.compile("\\bvod_pwd\\b").matcher(plot);

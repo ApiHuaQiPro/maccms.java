@@ -1,0 +1,93 @@
+### base (total=270766)
+count: SELECT COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+  type=ALL | key=null | key_len=null | rows=300000 | filtered=9.45 | Extra=Using where | possible_keys=type_id
+-- sort=hits offset=0
+step1: SELECT <summaryColumns> FROM mac_vod WHERE vod_status = 1 AND type_id IN (?×25) ORDER BY vod_hits DESC, vod_id DESC LIMIT ?, ?
+  type=ALL | key=null | key_len=null | rows=300000 | filtered=9.45 | Extra=Using where; Using filesort | possible_keys=type_id
+-- sort=time offset=0
+step1: SELECT <summaryColumns> FROM mac_vod WHERE vod_status = 1 AND type_id IN (?×25) ORDER BY vod_time DESC, vod_id DESC LIMIT ?, ?
+  type=ALL | key=null | key_len=null | rows=300000 | filtered=9.45 | Extra=Using where; Using filesort | possible_keys=type_id
+-- sort=time offset=10000
+step1: SELECT <summaryColumns> FROM mac_vod WHERE vod_status = 1 AND type_id IN (?×25) ORDER BY vod_time DESC, vod_id DESC LIMIT ?, ?
+  type=ALL | key=null | key_len=null | rows=300000 | filtered=9.45 | Extra=Using where; Using filesort | possible_keys=type_id
+### d.rnd1-area-letter (total=601)
+count: SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) AND vod_area IN (?,?) AND vod_letter IN (?,?,?)
+  type=range | key=vod_area | key_len=62 | rows=7105 | filtered=1.12 | Extra=Using index condition; Using where | possible_keys=type_id,vod_letter,vod_area
+-- sort=rnd offset=random
+step0: SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN (?×25) AND vod_area IN (?,?) AND vod_letter IN (?,?,?)
+  type=range | key=vod_area | key_len=62 | rows=7105 | filtered=1.12 | Extra=Using index condition; Using where | possible_keys=type_id,vod_letter,vod_area
+step1: SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_vod WHERE vod_status = 1 AND type_id IN (?×25) AND vod_area IN (?,?) AND vod_letter IN (?,?,?) ORDER BY vod_hits_week DESC, vod_id DESC LIMIT ?, ?
+  type=range | key=vod_area | key_len=62 | rows=7105 | filtered=1.12 | Extra=Using index condition; Using where; Using filesort | possible_keys=type_id,vod_letter,vod_area
+-- sort=rnd offset=0
+step0: SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN (?×25) AND vod_area IN (?,?) AND vod_letter IN (?,?,?)
+  type=range | key=vod_area | key_len=62 | rows=7105 | filtered=1.12 | Extra=Using index condition; Using where | possible_keys=type_id,vod_letter,vod_area
+step1: SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_vod WHERE vod_status = 1 AND type_id IN (?×25) AND vod_area IN (?,?) AND vod_letter IN (?,?,?) ORDER BY vod_hits_week DESC, vod_id DESC LIMIT ?, ?
+  type=range | key=vod_area | key_len=62 | rows=7105 | filtered=1.12 | Extra=Using index condition; Using where; Using filesort | possible_keys=type_id,vod_letter,vod_area
+-- sort=rnd offset=600
+step0: SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN (?×25) AND vod_area IN (?,?) AND vod_letter IN (?,?,?)
+  type=range | key=vod_area | key_len=62 | rows=7105 | filtered=1.12 | Extra=Using index condition; Using where | possible_keys=type_id,vod_letter,vod_area
+step1: SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_vod WHERE vod_status = 1 AND type_id IN (?×25) AND vod_area IN (?,?) AND vod_letter IN (?,?,?) ORDER BY vod_hits_week DESC, vod_id DESC LIMIT ?, ?
+  type=range | key=vod_area | key_len=62 | rows=7105 | filtered=1.12 | Extra=Using index condition; Using where; Using filesort | possible_keys=type_id,vod_letter,vod_area
+### d.rnd2-none (total=270766)
+count: SELECT COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+  type=ALL | key=null | key_len=null | rows=300000 | filtered=9.45 | Extra=Using where | possible_keys=type_id
+-- sort=rnd offset=0
+step0: SELECT COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN (?×25)
+  type=ALL | key=null | key_len=null | rows=300000 | filtered=9.45 | Extra=Using where | possible_keys=type_id
+step1: SELECT /*+ MAX_EXECUTION_TIME(3000) */ MIN(vod_id) AS minId, MAX(vod_id) AS maxId FROM mac_vod
+  type=null | key=null | key_len=null | rows=null | filtered=null | Extra=Select tables optimized away | possible_keys=null
+step2: SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN (?×25) AND vod_id IN (?×1000)
+  type=range | key=PRIMARY | key_len=4 | rows=1000 | filtered=9.45 | Extra=Using index condition; Using where; Using MRR | possible_keys=PRIMARY,type_id
+step3: SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_vod WHERE vod_status = 1 AND type_id IN (?×25) AND vod_id IN (?×1000) ORDER BY vod_hits_week DESC, vod_id DESC LIMIT ?, ?
+  type=range | key=PRIMARY | key_len=4 | rows=1000 | filtered=9.45 | Extra=Using index condition; Using where; Using MRR; Using filesort | possible_keys=PRIMARY,type_id
+-- sort=rnd offset=20
+step0: SELECT COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN (?×25)
+  type=ALL | key=null | key_len=null | rows=300000 | filtered=9.45 | Extra=Using where | possible_keys=type_id
+step1: SELECT /*+ MAX_EXECUTION_TIME(3000) */ MIN(vod_id) AS minId, MAX(vod_id) AS maxId FROM mac_vod
+  type=null | key=null | key_len=null | rows=null | filtered=null | Extra=Select tables optimized away | possible_keys=null
+step2: SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN (?×25) AND vod_id IN (?×1000)
+  type=range | key=PRIMARY | key_len=4 | rows=1000 | filtered=9.45 | Extra=Using index condition; Using where; Using MRR | possible_keys=PRIMARY,type_id
+step3: SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_vod WHERE vod_status = 1 AND type_id IN (?×25) AND vod_id IN (?×1000) ORDER BY vod_hits_week DESC, vod_id DESC LIMIT ?, ?
+  type=range | key=PRIMARY | key_len=4 | rows=1000 | filtered=9.45 | Extra=Using index condition; Using where; Using MRR; Using filesort | possible_keys=PRIMARY,type_id
+### d.rnd2-area (total=95002)
+count: SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) AND vod_area = ?
+  type=ref | key=vod_area | key_len=62 | rows=92839 | filtered=9.45 | Extra=Using where | possible_keys=type_id,vod_area
+-- sort=rnd offset=0
+step0: SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN (?×25) AND vod_area = ?
+  type=ref | key=vod_area | key_len=62 | rows=92839 | filtered=9.45 | Extra=Using where | possible_keys=type_id,vod_area
+step1: SELECT /*+ MAX_EXECUTION_TIME(3000) */ MIN(vod_id) AS minId, MAX(vod_id) AS maxId FROM mac_vod
+  type=null | key=null | key_len=null | rows=null | filtered=null | Extra=Select tables optimized away | possible_keys=null
+step2: SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN (?×25) AND vod_area = ? AND vod_id IN (?×1000)
+  type=range | key=PRIMARY | key_len=4 | rows=1000 | filtered=2.92 | Extra=Using index condition; Using where; Using MRR | possible_keys=PRIMARY,type_id,vod_area
+step3: SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_vod WHERE vod_status = 1 AND type_id IN (?×25) AND vod_area = ? AND vod_id IN (?×1000) ORDER BY vod_hits_week DESC, vod_id DESC LIMIT ?, ?
+  type=range | key=PRIMARY | key_len=4 | rows=1000 | filtered=2.92 | Extra=Using index condition; Using where; Using MRR; Using filesort | possible_keys=PRIMARY,type_id,vod_area
+-- sort=rnd offset=20
+step0: SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN (?×25) AND vod_area = ?
+  type=ref | key=vod_area | key_len=62 | rows=92839 | filtered=9.45 | Extra=Using where | possible_keys=type_id,vod_area
+step1: SELECT /*+ MAX_EXECUTION_TIME(3000) */ MIN(vod_id) AS minId, MAX(vod_id) AS maxId FROM mac_vod
+  type=null | key=null | key_len=null | rows=null | filtered=null | Extra=Select tables optimized away | possible_keys=null
+step2: SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN (?×25) AND vod_area = ? AND vod_id IN (?×1000)
+  type=range | key=PRIMARY | key_len=4 | rows=1000 | filtered=2.92 | Extra=Using index condition; Using where; Using MRR | possible_keys=PRIMARY,type_id,vod_area
+step3: SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_vod WHERE vod_status = 1 AND type_id IN (?×25) AND vod_area = ? AND vod_id IN (?×1000) ORDER BY vod_hits_week DESC, vod_id DESC LIMIT ?, ?
+  type=range | key=PRIMARY | key_len=4 | rows=1000 | filtered=2.92 | Extra=Using index condition; Using where; Using MRR; Using filesort | possible_keys=PRIMARY,type_id,vod_area
+### d.rnd2-class (total=45761)
+count: SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) AND vod_class LIKE ? ESCAPE '!'
+  type=ALL | key=null | key_len=null | rows=300000 | filtered=1.05 | Extra=Using where | possible_keys=type_id
+-- sort=rnd offset=0
+step0: SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN (?×25) AND vod_class LIKE ? ESCAPE '!'
+  type=ALL | key=null | key_len=null | rows=300000 | filtered=1.05 | Extra=Using where | possible_keys=type_id
+step1: SELECT /*+ MAX_EXECUTION_TIME(3000) */ MIN(vod_id) AS minId, MAX(vod_id) AS maxId FROM mac_vod
+  type=null | key=null | key_len=null | rows=null | filtered=null | Extra=Select tables optimized away | possible_keys=null
+step2: SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN (?×25) AND vod_class LIKE ? ESCAPE '!' AND vod_id IN (?×1000)
+  type=range | key=PRIMARY | key_len=4 | rows=1000 | filtered=1.05 | Extra=Using index condition; Using where; Using MRR | possible_keys=PRIMARY,type_id
+step3: SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_vod WHERE vod_status = 1 AND type_id IN (?×25) AND vod_class LIKE ? ESCAPE '!' AND vod_id IN (?×1000) ORDER BY vod_hits_week DESC, vod_id DESC LIMIT ?, ?
+  type=range | key=PRIMARY | key_len=4 | rows=1000 | filtered=1.05 | Extra=Using index condition; Using where; Using MRR; Using filesort | possible_keys=PRIMARY,type_id
+-- sort=rnd offset=20
+step0: SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN (?×25) AND vod_class LIKE ? ESCAPE '!'
+  type=ALL | key=null | key_len=null | rows=300000 | filtered=1.05 | Extra=Using where | possible_keys=type_id
+step1: SELECT /*+ MAX_EXECUTION_TIME(3000) */ MIN(vod_id) AS minId, MAX(vod_id) AS maxId FROM mac_vod
+  type=null | key=null | key_len=null | rows=null | filtered=null | Extra=Select tables optimized away | possible_keys=null
+step2: SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN (?×25) AND vod_class LIKE ? ESCAPE '!' AND vod_id IN (?×1000)
+  type=range | key=PRIMARY | key_len=4 | rows=1000 | filtered=1.05 | Extra=Using index condition; Using where; Using MRR | possible_keys=PRIMARY,type_id
+step3: SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_vod WHERE vod_status = 1 AND type_id IN (?×25) AND vod_class LIKE ? ESCAPE '!' AND vod_id IN (?×1000) ORDER BY vod_hits_week DESC, vod_id DESC LIMIT ?, ?
+  type=range | key=PRIMARY | key_len=4 | rows=1000 | filtered=1.05 | Extra=Using index condition; Using where; Using MRR; Using filesort | possible_keys=PRIMARY,type_id
