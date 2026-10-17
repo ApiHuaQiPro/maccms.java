@@ -1,6 +1,6 @@
 ## B05 前台只读页补全：契约稿与旧参数覆盖表（路线图 B05，MACC-29）
 
-> **状态：契约稿，待队长审阅并安排前端分工；第 2、3.1–3.5、4 节已在本地实现并有自动测试，第 3.6、5–7 节为待实施的设计。** 未部署、未切流量。只读批次：不写库、不登记业务写入、零结构变更、不改 B02/B07 护栏，服务端不发起出站请求。
+> **状态：已实施（2026-10-17 恢复运行），队长裁定 D-B05-1～8 已落实（第 9 节），前端 K1–K5（MACC-54 固定提交 `3100239`）已普通 merge；待整批验收。第 2–7 节为实现说明与覆盖表，第 10 节为最终树验证，第 11 节为与旧版的差异。** 未部署、未切流量。只读批次：不写库、不登记业务写入、零结构变更、不改 B02/B07 护栏，服务端不发起出站请求。
 > 依据：`09-roadmap.md` 第 4.2 节（W1/W2）、第 5.3 节 B05 行；MACC-29 任务描述（含"补充验收""补充标签查询能力""补充 SSR 完整性范围""启动决定""恢复决定"）；`14-video-list-filter-completion.md` 第 2、5.2 节（Q1/Q2/Q3）；`10-site-search-page.md`；`11-content-read-completion.md`。旧代码行号以当前仓库为准。
 > 证据标注沿用 09 方案：**【代码】**仓库代码；**【黄金】**PHP 黄金样本实测；**【待核实】**依赖线上配置、线上模板或数据。
 > 本文件只由后端维护；第 8 节列出需要前端（Kimi）确认或实施的部分，前端文档仍在 `docs/frontend/`。
@@ -14,7 +14,14 @@
 | 首次运行保存提交（含部分实现） | `b46009b78d3f2402567c354955da088016ca8b0c`（父 `6dd12f5`） |
 | 已验收 main（B04 合并） | `a0876b8595c800b3a87c9537a70e693335e475c6`，是 `6dd12f5` 的祖先 |
 
-恢复运行在 `b46009b` 上以普通提交继续，不 reset/rebase/amend/force。保存树中的 `.agent_tmp/`（首次运行的 6 个临时编辑脚本）以普通删除提交移除。
+| 第二、三次运行保存提交（额度中断） | `5bc49c8c39a07b5f3cab4f066d9294cc795d85c4`、`5f1479530ea1ad3149246f942e1e4d3204fa1ef5`（本次运行起点，tree `6b1adabe…`） |
+| 契约稿提交 | `6f5e2afaae97e788feebbc3fb937d77565e38959` |
+| 前端整合 | `d4262ea`：普通 merge MACC-54 的干净固定提交 `31002393ee117943b88f9945866f315ed2fb955b`（tree `fe61b6f…`），不含 `agent/kimi/macc-54` 顶端 `75f204d` 的临时文件 |
+
+恢复运行在 `b46009b` 上以普通提交继续，不 reset/rebase/amend/force。保存树中的 `.agent_tmp/`（首次运行的 6 个临时编辑脚本）以普通删除提交移除；
+本次运行以普通提交 `cb938c4` 移除中断运行混入的 `.agent_edit.py`、`.agent_*.json`、`.agent_verify*.log` 与误入的 worktree gitlink
+（只从索引移除，没有触碰实际的其他工作树），并在 `.gitignore` 中忽略 `.agent_*`、`.claude/worktrees/`。中断时只写入临时脚本、未执行的
+控制器/测试修改经逐条审阅后以 `955d767` 落地并补测试（没有盲跑临时脚本）。
 
 ### 1. 范围与分工
 
@@ -22,14 +29,14 @@
 |---|---|---|---|
 | A 内部标签查询能力 | 旧模板标签专属条件 `isend/timeadd/timehits/time/hits*/not/rel/typenot/type/tv/weekday/plot/start/level 多值`（第 2 节） | 已实现 | C |
 | B SSR 搜索补全 | B04 新键、`tid`、`by=rnd`、逐键零值归一（第 3.1–3.5 节） | 已实现；筛选区与隐藏字段为契约稿（第 3.3 节，待前端确认样式） | C（K 定样式） |
-| B' 位置参数路由 | `vodsearch/<14 位>`、`vodshow/<12 位>`（第 3.6 节） | 待实施 | C |
+| B' 位置参数路由 | `vodsearch/<14 位>`、`vodshow/<12 位>`、`vod/show` 分类筛选页（第 3.6 节） | 已实现 | C |
 | C 文章积分判定 | 按 `user.art_points_type` 取列（第 4 节） | 已实现 | C |
-| D 内容 SSR 页 | 文章（含分页）、专题、演员、角色、网址、剧情的列表与详情（第 5 节） | 待实施 | C 页面模板与视图模型；K 组件与样式 |
-| E 播放 / 下载 / 密码 / 试看 | `vod/play`、`vod/player`、`vod/down`、`vod/downer`、`playerconfig.js`、`player_aaaa`、W1/W2 两态（第 6 节） | 待实施；**需队长裁定第 9 节 D-B05-1～4** | C；K 负责播放页布局与样式 |
-| F `ajax_*` 与 `rss` | 各类型 `ajax_detail/ajax_show/ajax_search` 与单条 `rss`（第 7 节） | 待实施；需裁定 D-B05-5 | C |
-| G 手机模板与语言包 | 路线图第 3 节把 `mob_status` 手机模板切换与 `application/lang/zh-cn.php`、`zh-tw.php` 列为 B05、B12 共有（第 7 节末） | 待实施；需裁定 D-B05-8 | C + K |
+| D 内容 SSR 页 | 文章（含分页）、专题、演员、角色、网址、剧情的列表与详情（第 5 节） | 已实现 | C 页面模板与视图模型；K 样式（MACC-54） |
+| E 播放 / 下载 / 密码 / 试看 | `vod/play`、`vod/player`、`vod/down`、`vod/downer`、`playerconfig.js`、`player_aaaa`、W1/W2 两态（第 6 节） | 已实现（D-B05-1～4） | C；K 样式与试看脚本（MACC-54） |
+| F `ajax_*` 与 `rss` | 各类型 `ajax_detail/ajax_show/ajax_search`、模块 `show`/`search` 页与单条 `rss`（第 7 节） | 已实现（D-B05-5/6） | C |
+| G 手机模板与语言包 | 路线图第 3 节把 `mob_status` 手机模板切换与 `application/lang/zh-cn.php`、`zh-tw.php` 列为 B05、B12 共有（第 7 节末） | 只登记差异（D-B05-8），手机模板与 zh-cn/zh-tw 输出归 B12（MACC-36） | — |
 
-共享文件（前后端都会改动、须先协调再改）：`backend/src/main/jte/site/components/`、`backend/src/main/resources/static/site/`（前端维护，02 规范第 7 节）；`jte/site/layout/`（外壳）；以及组件 `@param` 签名。本批到目前为止**没有修改任何共享文件**：搜索页的新筛选组沿用 MACC-20 的 `filter-group`/`filter-chip` 结构与 class。
+共享文件（前后端都会改动、须先协调再改）：`backend/src/main/jte/site/components/`、`backend/src/main/resources/static/site/`（前端维护，02 规范第 7 节）；`jte/site/layout/`（外壳）；以及组件 `@param` 签名。后端没有修改共享文件：`static/site/` 的变更全部来自 MACC-54 的固定提交（普通 merge），`components/`、`layout/` 与 `@param` 签名未改；新页面沿用既有 class（`filter-group`/`filter-chip`、`content-grid`/`content-card`、`pagination`）。
 
 ### 2. 内部标签查询能力（已实现）
 
@@ -135,7 +142,7 @@ PHP `intval` 规则（`PhpIntval`）：51 个向量在两个 PHP 版本上一致
 - 与旧版的覆盖关系：旧 `$where['type_id']` 来自 `type`/`typenot`（标签），`tid` 写入的是独立的 `$where['type_id|type_id_1']`（`Vod.php:356-358`），所以与 `categoryId`、`types` 同时存在时取 AND（`VideoTagGoldenMySqlIT` 的 `tid.current-*` 用例）。
 - 冗余列不一致（`type_id_1` 与分类表的上级不同）、停用分类、多级分类：按旧 OR 条件比较 ID 集合，`VideoTagGoldenMySqlIT.ssrSearchTidMatchesLegacyAcrossFollowedPages` 以真实 HTTP 沿"下一页"链接取完所有页，ID 序列与 total 与旧版一致。
 
-#### 3.6 位置参数路由（待实施，设计）
+#### 3.6 位置参数路由与 `vod/show`（已实现，D-B05-7）
 
 旧路由（`application/route.php:321,331`，只在 `rewrite.route_status=1` 时生效）与位置顺序见 14 文档第 2.3 节（`LegacyVodUrlMappingTest` 已锁定两份黄金样本的逐位映射）。拟定：
 
@@ -143,6 +150,15 @@ PHP `intval` 规则（`PhpIntval`）：51 个向量在两个 PHP 版本上一致
 - `vodshow/<id>-…`（12 段，第 1 段为分类）：旧 `vod/show` 是分类筛选页（`Vod.php:23-28`，`check_show` 受 `app.show` 开关，仓库值为关闭【待核实】）。拟定映射到同一个搜索页：第 1 段按 `tid` 处理（intval，0 为未传）——**与旧 `vod/show` 的分类条件不完全相同**（旧 show 的列表条件由模板标签决定，通常是 `type="current"`，即本身 + 直接子分类），所以列入 **D-B05-7** 待裁定：① 映射为 `tid`（OR 冗余列）；② 映射为"当前分类"语义（`types=[id]`）；③ 实现独立的筛选页。推荐 ②，canonical 仍指向搜索页的查询串形式需另加键（如 `type`，不在旧 `vod/search` 键中），因此 ② 实际需要独立页面地址——队长裁定后再定链接形态。
 - 不依赖路由别名配置（新版不生成别名形态、B02 对旧配置 `route_status` 为真时仍启动失败），所以位置参数地址只作为**输入**被认可。年份区间不能写在位置参数地址中（旧版同样不行，14 文档 2.3）。
 - 测试：每一位的映射与空位、`-` 冲突、查询串覆盖、编码一次、与查询串形式的链接往返（解析结果相同、canonical 相同）、真实 HTTP。
+
+**实施（按 D-B05-7）**：`LegacyUrlParser.parseVodList` 统一承接 `vod/search`（固定路径 + 查询串、兼容模式 `s`）、`vod/ajax_search`、
+`vodsearch/<14 位>`、`vod/show/id/<分类>[/键/值…]`、`vod/ajax_show/…` 与 `vodshow/<12 位>`。位置/路径形式先按 PATH_INFO 解码一次，
+查询串覆盖同名值（旧 `array_merge($input, $_REQUEST)`），之后与搜索页同一套归一与校验。`vod/show` 是独立入口 `SiteRoute.VodShow`：
+第 1 槽为分类，条件为"分类本身 + 直接子分类"（即 API `categoryId`，**不是** `tid` 的冗余列 OR），叠加可见性/发布约束与旧 `app.show`
+开关（默认关，`SiteFeatures`）；不接受 `tid`（400）；规范地址 `vod/show/id/<分类>.html?<条件>`（`LegacyUrlBuilder.vodShowLink`），
+筛选、排序、分页、表单都保留分类；`vod/search` 不新增 `type` 键，API `categoryId` 不变。`vodshow` 多于 12 段、分类缺失/前导 0/越界不认（404）。
+【测试】`LegacyUrlParserVodListTest`（PHP 8.0/7.3 黄金 `urls[vodsearch.*]`、`urls[vodshow.*]` 共 58 条逐条与查询串形式对照、路径参数、
+四种 URL 形态往返）、`SiteVodListPagesMvcTest`、`SiteVodListClosedMvcTest`，真实 HTTP 见第 10 节。
 
 #### 3.7 链接预算
 
@@ -155,7 +171,7 @@ B05 的新键共用 MACC-20 的查询串预算 1209 字符（`LegacyUrlBuilder.M
 - 判定顺序与错误码不变：404 `ARTICLE_NOT_FOUND`（不存在/未审核/分类不可见/无详情权限）→ 403 `ARTICLE_POINTS_REQUIRED` → 403 `ARTICLE_PASSWORD_REQUIRED`。【测试】`ArticlePointsTypeTest`（类型 × 两列组合 × 密码的判定顺序、`user.status=0`、默认值、非法值不回显）、`LibraryMySqlIT`。
 - 取代 B03 暂时的"两列任一大于 0 即拒绝"（11 文档第 5 节差异 #6 更新为按配置）。旧配置目录接入：content 不读旧配置文件（02 规范第 2 节），部署时按旧 `user.art_points_type` 设置该环境变量【待核实线上值】。
 
-### 5. 内容 SSR 页（待实施，契约稿）
+### 5. 内容 SSR 页（已实现）
 
 #### 5.1 页面与路由
 
@@ -171,7 +187,9 @@ B05 的新键共用 MACC-20 的查询串预算 1209 字符（`LegacyUrlBuilder.M
 | 网址分类 / 详情 | `website/type`、`website/detail` | `WebsiteReadService` | 404 |
 | 分集剧情 | `vod/plot`（`vodplot/<id>-<page?>`）、`plot/detail` | `VideoPlotReadService` | 与视频详情相同；密码/版权按 6.4 |
 
-`*/show`（筛选页，受 `app.show`）、`*/search`（文章/演员/专题/角色/网址/剧情的搜索，全表包含匹配）不在本批：B05 的"SSR 搜索完整性"只针对视频（任务"补充 SSR 完整性范围"）；列入第 10 节遗留。
+`*/show`（筛选页，受 `app.show`）、`*/search`（文章/演员/专题/角色/网址/剧情的搜索）按 D-B05-5 在本批实现，见第 7.2 节。
+实现：`SiteLibraryController` + `LibraryPages`（列表、详情、单条 RSS、`ajax_detail`），文章分页与富文本见 5.2、5.3。【测试】
+`SiteLibraryPagesMvcTest`、`SiteAjaxFragmentsMvcTest`，真实 HTTP 与浏览器见第 10 节。
 
 #### 5.2 文章分页（补充验收）
 
@@ -189,7 +207,7 @@ B05 的新键共用 MACC-20 的查询串预算 1209 字符（`LegacyUrlBuilder.M
 
 页面模板在 `jte/site/pages/`（后端），视图模型在 `site.web.view`（不可变 record）。拟新增的语义 class（BEM 子类另列于实施提交）：`article-page`、`article-pager`、`topic-page`、`topic-list`、`actor-page`、`role-page`、`website-page`、`plot-page`、`plot-list`、`content-grid`、`content-card`（演员/专题/网址等的卡片）、`detail-content`（既有，正文容器）、`screenshot-list`。**需要前端确认**：`content-card` 是否作为新组件（`components/contentCard.jte`，由前端建立并确定 `@param`），还是由页面内联；样式由前端在 `site.css` 实施。
 
-### 6. 播放 / 下载 / 密码 / 试看（待实施，设计稿）
+### 6. 播放 / 下载 / 密码 / 试看（已实现，D-B05-1～4）
 
 #### 6.1 旧行为（【代码】`application/index/controller/Vod.php:81-123`、`application/common/controller/All.php:442-540`、`Base.php:92-231`、`Ajax.php:400-458`）
 
@@ -232,14 +250,36 @@ B05 的新键共用 MACC-20 的查询串预算 1209 字符（`LegacyUrlBuilder.M
 
 公开元数据不变：`VideoDetailDto` 等 API 不新增播放/下载地址、密码、积分字段；`player_aaaa` 只出现在播放器页，且只在权限、密码、版权检查都通过（或试看）之后。
 
-### 7. `ajax_*` 与 `rss`（待实施，设计稿）
+### 7. `ajax_*`、模块筛选/搜索页与 `rss`（已实现，D-B05-5/6）
 
 - 旧 `*/ajax_detail`、`*/ajax_show`、`*/ajax_search`：返回模板片段（`label_fetch('<模块>/ajax_*')`），受 `app.ajax_page` 开关（`Base.php:45-51`）；仓库没有这些模板，片段结构无从对齐【待核实】。拟定：只实现 `ajax_detail`（各类型）为详情页主体的 HTML 片段（同一视图模型与过滤，`no-store`），`ajax_show`/`ajax_search` 随 `*/show`、`*/search` 归入遗留。**D-B05-5**：是否接受该范围。
 - 路线图第 5.3 节 B05 行写作"`ajax_*` JSON"，而旧 `ajax_*` 是 HTML 片段（上一条）；以 D-B05-5 的裁定为准，裁定后同步修改路线图。
 - 旧 `vod/rss`、`art/rss`、`topic/rss`、`actor/rss`、`role/rss`、`website/rss`、`plot/rss`：单条内容的 RSS（模板缺失）。拟定：`application/rss+xml`（UTF-8），一个 `channel` + 一个 `item`（标题、链接、描述 = 简介纯文本、`pubDate` = 更新时间），文本做 XML 转义，正文不输出。站点级 `rss/index`、`rss/baidu` 等归 B06。
 - 手机模板与语言包：新页面是响应式单模板（MACC-14 差异），`mob_status` 没有独立模板可切换；语言包只有 zh-cn/zh-tw 且新页面文案为简体中文固定文案。拟定 B05 只登记差异、不实现切换，繁体输出随 B12（**D-B05-8**）。
 
+#### 7.2 模块筛选页（`show`）与搜索页（`search`）及 ajax 片段（D-B05-5）
+
+| 旧入口（Base.php 开关） | Java 入口 | 条件（旧参数 → 内部条件） | 测试 |
+|---|---|---|---|
+| `vod/ajax_search`、`vod/ajax_show`（`check_ajax` + `check_search`/`check_show`） | `SiteSearchController`、`SiteVodShowController`，片段模板 `site/ajax/videoList` | 与 `vod/search`、`vod/show` 相同 | `SiteVodListPagesMvcTest` |
+| `art/search`、`art/show`、`ajax_*`（Art.php:23-53） | `SiteModuleListController` → `ModuleListPages` → `LibrarySearchService.articles` | `wd`→`art_name/art_en/art_sub LIKE`（`search_art_rule` 仓库值）；`name/tag/class`→LIKE（mac_like_arr）；`ids`→IN；`tid`→`type_id = tid OR type_id_1 = tid`；`level/letter`；`by/order` | `ModuleSearchGoldenMySqlIT`（PHP 黄金 20 例）、`LegacyUrlParserModuleListTest`、`SiteModuleListPagesMvcTest`、`LibraryMatchTest` |
+| `topic/search`、`ajax_search`（Topic.php:18-33） | 同上 → `topics` | `wd`→`topic_name/en/sub`；`tag`→`topic_tag`；`class`→`topic_type`；`ids`；`level/letter` | 同上（6 例） |
+| `actor/search`、`actor/show`、`ajax_*`（Actor.php:18-60） | 同上 → `actors` | `wd`→`actor_name/en`（不含别名）；`sex/area/starsign/blood` 精确；`ids`；未给分类的筛选页取第一个可见演员分类 | 同上（10 例） |
+| `role/search`、`ajax_search`（Role.php:33-48） | 同上 → `roles` | `wd`→`role_name/en`；`rid`→`role_rid`；`ids` | 同上（4 例） |
+| `website/search`、`website/show`、`ajax_*`（Website.php:23-53） | 同上 → `websites` | `wd`→`website_name/en`；`name`→`website_name IN`（精确）；`tag/class`→LIKE；`area/lang`；`ids` | 同上（9 例） |
+| `plot/search`、`ajax_search`（Plot.php:20-35） | 同上 → `ContentReadService.listVideos` + 旧 `plot=1` | 视频的 `wd/level/letter/ids` 与排序 | 同上（3 例） |
+| `topic/show`、`plot/show` | — | 旧控制器没有该操作 | 404 |
+| `role/show`、`role/ajax_show`（Role.php:18-31） | — | 角色没有分类体系，旧 `label_type` 只能取到其他模块的分类；新版不提供（404，差异） | `LegacyUrlParserModuleListTest` |
+
+- **开关**：搜索页随 `maccms.site.search.enabled`（旧 `app.search`）；筛选页随旧 `app.show`（`SiteFeatures.show`，默认关，`show_verify=1` 按关闭）；ajax 入口另需旧 `app.ajax_page`（默认关）。关闭时 404，不查库。
+- **成本护栏**：包含匹配（`wd/name/tag/class`）经 `ContentReadService.guardedRead` 与视频列表共用 `maccms.content.search.enabled`（关 → 查库前 400）、并发许可（满 → 503）与 Mapper 的 `MAX_EXECUTION_TIME(3000)`；每页 20 条，越界页 404。公开 API 不新增参数（`ContentListQuery`/`ContentFilter` 不变，新条件只在 `LibraryMatch`）。
+- **链接**：规范地址 `<模块>/search.html?<条件>`、`<模块>/show/id/<分类>.html?<条件>`（`LegacyUrlBuilder.moduleListLink`，键按 mac_url 排序、PHP urlencode；ajax 入口的分页链接指向完整页面）；查询串白名单 `SiteQueries` 另加 `sex/starsign/blood/rid`。
+- **PHP 黄金**：`backend/src/test/php/module_search_golden.php` 在一次性库（`install.sql` + `site/module-search/seed.sql`）上以 `paging=yes` 调旧 `listCacheData`（条件经 `mac_param_url` 读取，`search_len` 按 Init.php 取 10）；PHP 8.0.30 与 7.3.33 结果逐项相同，52 例。`ModuleSearchGoldenMySqlIT` 以真实 HTTP 请求每例的规范地址，比对卡片 ID 序列、canonical、"共 N 条"与 ajax 片段：51 例相同，1 例为登记差异（`art.search.wd=_`：旧版 LIKE 不转义 `_ %`）。
+
 ### 8. 需要前端（Kimi）配合的事项
+
+**已完成**：K1–K5 由 MACC-54 交付，队长阶段审阅通过后以普通 merge `d4262ea` 整合固定提交 `3100239`。K5 中"W2 关闭时外链 Logo 已由后端过滤"的结论与当时固定树不符，
+已在 `docs/frontend/03-b05-pages-ui.md` 第 7 节更正；后端 `SitePages` 按 W2 过滤外站 Logo（站内路径与 base-url 同主机地址照常输出），测试见第 10 节。下表为原始分工记录。
 
 | 事项 | 内容 | 涉及文件 |
 |---|---|---|
@@ -251,7 +291,12 @@ B05 的新键共用 MACC-20 的查询串预算 1209 字符（`LegacyUrlBuilder.M
 
 在队长安排分工之前，后端不修改上述文件；后端负责页面模板、视图模型与全部验收。
 
-### 9. 待队长裁定
+### 9. 队长裁定（2026-10-17）与落实
+
+裁定原文见 MACC-29 评论（D-B05-1～8）。落实：D-B05-1 播放器内页专用 CSP（逐响应 nonce，`PlayerFramePolicy`），外层 vod/play 与其余页面仍是严格策略；
+D-B05-2 通过存在性/发布/可见性检查后无权限 403 固定提示、no-store；D-B05-3 签名 cookie（`PasswordTickets`，密钥只经环境配置，未配置时 403 说明不支持在线验证，
+HttpOnly/SameSite=Lax/站点路径/HTTPS 下 Secure，绑定内容与用途、服务端有效期、当前密码摘要）；D-B05-4 版权按入口（3 对 play、4 对 player）403；
+D-B05-5 第 7.2 节；D-B05-6 `ajax` 接受并忽略；D-B05-7 第 3.6 节；D-B05-8 只登记差异（第 11 节），承接见 MACC-36。下表为提交裁定时的推荐值。
 
 | 编号 | 事项 | 推荐 |
 |---|---|---|
@@ -264,16 +309,35 @@ B05 的新键共用 MACC-20 的查询串预算 1209 字符（`LegacyUrlBuilder.M
 | D-B05-7 | `vodshow` 位置参数的分类语义（第 3.6 节） | 映射为"当前分类"语义并新建独立筛选页地址；若不新建页面则映射为 `tid` 并登记差异 |
 | D-B05-8 | 手机模板切换与语言包（第 7 节末） | B05 只登记差异（响应式单模板、简体固定文案），繁体随 B12 |
 
-### 10. 当前树的验证（本次恢复运行）
+### 10. 验证（最终树）
 
-| 命令 | 结果 |
-|---|---|
-| `./mvnw verify`（保存树 `b46009b`） | 1912 个测试，1 个错误：`SiteSearchB05PagesMvcTest.randomSortBeyondTheResultsIsStill200`（测试自身在已有应答上重设桩时以 `null` 调用了旧应答）。已修正为 `doAnswer`，该类 16 个测试通过 |
-| 修正后 `./mvnw verify -Pmysql-it`（含 verify 全部单元/契约测试） | BUILD SUCCESS：surefire 1912 个、0 失败、0 错误、0 跳过；failsafe 35 个、0 失败（`VideoTagGoldenMySqlIT` 3、`SiteSearchMySqlIT` 1、`LibraryMySqlIT` 5、`VideoListGoldenMySqlIT` 6、`ContentApiMySqlIT` 2、`ContentSearchMySqlIT` 2、`SchemaGuardMySqlIT` 3、`WriteInfrastructureMySqlIT` 13）；只用一次性库 `maccms_it_*`，未连接 `maccms_dev` |
+所有检查只用一次性库 `maccms_it_<时间>_<随机>`（创建前校验库名，结束时删除并查 `information_schema.schemata` 确认不存在），不连接 `maccms_dev` 或任何已有库；
+浏览器只访问本机应用与本地反向代理，所有非本机请求在浏览器内拦截并记录，不访问外部站点。`./mvnw verify` 与 `./mvnw verify -Pmysql-it` 的最终计数
+以 MACC-29 交付评论中对最终提交的记录为准（本文件随最终提交一起变更，不在此重复会过期的数字）。
 
-未做：中规模合成库测量（IN/OR、年份区间、随机候选的耗时与 EXPLAIN）、PHP 播放页黄金向量（`player_aaaa`、`playerconfig.js`）、内容页与播放页的浏览器窄屏/键盘检查——随第 3.6、5–7 节实施。
+| 检查 | 方式 | 证据 |
+|---|---|---|
+| 单元/契约/MockMvc | `./mvnw verify` | 交付评论 |
+| MySQL 集成与黄金向量 | `./mvnw verify -Pmysql-it`：`PlaybackGoldenMySqlIT`（PHP 播放黄金：权限/积分/试看/密码/版权判定与 `player_aaaa` 逐字段）、`ModuleSearchGoldenMySqlIT`（第 7.2 节，52 例）、`VideoTagGoldenMySqlIT`、`SiteSearchMySqlIT` 等 | 交付评论 |
+| PHP 黄金向量 | `vod_play_golden.php`（`site/play/php-golden.json`）、`b05_url_golden.php`（`site/url-golden/b05-vectors.json`）、`module_search_golden.php`（PHP 8.0.30 与 7.3.33 逐项相同）、`content/vodlist` 的 `urls[vodsearch.*/vodshow.*]` | 资源文件 + 上列测试 |
+| 前端试看脚本 | `node --test backend/src/test/js/`（MACC-54） | 8/8 |
+| 真实 HTTP + 浏览器 | `python backend/src/test/browser/b05_site_check.py --out docs/architecture/15-b05-site-check`：已打包应用 × W1/W2 = 00/01/10/11 × 根路径 / 子目录 `/sub/`（本地反向代理）共 8 组；Chromium（Playwright 1.60） | `15-b05-site-check/summary.json`、`screenshots/` |
 
-### 11. 与旧版的差异（已实现部分）
+`b05_site_check.py` 每组检查（结果：8 组全部 0 项失败）：
+
+- 33 个页面/入口的状态码、`no-store`、CSP、站名、Logo、站内链接前缀（子目录时全部以 `/sub/` 开头；数据中存的站内绝对路径按旧版原样输出，单独记录）、
+  外部主机按开关出现（W1 关：`playerconfig.js`、CSP 中没有解析/预加载主机；W2 关：没有媒体/下载/外链 Logo 主机；**00 时所有响应与 CSP 中没有外部来源**；
+  富文本中的普通超链接是导航目标，单独记录）；
+- 播放/下载密码：错误密码 403 且不回显；正确密码 303 + `HttpOnly; SameSite=Lax` 签名票据，带票据访问 200；
+- 浏览器：播放器内页在专用 CSP 下运行旧 `player.js`（`MacPlayer`、`player_aaaa` 存在，DPlayer 渲染），整轮没有 CSP 违规；外部请求只在对应开关打开时出现
+  （00 与子目录 00 为空）；W2 关时外部播放地址显示固定提示而不输出地址；试看：时钟快进到 `data-trial-minutes` 之后，挂载区的媒体从 3 个变为 0，
+  `#trial-message` 显示固定文案（浏览器计时边界，不是服务端授权屏障）；
+- 根路径 W1/W2=11 另查：11 个页面在 320/360/768/1280 宽度横向溢出 0px（截图 16 张）；6 个页面键盘 Tab 第一个是"跳到主要内容"、可聚焦元素都有可见焦点；
+  `prefers-reduced-motion: reduce` 时卡片过渡为 `0s`（no-preference 为 `0.12s`）。
+
+观察（不属后端，留给前端）：页眉分类导航 `site-nav` 在 `main`（`a0876b8`）起就没有样式规则，窄屏下为默认列表（截图可见）；本批没有改 `static/site/`。
+
+### 11. 与旧版的差异
 
 | 方面 | 旧 PHP | 新 |
 |---|---|---|
@@ -281,7 +345,17 @@ B05 的新键共用 MACC-20 的查询串预算 1209 字符（`LegacyUrlBuilder.M
 | 标签列表项数 | 不限 | ≤ 100；文本 ≤ 64 码点 |
 | 标签包含匹配（`weekday`、文本 `rel`） | 无开关 | 受搜索开关（默认关）、并发许可与时限 |
 | 可见范围 | `popedom_filter` 才过滤 | 始终只含可见分类（`type` 中不可见的项只是不命中；`typenot` 在可见分类内取差集） |
-| SSR `ajax`、`isend` 等未用键 | 忽略 | 400（`ajax` 待 D-B05-6） |
+| SSR `isend` 等未用键 | 忽略 | 400（`ajax` 按 D-B05-6 接受并忽略） |
+| 兼容模式 `s` | 任何路径上都改写路由 | 入口路径上指向本批页面时由 Java 承接；`s` 指向其他页面、或出现在搜索/筛选页路径上指向别处时交还 PHP（本地 404） |
+| `vodsearch`/`vodshow` 位置参数 | `route_status=1` 时可用、生成器输出位置形式 | 只作为输入被认可，canonical 指向查询串形式；`vodshow` 多于 12 段不认 |
+| `vod/show` 分类条件 | 由模板标签决定（通常 `type=current`） | 固定为分类本身 + 直接子分类（D-B05-7）；不接受 `tid` |
+| 模块搜索 LIKE | 不转义 `_ %`（`wd=_` 命中全部） | 按字面值匹配（与视频相同） |
+| 模块搜索 `by=rnd`、多值 `letter`/`level` | 支持 | 400（排序白名单不含 rnd；letter/level 沿用契约 1.2.0 单值规则） |
+| 模块 `role/show` | 取其他模块的分类渲染 | 不提供（404） |
+| 搜索频率限制、验证码（`search_timespan`、`search_verify`、`show_verify`） | 有 | 不提供（`show_verify=1` 时筛选页按关闭） |
+| ajax 片段结构 | 模板 `*/ajax_*` | 与整页相同视图的结果片段（无外壳、无脚本）；仓库无旧模板，DOM 不对齐 |
+| 手机模板、繁体语言包（D-B05-8） | `mob_status` 切换、zh-tw | 响应式单模板、简体固定文案；归 B12（MACC-36） |
+| 试看 | 模板脚本计时 | `trial.js` 浏览器计时（不是服务端授权屏障，与旧版相同把地址交给浏览器） |
 | SSR 二次解码、`htmlspecialchars` | 有 | 只解码一次（10 文档第 6 节，不变） |
 | SSR 随机排序 | 每页可翻 | 不显示分页 |
 | SSR 新键超长 | 按 `search_len` 截断 | 超出码点上限或链接预算 400 |
@@ -291,4 +365,7 @@ B03 已登记的差异（可见分类、`type_id=0`、密码字符串 `"0"` 视�
 
 ### 12. 回滚
 
-不写库、无数据迁移；回滚即 `git revert` 本批提交。站点开关 `MACCMS_SITE_ENABLED`、`MACCMS_SITE_SEARCH_ENABLED` 关闭时不注册对应路由。`MACCMS_CONTENT_ART_POINTS_TYPE` 留空按仓库值 1。
+不写库、无数据迁移、零 DDL；回滚即普通 `git revert` 本批提交（不改写历史）。回滚点：已验收 `main` `a0876b8`；本次运行前的分支状态 `5f14795`；
+前端整合前 `af32178`（整合本身可单独 `git revert -m 1 d4262ea`）。运行时可逐项关闭：`MACCMS_SITE_ENABLED`、`MACCMS_SITE_SEARCH_ENABLED`（关闭时不注册对应路由），
+`MACCMS_SITE_SHOW`、`MACCMS_SITE_AJAX_PAGE`（筛选页、ajax 入口 404；留空按旧配置，仓库值关闭），`MACCMS_BROWSER_EXTERNAL_W1/W2`，
+未配置 `MACCMS_SITE_PASSWORD_SECRET` 时密码页只提示不支持在线验证。`MACCMS_CONTENT_ART_POINTS_TYPE` 留空按仓库值 1。
