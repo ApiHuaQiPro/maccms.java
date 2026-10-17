@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 演练用写 Mapper（B07，只在测试类路径上）。insertGbook、deleteUser 故意不在演练登记表里。 -->
+<mapper namespace="com.maccms.backend.drill.infrastructure.DrillWriteMapper">
+
+    <!-- 条件扣减：余额不足时匹配 0 行，不会扣成负数 -->
+    <update id="deductPoints">
+        UPDATE mac_user SET user_points = user_points - #{points}
+        WHERE user_id = #{userId} AND user_points &gt;= #{points}
+    </update>
+
+    <update id="addPoints">
+        UPDATE mac_user SET user_points = user_points + #{points} WHERE user_id = #{userId}
+    </update>
+
+    <!-- 条件写错时可能命中多行：演练"匹配行数非 0 但超过预期"不能当普通冲突 -->
+    <update id="addPointsInRange">
+        UPDATE mac_user SET user_points = user_points + #{points} WHERE user_id BETWEEN #{fromId} AND #{toId}
+    </update>
+
+    <!-- 写入同值：useAffectedRows=false 时返回匹配行数 1，而不是变更行数 0 -->
+    <update id="setPoints">
+        UPDATE mac_user SET user_points = #{points} WHERE user_id = #{userId}
+    </update>
+
+    <!-- 认领：只有一个并发请求能把 card_use_status 从 0 改成 1 -->
+    <update id="claimCard">
+        UPDATE mac_card SET card_use_status = 1, card_sale_status = 1, user_id = #{userId}, card_use_time = #{useTime}
+        WHERE card_id = #{cardId} AND card_use_status = 0
+    </update>
+
+    <!-- 认领的补偿：只撤销本次认领（条件包含本次写入的值），被别人改过就匹配 0 行 -->
+    <update id="releaseCard">
+        UPDATE mac_card SET card_use_status = 0, card_sale_status = #{saleStatus}, user_id = 0, card_use_time = 0
+        WHERE card_id = #{cardId} AND card_use_status = 1 AND user_id = #{userId} AND card_use_time = #{useTime}
+    </update>
+
+    <update id="hit">
+        UPDATE mac_vod SET vod_hits = vod_hits + 1 WHERE vod_id = #{vodId}
+    </update>
+
+    <insert id="insertPlog" useGeneratedKeys="true" keyProperty="plogId">
+        INSERT INTO mac_plog (user_id, plog_type, plog_points, plog_time, plog_remarks)
+        VALUES (#{userId}, #{type}, #{points}, #{time}, #{remarks})
+    </insert>
+
+    <delete id="deletePlog">
+        DELETE FROM mac_plog WHERE plog_id = #{plogId}
+    </delete>
+
+    <!-- 条件插入：没有唯一键可依赖时，用 NOT EXISTS 保证同一组 (user_id, mid, type, rid) 只插入一行 -->
+    <insert id="insertUlogOnce">
+        INSERT INTO mac_ulog (user_id, ulog_mid, ulog_type, ulog_rid, ulog_sid, ulog_nid, ulog_points, ulog_time)
+        SELECT #{userId}, #{mid}, #{type}, #{rid}, 0, 0, 0, #{time} FROM DUAL
+        WHERE NOT EXISTS (SELECT 1 FROM mac_ulog
+                          WHERE user_id = #{userId} AND ulog_mid = #{mid} AND ulog_type = #{type} AND ulog_rid = #{rid})
+    </insert>
+
+    <!-- 未登记的表 -->
+    <insert id="insertGbook">
+        INSERT INTO mac_gbook (gbook_name, gbook_content, gbook_time) VALUES (#{name}, #{content}, #{time})
+    </insert>
+
+    <!-- 未登记的操作 -->
+    <delete id="deleteUser">
+        DELETE FROM mac_user WHERE user_id = #{userId}
+    </delete>
+</mapper>

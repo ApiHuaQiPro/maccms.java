@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.regex.Matcher;
@@ -102,15 +103,36 @@ class ReadOnlyGuardrailsTest {
         try (Stream<Path> s = Files.walk(MAIN_RESOURCES)) {
             for (Path p : s.filter(Files::isRegularFile).toList()) {
                 String text = Files.readString(p, StandardCharsets.UTF_8);
-                assertThat(text).as(p.toString())
-                        .doesNotContainPattern("(?i)password\\s*[:=]\\s*(?!\\$\\{)\\S")
-                        .doesNotContainPattern("(?i)jdbc:mysql://[^$\\s]")
-                        .doesNotContainPattern("(?i)username\\s*:\\s*root");
+                assertThat(credentialViolations(text)).as(p.toString()).isEmpty();
             }
+        }
+        // 自检（B07 起可写数据源的密码占位符带空默认值 ${MACCMS_WRITE_DB_PASSWORD:}，规则相应收窄：占位符内只允许空默认值）
+        assertThat(credentialViolations("password: ${MACCMS_DB_PASSWORD}\n    password: ${MACCMS_WRITE_DB_PASSWORD:}\n"
+                + "url: ${MACCMS_DB_URL}")).isEmpty();
+        for (String bad : List.of("password: secret", "spring.datasource.password=x",
+                "password: ${MACCMS_WRITE_DB_PASSWORD:secret}", "password: ${MACCMS_WRITE_DB_PASSWORD: x}",
+                "url: jdbc:mysql://127.0.0.1/db", "url: ${MACCMS_DB_URL:jdbc:mysql://127.0.0.1/db}", "username: root")) {
+            assertThat(credentialViolations(bad)).as(bad).isNotEmpty();
         }
         String yml = Files.readString(MAIN_RESOURCES.resolve("application.yml"), StandardCharsets.UTF_8);
         assertThat(yml).contains("url: ${MACCMS_DB_URL}", "username: ${MACCMS_DB_USERNAME}",
                 "password: ${MACCMS_DB_PASSWORD}", "read-only: true", "mode: never");
+    }
+
+    private static List<String> credentialViolations(String text) {
+        List<String> out = new ArrayList<>();
+        // 占位符整体换成 ${} 后再查"password 后面不是占位符"；占位符里的默认值另查：密码只允许空默认值
+        String outsidePlaceholders = text.replaceAll("\\$\\{[^}]*}", "\\${}");
+        for (String pattern : List.of("(?i)password\\s*[:=]\\s*(?!\\$\\{)\\S", "(?i)jdbc:mysql://[^$\\s]",
+                "(?i)username\\s*:\\s*root")) {
+            if (Pattern.compile(pattern).matcher(pattern.contains("password") ? outsidePlaceholders : text).find()) {
+                out.add(pattern);
+            }
+        }
+        if (Pattern.compile("(?i)\\$\\{[^}]*PASSWORD:[^}]").matcher(text).find()) {
+            out.add("密码占位符不得带默认值");
+        }
+        return out;
     }
 
     @Test

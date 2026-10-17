@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 演练用写 Mapper（B07）：模块 drillother 未登记 -->
+<mapper namespace="com.maccms.backend.drillother.infrastructure.OtherWriteMapper">
+
+    <update id="addPoints">
+        UPDATE mac_user SET user_points = user_points + #{points} WHERE user_id = #{userId}
+    </update>
+</mapper>

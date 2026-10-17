@@ -30,6 +30,16 @@ mybatis:
 maccms:
   datasource:
     allow-root: ${MACCMS_DB_ALLOW_ROOT:false}
+  # 可写数据源（B07，docs/architecture/12-write-infrastructure.md 第 2 节）：默认关闭，关闭时不创建任何可写连接，应用只读。
+  # 与上面的只读连接池分开（连接池 maccms-rw，不是 DataSource Bean）；打开时地址、账号、密码必须经 MACCMS_WRITE_DB_* 单独提供，
+  # 不沿用只读连接池的配置；地址须与 MACCMS_DB_URL 指向同一主机、端口与库名。只执行 WriteRegistry 登记的"模块 + 表 + 操作"。
+  write:
+    enabled: ${MACCMS_WRITE_ENABLED:false}
+    url: ${MACCMS_WRITE_DB_URL:}
+    username: ${MACCMS_WRITE_DB_USERNAME:}
+    password: ${MACCMS_WRITE_DB_PASSWORD:}
+    allow-root: ${MACCMS_WRITE_DB_ALLOW_ROOT:false}
+    pool-size: ${MACCMS_WRITE_DB_POOL_SIZE:4}
   content:
     # 对齐 PHP 配置 user.status：1 时按游客组(group_id=1)的 group_type/group_popedom 判定分类与详情可见性
     enforce-guest-popedom: ${MACCMS_CONTENT_ENFORCE_GUEST_POPEDOM:true}

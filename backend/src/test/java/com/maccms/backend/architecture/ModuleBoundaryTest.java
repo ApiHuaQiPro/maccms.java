@@ -19,7 +19,7 @@ import org.junit.jupiter.api.Test;
  * <ul>
  * <li>模块内 api → application → infrastructure 自上而下；application、infrastructure 不得引用本模块 api。</li>
  * <li>跨模块只能引用对方 {@code application} 的公开服务与 {@code application.view} 已发布只读类型。</li>
- * <li>MyBatis/JDBC 类型只出现在 infrastructure（以及 common.config 的数据源检查）。</li>
+ * <li>MyBatis/JDBC 类型只出现在 infrastructure（以及 common.config 的数据源检查、common.write 的可写数据源（B07））。</li>
  * <li>site 只能引用 content.application(.view)、common 中登记的支持类与 legacyconfig 中登记的读取类型，不得接触任何数据访问类型，
  * 不得有自己的 Mapper XML；也不得读文件、环境变量，启动进程或发起网络请求（站点设置来自 {@code maccms.site.*} 外部化配置，
  * 留空的项经 {@code LegacyConfigService} 取旧配置（B02），site 自己不读文件；不回环调用旧 PHP 或本应用 API）。
@@ -49,6 +49,12 @@ class ModuleBoundaryTest {
             "legacyconfig.application.LegacyConfigService", "legacyconfig.application.LegacyConfigFile",
             "legacyconfig.application.LegacyConfigException", "legacyconfig.application.LegacyConfigConfiguration",
             "legacyconfig.application.view.PhpArray", "legacyconfig.application.view.PhpValue");
+
+    /**
+     * infrastructure 之外允许出现数据访问类型的包（精确匹配，不含子包）：common.config 的数据源账号检查；common.write 的
+     * 可写数据源、写入护栏与写入序列（B07，MACC-31，docs/architecture/12-write-infrastructure.md 第 2 节）。扩充须同步 02 规范。
+     */
+    private static final Set<String> DATA_ACCESS_OUTSIDE_INFRASTRUCTURE = Set.of("common.config", "common.write");
 
     /** 已存在、暂不调整的向上依赖：VodMapper 用排序枚举生成 ORDER BY 白名单（MACC-4）。不得新增。 */
     private static final Set<String> KNOWN_UPWARD = Set.of(
@@ -188,6 +194,17 @@ class ModuleBoundaryTest {
                 + "import com.maccms.backend.content.application.ContentReadService;")).isNotEmpty();
         assertThat(violations("package com.maccms.backend.content.application;\n"
                 + "import java.sql.ResultSet;")).isNotEmpty();
+        // 数据访问类型的例外只有 common.config、common.write 两个包本身（B07）
+        assertThat(violations("package com.maccms.backend.common.write;\n"
+                + "import java.sql.SQLException;\nimport org.apache.ibatis.plugin.Interceptor;\n"
+                + "import com.zaxxer.hikari.HikariDataSource;")).isEmpty();
+        for (String pkg : List.of("common.web", "common.writex", "common.write.internal", "common", "member.application")) {
+            assertThat(violations("package com.maccms.backend." + pkg + ";\nimport java.sql.SQLException;"))
+                    .as(pkg).isNotEmpty();
+        }
+        // common.write 也不能引用业务模块
+        assertThat(violations("package com.maccms.backend.common.write;\n"
+                + "import com.maccms.backend.content.application.ContentReadService;")).isNotEmpty();
         // 另一业务模块只能用 content.application 与 .view
         assertThat(violations("package com.maccms.backend.member.application;\n"
                 + "import com.maccms.backend.content.application.ContentReadService;\n"
@@ -261,7 +278,7 @@ class ModuleBoundaryTest {
         Matcher db = MYBATIS_JDBC.matcher(code);
         while (db.find()) {
             boolean allowed = !"site".equals(module)
-                    && ("infrastructure".equals(layer) || pkg.equals("common.config"));
+                    && ("infrastructure".equals(layer) || DATA_ACCESS_OUTSIDE_INFRASTRUCTURE.contains(pkg));
             if (!allowed) {
                 out.add("数据访问类型只能出现在 infrastructure：" + db.group(1));
             }
