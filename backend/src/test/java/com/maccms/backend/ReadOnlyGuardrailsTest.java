@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.regex.Matcher;
@@ -67,20 +68,71 @@ class ReadOnlyGuardrailsTest {
         assertThat(sqlOnly(MAPPERS.resolve("content/GroupMapper.xml"))).contains("FROM mac_group");
     }
 
+    /**
+     * 契约 1.2.0（MACC-27）的 Mapper：访问密码、积分只以 SQL 计算的布尔结果出现；模板、锁定、生成时间、关联、会员组等内部列不查询。
+     * website_jumpurl 是网址本身（导航目标）属于公开字段；topic_rel_vod/topic_rel_art 只在专题详情中读出用于查询关联内容。
+     */
+    @Test
+    void libraryMappersNeverSelectInternalColumns() throws IOException {
+        Pattern internal = Pattern.compile("\\b((art|topic|actor|role|website)_(tpl|lock|time_make|time_hits)|"
+                + "(art|actor|role)_jumpurl|art_rel_\\w+|art_pwd_url|topic_extend|website_time_referer|group_id|"
+                + "type_id_1|vod_play_\\w+|vod_down_\\w+|vod_points\\w*|vod_trysee|vod_pwd_\\w+)\\b");
+        for (String file : List.of("ArtMapper.xml", "TopicMapper.xml", "ActorMapper.xml", "RoleMapper.xml",
+                "WebsiteMapper.xml", "LinkMapper.xml", "VodPlotMapper.xml")) {
+            Matcher m = internal.matcher(sqlOnly(MAPPERS.resolve("content/" + file)));
+            assertThat(m.find()).as(file + " 不应查询内部列" + (m.hitEnd() ? "" : "：" + m.group())).isFalse();
+        }
+        String art = sqlOnly(MAPPERS.resolve("content/ArtMapper.xml"));
+        Matcher secret = Pattern.compile("\\b(art_pwd|art_points|art_points_detail)\\b").matcher(art);
+        while (secret.find()) {
+            String around = art.substring(Math.max(0, secret.start() - 12), Math.min(art.length(), secret.end() + 8));
+            assertThat(around).as("ArtMapper 只能以布尔结果使用 " + secret.group())
+                    .containsAnyOf("CHAR_LENGTH(art_pwd)", "&gt; 0");
+        }
+        String plot = sqlOnly(MAPPERS.resolve("content/VodPlotMapper.xml"));
+        Matcher pwd = Pattern.compile("\\bvod_pwd\\b").matcher(plot);
+        while (pwd.find()) {
+            assertThat(plot.substring(Math.max(0, pwd.start() - 12), pwd.end())).contains("CHAR_LENGTH(vod_pwd");
+        }
+        // vod_plot* 只出现在 VodPlotMapper.xml（mappersNeverSelectSensitiveVodColumns 仍禁止它出现在 VodMapper.xml）
+        assertThat(plot).contains("vod_plot_name", "vod_plot_detail");
+    }
+
     @Test
     void mainResourcesContainNoCredentials() throws IOException {
         try (Stream<Path> s = Files.walk(MAIN_RESOURCES)) {
             for (Path p : s.filter(Files::isRegularFile).toList()) {
                 String text = Files.readString(p, StandardCharsets.UTF_8);
-                assertThat(text).as(p.toString())
-                        .doesNotContainPattern("(?i)password\\s*[:=]\\s*(?!\\$\\{)\\S")
-                        .doesNotContainPattern("(?i)jdbc:mysql://[^$\\s]")
-                        .doesNotContainPattern("(?i)username\\s*:\\s*root");
+                assertThat(credentialViolations(text)).as(p.toString()).isEmpty();
             }
+        }
+        // 自检（B07 起可写数据源的密码占位符带空默认值 ${MACCMS_WRITE_DB_PASSWORD:}，规则相应收窄：占位符内只允许空默认值）
+        assertThat(credentialViolations("password: ${MACCMS_DB_PASSWORD}\n    password: ${MACCMS_WRITE_DB_PASSWORD:}\n"
+                + "url: ${MACCMS_DB_URL}")).isEmpty();
+        for (String bad : List.of("password: secret", "spring.datasource.password=x",
+                "password: ${MACCMS_WRITE_DB_PASSWORD:secret}", "password: ${MACCMS_WRITE_DB_PASSWORD: x}",
+                "url: jdbc:mysql://127.0.0.1/db", "url: ${MACCMS_DB_URL:jdbc:mysql://127.0.0.1/db}", "username: root")) {
+            assertThat(credentialViolations(bad)).as(bad).isNotEmpty();
         }
         String yml = Files.readString(MAIN_RESOURCES.resolve("application.yml"), StandardCharsets.UTF_8);
         assertThat(yml).contains("url: ${MACCMS_DB_URL}", "username: ${MACCMS_DB_USERNAME}",
                 "password: ${MACCMS_DB_PASSWORD}", "read-only: true", "mode: never");
+    }
+
+    private static List<String> credentialViolations(String text) {
+        List<String> out = new ArrayList<>();
+        // 占位符整体换成 ${} 后再查"password 后面不是占位符"；占位符里的默认值另查：密码只允许空默认值
+        String outsidePlaceholders = text.replaceAll("\\$\\{[^}]*}", "\\${}");
+        for (String pattern : List.of("(?i)password\\s*[:=]\\s*(?!\\$\\{)\\S", "(?i)jdbc:mysql://[^$\\s]",
+                "(?i)username\\s*:\\s*root")) {
+            if (Pattern.compile(pattern).matcher(pattern.contains("password") ? outsidePlaceholders : text).find()) {
+                out.add(pattern);
+            }
+        }
+        if (Pattern.compile("(?i)\\$\\{[^}]*PASSWORD:[^}]").matcher(text).find()) {
+            out.add("密码占位符不得带默认值");
+        }
+        return out;
     }
 
     @Test

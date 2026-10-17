@@ -50,6 +50,8 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
  * 三页（MACC-14）的 MockMvc 测试：content 服务是 Mockito 替身（合成数据，不连数据库）。
  * 覆盖正常、空结果、404、参数错误、500/503、恶意文本与 URL、canonical 不受 Host 注入影响、完整缓冲与日志脱敏。
  * 站点关闭见 {@link SiteContentClosedMvcTest}；rewrite 形态见 {@link SiteContentRewriteMvcTest}。
+ * 本类显式打开 W2（{@code maccms.browser-external.w2=true}，也是默认值），验证放行时的输出与 MACC-14 相同；关闭时的行为见
+ * {@link SiteExternalImagesMvcTest}（B02）。
  */
 @WebMvcTest(controllers = SiteContentController.class, properties = {
         "maccms.site.enabled=true",
@@ -57,7 +59,8 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
         "maccms.site.base-url=http://maccms.local.test/",
         "maccms.site.description=站点描述（合成）",
         "maccms.site.keywords=站点,关键词",
-        "maccms.site.image.protocol=https"})
+        "maccms.site.image.protocol=https",
+        "maccms.browser-external.w2=true"})
 @Import(SiteConfiguration.class)
 @ExtendWith(OutputCaptureExtension.class)
 class SiteContentPagesMvcTest {

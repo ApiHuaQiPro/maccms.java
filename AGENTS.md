@@ -97,5 +97,6 @@
 4. **运行**：`./mvnw -q package -DskipTests` 后，设置 `MACCMS_DB_URL`、`MACCMS_DB_USERNAME`、`MACCMS_DB_PASSWORD`（样例见 `backend/config/maccms-backend.env.example`），执行 `java -jar target/maccms-backend-0.1.0-SNAPSHOT.jar`，默认监听 `127.0.0.1:18280`；`curl http://127.0.0.1:18280/actuator/health` 返回 `{"status":"UP"}` 即就绪。
    - 缺少数据库环境变量时拒绝启动；用 `root` 需显式设置 `MACCMS_DB_ALLOW_ROOT=true`（仅本机开发）。连接池是只读会话，应用无法写库。
    - 生产应使用只授予 SELECT 的专用账号，由管理员创建（本批未创建任何账号）。
+   - 可写数据源（B07，`docs/architecture/12-write-infrastructure.md`）默认关闭（`MACCMS_WRITE_ENABLED=false`），开发期只在一次性库 `maccms_it_*` 上打开；不要指向 `maccms_dev` 或任何共享库。
 5. **停止**：前台运行按 Ctrl+C；后台运行时按启动时记录的 PID 结束（PowerShell `Stop-Process -Id <PID>`），不要按进程名批量结束 java。
 6. **不要提交**：`backend/target/`、`backend/config/*.env`、运行日志。

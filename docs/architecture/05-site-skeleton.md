@@ -17,7 +17,9 @@
 - 依赖：`gg.jte:jte-runtime`、`gg.jte:jte-models` 3.2.4；构建插件 `jte-maven-plugin` 3.2.4（`contentType=Html`、`OwaspHtmlPolicy`、`ModelExtension`，生成到 `com.maccms.backend.site.web.jte`）。**未引入** `jte-spring-boot-starter-4`，运行时不编译模板、不需要 JDK 编译器。测试另用 `gg.jte:jte`（编译器）与 jsoup 1.23.2（`test` 作用域）。
 - site 不调用 `ContentReadService`（骨架没有内容页面），不访问 Mapper、infrastructure、数据库或旧 PHP。site 的 Java 源码由 `ModuleBoundaryTest` 另禁止读文件/环境变量、启动进程、发起 HTTP 请求；模板由 `SiteGuardrailsTest` 禁止全限定名、静态 API、`new` 与反射（模板表达式只能读取视图模型）。
 
-### 2. 配置（只读本应用的环境变量，不读 PHP 配置）
+### 2. 配置（本应用的环境变量；B02 起可按字段取旧配置）
+
+> B02（MACC-26）起：设置了 `MACCMS_LEGACY_CONFIG_DIR` 时，下表中留空的站点项在启动时按字段取旧 `extra/maccms.php` 的值（环境变量非空优先，`base-url` 仍必填），规则与换算见 `11-guards-and-legacy-config.md` 第 4.4 节。下表的"默认"指两者都没有时的取值。
 
 | 配置项 / 环境变量 | 默认 | 规则 |
 |---|---|---|
@@ -26,7 +28,7 @@
 | `maccms.site.base-url` / `MACCMS_SITE_BASE_URL` | 无，启用时必填 | 小写 `http`/`https`，有主机名，无用户信息、查询串、片段、`%`、`.`/`..` 段、`//`、空白，路径以 `/` 结尾（允许子目录），完整地址（协议、主机、端口、路径，去首尾空白后）≤768 字符，长度规则见下文 |
 | `maccms.site.keywords` / `description` / `icp` | 空 | ≤200 / ≤500 / ≤64 字符，无控制字符 |
 | `maccms.site.logo-url` | 空 | 空，或 `SafeUrl`：`http`/`https` 绝对地址（无用户信息），或以单个 `/` 开头的站内路径（拒绝 `//`、`/\`） |
-| `maccms.site.status` | `open` | `open` / `closed` |
+| `maccms.site.status` | 空，按 `open` | `open` / `closed`（B02 起环境变量默认值为空，以便区分"未设置"） |
 | `maccms.site.closed-message` | `站点维护中，请稍后访问。` | ≤200 字符，无控制字符，按文本转义输出 |
 | `maccms.site.canonical-redirect` | `false` | D4 未批准，只接受 `false` |
 | `maccms.site.hit-counter-enabled` | `false` | D5 未决定，只接受 `false` |
@@ -87,7 +89,7 @@ curl -i http://127.0.0.1:18280/_site/placeholder
 ### 6. 与旧版的差异
 
 - 站点关闭：旧 PHP 输出关闭模板后 `die`，未设置状态码（`application/index/controller/Base.php:73-79`，代码阅读，未实测）；新版返回 503 + `Retry-After` + `no-store` + noindex。
-- 站点设置来源：旧版读 `application/extra/maccms.php` 的 `site.*`；新版只读 `maccms.site.*` 环境变量，两边由运维分别维护，并行期存在漂移风险。
+- 站点设置来源：旧版读 `application/extra/maccms.php` 的 `site.*`；新版读 `maccms.site.*` 环境变量；B02 起设置了旧配置目录时留空的项取旧 `maccms.php`（启动时读一次，改了要重启），未设置目录时两边由运维分别维护，并行期存在漂移风险。
 - 站点地址：旧版分为 `site.site_url`（主机名，协议取当前请求，`application/common/behavior/Init.php:64`）与 `site.install_dir`（`MAC_PATH`，同文件 `:48`），后台与安装程序都不校验格式和长度（`application/admin/view/system/config.html:29,91`、`application/install/controller/Index.php:200-212`，代码阅读）；新版合并为一个 `base-url`，要求格式合法，完整地址 ≤768 字符（见第 2 节）。这是有上限的兼容：正常的根路径与子目录（包括超过 200 字符的）都能配置，但超过 768 字符或格式不合法的旧值不能照搬。
 - 非白名单 URL（`javascript:`、协议相对地址等）的 Logo 配置在启动时被拒绝，不会输出。
 - 渲染失败返回完整 500 页（旧 PHP 的模板错误行为未核实）。

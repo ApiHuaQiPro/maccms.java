@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+  只读映射：沿用旧表 mac_art（install.sql:3）。禁止在此文件加入写语句，禁止 ${} 拼接。
+  不查询的列（不得出现在任何 select 中）：art_pwd 及 art_pwd_url（只以 CHAR_LENGTH(art_pwd) > 0 的布尔结果出现；比 PHP 的 !empty 更严：值为 "0" 也视为有密码）、
+  art_points、art_points_detail（只以 > 0 的布尔结果出现）、group_id、art_lock、art_tpl、art_jumpurl、art_time_make、
+  art_time_hits、art_rel_art、art_rel_vod、type_id_1。旧规则依据：application/common/model/Art.php。
+-->
+<mapper namespace="com.maccms.backend.content.infrastructure.ArtMapper">
+
+    <!-- art_status=1（Art.php:229）；分类可见性由 content.application 给出 typeIds -->
+    <sql id="publishedInTypes">
+        art_status = 1
+        AND type_id IN
+        <foreach collection="typeIds" item="tid" open="(" separator="," close=")">#{tid}</foreach>
+    </sql>
+
+    <!-- 精确筛选：level（Art.php:230-235，新版单值）、letter（:252-258）。列名固定，值只经 #{} 绑定。 -->
+    <sql id="criteriaConditions">
+        <if test="criteria.level != null">AND art_level = #{criteria.level}</if>
+        <if test="criteria.letters != null">
+            AND art_letter IN <foreach collection="criteria.letters" item="l" open="(" separator="," close=")">#{l}</foreach>
+        </if>
+    </sql>
+
+    <sql id="summaryColumns">
+        art_id                   AS id,
+        type_id                  AS categoryId,
+        art_name                 AS name,
+        art_sub                  AS subTitle,
+        art_en                   AS enName,
+        art_letter               AS letter,
+        art_color                AS color,
+        art_from                 AS source,
+        art_author               AS author,
+        art_tag                  AS tag,
+        art_class                AS classes,
+        art_pic                  AS pic,
+        art_pic_thumb            AS picThumb,
+        art_pic_slide            AS picSlide,
+        art_blurb                AS blurb,
+        art_remarks              AS remarks,
+        art_level                AS level,
+        art_score                AS score,
+        art_score_num            AS scoreNum,
+        art_hits                 AS hits,
+        art_hits_day             AS hitsDay,
+        art_hits_week            AS hitsWeek,
+        art_hits_month           AS hitsMonth,
+        art_up                   AS up,
+        art_down                 AS down,
+        art_time                 AS updatedAt,
+        art_time_add             AS addedAt,
+        (CHAR_LENGTH(art_pwd) &gt; 0) AS detailPasswordRequired
+    </sql>
+
+    <!--
+      count 与分页共用 publishedInTypes + criteriaConditions，保证 total 与列表一致。MAX_EXECUTION_TIME(3000) 为服务端执行时限
+      （超时 3024/1028 由 content.application 归为 503），字面常量，不经参数。
+    -->
+    <select id="countPublished" resultType="long">
+        SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*)
+        FROM mac_art
+        WHERE <include refid="publishedInTypes"/>
+        <include refid="criteriaConditions"/>
+    </select>
+
+    <!-- 排序白名单对应旧 by（Art.php:370-376，不含 rnd），追加 art_id 同向排序保证分页稳定。 -->
+    <select id="selectPublishedPage" resultType="com.maccms.backend.content.infrastructure.ArtSummaryRow">
+        SELECT /*+ MAX_EXECUTION_TIME(3000) */ <include refid="summaryColumns"/>
+        FROM mac_art
+        WHERE <include refid="publishedInTypes"/>
+        <include refid="criteriaConditions"/>
+        ORDER BY
+        <choose>
+            <when test="sort.name() == 'TIME'">art_time</when>
+            <when test="sort.name() == 'TIME_ADD'">art_time_add</when>
+            <when test="sort.name() == 'SCORE'">art_score</when>
+            <when test="sort.name() == 'HITS'">art_hits</when>
+            <when test="sort.name() == 'HITS_DAY'">art_hits_day</when>
+            <when test="sort.name() == 'HITS_WEEK'">art_hits_week</when>
+            <when test="sort.name() == 'HITS_MONTH'">art_hits_month</when>
+            <when test="sort.name() == 'UP'">art_up</when>
+            <when test="sort.name() == 'DOWN'">art_down</when>
+            <when test="sort.name() == 'LEVEL'">art_level</when>
+            <otherwise>art_id</otherwise>
+        </choose>
+        <choose>
+            <when test="descending">DESC, art_id DESC</when>
+            <otherwise>ASC, art_id ASC</otherwise>
+        </choose>
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- 对应旧 mac_label_art_detail 的 art_id + art_status=1 条件（application/common.php:2693-2713）。 -->
+    <select id="selectPublishedDetail" resultType="com.maccms.backend.content.infrastructure.ArtDetailRow">
+        SELECT art_id                   AS id,
+               type_id                  AS categoryId,
+               art_name                 AS name,
+               art_sub                  AS subTitle,
+               art_en                   AS enName,
+               art_letter               AS letter,
+               art_color                AS color,
+               art_from                 AS source,
+               art_author               AS author,
+               art_tag                  AS tag,
+               art_class                AS classes,
+               art_pic                  AS pic,
+               art_pic_thumb            AS picThumb,
+               art_pic_slide            AS picSlide,
+               art_blurb                AS blurb,
+               art_remarks              AS remarks,
+               art_level                AS level,
+               art_score                AS score,
+               art_score_all            AS scoreAll,
+               art_score_num            AS scoreNum,
+               art_hits                 AS hits,
+               art_hits_day             AS hitsDay,
+               art_hits_week            AS hitsWeek,
+               art_hits_month           AS hitsMonth,
+               art_up                   AS up,
+               art_down                 AS down,
+               art_time                 AS updatedAt,
+               art_time_add             AS addedAt,
+               art_title                AS pageTitles,
+               art_note                 AS pageNotes,
+               art_content              AS content,
+               art_pic_screenshot       AS screenshots,
+               (CHAR_LENGTH(art_pwd) &gt; 0) AS detailPasswordRequired,
+               (art_points &gt; 0 OR art_points_detail &gt; 0) AS pointsRequired
+        FROM mac_art
+        WHERE art_id = #{id}
+          AND art_status = 1
+    </select>
+
+    <!--
+      专题关联文章（Topic.php:302-312）：art_id IN (topic_rel_art) + art_status=1，按 art_time 倒序取前 999 条；
+      追加 art_id 倒序使并列时结果确定。
+    -->
+    <select id="selectPublishedByIds" resultType="com.maccms.backend.content.infrastructure.ArtSummaryRow">
+        SELECT /*+ MAX_EXECUTION_TIME(3000) */ <include refid="summaryColumns"/>
+        FROM mac_art
+        WHERE <include refid="publishedInTypes"/>
+          AND art_id IN <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
+        ORDER BY art_time DESC, art_id DESC
+        LIMIT 999
+    </select>
+
+    <!-- 专题按标签关联文章（Topic.php:324-332）：art_tag LIKE 任一模式（模式由 content.application 构造并以 '!' 转义）。 -->
+    <select id="selectPublishedByTagPatterns" resultType="com.maccms.backend.content.infrastructure.ArtSummaryRow">
+        SELECT /*+ MAX_EXECUTION_TIME(3000) */ <include refid="summaryColumns"/>
+        FROM mac_art
+        WHERE <include refid="publishedInTypes"/>
+          AND (<foreach collection="patterns" item="p" separator=" OR ">art_tag LIKE #{p} ESCAPE '!'</foreach>)
+        ORDER BY art_time DESC, art_id DESC
+        LIMIT 999
+    </select>
+</mapper>

@@ -1,12 +1,16 @@
 openapi: 3.0.3
 info:
-  title: MacCMS 内容只读接口（首批）
-  version: 1.1.0
+  title: MacCMS 内容只读接口
+  version: 1.2.0
   description: |
     MacCMS 重构首批对外接口（MACC-4）：视频分类、视频分页列表、视频公开详情元数据、健康检查。
     1.1.0（MACC-18，方案 docs/architecture/09-content-search-filter-plan.md，以下简称"09 方案"）在
     `GET /api/v1/videos` 上向后兼容地增加 6 个可选搜索/筛选参数（keyword、area、lang、year、level、classes），
     其余路径、所有响应 schema 与错误码不变。
+    1.2.0（MACC-27 / 路线图 B03，说明 docs/architecture/11-content-read-completion.md，以下简称"11 文档"）向后兼容地新增：
+    视频分集剧情 `/api/v1/videos/{id}/plots`；文章、专题、演员、角色、网址的列表与详情，文章/演员/网址分类树，友情链接列表；
+    对应的 schema 与错误码 ARTICLE_NOT_FOUND、ARTICLE_PASSWORD_REQUIRED、ARTICLE_POINTS_REQUIRED、TOPIC_NOT_FOUND、
+    ACTOR_NOT_FOUND、ROLE_NOT_FOUND、WEBSITE_NOT_FOUND。1.1.0 已有的路径、参数、响应与行为完全不变。
 
     本文件是前后端契约，后端实现位于 backend/ 的 content 模块，HTTP 契约测试
     （backend/src/test/java/com/maccms/backend/content/ContentApiContractTest.java）逐字段比对响应与本文件中的 schema。
@@ -20,8 +24,8 @@ info:
     - 时间字段是 Unix 时间戳（秒，整数），与旧库存储一致。
     - 未声明的查询参数会被忽略；值为空字符串的参数按"未传"处理。
     - 访问者一律按旧系统的游客（会员组 group_id=1）身份判定可见性；本批不识别登录态。
-    - 本批不提供：播放/下载地址与授权、观看密码校验、收费/积分、会员、Provide 资源站协议、采集、后台写入、
-      全文检索/相关度排序、演员/导演/标签等其他搜索条件、文章/专题/演员等其他内容类型。
+    - 不提供：播放/下载地址与授权、观看密码校验、收费/积分（1.2.0 的文章详情只判断"是否需要积分"）、会员、Provide 资源站协议、
+      采集、后台写入、全文检索/相关度排序、演员/导演/标签等其他视频搜索条件。
 
     参数取值的约定（1.1.0 起写明，1.0.0 的既有参数行为不变）：
     - 每个参数的 schema（maxLength、pattern、minimum/maximum）**直接作用于原始解码值**——查询串按
@@ -67,16 +71,28 @@ info:
 
     运行开关与成本控制（09 方案第 6 节）：
     - 后端开关 `maccms.content.search.enabled`（默认 **false**）控制包含匹配参数 keyword、classes；关闭时传入非空值 → 400。
+      1.2.0 起它同时控制专题详情中"按标签关联内容"的包含匹配（关闭时不执行，见 `/api/v1/topics/{id}`）。
       精确匹配参数 area、lang、year、level 不受该开关影响。
     - 带任一新参数的 count/分页语句有服务端执行时限（MAX_EXECUTION_TIME 3000 ms）；带 keyword/classes 的请求另有进程内
       并发上限 `maccms.content.search.max-concurrent`（默认 4，不排队）。超时或超过并发上限时返回 503 `SERVICE_UNAVAILABLE`，
       响应体与数据库不可用时逐字相同。不带新参数的请求不受这两项影响。
+    1.2.0 新列表（articles、topics、actors、roles、websites、links）的参数规则（11 文档第 4.2 节）：
+    - 读取方式与 1.0.0 的既有参数相同：每个参数多次出现时各值以逗号连接后校验（因此文本参数重复出现 → 400 "不支持多个取值"，
+      整数参数重复出现 → 400）；百分号编码不是合法 UTF-8 时整个请求返回 500 `INTERNAL_ERROR`（与 1.0.0 既有参数相同）。
+      空字符串按"未传"处理；未声明的参数（含其他类型才有的筛选参数、旧站参数名 wd/tid/by/class 等）被忽略。
+    - 校验顺序：categoryId（仅文章/演员/网址）→ sort → order → page → pageSize → 各列表声明的筛选参数（按其在本文件中的出现顺序）。
+      只报第一个错误。
+    - categoryId、page、pageSize、level 的词法与范围同视频列表（只含 ASCII 数字、最多 10 个字符）。
+    - 文本筛选参数（sex、area、lang、starSign、blood）与 1.1.0 的 area/lang 规则相同：禁用字符、不含半角逗号、首尾不得为空白、
+      不超过列宽（maxLength），精确匹配，大小写与尾随空格是否敏感由旧表列的排序规则决定。
+    - 所有条件之间为 AND，不能扩大可见范围；count 与分页使用同一组条件，排序后再按 id 同方向排序；列表语句带服务端执行时限
+      （超时 → 503，响应体同数据库不可用）。
 servers:
   - url: http://127.0.0.1:18280
     description: 本机开发（默认端口，见 backend/README.md）
 tags:
   - name: content
-    description: 视频分类与视频公开元数据（只读）
+    description: 视频、文章、专题、演员、角色、网址、友链的公开元数据（只读）
   - name: ops
     description: 运维
 paths:
@@ -490,6 +506,484 @@ paths:
           $ref: '#/components/responses/ServiceUnavailable'
         '500':
           $ref: '#/components/responses/InternalError'
+  /api/v1/videos/{id}/plots:
+    get:
+      tags: [content]
+      operationId: getVideoPlots
+      summary: 【1.2.0】视频分集剧情
+      description: |
+        返回视频的分集剧情（旧 plot/detail 页的 vod_plot_list：vod_plot_name / vod_plot_detail 按 `$$$` 分组，
+        条数取剧情名的组数，详情按位置对齐，缺少时为 ""；mac_plot_list，application/common.php:1320-1341）。
+
+        可见性与 `/api/v1/videos/{id}` **完全相同**（判定顺序、错误码一致）：404 `VIDEO_NOT_FOUND`、
+        403 `VIDEO_PASSWORD_REQUIRED`、403 `VIDEO_COPYRIGHT_RESTRICTED`。没有剧情时 `items` 为空数组。
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VideoPlotListResponse'
+        '400':
+          $ref: '#/components/responses/InvalidParameter'
+        '403':
+          description: 需要观看密码（VIDEO_PASSWORD_REQUIRED）或因版权不提供详情（VIDEO_COPYRIGHT_RESTRICTED），同视频详情
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: 视频不存在或不可见（code=VIDEO_NOT_FOUND）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /api/v1/article-categories:
+    get:
+      tags: [content]
+      operationId: listArticleCategories
+      summary: 【1.2.0】文章分类树
+      description: 与 `/api/v1/video-categories` 规则完全相同，只是取文章分类（mac_type.type_mid=2）。
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryListResponse'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /api/v1/articles:
+    get:
+      tags: [content]
+      operationId: listArticles
+      summary: 【1.2.0】文章分页列表
+      description: |
+        返回已审核（art_status=1）且所属文章分类可见（规则同 `/api/v1/article-categories`）的文章。
+        传 `categoryId` 时包含该分类及其可见的直接子分类；分类不存在或不可见 → 404 `CATEGORY_NOT_FOUND`。
+        排序白名单同视频列表（旧 Art::listCacheData 的 by，不含 rnd），默认 `time` 倒序，再按 `id` 同方向排序。
+        列表项不含正文、访问密码、积分。
+      parameters:
+        - $ref: '#/components/parameters/CategoryId'
+        - $ref: '#/components/parameters/CommonSort'
+        - $ref: '#/components/parameters/OrderDesc'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+        - $ref: '#/components/parameters/Level'
+        - $ref: '#/components/parameters/Letter'
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArticlePage'
+        '400':
+          $ref: '#/components/responses/InvalidParameter'
+        '404':
+          $ref: '#/components/responses/CategoryNotFound'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /api/v1/articles/{id}:
+    get:
+      tags: [content]
+      operationId: getArticle
+      summary: 【1.2.0】文章公开详情
+      description: |
+        判定顺序（旧 label_art_detail + Art::detail）：
+        1. 文章不存在、未审核、所属分类不可见、或游客组对该分类没有"详情"权限（权限位 2）→ 404 `ARTICLE_NOT_FOUND`；
+        2. 启用游客权限校验（`maccms.content.enforce-guest-popedom=true`，默认）且文章需要积分（art_points 或
+           art_points_detail 大于 0）→ 403 `ARTICLE_POINTS_REQUIRED`（旧版显示扣积分确认页）；
+        3. 文章设置了访问密码（art_pwd 非空）→ 403 `ARTICLE_PASSWORD_REQUIRED`；
+        4. 其他情况 → 200。`pages` 为全部分页（旧 `$$$` 分页，mac_art_list），客户端自行分页显示。
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArticleDetail'
+        '400':
+          $ref: '#/components/responses/InvalidParameter'
+        '403':
+          description: 需要积分（ARTICLE_POINTS_REQUIRED）或访问密码（ARTICLE_PASSWORD_REQUIRED）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                code: ARTICLE_PASSWORD_REQUIRED
+                message: 该文章需要访问密码
+                fieldErrors: []
+        '404':
+          description: 文章不存在或不可见（code=ARTICLE_NOT_FOUND）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /api/v1/topics:
+    get:
+      tags: [content]
+      operationId: listTopics
+      summary: 【1.2.0】专题分页列表
+      description: |
+        返回 topic_status=1 的专题（专题没有分类与权限位）。排序白名单同视频列表，默认 `time` 倒序，再按 `id` 同方向排序。
+      parameters:
+        - $ref: '#/components/parameters/CommonSort'
+        - $ref: '#/components/parameters/OrderDesc'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+        - $ref: '#/components/parameters/Level'
+        - $ref: '#/components/parameters/Letter'
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TopicPage'
+        '400':
+          $ref: '#/components/responses/InvalidParameter'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /api/v1/topics/{id}:
+    get:
+      tags: [content]
+      operationId: getTopic
+      summary: 【1.2.0】专题公开详情（含关联视频与文章）
+      description: |
+        专题不存在或 topic_status≠1 → 404 `TOPIC_NOT_FOUND`。关联内容对应旧 Topic::infoData，按以下顺序**直接拼接**（重复项保留）：
+        1. `topic_rel_vod` / `topic_rel_art` 中列出的 ID：已审核且所属分类可见，按更新时间倒序（再按 id 倒序），各最多 999 条；
+        2. 仅当 `maccms.content.search.enabled=true`：`topic_tag` 按逗号拆开后在视频 `vod_tag` / 文章 `art_tag` 中包含匹配（字面匹配），
+           同样的可见性、排序与上限。开关关闭时不执行这一步（只返回第 1 步的结果）。这一步与视频搜索共用并发上限，
+           超过上限或执行超时 → 503 `SERVICE_UNAVAILABLE`。
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TopicDetail'
+        '400':
+          $ref: '#/components/responses/InvalidParameter'
+        '404':
+          description: 专题不存在或未审核（code=TOPIC_NOT_FOUND）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /api/v1/actor-categories:
+    get:
+      tags: [content]
+      operationId: listActorCategories
+      summary: 【1.2.0】演员分类树
+      description: 与 `/api/v1/video-categories` 规则完全相同，只是取演员分类（mac_type.type_mid=8）。
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryListResponse'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /api/v1/actors:
+    get:
+      tags: [content]
+      operationId: listActors
+      summary: 【1.2.0】演员分页列表
+      description: |
+        返回 actor_status=1 且所属演员分类可见的演员。`categoryId` 规则同文章列表。排序白名单同视频列表（不含旧 rnd、in），
+        默认 `time` 倒序，再按 `id` 同方向排序。
+      parameters:
+        - $ref: '#/components/parameters/CategoryId'
+        - $ref: '#/components/parameters/CommonSort'
+        - $ref: '#/components/parameters/OrderDesc'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+        - $ref: '#/components/parameters/Level'
+        - $ref: '#/components/parameters/Letter'
+        - name: sex
+          in: query
+          required: false
+          description: 性别 actor_sex，精确匹配（旧 sex）。文本参数通用规则见 info.description。
+          schema: {type: string, maxLength: 1, pattern: '^(?:[^\s,\x00-\x1F\x7F-\x9F\uD800-\uDFFF\uFFFD](?:[^,\x00-\x1F\x7F-\x9F\uD800-\uDFFF\uFFFD]*[^\s,\x00-\x1F\x7F-\x9F\uD800-\uDFFF\uFFFD])?)?$'}
+        - name: area
+          in: query
+          required: false
+          description: 地区 actor_area，精确匹配（旧 area，新版单值）。
+          schema: {type: string, maxLength: 20, pattern: '^(?:[^\s,\x00-\x1F\x7F-\x9F\uD800-\uDFFF\uFFFD](?:[^,\x00-\x1F\x7F-\x9F\uD800-\uDFFF\uFFFD]*[^\s,\x00-\x1F\x7F-\x9F\uD800-\uDFFF\uFFFD])?)?$'}
+        - name: starSign
+          in: query
+          required: false
+          description: 星座 actor_starsign，精确匹配（旧 starsign，新版单值）。
+          schema: {type: string, maxLength: 10, pattern: '^(?:[^\s,\x00-\x1F\x7F-\x9F\uD800-\uDFFF\uFFFD](?:[^,\x00-\x1F\x7F-\x9F\uD800-\uDFFF\uFFFD]*[^\s,\x00-\x1F\x7F-\x9F\uD800-\uDFFF\uFFFD])?)?$'}
+        - name: blood
+          in: query
+          required: false
+          description: 血型 actor_blood，精确匹配（旧 blood，新版单值）。
+          schema: {type: string, maxLength: 10, pattern: '^(?:[^\s,\x00-\x1F\x7F-\x9F\uD800-\uDFFF\uFFFD](?:[^,\x00-\x1F\x7F-\x9F\uD800-\uDFFF\uFFFD]*[^\s,\x00-\x1F\x7F-\x9F\uD800-\uDFFF\uFFFD])?)?$'}
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActorPage'
+        '400':
+          $ref: '#/components/responses/InvalidParameter'
+        '404':
+          $ref: '#/components/responses/CategoryNotFound'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /api/v1/actors/{id}:
+    get:
+      tags: [content]
+      operationId: getActor
+      summary: 【1.2.0】演员公开详情
+      description: |
+        演员不存在、未审核、所属分类不可见、或游客组对该分类没有"详情"权限 → 404 `ACTOR_NOT_FOUND`（mac_actor 没有积分与密码）。
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActorDetail'
+        '400':
+          $ref: '#/components/responses/InvalidParameter'
+        '404':
+          description: 演员不存在或不可见（code=ACTOR_NOT_FOUND）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /api/v1/roles:
+    get:
+      tags: [content]
+      operationId: listRoles
+      summary: 【1.2.0】角色分页列表
+      description: |
+        返回 role_status=1 的角色（与旧版相同，不按所属视频的状态过滤）。排序白名单同视频列表，默认 `time` 倒序，再按 `id` 同方向排序。
+        每项的 `video` 只在所属视频已审核且分类可见时给出，否则 `id=0`、其余为空值。
+      parameters:
+        - $ref: '#/components/parameters/CommonSort'
+        - $ref: '#/components/parameters/OrderDesc'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+        - $ref: '#/components/parameters/Level'
+        - $ref: '#/components/parameters/Letter'
+        - name: videoId
+          in: query
+          required: false
+          description: 所属视频 role_rid（旧 rid），只列出该视频的角色。
+          schema: {type: integer, format: int64, minimum: 1, maximum: 4294967295}
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RolePage'
+        '400':
+          $ref: '#/components/responses/InvalidParameter'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /api/v1/roles/{id}:
+    get:
+      tags: [content]
+      operationId: getRole
+      summary: 【1.2.0】角色公开详情
+      description: 角色不存在或 role_status≠1 → 404 `ROLE_NOT_FOUND`。`video` 规则同列表。
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoleDetail'
+        '400':
+          $ref: '#/components/responses/InvalidParameter'
+        '404':
+          description: 角色不存在或未审核（code=ROLE_NOT_FOUND）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /api/v1/website-categories:
+    get:
+      tags: [content]
+      operationId: listWebsiteCategories
+      summary: 【1.2.0】网址分类树
+      description: 与 `/api/v1/video-categories` 规则完全相同，只是取网址分类（mac_type.type_mid=11）。
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryListResponse'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /api/v1/websites:
+    get:
+      tags: [content]
+      operationId: listWebsites
+      summary: 【1.2.0】网址分页列表
+      description: |
+        返回 website_status=1 且所属网址分类可见的网址。`categoryId` 规则同文章列表。默认 `time` 倒序，再按 `id` 同方向排序。
+      parameters:
+        - $ref: '#/components/parameters/CategoryId'
+        - name: sort
+          in: query
+          required: false
+          description: 排序字段（旧 Website::listCacheData 的 by，不含 rnd、in），默认 time。
+          schema:
+            type: string
+            default: time
+            enum: [time, time_add, id, score, hits, hits_day, hits_week, hits_month, up, down, level,
+                   referer, referer_day, referer_week, referer_month]
+        - $ref: '#/components/parameters/OrderDesc'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+        - $ref: '#/components/parameters/Level'
+        - $ref: '#/components/parameters/Letter'
+        - name: area
+          in: query
+          required: false
+          description: 地区 website_area，精确匹配（旧 area，新版单值）。
+          schema: {type: string, maxLength: 20, pattern: '^(?:[^\s,\x00-\x1F\x7F-\x9F\uD800-\uDFFF\uFFFD](?:[^,\x00-\x1F\x7F-\x9F\uD800-\uDFFF\uFFFD]*[^\s,\x00-\x1F\x7F-\x9F\uD800-\uDFFF\uFFFD])?)?$'}
+        - name: lang
+          in: query
+          required: false
+          description: 语言 website_lang，精确匹配（旧 lang，新版单值）。
+          schema: {type: string, maxLength: 10, pattern: '^(?:[^\s,\x00-\x1F\x7F-\x9F\uD800-\uDFFF\uFFFD](?:[^,\x00-\x1F\x7F-\x9F\uD800-\uDFFF\uFFFD]*[^\s,\x00-\x1F\x7F-\x9F\uD800-\uDFFF\uFFFD])?)?$'}
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebsitePage'
+        '400':
+          $ref: '#/components/responses/InvalidParameter'
+        '404':
+          $ref: '#/components/responses/CategoryNotFound'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /api/v1/websites/{id}:
+    get:
+      tags: [content]
+      operationId: getWebsite
+      summary: 【1.2.0】网址公开详情
+      description: |
+        网址不存在、未审核、所属分类不可见、或游客组对该分类没有"详情"权限 → 404 `WEBSITE_NOT_FOUND`（mac_website 没有积分与密码）。
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebsiteDetail'
+        '400':
+          $ref: '#/components/responses/InvalidParameter'
+        '404':
+          description: 网址不存在或不可见（code=WEBSITE_NOT_FOUND）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /api/v1/links:
+    get:
+      tags: [content]
+      operationId: listLinks
+      summary: 【1.2.0】友情链接列表
+      description: |
+        返回 mac_link 的全部行（友链没有状态与权限，旧 Link::listCacheData）。排序 `id`（默认）或 `sort`，方向**默认 asc**
+        （与旧版相同），再按 `id` 同方向排序。
+      parameters:
+        - name: sort
+          in: query
+          required: false
+          description: 排序字段，默认 id。
+          schema: {type: string, enum: [id, sort], default: id}
+        - name: order
+          in: query
+          required: false
+          description: 排序方向，默认 asc。
+          schema: {type: string, enum: [asc, desc], default: asc}
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+        - name: type
+          in: query
+          required: false
+          description: font（文字链接，link_type=0）或 pic（图片链接，link_type=1）；不传时两类都列出。其他值 → 400。
+          schema: {type: string, enum: [font, pic]}
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LinkPage'
+        '400':
+          $ref: '#/components/responses/InvalidParameter'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '500':
+          $ref: '#/components/responses/InternalError'
   /actuator/health:
     get:
       tags: [ops]
@@ -514,7 +1008,71 @@ paths:
               example:
                 status: DOWN
 components:
+  parameters:
+    ResourceId:
+      name: id
+      in: path
+      required: true
+      description: 【1.2.0】内容 ID（vod_id / art_id / topic_id / actor_id / role_id / website_id）。词法与范围同视频详情。
+      schema: {type: integer, format: int64, minimum: 1, maximum: 4294967295}
+    CategoryId:
+      name: categoryId
+      in: query
+      required: false
+      description: 【1.2.0】分类 ID（mac_type.type_id），规则同视频列表：包含该分类及其可见的直接子分类。
+      schema: {type: integer, minimum: 1, maximum: 65535}
+    CommonSort:
+      name: sort
+      in: query
+      required: false
+      description: 【1.2.0】排序字段（各模型 listCacheData 的 by，不含 rnd、in），默认 time。
+      schema:
+        type: string
+        default: time
+        enum: [time, time_add, id, score, hits, hits_day, hits_week, hits_month, up, down, level]
+    OrderDesc:
+      name: order
+      in: query
+      required: false
+      description: 【1.2.0】排序方向，默认 desc。
+      schema: {type: string, enum: [asc, desc], default: desc}
+    Page:
+      name: page
+      in: query
+      required: false
+      description: 【1.2.0】页码，从 1 开始，默认 1。规则同视频列表。
+      schema: {type: integer, minimum: 1, maximum: 1000, default: 1}
+    PageSize:
+      name: pageSize
+      in: query
+      required: false
+      description: 【1.2.0】每页条数，默认 20（旧 listCacheData 的 num 默认值）。规则同视频列表。
+      schema: {type: integer, minimum: 1, maximum: 100, default: 20}
+    Level:
+      name: level
+      in: query
+      required: false
+      description: 【1.2.0】推荐等级，精确匹配（旧 level；新版单值，不支持逗号多值与 all）。词法同视频列表的 level。
+      schema: {type: integer, minimum: 1, maximum: 9}
+    Letter:
+      name: letter
+      in: query
+      required: false
+      description: |
+        【1.2.0】首字母（旧 letter）：单个 ASCII 字母或数字，或 `0-9`（匹配 10 个数字）。大小写不敏感（由旧表列排序规则决定，与旧版相同）。
+        其他取值 → 400（message "必须是单个字母或数字，或 0-9"）。
+      schema: {type: string, pattern: '^([A-Za-z0-9]|0-9)$'}
   responses:
+    CategoryNotFound:
+      description: 【1.2.0】分类不存在或不可见（code=CATEGORY_NOT_FOUND）
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            code: CATEGORY_NOT_FOUND
+            message: 分类不存在
+            fieldErrors: []
     InvalidParameter:
       description: 参数不合法（code=INVALID_PARAMETER），fieldErrors 指出具体参数
       content:
@@ -528,7 +1086,7 @@ components:
               - field: pageSize
                 message: 必须是 1 到 100 之间的整数
     ServiceUnavailable:
-      description: 数据库暂时不可用（code=SERVICE_UNAVAILABLE）。/api/v1/videos 带 1.1.0 新参数时另有两种原因，见该操作的 503
+      description: 数据库暂时不可用（code=SERVICE_UNAVAILABLE）。/api/v1/videos 带 1.1.0 新参数时另有两种原因，见该操作的 503；1.2.0 的列表语句超过执行时限、专题按标签关联内容达到并发上限时同样返回该响应
       content:
         application/json:
           schema:
@@ -548,12 +1106,16 @@ components:
         统一错误响应。code 取值与 HTTP 状态：
         INVALID_PARAMETER=400，CATEGORY_NOT_FOUND=404，VIDEO_NOT_FOUND=404，VIDEO_PASSWORD_REQUIRED=403，
         VIDEO_COPYRIGHT_RESTRICTED=403，NOT_FOUND=404（路径不存在），METHOD_NOT_ALLOWED=405，
-        SERVICE_UNAVAILABLE=503，INTERNAL_ERROR=500。前端应按 code 分支，message 仅供展示。
+        SERVICE_UNAVAILABLE=503，INTERNAL_ERROR=500；1.2.0 新增 ARTICLE_NOT_FOUND=404、ARTICLE_PASSWORD_REQUIRED=403、
+        ARTICLE_POINTS_REQUIRED=403、TOPIC_NOT_FOUND=404、ACTOR_NOT_FOUND=404、ROLE_NOT_FOUND=404、WEBSITE_NOT_FOUND=404。
+        前端应按 code 分支，message 仅供展示。
       properties:
         code:
           type: string
           enum: [INVALID_PARAMETER, CATEGORY_NOT_FOUND, VIDEO_NOT_FOUND, VIDEO_PASSWORD_REQUIRED,
-                 VIDEO_COPYRIGHT_RESTRICTED, NOT_FOUND, METHOD_NOT_ALLOWED, SERVICE_UNAVAILABLE, INTERNAL_ERROR]
+                 VIDEO_COPYRIGHT_RESTRICTED, ARTICLE_NOT_FOUND, ARTICLE_PASSWORD_REQUIRED, ARTICLE_POINTS_REQUIRED,
+                 TOPIC_NOT_FOUND, ACTOR_NOT_FOUND, ROLE_NOT_FOUND, WEBSITE_NOT_FOUND, NOT_FOUND, METHOD_NOT_ALLOWED,
+                 SERVICE_UNAVAILABLE, INTERNAL_ERROR]
         message:
           type: string
         fieldErrors:
@@ -568,7 +1130,7 @@ components:
       properties:
         field:
           type: string
-          description: 出错的参数名（如 page、pageSize、sort、order、categoryId、id；1.1.0 起另有 keyword、area、lang、year、level、classes）。
+          description: 出错的参数名（如 page、pageSize、sort、order、categoryId、id；1.1.0 起另有 keyword、area、lang、year、level、classes；1.2.0 起另有 letter、sex、starSign、blood、videoId、type）。
         message:
           type: string
     Health:
@@ -785,3 +1347,553 @@ components:
         content:
           type: string
           description: vod_content，后台录入的原始 HTML。前端渲染前必须做 HTML 白名单过滤。
+    VideoPlotListResponse:
+      type: object
+      additionalProperties: false
+      required: [videoId, items]
+      description: 【1.2.0】GET /api/v1/videos/{id}/plots 的响应。
+      properties:
+        videoId: {type: integer, format: int64}
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Plot'
+    Plot:
+      type: object
+      additionalProperties: false
+      required: [index, name, detail]
+      description: 【1.2.0】一条分集剧情：index 从 1 起，detail 按位置对齐，缺少时为 ""。
+      properties:
+        index: {type: integer}
+        name: {type: string}
+        detail: {type: string}
+    ArticleContentPage:
+      type: object
+      additionalProperties: false
+      required: [page, title, note, content]
+      description: 【1.2.0】文章的一页：page 从 1 起；title/note 按位置对齐，缺少时为 ""。
+      properties:
+        page: {type: integer}
+        title: {type: string}
+        note: {type: string}
+        content: {type: string}
+    Screenshot:
+      type: object
+      additionalProperties: false
+      required: [index, name, url]
+      description: 【1.2.0】一张截图：index 为在“#”分隔序列中的位置（从 1 起，空段占位）；没有地址部分时 name 为该序号、url 为整段。url 原样返回库内值。
+      properties:
+        index: {type: integer}
+        name: {type: string}
+        url: {type: string}
+    ArticlePage:
+      type: object
+      additionalProperties: false
+      required: [items, page, pageSize, total, totalPages]
+      description: 【1.2.0】文章分页响应，字段含义同 VideoPage。
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ArticleSummary'
+        page: {type: integer}
+        pageSize: {type: integer}
+        total: {type: integer, format: int64}
+        totalPages: {type: integer, format: int64}
+    ArticleSummary:
+      type: object
+      additionalProperties: false
+      required: [id, name, subTitle, enName, letter, color, category, source, author, tag, classes, pic, picThumb,
+                 picSlide, blurb, remarks, level, score, scoreNum, hits, hitsDay, hitsWeek, hitsMonth, up, down,
+                 updatedAt, addedAt, detailPasswordRequired]
+      description: 【1.2.0】文章列表项。不含正文、访问密码、积分、会员组、模板、跳转、关联等字段。
+      properties:
+        id: {type: integer, format: int64, description: art_id}
+        name: {type: string, description: art_name}
+        subTitle: {type: string, description: art_sub}
+        enName: {type: string, description: art_en}
+        letter: {type: string, description: art_letter}
+        color: {type: string, description: art_color}
+        category:
+          $ref: '#/components/schemas/CategoryRef'
+        source: {type: string, description: art_from（来源）}
+        author: {type: string, description: art_author}
+        tag: {type: string, description: art_tag}
+        classes: {type: string, description: art_class（扩展分类，逗号分隔）}
+        pic: {type: string, description: art_pic}
+        picThumb: {type: string, description: art_pic_thumb}
+        picSlide: {type: string, description: art_pic_slide}
+        blurb: {type: string, description: art_blurb（简介）}
+        remarks: {type: string, description: art_remarks}
+        level: {type: integer, description: art_level（推荐等级 0-9）}
+        score: {type: number, description: art_score（一位小数）}
+        scoreNum: {type: integer, description: art_score_num}
+        hits: {type: integer, description: art_hits}
+        hitsDay: {type: integer, description: art_hits_day}
+        hitsWeek: {type: integer, description: art_hits_week}
+        hitsMonth: {type: integer, description: art_hits_month}
+        up: {type: integer, description: art_up（顶）}
+        down: {type: integer, description: art_down（踩）}
+        updatedAt: {type: integer, format: int64, description: art_time（Unix 秒）}
+        addedAt: {type: integer, format: int64, description: art_time_add（Unix 秒）}
+        detailPasswordRequired: {type: boolean, description: 文章设置了访问密码，详情接口会返回 403 ARTICLE_PASSWORD_REQUIRED。密码本身从不返回。}
+    ArticleDetail:
+      type: object
+      additionalProperties: false
+      required: [id, name, subTitle, enName, letter, color, category, source, author, tag, classes, pic, picThumb,
+                 picSlide, blurb, remarks, level, score, scoreAll, scoreNum, hits, hitsDay, hitsWeek, hitsMonth, up,
+                 down, updatedAt, addedAt, pages, screenshots]
+      description: 【1.2.0】文章公开详情。不含访问密码、积分、会员组、模板、跳转、关联等字段。
+      properties:
+        id: {type: integer, format: int64, description: art_id}
+        name: {type: string, description: art_name}
+        subTitle: {type: string, description: art_sub}
+        enName: {type: string, description: art_en}
+        letter: {type: string, description: art_letter}
+        color: {type: string, description: art_color}
+        category:
+          $ref: '#/components/schemas/CategoryRef'
+        source: {type: string, description: art_from（来源）}
+        author: {type: string, description: art_author}
+        tag: {type: string, description: art_tag}
+        classes: {type: string, description: art_class（扩展分类，逗号分隔）}
+        pic: {type: string, description: art_pic}
+        picThumb: {type: string, description: art_pic_thumb}
+        picSlide: {type: string, description: art_pic_slide}
+        blurb: {type: string, description: art_blurb（简介）}
+        remarks: {type: string, description: art_remarks}
+        level: {type: integer, description: art_level（推荐等级 0-9）}
+        score: {type: number, description: art_score（一位小数）}
+        scoreAll: {type: integer, description: art_score_all}
+        scoreNum: {type: integer, description: art_score_num}
+        hits: {type: integer, description: art_hits}
+        hitsDay: {type: integer, description: art_hits_day}
+        hitsWeek: {type: integer, description: art_hits_week}
+        hitsMonth: {type: integer, description: art_hits_month}
+        up: {type: integer, description: art_up（顶）}
+        down: {type: integer, description: art_down（踩）}
+        updatedAt: {type: integer, format: int64, description: art_time（Unix 秒）}
+        addedAt: {type: integer, format: int64, description: art_time_add（Unix 秒）}
+        pages:
+          type: array
+          description: 全部分页（mac_art_list：art_content 按 $$$ 分页，标题 art_title、备注 art_note 按位置对齐）；正文为后台录入的原始 HTML，前端渲染前必须做白名单过滤。
+          items:
+            $ref: '#/components/schemas/ArticleContentPage'
+        screenshots:
+          type: array
+          description: art_pic_screenshot 按“#”拆分（mac_screenshot_list）。
+          items:
+            $ref: '#/components/schemas/Screenshot'
+    TopicPage:
+      type: object
+      additionalProperties: false
+      required: [items, page, pageSize, total, totalPages]
+      description: 【1.2.0】专题分页响应，字段含义同 VideoPage。
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/TopicSummary'
+        page: {type: integer}
+        pageSize: {type: integer}
+        total: {type: integer, format: int64}
+        totalPages: {type: integer, format: int64}
+    TopicSummary:
+      type: object
+      additionalProperties: false
+      required: [id, name, subTitle, enName, letter, color, sort, classes, tag, pic, picThumb, picSlide, title,
+                 keywords, description, blurb, remarks, level, score, scoreNum, hits, hitsDay, hitsWeek, hitsMonth,
+                 up, down, updatedAt, addedAt]
+      description: 【1.2.0】专题列表项。不含正文、模板、关联 ID、扩展字段。
+      properties:
+        id: {type: integer, description: topic_id}
+        name: {type: string, description: topic_name}
+        subTitle: {type: string, description: topic_sub}
+        enName: {type: string, description: topic_en}
+        letter: {type: string, description: topic_letter}
+        color: {type: string, description: topic_color}
+        sort: {type: integer, description: topic_sort}
+        classes: {type: string, description: topic_type（扩展分类，逗号分隔）}
+        tag: {type: string, description: topic_tag}
+        pic: {type: string, description: topic_pic}
+        picThumb: {type: string, description: topic_pic_thumb}
+        picSlide: {type: string, description: topic_pic_slide}
+        title: {type: string, description: topic_title（SEO 标题）}
+        keywords: {type: string, description: topic_key（SEO 关键词）}
+        description: {type: string, description: topic_des（SEO 描述）}
+        blurb: {type: string, description: topic_blurb（简介）}
+        remarks: {type: string, description: topic_remarks}
+        level: {type: integer, description: topic_level（推荐等级 0-9）}
+        score: {type: number, description: topic_score（一位小数）}
+        scoreNum: {type: integer, description: topic_score_num}
+        hits: {type: integer, description: topic_hits}
+        hitsDay: {type: integer, description: topic_hits_day}
+        hitsWeek: {type: integer, description: topic_hits_week}
+        hitsMonth: {type: integer, description: topic_hits_month}
+        up: {type: integer, description: topic_up（顶）}
+        down: {type: integer, description: topic_down（踩）}
+        updatedAt: {type: integer, format: int64, description: topic_time（Unix 秒）}
+        addedAt: {type: integer, format: int64, description: topic_time_add（Unix 秒）}
+    TopicDetail:
+      type: object
+      additionalProperties: false
+      required: [id, name, subTitle, enName, letter, color, sort, classes, tag, pic, picThumb, picSlide, title,
+                 keywords, description, blurb, remarks, level, score, scoreAll, scoreNum, hits, hitsDay, hitsWeek,
+                 hitsMonth, up, down, updatedAt, addedAt, content, relatedVideos, relatedArticles]
+      description: 【1.2.0】专题公开详情。
+      properties:
+        id: {type: integer, description: topic_id}
+        name: {type: string, description: topic_name}
+        subTitle: {type: string, description: topic_sub}
+        enName: {type: string, description: topic_en}
+        letter: {type: string, description: topic_letter}
+        color: {type: string, description: topic_color}
+        sort: {type: integer, description: topic_sort}
+        classes: {type: string, description: topic_type（扩展分类，逗号分隔）}
+        tag: {type: string, description: topic_tag}
+        pic: {type: string, description: topic_pic}
+        picThumb: {type: string, description: topic_pic_thumb}
+        picSlide: {type: string, description: topic_pic_slide}
+        title: {type: string, description: topic_title（SEO 标题）}
+        keywords: {type: string, description: topic_key（SEO 关键词）}
+        description: {type: string, description: topic_des（SEO 描述）}
+        blurb: {type: string, description: topic_blurb（简介）}
+        remarks: {type: string, description: topic_remarks}
+        level: {type: integer, description: topic_level（推荐等级 0-9）}
+        score: {type: number, description: topic_score（一位小数）}
+        scoreAll: {type: integer, description: topic_score_all}
+        scoreNum: {type: integer, description: topic_score_num}
+        hits: {type: integer, description: topic_hits}
+        hitsDay: {type: integer, description: topic_hits_day}
+        hitsWeek: {type: integer, description: topic_hits_week}
+        hitsMonth: {type: integer, description: topic_hits_month}
+        up: {type: integer, description: topic_up（顶）}
+        down: {type: integer, description: topic_down（踩）}
+        updatedAt: {type: integer, format: int64, description: topic_time（Unix 秒）}
+        addedAt: {type: integer, format: int64, description: topic_time_add（Unix 秒）}
+        content: {type: string, description: topic_content，后台录入的原始 HTML。前端渲染前必须做 HTML 白名单过滤。}
+        relatedVideos:
+          type: array
+          description: 关联视频（规则见 GET /api/v1/topics/{id}）。
+          items:
+            $ref: '#/components/schemas/VideoSummary'
+        relatedArticles:
+          type: array
+          description: 关联文章（规则见 GET /api/v1/topics/{id}）。
+          items:
+            $ref: '#/components/schemas/ArticleSummary'
+    ActorPage:
+      type: object
+      additionalProperties: false
+      required: [items, page, pageSize, total, totalPages]
+      description: 【1.2.0】演员分页响应，字段含义同 VideoPage。
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ActorSummary'
+        page: {type: integer}
+        pageSize: {type: integer}
+        total: {type: integer, format: int64}
+        totalPages: {type: integer, format: int64}
+    ActorSummary:
+      type: object
+      additionalProperties: false
+      required: [id, name, enName, alias, letter, color, category, sex, pic, blurb, remarks, area, height, weight,
+                 birthday, birthArea, blood, starSign, school, works, tag, classes, level, score, scoreNum, hits,
+                 hitsDay, hitsWeek, hitsMonth, up, down, updatedAt, addedAt]
+      description: 【1.2.0】演员列表项。不含正文、模板、跳转、锁定等字段。
+      properties:
+        id: {type: integer, format: int64, description: actor_id}
+        name: {type: string, description: actor_name}
+        enName: {type: string, description: actor_en}
+        alias: {type: string, description: actor_alias（别名）}
+        letter: {type: string, description: actor_letter}
+        color: {type: string, description: actor_color}
+        category:
+          $ref: '#/components/schemas/CategoryRef'
+        sex: {type: string, description: actor_sex}
+        pic: {type: string, description: actor_pic}
+        blurb: {type: string, description: actor_blurb（简介）}
+        remarks: {type: string, description: actor_remarks}
+        area: {type: string, description: actor_area}
+        height: {type: string, description: actor_height}
+        weight: {type: string, description: actor_weight}
+        birthday: {type: string, description: actor_birthday}
+        birthArea: {type: string, description: actor_birtharea}
+        blood: {type: string, description: actor_blood}
+        starSign: {type: string, description: actor_starsign}
+        school: {type: string, description: actor_school}
+        works: {type: string, description: actor_works（代表作）}
+        tag: {type: string, description: actor_tag}
+        classes: {type: string, description: actor_class（扩展分类，逗号分隔）}
+        level: {type: integer, description: actor_level（推荐等级 0-9）}
+        score: {type: number, description: actor_score（一位小数）}
+        scoreNum: {type: integer, description: actor_score_num}
+        hits: {type: integer, description: actor_hits}
+        hitsDay: {type: integer, description: actor_hits_day}
+        hitsWeek: {type: integer, description: actor_hits_week}
+        hitsMonth: {type: integer, description: actor_hits_month}
+        up: {type: integer, description: actor_up（顶）}
+        down: {type: integer, description: actor_down（踩）}
+        updatedAt: {type: integer, format: int64, description: actor_time（Unix 秒）}
+        addedAt: {type: integer, format: int64, description: actor_time_add（Unix 秒）}
+    ActorDetail:
+      type: object
+      additionalProperties: false
+      required: [id, name, enName, alias, letter, color, category, sex, pic, blurb, remarks, area, height, weight,
+                 birthday, birthArea, blood, starSign, school, works, tag, classes, level, score, scoreAll, scoreNum,
+                 hits, hitsDay, hitsWeek, hitsMonth, up, down, updatedAt, addedAt, content]
+      description: 【1.2.0】演员公开详情。
+      properties:
+        id: {type: integer, format: int64, description: actor_id}
+        name: {type: string, description: actor_name}
+        enName: {type: string, description: actor_en}
+        alias: {type: string, description: actor_alias（别名）}
+        letter: {type: string, description: actor_letter}
+        color: {type: string, description: actor_color}
+        category:
+          $ref: '#/components/schemas/CategoryRef'
+        sex: {type: string, description: actor_sex}
+        pic: {type: string, description: actor_pic}
+        blurb: {type: string, description: actor_blurb（简介）}
+        remarks: {type: string, description: actor_remarks}
+        area: {type: string, description: actor_area}
+        height: {type: string, description: actor_height}
+        weight: {type: string, description: actor_weight}
+        birthday: {type: string, description: actor_birthday}
+        birthArea: {type: string, description: actor_birtharea}
+        blood: {type: string, description: actor_blood}
+        starSign: {type: string, description: actor_starsign}
+        school: {type: string, description: actor_school}
+        works: {type: string, description: actor_works（代表作）}
+        tag: {type: string, description: actor_tag}
+        classes: {type: string, description: actor_class（扩展分类，逗号分隔）}
+        level: {type: integer, description: actor_level（推荐等级 0-9）}
+        score: {type: number, description: actor_score（一位小数）}
+        scoreAll: {type: integer, description: actor_score_all}
+        scoreNum: {type: integer, description: actor_score_num}
+        hits: {type: integer, description: actor_hits}
+        hitsDay: {type: integer, description: actor_hits_day}
+        hitsWeek: {type: integer, description: actor_hits_week}
+        hitsMonth: {type: integer, description: actor_hits_month}
+        up: {type: integer, description: actor_up（顶）}
+        down: {type: integer, description: actor_down（踩）}
+        updatedAt: {type: integer, format: int64, description: actor_time（Unix 秒）}
+        addedAt: {type: integer, format: int64, description: actor_time_add（Unix 秒）}
+        content: {type: string, description: actor_content，原始 HTML。前端渲染前必须做 HTML 白名单过滤。}
+    RolePage:
+      type: object
+      additionalProperties: false
+      required: [items, page, pageSize, total, totalPages]
+      description: 【1.2.0】角色分页响应，字段含义同 VideoPage。
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/RoleSummary'
+        page: {type: integer}
+        pageSize: {type: integer}
+        total: {type: integer, format: int64}
+        totalPages: {type: integer, format: int64}
+    RoleVideo:
+      type: object
+      additionalProperties: false
+      required: [id, name, enName, categoryId]
+      description: 【1.2.0】角色所属视频（role_rid）的摘要；视频不存在、未审核或分类不可见时 id=0、name/enName 为 ""、categoryId 为 0。
+      properties:
+        id: {type: integer, format: int64}
+        name: {type: string}
+        enName: {type: string}
+        categoryId: {type: integer}
+    RoleSummary:
+      type: object
+      additionalProperties: false
+      required: [id, video, name, enName, letter, color, actor, remarks, pic, sort, level, score, scoreNum, hits,
+                 hitsDay, hitsWeek, hitsMonth, up, down, updatedAt, addedAt]
+      description: 【1.2.0】角色列表项。不含正文、模板、跳转、锁定等字段。
+      properties:
+        id: {type: integer, format: int64, description: role_id}
+        video:
+          $ref: '#/components/schemas/RoleVideo'
+        name: {type: string, description: role_name}
+        enName: {type: string, description: role_en}
+        letter: {type: string, description: role_letter}
+        color: {type: string, description: role_color}
+        actor: {type: string, description: role_actor（饰演者）}
+        remarks: {type: string, description: role_remarks}
+        pic: {type: string, description: role_pic}
+        sort: {type: integer, description: role_sort}
+        level: {type: integer, description: role_level（推荐等级 0-9）}
+        score: {type: number, description: role_score（一位小数）}
+        scoreNum: {type: integer, description: role_score_num}
+        hits: {type: integer, description: role_hits}
+        hitsDay: {type: integer, description: role_hits_day}
+        hitsWeek: {type: integer, description: role_hits_week}
+        hitsMonth: {type: integer, description: role_hits_month}
+        up: {type: integer, description: role_up（顶）}
+        down: {type: integer, description: role_down（踩）}
+        updatedAt: {type: integer, format: int64, description: role_time（Unix 秒）}
+        addedAt: {type: integer, format: int64, description: role_time_add（Unix 秒）}
+    RoleDetail:
+      type: object
+      additionalProperties: false
+      required: [id, video, name, enName, letter, color, actor, remarks, pic, sort, level, score, scoreAll, scoreNum,
+                 hits, hitsDay, hitsWeek, hitsMonth, up, down, updatedAt, addedAt, content]
+      description: 【1.2.0】角色公开详情。
+      properties:
+        id: {type: integer, format: int64, description: role_id}
+        video:
+          $ref: '#/components/schemas/RoleVideo'
+        name: {type: string, description: role_name}
+        enName: {type: string, description: role_en}
+        letter: {type: string, description: role_letter}
+        color: {type: string, description: role_color}
+        actor: {type: string, description: role_actor（饰演者）}
+        remarks: {type: string, description: role_remarks}
+        pic: {type: string, description: role_pic}
+        sort: {type: integer, description: role_sort}
+        level: {type: integer, description: role_level（推荐等级 0-9）}
+        score: {type: number, description: role_score（一位小数）}
+        scoreAll: {type: integer, description: role_score_all}
+        scoreNum: {type: integer, description: role_score_num}
+        hits: {type: integer, description: role_hits}
+        hitsDay: {type: integer, description: role_hits_day}
+        hitsWeek: {type: integer, description: role_hits_week}
+        hitsMonth: {type: integer, description: role_hits_month}
+        up: {type: integer, description: role_up（顶）}
+        down: {type: integer, description: role_down（踩）}
+        updatedAt: {type: integer, format: int64, description: role_time（Unix 秒）}
+        addedAt: {type: integer, format: int64, description: role_time_add（Unix 秒）}
+        content: {type: string, description: role_content，原始 HTML。前端渲染前必须做 HTML 白名单过滤。}
+    WebsitePage:
+      type: object
+      additionalProperties: false
+      required: [items, page, pageSize, total, totalPages]
+      description: 【1.2.0】网址分页响应，字段含义同 VideoPage。
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/WebsiteSummary'
+        page: {type: integer}
+        pageSize: {type: integer}
+        total: {type: integer, format: int64}
+        totalPages: {type: integer, format: int64}
+    WebsiteSummary:
+      type: object
+      additionalProperties: false
+      required: [id, name, subTitle, enName, letter, color, category, sort, url, pic, logo, area, lang, tag, classes,
+                 blurb, remarks, level, score, scoreNum, hits, hitsDay, hitsWeek, hitsMonth, up, down, referer,
+                 refererDay, refererWeek, refererMonth, updatedAt, addedAt]
+      description: 【1.2.0】网址列表项。不含正文、模板、锁定等字段。
+      properties:
+        id: {type: integer, format: int64, description: website_id}
+        name: {type: string, description: website_name}
+        subTitle: {type: string, description: website_sub}
+        enName: {type: string, description: website_en}
+        letter: {type: string, description: website_letter}
+        color: {type: string, description: website_color}
+        category:
+          $ref: '#/components/schemas/CategoryRef'
+        sort: {type: integer, description: website_sort}
+        url: {type: string, description: website_jumpurl（网址本身，原样返回库内值）}
+        pic: {type: string, description: website_pic}
+        logo: {type: string, description: website_logo}
+        area: {type: string, description: website_area}
+        lang: {type: string, description: website_lang}
+        tag: {type: string, description: website_tag}
+        classes: {type: string, description: website_class（扩展分类，逗号分隔）}
+        blurb: {type: string, description: website_blurb（简介）}
+        remarks: {type: string, description: website_remarks}
+        level: {type: integer, description: website_level（推荐等级 0-9）}
+        score: {type: number, description: website_score（一位小数）}
+        scoreNum: {type: integer, description: website_score_num}
+        hits: {type: integer, description: website_hits}
+        hitsDay: {type: integer, description: website_hits_day}
+        hitsWeek: {type: integer, description: website_hits_week}
+        hitsMonth: {type: integer, description: website_hits_month}
+        up: {type: integer, description: website_up（顶）}
+        down: {type: integer, description: website_down（踩）}
+        referer: {type: integer, description: website_referer（来访数）}
+        refererDay: {type: integer, description: website_referer_day}
+        refererWeek: {type: integer, description: website_referer_week}
+        refererMonth: {type: integer, description: website_referer_month}
+        updatedAt: {type: integer, format: int64, description: website_time（Unix 秒）}
+        addedAt: {type: integer, format: int64, description: website_time_add（Unix 秒）}
+    WebsiteDetail:
+      type: object
+      additionalProperties: false
+      required: [id, name, subTitle, enName, letter, color, category, sort, url, pic, logo, area, lang, tag, classes,
+                 blurb, remarks, level, score, scoreAll, scoreNum, hits, hitsDay, hitsWeek, hitsMonth, up, down,
+                 referer, refererDay, refererWeek, refererMonth, updatedAt, addedAt, content, screenshots]
+      description: 【1.2.0】网址公开详情。
+      properties:
+        id: {type: integer, format: int64, description: website_id}
+        name: {type: string, description: website_name}
+        subTitle: {type: string, description: website_sub}
+        enName: {type: string, description: website_en}
+        letter: {type: string, description: website_letter}
+        color: {type: string, description: website_color}
+        category:
+          $ref: '#/components/schemas/CategoryRef'
+        sort: {type: integer, description: website_sort}
+        url: {type: string, description: website_jumpurl（网址本身，原样返回库内值）}
+        pic: {type: string, description: website_pic}
+        logo: {type: string, description: website_logo}
+        area: {type: string, description: website_area}
+        lang: {type: string, description: website_lang}
+        tag: {type: string, description: website_tag}
+        classes: {type: string, description: website_class（扩展分类，逗号分隔）}
+        blurb: {type: string, description: website_blurb（简介）}
+        remarks: {type: string, description: website_remarks}
+        level: {type: integer, description: website_level（推荐等级 0-9）}
+        score: {type: number, description: website_score（一位小数）}
+        scoreAll: {type: integer, description: website_score_all}
+        scoreNum: {type: integer, description: website_score_num}
+        hits: {type: integer, description: website_hits}
+        hitsDay: {type: integer, description: website_hits_day}
+        hitsWeek: {type: integer, description: website_hits_week}
+        hitsMonth: {type: integer, description: website_hits_month}
+        up: {type: integer, description: website_up（顶）}
+        down: {type: integer, description: website_down（踩）}
+        referer: {type: integer, description: website_referer（来访数）}
+        refererDay: {type: integer, description: website_referer_day}
+        refererWeek: {type: integer, description: website_referer_week}
+        refererMonth: {type: integer, description: website_referer_month}
+        updatedAt: {type: integer, format: int64, description: website_time（Unix 秒）}
+        addedAt: {type: integer, format: int64, description: website_time_add（Unix 秒）}
+        content: {type: string, description: website_content，原始 HTML。前端渲染前必须做 HTML 白名单过滤。}
+        screenshots:
+          type: array
+          description: website_pic_screenshot 按“#”拆分（mac_screenshot_list）。
+          items:
+            $ref: '#/components/schemas/Screenshot'
+    LinkPage:
+      type: object
+      additionalProperties: false
+      required: [items, page, pageSize, total, totalPages]
+      description: 【1.2.0】友情链接分页响应，字段含义同 VideoPage。
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Link'
+        page: {type: integer}
+        pageSize: {type: integer}
+        total: {type: integer, format: int64}
+        totalPages: {type: integer, format: int64}
+    Link:
+      type: object
+      additionalProperties: false
+      required: [id, type, name, sort, url, logo, addedAt, updatedAt]
+      description: 【1.2.0】友情链接：type 0 文字链接、1 图片链接；其余字段依次为 link_id、link_name、link_sort、link_url、link_logo、link_add_time、link_time 原值。
+      properties:
+        id: {type: integer}
+        type: {type: integer}
+        name: {type: string}
+        sort: {type: integer}
+        url: {type: string}
+        logo: {type: string}
+        addedAt: {type: integer, format: int64}
+        updatedAt: {type: integer, format: int64}

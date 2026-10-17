@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+  只读映射：沿用旧表 mac_topic（install.sql）。禁止在此文件加入写语句，禁止 ${} 拼接。
+  不查询的列：topic_tpl、topic_time_make、topic_time_hits、topic_extend（后台从不写入，见 docs/architecture/11-content-read-completion.md）。
+  topic_rel_vod、topic_rel_art 只在详情中读取，用于查询关联内容，不输出。旧规则依据：application/common/model/Topic.php。
+-->
+<mapper namespace="com.maccms.backend.content.infrastructure.TopicMapper">
+
+    <!-- topic_status=1（Topic.php:147）；level（:148-150，新版单值）、letter（:158-164） -->
+    <sql id="publishedMatching">
+        topic_status = 1
+        <if test="criteria.level != null">AND topic_level = #{criteria.level}</if>
+        <if test="criteria.letters != null">
+            AND topic_letter IN <foreach collection="criteria.letters" item="l" open="(" separator="," close=")">#{l}</foreach>
+        </if>
+    </sql>
+
+    <select id="countPublished" resultType="long">
+        SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*)
+        FROM mac_topic
+        WHERE <include refid="publishedMatching"/>
+    </select>
+
+    <!-- 排序白名单对应旧 by（Topic.php:235-241，不含 rnd），追加 topic_id 同向排序保证分页稳定。 -->
+    <select id="selectPublishedPage" resultType="com.maccms.backend.content.infrastructure.TopicSummaryRow">
+        SELECT /*+ MAX_EXECUTION_TIME(3000) */
+               topic_id                 AS id,
+               topic_name               AS name,
+               topic_sub                AS subTitle,
+               topic_en                 AS enName,
+               topic_letter             AS letter,
+               topic_color              AS color,
+               topic_sort               AS sort,
+               topic_type               AS classes,
+               topic_tag                AS tag,
+               topic_pic                AS pic,
+               topic_pic_thumb          AS picThumb,
+               topic_pic_slide          AS picSlide,
+               topic_title              AS title,
+               topic_key                AS keywords,
+               topic_des                AS description,
+               topic_blurb              AS blurb,
+               topic_remarks            AS remarks,
+               topic_level              AS level,
+               topic_score              AS score,
+               topic_score_num          AS scoreNum,
+               topic_hits               AS hits,
+               topic_hits_day           AS hitsDay,
+               topic_hits_week          AS hitsWeek,
+               topic_hits_month         AS hitsMonth,
+               topic_up                 AS up,
+               topic_down               AS down,
+               topic_time               AS updatedAt,
+               topic_time_add           AS addedAt
+        FROM mac_topic
+        WHERE <include refid="publishedMatching"/>
+        ORDER BY
+        <choose>
+            <when test="sort.name() == 'TIME'">topic_time</when>
+            <when test="sort.name() == 'TIME_ADD'">topic_time_add</when>
+            <when test="sort.name() == 'SCORE'">topic_score</when>
+            <when test="sort.name() == 'HITS'">topic_hits</when>
+            <when test="sort.name() == 'HITS_DAY'">topic_hits_day</when>
+            <when test="sort.name() == 'HITS_WEEK'">topic_hits_week</when>
+            <when test="sort.name() == 'HITS_MONTH'">topic_hits_month</when>
+            <when test="sort.name() == 'UP'">topic_up</when>
+            <when test="sort.name() == 'DOWN'">topic_down</when>
+            <when test="sort.name() == 'LEVEL'">topic_level</when>
+            <otherwise>topic_id</otherwise>
+        </choose>
+        <choose>
+            <when test="descending">DESC, topic_id DESC</when>
+            <otherwise>ASC, topic_id ASC</otherwise>
+        </choose>
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- 对应旧 mac_label_topic_detail 的 topic_id + topic_status=1 条件（application/common.php:2677-2692）。 -->
+    <select id="selectPublishedDetail" resultType="com.maccms.backend.content.infrastructure.TopicDetailRow">
+        SELECT topic_id                 AS id,
+               topic_name               AS name,
+               topic_sub                AS subTitle,
+               topic_en                 AS enName,
+               topic_letter             AS letter,
+               topic_color              AS color,
+               topic_sort               AS sort,
+               topic_type               AS classes,
+               topic_tag                AS tag,
+               topic_pic                AS pic,
+               topic_pic_thumb          AS picThumb,
+               topic_pic_slide          AS picSlide,
+               topic_title              AS title,
+               topic_key                AS keywords,
+               topic_des                AS description,
+               topic_blurb              AS blurb,
+               topic_remarks            AS remarks,
+               topic_level              AS level,
+               topic_score              AS score,
+               topic_score_all          AS scoreAll,
+               topic_score_num          AS scoreNum,
+               topic_hits               AS hits,
+               topic_hits_day           AS hitsDay,
+               topic_hits_week          AS hitsWeek,
+               topic_hits_month         AS hitsMonth,
+               topic_up                 AS up,
+               topic_down               AS down,
+               topic_time               AS updatedAt,
+               topic_time_add           AS addedAt,
+               topic_content            AS content,
+               topic_rel_vod            AS relatedVideoIds,
+               topic_rel_art            AS relatedArticleIds
+        FROM mac_topic
+        WHERE topic_id = #{id}
+          AND topic_status = 1
+    </select>
+</mapper>

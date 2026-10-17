@@ -19,10 +19,10 @@ import org.junit.jupiter.api.Test;
  * <ul>
  * <li>模块内 api → application → infrastructure 自上而下；application、infrastructure 不得引用本模块 api。</li>
  * <li>跨模块只能引用对方 {@code application} 的公开服务与 {@code application.view} 已发布只读类型。</li>
- * <li>MyBatis/JDBC 类型只出现在 infrastructure（以及 common.config 的数据源检查）。</li>
- * <li>site 只能引用 content.application(.view) 与 common.web 中的四个支持类，不得接触任何数据访问类型，
- * 不得有自己的 Mapper XML；也不得读文件、环境变量，启动进程或发起网络请求（站点设置只来自
- * {@code maccms.site.*} 外部化配置，不读取 PHP 配置或线上目录，不回环调用旧 PHP 或本应用 API）。
+ * <li>MyBatis/JDBC 类型只出现在 infrastructure（以及 common.config 的数据源检查、common.write 的可写数据源（B07））。</li>
+ * <li>site 只能引用 content.application(.view)、common 中登记的支持类与 legacyconfig 中登记的读取类型，不得接触任何数据访问类型，
+ * 不得有自己的 Mapper XML；也不得读文件、环境变量，启动进程或发起网络请求（站点设置来自 {@code maccms.site.*} 外部化配置，
+ * 留空的项经 {@code LegacyConfigService} 取旧配置（B02），site 自己不读文件；不回环调用旧 PHP 或本应用 API）。
  * 规则由 {@link #siteRulesOnSyntheticSources()} 自检，并由 {@link #mainSourcesRespectModuleBoundaries()} 覆盖真实文件。</li>
  * </ul>
  * 注释与字符串字面量中的包名不计入。
@@ -33,9 +33,28 @@ class ModuleBoundaryTest {
     private static final Path MAPPER_XML = Path.of("src", "main", "resources", "mapper");
     private static final String ROOT = "com.maccms.backend";
 
-    /** site 可用的 common 类型；扩充须在任务中说明并同步 02 规范。 */
+    /**
+     * site 可用的 common 类型；扩充须在任务中说明并同步 02 规范。
+     * B02（MACC-26）加入浏览器侧外部地址放行开关及其装配类（site 装配时引入，不读环境变量）。
+     */
     private static final Set<String> SITE_COMMON = Set.of(
-            "common.web.PageResponse", "common.web.ApiException", "common.web.ErrorCode", "common.web.SafeExceptionLog");
+            "common.web.PageResponse", "common.web.ApiException", "common.web.ErrorCode", "common.web.SafeExceptionLog",
+            "common.browser.BrowserExternalAccess", "common.browser.BrowserExternalConfiguration");
+
+    /**
+     * site 可用的 legacyconfig 类型（B02，MACC-26）：经 {@code LegacyConfigService} 读取 {@code extra/maccms.php} 并按字段并入站点设置。
+     * 不含 {@code LegacyConfigProperties}（目录只由部署参数决定）与 infrastructure（site 不自己读文件）。扩充须同步 02 规范。
+     */
+    private static final Set<String> SITE_LEGACYCONFIG = Set.of(
+            "legacyconfig.application.LegacyConfigService", "legacyconfig.application.LegacyConfigFile",
+            "legacyconfig.application.LegacyConfigException", "legacyconfig.application.LegacyConfigConfiguration",
+            "legacyconfig.application.view.PhpArray", "legacyconfig.application.view.PhpValue");
+
+    /**
+     * infrastructure 之外允许出现数据访问类型的包（精确匹配，不含子包）：common.config 的数据源账号检查；common.write 的
+     * 可写数据源、写入护栏与写入序列（B07，MACC-31，docs/architecture/12-write-infrastructure.md 第 2 节）。扩充须同步 02 规范。
+     */
+    private static final Set<String> DATA_ACCESS_OUTSIDE_INFRASTRUCTURE = Set.of("common.config", "common.write");
 
     /** 已存在、暂不调整的向上依赖：VodMapper 用排序枚举生成 ORDER BY 白名单（MACC-4）。不得新增。 */
     private static final Set<String> KNOWN_UPWARD = Set.of(
@@ -103,6 +122,10 @@ class ModuleBoundaryTest {
                 import com.maccms.backend.common.web.PageResponse;
                 import com.maccms.backend.common.web.SafeExceptionLog;
                 import com.maccms.backend.site.application.UrlBuilder;
+                import com.maccms.backend.legacyconfig.application.LegacyConfigService;
+                import com.maccms.backend.legacyconfig.application.LegacyConfigFile;
+                import com.maccms.backend.legacyconfig.application.view.PhpArray;
+                import com.maccms.backend.legacyconfig.application.view.PhpValue.PhpString;
                 import java.net.URI;
                 import java.io.Serializable;
                 import org.jsoup.nodes.Document;
@@ -120,6 +143,10 @@ class ModuleBoundaryTest {
                 "import com.maccms.backend.common.web.GlobalExceptionHandler;",
                 "import com.maccms.backend.common.web.ErrorResponse;",
                 "import com.maccms.backend.common.config.DatabaseAccountGuard;",
+                "import com.maccms.backend.legacyconfig.application.LegacyConfigProperties;",
+                "import com.maccms.backend.legacyconfig.application.VarExportParser;",
+                "import com.maccms.backend.legacyconfig.infrastructure.LegacyConfigDirectory;",
+                "import com.maccms.backend.legacyconfig.application.*;",
                 "import org.apache.ibatis.annotations.Mapper;",
                 "import org.mybatis.spring.annotation.MapperScan;",
                 "import java.sql.Connection;",
@@ -167,6 +194,17 @@ class ModuleBoundaryTest {
                 + "import com.maccms.backend.content.application.ContentReadService;")).isNotEmpty();
         assertThat(violations("package com.maccms.backend.content.application;\n"
                 + "import java.sql.ResultSet;")).isNotEmpty();
+        // 数据访问类型的例外只有 common.config、common.write 两个包本身（B07）
+        assertThat(violations("package com.maccms.backend.common.write;\n"
+                + "import java.sql.SQLException;\nimport org.apache.ibatis.plugin.Interceptor;\n"
+                + "import com.zaxxer.hikari.HikariDataSource;")).isEmpty();
+        for (String pkg : List.of("common.web", "common.writex", "common.write.internal", "common", "member.application")) {
+            assertThat(violations("package com.maccms.backend." + pkg + ";\nimport java.sql.SQLException;"))
+                    .as(pkg).isNotEmpty();
+        }
+        // common.write 也不能引用业务模块
+        assertThat(violations("package com.maccms.backend.common.write;\n"
+                + "import com.maccms.backend.content.application.ContentReadService;")).isNotEmpty();
         // 另一业务模块只能用 content.application 与 .view
         assertThat(violations("package com.maccms.backend.member.application;\n"
                 + "import com.maccms.backend.content.application.ContentReadService;\n"
@@ -212,7 +250,7 @@ class ModuleBoundaryTest {
             if ("site".equals(module)) {
                 boolean allowed = "site".equals(refModule)
                         || refPkg.equals("content.application") || refPkg.equals("content.application.view")
-                        || SITE_COMMON.contains(ref);
+                        || SITE_COMMON.contains(ref) || SITE_LEGACYCONFIG.contains(ref);
                 if (!allowed) {
                     out.add("site 不得引用 " + ref);
                 }
@@ -240,7 +278,7 @@ class ModuleBoundaryTest {
         Matcher db = MYBATIS_JDBC.matcher(code);
         while (db.find()) {
             boolean allowed = !"site".equals(module)
-                    && ("infrastructure".equals(layer) || pkg.equals("common.config"));
+                    && ("infrastructure".equals(layer) || DATA_ACCESS_OUTSIDE_INFRASTRUCTURE.contains(pkg));
             if (!allowed) {
                 out.add("数据访问类型只能出现在 infrastructure：" + db.group(1));
             }

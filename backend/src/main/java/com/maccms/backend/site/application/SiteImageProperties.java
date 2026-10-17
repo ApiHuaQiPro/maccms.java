@@ -5,7 +5,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
  * 图片地址配置 {@code maccms.site.image.*}（MACC-14），对应旧 {@code upload.*}（见 {@link ImageUrlConfig}），
- * 与 {@link SiteProperties} 同属 {@code maccms.site.*}，只来自本应用的环境变量。按原始字符串绑定，
+ * 与 {@link SiteProperties} 同属 {@code maccms.site.*}，来自本应用的环境变量，留空时可取旧配置（{@link SiteLegacyConfig}）。按原始字符串绑定，
  * 由 {@link #toNormalizer(SiteSettings)} 校验，错误只报配置项名称、不回显取值。
  *
  * <p>{@code img-key} 另有一条比 {@link ImageUrlNormalizer#create} 更严的限制（07 文档第 8 节"img_key 回溯"的处理）：

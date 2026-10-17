@@ -143,8 +143,8 @@ public record VideoFilter(String keyword, String area, String lang, String year,
         return text(field, p.value(), max, commaAllowed);
     }
 
-    /** 步骤 4–7。{@code null} 与空串都表示未设置。 */
-    private static String text(String field, String v, int max, boolean commaAllowed) {
+    /** 步骤 4–7。{@code null} 与空串都表示未设置。契约 1.2.0 的精确筛选参数（{@link ContentFilter}）复用同一规则。 */
+    static String text(String field, String v, int max, boolean commaAllowed) {
         if (v == null || v.isEmpty()) {
             return null;
         }

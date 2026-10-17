@@ -7,17 +7,33 @@ MacCMS 重构的 Java 后端（模块化单体）。本批（MACC-4）只包含 
 | `GET /api/v1/video-categories` | 视频分类树 |
 | `GET /api/v1/videos` | 视频分页列表，可按分类筛选；契约 1.1.0（MACC-18）起可按关键字、地区、语言、年份、推荐等级、扩展分类查询 |
 | `GET /api/v1/videos/{id}` | 视频公开详情元数据（不含播放/下载地址） |
+| `GET /api/v1/videos/{id}/plots` | 契约 1.2.0（MACC-27）：视频分集剧情，可见性同视频详情 |
+| `GET /api/v1/{article,actor,website}-categories` | 1.2.0：文章、演员、网址分类树（规则同视频分类） |
+| `GET /api/v1/{articles,topics,actors,roles,websites}`、`…/{id}` | 1.2.0：文章、专题、演员、角色、网址的分页列表与公开详情 |
+| `GET /api/v1/links` | 1.2.0：友情链接列表 |
 | `GET /actuator/health` | 健康检查，只返回 `{"status":"UP"}` / `DOWN` |
 
 正式契约：`docs/contracts/content-read.openapi.yaml`。设计与验收：`docs/architecture/01-batch1-content-read-plan.md`；
 搜索/筛选（1.1.0）的规则与实施记录见 `docs/architecture/09-content-search-filter-plan.md`（第 4、6、12 节）。
 关键字与扩展分类（`keyword`、`classes`）是包含匹配，默认关闭（`MACCMS_CONTENT_SEARCH_ENABLED=false`，关闭时这两个参数返回 400）；
 开启后受并发上限 `MACCMS_CONTENT_SEARCH_MAX_CONCURRENT`（默认 4）与 3 秒服务端执行时限约束，超限返回 503。开启前须先按 09 方案第 6.5 节做合成库测量。
+1.2.0（文章/专题/演员/角色/网址/友链与多值字段解码）的规则、与旧版差异和 PHP 黄金样本见 `docs/architecture/11-content-read-completion.md`。
 开发规范：`docs/architecture/02-agent-development-rules.md`。
 
 另有 `site` 服务端渲染页面（jte 3.2.4）：默认关闭（`MACCMS_SITE_ENABLED=false`）。骨架（MACC-9，占位页 `GET /_site/placeholder`、
 错误/维护页）见 `docs/architecture/05-site-skeleton.md`；首页、分类列表（`vod/type`）、视频公开详情（`vod/detail`）三页（MACC-14，只读、
 只承接数字 id，路由与旧 URL 兼容规则、配置、与旧版差异）见 `docs/architecture/08-site-pages.md`。
+
+B02（MACC-26）加了四样东西，见 `docs/architecture/11-guards-and-legacy-config.md`：出站护栏、表结构与 SQL 入口护栏（静态测试 +
+`-Pmysql-it` 的 information_schema 比对）、旧配置只读层（`MACCMS_LEGACY_CONFIG_DIR`，只解析 `var_export`，不执行 PHP）、
+浏览器侧外部地址放行参数（`MACCMS_BROWSER_EXTERNAL_W1/W2/W3`，W1/W2 默认打开、W3 默认关闭；W2 设为 false 时页面中的外部图片显示占位）。
+设置了 `MACCMS_LEGACY_CONFIG_DIR` 时，site 启动时读一次旧 `extra/maccms.php`，留空的站点项按字段取旧值（环境变量优先，`base-url` 仍必填），
+旧配置里新版不支持的 URL 形态会让启动失败（11 文档第 4.4 节）。
+
+B07（MACC-31）建了写入基础设施，见 `docs/architecture/12-write-infrastructure.md`：与只读池分开的可写数据源（`MACCMS_WRITE_ENABLED`，
+**默认关闭**，打开时 `MACCMS_WRITE_DB_URL/USERNAME/PASSWORD` 必须单独提供，地址须与 `MACCMS_DB_URL` 同库）、"模块 + 表 + 操作"写入登记表
+与静态/运行期护栏、写 SQL 规范（条件更新、匹配行数、固定顺序与补偿），以及测试侧的并发写测试支撑与回滚演练工具（快照、逐行 diff、
+只用 DML 恢复）。本批没有任何业务写入，正式登记表为空。整体切换（D3）方案见 `docs/architecture/13-cutover-plan.md`。
 
 ### 环境
 
@@ -48,6 +64,9 @@ export MACCMS_IT_ADMIN_PASSWORD=<密码>
   写入合成数据，通过真实 HTTP 调用全部接口，结束后**只删除这个库**。不读写 `maccms_dev` 或任何已有库。
 - 缺少上述环境变量时测试直接失败，不会回落到默认账号。
 - 管理账号只用于建库、灌数据、比对校验和；被测应用连接同一个一次性库时连接池是只读会话。
+- `WriteInfrastructureMySqlIT`（B07）另外用同一个管理账号打开可写数据源，只在这个一次性库上做并发写入、补偿与 DML 恢复演练，
+  结束时数据恢复到快照、表结构指纹不变，然后删库。
+- 每个集成测试在导入 `install.sql` 后记录 information_schema 指纹，删库前再比对，表结构有任何变化即失败（B02）。
 
 ### 本地运行
 
@@ -83,6 +102,9 @@ GRANT SELECT ON `<库名>`.* TO 'maccms_ro'@'<应用服务器地址>';
 3. Mapper 只有 `select`，不含 `${}` 拼接、DDL、初始化脚本（`spring.sql.init.mode=never`）；静态测试 `ReadOnlyGuardrailsTest` 会检查。
 4. 账号本身只有 SELECT 权限（需管理员配合）。
 
+可写数据源（B07）默认关闭。获批写库时，管理员另建写账号，只授予 `mac_*` 表的 `SELECT, INSERT, UPDATE, DELETE`，
+经 `MACCMS_WRITE_DB_*` 提供；应用只执行 `WriteRegistry` 登记过的写入，详见 `docs/architecture/12-write-infrastructure.md` 第 2、3 节。
+
 ### 目录
 
 ```
@@ -91,12 +113,15 @@ backend/
   mvnw, mvnw.cmd, .mvn/        Maven Wrapper
   config/*.env.example         运行配置样例（真实 *.env 不提交）
   src/main/java/com/maccms/backend/
-    common/                    公共支持：错误码、统一错误响应、分页、数据库账号检查
+    common/                    公共支持：错误码、统一错误响应、分页、数据库账号检查、浏览器侧外部地址放行开关（common/browser）、
+                               可写数据源与写入护栏（common/write，默认关闭）
     content/api/               HTTP 层（Controller、DTO）
     content/application/       查询服务、可见性规则、参数校验
     content/infrastructure/    MyBatis Mapper 接口与行记录
+    legacyconfig/              旧配置只读层（var_export 解析、配置目录访问）
   src/main/resources/
     application.yml            默认配置（无凭证）
     mapper/content/*.xml       只读 SQL
+    mapper-write/<模块>/*.xml  写 SQL（B07 起；目前没有正式的写 Mapper，测试侧演练 Mapper 在 src/test/resources/mapper-write）
   src/test/java/...            单元、HTTP 契约、MySQL 集成测试
 ```

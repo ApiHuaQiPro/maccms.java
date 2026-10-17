@@ -24,4 +24,27 @@
           AND type_status = 1
         ORDER BY type_sort ASC, type_id ASC
     </select>
+
+    <!--
+      文章(2)/演员(8)/网址(11) 分类，规则与 selectEnabledVodTypes 相同（Type.php:126-127 的 mid 条件、:189 的 type_status=1）。
+      后台为这三类内容选分类时只列出对应 type_mid 的分类（application/admin/view/art/info.html:24、actor/info.html:24、
+      website/info.html:25）。
+    -->
+    <select id="selectEnabledTypes" resultType="com.maccms.backend.content.infrastructure.TypeRow">
+        SELECT type_id     AS id,
+               type_name   AS name,
+               type_en     AS enName,
+               type_sort   AS sort,
+               type_pid    AS parentId,
+               type_title  AS title,
+               type_key    AS keywords,
+               type_des    AS description,
+               type_logo   AS logo,
+               type_pic    AS pic,
+               type_extend AS extendJson
+        FROM mac_type
+        WHERE type_mid = #{mid}
+          AND type_status = 1
+        ORDER BY type_sort ASC, type_id ASC
+    </select>
 </mapper>
