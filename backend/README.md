@@ -21,7 +21,9 @@ MacCMS 重构的 Java 后端（模块化单体）。本批（MACC-4）只包含 
 
 B02（MACC-26）加了四样东西，见 `docs/architecture/11-guards-and-legacy-config.md`：出站护栏、表结构与 SQL 入口护栏（静态测试 +
 `-Pmysql-it` 的 information_schema 比对）、旧配置只读层（`MACCMS_LEGACY_CONFIG_DIR`，只解析 `var_export`，不执行 PHP）、
-浏览器侧外部地址放行参数（`MACCMS_BROWSER_EXTERNAL_W1/W2/W3`，默认全关；W2 关闭时页面中的外部图片显示占位）。
+浏览器侧外部地址放行参数（`MACCMS_BROWSER_EXTERNAL_W1/W2/W3`，W1/W2 默认打开、W3 默认关闭；W2 设为 false 时页面中的外部图片显示占位）。
+设置了 `MACCMS_LEGACY_CONFIG_DIR` 时，site 启动时读一次旧 `extra/maccms.php`，留空的站点项按字段取旧值（环境变量优先，`base-url` 仍必填），
+旧配置里新版不支持的 URL 形态会让启动失败（11 文档第 4.4 节）。
 
 ### 环境
 

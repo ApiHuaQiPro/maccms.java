@@ -6,7 +6,7 @@ import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 
 /**
- * W2 默认关闭、远程存储模式（{@code upload.mode=remote}，{@code remoteurl} 是外部主机）：相对路径拼上外部前缀后不输出，
+ * W2 关闭、远程存储模式（{@code upload.mode=remote}，{@code remoteurl} 是外部主机）：相对路径拼上外部前缀后不输出，
  * 只有站内路径照常输出。
  */
 @WebMvcTest(controllers = SiteContentController.class, properties = {
@@ -14,7 +14,8 @@ import org.springframework.context.annotation.Import;
         "maccms.site.name=合成站",
         "maccms.site.base-url=https://www.maccms.test/",
         "maccms.site.image.mode=remote",
-        "maccms.site.image.remote-url=https://cdn.ext.test/files/"})
+        "maccms.site.image.remote-url=https://cdn.ext.test/files/",
+        "maccms.browser-external.w2=false"})
 @Import(SiteConfiguration.class)
 class SiteExternalImagesRemoteMvcTest extends ExternalImagesPageCheck {
 

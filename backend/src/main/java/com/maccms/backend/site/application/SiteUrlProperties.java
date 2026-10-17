@@ -7,7 +7,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
  * 旧站 URL 形态配置 {@code maccms.site.url.*}（MACC-14），与 {@link SiteProperties} 同属 {@code maccms.site.*}，
- * 只来自本应用的环境变量。按原始字符串绑定，校验在 {@link #toStyle()} 中进行，错误只报配置项名称。
+ * 来自本应用的环境变量，留空时可取旧配置（{@link SiteLegacyConfig}）。按原始字符串绑定，校验在 {@link #toStyle()} 中进行，错误只报配置项名称。
  *
  * <p>首批页面只承接 {@code pathinfo_depr='/'}、不启用路由别名（{@code route_status=0}）的形态，所以只开放两项；
  * 其余前提见 {@link LegacyUrlStyle}。旧配置的线上取值未核实（03 方案第 5.1 节）。

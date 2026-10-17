@@ -6,7 +6,7 @@ import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 
 /**
- * W2 默认关闭、本地存储模式（{@code upload.mode=local}）且启用 {@code img_key/img_api}：{@code mac:}、协议相对、
+ * W2 关闭（{@code maccms.browser-external.w2=false}）、本地存储模式（{@code upload.mode=local}）且启用 {@code img_key/img_api}：{@code mac:}、协议相对、
  * {@code img_api} 命中、仿冒本站的外部主机都不输出；相对路径、站内路径与本站绝对地址照常输出。
  */
 @WebMvcTest(controllers = SiteContentController.class, properties = {
@@ -15,7 +15,8 @@ import org.springframework.context.annotation.Import;
         "maccms.site.base-url=https://www.maccms.test/",
         "maccms.site.image.protocol=https",
         "maccms.site.image.img-key=img\\.api\\.ext\\.test|www\\.maccms\\.test",
-        "maccms.site.image.img-api=/img.php?url="})
+        "maccms.site.image.img-api=/img.php?url=",
+        "maccms.browser-external.w2=false"})
 @Import(SiteConfiguration.class)
 class SiteExternalImagesMvcTest extends ExternalImagesPageCheck {
 

@@ -31,7 +31,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
 /**
- * W2 关闭（默认）时三页的"页面无外部域名资源"检查（B02，路线图第 4.2 节；11 文档第 5 节）。子类给出图片配置与测试数据：
+ * W2 关闭时三页的"页面无外部域名资源"检查（B02，路线图第 4.2 节；11 文档第 5 节）。子类给出图片配置与测试数据：
  * 用含外部图片地址（{@code mac:}、协议相对、{@code img_api} 命中、{@code remote} 前缀等分支）的合成数据渲染首页、分类、详情，
  * 断言任何元素属性里都没有外部主机（导航链接 {@code a[href]} 除外，它不是资源加载），外部图片位置显示占位，本站图片照常输出。
  */
