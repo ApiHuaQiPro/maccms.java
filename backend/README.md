@@ -30,6 +30,11 @@ B02（MACC-26）加了四样东西，见 `docs/architecture/11-guards-and-legacy
 设置了 `MACCMS_LEGACY_CONFIG_DIR` 时，site 启动时读一次旧 `extra/maccms.php`，留空的站点项按字段取旧值（环境变量优先，`base-url` 仍必填），
 旧配置里新版不支持的 URL 形态会让启动失败（11 文档第 4.4 节）。
 
+B07（MACC-31）建了写入基础设施，见 `docs/architecture/12-write-infrastructure.md`：与只读池分开的可写数据源（`MACCMS_WRITE_ENABLED`，
+**默认关闭**，打开时 `MACCMS_WRITE_DB_URL/USERNAME/PASSWORD` 必须单独提供，地址须与 `MACCMS_DB_URL` 同库）、"模块 + 表 + 操作"写入登记表
+与静态/运行期护栏、写 SQL 规范（条件更新、匹配行数、固定顺序与补偿），以及测试侧的并发写测试支撑与回滚演练工具（快照、逐行 diff、
+只用 DML 恢复）。本批没有任何业务写入，正式登记表为空。整体切换（D3）方案见 `docs/architecture/13-cutover-plan.md`。
+
 ### 环境
 
 - JDK 21（本机 `D:\Tools\Java\jdk-21`，`JAVA_HOME` 已指向它）。
@@ -59,6 +64,8 @@ export MACCMS_IT_ADMIN_PASSWORD=<密码>
   写入合成数据，通过真实 HTTP 调用全部接口，结束后**只删除这个库**。不读写 `maccms_dev` 或任何已有库。
 - 缺少上述环境变量时测试直接失败，不会回落到默认账号。
 - 管理账号只用于建库、灌数据、比对校验和；被测应用连接同一个一次性库时连接池是只读会话。
+- `WriteInfrastructureMySqlIT`（B07）另外用同一个管理账号打开可写数据源，只在这个一次性库上做并发写入、补偿与 DML 恢复演练，
+  结束时数据恢复到快照、表结构指纹不变，然后删库。
 - 每个集成测试在导入 `install.sql` 后记录 information_schema 指纹，删库前再比对，表结构有任何变化即失败（B02）。
 
 ### 本地运行
@@ -95,6 +102,9 @@ GRANT SELECT ON `<库名>`.* TO 'maccms_ro'@'<应用服务器地址>';
 3. Mapper 只有 `select`，不含 `${}` 拼接、DDL、初始化脚本（`spring.sql.init.mode=never`）；静态测试 `ReadOnlyGuardrailsTest` 会检查。
 4. 账号本身只有 SELECT 权限（需管理员配合）。
 
+可写数据源（B07）默认关闭。获批写库时，管理员另建写账号，只授予 `mac_*` 表的 `SELECT, INSERT, UPDATE, DELETE`，
+经 `MACCMS_WRITE_DB_*` 提供；应用只执行 `WriteRegistry` 登记过的写入，详见 `docs/architecture/12-write-infrastructure.md` 第 2、3 节。
+
 ### 目录
 
 ```
@@ -103,7 +113,8 @@ backend/
   mvnw, mvnw.cmd, .mvn/        Maven Wrapper
   config/*.env.example         运行配置样例（真实 *.env 不提交）
   src/main/java/com/maccms/backend/
-    common/                    公共支持：错误码、统一错误响应、分页、数据库账号检查、浏览器侧外部地址放行开关（common/browser）
+    common/                    公共支持：错误码、统一错误响应、分页、数据库账号检查、浏览器侧外部地址放行开关（common/browser）、
+                               可写数据源与写入护栏（common/write，默认关闭）
     content/api/               HTTP 层（Controller、DTO）
     content/application/       查询服务、可见性规则、参数校验
     content/infrastructure/    MyBatis Mapper 接口与行记录
@@ -111,5 +122,6 @@ backend/
   src/main/resources/
     application.yml            默认配置（无凭证）
     mapper/content/*.xml       只读 SQL
+    mapper-write/<模块>/*.xml  写 SQL（B07 起；目前没有正式的写 Mapper，测试侧演练 Mapper 在 src/test/resources/mapper-write）
   src/test/java/...            单元、HTTP 契约、MySQL 集成测试
 ```

@@ -61,8 +61,10 @@ class SqlEntryGuardTest {
 
     @Test
     void mapperXmlUsesOnlyRegisteredDollarExpressions() throws IOException {
-        Map<String, String> mappers = JavaSources.read(MAPPERS, ".xml");
+        // 只读 Mapper（mapper/）与写 Mapper（mapper-write/，B07）都检查
+        Map<String, String> mappers = new java.util.LinkedHashMap<>(JavaSources.read(MAPPERS, ".xml"));
         assertThat(mappers).isNotEmpty();
+        JavaSources.read(WriteGuardTest.WRITE_MAPPERS, ".xml").forEach((k, v) -> mappers.put("mapper-write/" + k, v));
         List<String> all = new ArrayList<>();
         for (Map.Entry<String, String> e : mappers.entrySet()) {
             for (String v : xmlViolations(e.getValue(), REGISTERED_DOLLAR)) {
