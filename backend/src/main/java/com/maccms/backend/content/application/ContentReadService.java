@@ -16,9 +16,11 @@ import com.maccms.backend.content.infrastructure.TypeMapper;
 import com.maccms.backend.content.infrastructure.TypeRow;
 import com.maccms.backend.content.infrastructure.VodDetailRow;
 import com.maccms.backend.content.infrastructure.VodFilterCriteria;
+import com.maccms.backend.content.infrastructure.VodIdRange;
 import com.maccms.backend.content.infrastructure.VodMapper;
 import com.maccms.backend.content.infrastructure.VodSummaryRow;
 import java.math.BigDecimal;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.List;
@@ -27,6 +29,7 @@ import java.util.concurrent.Semaphore;
 import java.util.function.Supplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataAccessException;
@@ -51,7 +54,11 @@ import tools.jackson.databind.json.JsonMapper;
  * <p>搜索/筛选（契约 1.1.0，09 方案第 6.3 节）：带 keyword/classes 的请求要求 {@code maccms.content.search.enabled=true}
  * （否则 400），并经进程内并发上限（{@code max-concurrent}，不等待）进入，拿不到许可即 503；带任一新条件的语句有服务端
  * 执行时限，超时（MySQL 3024；排序阶段中止为 1028）同样归为 503。两种新 503 的响应体与数据库不可用时逐字相同，日志只有固定说明与类型链，
- * 不记录条件值。不带新条件的请求不经过这两项，SQL 与 1.0.0 相同。
+ * 不记录条件值。不带新条件的请求不经过这两项，SQL 与 1.0.0 相同。1.3.0 的 actor/director/tag/name 同样是包含匹配，与
+ * keyword/classes 共用开关、并发许可与 503；letter/state/version/ids/年份区间是精确匹配，只受执行时限约束。
+ *
+ * <p>随机排序（1.3.0 sort=rnd，{@link VideoListQuery#random()}）照搬旧 Vod::listCacheData 的两种算法
+ * （application/common/model/Vod.php:500-537，阈值 {@value #RANDOM_THRESHOLD}），见 {@link #randomPage}。
  */
 @Service
 public class ContentReadService {
@@ -68,18 +75,37 @@ public class ContentReadService {
     private final ContentProperties properties;
     private final SearchSettings search;
     private final Semaphore searchPermits;
+    private final VideoRandom random;
+
+    /** 旧版随机排序在两种算法之间切换的行数（Vod.php:505 {@code $algo2_threshold}）：超过它才取随机 ID 段。 */
+    static final int RANDOM_THRESHOLD = 2000;
+    /** 随机 ID 段的候选个数（Vod.php:518 {@code intval($algo2_threshold / 2)}）。 */
+    static final int RANDOM_CANDIDATES = RANDOM_THRESHOLD / 2;
 
     /** 连接池大小取 Hikari 的同一配置（application.yml 中 MACCMS_DB_POOL_SIZE，默认 10），用于校验并发上限。 */
     @Autowired
     public ContentReadService(TypeMapper typeMapper, GroupMapper groupMapper, VodMapper vodMapper,
                               ContentProperties properties,
-                              @Value("${spring.datasource.hikari.maximum-pool-size:10}") int poolSize) {
+                              @Value("${spring.datasource.hikari.maximum-pool-size:10}") int poolSize,
+                              ObjectProvider<VideoRandom> random) {
+        this(typeMapper, groupMapper, vodMapper, properties, poolSize, random.getIfAvailable(VideoRandom::new));
+    }
+
+    /** 随机源可替换（测试用确定的实现覆盖随机排序的每个分支）。 */
+    public ContentReadService(TypeMapper typeMapper, GroupMapper groupMapper, VodMapper vodMapper,
+                              ContentProperties properties, int poolSize, VideoRandom random) {
         this.typeMapper = typeMapper;
         this.groupMapper = groupMapper;
         this.vodMapper = vodMapper;
         this.properties = properties;
         this.search = SearchSettings.from(properties.search(), poolSize);
         this.searchPermits = new Semaphore(search.maxConcurrent());
+        this.random = random;
+    }
+
+    public ContentReadService(TypeMapper typeMapper, GroupMapper groupMapper, VodMapper vodMapper,
+                              ContentProperties properties, int poolSize) {
+        this(typeMapper, groupMapper, vodMapper, properties, poolSize, new VideoRandom());
     }
 
     /** 测试与无 Spring 场景：连接池按默认 10。 */
@@ -88,7 +114,7 @@ public class ContentReadService {
         this(typeMapper, groupMapper, vodMapper, properties, 10);
     }
 
-    /** 是否接受包含匹配参数 keyword、classes（{@code maccms.content.search.enabled}）。 */
+    /** 是否接受包含匹配参数 keyword、classes、actor、director、tag、name（{@code maccms.content.search.enabled}）。 */
     public boolean searchEnabled() {
         return search.enabled();
     }
@@ -106,8 +132,7 @@ public class ContentReadService {
             return read(() -> doListVideos(query));
         }
         if (!search.enabled()) {
-            throw ApiException.invalidParameter(filter.keyword() != null ? "keyword" : "classes",
-                    VideoFilter.SEARCH_DISABLED);
+            throw ApiException.invalidParameter(filter.firstContainsMatchParameter(), VideoFilter.SEARCH_DISABLED);
         }
         if (!searchPermits.tryAcquire()) {
             log.warn("content search rejected: concurrency limit reached");
@@ -190,6 +215,9 @@ public class ContentReadService {
             return PageResponse.of(List.of(), query.page(), query.pageSize(), 0);
         }
         VodFilterCriteria criteria = criteria(query.filter());
+        if (query.random()) {
+            return randomPage(catalog, typeIds, criteria, query);
+        }
         long total = criteria == null ? vodMapper.countPublished(typeIds)
                 : vodMapper.countPublishedMatching(typeIds, criteria);
         if (total == 0 || query.offset() >= total) {
@@ -204,12 +232,79 @@ public class ContentReadService {
         return PageResponse.of(items, query.page(), query.pageSize(), total);
     }
 
-    /** 不带新条件时返回 null，使用与 1.0.0 相同的语句。 */
-    private static VodFilterCriteria criteria(VideoFilter f) {
+    /**
+     * 随机排序（旧 Vod.php:500-537）。先按全部条件计数 c：
+     * <ul>
+     *   <li>c &gt; {@value #RANDOM_THRESHOLD} 且全表 MIN/MAX(vod_id) 有效（最小值非 0、最大值大于最小值）时：从下标
+     *       0..(max−min) 中随机取 {@value #RANDOM_CANDIDATES} 个作为候选 vod_id（旧版 array_rand 返回的是 range 数组的键，
+     *       不是 ID，照搬：候选范围是 0..max−min，min 很大或 ID 稀疏时可能一个都命中不了），与原条件 AND 后按 hits_week 倒序，
+     *       取请求的 page 页，total 为加上候选段后的计数；</li>
+     *   <li>否则：随机页 = 1..(c / pageSize + 1)（整除，c 恰为页大小整数倍时最后一个随机页为空，与旧版相同），忽略请求的 page，
+     *       按 hits_week 倒序取该页，响应中的 page 为实际取的随机页，total 为 c。</li>
+     * </ul>
+     * 两种情况都追加 vod_id 倒序（并列时稳定，旧版没有）。
+     */
+    private PageResponse<VideoSummaryDto> randomPage(CategoryCatalog catalog, Set<Integer> typeIds,
+                                                     VodFilterCriteria criteria, VideoListQuery query) {
+        long count = criteria == null ? vodMapper.countPublished(typeIds)
+                : vodMapper.countPublishedMatching(typeIds, criteria);
+        if (count > RANDOM_THRESHOLD) {
+            VodIdRange range = vodMapper.selectIdRange();
+            if (range != null && range.minId() != null && range.maxId() != null && range.minId() != 0
+                    && range.maxId() > range.minId()) {
+                long[] picked = random.sampleIndexes(range.maxId() - range.minId() + 1, RANDOM_CANDIDATES);
+                List<Long> candidates = Arrays.stream(picked).boxed().toList();
+                VodFilterCriteria c = criteria == null ? VodFilterCriteria.candidatesOnly(candidates)
+                        : criteria.withCandidates(candidates);
+                long total = vodMapper.countPublishedMatching(typeIds, c);
+                if (total == 0 || query.offset() >= total) {
+                    return PageResponse.of(List.of(), query.page(), query.pageSize(), total);
+                }
+                List<VodSummaryRow> rows = vodMapper.selectPublishedMatchingPage(typeIds, c, VideoSort.HITS_WEEK, true,
+                        query.offset(), query.pageSize());
+                return PageResponse.of(rows.stream().map(r -> toSummary(r, catalog)).toList(), query.page(),
+                        query.pageSize(), total);
+            }
+        }
+        long page = random.pageBetweenOneAnd(count / query.pageSize() + 1);
+        long offset = (page - 1) * query.pageSize();
+        int responsePage = Math.toIntExact(page);
+        if (count == 0 || offset >= count) {
+            return PageResponse.of(List.of(), responsePage, query.pageSize(), count);
+        }
+        List<VodSummaryRow> rows = criteria == null
+                ? vodMapper.selectPublishedPage(typeIds, VideoSort.HITS_WEEK, true, offset, query.pageSize())
+                : vodMapper.selectPublishedMatchingPage(typeIds, criteria, VideoSort.HITS_WEEK, true, offset,
+                        query.pageSize());
+        return PageResponse.of(rows.stream().map(r -> toSummary(r, catalog)).toList(), responsePage,
+                query.pageSize(), count);
+    }
+
+    /**
+     * 不带新条件时返回 null，使用与 1.0.0 相同的语句。单个年份仍用 {@code year}（1.1.0 的 SQL 文本不变），区间展开为多项时用
+     * {@code years}；area、lang、classes 同理，只有一项时用 1.1.0 的单值形式，逗号多值时用 {@code areas}/{@code langs}/
+     * {@code classesPatterns}。
+     */
+    static VodFilterCriteria criteria(VideoFilter f) {
         if (f.isEmpty()) {
             return null;
         }
-        return new VodFilterCriteria(f.level(), f.year(), f.area(), f.lang(), f.classesPattern(), f.keywordPatterns());
+        List<String> years = f.years();
+        List<String> areas = f.areas();
+        List<String> langs = f.langs();
+        List<String> classes = f.classesPatterns();
+        return new VodFilterCriteria(f.level(), single(years), single(areas), single(langs), single(classes),
+                f.keywordPatterns(), multiple(years), f.letters(), f.states(), f.versions(), f.actorPatterns(),
+                f.directorPatterns(), f.tagPatterns(), f.namePatterns(), f.idList(), null, multiple(areas),
+                multiple(langs), multiple(classes));
+    }
+
+    private static String single(List<String> values) {
+        return values != null && values.size() == 1 ? values.get(0) : null;
+    }
+
+    private static List<String> multiple(List<String> values) {
+        return values != null && values.size() > 1 ? values : null;
     }
 
     private VideoDetailDto doGetVideo(long id) {

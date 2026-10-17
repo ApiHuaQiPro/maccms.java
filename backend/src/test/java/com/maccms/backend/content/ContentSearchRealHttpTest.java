@@ -149,6 +149,17 @@ class ContentSearchRealHttpTest {
             "area=%E5%A4%A7&area=%FF | area   | 参数不能重复",
             "page=0&keyword=%FF     | page    | 必须是 1 到 1000 之间的整数",
             "keyword=x&area=%FF     | area    | 含不允许的字符",
+            // 契约 1.3.0（B04）新增参数同样适用
+            "letter=%FF             | letter  | 含不允许的字符",
+            "state=%E4%B8           | state   | 含不允许的字符",
+            "version=%              | version | 含不允许的字符",
+            "actor=%FF              | actor   | 含不允许的字符",
+            "director=%C0%AF        | director | 含不允许的字符",
+            "tag=%ED%A0%80          | tag     | 含不允许的字符",
+            "name=%FF&name=x        | name    | 参数不能重复",
+            "ids=%FF                | ids     | 含不允许的字符",
+            "ids=1&ids=2            | ids     | 参数不能重复",
+            "classes=x&letter=%FF   | letter  | 含不允许的字符",
     })
     void malformedEncodingInNewParametersIs400ForThatParameter(String query, String field, String message)
             throws Exception {
@@ -165,6 +176,21 @@ class ContentSearchRealHttpTest {
         assertThat(r.status()).isEqualTo(500);
         assertThat(r.json().get("code").asString()).isEqualTo("INTERNAL_ERROR");
         assertThat(output.getAll()).contains("unhandled exception: org.apache.tomcat.util.http.InvalidParameterException");
+    }
+
+    /**
+     * 文章/演员/网址等列表（契约 1.2.0）不使用视频列表的非法编码回退：任何参数的非法编码都按契约写明的 500 处理，
+     * 不会被当成字面值继续查询（B04 修正：此前与视频列表共用回退集合，{@code area=%FF} 会成为字面值 "null"）。
+     */
+    @ParameterizedTest
+    @CsvSource({"/api/v1/articles?letter=%FF", "/api/v1/actors?area=%FF", "/api/v1/websites?lang=%E4%B8",
+            "/api/v1/articles?level=%FF", "/api/v1/topics?letter=%FF"})
+    void malformedEncodingInOtherListsIsTheContract120Status500(String target, CapturedOutput output) throws Exception {
+        Resp r = raw(target);
+        assertThat(r.status()).as(target + " → " + r.body()).isEqualTo(500);
+        assertThat(r.json().get("code").asString()).isEqualTo("INTERNAL_ERROR");
+        assertThat(output.getAll()).contains("unhandled exception: org.apache.tomcat.util.http.InvalidParameterException")
+                .doesNotContain("database unavailable");
     }
 
     @Test

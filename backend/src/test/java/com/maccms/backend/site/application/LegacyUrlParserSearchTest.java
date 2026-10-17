@@ -209,11 +209,24 @@ class LegacyUrlParserSearchTest {
         for (LegacyUrlStyle style : STYLES) {
             assertThat(invalid(style, "wd=" + "%E4%B8%AD".repeat(65)).field()).isEqualTo("keyword");
             assertThat(filters(style, "wd=" + "%E4%B8%AD".repeat(64)).keyword()).hasSize(64);
-            assertThat(invalid(style, "area=a%2Cb").field()).as("精确字段不支持多值").isEqualTo("area");
+            // 契约 1.3.0（MACC-28 Q1）：area/lang/class 按旧版逗号多值交给 content，原始值原样保留（含空项、全角逗号）
+            assertThat(filters(style, "area=a%2Cb").area()).as("逗号多值").isEqualTo("a,b");
+            assertThat(filters(style, "area=a,b").area()).as("未编码的逗号").isEqualTo("a,b");
+            assertThat(filters(style, "lang=" + "%E5%9B%BD%E8%AF%AD,").lang()).as("尾逗号").isEqualTo("国语,");
+            assertThat(filters(style, "class=,").classes()).as("只有空项").isEqualTo(",");
+            assertThat(filters(style, "area=%E5%A4%A7%E9%99%86%EF%BC%8C%E9%A6%99%E6%B8%AF").area()).as("全角逗号")
+                    .isEqualTo("大陆，香港");
+            assertThat(filters(style, "area=+a,b+").area()).as("SSR 只去整个值的首尾空白").isEqualTo("a,b");
+            assertThat(filters(style, "area=a,+b").area()).as("项内空白保留").isEqualTo("a, b");
+            assertThat(filters(style, "area=0,").area()).as("只有整个值为 0 才按未传").isEqualTo("0,");
+            assertThat(filters(style, "area=0").area()).isNull();
+            assertThat(invalid(style, "lang=a,b,c,d,e,f").field()).as("长度上限作用于整个值").isEqualTo("lang");
             assertThat(filters(style, "wd=a%2Cb").keyword()).as("关键字中的逗号是字面字符").isEqualTo("a,b");
             assertThat(invalid(style, "lang=" + "a".repeat(11)).field()).isEqualTo("lang");
             assertThat(invalid(style, "year=20").field()).isEqualTo("year");
-            assertThat(invalid(style, "year=2020-2022").field()).isEqualTo("year");
+            assertThat(invalid(style, "year=2020-202").field()).isEqualTo("year");
+            // 契约 1.3.0（B04）：9 字符年份区间由 content 接受，搜索页随之接受（旧站同样接受）
+            assertThat(filters(style, "year=2020-2022").year()).isEqualTo("2020-2022");
             assertThat(filters(style, "year=+2020+").year()).isEqualTo("2020");
             assertThat(invalid(style, "class=" + "a".repeat(33)).field()).isEqualTo("classes");
             assertThat(invalid(style, "wd=a%00b").field()).as("控制字符").isEqualTo("keyword");

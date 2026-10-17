@@ -332,6 +332,28 @@ class SiteSearchMySqlIT {
         assertThat(get(SEARCH + "?wd=100%25").ids()).containsExactly(303L);
         assertThat(get(SEARCH + "?class=" + enc("剧情")).ids()).containsExactly(301L);
 
+        // 契约 1.3.0（MACC-28 Q1）：逗号多值经 SSR 原样交给 content——area 并集、class 各项 OR、全角逗号不拆分
+        assertThat(get(SEARCH + "?area=" + enc("大陆,香港") + "&wd=" + enc("合成")).ids()).containsExactly(302L, 301L);
+        assertThat(get(SEARCH + "?class=" + enc("剧情,动作")).ids()).containsExactly(302L, 301L);
+        assertThat(get(SEARCH + "?lang=" + enc("粤语,日语") + "&year=2021").ids()).containsExactly(302L);
+        Page fullWidth = get(SEARCH + "?area=" + enc("大陆，香港") + "&wd=" + enc("合成"));
+        assertThat(fullWidth.status()).isEqualTo(200);
+        assertThat(fullWidth.ids()).isEmpty();
+        // 多值条件下的分页：沿页面上实际生成的"下一页 / 上一页"链接往返，结果不重不漏，canonical 为规范形态
+        Page m1 = get(SEARCH + "?year=2018&area=" + enc("大陆,台湾"));
+        assertThat(m1.status()).isEqualTo(200);
+        assertThat(m1.ids()).hasSize(20);
+        assertThat(m1.doc().select("link[rel=canonical]").attr("href")).isEqualTo(
+                "http://maccms.local.test/index.php/vod/search.html?area=%E5%A4%A7%E9%99%86%2C%E5%8F%B0%E6%B9%BE&year=2018");
+        String next = m1.doc().selectFirst("a.pagination__link--next").attr("href");
+        assertThat(next).isEqualTo(SEARCH + "?area=%E5%A4%A7%E9%99%86%2C%E5%8F%B0%E6%B9%BE&page=2&year=2018");
+        Page m2 = get(next);
+        assertThat(m2.ids()).hasSize(5).doesNotContainAnyElementsOf(m1.ids());
+        assertThat(m2.doc().selectFirst(".pagination__status").text()).isEqualTo("第 2 / 2 页");
+        assertThat(m2.doc().selectFirst("form.search-form input[name=area]").attr("value")).isEqualTo("大陆,台湾");
+        assertThat(get(m2.doc().selectFirst("a.pagination__link--prev").attr("href")).ids())
+                .containsExactlyElementsOf(m1.ids());
+
         // 分页：25 条 → 2 页；第 3 页 404
         Page p1 = get(SEARCH + "?wd=" + enc("分页样本"));
         Page p2 = get(SEARCH + "?page=2&wd=" + enc("分页样本"));

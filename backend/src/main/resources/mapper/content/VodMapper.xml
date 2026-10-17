@@ -18,7 +18,7 @@
       搜索/筛选条件（契约 1.1.0，docs/architecture/09-content-search-filter-plan.md 第 4、6.1 节），只追加在 publishedInTypes 之后，
       只能在可见范围内收窄。列名固定，值只经 #{} 绑定；LIKE 模式由 content.application 构造并以 '!' 转义 %、_、!，
       反斜线按普通字符（不受 NO_BACKSLASH_ESCAPES 影响）。旧规则：level/year/area/lang 见 application/common/model/Vod.php:290-304
-      （旧版逗号多值、year 整数比较，新版单值、字符串比较）；wd 见 :462-468（vod_name 加 search_vod_rule 列，仓库值 vod_en|vod_sub，
+      （旧版逗号多值、year 整数比较；新版这里是单值形式、字符串比较，1.3.0 的多值形式见下）；wd 见 :462-468（vod_name 加 search_vod_rule 列，仓库值 vod_en|vod_sub，
       application/extra/maccms.php:70）；class 见 :475-477。
     -->
     <sql id="matchingConditions">
@@ -30,6 +30,26 @@
         <if test="filter.keywordPatterns != null">
             AND (<foreach collection="filter.keywordPatterns" item="p" separator=" OR ">vod_name LIKE #{p} ESCAPE '!' OR vod_sub LIKE #{p} ESCAPE '!' OR vod_en LIKE #{p} ESCAPE '!'</foreach>)
         </if>
+        <!--
+          契约 1.3.0（B04，docs/architecture/14-video-list-filter-completion.md 第 3 节），追加在 1.1.0 条件之后（不传时上面的 SQL 文本不变）。
+          旧规则：year 区间 application/common/model/Vod.php:187-200,296-298（新版字符串比较）；letter :330-335；state/version :305-310；
+          actor/director/tag/name :469-483（mac_like_arr，application/common.php:1284-1292，逗号拆分后各项 OR）；ids :273-277；
+          随机排序候选段 :508-526（与 ids 同时出现时两者都要满足）。多值的各项、LIKE 模式由 content.application 构造。
+          area/lang/class 的逗号多值 :299-304（IN explode）、:475-477（mac_like_arr）；只有一项时仍用上面 1.1.0 的单值形式。
+        -->
+        <if test="filter.areas != null">AND vod_area IN <foreach collection="filter.areas" item="v" open="(" separator="," close=")">#{v}</foreach></if>
+        <if test="filter.langs != null">AND vod_lang IN <foreach collection="filter.langs" item="v" open="(" separator="," close=")">#{v}</foreach></if>
+        <if test="filter.classesPatterns != null">AND (<foreach collection="filter.classesPatterns" item="p" separator=" OR ">vod_class LIKE #{p} ESCAPE '!'</foreach>)</if>
+        <if test="filter.years != null">AND vod_year IN <foreach collection="filter.years" item="y" open="(" separator="," close=")">#{y}</foreach></if>
+        <if test="filter.letters != null">AND vod_letter IN <foreach collection="filter.letters" item="v" open="(" separator="," close=")">#{v}</foreach></if>
+        <if test="filter.states != null">AND vod_state IN <foreach collection="filter.states" item="v" open="(" separator="," close=")">#{v}</foreach></if>
+        <if test="filter.versions != null">AND vod_version IN <foreach collection="filter.versions" item="v" open="(" separator="," close=")">#{v}</foreach></if>
+        <if test="filter.actorPatterns != null">AND (<foreach collection="filter.actorPatterns" item="p" separator=" OR ">vod_actor LIKE #{p} ESCAPE '!'</foreach>)</if>
+        <if test="filter.directorPatterns != null">AND (<foreach collection="filter.directorPatterns" item="p" separator=" OR ">vod_director LIKE #{p} ESCAPE '!'</foreach>)</if>
+        <if test="filter.tagPatterns != null">AND (<foreach collection="filter.tagPatterns" item="p" separator=" OR ">vod_tag LIKE #{p} ESCAPE '!'</foreach>)</if>
+        <if test="filter.namePatterns != null">AND (<foreach collection="filter.namePatterns" item="p" separator=" OR ">vod_name LIKE #{p} ESCAPE '!'</foreach>)</if>
+        <if test="filter.ids != null">AND vod_id IN <foreach collection="filter.ids" item="id" open="(" separator="," close=")">#{id}</foreach></if>
+        <if test="filter.candidateIds != null">AND vod_id IN <foreach collection="filter.candidateIds" item="id" open="(" separator="," close=")">#{id}</foreach></if>
     </sql>
 
     <sql id="summaryColumns">
@@ -106,7 +126,8 @@
     </select>
 
     <!--
-      排序白名单对应旧 Vod::listCacheData 的 by 取值（common/model/Vod.php:539），rnd 暂不支持；
+      排序白名单对应旧 Vod::listCacheData 的 by 取值（common/model/Vod.php:539）；rnd 不是排序列，由 ContentReadService 按旧算法
+      选页或加候选 ID 段后以 HITS_WEEK DESC 调用这里（1.3.0）；
       追加 vod_id 同向排序保证分页稳定（带不带搜索/筛选条件都一样）。
     -->
     <sql id="pageOrderAndLimit">
@@ -130,6 +151,15 @@
         </choose>
         LIMIT #{offset}, #{limit}
     </sql>
+
+    <!--
+      随机排序（契约 1.3.0 sort=rnd）的 ID 段：旧 Vod.php:509 的 MAX/MIN(vod_id)，不带任何条件（含未审核行，与旧版相同）。
+      MyISAM 主键上的 MIN/MAX 由优化器直接取得（Select tables optimized away）；执行时限与其他搜索/筛选语句相同。
+    -->
+    <select id="selectIdRange" resultType="com.maccms.backend.content.infrastructure.VodIdRange">
+        SELECT /*+ MAX_EXECUTION_TIME(3000) */ MIN(vod_id) AS minId, MAX(vod_id) AS maxId
+        FROM mac_vod
+    </select>
 
     <!-- 对应旧 mac_label_vod_detail 的 vod_id + vod_status=1 条件（application/common.php:2715-2728）。 -->
     <select id="selectPublishedDetail" resultType="com.maccms.backend.content.infrastructure.VodDetailRow">
