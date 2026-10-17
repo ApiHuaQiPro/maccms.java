@@ -61,7 +61,9 @@ class SiteStylesheetTest {
     void contractClassesAreStyled() throws IOException {
         String body = stripComments(css());
         for (String klass : new String[]{"site-home", "category-page", "category-grid", "video-grid",
-                "video-card", "pagination", "video-detail", "metadata-list", "detail-content"}) {
+                "video-card", "pagination", "video-detail", "metadata-list", "detail-content",
+                "search-page", "search-form", "search-summary", "search-filters", "filter-group",
+                "filter-chip", "search-empty"}) {
             assertThat(body).as("缺少约定 class .%s 的规则", klass)
                     .containsPattern(Pattern.compile("\\." + Pattern.quote(klass) + "\\b").pattern());
         }
@@ -73,7 +75,8 @@ class SiteStylesheetTest {
         // 模板就位后这里直接兜底 class 契约不漂移。
         String body = stripComments(css());
         Matcher m = Pattern.compile("\\.(site-home|category-page|category-grid|video-grid|video-card|pagination"
-                + "|video-detail|metadata-list|detail-content)(__[a-z-]+)?\\b").matcher(body);
+                + "|video-detail|metadata-list|detail-content|search-page|search-form|search-summary|search-filters"
+                + "|filter-group|filter-chip|search-empty)(__[a-z-]+)?\\b").matcher(body);
         assertThat(m.find()).as("CSS 应包含至少一个契约 class").isTrue();
     }
 
@@ -102,5 +105,34 @@ class SiteStylesheetTest {
             }
         }
         assertThat(found).as("30rem 断点内须有 .metadata-list 单列 minmax(0, 1fr) 规则").isTrue();
+    }
+
+    /**
+     * 窄屏（30rem 断点）下搜索页筛选组 .filter-group 必须回退为单列 minmax(0, 1fr)，
+     * 与 .metadata-list 同样的溢出防护（label 列 max-content 在 320/360px 视口会挤压 chip 列表）。
+     */
+    @Test
+    void narrowViewportFilterGroupIsSingleColumn() throws IOException {
+        String body = stripComments(css());
+        Matcher media = Pattern.compile(
+                "@media\\s*\\(max-width:\\s*30rem\\)\\s*\\{(.*?)\\}\\s*\\}", Pattern.DOTALL).matcher(body);
+        boolean found = false;
+        while (media.find()) {
+            if (media.group(1).contains(".filter-group")
+                    && media.group(1).contains("minmax(0, 1fr)")) {
+                found = true;
+            }
+        }
+        assertThat(found).as("30rem 断点内须有 .filter-group 单列 minmax(0, 1fr) 规则").isTrue();
+    }
+
+    /** 当前筛选 chip 必须有可辨样式（--current 或 aria-current 属性选择器）。 */
+    @Test
+    void currentFilterChipIsDistinguishable() throws IOException {
+        String body = stripComments(css());
+        assertThat(body).containsPattern(Pattern.compile(
+                "\\.filter-chip--current\\b[^{]*\\{[^}]*border-color:\\s*var\\(--site-color-link\\)", Pattern.DOTALL).pattern());
+        assertThat(body).containsPattern(Pattern.compile(
+                "\\.filter-chip--current\\b[^{]*\\{[^}]*font-weight:", Pattern.DOTALL).pattern());
     }
 }
