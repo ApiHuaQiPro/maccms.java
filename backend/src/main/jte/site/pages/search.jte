@@ -63,6 +63,9 @@
     @endif
   </section>
   @endif
+  @if(page.random() && page.total().isPresent())
+  <p class="search-random-notice notice">随机排序每次显示不同的结果，不提供翻页。</p>
+  @endif
   @if(page.pagination().isPresent())
   @template.site.components.pagination(currentPage = page.pagination().get().currentPage(), pageCount = page.pagination().get().pageCount(), previousUrl = page.pagination().get().previousUrl(), nextUrl = page.pagination().get().nextUrl())
   @endif

@@ -66,6 +66,8 @@ public class SiteContentController {
             }
             // parse() 不认识 vod/search；搜索页只由 SiteSearchController 经 parseSearch 承接
             case SiteRoute.VodSearch s -> throw new ApiException(ErrorCode.NOT_FOUND, "页面不存在");
+            // B05 的其他页面由各自的 Controller 按路径承接；经 ?s= 兼容模式到达这里时不在本 Controller 渲染
+            case SiteRoute.Legacy l -> throw new ApiException(ErrorCode.NOT_FOUND, "页面不存在");
         };
     }
 }

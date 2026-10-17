@@ -17,8 +17,9 @@ import java.util.Optional;
  * @param filters      筛选与排序链接组
  * @param videos       当前页的视频；有条件而为空时页面显示"没有找到相关视频"（只会出现在第 1 页）
  * @param pagination   多于一页时的分页
+ * @param random       随机排序（by=rnd）：不显示分页，显示固定说明（B05，15 文档第 3.4 节）
  */
 public record SearchPage(PageChrome chrome, String heading, boolean invalid, SafeUrl formAction, String keyword,
                          List<HiddenField> hiddenFields, Optional<Long> total, List<FilterGroup> filters,
-                         List<VideoCardView> videos, Optional<PaginationView> pagination) {
+                         List<VideoCardView> videos, Optional<PaginationView> pagination, boolean random) {
 }

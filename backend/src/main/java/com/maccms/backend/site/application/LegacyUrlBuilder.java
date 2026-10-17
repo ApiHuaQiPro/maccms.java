@@ -79,7 +79,26 @@ public final class LegacyUrlBuilder {
             case SiteRoute.VodType t -> vodType(t.typeId(), t.page());
             case SiteRoute.VodDetail d -> vodDetail(d.vodId());
             case SiteRoute.VodSearch s -> vodSearch(Map.of(), 1);
+            case SiteRoute.Legacy l -> legacy(l);
         };
+    }
+
+    /**
+     * B05 的"模块/操作 + 数字参数"页面（{@link LegacyPage}），参数按 {@link LegacyPage#keys()} 的顺序输出，页码 1 不输出。
+     * 与 PHP 黄金向量 site/url-golden/b05-vectors.json 逐字一致（B05UrlGoldenVectorsTest）。
+     */
+    public String legacy(SiteRoute.Legacy route) {
+        Map<String, String> vars = new LinkedHashMap<>();
+        for (String key : route.page().keys()) {
+            switch (key) {
+                case "id" -> vars.put("id", Long.toString(route.id()));
+                case "sid" -> vars.put("sid", Integer.toString(route.sid()));
+                case "nid" -> vars.put("nid", Integer.toString(route.nid()));
+                case "page" -> vars.put("page", pageValue(route.pageNo()));
+                default -> throw new IllegalStateException("未知参数");
+            }
+        }
+        return macUrl(route.page().target(), vars);
     }
 
     /** 首页：旧模板用 {@code {$maccms.path}}，即 {@code MAC_PATH}（All.php:61），不经 mac_url。 */

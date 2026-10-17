@@ -65,6 +65,16 @@ public class ArticleReadService {
     }
 
     public ArticleDetailDto getArticle(long id) {
+        return getArticle(id, null);
+    }
+
+    /**
+     * 文章详情；有访问密码的文章只在凭据与当前密码一致时返回（B05，D-B05-3，{@link PasswordProof}），否则仍是
+     * ARTICLE_PASSWORD_REQUIRED。判定顺序 404 → 积分 → 密码不变。
+     *
+     * @param proof 访问密码凭据（site 的签名票据校验通过后），可为 null
+     */
+    public ArticleDetailDto getArticle(long id, PasswordProof proof) {
         return read(() -> {
             ArtDetailRow row = artMapper.selectPublishedDetail(id);
             if (row == null) {
@@ -84,10 +94,29 @@ public class ArticleReadService {
                 throw new ApiException(ErrorCode.ARTICLE_POINTS_REQUIRED, "该文章需要积分才能查看");
             }
             // 旧版 art_pwd 非空且本会话未验证时显示密码页（index/controller/Art.php:56-61）
-            if (nz(row.detailPasswordRequired()) != 0) {
+            if (nz(row.detailPasswordRequired()) != 0 && (proof == null
+                    || artMapper.countPasswordProven(id, proof.salt(), proof.fingerprint()) == 0)) {
                 throw new ApiException(ErrorCode.ARTICLE_PASSWORD_REQUIRED, "该文章需要访问密码");
             }
             return toDetail(row, catalog);
+        });
+    }
+
+    /**
+     * 文章访问密码校验（B05）：文章已审核、分类可见、art_pwd 非空且与 candidate 逐字节相等。candidate 为空或超过
+     * {@link VideoPlaybackService#MAX_PASSWORD_LENGTH} 个码点时直接为 false（不查库）。只返回布尔值，密码列不读入内存。
+     */
+    public boolean verifyPassword(long id, String candidate) {
+        if (id < 1 || candidate == null || candidate.isEmpty()
+                || candidate.codePointCount(0, candidate.length()) > VideoPlaybackService.MAX_PASSWORD_LENGTH) {
+            return false;
+        }
+        return read(() -> {
+            ArtDetailRow row = artMapper.selectPublishedDetail(id);
+            if (row == null || !catalogs.catalog(TYPE_MID, catalogs.guest()).isVisible(nz(row.categoryId()))) {
+                return false;
+            }
+            return artMapper.countPasswordMatch(id, candidate) > 0;
         });
     }
 

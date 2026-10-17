@@ -1,0 +1,191 @@
+## machine
+os	Windows 11 10.0
+cpu	AMD64 Family 25 Model 33 Stepping 0, AuthenticAMD; logical=16
+memory_total_mb	31961
+memory_free_mb	10871
+java	OpenJDK 64-Bit Server VM 21.0.11
+
+## mysql
+VERSION()	@@version_comment	@@character_set_connection	@@collation_connection
+5.7.44	MySQL Community Server (GPL)	utf8mb4	utf8mb4_general_ci
+
+## variables
+Variable_name	Value
+concurrent_insert	AUTO
+eq_range_index_dive_limit	200
+key_buffer_size	8388608
+low_priority_updates	OFF
+max_execution_time	0
+max_heap_table_size	16777216
+max_length_for_sort_data	1024
+optimizer_switch	index_merge=on,index_merge_union=on,index_merge_sort_union=on,index_merge_intersection=on,engine_condition_pushdown=on,index_condition_pushdown=on,mrr=on,mrr_cost_based=on,block_nested_loop=on,batched_key_access=off,materialization=on,semijoin=on,loosescan=on,firstmatch=on,duplicateweedout=on,subquery_materialization_cost_based=on,use_index_extensions=on,condition_fanout_filter=on,derived_merge=on,prefer_ordering_index=on
+query_cache_type	OFF
+range_optimizer_max_mem_size	8388608
+read_buffer_size	131072
+read_rnd_buffer_size	262144
+sort_buffer_size	262144
+sql_mode	STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION
+tmp_table_size	16777216
+
+## mac_vod table status
+table_rows	avg_row_length	data_length	index_length	row_format	engine	table_collation
+300000	3653	1096190456	84037632	Dynamic	MyISAM	utf8_general_ci
+
+## distribution (whole table / visible = vod_status=1 AND type_id 1..25)
+total	status1	visible	min_id	max_id	avg_content_bytes	avg_play_url_bytes
+300000	284997	270766	1	300000	2032	1104
+
+### vod_area (visible rows)
+v	n
+大陆	95002
+美国	40368
+日本	27194
+韩国	27077
+香港	21561
+台湾	16304
+泰国	8219
+英国	8148
+法国	5403
+其它	5331
+加拿大	2756
+印度	2749
+新加坡	2730
+马来西亚	2652
+西班牙	2639
+俄罗斯	2633
+
+### vod_lang (visible rows)
+v	n
+国语	108459
+英语	54302
+韩语	27121
+日语	27055
+粤语	21577
+其它	13444
+法语	8037
+德语	5450
+闽南语	5321
+
+### vod_year (visible rows)
+v	n
+2021	38468
+2020	20609
+2019	17248
+2018	14980
+2017	13538
+2016	12607
+2015	11934
+2014	11260
+2013	10869
+2012	10248
+2011	9996
+2010	9692
+2009	9325
+2008	9032
+2007	8921
+2006	8634
+2005	8313
+2004	8168
+2003	8126
+2002	7881
+2000	7767
+2001	7723
+	5427
+
+### vod_letter (visible rows)
+v	n
+Y	10146
+N	10117
+X	10073
+Z	10061
+O	10021
+J	9994
+R	9983
+M	9972
+Q	9969
+C	9926
+U	9906
+I	9897
+B	9884
+F	9865
+H	9854
+T	9833
+G	9833
+D	9828
+A	9824
+W	9819
+P	9810
+K	9783
+V	9780
+S	9772
+E	9732
+L	9664
+5	1381
+2	1370
+1	1363
+6	1358
+8	1351
+9	1338
+4	1331
+7	1323
+3	1304
+0	1301
+
+### vod_state (visible rows)
+v	n
+正片	216404
+预告片	21942
+	21547
+花絮	10873
+
+### vod_version (visible rows)
+v	n
+高清版	135332
+超清版	53956
+	27268
+蓝光版	26977
+TC	13753
+抢先版	13480
+
+### vod_isend (visible rows)
+v	n
+1	149048
+0	121718
+
+## mac_vod indexes (cardinality)
+index_name	column_name	cardinality
+group_id	group_id	1
+PRIMARY	vod_id	300000
+type_id	type_id	30
+type_id_1	type_id_1	6
+vod_actor	vod_actor	27273
+vod_area	vod_area	16
+vod_class	vod_class	1435
+vod_director	vod_director	30
+vod_down	vod_down	500
+vod_en	vod_en	300000
+vod_hits	vod_hits	150000
+vod_hits_day	vod_hits_day	7143
+vod_hits_month	vod_hits_month	100000
+vod_hits_week	vod_hits_week	42857
+vod_isend	vod_isend	2
+vod_lang	vod_lang	9
+vod_letter	vod_letter	36
+vod_level	vod_level	10
+vod_lock	vod_lock	1
+vod_name	vod_name	150000
+vod_plot	vod_plot	1
+vod_points_down	vod_points_down	1
+vod_points_play	vod_points_play	1
+vod_score	vod_score	100
+vod_score_all	vod_score_all	100000
+vod_score_num	vod_score_num	10000
+vod_state	vod_state	4
+vod_tag	vod_tag	1
+vod_time	vod_time	300000
+vod_time_add	vod_time_add	300000
+vod_time_make	vod_time_make	1
+vod_total	vod_total	1
+vod_up	vod_up	5000
+vod_version	vod_version	6
+vod_year	vod_year	23

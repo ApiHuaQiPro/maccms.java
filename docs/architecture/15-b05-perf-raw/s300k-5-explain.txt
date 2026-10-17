@@ -1,0 +1,78 @@
+### e.hits-between (total=79560)
+count: SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) AND vod_hits BETWEEN ? AND ?
+  type=range | key=vod_hits | key_len=3 | rows=87355 | filtered=9.45 | Extra=Using index condition; Using where | possible_keys=type_id,vod_hits
+-- sort=time offset=0
+step1: SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_vod WHERE vod_status = 1 AND type_id IN (?×25) AND vod_hits BETWEEN ? AND ? ORDER BY vod_time DESC, vod_id DESC LIMIT ?, ?
+  type=range | key=vod_hits | key_len=3 | rows=87355 | filtered=9.45 | Extra=Using index condition; Using where; Using filesort | possible_keys=type_id,vod_hits
+-- sort=hits offset=0
+step1: SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_vod WHERE vod_status = 1 AND type_id IN (?×25) AND vod_hits BETWEEN ? AND ? ORDER BY vod_hits DESC, vod_id DESC LIMIT ?, ?
+  type=range | key=vod_hits | key_len=3 | rows=87355 | filtered=9.45 | Extra=Using index condition; Using where; Using filesort | possible_keys=type_id,vod_hits
+-- sort=time offset=10000
+step1: SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_vod WHERE vod_status = 1 AND type_id IN (?×25) AND vod_hits BETWEEN ? AND ? ORDER BY vod_time DESC, vod_id DESC LIMIT ?, ?
+  type=range | key=vod_hits | key_len=3 | rows=87355 | filtered=9.45 | Extra=Using index condition; Using where; Using filesort | possible_keys=type_id,vod_hits
+### e.hits-gt (total=90307)
+count: SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) AND vod_hits > ?
+  type=range | key=vod_hits | key_len=3 | rows=101789 | filtered=9.45 | Extra=Using index condition; Using where | possible_keys=type_id,vod_hits
+-- sort=time offset=0
+step1: SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_vod WHERE vod_status = 1 AND type_id IN (?×25) AND vod_hits > ? ORDER BY vod_time DESC, vod_id DESC LIMIT ?, ?
+  type=range | key=vod_hits | key_len=3 | rows=101789 | filtered=9.45 | Extra=Using index condition; Using where; Using filesort | possible_keys=type_id,vod_hits
+-- sort=hits offset=0
+step1: SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_vod WHERE vod_status = 1 AND type_id IN (?×25) AND vod_hits > ? ORDER BY vod_hits DESC, vod_id DESC LIMIT ?, ?
+  type=range | key=vod_hits | key_len=3 | rows=101789 | filtered=9.45 | Extra=Using index condition; Using where; Using filesort | possible_keys=type_id,vod_hits
+-- sort=time offset=10000
+step1: SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_vod WHERE vod_status = 1 AND type_id IN (?×25) AND vod_hits > ? ORDER BY vod_time DESC, vod_id DESC LIMIT ?, ?
+  type=range | key=vod_hits | key_len=3 | rows=101789 | filtered=9.45 | Extra=Using index condition; Using where; Using filesort | possible_keys=type_id,vod_hits
+### e.timeadd-30d (total=182)
+count: SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) AND vod_time_add > ?
+  type=range | key=vod_time_add | key_len=4 | rows=411 | filtered=9.45 | Extra=Using index condition; Using where | possible_keys=type_id,vod_time_add
+-- sort=time offset=0
+step1: SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_vod WHERE vod_status = 1 AND type_id IN (?×25) AND vod_time_add > ? ORDER BY vod_time DESC, vod_id DESC LIMIT ?, ?
+  type=range | key=vod_time_add | key_len=4 | rows=411 | filtered=9.45 | Extra=Using index condition; Using where; Using filesort | possible_keys=type_id,vod_time_add
+-- sort=hits offset=0
+step1: SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_vod WHERE vod_status = 1 AND type_id IN (?×25) AND vod_time_add > ? ORDER BY vod_hits DESC, vod_id DESC LIMIT ?, ?
+  type=range | key=vod_time_add | key_len=4 | rows=411 | filtered=9.45 | Extra=Using index condition; Using where; Using filesort | possible_keys=type_id,vod_time_add
+### e.timeadd-365d (total=27046)
+count: SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) AND vod_time_add > ?
+  type=range | key=vod_time_add | key_len=4 | rows=31800 | filtered=9.45 | Extra=Using index condition; Using where | possible_keys=type_id,vod_time_add
+-- sort=time offset=0
+step1: SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_vod WHERE vod_status = 1 AND type_id IN (?×25) AND vod_time_add > ? ORDER BY vod_time DESC, vod_id DESC LIMIT ?, ?
+  type=range | key=vod_time_add | key_len=4 | rows=31800 | filtered=9.45 | Extra=Using index condition; Using where; Using filesort | possible_keys=type_id,vod_time_add
+-- sort=hits offset=0
+step1: SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_vod WHERE vod_status = 1 AND type_id IN (?×25) AND vod_time_add > ? ORDER BY vod_hits DESC, vod_id DESC LIMIT ?, ?
+  type=range | key=vod_time_add | key_len=4 | rows=31800 | filtered=9.45 | Extra=Using index condition; Using where; Using filesort | possible_keys=type_id,vod_time_add
+-- sort=time offset=10000
+step1: SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_vod WHERE vod_status = 1 AND type_id IN (?×25) AND vod_time_add > ? ORDER BY vod_time DESC, vod_id DESC LIMIT ?, ?
+  type=range | key=vod_time_add | key_len=4 | rows=31800 | filtered=9.45 | Extra=Using index condition; Using where; Using filesort | possible_keys=type_id,vod_time_add
+### e.isend1 (total=149048)
+count: SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) AND vod_isend = ?
+  type=ref | key=vod_isend | key_len=1 | rows=168276 | filtered=9.45 | Extra=Using where | possible_keys=type_id,vod_isend
+-- sort=time offset=0
+step1: SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_vod WHERE vod_status = 1 AND type_id IN (?×25) AND vod_isend = ? ORDER BY vod_time DESC, vod_id DESC LIMIT ?, ?
+  type=ref | key=vod_isend | key_len=1 | rows=168276 | filtered=9.45 | Extra=Using index condition; Using where; Using filesort | possible_keys=type_id,vod_isend
+-- sort=hits offset=0
+step1: SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_vod WHERE vod_status = 1 AND type_id IN (?×25) AND vod_isend = ? ORDER BY vod_hits DESC, vod_id DESC LIMIT ?, ?
+  type=ref | key=vod_isend | key_len=1 | rows=168276 | filtered=9.45 | Extra=Using index condition; Using where; Using filesort | possible_keys=type_id,vod_isend
+-- sort=time offset=10000
+step1: SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_vod WHERE vod_status = 1 AND type_id IN (?×25) AND vod_isend = ? ORDER BY vod_time DESC, vod_id DESC LIMIT ?, ?
+  type=ref | key=vod_isend | key_len=1 | rows=168276 | filtered=9.45 | Extra=Using index condition; Using where; Using filesort | possible_keys=type_id,vod_isend
+### e.notin100 (total=270676)
+count: SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) AND vod_id NOT IN (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+  type=ALL | key=null | key_len=null | rows=300000 | filtered=9.44 | Extra=Using where | possible_keys=PRIMARY,type_id
+-- sort=time offset=0
+step1: SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_vod WHERE vod_status = 1 AND type_id IN (?×25) AND vod_id NOT IN (?×100) ORDER BY vod_time DESC, vod_id DESC LIMIT ?, ?
+  type=ALL | key=null | key_len=null | rows=300000 | filtered=9.44 | Extra=Using where; Using filesort | possible_keys=PRIMARY,type_id
+-- sort=hits offset=0
+step1: SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_vod WHERE vod_status = 1 AND type_id IN (?×25) AND vod_id NOT IN (?×100) ORDER BY vod_hits DESC, vod_id DESC LIMIT ?, ?
+  type=ALL | key=null | key_len=null | rows=300000 | filtered=9.44 | Extra=Using where; Using filesort | possible_keys=PRIMARY,type_id
+-- sort=time offset=10000
+step1: SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_vod WHERE vod_status = 1 AND type_id IN (?×25) AND vod_id NOT IN (?×100) ORDER BY vod_time DESC, vod_id DESC LIMIT ?, ?
+  type=ALL | key=null | key_len=null | rows=300000 | filtered=9.44 | Extra=Using where; Using filesort | possible_keys=PRIMARY,type_id
+### e.combo-isend-hits-time (total=4893)
+count: SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) AND vod_time_add > ? AND vod_hits > ? AND vod_isend = ?
+  type=range | key=vod_time_add | key_len=4 | rows=31800 | filtered=1.8 | Extra=Using index condition; Using where | possible_keys=type_id,vod_hits,vod_time_add,vod_isend
+-- sort=time offset=0
+step1: SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_vod WHERE vod_status = 1 AND type_id IN (?×25) AND vod_time_add > ? AND vod_hits > ? AND vod_isend = ? ORDER BY vod_time DESC, vod_id DESC LIMIT ?, ?
+  type=range | key=vod_time_add | key_len=4 | rows=31800 | filtered=1.8 | Extra=Using index condition; Using where; Using filesort | possible_keys=type_id,vod_hits,vod_time_add,vod_isend
+-- sort=hits offset=0
+step1: SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_vod WHERE vod_status = 1 AND type_id IN (?×25) AND vod_time_add > ? AND vod_hits > ? AND vod_isend = ? ORDER BY vod_hits DESC, vod_id DESC LIMIT ?, ?
+  type=range | key=vod_time_add | key_len=4 | rows=31800 | filtered=1.8 | Extra=Using index condition; Using where; Using filesort | possible_keys=type_id,vod_hits,vod_time_add,vod_isend

@@ -91,7 +91,7 @@ public class SearchPages {
             }
             return new SearchPage(pages.search("搜索视频 - " + site.name(), Optional.of(canonical), List.of()),
                     "搜索视频", false, formAction(), "", List.of(), Optional.empty(), List.of(), List.of(),
-                    Optional.empty());
+                    Optional.empty(), false);
         }
         if (f.usesContainsMatch() && !content.searchEnabled()) {
             // 与 content 的判断相同（ContentReadService.listVideos），这里提前到查库之前
@@ -120,14 +120,14 @@ public class SearchPages {
         }
         return new SearchPage(pages.search(title, Optional.of(canonical), contentPages.nav(roots, 0)), heading, false,
                 formAction(), f.keyword() == null ? "" : f.keyword(), hiddenFields(f), Optional.of(result.total()),
-                filterGroups(f, roots), contentPages.cards(result.items()), pagination);
+                filterGroups(f, roots), contentPages.cards(result.items()), pagination, f.random());
     }
 
     /** 参数不合法（400）：固定提示、空白表单；不查库、不回显输入、没有 canonical。 */
     public SearchPage invalid() {
         return new SearchPage(pages.search("搜索条件不合法 - " + site.name(), Optional.empty(), List.of()),
                 "搜索条件不合法", true, formAction(), "", List.of(), Optional.empty(), List.of(), List.of(),
-                Optional.empty());
+                Optional.empty(), false);
     }
 
     private SafeUrl formAction() {

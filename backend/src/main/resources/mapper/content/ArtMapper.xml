@@ -138,6 +138,29 @@
     </select>
 
     <!--
+      文章访问密码（B05，docs/architecture/15-b05-readonly-pages.md 第 6.4 节）：旧 Art::detail 在 art_pwd 非空且会话 2-1-id 未验证时显示密码页
+      （application/index/controller/Art.php:55-61），ajax/pwd 以 PHP != 宽松比较（Ajax.php:444-453，不看 art_status）。新版只认已审核的文章，
+      密码列只以布尔表达式出现：凭据的 SHA2 比较（改密码后旧凭据失效）与 BINARY 逐字节相等；密码本身不读出。
+    -->
+    <select id="countPasswordProven" resultType="int">
+        SELECT COUNT(*)
+        FROM mac_art
+        WHERE art_id = #{id}
+          AND art_status = 1
+          AND CHAR_LENGTH(art_pwd) &gt; 0
+          AND SHA2(CONCAT(#{proofSalt}, art_pwd), 256) = #{proofHash}
+    </select>
+
+    <select id="countPasswordMatch" resultType="int">
+        SELECT COUNT(*)
+        FROM mac_art
+        WHERE art_id = #{id}
+          AND art_status = 1
+          AND CHAR_LENGTH(art_pwd) &gt; 0
+          AND BINARY art_pwd = BINARY #{candidate}
+    </select>
+
+    <!--
       专题关联文章（Topic.php:302-312）：art_id IN (topic_rel_art) + art_status=1，按 art_time 倒序取前 999 条；
       追加 art_id 倒序使并列时结果确定。
     -->

@@ -53,12 +53,14 @@ public final class LegacyUrlParser {
      * （docs/architecture/15-b05-readonly-pages.md 第 3.1 节）。
      */
     private static final Set<String> SEARCH_REQUEST_KEYS = Set.of("wd", "area", "lang", "year", "level", "class",
-            "by", "order", "page", "actor", "director", "tag", "letter", "state", "version", "name", "ids", "tid");
+            "by", "order", "page", "actor", "director", "tag", "letter", "state", "version", "name", "ids", "tid", "ajax");
     /**
-     * 出现即交 PHP 的键：只剩 ThinkPHP 兼容模式 {@code s}（它改变的是路由而不是条件，Request.php:403-406）。B05 之前交 PHP 的
-     * 其余键已由 Java 承接；{@code isend}、{@code ajax} 旧代码读不到或不使用（15 文档第 3.1 节），按未知参数 400。
+     * ThinkPHP 兼容模式 {@code s}（Request.php:403-406，它改变的是路由而不是条件）：B05 起值解码后是搜索页路径（{@link #SEARCH_PATHS}，
+     * 可带一个开头的 /）时按搜索页处理，其余键照常；指向其他页面时不认（empty，交还 PHP）。{@code isend} 旧代码读不到
+     * （15 文档第 3.1 节），按未知参数 400。{@code ajax}（旧 {@code intval}，只供模板使用）按队长裁定 D-B05-6 接受并忽略：仍检查重复与
+     * 编码，不影响查询、不进链接/canonical/隐藏字段。
      */
-    private static final Set<String> SEARCH_HANDOFF_KEYS = Set.of("s");
+    private static final String COMPAT_KEY = "s";
     /** 按旧站 trim + {@code !empty()} 归一的文本键（application/common.php:1580-1604；Vod.php:167-247 只在非空时覆盖）。 */
     private static final List<String> SEARCH_TEXT_KEYS = List.of("wd", "area", "lang", "year", "class", "letter",
             "state", "version", "actor", "director", "tag", "name", "ids", "by", "order");
@@ -139,11 +141,15 @@ public final class LegacyUrlParser {
      * {@code year} 为 {@code 0000}、{@code 0000-0000}（旧版 intval 后为空）时未传。{@code by=rnd} 为随机排序。
      */
     public Optional<Match> parseSearch(String rawPath, String rawQuery) {
-        if (rawPath == null || rawPath.length() > MAX_INPUT || !isSearchPath(rawPath)) {
+        if (rawPath == null || rawPath.length() > MAX_INPUT) {
             return Optional.empty();
         }
         String query = rawQuery == null ? "" : rawQuery;
         if (query.length() > MAX_SEARCH_QUERY) {
+            return Optional.empty();
+        }
+        boolean entry = isEntry(rawPath) && !style.routeAliases() && style.depr() == '/';
+        if (!isSearchPath(rawPath) && !entry) {
             return Optional.empty();
         }
         // 步骤 3：按 & 切分，跳过空项；键不解码，逐字比较
@@ -155,12 +161,25 @@ public final class LegacyUrlParser {
             int eq = item.indexOf('=');
             items.add(eq < 0 ? new String[] {item, ""} : new String[] {item.substring(0, eq), item.substring(eq + 1)});
         }
-        // 步骤 4：ThinkPHP 兼容模式 s（会覆盖路径，Request.php:403-406）与暂不承接的旧键
+        // 步骤 4：ThinkPHP 兼容模式 s（会覆盖路径，Request.php:403-406）：只认指向搜索页的值，其余交还 PHP；入口路径没有 s 时不是搜索页
+        boolean compat = false;
         for (String[] kv : items) {
-            if (SEARCH_HANDOFF_KEYS.contains(kv[0])) {
-                return Optional.empty();
+            if (kv[0].equals(COMPAT_KEY)) {
+                if (compat) {
+                    throw ApiException.invalidParameter(COMPAT_KEY, "参数重复");
+                }
+                Optional<String> s = formDecode(kv[1]);
+                String v = s.map(x -> x.startsWith("/") ? x.substring(1) : x).orElse(null);
+                if (v == null || !SEARCH_PATHS.contains(v)) {
+                    return Optional.empty();
+                }
+                compat = true;
             }
         }
+        if (entry && !compat) {
+            return Optional.empty();
+        }
+        items.removeIf(kv -> kv[0].equals(COMPAT_KEY));
         // 步骤 5：按出现顺序逐项检查，只报第一个错误
         Map<String, String> decoded = new HashMap<>();
         for (String[] kv : items) {
@@ -334,6 +353,10 @@ public final class LegacyUrlParser {
         if (target.equals("index/index")) {
             return seg.length == 2 ? Optional.of(new SiteRoute.Home()) : Optional.empty();
         }
+        LegacyPage legacyPage = LegacyPage.byTarget(target);
+        if (legacyPage != null) {
+            return legacyPage(legacyPage, seg);
+        }
         if (!target.equals("vod/type") && !target.equals("vod/detail")) {
             return Optional.empty();
         }
@@ -365,6 +388,49 @@ public final class LegacyUrlParser {
         int id = (int) number("id", params.get("id"), VideoListQuery.MAX_CATEGORY_ID);
         int page = params.containsKey("page") ? (int) number("page", params.get("page"), VideoListQuery.MAX_PAGE) : 1;
         return Optional.of(new SiteRoute.VodType(id, page));
+    }
+
+    /**
+     * B05 页面（{@link LegacyPage}）的 键/值 段：只认该页面的参数名，值必须是十进制数字（拼音、编码 id 等非数字取值交还 PHP），
+     * 重复、不成对、缺少必需参数（id；播放/下载入口的 sid、nid）或越界 → INVALID_PARAMETER（页面 404）。参数顺序不限，
+     * 非生成器顺序时只是非规范地址（canonical 指向生成器的输出）。
+     */
+    private static Optional<SiteRoute> legacyPage(LegacyPage page, String[] seg) {
+        Map<String, String> params = new HashMap<>();
+        for (int i = 2; i < seg.length; i += 2) {
+            if (i + 1 >= seg.length) {
+                throw ApiException.invalidParameter("path", "参数不成对");
+            }
+            String key = seg[i];
+            String value = seg[i + 1];
+            if (!page.keys().contains(key)) {
+                throw ApiException.invalidParameter(key.length() > 32 ? "path" : key, "不支持的参数");
+            }
+            if (!DIGITS.matcher(value).matches()) {
+                return Optional.empty();
+            }
+            if (params.put(key, value) != null) {
+                throw ApiException.invalidParameter(key, "参数重复");
+            }
+        }
+        long id = 0;
+        if (page.id() != LegacyPage.Id.NONE) {
+            if (!params.containsKey("id")) {
+                throw ApiException.invalidParameter("id", "缺少 id");
+            }
+            id = number("id", params.get("id"), page.id().max());
+        }
+        int sid = 0;
+        int nid = 0;
+        if (page.episode()) {
+            if (!params.containsKey("sid") || !params.containsKey("nid")) {
+                throw ApiException.invalidParameter("sid", "缺少播放源或集数");
+            }
+            sid = (int) number("sid", params.get("sid"), LegacyPage.MAX_SID);
+            nid = (int) number("nid", params.get("nid"), LegacyPage.MAX_NID);
+        }
+        int pageNo = params.containsKey("page") ? (int) number("page", params.get("page"), VideoListQuery.MAX_PAGE) : 1;
+        return Optional.of(new SiteRoute.Legacy(page, id, sid, nid, pageNo));
     }
 
     /** 十进制正整数，无前导 0，1..max；否则 INVALID_PARAMETER。 */

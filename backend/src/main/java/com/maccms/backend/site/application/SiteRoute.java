@@ -53,4 +53,40 @@ public sealed interface SiteRoute {
             }
         }
     }
+
+    /**
+     * B05 承接的"模块/操作 + 数字参数"页面（{@link LegacyPage}）：播放/下载四个入口、内容页、单条 RSS、ajax_detail。
+     *
+     * @param page 页面
+     * @param id   id（{@link LegacyPage.Id#NONE} 时为 0）
+     * @param sid  播放源序号（播放/下载入口 1..{@value LegacyPage#MAX_SID}，否则 0）
+     * @param nid  集序号（播放/下载入口 1..{@value LegacyPage#MAX_NID}，否则 0）
+     * @param pageNo 页码（可分页时 1..1000，否则 1）
+     */
+    record Legacy(LegacyPage page, long id, int sid, int nid, int pageNo) implements SiteRoute {
+        public Legacy {
+            if (page == null) {
+                throw new IllegalArgumentException("页面缺失");
+            }
+            boolean idOk = page.id() == LegacyPage.Id.NONE ? id == 0 : id >= 1 && id <= page.id().max();
+            boolean episodeOk = page.episode() ? sid >= 1 && sid <= LegacyPage.MAX_SID && nid >= 1
+                    && nid <= LegacyPage.MAX_NID : sid == 0 && nid == 0;
+            boolean pageOk = page.paged() ? pageNo >= 1 && pageNo <= VideoListQuery.MAX_PAGE : pageNo == 1;
+            if (!idOk || !episodeOk || !pageOk) {
+                throw new IllegalArgumentException("页面参数越界");
+            }
+        }
+
+        public static Legacy of(LegacyPage page, long id) {
+            return new Legacy(page, id, 0, 0, 1);
+        }
+
+        public static Legacy paged(LegacyPage page, long id, int pageNo) {
+            return new Legacy(page, id, 0, 0, pageNo);
+        }
+
+        public static Legacy episode(LegacyPage page, long id, int sid, int nid) {
+            return new Legacy(page, id, sid, nid, 1);
+        }
+    }
 }

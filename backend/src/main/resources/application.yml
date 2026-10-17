@@ -47,6 +47,13 @@ maccms:
     copyright-hides-detail: ${MACCMS_CONTENT_COPYRIGHT_HIDES_DETAIL:true}
     # 对齐 PHP 配置 user.art_points_type（B05）：1 按 art_points（整篇收费），0 按 art_points_detail（按页收费），留空按仓库值 1
     art-points-type: ${MACCMS_CONTENT_ART_POINTS_TYPE:}
+    # 播放/下载授权（B05，docs/architecture/15-b05-readonly-pages.md 第 6 节），对齐旧 PHP 配置，留空按仓库值：
+    # vod-points-type 对应 user.vod_points_type（1 每数据、0 每集）；trysee 对应 user.trysee（全局试看分钟数，0 关闭）；
+    # copyright-status 对应 app.copyright_status（0..4，留空时按 copyright-hides-detail 取 2 或 1；设置时须与 copyright-hides-detail 一致）
+    playback:
+      vod-points-type: ${MACCMS_CONTENT_VOD_POINTS_TYPE:}
+      trysee: ${MACCMS_CONTENT_TRYSEE:}
+      copyright-status: ${MACCMS_CONTENT_COPYRIGHT_STATUS:}
     # 视频搜索（契约 1.1.0，docs/architecture/09-content-search-filter-plan.md 第 6.3-6.4 节）。只读本应用环境变量，不读取 PHP 配置。
     search:
       # 是否接受包含匹配参数 keyword、classes（true/false），默认关闭；area/lang/year/level 精确筛选不受影响。
@@ -88,6 +95,15 @@ maccms:
     # 关键字 wd、扩展分类 class 仍受 maccms.content.search.enabled 控制（关闭时搜索页对它们返回 400）。
     search:
       enabled: ${MACCMS_SITE_SEARCH_ENABLED:false}
+    # 访问密码签名票据的部署密钥（B05，D-B05-3）：32～256 个可打印 ASCII 字符，只经环境变量提供、没有内置值；
+    # 留空时播放/下载/文章密码页保持 403 并说明暂不支持在线验证。不要写进任何文件或日志。
+    password-tickets:
+      secret: ${MACCMS_SITE_PASSWORD_SECRET:}
+    # 旧前台页面开关（B05）：ajax-page 对应 app.ajax_page（各模块 ajax_detail/ajax_show/ajax_search），show 对应 app.show
+    # （各模块 show 筛选页）。true/false，留空取旧配置，没有旧配置按关闭（仓库值 0）。
+    features:
+      ajax-page: ${MACCMS_SITE_AJAX_PAGE:}
+      show: ${MACCMS_SITE_SHOW:}
     # 旧站 URL 形态（MACC-14，对应旧 rewrite.status / rewrite.suffix_hide），只接受 true/false，留空时取旧配置，没有旧配置按 false；
     # pathinfo_depr 固定 /、不启用路由别名。规则见 docs/architecture/08-site-pages.md。
     url:

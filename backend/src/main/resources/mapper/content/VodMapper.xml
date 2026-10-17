@@ -332,4 +332,77 @@
         WHERE vod_status = 1
           AND vod_id IN <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
     </select>
+
+    <!--
+      播放/下载入口（B05，docs/architecture/15-b05-readonly-pages.md 第 6 节）：旧 label_vod_play 经 mac_label_vod_detail 取
+      vod_status=1 的整行（application/common.php:2715-2733、common/controller/All.php:442-563）。新版只取授权判定与播放器所需的列；
+      密码列只以布尔表达式出现：是否非空（CHAR_LENGTH，与详情的 detailPasswordRequired 相同，"0" 也算有密码，B03 已登记差异），
+      以及凭据是否与当前密码一致（SHA2(CONCAT(salt, 密码列), 256) = hash；salt 与 hash 都是 64 位十六进制，由 content.application 校验）。
+      down=false 取 vod_play_* 与 vod_points_play、vod_pwd_play；down=true 取 vod_down_* 与 vod_points_down、vod_pwd_down。
+    -->
+    <select id="selectPlayback" resultType="com.maccms.backend.content.infrastructure.VodPlaybackRow">
+        SELECT vod_id                   AS id,
+               type_id                  AS categoryId,
+               vod_name                 AS name,
+               vod_actor                AS actor,
+               vod_director             AS director,
+               vod_class                AS classes,
+               vod_copyright            AS copyright,
+               vod_trysee               AS trySee,
+               vod_points               AS pointsWhole,
+        <choose>
+            <when test="down">
+               vod_points_down          AS pointsKind,
+               vod_down_from            AS sourceFrom,
+               vod_down_url             AS sourceUrl,
+               vod_down_server          AS sourceServer,
+               vod_down_note            AS sourceNote,
+               (CHAR_LENGTH(vod_pwd_down) &gt; 0) AS passwordRequired,
+            </when>
+            <otherwise>
+               vod_points_play          AS pointsKind,
+               vod_play_from            AS sourceFrom,
+               vod_play_url             AS sourceUrl,
+               vod_play_server          AS sourceServer,
+               vod_play_note            AS sourceNote,
+               (CHAR_LENGTH(vod_pwd_play) &gt; 0) AS passwordRequired,
+            </otherwise>
+        </choose>
+        <choose>
+            <when test="proofSalt != null and proofHash != null and down">
+               (SHA2(CONCAT(#{proofSalt}, vod_pwd_down), 256) = #{proofHash}) AS passwordProven,
+            </when>
+            <when test="proofSalt != null and proofHash != null">
+               (SHA2(CONCAT(#{proofSalt}, vod_pwd_play), 256) = #{proofHash}) AS passwordProven,
+            </when>
+            <otherwise>
+               0                        AS passwordProven,
+            </otherwise>
+        </choose>
+               vod_time                 AS updatedAt
+        FROM mac_vod
+        WHERE vod_id = #{id}
+          AND vod_status = 1
+    </select>
+
+    <!--
+      访问密码校验（B05，旧 ajax/pwd 的 1-4、1-5，application/index/controller/Ajax.php:421-442）：旧版按 id 取视频（不看 vod_status）后
+      以 PHP != 宽松比较；新版只认已审核的视频，密码列非空且与输入逐字节相等（BINARY，不做 PHP 数字字符串的宽松相等），只返回 0/1。
+    -->
+    <select id="countPasswordMatch" resultType="int">
+        SELECT COUNT(*)
+        FROM mac_vod
+        WHERE vod_id = #{id}
+          AND vod_status = 1
+        <choose>
+            <when test="down">
+          AND CHAR_LENGTH(vod_pwd_down) &gt; 0
+          AND BINARY vod_pwd_down = BINARY #{candidate}
+            </when>
+            <otherwise>
+          AND CHAR_LENGTH(vod_pwd_play) &gt; 0
+          AND BINARY vod_pwd_play = BINARY #{candidate}
+            </otherwise>
+        </choose>
+    </select>
 </mapper>
