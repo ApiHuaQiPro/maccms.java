@@ -13,6 +13,11 @@
         UPDATE mac_user SET user_points = user_points + #{points} WHERE user_id = #{userId}
     </update>
 
+    <!-- 条件写错时可能命中多行：演练"匹配行数非 0 但超过预期"不能当普通冲突 -->
+    <update id="addPointsInRange">
+        UPDATE mac_user SET user_points = user_points + #{points} WHERE user_id BETWEEN #{fromId} AND #{toId}
+    </update>
+
     <!-- 写入同值：useAffectedRows=false 时返回匹配行数 1，而不是变更行数 0 -->
     <update id="setPoints">
         UPDATE mac_user SET user_points = #{points} WHERE user_id = #{userId}

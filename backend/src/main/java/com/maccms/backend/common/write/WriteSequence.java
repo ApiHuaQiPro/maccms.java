@@ -30,13 +30,18 @@ import org.slf4j.LoggerFactory;
  *
  * <p>执行规则：
  * <ul>
- * <li>每步返回匹配行数（可写数据源固定 {@code useAffectedRows=false}），不等于预期即视为冲突：已完成的步骤按相反顺序补偿，
+ * <li>每步返回匹配行数（可写数据源固定 {@code useAffectedRows=false}）。匹配 0 行说明这一步什么都没改：已完成的步骤按相反顺序补偿，
  * 全部补偿成功后抛 {@link WriteConflictException}。</li>
+ * <li>匹配行数非 0 但不等于预期（部分生效或超额匹配）：这一步已经改了数据，但改了哪些行、能否撤销都不确定。不做任何补偿，
+ * 已完成步骤（包括认领）原样保留，抛 {@link CompensationFailedException}（{@code UNEXPECTED_ROWS}）。</li>
  * <li>某步抛出异常时，先判断语句是否肯定没有执行（{@link #definitelyNotApplied}）：肯定没有执行时同样补偿已完成步骤后重新抛出；
  * 不能确定时（连接中断、超时、被中止、客户端错误）不补偿，抛 {@link CompensationFailedException}（{@code OUTCOME_UNKNOWN}）。</li>
- * <li>补偿语句同样检查匹配行数；有补偿失败时继续补偿其余步骤，最后抛 {@link CompensationFailedException}
- * （{@code COMPENSATION_FAILED}），并在日志里只记序列名、步骤名与异常类型。</li>
+ * <li>补偿语句同样检查匹配行数。某个补偿不命中或抛异常时<b>立即停止</b>，不再补偿更早的步骤：后面的步骤依赖前面的步骤，
+ * 前面的步骤（尤其是认领）必须保留，作为未对账前不能再次生效的屏障。抛 {@link CompensationFailedException}
+ * （{@code COMPENSATION_FAILED}）。</li>
  * </ul>
+ * 三种 {@link CompensationFailedException} 都列出全部待对账步骤（按执行顺序），日志里只记序列名、步骤名、原因与异常类型。
+ * 补偿是对本次差值的条件逆操作，不是恢复到写入前的快照：期间其他请求的写入照常保留。
  * 每个步骤应该是一条单行语句（按主键或认领条件）；预期大于 1 行的步骤出错时一律视为不确定（MyISAM 多行语句出错会留下部分结果）。
  */
 public final class WriteSequence {
@@ -63,11 +68,19 @@ public final class WriteSequence {
         return new Builder(name);
     }
 
-    /** 单条条件写入的匹配行数检查：不等于预期时抛 {@link WriteConflictException}。 */
+    /**
+     * 单条条件写入的匹配行数检查：匹配 0 行抛 {@link WriteConflictException}；非 0 但不等于预期（部分生效或超额匹配）抛
+     * {@link CompensationFailedException}（{@code UNEXPECTED_ROWS}）并记日志，不能当作可重试的普通冲突。
+     */
     public static void requireMatched(String what, int matched, int expected) {
-        if (matched != expected) {
+        if (matched == expected) {
+            return;
+        }
+        if (matched == 0) {
             throw new WriteConflictException(what, what, matched, expected);
         }
+        throw logged(new CompensationFailedException(what, what, CompensationFailedException.Reason.UNEXPECTED_ROWS,
+                List.of(what), null));
     }
 
     /** 按顺序执行全部步骤；规则见类注释。 */
@@ -79,44 +92,46 @@ public final class WriteSequence {
                 matched = step.write().getAsInt();
             } catch (RuntimeException e) {
                 if (step.expected() > 1 || !definitelyNotApplied(e)) {
-                    List<String> unresolved = new ArrayList<>(names(done));
-                    unresolved.add(step.name());
                     throw logged(new CompensationFailedException(name, step.name(),
-                            CompensationFailedException.Reason.OUTCOME_UNKNOWN, unresolved, e));
+                            CompensationFailedException.Reason.OUTCOME_UNKNOWN, namesWith(done, step), e));
                 }
                 compensate(done, step, e);
                 throw e;
             }
-            if (matched != step.expected()) {
+            if (matched == 0) {
                 compensate(done, step, null);
                 throw new WriteConflictException(name, step.name(), matched, step.expected());
+            }
+            if (matched != step.expected()) {
+                throw logged(new CompensationFailedException(name, step.name(),
+                        CompensationFailedException.Reason.UNEXPECTED_ROWS, namesWith(done, step), null));
             }
             done.add(step);
         }
     }
 
+    /** 按相反顺序补偿；遇到第一个失败的补偿即停止，它和更早的步骤都留给人工对账。 */
     private void compensate(List<Step> done, Step failed, Throwable cause) {
-        List<String> unresolved = new ArrayList<>();
-        Throwable first = cause;
         for (int i = done.size() - 1; i >= 0; i--) {
             Step s = done.get(i);
+            RuntimeException error = null;
+            int matched = -1;
             try {
-                int matched = s.compensation().getAsInt();
-                if (matched != s.expected()) {
-                    unresolved.add(s.name());
-                }
+                matched = s.compensation().getAsInt();
             } catch (RuntimeException e) {
-                unresolved.add(s.name());
-                if (first == null) {
-                    first = e;
-                } else if (first != e) {
-                    first.addSuppressed(e);
-                }
+                error = e;
             }
-        }
-        if (!unresolved.isEmpty()) {
+            if (error == null && matched == s.expected()) {
+                continue;
+            }
+            Throwable first = cause;
+            if (first == null) {
+                first = error;
+            } else if (error != null && error != first) {
+                first.addSuppressed(error);
+            }
             throw logged(new CompensationFailedException(name, failed.name(),
-                    CompensationFailedException.Reason.COMPENSATION_FAILED, unresolved, first));
+                    CompensationFailedException.Reason.COMPENSATION_FAILED, names(done.subList(0, i + 1)), first));
         }
     }
 
@@ -128,6 +143,12 @@ public final class WriteSequence {
 
     private static List<String> names(List<Step> steps) {
         return steps.stream().map(Step::name).toList();
+    }
+
+    private static List<String> namesWith(List<Step> done, Step current) {
+        List<String> all = new ArrayList<>(names(done));
+        all.add(current.name());
+        return all;
     }
 
     /**

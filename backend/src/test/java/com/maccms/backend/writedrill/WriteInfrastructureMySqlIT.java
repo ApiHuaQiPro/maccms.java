@@ -57,7 +57,8 @@ import org.springframework.dao.DataAccessException;
  *
  * <p>流程：外部管理账号新建一次性库 maccms_it_&lt;时间&gt;_&lt;随机&gt; → 原样导入 install.sql → 取表结构指纹 → 写入合成数据 →
  * 取数据快照 S0 → ① 应用默认不创建可写数据源、只读池仍拒绝写入 → ② 打开可写数据源时用正式登记表（为空），演练写入被拒 →
- * ③ 错误凭证不回显 → ④ 并发条件写入（扣减、计数、认领、条件插入、匹配行数）→ ⑤ 多表写入序列的认领幂等、失败补偿、补偿失败上报 →
+ * ③ 错误凭证不回显 → ④ 并发条件写入（扣减、计数、认领、条件插入、匹配行数）→ ⑤ 多表写入序列的认领幂等、失败补偿、
+ * 补偿失败与超额匹配时保留认领并上报、对账后向前补齐 →
  * ⑥ 未登记的表、操作、模块在执行前被拒 → ⑦ MyISAM 不回滚 → ⑧ 快照 S1、逐行 diff、只用 DML 恢复、再次 diff 为空、表结构指纹不变 →
  * 删库并确认不存在。
  *
@@ -224,7 +225,7 @@ class WriteInfrastructureMySqlIT {
         assertThat(intValue("SELECT COUNT(*) FROM mac_plog WHERE plog_remarks = 'drill card 1'")).isEqualTo(1);
     }
 
-    /** ⑤-2 最后一步被服务端拒绝（备注超长，严格模式报错，语句没有执行）：前两步按相反顺序补偿，数据回到之前。 */
+    /** ⑤-2 最后一步被服务端拒绝（备注超长，严格模式报错，语句没有执行）：前两步按相反顺序补偿；期间没有其他写入，所以与之前一致。 */
     @Test
     @Order(6)
     void serverRejectedStepIsCompensated() throws Exception {
@@ -257,9 +258,111 @@ class WriteInfrastructureMySqlIT {
                 .doesNotContain("drill_u20");
     }
 
-    /** ⑥ 未登记的表、操作、模块：执行前被拒，数据不变。 */
+    /**
+     * ⑤-4 匹配行数超过预期（步骤条件写错，预期 1 行实际 2 行）：这一步已经生效，不补偿任何步骤、认领保留，抛 UNEXPECTED_ROWS
+     * 而不是可重试的普通冲突；重试在认领步骤被挡住。
+     */
     @Test
     @Order(8)
+    void overMatchedStepKeepsEverythingForReconcile(CapturedOutput out) throws Exception {
+        DrillWriteMapper m = drill.mapper(DrillWriteMapper.class);
+        long useTime = 1_700_000_400L;
+        int p19 = points(19);
+        int p20 = points(20);
+        WriteSequence s = WriteSequence.named("drill-card")
+                .step(Role.CLAIM, "card", () -> m.claimCard(4, 19, useTime), 1, () -> m.releaseCard(4, 19, useTime, 0))
+                .step(Role.TRANSFER, "points", () -> m.addPointsInRange(19, 20, 2), 1, () -> m.deductPoints(19, 2))
+                .step(Role.RECORD, "plog", () -> m.insertPlog(new PlogInsert(19, 1, 2, useTime, "drill card 4")), 1, null)
+                .build();
+        assertThatThrownBy(s::run).isNotInstanceOf(WriteConflictException.class)
+                .isInstanceOfSatisfying(CompensationFailedException.class, e -> {
+                    assertThat(e.reason()).isEqualTo(CompensationFailedException.Reason.UNEXPECTED_ROWS);
+                    assertThat(e.failedStep()).isEqualTo("points");
+                    assertThat(e.unresolvedSteps()).containsExactly("card", "points");
+                });
+        assertThat(points(19)).as("超额生效的变更原样留给对账").isEqualTo(p19 + 2);
+        assertThat(points(20)).isEqualTo(p20 + 2);
+        assertThat(intValue("SELECT card_use_status FROM mac_card WHERE card_id = 4")).as("认领保留").isEqualTo(1);
+        assertThat(intValue("SELECT COUNT(*) FROM mac_plog WHERE plog_remarks = 'drill card 4'")).isZero();
+        assertThat(out.getAll()).contains("写入需人工对账", "sequence=drill-card", "step=points", "reason=UNEXPECTED_ROWS",
+                "unresolved=[card, points]").doesNotContain("drill_u19");
+
+        assertThatThrownBy(s::run).isInstanceOfSatisfying(WriteConflictException.class,
+                e -> assertThat(e.step()).isEqualTo("card"));
+        assertThat(points(19)).isEqualTo(p19 + 2);
+        assertThat(points(20)).isEqualTo(p20 + 2);
+    }
+
+    /**
+     * ⑤-5 补偿失败后认领不释放（故障注入 + 并发）：16 个请求同时用卡 5；胜出者加 50 分后，同一用户被并发花掉 45 分，接着记流水被
+     * 服务端拒绝。退 50 分的补偿不命中，补偿停止、卡保持已认领。其余请求与之后的重试全部在认领步骤失败，积分只加一次。
+     */
+    @Test
+    @Order(9)
+    void failedCompensationKeepsTheClaimUnderConcurrency(CapturedOutput out) throws Exception {
+        DrillWriteMapper m = drill.mapper(DrillWriteMapper.class);
+        long useTime = 1_700_000_500L;
+        String tooLong = "x".repeat(101);
+        int before = points(20);
+        assertThat(before).as("前提：花掉 45 分后余额不够退回 50 分").isLessThan(CARD_POINTS - 5);
+        WriteSequence s = WriteSequence.named("drill-card")
+                .step(Role.CLAIM, "card", () -> m.claimCard(5, 20, useTime), 1, () -> m.releaseCard(5, 20, useTime, 0))
+                .step(Role.TRANSFER, "points", () -> m.addPoints(20, CARD_POINTS), 1, () -> m.deductPoints(20, CARD_POINTS))
+                .step(Role.RECORD, "plog", () -> {
+                    assertThat(m.deductPoints(20, 45)).as("注入：并发消费").isEqualTo(1);
+                    return m.insertPlog(new PlogInsert(20, 1, CARD_POINTS, useTime, tooLong));
+                }, 1, null)
+                .build();
+        ConcurrentWrites.Outcome<Integer> o = ConcurrentWrites.run(16, i -> {
+            s.run();
+            return i;
+        });
+        assertThat(o.values()).isEmpty();
+        assertThat(o.failures()).filteredOn(CompensationFailedException.class::isInstance).singleElement()
+                .isInstanceOfSatisfying(CompensationFailedException.class, e -> {
+                    assertThat(e.reason()).isEqualTo(CompensationFailedException.Reason.COMPENSATION_FAILED);
+                    assertThat(e.failedStep()).isEqualTo("plog");
+                    assertThat(e.unresolvedSteps()).containsExactly("card", "points");
+                    assertThat(e.getCause()).isInstanceOf(DataAccessException.class);
+                });
+        assertThat(o.failures()).filteredOn(WriteConflictException.class::isInstance).hasSize(15)
+                .allSatisfy(t -> assertThat(((WriteConflictException) t).step()).isEqualTo("card"));
+        assertThat(points(20)).as("只加一次 50，被花掉 45").isEqualTo(before + 5);
+        assertThat(intValue("SELECT card_use_status FROM mac_card WHERE card_id = 5")).as("认领保留").isEqualTo(1);
+        assertThat(out.getAll()).contains("写入需人工对账", "sequence=drill-card", "step=plog", "reason=COMPENSATION_FAILED",
+                "unresolved=[card, points]").doesNotContain("drill_u20").doesNotContain(tooLong);
+
+        // 未对账前再并发重试 8 次：全部在认领步骤失败，积分不再增加
+        ConcurrentWrites.Outcome<Integer> retry = ConcurrentWrites.run(8, i -> {
+            s.run();
+            return i;
+        });
+        assertThat(retry.failures()).hasSize(8).allSatisfy(t -> assertThat(t)
+                .isInstanceOfSatisfying(WriteConflictException.class, e -> assertThat(e.step()).isEqualTo("card")));
+        assertThat(points(20)).isEqualTo(before + 5);
+    }
+
+    /**
+     * ⑤-6 对账后恢复（12 文档第 4.4 节"向前补齐"）：卡已用、积分已加且被合法消费，只缺流水，由对账补写一条流水。
+     * 之后数据自洽，同一张卡仍不能再用。
+     */
+    @Test
+    @Order(10)
+    void reconcileCompletesForwardAndTheCardStaysUsed() throws Exception {
+        DrillWriteMapper m = drill.mapper(DrillWriteMapper.class);
+        int before = points(20);
+        assertThat(intValue("SELECT COUNT(*) FROM mac_plog WHERE user_id = 20")).isZero();
+        assertThat(m.insertPlog(new PlogInsert(20, 1, CARD_POINTS, 1_700_000_500L, "drill card 5 reconciled"))).isEqualTo(1);
+        assertThatThrownBy(() -> useCard(m, 5, 20, 1_700_000_600L, "drill card 5 again").run())
+                .isInstanceOfSatisfying(WriteConflictException.class, e -> assertThat(e.step()).isEqualTo("card"));
+        assertThat(points(20)).isEqualTo(before);
+        assertThat(intValue("SELECT COUNT(*) FROM mac_plog WHERE user_id = 20")).isEqualTo(1);
+        assertThat(intValue("SELECT user_id FROM mac_card WHERE card_id = 5")).isEqualTo(20);
+    }
+
+    /** ⑥ 未登记的表、操作、模块：执行前被拒，数据不变。 */
+    @Test
+    @Order(11)
     void unregisteredWritesAreRejectedBeforeExecution() throws Exception {
         DrillWriteMapper m = drill.mapper(DrillWriteMapper.class);
         DatabaseSnapshot before = snapshot();
@@ -276,7 +379,7 @@ class WriteInfrastructureMySqlIT {
 
     /** ⑦ MyISAM 没有事务：关闭自动提交后回滚，修改仍然生效。所以一致性靠 WriteSequence，而不是事务。 */
     @Test
-    @Order(9)
+    @Order(12)
     void myIsamIgnoresRollback() throws Exception {
         int hits = intValue("SELECT vod_hits FROM mac_vod WHERE vod_id = 2");
         try (Connection c = admin(dbName)) {
@@ -298,7 +401,7 @@ class WriteInfrastructureMySqlIT {
 
     /** ⑧ 快照 → 写入（以上各步）→ 只用 DML 恢复 → diff 为空；表结构指纹与导入时一致。 */
     @Test
-    @Order(10)
+    @Order(13)
     void dmlRestoreReturnsToTheSnapshotWithoutStructureChanges() throws Exception {
         long autoIncrementBefore = autoIncrement("mac_plog");
         DatabaseSnapshot s1 = snapshot();
@@ -361,7 +464,7 @@ class WriteInfrastructureMySqlIT {
         }
         try (PreparedStatement k = c.prepareStatement("INSERT INTO mac_card (card_id, card_no, card_pwd, card_points, "
                 + "card_add_time) VALUES (?, ?, ?, ?, 1700000000)")) {
-            for (int i = 1; i <= 3; i++) {
+            for (int i = 1; i <= 5; i++) {
                 k.setInt(1, i);
                 k.setString(2, "DRILLCARD00000" + i);
                 k.setString(3, "pw00000" + i);
@@ -438,6 +541,10 @@ class WriteInfrastructureMySqlIT {
             rs.next();
             return rs.getInt(1);
         }
+    }
+
+    private static int points(long userId) throws SQLException {
+        return intValue("SELECT user_points FROM mac_user WHERE user_id = " + userId);
     }
 
     private static void adminUpdate(String sql) {

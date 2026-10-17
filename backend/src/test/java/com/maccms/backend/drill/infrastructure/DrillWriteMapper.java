@@ -15,6 +15,9 @@ public interface DrillWriteMapper {
 
     int addPoints(@Param("userId") long userId, @Param("points") int points);
 
+    /** 按 id 区间加积分：可能命中多行，用来演练"匹配行数超过预期"。 */
+    int addPointsInRange(@Param("fromId") long fromId, @Param("toId") long toId, @Param("points") int points);
+
     int setPoints(@Param("userId") long userId, @Param("points") int points);
 
     int claimCard(@Param("cardId") long cardId, @Param("userId") long userId, @Param("useTime") long useTime);

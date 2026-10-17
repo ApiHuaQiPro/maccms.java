@@ -127,22 +127,78 @@ class WriteSequenceTest {
     }
 
     @Test
-    void failedCompensationNeedsManualReconcile(CapturedOutput out) {
+    void failedCompensationStopsAndKeepsTheClaim(CapturedOutput out) {
         WriteSequence s = WriteSequence.named("card-use")
-                .step(Role.CLAIM, "card", op("claim", 1), 1, op("release", 0))
+                .step(Role.CLAIM, "card", op("claim", 1), 1, op("release", 1))
                 .step(Role.TRANSFER, "points", op("add", 1), 1, fail("sub", serverError(1205, "40001")))
                 .step(Role.RECORD, "plog", op("log", 0), 1, null)
                 .build();
         assertThatThrownBy(s::run).isInstanceOfSatisfying(CompensationFailedException.class, c -> {
             assertThat(c.reason()).isEqualTo(CompensationFailedException.Reason.COMPENSATION_FAILED);
             assertThat(c.failedStep()).isEqualTo("plog");
-            assertThat(c.unresolvedSteps()).containsExactly("points", "card");
+            assertThat(c.unresolvedSteps()).containsExactly("card", "points");
             assertThat(c.getMessage()).doesNotContain("user-MARKER");
         });
-        // 一个补偿失败后其余补偿照常执行
-        assertThat(calls).containsExactly("claim", "add", "log", "sub", "release");
+        // 补偿失败后立即停止：认领不释放，未对账前同一张卡不能再次生效
+        assertThat(calls).containsExactly("claim", "add", "log", "sub");
         assertThat(out.getAll()).contains("写入需人工对账", "sequence=card-use", "step=plog",
-                "unresolved=[points, card]").doesNotContain("user-MARKER");
+                "reason=COMPENSATION_FAILED", "unresolved=[card, points]").doesNotContain("user-MARKER");
+    }
+
+    @Test
+    void compensationMissStopsBeforeEarlierSteps() {
+        WriteSequence s = WriteSequence.named("buy")
+                .step(Role.CLAIM, "order", op("claim", 1), 1, op("unclaim", 1))
+                .step(Role.TRANSFER, "points", op("deduct", 1), 1, op("refund", 0))
+                .step(Role.TRANSFER, "vip", op("extend", 1), 1, op("shorten", 1))
+                .step(Role.RECORD, "plog", op("log", 0), 1, null)
+                .build();
+        assertThatThrownBy(s::run).isInstanceOfSatisfying(CompensationFailedException.class, c -> {
+            assertThat(c.reason()).isEqualTo(CompensationFailedException.Reason.COMPENSATION_FAILED);
+            assertThat(c.unresolvedSteps()).as("vip 已补偿；points 补偿未命中；order 保留").containsExactly("order", "points");
+            assertThat(c.getCause()).isNull();
+        });
+        assertThat(calls).containsExactly("claim", "deduct", "extend", "log", "shorten", "refund");
+    }
+
+    @Test
+    void unexpectedRowCountIsNotAnOrdinaryConflict(CapturedOutput out) {
+        // 超额匹配（预期 1 行、实际 2 行）：这一步已经改了数据，不补偿任何步骤，认领保留
+        WriteSequence over = WriteSequence.named("card-use")
+                .step(Role.CLAIM, "card", op("claim", 1), 1, op("release", 1))
+                .step(Role.TRANSFER, "points", op("add", 2), 1, op("sub", 1))
+                .step(Role.RECORD, "plog", op("log", 1), 1, null)
+                .build();
+        assertThatThrownBy(over::run).isNotInstanceOf(WriteConflictException.class)
+                .isInstanceOfSatisfying(CompensationFailedException.class, c -> {
+                    assertThat(c.reason()).isEqualTo(CompensationFailedException.Reason.UNEXPECTED_ROWS);
+                    assertThat(c.failedStep()).isEqualTo("points");
+                    assertThat(c.unresolvedSteps()).containsExactly("card", "points");
+                });
+        assertThat(calls).containsExactly("claim", "add");
+        assertThat(out.getAll()).contains("写入需人工对账", "sequence=card-use", "step=points", "reason=UNEXPECTED_ROWS",
+                "unresolved=[card, points]");
+        // 部分生效（预期 3 行、实际 2 行）与负数同样处理
+        for (int matched : new int[] {2, -2}) {
+            calls.clear();
+            WriteSequence partial = WriteSequence.named("batch")
+                    .step(Role.TRANSFER, "a", op("a", 1), 1, op("undo-a", 1))
+                    .step(Role.TRANSFER, "many", op("many", matched), 3, op("undo-many", 3))
+                    .build();
+            assertThatThrownBy(partial::run).isInstanceOfSatisfying(CompensationFailedException.class, c -> {
+                assertThat(c.reason()).isEqualTo(CompensationFailedException.Reason.UNEXPECTED_ROWS);
+                assertThat(c.unresolvedSteps()).containsExactly("a", "many");
+            });
+            assertThat(calls).containsExactly("a", "many");
+        }
+        // 预期多行、匹配 0 行：这一步什么都没改，仍是普通冲突
+        calls.clear();
+        WriteSequence none = WriteSequence.named("batch")
+                .step(Role.TRANSFER, "a", op("a", 1), 1, op("undo-a", 1))
+                .step(Role.TRANSFER, "many", op("many", 0), 3, op("undo-many", 3))
+                .build();
+        assertThatThrownBy(none::run).isInstanceOf(WriteConflictException.class);
+        assertThat(calls).containsExactly("a", "many", "undo-a");
     }
 
     @Test
@@ -166,8 +222,14 @@ class WriteSequenceTest {
     }
 
     @Test
-    void requireMatchedChecksSingleConditionalWrites() {
+    void requireMatchedChecksSingleConditionalWrites(CapturedOutput out) {
         WriteSequence.requireMatched("hit", 1, 1);
         assertThatThrownBy(() -> WriteSequence.requireMatched("hit", 0, 1)).isInstanceOf(WriteConflictException.class);
+        assertThatThrownBy(() -> WriteSequence.requireMatched("hit", 2, 1))
+                .isInstanceOfSatisfying(CompensationFailedException.class, c -> {
+                    assertThat(c.reason()).isEqualTo(CompensationFailedException.Reason.UNEXPECTED_ROWS);
+                    assertThat(c.unresolvedSteps()).containsExactly("hit");
+                });
+        assertThat(out.getAll()).contains("sequence=hit", "reason=UNEXPECTED_ROWS");
     }
 }

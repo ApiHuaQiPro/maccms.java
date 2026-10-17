@@ -80,7 +80,7 @@
 
 - **数值变化一律原子表达式**：`SET user_points = user_points - ?`、`vod_hits = vod_hits + 1`，不做"先读出来、在 Java 里算好、再写回"。旧版的点击、积分多是先读后写（例如 `application/common/model/Card.php:142` 用 `setInc`，但前面的卡状态是先 `find` 再改），新版在此处更严，不改变结果的语义。
 - **条件更新**：前置条件写进同一条语句的 `WHERE`（`AND user_points >= ?`、`AND card_use_status = 0`、`AND order_status = 0`），并发时只有满足条件的请求能命中。
-- **检查匹配行数**：可写数据源固定 `useAffectedRows=false`，`UPDATE` 返回**匹配**行数——写入同值（例如把已是 0 的积分再设成 0）也返回 1，不会被误判为"没找到"。调用方必须把返回值与预期比较（`WriteSequence.requireMatched` 或序列步骤的 `expected`），不等即 `WriteConflictException`。`WriteInfrastructureMySqlIT` ④ 实测：同值写入返回 1、不存在的行返回 0。
+- **检查匹配行数**：可写数据源固定 `useAffectedRows=false`，`UPDATE` 返回**匹配**行数——写入同值（例如把已是 0 的积分再设成 0）也返回 1，不会被误判为"没找到"。调用方必须把返回值与预期比较（`WriteSequence.requireMatched` 或序列步骤的 `expected`）：**匹配 0 行**才是普通冲突 `WriteConflictException`（这条语句什么都没改）；**非 0 但不等于预期**（部分生效或超额匹配，例如条件写错命中了多行）说明语句已经改了数据，抛 `CompensationFailedException(UNEXPECTED_ROWS)` 交人工对账，不能当作可重试的冲突——预期行数不是"实际只写了这么多行"的保证。`WriteInfrastructureMySqlIT` ④ 实测：同值写入返回 1、不存在的行返回 0。
 - **没有唯一键时的去重**：用条件插入（`INSERT … SELECT … WHERE NOT EXISTS (…)`）。MyISAM 的写锁是表级的，`INSERT … SELECT` 对同一张表在一条语句内完成判断与插入；`WriteInfrastructureMySqlIT` ④ 用 5 轮 × 16 线程验证每组只插入 1 行。
 - 每个"先查后写"的业务操作都必须改写成上面某种单语句形式，并有并发测试（第 5 节）。
 
@@ -104,10 +104,16 @@
 
 执行规则：
 
-- 每步返回匹配行数，与预期比较。**不等** → 已完成的步骤按**相反顺序**补偿，全部补偿成功后抛 `WriteConflictException`（含序列名、步骤名、匹配数），数据回到本次写入之前。第一步（认领）不命中时什么都没改。
+- 每步返回匹配行数，与预期比较：
+  - **匹配 0 行** → 这一步什么都没改。已完成的步骤按**相反顺序**补偿，全部补偿成功后抛 `WriteConflictException`（含序列名、步骤名、匹配数）。第一步（认领）不命中时什么都没改。
+  - **非 0 但不等于预期**（部分生效或超额匹配）→ 这一步已经改了数据，改了哪些行、补偿能否撤销都不确定。**不补偿任何步骤**，已完成步骤（含认领）原样保留，抛 `CompensationFailedException(UNEXPECTED_ROWS)`。`WriteInfrastructureMySqlIT` ⑤-4 实测：预期 1 行、实际 2 行时两行的变化与认领都保留，重试在认领步骤被挡住。
 - 某步**抛异常**：肯定没执行（本应用拒绝 `WriteRejectedException`，或服务端返回的非连接类、非中止类错误）→ 补偿已完成步骤后原样抛出；不能确定 → 不补偿，抛 `CompensationFailedException(OUTCOME_UNKNOWN)`。
-- **补偿语句同样是条件写入**，条件里带上本次写入的值（例如释放卡时 `WHERE card_id=? AND card_use_status=1 AND user_id=? AND card_use_time=?`），被别人改过就匹配 0 行而不是盲目覆盖。补偿不命中或抛异常 → 继续补偿其余步骤，最后抛 `CompensationFailedException(COMPENSATION_FAILED)`，列出未恢复的步骤。
-- **上报**：两种 `CompensationFailedException` 都以 ERROR 记一行日志 `写入需人工对账：sequence=… step=… reason=… unresolved=[…] cause=<异常类型链>`，**不含参数与业务数据**；后续批次负责把它变成后台可见的对账项（B12/B14 起）。
+- **补偿语句同样是条件写入**，条件里带上本次写入的值（例如释放卡时 `WHERE card_id=? AND card_use_status=1 AND user_id=? AND card_use_time=?`、退积分时 `AND user_points >= ?`），被别人改过就匹配 0 行而不是盲目覆盖。补偿不命中或抛异常 → **立即停止**，不再补偿更早的步骤，抛 `CompensationFailedException(COMPENSATION_FAILED)`。理由：后面的步骤依赖前面的步骤，前面的步骤（尤其是认领）是"未对账前不能再次生效"的屏障。例如用卡加 50 分后，积分在补偿前被并发花掉 45 分，退 50 分不命中；若继续释放卡，同一张卡可以再用一次、再加 50 分。`WriteInfrastructureMySqlIT` ⑤-5 用这个场景加 16 个并发请求、之后 8 个并发重试验证：卡保持已认领，积分只加一次，其余请求全部在认领步骤失败。
+- **补偿不是快照恢复**：补偿是对本次差值的条件逆操作。全部补偿成功时，本次写入的影响被撤销，但期间其他请求的写入照常保留，数据不一定与本次写入之前逐字段相同（`WriteInfrastructureMySqlIT` ⑤-2 在没有其他写入时与之前完全一致）。
+- **待对账步骤**：`CompensationFailedException.unresolvedSteps()` 按执行顺序列出全部待对账步骤——`COMPENSATION_FAILED` 时是补偿失败的步骤及其之前所有未补偿的步骤（之后的步骤已补偿成功，出错步骤本身没有生效）；`OUTCOME_UNKNOWN` 与 `UNEXPECTED_ROWS` 时是出错步骤及其之前的全部步骤。
+- **上报**：三种 `CompensationFailedException` 都以 ERROR 记一行日志 `写入需人工对账：sequence=… step=… reason=… unresolved=[…] cause=<异常类型链>`，**不含参数与业务数据**；后续批次负责把它变成后台可见的对账项（B12/B14 起）。
+- **对账处理**（人工，按待对账步骤逐项核对实际数据后二选一）：**向前补齐**——认领与转移都已生效且合法，只补上缺失的记录（`WriteInfrastructureMySqlIT` ⑤-6：补写一条流水后数据自洽，卡仍不能再用）；**向后撤销**——核实后按当前值做条件写入撤销，最后才释放认领。认领在对账完成前一律不释放。
+- **没有认领步骤的序列没有屏障**：调用方不得在 `CompensationFailedException` 后自动重试，重复生效只能靠对账项拦住。需要防重复生效的业务必须有认领步骤（第 4.5 节）。
 - 只有最后一步可以没有补偿。
 
 旧版对照（以卡密充值为例，`application/common/model/Card.php:123-158`）：旧版先 `find` 未使用的卡，再给用户加积分（第 142 行），最后把卡改成已使用（第 152 行），两步都不检查影响行数——两个并发请求可以同时通过 `find`，积分加两次。新版顺序是"认领卡（条件更新，匹配 1 行才继续）→ 加积分 → 记流水"，`WriteInfrastructureMySqlIT` ⑤-1 用 16 个用户同时用同一张卡验证：恰好 1 个成功、积分只加一次、流水只有一条，其余 15 个在"card"步骤得到 `WriteConflictException`。这是"只会更严、不会更松"的内部实现差异（路线图第 1.1 节），对外结果与旧版正常路径相同；具体业务（卡密、订单、提现）由 B10/B14 按此实现并写进各自文档。
@@ -117,7 +123,7 @@
 - 不新增幂等表或幂等列（零结构变更），幂等键只能用**已有列的状态**：卡 `card_use_status`、订单 `order_status`（支付回调 E05：`WHERE order_code=? AND order_status=0`，B24）、提现 `cash_status`、审核状态等。重复请求在认领步骤匹配 0 行，什么都不改。
 - 匹配 0 行时调用方**重读一次**区分"已经由本请求或别人完成"（幂等成功，按旧版返回成功提示）与"不存在 / 条件不满足"（返回旧版对应的错误），由各批次按旧版提示语实现。
 - 不能用认领表达的计数类写入（点击、顶踩）本身不要求幂等，与旧版一致；不做"同一 IP 去重"等旧版没有的限制。
-- 新系统自己的重试：只在 `WriteConflictException` 后由业务决定是否重试；`CompensationFailedException` 一律不自动重试。
+- 新系统自己的重试：只在 `WriteConflictException`（匹配 0 行，且此前步骤已全部补偿成功）后由业务决定是否重试；`CompensationFailedException`（三种原因）一律不自动重试，认领保留到对账完成。
 
 #### 4.6 写 Mapper 的用法（供 B08 起参照）
 
@@ -140,6 +146,7 @@ WriteRegistry.REGISTERED 增加 new WritePermission("<模块>", "mac_xxx", Write
 | 原子计数 `vod_hits + 1` | 100 | 100 个都匹配 1 行，最终 +100 |
 | 条件插入（同一组 user/mid/type/rid） | 16 × 5 轮 | 每轮恰好 1 行 |
 | 用卡序列（认领 → 加积分 → 记流水） | 16 | 恰好 1 个成功，积分 +50 一次，流水 1 条，其余在认领步骤冲突 |
+| 用卡序列 + 故障注入（加积分后并发花掉 45 分，再让记流水被服务端拒绝，退 50 分补偿不命中） | 16，之后再 8 | 恰好 1 个 `COMPENSATION_FAILED`（待对账 `[card, points]`），15 个与之后 8 个重试都在认领步骤冲突；卡保持已认领，积分只 +50 一次 |
 
 ### 6. 回滚演练工具（测试侧 `writedrill`）
 
@@ -153,7 +160,7 @@ WriteRegistry.REGISTERED 增加 new WritePermission("<模块>", "mac_xxx", Write
 - **只用 DML**：不使用、也不需要 `TRUNCATE`、`ALTER`、重建表或导入；`WriteGuardTest.drillToolsUseOnlyDml` 用 B02 的结构语句规则扫描工具源码。
 - **已知边界**：`AUTO_INCREMENT` 计数器不会回退（回退需要 `ALTER TABLE`）。恢复后再插入的行 id 更大，不影响行数据与对账；指纹本来就不含 `AUTO_INCREMENT`（B02）。`WriteInfrastructureMySqlIT` ⑧ 断言恢复前后 `mac_plog` 的 `AUTO_INCREMENT` 相同（删除新增行不改变计数器）。
 - **前提**：取快照与恢复时没有其他写入（演练在一次性库上；整体切换时在停止写入之后，见 13 文档）。工具不加锁。
-- **演练结果**（`WriteInfrastructureMySqlIT` ⑧，本机）：S0 之后各步写入共涉及 `mac_user` 2 行、`mac_card` 2 行、`mac_vod` 2 行变更，`mac_plog` 新增 1 行、`mac_ulog` 新增 5 行（其余步骤已被补偿或被拒，没有留下差异）；`DmlRestore` 执行 12 条语句；再取快照与 S0 的 diff 为空；表结构指纹与导入 `install.sql` 时一致。
+- **演练结果**（`WriteInfrastructureMySqlIT` ⑧，本机）：S0 之后各步写入共涉及 `mac_user` 4 行、`mac_card` 4 行、`mac_vod` 2 行变更，`mac_plog` 新增 2 行、`mac_ulog` 新增 5 行（含 ⑤-3～⑤-6 故意留给对账的认领与积分变化；其余步骤已被补偿或被拒，没有留下差异）；`DmlRestore` 执行 17 条语句；再取快照与 S0 的 diff 为空；表结构指纹与导入 `install.sql` 时一致。
 - **B21 / 整体切换时的扩展**（本批不做）：生产规模的表（如 `mac_vod` 上百万行）不能整表放进内存，需要改成按主键分段、落到本地文件的快照与 diff；`apply` 的库名限制要放宽到"经确认的切换目标库"并加二次确认。届时在 B21 中实现并演练。
 
 ### 7. 验证记录（2026-10-16，本机）
@@ -163,14 +170,21 @@ WriteRegistry.REGISTERED 增加 new WritePermission("<模块>", "mac_xxx", Write
 | `./mvnw verify` | BUILD SUCCESS，1447 个测试，0 失败、0 错误、0 跳过。比 B02 交付时（1415）多 32 个：`WriteGuardTest` 7、`WriteSequenceTest` 8、`WriteRegistryTest` 5、`WriteDrillToolsTest` 5、`WriteDataSourceConfigurationTest` 4、`WriteStatementTest` 3；`ModuleBoundaryTest`、`ReadOnlyGuardrailsTest` 只在原有测试方法里加了断言，个数不变 |
 | `./mvnw verify -Pmysql-it`（MySQL 5.7.44，`sql_mode=STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION`，本机管理账号，一次性库） | BUILD SUCCESS：单元 1447 个；集成 18 个（原有 8 个 + `WriteInfrastructureMySqlIT` 10 个）。各 IT 创建的 `maccms_it_*` 库均已删除并确认不存在（结束后查询 `maccms\_it\_%` 为 0）；没有连接 `maccms_dev` |
 
-`WriteInfrastructureMySqlIT` 各步（按执行顺序）：① 默认不创建可写数据源，只读池写入被拒、会话 `tx_read_only=1`；② 打开可写数据源时正式登记表为空，演练写入被拒、数据不变；③ 错误账号与密码不出现在异常与日志中（约 5 秒，等连接超时）；④ 第 5 节表格中的并发用例；⑤ 用卡序列：并发只成功一次、服务端拒绝时补偿回原状、补偿失败时上报 `COMPENSATION_FAILED`；⑥ 未登记的表、操作、模块被拒；⑦ MyISAM 回滚不生效；⑧ 快照 → 逐行 diff → `DmlRestore`（12 条）→ diff 为空 → 表结构指纹不变 → `AUTO_INCREMENT` 不回退 → 未选库的连接上拒绝恢复。
+**首轮验收返工（MACC-31，同日，本机，在含 B03 的 main `52b9e5f` 合并后验证）**：修正两处缺陷——匹配行数非 0 但不等于预期时不再当普通冲突（新增 `UNEXPECTED_ROWS`，不补偿、保留认领）；补偿失败时立即停止、不再释放认领。
+
+| 命令 | 结果 |
+|---|---|
+| `mvnw.cmd verify`（PowerShell） | BUILD SUCCESS，**1634** 个测试，0 失败、0 错误、0 跳过（验收时合并树 1632；`WriteSequenceTest` 由 8 个增至 10 个） |
+| `mvnw.cmd verify -Pmysql-it`（同上 MySQL 5.7.44，本机管理账号，一次性库） | BUILD SUCCESS：单元 1634 个；集成 **26** 个（验收时 23 个 + `WriteInfrastructureMySqlIT` 新增 ⑤-4、⑤-5、⑤-6 共 3 个，该类共 13 个）；`DmlRestore` 17 条后 diff 为空、表结构指纹不变；`maccms\_it\_%` 库结束后为 0；没有连接 `maccms_dev` |
+
+`WriteInfrastructureMySqlIT` 各步（按执行顺序）：① 默认不创建可写数据源，只读池写入被拒、会话 `tx_read_only=1`；② 打开可写数据源时正式登记表为空，演练写入被拒、数据不变；③ 错误账号与密码不出现在异常与日志中（约 5 秒，等连接超时）；④ 第 5 节表格中的并发用例；⑤ 用卡序列：⑤-1 并发只成功一次、⑤-2 服务端拒绝时补偿回原状、⑤-3 释放认领的补偿不命中时上报 `COMPENSATION_FAILED`、⑤-4 超额匹配时上报 `UNEXPECTED_ROWS` 且认领与变化都保留、⑤-5 退积分补偿失败时补偿停止、认领保留（并发 + 故障注入 + 重试）、⑤-6 对账向前补齐后数据自洽且卡不能再用，⑤-3～⑤-5 都断言了日志行内容且不含用户名与参数；⑥ 未登记的表、操作、模块被拒；⑦ MyISAM 回滚不生效；⑧ 快照 → 逐行 diff → `DmlRestore`（17 条）→ diff 为空 → 表结构指纹不变 → `AUTO_INCREMENT` 不回退 → 未选库的连接上拒绝恢复。
 
 ### 8. 与旧版的差异
 
 | 项 | 旧版 | 新版（本批） |
 |---|---|---|
 | 写库方式 | ThinkPHP 模型随处写库，多为先读后写，不检查影响行数 | 只经可写数据源与登记过的写 Mapper；数值变化用原子表达式，前置条件写进 WHERE，检查匹配行数（本批只建机制，没有业务写入） |
-| 多表写入 | 无顺序约定、失败不回退（例如卡密先加积分后改卡状态） | 认领 → 转移 → 记录，失败按相反顺序条件补偿，补偿失败或结果不确定时上报人工对账 |
+| 多表写入 | 无顺序约定、失败不回退（例如卡密先加积分后改卡状态） | 认领 → 转移 → 记录，匹配 0 行时按相反顺序条件补偿；补偿失败、结果不确定或匹配行数异常时停止补偿、保留认领并上报人工对账 |
 | 并发重复提交 | 可能重复生效（卡密、回调等） | 认领步骤保证只生效一次；属于"只会更严"的内部差异，正常路径结果相同 |
 | 账号 | 一个账号读写 | 只读池与可写池分开配置；生产建议两个账号（本批未创建） |
 | 结构语句 | 后台可执行 | 任何入口都不能执行（B02 护栏），恢复只用 DML |
@@ -179,11 +193,12 @@ WriteRegistry.REGISTERED 增加 new WritePermission("<模块>", "mac_xxx", Write
 
 - **静态护栏是文本扫描**：能被反射、动态拼接的类名等手法绕过；运行期拦截器按实际 SQL 补一道，代码评审仍要看。`WriteStatement` 不是完整的 SQL 解析器，只认上面三种形态，不认识的一律拒绝（宁可误拒）。
 - **`WHERE` 只检查存在性**：`WHERE 1=1` 之类仍能整表写入。条件内容靠评审与并发测试。
-- **补偿失败需要人工**：本批只有日志一行；后台可见的对账项在 B12/B14 起实现。
+- **补偿失败需要人工**：本批只有日志一行；后台可见的对账项在 B12/B14 起实现。保留的认领在对账完成前会让同一张卡、同一个订单持续"已使用 / 已处理"，这是有意的（宁可让用户找客服，也不重复生效）。
+- **没有认领步骤的序列**补偿失败后没有数据层面的屏障，只能靠调用方不自动重试与对账项（第 4.4 节）。
 - **快照工具规模**：只适合演练（≤20 万行/表、全部在内存），生产规模见第 6 节，B21 实现。
 - **严格模式依赖**：第 4.3 节第 2 条依赖 MySQL 严格模式（5.7 默认开启，Connector/J 也会补上）。生产库的 `sql_mode` 未核实（D9-b），B21 演练时核对。
 - **写账号权限**需要数据库管理员在获批部署时创建，本批没有、也不能创建。
 
 ### 10. 回滚
 
-本批是新增代码与文档，以一个合并提交进入 main，`git revert` 即可回到 B02 的 main（`dcd3598`）。可写数据源默认关闭、正式登记表为空，revert 前后应用对外行为相同（只读）；部署环境里如果设置过 `MACCMS_WRITE_*`，revert 后这些变量不再被读取，无需清理。不改表结构、不改旧 PHP、不建账号、不部署。
+本批是新增代码与文档，以一个合并提交进入 main，`git revert -m 1 <合并提交>` 即可回到合并前的 main（当前为 `52b9e5f`）。可写数据源默认关闭、正式登记表为空，revert 前后应用对外行为相同（只读）；部署环境里如果设置过 `MACCMS_WRITE_*`，revert 后这些变量不再被读取，无需清理。不改表结构、不改旧 PHP、不建账号、不部署。
