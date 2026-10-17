@@ -137,6 +137,26 @@ class ReadOnlyGuardrailsTest {
         assertThat(plot).contains("vod_plot_name", "vod_plot_detail");
     }
 
+    /**
+     * B06 旧协议整行读取（LegacyRowMapper.xml，16 文档第 3.5、3.6 节）：访问密码列只能以 {@code CHAR_LENGTH(...) > 0} 的布尔结果出现
+     * （不读出密码值）；其余整行列是旧协议输出的一部分，按 install.sql 列出。
+     */
+    @Test
+    void legacyRowMapperNeverSelectsPasswords() throws IOException {
+        String sql = sqlOnly(MAPPERS.resolve("content/LegacyRowMapper.xml"));
+        Matcher pwd = Pattern.compile("\\b(vod_pwd\\w*|art_pwd\\w*)\\b").matcher(sql);
+        int flags = 0;
+        while (pwd.find()) {
+            String around = sql.substring(Math.max(0, pwd.start() - 16), Math.min(sql.length(), pwd.end() + 24));
+            assertThat(around).as("LegacyRowMapper 只能以布尔结果使用 " + pwd.group())
+                    .matches("(?s).*CHAR_LENGTH\\(" + pwd.group() + "\\) &gt; 0\\) AS _pwd.*");
+            assertThat(pwd.group()).isIn("vod_pwd", "vod_pwd_play", "vod_pwd_down", "art_pwd");
+            flags++;
+        }
+        assertThat(flags).isEqualTo(4);
+        assertThat(sql).doesNotContain("SELECT *", "vod_pwd_url", "art_pwd_url");
+    }
+
     @Test
     void mainResourcesContainNoCredentials() throws IOException {
         try (Stream<Path> s = Files.walk(MAIN_RESOURCES)) {

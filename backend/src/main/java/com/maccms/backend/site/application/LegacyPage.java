@@ -58,7 +58,20 @@ public enum LegacyPage {
     PLOT_INDEX("plot/index", Id.NONE, List.of("page"), false),
     PLOT_DETAIL("plot/detail", Id.VIDEO, List.of("id", "page"), false),
     PLOT_RSS("plot/rss", Id.VIDEO, List.of("id"), true),
-    PLOT_AJAX_DETAIL("plot/ajax_detail", Id.VIDEO, List.of("id"), false);
+    PLOT_AJAX_DETAIL("plot/ajax_detail", Id.VIDEO, List.of("id"), false),
+
+    // ---- B06（docs/architecture/16-b06-misc-pages-provide.md 第 4 节）：地图、帮助、版权页、站点级 RSS 与搜索引擎地图
+    MAP_INDEX("map/index", Id.NONE, List.of(), false, "html", true),
+    HELP_INDEX("help/index", Id.NONE, List.of(), false, "html", true),
+    VOD_COPYRIGHT("vod/copyright", Id.VIDEO, List.of("id"), false, "html", true),
+    /** 旧 {@code url($model, $param, 'xml')}（application/common.php:1782-1793）：站点级 RSS 的地址以 .xml 结尾。 */
+    RSS_INDEX("rss/index", Id.NONE, List.of(), false, "xml", true),
+    RSS_BAIDU("rss/baidu", Id.NONE, List.of(), false, "xml", true),
+    RSS_GOOGLE("rss/google", Id.NONE, List.of(), false, "xml", true),
+    RSS_SO("rss/so", Id.NONE, List.of(), false, "xml", true),
+    RSS_SOGOU("rss/sogou", Id.NONE, List.of(), false, "xml", true),
+    RSS_BING("rss/bing", Id.NONE, List.of(), false, "xml", true),
+    RSS_SM("rss/sm", Id.NONE, List.of(), false, "xml", true);
 
     /** id 参数的取值范围。 */
     public enum Id {
@@ -94,12 +107,35 @@ public enum LegacyPage {
     private final Id id;
     private final List<String> keys;
     private final boolean rss;
+    private final String suffix;
+    private final boolean misc;
 
     LegacyPage(String target, Id id, List<String> keys, boolean rss) {
+        this(target, id, keys, rss, "html", false);
+    }
+
+    LegacyPage(String target, Id id, List<String> keys, boolean rss, String suffix, boolean misc) {
         this.target = target;
         this.id = id;
         this.keys = keys;
         this.rss = rss;
+        this.suffix = suffix;
+        this.misc = misc;
+    }
+
+    /** 旧地址的后缀（{@code html}；站点级 RSS 为 {@code xml}）。 */
+    public String suffix() {
+        return suffix;
+    }
+
+    /** 是否为 B06 的杂项页（地图、帮助、版权页、站点级 RSS），由 SiteMiscController 承接。 */
+    public boolean misc() {
+        return misc;
+    }
+
+    /** 是否为站点级 RSS / 搜索引擎地图（{@code rss/<格式>}）。 */
+    public boolean feed() {
+        return suffix.equals("xml");
     }
 
     /** 旧"控制器/操作"（小写）。 */

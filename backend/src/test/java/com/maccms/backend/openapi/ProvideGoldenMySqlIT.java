@@ -261,6 +261,31 @@ class ProvideGoldenMySqlIT {
         assertThat(exact).as("逐字节相同的用例数").isGreaterThanOrEqualTo(90);
     }
 
+    /**
+     * LegacyTable 的整行列清单（与 LegacyRowMapper.xml 由同一份清单生成）与一次性库的 information_schema 一致：旧表的全部列按顺序，
+     * 只去掉访问密码列。
+     */
+    @Test
+    void fullColumnListsMatchInformationSchema() throws Exception {
+        Set<String> passwords = Set.of("vod_pwd", "vod_pwd_url", "vod_pwd_play", "vod_pwd_play_url", "vod_pwd_down",
+                "vod_pwd_down_url", "art_pwd", "art_pwd_url");
+        try (Connection c = admin(dbName); Statement st = c.createStatement()) {
+            for (com.maccms.backend.content.application.LegacyTable t
+                    : com.maccms.backend.content.application.LegacyTable.values()) {
+                List<String> cols = new ArrayList<>();
+                try (ResultSet rs = st.executeQuery("SELECT column_name FROM information_schema.columns WHERE table_schema = '"
+                        + dbName + "' AND table_name = 'mac_" + t.prefix() + "' ORDER BY ordinal_position")) {
+                    while (rs.next()) {
+                        if (!passwords.contains(rs.getString(1))) {
+                            cols.add(rs.getString(1));
+                        }
+                    }
+                }
+                assertThat(t.fullColumns()).as(t.name()).isEqualTo(cols);
+            }
+        }
+    }
+
     /** 返回 true 表示与旧版逐字节相同，false 表示按登记差异断言通过。 */
     private static boolean check(String id, JsonNode c, Reply r, Map<String, byte[]> phpBodies) throws Exception {
         {

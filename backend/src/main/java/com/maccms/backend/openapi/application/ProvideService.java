@@ -3,6 +3,7 @@ package com.maccms.backend.openapi.application;
 import com.maccms.backend.common.clientip.IpAddress;
 import com.maccms.backend.common.web.ApiException;
 import com.maccms.backend.common.web.ErrorCode;
+import com.maccms.backend.common.web.LegacyJson;
 import com.maccms.backend.content.application.LegacyColumnSet;
 import com.maccms.backend.content.application.LegacyRowOrder;
 import com.maccms.backend.content.application.LegacyRowQuery;
@@ -240,7 +241,7 @@ public class ProvideService {
             if (!full) {
                 out.put("class", classList(m, types, ms));
             }
-            body = PhpJsonWriter.encode(out);
+            body = LegacyJson.encode(out);
         }
         body = PhpCompat.filterTags(body);
         return new ProvideResponse(200, xml ? ProvideResponse.XML : ProvideResponse.JSON, cacheControl(ms),

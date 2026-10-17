@@ -79,12 +79,15 @@ public class ProvideController {
 
     private static ResponseEntity<byte[]> respond(ProvideResponse r) {
         byte[] body = r.body();
-        return ResponseEntity.status(r.status())
+        ResponseEntity.BodyBuilder b = ResponseEntity.status(r.status())
                 .header(HttpHeaders.CONTENT_TYPE, r.contentType())
                 .header(HttpHeaders.CACHE_CONTROL, r.cacheControl())
                 .header("X-Content-Type-Options", "nosniff")
-                .contentLength(body.length)
-                .body(body);
+                .contentLength(body.length);
+        if (r.status() == 503) {
+            b.header(HttpHeaders.RETRY_AFTER, "5");
+        }
+        return b.body(body);
     }
 
     private static ProvideResponse notFound() {
