@@ -42,25 +42,27 @@ public class WebsiteReadService {
     }
 
     public PageResponse<WebsiteSummaryDto> listWebsites(ContentListQuery query) {
+        return read(() -> page(query, query.filter().toCriteria()));
+    }
+
+    /** 一页（异常转换由调用方的 read 负责）；B05 的 LibrarySearchService 以并入 LibraryMatch 的条件调用。 */
+    PageResponse<WebsiteSummaryDto> page(ContentListQuery query, ContentCriteria criteria) {
         if (query.kind() != ContentKind.WEBSITE) {
             throw new IllegalArgumentException("kind");
         }
-        return read(() -> {
-            CategoryCatalog catalog = catalogs.catalog(TYPE_MID, catalogs.guest());
-            Set<Integer> typeIds = ArticleReadService.typeIds(catalog, query.categoryId());
-            if (typeIds.isEmpty()) {
-                return PageResponse.of(List.of(), query.page(), query.pageSize(), 0);
-            }
-            ContentCriteria criteria = query.filter().toCriteria();
-            long total = websiteMapper.countPublished(typeIds, criteria);
-            if (total == 0 || query.offset() >= total) {
-                return PageResponse.of(List.of(), query.page(), query.pageSize(), total);
-            }
-            List<WebsiteSummaryDto> items = websiteMapper.selectPublishedPage(typeIds, criteria, query.sort(),
-                    query.descending(), query.offset(), query.pageSize()).stream()
-                    .map(r -> toSummary(r, catalog)).toList();
-            return PageResponse.of(items, query.page(), query.pageSize(), total);
-        });
+        CategoryCatalog catalog = catalogs.catalog(TYPE_MID, catalogs.guest());
+        Set<Integer> typeIds = ArticleReadService.typeIds(catalog, query.categoryId());
+        if (typeIds.isEmpty()) {
+            return PageResponse.of(List.of(), query.page(), query.pageSize(), 0);
+        }
+        long total = websiteMapper.countPublished(typeIds, criteria);
+        if (total == 0 || query.offset() >= total) {
+            return PageResponse.of(List.of(), query.page(), query.pageSize(), total);
+        }
+        List<WebsiteSummaryDto> items = websiteMapper.selectPublishedPage(typeIds, criteria, query.sort(),
+                query.descending(), query.offset(), query.pageSize()).stream()
+                .map(r -> toSummary(r, catalog)).toList();
+        return PageResponse.of(items, query.page(), query.pageSize(), total);
     }
 
     public WebsiteDetailDto getWebsite(long id) {

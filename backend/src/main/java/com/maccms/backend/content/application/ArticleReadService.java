@@ -43,25 +43,27 @@ public class ArticleReadService {
     }
 
     public PageResponse<ArticleSummaryDto> listArticles(ContentListQuery query) {
+        return read(() -> page(query, query.filter().toCriteria()));
+    }
+
+    /** 一页（异常转换由调用方的 read 负责）；B05 的 LibrarySearchService 以并入 LibraryMatch 的条件调用。 */
+    PageResponse<ArticleSummaryDto> page(ContentListQuery query, ContentCriteria criteria) {
         if (query.kind() != ContentKind.ARTICLE) {
             throw new IllegalArgumentException("kind");
         }
-        return read(() -> {
-            CategoryCatalog catalog = catalogs.catalog(TYPE_MID, catalogs.guest());
-            Set<Integer> typeIds = typeIds(catalog, query.categoryId());
-            if (typeIds.isEmpty()) {
-                return PageResponse.of(List.of(), query.page(), query.pageSize(), 0);
-            }
-            ContentCriteria criteria = query.filter().toCriteria();
-            long total = artMapper.countPublished(typeIds, criteria);
-            if (total == 0 || query.offset() >= total) {
-                return PageResponse.of(List.of(), query.page(), query.pageSize(), total);
-            }
-            List<ArticleSummaryDto> items = artMapper.selectPublishedPage(typeIds, criteria, query.sort(),
-                    query.descending(), query.offset(), query.pageSize()).stream()
-                    .map(r -> toSummary(r, catalog)).toList();
-            return PageResponse.of(items, query.page(), query.pageSize(), total);
-        });
+        CategoryCatalog catalog = catalogs.catalog(TYPE_MID, catalogs.guest());
+        Set<Integer> typeIds = typeIds(catalog, query.categoryId());
+        if (typeIds.isEmpty()) {
+            return PageResponse.of(List.of(), query.page(), query.pageSize(), 0);
+        }
+        long total = artMapper.countPublished(typeIds, criteria);
+        if (total == 0 || query.offset() >= total) {
+            return PageResponse.of(List.of(), query.page(), query.pageSize(), total);
+        }
+        List<ArticleSummaryDto> items = artMapper.selectPublishedPage(typeIds, criteria, query.sort(),
+                query.descending(), query.offset(), query.pageSize()).stream()
+                .map(r -> toSummary(r, catalog)).toList();
+        return PageResponse.of(items, query.page(), query.pageSize(), total);
     }
 
     public ArticleDetailDto getArticle(long id) {

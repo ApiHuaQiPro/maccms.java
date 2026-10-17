@@ -24,6 +24,13 @@
         <if test="criteria.area != null">AND actor_area = #{criteria.area}</if>
         <if test="criteria.starSign != null">AND actor_starsign = #{criteria.starSign}</if>
         <if test="criteria.blood != null">AND actor_blood = #{criteria.blood}</if>
+        <!--
+          B05 SSR 筛选/搜索页（docs/architecture/15-b05-readonly-pages.md 第 7.2 节，LibraryMatch）：只由 site 经
+          content.application.LibrarySearchService 构造，公开 API 从不设置（不设置时上面的 SQL 文本不变）。列名固定，
+          LIKE 模式已按 ESCAPE '!' 转义。旧规则：wd Actor.php:289-291（actor_name|actor_en）；ids :186-190。
+        -->
+        <if test="criteria.keywordPatterns != null">AND (<foreach collection="criteria.keywordPatterns" item="p" separator=" OR ">actor_name LIKE #{p} ESCAPE '!' OR actor_en LIKE #{p} ESCAPE '!'</foreach>)</if>
+        <if test="criteria.ids != null">AND actor_id IN <foreach collection="criteria.ids" item="id" open="(" separator="," close=")">#{id}</foreach></if>
     </sql>
 
     <select id="countPublished" resultType="long">

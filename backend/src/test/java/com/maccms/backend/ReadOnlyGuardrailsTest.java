@@ -110,7 +110,14 @@ class ReadOnlyGuardrailsTest {
                 + "type_id_1|vod_play_\\w+|vod_down_\\w+|vod_points\\w*|vod_trysee|vod_pwd_\\w+)\\b");
         for (String file : List.of("ArtMapper.xml", "TopicMapper.xml", "ActorMapper.xml", "RoleMapper.xml",
                 "WebsiteMapper.xml", "LinkMapper.xml", "VodPlotMapper.xml")) {
-            Matcher m = internal.matcher(sqlOnly(MAPPERS.resolve("content/" + file)));
+            String sql = sqlOnly(MAPPERS.resolve("content/" + file));
+            if (file.equals("ArtMapper.xml")) {
+                // B05（15 文档第 7.2 节）：type_id_1 只允许出现在 SSR 搜索页的 tid 条件中，作 WHERE 比较，不是查询列
+                String tid = "type_id = #{criteria.tid} OR type_id_1 = #{criteria.tid}";
+                assertThat(sql.split(Pattern.quote(tid), -1)).as("ArtMapper 的 tid 条件只有一处").hasSize(2);
+                sql = sql.replace(tid, "");
+            }
+            Matcher m = internal.matcher(sql);
             assertThat(m.find()).as(file + " 不应查询内部列" + (m.hitEnd() ? "" : "：" + m.group())).isFalse();
         }
         String art = sqlOnly(MAPPERS.resolve("content/ArtMapper.xml"));

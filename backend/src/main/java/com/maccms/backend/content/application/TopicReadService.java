@@ -56,19 +56,21 @@ public class TopicReadService {
     }
 
     public PageResponse<TopicSummaryDto> listTopics(ContentListQuery query) {
+        return read(() -> page(query, query.filter().toCriteria()));
+    }
+
+    /** 一页（异常转换由调用方的 read 负责）；B05 的 LibrarySearchService 以并入 LibraryMatch 的条件调用。 */
+    PageResponse<TopicSummaryDto> page(ContentListQuery query, ContentCriteria criteria) {
         if (query.kind() != ContentKind.TOPIC) {
             throw new IllegalArgumentException("kind");
         }
-        return read(() -> {
-            ContentCriteria criteria = query.filter().toCriteria();
-            long total = topicMapper.countPublished(criteria);
-            if (total == 0 || query.offset() >= total) {
-                return PageResponse.of(List.of(), query.page(), query.pageSize(), total);
-            }
-            List<TopicSummaryDto> items = topicMapper.selectPublishedPage(criteria, query.sort(), query.descending(),
-                    query.offset(), query.pageSize()).stream().map(TopicReadService::toSummary).toList();
-            return PageResponse.of(items, query.page(), query.pageSize(), total);
-        });
+        long total = topicMapper.countPublished(criteria);
+        if (total == 0 || query.offset() >= total) {
+            return PageResponse.of(List.of(), query.page(), query.pageSize(), total);
+        }
+        List<TopicSummaryDto> items = topicMapper.selectPublishedPage(criteria, query.sort(), query.descending(),
+                query.offset(), query.pageSize()).stream().map(TopicReadService::toSummary).toList();
+        return PageResponse.of(items, query.page(), query.pageSize(), total);
     }
 
     public TopicDetailDto getTopic(long id) {

@@ -4,7 +4,8 @@
   只读映射：沿用旧表 mac_art（install.sql:3）。禁止在此文件加入写语句，禁止 ${} 拼接。
   不查询的列（不得出现在任何 select 中）：art_pwd 及 art_pwd_url（只以 CHAR_LENGTH(art_pwd) > 0 的布尔结果出现；比 PHP 的 !empty 更严：值为 "0" 也视为有密码）、
   art_points、art_points_detail（只以 > 0 的布尔结果出现）、group_id、art_lock、art_tpl、art_jumpurl、art_time_make、
-  art_time_hits、art_rel_art、art_rel_vod、type_id_1。旧规则依据：application/common/model/Art.php。
+  art_time_hits、art_rel_art、art_rel_vod、type_id_1（type_id_1 只出现在 B05 SSR 的 tid 条件中，作 WHERE 比较）。
+  旧规则依据：application/common/model/Art.php。
 -->
 <mapper namespace="com.maccms.backend.content.infrastructure.ArtMapper">
 
@@ -21,6 +22,17 @@
         <if test="criteria.letters != null">
             AND art_letter IN <foreach collection="criteria.letters" item="l" open="(" separator="," close=")">#{l}</foreach>
         </if>
+        <!--
+          B05 SSR 筛选/搜索页（docs/architecture/15-b05-readonly-pages.md 第 7.2 节，LibraryMatch）：只由 site 经
+          content.application.LibrarySearchService 构造，公开 API 从不设置（不设置时上面的 SQL 文本不变）。列名固定，
+          LIKE 模式已按 ESCAPE '!' 转义。旧规则：wd Art.php:331-337（art_name 加 search_art_rule 列，仓库值 art_en|art_sub，application/extra/maccms.php:71）；name/tag/class :338-346（mac_like_arr）；ids :238-242；tid :173-174、:291-292（type_id|type_id_1）。
+        -->
+        <if test="criteria.keywordPatterns != null">AND (<foreach collection="criteria.keywordPatterns" item="p" separator=" OR ">art_name LIKE #{p} ESCAPE '!' OR art_en LIKE #{p} ESCAPE '!' OR art_sub LIKE #{p} ESCAPE '!'</foreach>)</if>
+        <if test="criteria.namePatterns != null">AND (<foreach collection="criteria.namePatterns" item="p" separator=" OR ">art_name LIKE #{p} ESCAPE '!'</foreach>)</if>
+        <if test="criteria.tagPatterns != null">AND (<foreach collection="criteria.tagPatterns" item="p" separator=" OR ">art_tag LIKE #{p} ESCAPE '!'</foreach>)</if>
+        <if test="criteria.classPatterns != null">AND (<foreach collection="criteria.classPatterns" item="p" separator=" OR ">art_class LIKE #{p} ESCAPE '!'</foreach>)</if>
+        <if test="criteria.ids != null">AND art_id IN <foreach collection="criteria.ids" item="id" open="(" separator="," close=")">#{id}</foreach></if>
+        <if test="criteria.tid != null">AND (type_id = #{criteria.tid} OR type_id_1 = #{criteria.tid})</if>
     </sql>
 
     <sql id="summaryColumns">

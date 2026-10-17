@@ -38,6 +38,11 @@ public final class LegacyUrlBuilder {
     public static final List<String> SEARCH_LINK_KEYS = List.of("actor", "area", "by", "class", "director", "ids",
             "lang", "letter", "level", "name", "order", "page", "state", "tag", "tid", "version", "wd", "year");
     /**
+     * 模块筛选/搜索页（B05 D-B05-5，{@link #moduleListLink}）另用的查询串键：演员的 sex/starsign/blood、角色的 rid
+     * （其余键与 {@link #SEARCH_LINK_KEYS} 相同）。
+     */
+    public static final List<String> MODULE_LINK_KEYS = List.of("blood", "rid", "sex", "starsign");
+    /**
      * 搜索链接查询串的最大长度：MACC-20 的 wd/area/lang/class 各取 content 的码点上限、每个码点 3 字节（U+FFFF 以上字符被拒绝）
      * 编码为 9 个字符，加上最长的 by、order、level、page 与 4 位年份（09 方案第 7.2.4 节）。B05 起这是预算而不是推论：
      * 新键会占用同一预算，超出预算的条件组合在 {@link SearchFilters} 中被拒绝（搜索页 400），所以生成的链接仍在 {@link SafeUrl} 上限内。
@@ -80,6 +85,8 @@ public final class LegacyUrlBuilder {
             case SiteRoute.VodDetail d -> vodDetail(d.vodId());
             case SiteRoute.VodSearch s -> vodSearch(Map.of(), 1);
             case SiteRoute.VodShow s -> vodShowLink(s.categoryId(), SearchFilters.NONE, 1).path();
+            case SiteRoute.ModuleList m -> moduleListLink(m.page(), m.categoryId(), ModuleFilters.none(m.page().module()),
+                    1).path();
             case SiteRoute.Legacy l -> legacy(l);
         };
     }
@@ -176,9 +183,31 @@ public final class LegacyUrlBuilder {
         return new SiteLink(macUrl("vod/show", vars), searchQuery(filters, page));
     }
 
+    /**
+     * 文章、专题、演员、角色、网址、剧情的筛选/搜索页链接（B05 D-B05-5）：固定路径（搜索页 {@code <模块>/search}，筛选页
+     * {@code <模块>/show/id/<分类>}，{@code mac_url} 的写法）+ 与视频搜索页相同写法的查询串。ajax 入口的链接指向完整页面。
+     * 只支持 site 的 URL 形态（分隔符 /、不启用路由别名）。
+     */
+    public SiteLink moduleListLink(ModuleListPage page, Integer categoryId, ModuleFilters filters, int pageNo) {
+        if (style.routeAliases() || style.depr() != '/') {
+            throw new IllegalStateException("筛选/搜索页链接只支持 pathinfo_depr=/、不启用路由别名的形态");
+        }
+        ModuleListPage target = page.page();
+        new SiteRoute.ModuleList(target, categoryId, filters, pageNo);
+        Map<String, String> vars = new LinkedHashMap<>();
+        if (categoryId != null) {
+            vars.put("id", Integer.toString(categoryId));
+        }
+        return new SiteLink(macUrl(target.target(), vars), query(filters.params(), pageNo));
+    }
+
     /** 搜索/筛选页链接的查询串：已设置的条件按键排序（mac_url 的 ksort），页码只在 &gt; 1 时输出，值用 PHP urlencode。 */
     private static String searchQuery(SearchFilters filters, int page) {
-        Map<String, String> vars = new TreeMap<>(filters.params());
+        return query(filters.params(), page);
+    }
+
+    private static String query(Map<String, String> params, int page) {
+        Map<String, String> vars = new TreeMap<>(params);
         if (page > 1) {
             vars.put("page", Integer.toString(page));
         }

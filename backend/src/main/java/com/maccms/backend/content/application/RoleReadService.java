@@ -43,28 +43,30 @@ public class RoleReadService {
     }
 
     public PageResponse<RoleSummaryDto> listRoles(ContentListQuery query) {
+        return read(() -> page(query, query.filter().toCriteria()));
+    }
+
+    /** 一页（异常转换由调用方的 read 负责）；B05 的 LibrarySearchService 以并入 LibraryMatch 的条件调用。 */
+    PageResponse<RoleSummaryDto> page(ContentListQuery query, ContentCriteria criteria) {
         if (query.kind() != ContentKind.ROLE) {
             throw new IllegalArgumentException("kind");
         }
-        return read(() -> {
-            ContentCriteria criteria = query.filter().toCriteria();
-            long total = roleMapper.countPublished(criteria);
-            if (total == 0 || query.offset() >= total) {
-                return PageResponse.of(List.of(), query.page(), query.pageSize(), total);
+        long total = roleMapper.countPublished(criteria);
+        if (total == 0 || query.offset() >= total) {
+            return PageResponse.of(List.of(), query.page(), query.pageSize(), total);
+        }
+        List<RoleSummaryRow> rows = roleMapper.selectPublishedPage(criteria, query.sort(), query.descending(),
+                query.offset(), query.pageSize());
+        Set<Long> videoIds = new LinkedHashSet<>();
+        rows.forEach(r -> {
+            if (nz(r.videoId()) > 0) {
+                videoIds.add(r.videoId());
             }
-            List<RoleSummaryRow> rows = roleMapper.selectPublishedPage(criteria, query.sort(), query.descending(),
-                    query.offset(), query.pageSize());
-            Set<Long> videoIds = new LinkedHashSet<>();
-            rows.forEach(r -> {
-                if (nz(r.videoId()) > 0) {
-                    videoIds.add(r.videoId());
-                }
-            });
-            Map<Long, RoleVideoDto> refs = videoRefs(videoIds);
-            List<RoleSummaryDto> items = rows.stream()
-                    .map(r -> toSummary(r, refs.getOrDefault(nz(r.videoId()), RoleVideoDto.NONE))).toList();
-            return PageResponse.of(items, query.page(), query.pageSize(), total);
         });
+        Map<Long, RoleVideoDto> refs = videoRefs(videoIds);
+        List<RoleSummaryDto> items = rows.stream()
+                .map(r -> toSummary(r, refs.getOrDefault(nz(r.videoId()), RoleVideoDto.NONE))).toList();
+        return PageResponse.of(items, query.page(), query.pageSize(), total);
     }
 
     public RoleDetailDto getRole(long id) {

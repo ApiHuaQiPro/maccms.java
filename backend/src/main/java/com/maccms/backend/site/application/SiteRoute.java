@@ -72,6 +72,30 @@ public sealed interface SiteRoute {
     }
 
     /**
+     * 文章、专题、演员、角色、网址、剧情的筛选/搜索页与 ajax 片段（{@link ModuleListPage}，B05 D-B05-5），由
+     * {@link LegacyUrlParser#parseModuleList} 识别。
+     *
+     * @param page       页面
+     * @param categoryId 筛选页的分类（1..65535）；搜索页为 null；演员筛选页未给出时为 null（旧版取第一个演员分类，Actor.php:24-35）
+     * @param filters    已归一、已校验的条件（模块与页面相同）
+     * @param pageNo     1..1000
+     */
+    record ModuleList(ModuleListPage page, Integer categoryId, ModuleFilters filters, int pageNo) implements SiteRoute {
+        public ModuleList {
+            if (page == null || filters == null || !filters.module().equals(page.module()) || pageNo < 1
+                    || pageNo > VideoListQuery.MAX_PAGE) {
+                throw new IllegalArgumentException("页面、条件或页码不合法");
+            }
+            boolean categoryOk = categoryId == null
+                    ? !page.show() || page.module().equals("actor")
+                    : page.show() && categoryId >= 1 && categoryId <= VideoListQuery.MAX_CATEGORY_ID;
+            if (!categoryOk) {
+                throw new IllegalArgumentException("分类不合法");
+            }
+        }
+    }
+
+    /**
      * B05 承接的"模块/操作 + 数字参数"页面（{@link LegacyPage}）：播放/下载四个入口、内容页、单条 RSS、ajax_detail。
      *
      * @param page 页面

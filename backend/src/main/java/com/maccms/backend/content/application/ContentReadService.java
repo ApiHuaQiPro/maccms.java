@@ -169,6 +169,28 @@ public class ContentReadService {
     }
 
     /**
+     * B05 SSR 的文章/专题/演员/角色/网址筛选与搜索页（{@link LibraryMatch}）：含包含匹配条件时与视频列表共用开关（关闭 → 400）、
+     * 并发许可（用尽 → 503）与执行时限（Mapper 的 MAX_EXECUTION_TIME，超时 → 503）；不含时与普通列表相同。
+     */
+    <T> T guardedRead(LibraryMatch match, Supplier<T> query) {
+        if (!match.usesContainsMatch()) {
+            return read(query);
+        }
+        if (!search.enabled()) {
+            throw ApiException.invalidParameter(match.firstContainsMatchParameter(), VideoFilter.SEARCH_DISABLED);
+        }
+        if (!searchPermits.tryAcquire()) {
+            log.warn("content search rejected: concurrency limit reached");
+            throw unavailable();
+        }
+        try {
+            return read(query);
+        } finally {
+            searchPermits.release();
+        }
+    }
+
+    /**
      * 执行一次只读查询，把数据库连接类故障与服务端执行时限超时（搜索/筛选语句的 MAX_EXECUTION_TIME）转换为
      * SERVICE_UNAVAILABLE；其他异常原样抛出。
      */

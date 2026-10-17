@@ -14,6 +14,13 @@
             AND role_letter IN <foreach collection="criteria.letters" item="l" open="(" separator="," close=")">#{l}</foreach>
         </if>
         <if test="criteria.videoId != null">AND role_rid = #{criteria.videoId}</if>
+        <!--
+          B05 SSR 筛选/搜索页（docs/architecture/15-b05-readonly-pages.md 第 7.2 节，LibraryMatch）：只由 site 经
+          content.application.LibrarySearchService 构造，公开 API 从不设置（不设置时上面的 SQL 文本不变）。列名固定，
+          LIKE 模式已按 ESCAPE '!' 转义。旧规则：wd Role.php:232-234（role_name|role_en）；ids :160-164。
+        -->
+        <if test="criteria.keywordPatterns != null">AND (<foreach collection="criteria.keywordPatterns" item="p" separator=" OR ">role_name LIKE #{p} ESCAPE '!' OR role_en LIKE #{p} ESCAPE '!'</foreach>)</if>
+        <if test="criteria.ids != null">AND role_id IN <foreach collection="criteria.ids" item="id" open="(" separator="," close=")">#{id}</foreach></if>
     </sql>
 
     <select id="countPublished" resultType="long">

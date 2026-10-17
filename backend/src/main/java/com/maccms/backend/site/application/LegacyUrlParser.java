@@ -398,6 +398,113 @@ public final class LegacyUrlParser {
         return Optional.of(new ListMatch(route, ajax, canonical));
     }
 
+    /**
+     * {@link #parseModuleList} 的结果。
+     *
+     * @param canonical 请求是否正是生成器的输出（ajax 入口、路径参数形式一律为否）
+     */
+    public record ModuleMatch(SiteRoute.ModuleList route, boolean canonical) {
+    }
+
+    /**
+     * 文章、专题、演员、角色、网址、剧情的筛选/搜索页与 ajax 片段（{@link ModuleListPage}，B05 D-B05-5）：
+     * <ul>
+     * <li>搜索页 {@code <模块>/search}、{@code <模块>/ajax_search}：只认固定路径（{@code .html}、{@code /}、无后缀）+ 查询串
+     * （与视频搜索页相同，路径参数形式不认）；</li>
+     * <li>筛选页 {@code <模块>/show/id/<分类>[/键/值…]}、{@code <模块>/ajax_show/…}：路径参数按 PATH_INFO 解码一次，查询串覆盖同名值。</li>
+     * </ul>
+     * 键为该模块的旧参数名（{@link ModuleListPage#keys()}）与 {@code page}、{@code ajax}（D-B05-6，接受并忽略）、筛选页的 {@code id}；
+     * 未知键、重复键、解码失败、条件不满足 content 规则或超出链接预算 → INVALID_PARAMETER（页面 400）；分类格式不对 → empty（404）；
+     * 查询串含兼容模式 {@code s} → empty。值的归一与视频搜索页相同：文本键去首尾 W 后 {@code ''}/{@code '0'} 为未传，
+     * {@code level}/{@code tid}/{@code rid} 为旧 intval，结果为 0 时未传。
+     */
+    public Optional<ModuleMatch> parseModuleList(String rawPath, String rawQuery) {
+        if (rawPath == null || rawPath.length() > MAX_INPUT || style.routeAliases() || style.depr() != '/') {
+            return Optional.empty();
+        }
+        String query = rawQuery == null ? "" : rawQuery;
+        if (query.length() > MAX_SEARCH_QUERY) {
+            return Optional.empty();
+        }
+        String pathInfo = rawPath.startsWith(ENTRY + "/") ? rawPath.substring(ENTRY.length() + 1)
+                : style.rewrite() && rawPath.startsWith("/") ? rawPath.substring(1) : null;
+        if (pathInfo == null) {
+            return Optional.empty();
+        }
+        String p = pathInfo.endsWith(".html") ? pathInfo.substring(0, pathInfo.length() - ".html".length())
+                : pathInfo.endsWith("/") ? pathInfo.substring(0, pathInfo.length() - 1) : pathInfo;
+        String[] seg = p.split("/", -1);
+        if (seg.length < 2) {
+            return Optional.empty();
+        }
+        ModuleListPage page = ModuleListPage.byTarget(seg[0] + "/" + seg[1]);
+        if (page == null || (!page.show() && seg.length != 2)) {
+            return Optional.empty();
+        }
+        List<String[]> items = queryItems(query);
+        for (String[] kv : items) {
+            if (kv[0].equals(COMPAT_KEY)) {
+                return Optional.empty();
+            }
+        }
+        Set<String> allowed = new HashSet<>(page.keys());
+        allowed.add("page");
+        allowed.add("ajax");
+        if (page.show()) {
+            allowed.add("id");
+        }
+        Map<String, String> preset = new HashMap<>();
+        if ((seg.length - 2) % 2 != 0) {
+            throw ApiException.invalidParameter("path", "参数不成对");
+        }
+        for (int i = 2; i < seg.length; i += 2) {
+            String key = seg[i];
+            if (!allowed.contains(key)) {
+                throw ApiException.invalidParameter(key.isEmpty() || key.length() > 32 ? "path" : key, "不支持的参数");
+            }
+            String value = pathDecode(seg[i + 1]).orElseThrow(() -> ApiException.invalidParameter(key, "含不允许的字符"));
+            if (preset.put(key, value) != null) {
+                throw ApiException.invalidParameter(key, "参数重复");
+            }
+        }
+        Map<String, String> decoded = decodeQuery(items, allowed, preset);
+        Integer categoryId = null;
+        if (page.show()) {
+            String id = decoded.get("id");
+            if (id == null || id.isEmpty()) {
+                if (!page.module().equals("actor")) {
+                    return Optional.empty();
+                }
+            } else if (!DIGITS.matcher(id).matches() || id.startsWith("0") || id.length() > 5
+                    || Integer.parseInt(id) > VideoListQuery.MAX_CATEGORY_ID) {
+                return Optional.empty();
+            } else {
+                categoryId = Integer.parseInt(id);
+            }
+        }
+        Map<String, String> values = new HashMap<>();
+        for (String key : page.keys()) {
+            String v = key.equals("level") || key.equals("tid") || key.equals("rid") ? intvalNonZero(decoded.get(key))
+                    : normalized(decoded.get(key));
+            if (v != null) {
+                values.put(key, v);
+            }
+        }
+        int pageNo = 1;
+        String rawPage = decoded.get("page");
+        if (rawPage != null && !rawPage.isEmpty()) {
+            if (!DIGITS.matcher(rawPage).matches()) {
+                throw ApiException.invalidParameter("page", pageRule());
+            }
+            pageNo = (int) number("page", rawPage, VideoListQuery.MAX_PAGE);
+        }
+        ModuleFilters filters = new ModuleFilters(page.module(), values);
+        SiteRoute.ModuleList route = new SiteRoute.ModuleList(page, categoryId, filters, pageNo);
+        SiteLink link = builder.moduleListLink(page, categoryId, filters, pageNo);
+        boolean canonical = !page.ajax() && rawPath.equals("/" + link.path()) && query.equals(link.query());
+        return Optional.of(new ModuleMatch(route, canonical));
+    }
+
     private boolean isSearchPath(String rawPath) {
         if (style.routeAliases() || style.depr() != '/') {
             return false;

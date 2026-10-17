@@ -239,6 +239,7 @@ class LegacyUrlGoldenVectorsTest {
             // parse() 不产生搜索页路由（搜索页走 parseSearch，见 SearchLinkRoundTripTest）
             case SiteRoute.VodSearch s -> throw new AssertionError(where + " parse() 不应识别搜索页");
             case SiteRoute.VodShow s -> throw new AssertionError(where + " parse() 不应识别筛选页");
+            case SiteRoute.ModuleList m -> throw new AssertionError(where + " parse() 不应识别模块筛选/搜索页");
             case SiteRoute.Legacy l -> {
                 assertThat(php.get("dispatch").asString()).as(where).isEqualTo(l.page().target());
                 assertThat(param.get("id").asString()).as(where).isEqualTo(Long.toString(l.id()));
@@ -370,6 +371,7 @@ class LegacyUrlGoldenVectorsTest {
                 case SiteRoute.VodDetail d -> "detail " + d.vodId();
                 case SiteRoute.VodSearch s -> "search";
                 case SiteRoute.VodShow s -> "show";
+                case SiteRoute.ModuleList list -> "module " + list.page().target();
                 case SiteRoute.Legacy l -> "legacy " + l.page().target() + " " + l.id() + " " + l.sid() + " " + l.nid()
                         + " " + l.pageNo();
             };
