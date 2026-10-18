@@ -1,6 +1,6 @@
 {
- "started": "2026-10-17T16:54:43",
- "database": "maccms_it_20261017165443_981139bb",
+ "started": "2026-10-17T20:19:43",
+ "database": "maccms_it_20261017201943_6bf2dbb6",
  "runs": {
   "root W1W2=00": {
    "failures": [],
@@ -597,17 +597,29 @@
     },
     "layout": {
      "map@320": 0,
+     "map@320 stress": 0,
      "help@320": 0,
+     "help@320 stress": 0,
      "copyright@320": 0,
+     "copyright@320 stress": 0,
      "map@360": 0,
+     "map@360 stress": 0,
      "help@360": 0,
+     "help@360 stress": 0,
      "copyright@360": 0,
+     "copyright@360 stress": 0,
      "map@768": 0,
+     "map@768 stress": 0,
      "help@768": 0,
+     "help@768 stress": 0,
      "copyright@768": 0,
+     "copyright@768 stress": 0,
      "map@1280": 0,
+     "map@1280 stress": 0,
      "help@1280": 0,
-     "copyright@1280": 0
+     "help@1280 stress": 0,
+     "copyright@1280": 0,
+     "copyright@1280 stress": 0
     },
     "keyboard": {
      "map": [
@@ -870,8 +882,30 @@
      ]
     },
     "reducedMotion": {
-     "reduce": "0s",
-     "no-preference": "0s"
+     "map reduce": {
+      "reduceMatches": true,
+      "moving": []
+     },
+     "help reduce": {
+      "reduceMatches": true,
+      "moving": []
+     },
+     "copyright reduce": {
+      "reduceMatches": true,
+      "moving": []
+     },
+     "map no-preference": {
+      "reduceMatches": false,
+      "moving": []
+     },
+     "help no-preference": {
+      "reduceMatches": false,
+      "moving": []
+     },
+     "copyright no-preference": {
+      "reduceMatches": false,
+      "moving": []
+     }
     },
     "blockedHosts": []
    }
@@ -884,7 +918,7 @@
      "type": "text/html;charset=UTF-8",
      "cache": "no-cache",
      "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'sel",
-     "canonical": "http://127.0.0.1:60704/sub/index.php/map/index.html",
+     "canonical": "http://127.0.0.1:58172/sub/index.php/map/index.html",
      "linksOutsidePrefix": [],
      "externalHosts": []
     },
@@ -893,7 +927,7 @@
      "type": "text/html;charset=UTF-8",
      "cache": "no-cache",
      "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'sel",
-     "canonical": "http://127.0.0.1:60704/sub/index.php/help/index.html",
+     "canonical": "http://127.0.0.1:58172/sub/index.php/help/index.html",
      "linksOutsidePrefix": [],
      "externalHosts": []
     },
@@ -902,7 +936,7 @@
      "type": "text/html;charset=UTF-8",
      "cache": "no-cache",
      "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'sel",
-     "canonical": "http://127.0.0.1:60704/sub/index.php/vod/copyright/id/1.html",
+     "canonical": "http://127.0.0.1:58172/sub/index.php/vod/copyright/id/1.html",
      "linksOutsidePrefix": [],
      "externalHosts": []
     },
@@ -971,7 +1005,7 @@
     "desktop": {
      "status": 200,
      "disposition": "attachment; filename=\"___.url\"; filename*=UTF-8''%E5%90%88%E6%88%90%E7%AB%99.url",
-     "firstLine": "[InternetShortcut]\r\n        URL=http://127.0.0.1:60704/sub\r\n"
+     "firstLine": "[InternetShortcut]\r\n        URL=http://127.0.0.1:58172/sub\r\n"
     },
     "desktop-injection": {
      "status": 400
@@ -1033,7 +1067,7 @@
      "type": "text/html;charset=UTF-8",
      "cache": "no-cache",
      "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'sel",
-     "canonical": "http://127.0.0.1:60704/sub/index.php/map/index.html",
+     "canonical": "http://127.0.0.1:58172/sub/index.php/map/index.html",
      "linksOutsidePrefix": [],
      "externalHosts": []
     },
@@ -1042,7 +1076,7 @@
      "type": "text/html;charset=UTF-8",
      "cache": "no-cache",
      "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'sel",
-     "canonical": "http://127.0.0.1:60704/sub/index.php/help/index.html",
+     "canonical": "http://127.0.0.1:58172/sub/index.php/help/index.html",
      "linksOutsidePrefix": [],
      "externalHosts": []
     },
@@ -1051,7 +1085,7 @@
      "type": "text/html;charset=UTF-8",
      "cache": "no-cache",
      "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'sel",
-     "canonical": "http://127.0.0.1:60704/sub/index.php/vod/copyright/id/1.html",
+     "canonical": "http://127.0.0.1:58172/sub/index.php/vod/copyright/id/1.html",
      "linksOutsidePrefix": [],
      "externalHosts": []
     },
@@ -1120,7 +1154,7 @@
     "desktop": {
      "status": 200,
      "disposition": "attachment; filename=\"___.url\"; filename*=UTF-8''%E5%90%88%E6%88%90%E7%AB%99.url",
-     "firstLine": "[InternetShortcut]\r\n        URL=http://127.0.0.1:60704/sub\r\n"
+     "firstLine": "[InternetShortcut]\r\n        URL=http://127.0.0.1:58172/sub\r\n"
     },
     "desktop-injection": {
      "status": 400
@@ -1182,7 +1216,7 @@
      "type": "text/html;charset=UTF-8",
      "cache": "no-cache",
      "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'sel",
-     "canonical": "http://127.0.0.1:60704/sub/index.php/map/index.html",
+     "canonical": "http://127.0.0.1:58172/sub/index.php/map/index.html",
      "linksOutsidePrefix": [],
      "externalHosts": []
     },
@@ -1191,7 +1225,7 @@
      "type": "text/html;charset=UTF-8",
      "cache": "no-cache",
      "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'sel",
-     "canonical": "http://127.0.0.1:60704/sub/index.php/help/index.html",
+     "canonical": "http://127.0.0.1:58172/sub/index.php/help/index.html",
      "linksOutsidePrefix": [],
      "externalHosts": []
     },
@@ -1200,7 +1234,7 @@
      "type": "text/html;charset=UTF-8",
      "cache": "no-cache",
      "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'sel",
-     "canonical": "http://127.0.0.1:60704/sub/index.php/vod/copyright/id/1.html",
+     "canonical": "http://127.0.0.1:58172/sub/index.php/vod/copyright/id/1.html",
      "linksOutsidePrefix": [],
      "externalHosts": []
     },
@@ -1269,7 +1303,7 @@
     "desktop": {
      "status": 200,
      "disposition": "attachment; filename=\"___.url\"; filename*=UTF-8''%E5%90%88%E6%88%90%E7%AB%99.url",
-     "firstLine": "[InternetShortcut]\r\n        URL=http://127.0.0.1:60704/sub\r\n"
+     "firstLine": "[InternetShortcut]\r\n        URL=http://127.0.0.1:58172/sub\r\n"
     },
     "desktop-injection": {
      "status": 400
@@ -1331,7 +1365,7 @@
      "type": "text/html;charset=UTF-8",
      "cache": "no-cache",
      "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'sel",
-     "canonical": "http://127.0.0.1:60704/sub/index.php/map/index.html",
+     "canonical": "http://127.0.0.1:58172/sub/index.php/map/index.html",
      "linksOutsidePrefix": [],
      "externalHosts": []
     },
@@ -1340,7 +1374,7 @@
      "type": "text/html;charset=UTF-8",
      "cache": "no-cache",
      "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'sel",
-     "canonical": "http://127.0.0.1:60704/sub/index.php/help/index.html",
+     "canonical": "http://127.0.0.1:58172/sub/index.php/help/index.html",
      "linksOutsidePrefix": [],
      "externalHosts": []
     },
@@ -1349,7 +1383,7 @@
      "type": "text/html;charset=UTF-8",
      "cache": "no-cache",
      "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'sel",
-     "canonical": "http://127.0.0.1:60704/sub/index.php/vod/copyright/id/1.html",
+     "canonical": "http://127.0.0.1:58172/sub/index.php/vod/copyright/id/1.html",
      "linksOutsidePrefix": [],
      "externalHosts": []
     },
@@ -1418,7 +1452,7 @@
     "desktop": {
      "status": 200,
      "disposition": "attachment; filename=\"___.url\"; filename*=UTF-8''%E5%90%88%E6%88%90%E7%AB%99.url",
-     "firstLine": "[InternetShortcut]\r\n        URL=http://127.0.0.1:60704/sub\r\n"
+     "firstLine": "[InternetShortcut]\r\n        URL=http://127.0.0.1:58172/sub\r\n"
     },
     "desktop-injection": {
      "status": 400
@@ -1474,6 +1508,6 @@
   }
  },
  "databaseDropped": true,
- "finished": "2026-10-17T16:57:12",
+ "finished": "2026-10-17T20:22:55",
  "failures": 0
 }

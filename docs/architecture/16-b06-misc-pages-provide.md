@@ -11,7 +11,7 @@
 |---|---|
 | 分支 | `agent/claude/macc-30`（只用普通提交，没有 reset/rebase/amend/force） |
 | 开工基线（已验收 main，含 B05 合并） | `2313076`（merge MACC-29），包含 B05 固定交付 `967941951bc52664b54a001bf96a946fbd75929e`；平台基线提交 `3c2348d` |
-| 前端基线 | 已验收前端 `3100239`（MACC-54，经 B05 整合）；本批没有修改 `static/site/`、`jte/site/components/`、`jte/site/layout/` |
+| 前端基线 | 已验收前端 `3100239`（MACC-54，经 B05 整合）；后端提交没有修改 `static/site/`、`jte/site/components/`、`jte/site/layout/`。整合任务 MACC-55 只在 `site.css` 末尾追加三页的最小规则（第 5 节） |
 | 提交 | `de890ba` 契约稿 → `8004bca` 客户端 IP、整行读取、Provide 与黄金 → `1afe59e` site 杂项页与 ajax → 文档与验证（最终 SHA/tree 以交付评论为准） |
 
 ### 1. 范围、分工与文件归属
@@ -27,7 +27,7 @@
 | 不在本批 | `Ajax::hits/digg/score/referer`（写计数）、`ajax/pwd`（B05 改为 POST + 签名票据）、`verify_check`（B11）、Provide `detail_inc_hits` 计数（B11）、`gbook`/`comment` 页面与写入（B11）、手机模板/繁体（B12） | 这些 `ajax/*` 操作在 Java 中 404（交还 PHP） | — |
 
 **数据归属**：旧表由 `content` 读取——新增 `content.application.LegacyRowReadService`（`infrastructure.LegacyRowMapper`，SQL 在 `mapper/content/LegacyRowMapper.xml`）提供旧协议需要的"整行"读取；`openapi` 与 `site` 只调用它，自己没有 Mapper。
-**文件归属**：后端拥有 `openapi`、`common.clientip`、`common.web.LegacyJson`、`content` 的整行读取、`site` 中新增的控制器/视图模型与新增页面模板（`jte/site/pages/map.jte`、`help.jte`、`copyright.jte`、`jte/site/fragments/mapTree.jte`）。共享的 `components/`、`layout/`、`static/site/site.css`、`trial.js` 与组件签名**本批不修改**；新页面只用既有 class（`notice`、`detail-content`）与第 5 节列出的新语义 class，样式由前端另行实施。
+**文件归属**：后端拥有 `openapi`、`common.clientip`、`common.web.LegacyJson`、`content` 的整行读取、`site` 中新增的控制器/视图模型与新增页面模板（`jte/site/pages/map.jte`、`help.jte`、`copyright.jte`、`jte/site/fragments/mapTree.jte`）。共享的 `components/`、`layout/`、`static/site/site.css`、`trial.js` 与组件签名**本批不修改**；新页面只用既有 class（`notice`、`detail-content`）与第 5 节列出的新语义 class；三页样式由整合任务 MACC-55 按既有样式最小补齐（第 5 节）。
 
 ### 2. 客户端 IP 组件（D2 ④，`common.clientip`）
 
@@ -194,9 +194,15 @@
 - 输出（旧 JSON 同形）：整行字段（去掉访问密码列、`<前缀>_time_hits`、`<前缀>_time_make`，视频另去掉 8 个播放/下载列），旧 `listData` 附加的 `type`（分类整行，`type_extend` 经 json_decode/encode，顶级分类带 `childids`，子分类带上级的 `type_1`）与 `type_1`（上级分类）照旧；角色另有 `data`（关联视频整行与其 `type`/`type_1`，只在已审核且分类可见时给出，与视频一样不含播放/下载列，否则 `null`）；`<前缀>_time`、`_time_add` 格式化为 `Y-m-d H:i:s`；追加 `detail_link`（站内详情地址，含 base-url 路径前缀）与 `<前缀>_pic/_pic_thumb/_pic_slide`（经 `ImageUrlNormalizer`，缺少的键追加在末尾，空值为空串，W2 关闭时外部图片为空串）；专题以 topic_id 为键（列表为空时为 `[]`）。会员组 `group` 不输出。`application/json;charset=UTF-8`、`Cache-Control: no-cache`。
 - 旧版在 PHP 8 下 mid=1/2 恒为 500（先把 `vod_time` 格式化成字符串，再拼详情地址时 `date('Y', 字符串)` 抛类型错误，`common.php:1881`）；PHP 7.3 只告警并输出。新版按 7.3 的输出对齐（`AjaxGoldenMySqlIT`）。
 
-### 5. 前端配合（Kimi）
+### 5. 页面结构与样式（MACC-55 整合）
 
-后端已交付页面结构、语义 class 与状态；样式（`site.css`）由前端另行实施，后端不修改 `site.css`、组件与布局。真实 HTTP/浏览器检查（第 9 节）在未加样式的结构上已通过 320/360/768/1280 无横向溢出与键盘焦点检查，样式交付后整合时复跑。
+后端交付页面结构、语义 class 与状态。按用户 2026-10-17 的指示（前台沿用现有统一极简样式，不做新设计，不再安排独立页面美化任务），三页样式不再交给前端单独实施，由 Claude 在整合时按现有 `site.css` 做最小处理：DOM、class、路由、数据、组件、布局与 `trial.js` 都不变，只在 `site.css` 末尾追加 "B06（MACC-55）" 一段——
+
+- 页面根 `min-width: 0`，`h1` 与其他内容页一致（`--site-font-size-xl`、行高 1.3、上下 `--site-space-3`）；地图分区标题 `h2.map-section__title` 与搜索页结果标题一致（`--site-font-size-lg`），保持 h1 > h2 的层级；
+- 标题、地图链接、版权提示与返回链接 `overflow-wrap: anywhere`。依据：未加这段时，把标题与链接换成 120 个无空格字符后四种宽度都横向溢出（+1360～+2256px，本地实测），加后为 0；正常合成数据下加前加后都不溢出；
+- 正文与提示框沿用 `detail-content`、`notice`；不新增颜色、字体、图片、动画或断点。`SiteStylesheetTest.b06MiscPagesWrapLongText` 静态兜底这几条规则。
+
+站点头部的分类导航与搜索表单（`site-nav`、`site-search`，`layout/page.jte`）在全站都没有专门样式，三页与 B05 各页一致，本任务不改。
 
 | 页面 | 根元素与区块 | 状态 |
 |---|---|---|
@@ -284,7 +290,7 @@ B05 及以前登记的差异（可见分类、`type_id=0`、密码字符串 `"0"
 | 单元/契约/MockMvc/真实 HTTP | `./mvnw clean verify` | 交付评论 |
 | MySQL 集成与黄金对照 | `./mvnw verify -Pmysql-it`（含 `ProvideGoldenMySqlIT`、`AjaxGoldenMySqlIT` 与既有 IT） | 交付评论 |
 | PHP 黄金 | `provide_golden.php`（PHP 8.0.30、7.3.33 各一份）、`qrcode_url_golden.php`（两版） | 资源文件 + 上列测试 |
-| 真实 HTTP + 浏览器 | `python backend/src/test/browser/b06_site_check.py --out docs/architecture/16-b06-site-check`：已打包应用 × W1/W2 = 00/01/10/11 × 根路径 / 子目录 `/sub/` 共 8 组；Chromium（Playwright）；根路径 11 另查 320/360/768/1280 横向溢出、键盘 Tab 与可见焦点、reduced-motion | `16-b06-site-check/summary.json`、`screenshots/` |
+| 真实 HTTP + 浏览器 | `python backend/src/test/browser/b06_site_check.py --out docs/architecture/16-b06-site-check`：已打包应用 × W1/W2 = 00/01/10/11 × 根路径 / 子目录 `/sub/` 共 8 组；Chromium（Playwright）；根路径 11 另查 320/360/768/1280 横向溢出（另做长文本压力：浏览器内把 `main` 中的标题、链接、提示换成 120 个无空格字符后再量）、键盘 Tab 与可见焦点、reduced-motion（`reduce` 下三页没有任何元素带动画或非零过渡，否则记失败） | `16-b06-site-check/summary.json`、`screenshots/` |
 | 中规模测量 | `python backend/src/test/perf/b06_perf_run.py --out docs/architecture/16-b06-perf-raw`（30 万行，真实 HTTP，实际 SQL + EXPLAIN） | `16-b06-perf-report.md`、`16-b06-perf-raw/` |
 
 `b06_site_check.py` 每组检查：地图/帮助/版权页的状态码、MIME、`no-cache`、严格 CSP、`nosniff`、canonical 与站内链接前缀（子目录时以 `/sub/` 开头）、页面无外部主机；7 种 RSS/地图 XML 可解析、MIME、`loc` 为 base-url 下的绝对地址；标签页 404；二维码 PNG 与缓存头、非法 URL 空响应；快捷方式 MIME、`filename*`、正文首行、注入 400；ajax/data 的 JSON、`detail_link` 前缀、外链图片只在 W2 打开时出现、不含密码与播放列；联想词 `url` 前缀与 `no-store`；Provide JSON/XML/`closed`/HEAD、缓存头、Provide 图片地址不受 W2 影响；浏览器无 CSP 违规、无外部请求。
@@ -293,4 +299,4 @@ B05 及以前登记的差异（可见分类、`type_id=0`、密码字符串 `"0"
 
 ### 10. 回滚
 
-不写库、无数据迁移、零 DDL；回滚即普通 `git revert` 本批提交（不改写历史）。回滚点：已验收 main `2313076`；契约稿 `de890ba`；Provide 提交 `8004bca`；site 提交 `1afe59e`。运行时：`MACCMS_OPENAPI_ENABLED=false`（默认）时不注册 Provide 路由；`MACCMS_SITE_ENABLED=false` 时不注册任何 site 页面；`MACCMS_SITE_SEARCH_ENABLED`/`MACCMS_CONTENT_SEARCH_ENABLED` 关闭时联想词输出关闭提示；`MACCMS_TRUSTED_PROXIES` 留空即回到"只信连接对端"。
+不写库、无数据迁移、零 DDL；回滚即普通 `git revert` 本批提交（不改写历史）。回滚点：已验收 main `2313076`；契约稿 `de890ba`；Provide 提交 `8004bca`；site 提交 `1afe59e`；后端固定交付 `39804d9`（MACC-55 三页样式整合之前）。运行时：`MACCMS_OPENAPI_ENABLED=false`（默认）时不注册 Provide 路由；`MACCMS_SITE_ENABLED=false` 时不注册任何 site 页面；`MACCMS_SITE_SEARCH_ENABLED`/`MACCMS_CONTENT_SEARCH_ENABLED` 关闭时联想词输出关闭提示；`MACCMS_TRUSTED_PROXIES` 留空即回到"只信连接对端"。

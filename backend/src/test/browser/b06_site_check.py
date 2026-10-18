@@ -7,7 +7,7 @@ backend/target 中已打包的应用（W1/W2 = 00/01/10/11 × 根路径 / 子目
   1. 真实 HTTP：地图、帮助、版权页、站点级 RSS 与 6 种搜索引擎地图、自定义标签页、二维码、桌面快捷方式、联想词、ajax/data 与 Provide
      的状态码、MIME、编码、缓存头、nosniff、页面 CSP、canonical 与站内链接前缀、XML/JSON 可解析、外部主机只按 W2 出现在页面数据中；
   2. Chromium（Playwright，无头）：所有非本机请求在浏览器内被拦截并记录（不访问任何外部站点）；页面无 CSP 违规；
-  3. 根路径 W1/W2=11 时另做：320/360/768/1280 宽度无横向溢出（截图）、键盘 Tab 顺序与可见焦点、prefers-reduced-motion 记录。
+  3. 根路径 W1/W2=11 时另做：320/360/768/1280 宽度无横向溢出（截图，另做长文本压力）、键盘 Tab 顺序与可见焦点、prefers-reduced-motion（reduce 下三页无动画与过渡）。
 → 结束每个应用子进程（只按本脚本启动的 PID）→ 删除一次性库并确认已不存在。
 
 管理账号只经环境变量传入：MACCMS_IT_ADMIN_URL（jdbc:mysql://127.0.0.1:3306/）、MACCMS_IT_ADMIN_USERNAME、MACCMS_IT_ADMIN_PASSWORD；
@@ -324,7 +324,7 @@ def browser_checks(pw, origin, prefix, shots, full, result):
     if full:
         out['layout'] = layout_checks(ctx, origin + prefix, shots, result)
         out['keyboard'] = keyboard_checks(ctx, origin + prefix, result)
-        out['reducedMotion'] = motion_checks(browser, origin + prefix)
+        out['reducedMotion'] = motion_checks(browser, origin + prefix, result)
     ctx.close()
     browser.close()
     out['blockedHosts'] = sorted(set(out['blocked']))
@@ -348,8 +348,18 @@ def layout_checks(ctx, base, shots, result):
             if over > 1:
                 result['failures'].append('overflow %s@%d +%dpx' % (name, width, over))
             p.screenshot(path=str(shots / ('%s-%d.png' % (name, width))), full_page=True)
+            # 长文本压力（MACC-55）：合成数据里没有超长片名/分类名，在浏览器内把标题与链接文字换成 120 个无空格字符后复测
+            over = p.evaluate(STRESS)
+            out['%s@%d stress' % (name, width)] = over
+            if over > 1:
+                result['failures'].append('overflow %s@%d stress +%dpx' % (name, width, over))
         p.close()
     return out
+
+
+STRESS = """() => {const s='长'.repeat(40)+'W'.repeat(80);
+    document.querySelectorAll('main h1, main h2, main a, main .notice').forEach(e => { e.textContent = s; });
+    return document.documentElement.scrollWidth - document.documentElement.clientWidth}"""
 
 
 def keyboard_checks(ctx, base, result):
@@ -373,17 +383,24 @@ def keyboard_checks(ctx, base, result):
     return out
 
 
-def motion_checks(browser, base):
-    """新页面本身没有动画；记录 reduce 与 no-preference 下链接的 transition-duration（样式由前端实施后复查）。"""
+def motion_checks(browser, base, result):
+    """三页在 reduce 下不得有任何元素带动画或非零过渡；no-preference 下只记录（site.css 的动效都在 no-preference 媒体查询内）。"""
     out = {}
     for mode in ('reduce', 'no-preference'):
         c = browser.new_context(reduced_motion=mode)
         c.route('**/*', lambda r: r.continue_() if urllib.parse.urlsplit(r.request.url).hostname in (
             '127.0.0.1', 'localhost') else r.abort())
         p = c.new_page()
-        p.goto(base + HTML['map'], wait_until='load')
-        out[mode] = p.evaluate("""() => {const e=document.querySelector('.map-tree a, .map-links a');
-            return e ? getComputedStyle(e).transitionDuration : null}""")
+        for name, rel in HTML.items():
+            p.goto(base + rel, wait_until='load')
+            moving = p.evaluate("""() => {const m = matchMedia('(prefers-reduced-motion: reduce)').matches;
+                const bad = [...document.querySelectorAll('*')].filter(e => {const s = getComputedStyle(e);
+                    return s.animationName !== 'none' || s.transitionDuration.split(',').some(d => parseFloat(d) > 0)})
+                    .map(e => e.tagName + '.' + (e.className || '').toString().split(' ')[0]);
+                return {reduceMatches: m, moving: bad.slice(0, 5)}}""")
+            out['%s %s' % (name, mode)] = moving
+            if mode == 'reduce' and (not moving['reduceMatches'] or moving['moving']):
+                result['failures'].append('reduced-motion %s %s' % (name, json.dumps(moving, ensure_ascii=False)))
         c.close()
     return out
 
