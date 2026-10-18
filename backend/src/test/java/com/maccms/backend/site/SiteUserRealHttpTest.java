@@ -82,6 +82,13 @@ class SiteUserRealHttpTest {
         assertThat(page.status()).isEqualTo(200);
         assertThat(page.headers("Set-Cookie")).isEqualTo(MemberCookies.guestReset());
         assertThat(page.headers("Cache-Control")).containsExactly("no-store");
+
+        // 需登录的操作：旧版先由 label_user 写游客回写，再由构造函数的 logout() 删 6 个，浏览器按顺序收到 8 个
+        Raw protectedPage = request("GET /index.php/user/index.html HTTP/1.1",
+                List.of("Cookie: user_id=1; user_name=a; user_check=b"), new byte[0]);
+        List<String> expected = new ArrayList<>(MemberCookies.guestReset());
+        expected.addAll(MemberCookies.logout());
+        assertThat(protectedPage.headers("Set-Cookie")).isEqualTo(expected);
     }
 
     private record Raw(int status, List<String> lines, byte[] body) {

@@ -368,4 +368,85 @@ POST 字段：`user_pwd`（当前密码，必填）、`user_pwd1`、`user_pwd2`�
 
 ### 12. 验证记录与验收对照
 
-（实施后补。）
+#### 12.1 命令（本机，2026-10-18）
+
+| 命令 | 结果 |
+|---|---|
+| `./mvnw verify` | BUILD SUCCESS，2371 个测试，0 失败、0 错误、0 跳过 |
+| `./mvnw verify -Pmysql-it`（MySQL 5.7.44，本机管理账号，一次性库 `maccms_it_*`；`MACCMS_IT_PHP_CGI` 指向 PHP 8.0.30 与 7.3.33 的 php-cgi） | BUILD SUCCESS：单元 2371、集成 53（新增 `MemberAccountGoldenMySqlIT` 6 个），0 失败、0 错误、0 跳过；PHP 8.0 与 7.3 的 cookie 互认两步都实际执行（日志 `PHP label_user accepted the Java-issued cookie`）；`DmlRestore` 47 条后 diff 为空、表结构指纹不变；运行前后 `maccms\_it\_%` 均为 0；没有连接 `maccms_dev`。（这一轮在 `2746e56` 上执行；之后的修正只改了 `SiteUserController` 的 cookie 顺序，见第 12.3 节，`./mvnw verify` 重新通过） |
+| 打包 jar 实际 HTTP（第 12.3 节） | 通过：16 个请求，见第 12.3 节；结束后进程已停、一次性库已删并确认不存在、临时目录已删 |
+| 黄金生成 | `account_golden.php` 8.0.30 / 7.3.33 各 203 用例，0 个 PHP 侧错误，两版返回码与提示逐条相同；`member_golden.php` 两版重新生成（含 `expiry_repro`） |
+| `git diff --check`、UTF-8 无 BOM、路径与密钥扫描 | 通过（提交前逐次执行；测试只用假密码与一次性库，管理账号只经环境变量） |
+
+#### 12.2 测试与覆盖
+
+| 内容 | 测试 |
+|---|---|
+| 03 第 4.3 (1) 节逐入口密码字节语义（注册 40、登录 18、资料 11、找回 7 个用例：首尾空格、制表、换行、`\0`、`\x0B`、`+`、`%xx`、`& < > " '`、中文、4 字节、全角空格、空串、`0`、只有空格、非法 UTF-8）、各入口返回码与提示原文、regcheck、短信/邮件"未配置" | `MemberAccountGoldenMySqlIT` ①（PHP 8.0 与 7.3 黄金逐条复放：返回码、提示、库里存的 `user_pwd` 与各列、登录 cookie 名与值） |
+| D2 ①②⑥ | 黄金中的 `login-stored-hash`、`login-openid`、`reg-openid-skips-verify`（PHP 成功、新版拒绝）；`MemberAccountGoldenMySqlIT` ②：库内 md5 当密码 1003、openid/col 1001、注销/改密/找回重置后旧 cookie 失效、改密响应的新 cookie 有效 |
+| 新签发的 cookie 与 PHP 互认 | `MemberAccountGoldenMySqlIT` ② 末尾：找回重置后登录得到的 cookie 交给 PHP 8.0 与 7.3 的旧 `label_user`（连同一个一次性库）均认；B08 的 `JavaIssuedCookiesTest` 仍成立 |
+| 同名并发注册只 1 行、IP 限额不超额 | `MemberAccountGoldenMySqlIT` ③：5 轮 × 16 线程（大小写混合同名）每轮 1 成功 15 个 1005、库里 1 行；`reg_num=2` 时 16 个不同用户名并发只成功 2 个 |
+| 到期单行降级、并发只命中 1 行、续费不误降、组/游客 cookie 字节 | `MemberAccountGoldenMySqlIT` ④：16 个并发页面请求都按 2 组、库里降一次；`expireMember` 16 线程恰好 1 次匹配；续费与降级竞态 20 轮后都是 3 组且不重发 cookie；重发的 2 个组 cookie 与 PHP 8.0/7.3 黄金 `expiry-5-g3--1`（修正后为 2 个）除有效期外逐字节相同；游客回写与黄金 `guest_reset` 逐字节相同；前置判断不通过时不写 cookie |
+| 有效组与到期后 2 组的页面权限 | `GroupPopedomGoldenTest`：黄金 96 个播放/下载/文章用例 × 2 版（游客、2 组、3 组、组不存在）；到期会员的有效组为 2（`MemberSessionService` 与 IT ④） |
+| 头像 | `MemberAccountUnitTest`（检查顺序、扩展名、`<?php`、危险内容正则、重新编码尺寸）、`MemberAccountGoldenMySqlIT` ⑥（写盘、`user_portrait`、登录 cookie 的头像地址） |
+| HTTP 契约 | `SiteUserMvcTest`（11 个：字节参数、JSON 字节与键顺序、跳转、未登录与 503、注销、uid cookie、regcheck、info 的 success/error 形态、头像、label_user 接线与观看者作用域、verify 不参与）、`SiteUserRealHttpTest`（真实 Tomcat：6 个登录 `Set-Cookie` 与 2 个游客回写逐字节、表单字节到达服务） |
+| 回滚演练与零 DDL | `MemberAccountGoldenMySqlIT` ⑦：S0 → 本 IT 全部写入 → `DmlRestore` → diff 为空 → 表结构指纹不变；删库后确认不存在 |
+| 护栏 | `WriteGuardTest`、`WriteRegistryTest`、`ModuleBoundaryTest`、`SiteTemplatePolicyTest`、`SiteGuardrailsTest`、`SchemaGuardTest`（不变） |
+
+#### 12.3 打包 jar 实测
+
+`./mvnw package -DskipTests` 得到的 `maccms-backend-0.1.0-SNAPSHOT.jar`，一次性库 `maccms_it_<时间>_<随机>`（导入 `install.sql`），可写数据源打开、站点启用、旧配置目录为仓库 `application/`、头像目录为临时目录，端口 18281。脚本只用假密码；输出保存在本机，不入库。
+
+| 请求 | 结果 |
+|---|---|
+| `GET user/reg` | 200，`no-store`，CSP `script-src 'nonce-…'` |
+| `POST user/reg`（`user_pwd=%20pa%2Bss%20`） | `{"code":1,"msg":"注册成功，登录成功"}`；6 个 `Set-Cookie` 与 `MemberCookies` 相同（`user_check` 带 HttpOnly）；库里 `user_pwd = MD5('pa+ss')`（`md5(trim(原值))`） |
+| `GET user/index`（带上一步的 cookie） | 200 会员中心 |
+| `POST user/login`，密码填库里的 md5 值 | `{"code":1003,"msg":"获取用户信息失败"}`（D2 ①） |
+| `POST user/login`，`openid=x&col=user_openid_qq` | `{"code":1001,"msg":"请填写必填项"}`（D2 ②） |
+| `POST user/login`，`HTTPUSER01` / `pa+ss` | 登录成功（用户名不分大小写）；注册时签发的 cookie 随之失效（同旧版） |
+| `POST user/info` 改密 | `{"code":1,"msg":"保存成功!","data":"","url":null,"wait":3}` + 重新签发的 6 个 cookie；改密前的 cookie 访问 `user/index` 得到"未登录"（D2 ⑥） |
+| `POST user/portrait`（300×200 PNG） | `{"msg":"文件上传成功！","code":1,"file":"\/upload\/user\/1\/1.jpg?…"}`；磁盘上 `user/1/1.jpg`（100×100 JPEG）；`user_portrait = upload/user/1/1.jpg` |
+| 库里改为 3 组、已到期后访问 `user/index` | 写出 `group_id=2`、`group_name=默认会员` 两个 cookie；库里 `group_id = 2` |
+| 伪造 cookie 访问 `user/index` | 依次写出游客回写 2 个 + 删除 6 个（与旧版 `label_user` → 构造函数 `logout()` 的顺序相同），提示页"未登录" |
+| `GET user/regcheck?t=user_name&str=HTTPUSER01`（已登录） | 正文 `HTTPUSER01`（已注册） |
+| `GET user/logout` | 302 → `user/login.html` + 6 个删除 cookie；之后旧 cookie 访问 `user/index` 为"未登录"（D2 ⑥） |
+| `GET user/findpass`、`POST user/findpass_reset` | 200；`{"code":9002,"msg":"验证信息错误，请重试"}` |
+| 结束 | 进程已停；表结构指纹（列与索引）前后相同；库已删除，`maccms\_it\_%` 为 0；应用日志 28 行，0 行 ERROR，不含 JDBC 地址；临时目录已删 |
+
+这一轮实测发现并修正了一个问题：`user/*` 的响应自己带 `Set-Cookie` 时，Spring 写出 `ResponseEntity` 会替换拦截器先加上的同名头，游客回写的 2 个 cookie 丢失（浏览器的最终结果相同，但与旧版的头不一致）。修正：`SiteUserController.withLabelUserCookies` 把 `label_user` 的 cookie 按旧顺序放在前面；`SiteUserRealHttpTest` 增加回归（真实 Tomcat 上 8 个 `Set-Cookie` 的顺序与字节）。
+
+#### 12.4 验收对照（任务 MACC-33）
+
+| # | 验收标准 | 结果 |
+|---|---|---|
+| 1 | 03 第 4.3 (1) 节逐入口密码字节语义 PHP 黄金通过；注册、登录、找回、资料、头像 HTTP 契约覆盖 | ✅ 第 12.2 节 |
+| 2 | D2 ①②⑥；轮换 `user_random`、旧 `user_check` 即时失效、新 cookie 与 PHP 互认；差异逐条记录 | ✅ 第 10 节 D-B09-1～3，第 12.2 节 |
+| 3 | 到期实际降级、并发只命中 1 行、续费不误降；组/游客 cookie 字节对照黄金；有效组与到期后 2 组页面权限对照黄金 | ✅ 第 5、9、12.2 节 |
+| 4 | MyISAM 无唯一约束下同名并发注册只 1 行，方案与作用范围；只登记必要写路径；可写数据源默认关闭，B07 零 DDL/写入护栏保留 | ✅ 第 6 节；登记两条；`MACCMS_WRITE_ENABLED` 默认 false |
+| 5 | `./mvnw verify` 与 `-Pmysql-it`；并发写、DML 回滚演练、前后 information_schema 一致；打包 jar 实际 HTTP、测试库与进程清理有证据 | 见第 12.1、12.3 节 |
+| 6 | `git diff --check`、UTF-8 无 BOM、路径与密钥检查；交付 SHA/tree、分支、验证摘要、差异、未验证项、回滚点；文档与路线图状态 | ✅ 本文、路线图 B09 行；SHA/tree 见交付评论 |
+| — | 契约与前端接线（整批验收） | ❌ 前端 K1–K4（`member.js` 与样式）未完成，待队长安排；在此之前页面表单提交后看到的是 JSON 原文 |
+
+#### 12.5 未验证与遗留
+
+- 前端 `static/site/member.js` 与样式（第 8 节）尚未提供；浏览器内的完整交互（提交、刷新验证码、跳转）没有验证。
+- 线上 `maccms.php` 的 `user` 段、`sms`/`email` 配置与 `extend/` 是否存在无法核实（D9-b），"未配置"时的提示按仓库值与黄金的"未配置"设定。
+- `webp` 头像、`mac_annex` 登记、推广积分与流水、组 ≤2 的已购买判定为分批缺口（第 10 节）。
+- 头像目录与 `/upload/` 的静态服务由部署层负责，未在 nginx 上验证。
+
+#### 12.6 回滚
+
+- 代码：合并后如需回退，`git revert -m 1 <合并提交>`。不改表结构、不改旧 PHP、不建账号。
+- 数据：新版只按旧语义写 `mac_user` 现有列（密码仍是 `md5(trim(原值))`），回滚到 PHP 后旧版能读懂全部写入；新版签发的 cookie 旧版照认（第 12.2 节）。新版轮换过 `user_random` 的会员在回滚后需重新登录一次以外没有影响。头像文件与旧版同路径同格式。
+
+### 13. 契约修订记录（相对 `3008228` 的契约稿 v1）
+
+| 项 | v1 | 现行 | 原因 |
+|---|---|---|---|
+| `regcheck` 是否需登录 | 否 | 是 | 旧构造函数的白名单（`index/controller/User.php:19`）不含 `regcheck`，游客得到"未登录"；照搬 |
+| 未实现的 `user/*` | 一律 404 | 先按白名单检查登录态，游客"未登录"，已登录 404 | 与旧构造函数的顺序一致 |
+| 非 ajax 的提示页 | `<meta refresh>` 自动跳转 | 只给链接，不自动跳转 | 页面不输出额外的跳转机制，保持无脚本 |
+| 表单正文超限 | 413 | 400 | 不新增对外错误码（`ErrorCode` 属于 OpenAPI 契约） |
+| `member.js` | 6 条 | 7 条，新增 `[data-member-send]` 发送验证码 | 注册页/找回页的"发送验证码"按钮需要从同一表单取 `ac`、`to` |
+| 头像 `accept` | 含 webp | 不含 webp | JDK 没有 webp 解码器（D-B09-9） |

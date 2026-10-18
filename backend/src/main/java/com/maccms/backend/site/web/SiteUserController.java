@@ -35,7 +35,6 @@ import com.maccms.backend.site.web.view.UserMessageBlock;
 import com.maccms.backend.site.web.view.UserPortraitPage;
 import com.maccms.backend.site.web.view.UserRegPage;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -104,7 +103,29 @@ public class SiteUserController {
 
     @RequestMapping(value = {"/index.php/user", "/index.php/user/**", "/user", "/user/**"},
             method = {RequestMethod.GET, RequestMethod.HEAD, RequestMethod.POST})
-    public ResponseEntity<?> handle(HttpServletRequest request, HttpServletResponse response) {
+    public ResponseEntity<?> handle(HttpServletRequest request) {
+        return withLabelUserCookies(dispatch(request), SiteMemberInterceptor.member(request).setCookies());
+    }
+
+    /**
+     * 旧版先由 {@code label_user} 写游客回写/组 cookie，再由动作写自己的 cookie，浏览器按顺序收到全部 {@code Set-Cookie}。
+     * Spring 写出 {@link ResponseEntity} 的 {@code Set-Cookie} 时会替换拦截器已经加上的同名头，所以这里把拦截器的 cookie
+     * 按旧顺序放在前面。
+     */
+    static ResponseEntity<?> withLabelUserCookies(ResponseEntity<?> r, List<String> labelUser) {
+        List<String> own = r.getHeaders().get(HttpHeaders.SET_COOKIE);
+        if (labelUser.isEmpty() || own == null || own.isEmpty()) {
+            return r;
+        }
+        HttpHeaders headers = new HttpHeaders();
+        headers.putAll(r.getHeaders());
+        List<String> all = new ArrayList<>(labelUser);
+        all.addAll(own);
+        headers.put(HttpHeaders.SET_COOKIE, all);
+        return new ResponseEntity<>(r.getBody(), headers, r.getStatusCode());
+    }
+
+    private ResponseEntity<?> dispatch(HttpServletRequest request) {
         Route route = route(request);
         MemberAccountService account = accounts.getIfAvailable();
         boolean ajax = isAjax(request, null);
