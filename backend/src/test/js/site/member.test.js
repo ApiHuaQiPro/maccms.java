@@ -26,6 +26,11 @@ class FakeFormData {
 class FakeURLSearchParams {
   constructor(data) {
     this.data = data;
+    this.entries = [];
+  }
+
+  append(name, value) {
+    this.entries.push([name, value]);
   }
 }
 
@@ -374,6 +379,67 @@ test('无验证码表单失败时不报错', async () => {
   await Promise.resolve();
   assert.equal(message.textContent, '原密码错误');
   assert.equal(form.getAttribute('data-state'), 'error');
+});
+
+/** 造一个契约第 8.2 节"发送验证码"区（findpass_msg 页的重置表单内）。 */
+function makeSendForm(doc) {
+  const form = new FakeEl('form');
+  form.setAttribute('action', '/index.php/user/findpass_reset.html');
+  form.setAttribute('data-member-form', 'findpass_reset');
+  const ac = new FakeEl('input');
+  ac.setAttribute('name', 'ac');
+  ac.value = 'email';
+  form.appendChild(ac);
+  const to = new FakeEl('input');
+  to.setAttribute('name', 'to');
+  to.value = 'a@b.test';
+  form.appendChild(to);
+  const button = new FakeEl('button');
+  button.setAttribute('type', 'button');
+  button.setAttribute('data-member-send', '');
+  button.setAttribute('data-send-url', '/index.php/user/findpass_msg.html');
+  form.appendChild(button);
+  const message = new FakeEl('p');
+  message.setAttribute('data-member-message', '');
+  message.hidden = true;
+  form.appendChild(message);
+  doc.children.push(form);
+  return { form, button, message };
+}
+
+test('点击 [data-member-send]：取同表单 ac、to，urlencoded POST 到 data-send-url，显示 msg', async () => {
+  const { macMember, doc, win } = load();
+  const { form, button, message } = makeSendForm(doc);
+  let resolveFetch;
+  win.fetchHandler = () => new Promise((resolve) => {
+    resolveFetch = () => resolve({ json: () => Promise.resolve({ code: 0, msg: '验证码发送失败：未配置邮箱发送服务' }) });
+  });
+  macMember.boot();
+  doc.fire('click', { target: button });
+  assert.equal(win.fetchCalls.length, 1);
+  const call = win.fetchCalls[0];
+  assert.equal(call.url, '/index.php/user/findpass_msg.html');
+  assert.equal(call.options.method, 'POST');
+  assert.equal(call.options.credentials, 'same-origin');
+  assert.equal(call.options.headers['X-Requested-With'], 'XMLHttpRequest');
+  assert.ok(call.options.body instanceof FakeURLSearchParams);
+  assert.deepEqual(call.options.body.entries, [['ac', 'email'], ['to', 'a@b.test']]);
+  assert.equal(button.disabled, true, '请求期间禁用发送按钮');
+  resolveFetch();
+  await new Promise((r) => setImmediate(r));
+  assert.equal(message.textContent, '验证码发送失败：未配置邮箱发送服务');
+  assert.equal(message.hidden, false);
+  assert.equal(button.disabled, false);
+  assert.equal(form.getAttribute('data-state'), null, '发送验证码不改变表单状态');
+});
+
+test('[data-member-send] 网络错误：显示固定文案', async () => {
+  const { macMember, doc, win } = load();
+  const { button, message } = makeSendForm(doc);
+  win.fetchHandler = () => Promise.reject(new Error('down'));
+  macMember.boot();
+  await macMember.send(button);
+  assert.equal(message.textContent, FAIL_MESSAGE);
 });
 
 test('源码不使用 innerHTML、不访问外部域名', () => {

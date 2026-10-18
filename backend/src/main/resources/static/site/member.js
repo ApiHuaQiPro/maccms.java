@@ -5,6 +5,7 @@
  * 行为契约：docs/architecture/18-b09-member-account.md 第 8.3 节。
  *   挂点：form[data-member-form]、[data-member-message]、[data-captcha-refresh]
  *   （内含 img[data-captcha-src]）、img[data-member-portrait]、
+ *   [data-member-send][data-send-url]（发送验证码，第 6 条，整合时补）、
  *   data-success-url、data-state="pending|success|error"。
  * 约束：不读写 cookie，不做 HTML 字符串注入（只写 textContent），不访问外部域名，不引入依赖。
  * 新版验证码猜错即作废（D-B08-4），所以每次提交后不论成败都要刷新验证码。
@@ -167,11 +168,58 @@
     submit(form);
   }
 
+  function closestForm(node) {
+    while (node && node !== document.documentElement) {
+      if (node.tagName === 'FORM') {
+        return node;
+      }
+      node = node.parentNode;
+    }
+    return null;
+  }
+
+  function fieldValue(form, name) {
+    var field = form.querySelector('[name="' + name + '"]');
+    return field ? field.value : '';
+  }
+
+  /*
+   * 契约第 6 条：点击 [data-member-send] 时取所在表单的 ac、to，按第 1 条的方式（urlencoded）
+   * POST 到 data-send-url，在该表单的 [data-member-message] 显示 msg。不改变表单的 data-state。
+   */
+  function send(button) {
+    var form = closestForm(button);
+    var url = button.getAttribute('data-send-url');
+    if (!form || !url) {
+      return null;
+    }
+    var body = new URLSearchParamsCtor();
+    body.append('ac', fieldValue(form, 'ac'));
+    body.append('to', fieldValue(form, 'to'));
+    button.disabled = true;
+    return window.fetch(url, {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      body: body
+    }).then(parseJson).then(function (result) {
+      showMessage(form, result && typeof result.msg === 'string' ? result.msg : FAIL_MESSAGE);
+    }).catch(function () {
+      showMessage(form, FAIL_MESSAGE);
+    }).then(function () {
+      button.disabled = false;
+    });
+  }
+
   function onDocumentClick(event) {
     var node = event.target;
     while (node && node !== document.documentElement) {
       if (typeof node.hasAttribute === 'function' && node.hasAttribute('data-captcha-refresh')) {
         refreshCaptchaIn(node);
+        return;
+      }
+      if (typeof node.hasAttribute === 'function' && node.hasAttribute('data-member-send')) {
+        send(node);
         return;
       }
       node = node.parentNode;
@@ -197,6 +245,7 @@
   window.MacMember = {
     boot: boot,
     submit: submit,
+    send: send,
     refreshCaptchaIn: refreshCaptchaIn,
     resetCaptcha: resetCaptcha,
     isSafeSitePath: isSafeSitePath,

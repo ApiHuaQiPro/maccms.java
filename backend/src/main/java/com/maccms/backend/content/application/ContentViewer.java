@@ -6,8 +6,9 @@ package com.maccms.backend.content.application;
  *
  * <p>只由 {@code site} 的会员拦截器在一次页面请求内设置（{@link #enter}），请求结束时由同一拦截器关闭；没有设置时按游客组 1。
  * 公开 JSON API（{@code /api/v1/**}）与 Provide 接口从不设置，始终按游客——与旧版 api 模块不调用 {@code label_user} 相同。
- * 内容服务全部在请求线程上同步执行（没有线程池或异步调用），所以按线程保存是安全的；{@code SiteMemberInterceptorTest} 锁定
- * "请求结束后清除"。用作用域而不是给 79 处页面调用逐个加参数，理由见 18 文档第 11 节。
+ * 内容服务全部在请求线程上同步执行（没有线程池或异步调用），所以按线程保存是安全的；
+ * {@code SiteContentViewerIsolationTest}（真实 Tomcat）锁定异常退出后清除、工作线程复用不串组、并发请求互不影响、公开 API 按游客。
+ * 用作用域而不是给 79 处页面调用逐个加参数，理由见 18 文档第 11 节。
  */
 public final class ContentViewer {
 
