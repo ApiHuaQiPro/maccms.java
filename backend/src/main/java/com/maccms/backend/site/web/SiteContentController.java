@@ -10,6 +10,7 @@ import com.maccms.backend.site.application.RichTextCache;
 import com.maccms.backend.site.application.SiteRoute;
 import com.maccms.backend.site.config.ConditionalOnSiteEnabled;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -56,7 +57,7 @@ public class SiteContentController {
 
     @GetMapping({"/", "/index.php", "/index.php/",
             "/index.php/vod/type/**", "/index.php/vod/detail/**", "/vod/type/**", "/vod/detail/**"})
-    public ResponseEntity<String> page(HttpServletRequest request) {
+    public ResponseEntity<String> page(HttpServletRequest request, HttpServletResponse response) {
         // getRequestURI 是未解码的原始路径；应用挂在根路径（base-url 子目录由反向代理映射，05 文档第 2 节）
         String rawPath = request.getRequestURI().substring(request.getContextPath().length());
         // ThinkPHP 兼容模式 ?s=vod/search&…（B05）：入口路径上指向搜索页的 s 由搜索页处理（搜索页未开启时 404）。
@@ -64,7 +65,7 @@ public class SiteContentController {
         if (request.getQueryString() != null && request.getQueryString().contains("s=")) {
             SiteSearchController s = search.getIfAvailable();
             if (s != null && isCompatSearch(rawPath, request.getQueryString())) {
-                return s.search(request);
+                return s.search(request, response);
             }
         }
         SiteRoute route = parser.parse(rawPath, request.getQueryString())

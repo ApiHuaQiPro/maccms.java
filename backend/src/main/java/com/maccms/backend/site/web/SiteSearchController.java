@@ -12,6 +12,7 @@ import com.maccms.backend.site.application.SiteRoute;
 import com.maccms.backend.site.config.ConditionalOnSiteEnabled;
 import com.maccms.backend.site.web.view.SearchPage;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -29,7 +30,8 @@ import org.springframework.web.bind.annotation.GetMapping;
  * （单次解码，不调用 getParameter，不读 Host、X-Forwarded-*）。
  *
  * <p>状态：不认识的形态 → 404；参数不合法（含包含匹配开关关闭时的 wd/class）→ 400 搜索错误页（固定文案、空白表单、
- * 不回显输入）；越界页 → 404；503/500 与站点关闭沿用 SiteExceptionHandler 与 SiteStatusInterceptor。
+ * 不回显输入）；越界页 → 404；第 1 页搜索过于频繁（旧 {@code search_timespan}，B08 {@link SearchThrottle}）→ 429；
+ * 503/500 与站点关闭沿用 SiteExceptionHandler 与 SiteStatusInterceptor。
  * 所有搜索页 noindex、no-store；日志不记录关键字或查询串。
  */
 @Controller
@@ -41,13 +43,15 @@ public class SiteSearchController {
     private final LegacyUrlParser parser;
     private final SearchPages pages;
     private final SiteFeatures features;
+    private final SearchThrottle throttle;
 
     public SiteSearchController(SiteHtmlRenderer renderer, SitePages sitePages, LegacyUrlBuilder urls,
                                 LegacyUrlParser parser, ImageUrlNormalizer images, RichTextCache richText,
-                                ContentReadService content, SiteFeatures features) {
+                                ContentReadService content, SiteFeatures features, SearchThrottle throttle) {
         this.renderer = renderer;
         this.parser = parser;
         this.features = features;
+        this.throttle = throttle;
         this.pages = new SearchPages(content, sitePages, urls, new ContentPages(content, sitePages, urls, images,
                 richText));
     }
@@ -56,7 +60,7 @@ public class SiteSearchController {
             "/vod/search", "/vod/search.html", "/vod/search/", "/index.php/vodsearch/**", "/vodsearch/**",
             "/index.php/vod/ajax_search", "/index.php/vod/ajax_search.html", "/index.php/vod/ajax_search/",
             "/vod/ajax_search", "/vod/ajax_search.html", "/vod/ajax_search/"})
-    public ResponseEntity<String> search(HttpServletRequest request) {
+    public ResponseEntity<String> search(HttpServletRequest request, HttpServletResponse response) {
         // getRequestURI / getQueryString 都是未解码的原始值；应用挂在根路径（base-url 子目录由反向代理映射）
         String rawPath = request.getRequestURI().substring(request.getContextPath().length());
         boolean ajax = rawPath.contains("/ajax_search");
@@ -72,6 +76,11 @@ public class SiteSearchController {
                     .filter(m -> m.route() instanceof SiteRoute.VodSearch && m.ajax() == ajax)
                     .orElseThrow(() -> new ApiException(ErrorCode.NOT_FOUND, "页面不存在"))
                     .route();
+            // 旧 check_search 的频率限制（B08）：第 1 页按会话计时，过快时 429，不查库
+            ResponseEntity<String> limited = throttle.check(((SiteRoute.VodSearch) route).page(), request, response);
+            if (limited != null) {
+                return limited;
+            }
             // 先组装视图模型（读取数据）再渲染：读取失败的业务异常（404/503）不能被渲染器包装成 500
             page = pages.search((SiteRoute.VodSearch) route);
             status = HttpStatus.OK;

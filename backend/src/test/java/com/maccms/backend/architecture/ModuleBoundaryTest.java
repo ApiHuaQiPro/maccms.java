@@ -38,11 +38,15 @@ class ModuleBoundaryTest {
      * B02（MACC-26）加入浏览器侧外部地址放行开关及其装配类（site 装配时引入，不读环境变量）。
      * B06（MACC-30）加入 {@code LegacyJson}（旧 ajax/* 接口与 Provide 共用的 PHP json_encode 等价编码，纯计算）与
      * {@code IpAddress}（IP 字面量解析，二维码 URL 校验的 IPv6 主机；不做 DNS 查询）。
+     * B08（MACC-32）加入进程内会话 {@code SessionStore}/{@code SessionState}、本地验证码 {@code Captchas}/{@code CaptchaSettings}
+     * 与 PHP 兼容的 cookie 读写 {@code PhpCookies}（均为纯内存计算，不读文件、不发网络请求）。
      */
     private static final Set<String> SITE_COMMON = Set.of(
             "common.web.PageResponse", "common.web.ApiException", "common.web.ErrorCode", "common.web.SafeExceptionLog",
             "common.browser.BrowserExternalAccess", "common.browser.BrowserExternalConfiguration",
-            "common.web.LegacyJson", "common.clientip.IpAddress");
+            "common.web.LegacyJson", "common.clientip.IpAddress",
+            "common.session.SessionStore", "common.session.SessionState", "common.captcha.Captchas",
+            "common.captcha.CaptchaSettings", "common.web.PhpCookies");
 
     /**
      * site 可用的 legacyconfig 类型（B02，MACC-26）：经 {@code LegacyConfigService} 读取 {@code extra/maccms.php} 并按字段并入站点设置。

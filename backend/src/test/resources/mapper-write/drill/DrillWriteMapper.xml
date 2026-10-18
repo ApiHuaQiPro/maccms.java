@@ -65,4 +65,19 @@
     <delete id="deleteUser">
         DELETE FROM mac_user WHERE user_id = #{userId}
     </delete>
+
+    <!-- B08 演练：旧 User::expire 的批量降级（User.php:394-408）：group_id > 2 且 user_end_time <= now 的会员降为 2 组（正式归 B10/B14） -->
+    <update id="expireMembers">
+        UPDATE mac_user SET group_id = 2 WHERE group_id &gt; 2 AND user_end_time &lt;= #{now}
+    </update>
+
+    <!-- B08 演练：登录态校验时的单行降级（User.php:455-466）；条件带上到期判定（严格小于），并发续费后匹配 0 行（正式归 B09） -->
+    <update id="expireMember">
+        UPDATE mac_user SET group_id = 2
+        WHERE user_id = #{userId} AND user_status = 1 AND group_id &gt; 2 AND user_end_time &lt; #{now}
+    </update>
+
+    <update id="renewMember">
+        UPDATE mac_user SET group_id = #{groupId}, user_end_time = #{endTime} WHERE user_id = #{userId}
+    </update>
 </mapper>

@@ -2,11 +2,14 @@ package com.maccms.backend.site.config;
 
 import com.maccms.backend.common.browser.BrowserExternalAccess;
 import com.maccms.backend.common.browser.BrowserExternalConfiguration;
+import com.maccms.backend.common.captcha.CaptchaSettings;
+import com.maccms.backend.common.session.SessionStore;
 import com.maccms.backend.legacyconfig.application.LegacyConfigConfiguration;
 import com.maccms.backend.legacyconfig.application.LegacyConfigException;
 import com.maccms.backend.legacyconfig.application.LegacyConfigFile;
 import com.maccms.backend.legacyconfig.application.LegacyConfigService;
 import com.maccms.backend.legacyconfig.application.view.PhpArray;
+import com.maccms.backend.legacyconfig.application.view.PhpValue;
 import com.maccms.backend.site.application.BrowserAddress;
 import com.maccms.backend.site.application.ImageUrlNormalizer;
 import com.maccms.backend.site.application.LegacyUrlBuilder;
@@ -16,6 +19,7 @@ import com.maccms.backend.site.application.PasswordTickets;
 import com.maccms.backend.site.application.PlayerSettings;
 import com.maccms.backend.site.application.RichTextCache;
 import com.maccms.backend.site.application.RichTextSanitizer;
+import com.maccms.backend.site.application.SearchTimespan;
 import com.maccms.backend.site.application.SiteFeatures;
 import com.maccms.backend.site.application.SiteMiscSettings;
 import com.maccms.backend.site.application.SiteImageProperties;
@@ -24,11 +28,19 @@ import com.maccms.backend.site.application.SitePasswordProperties;
 import com.maccms.backend.site.application.SiteProperties;
 import com.maccms.backend.site.application.SiteSettings;
 import com.maccms.backend.site.application.SiteUrlProperties;
+import com.maccms.backend.site.web.SearchThrottle;
 import com.maccms.backend.site.web.SiteHtmlRenderer;
 import com.maccms.backend.site.web.SitePages;
+import com.maccms.backend.site.web.SiteSessions;
 import com.maccms.backend.site.web.SiteStatusInterceptor;
 import com.maccms.backend.site.web.jte.StaticTemplates;
+import java.security.SecureRandom;
 import java.time.Clock;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.random.RandomGenerator;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -58,6 +70,9 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 public class SiteConfiguration {
 
     private static final Logger log = LoggerFactory.getLogger(SiteConfiguration.class);
+
+    /** 中文码表缺字形告警最多列出的码位数。 */
+    static final int MISSING_GLYPHS_LOGGED = 16;
 
     /**
      * 站点设置的来源：设置了 {@code maccms.legacy-config.dir} 时，启动时读一次旧配置 {@code extra/maccms.php}，
@@ -178,6 +193,87 @@ public class SiteConfiguration {
     @Bean
     PasswordAttempts sitePasswordAttempts() {
         return new PasswordAttempts(Clock.systemUTC());
+    }
+
+    /** 进程内会话（B08）：验证码与搜索计时。重启即清空。 */
+    @Bean
+    SessionStore siteSessionStore() {
+        return SessionStore.withDefaults(Clock.systemUTC());
+    }
+
+    @Bean
+    SiteSessions siteSessions(SessionStore store, SiteSettings settings) {
+        return new SiteSessions(store, settings.homePath().href(), settings.baseUrl().href().startsWith("https:"));
+    }
+
+    /**
+     * 验证码图片参数（B08）：配置了旧配置目录时启动时读一次 {@code extra/captcha.php}（文件不存在时用 think-captcha 默认值；格式错误
+     * 或取值不受支持时启动失败，信息不含文件内容）；没有配置时按仓库值。
+     */
+    @Bean
+    CaptchaSettings siteCaptchaSettings(LegacyConfigService legacy) {
+        if (!legacy.isConfigured()) {
+            return CaptchaSettings.fromLegacy(Map.of("codeSet", "1234567890", "length", 4L, "fontSize", 16L,
+                    "useNoise", false, "useCurve", false));
+        }
+        PhpArray captcha;
+        try {
+            captcha = legacy.read(LegacyConfigFile.CAPTCHA);
+        } catch (LegacyConfigException e) {
+            if (e.reason() == LegacyConfigException.Reason.NOT_FOUND) {
+                log.warn("legacy captcha config not found; using think-captcha defaults");
+                return CaptchaSettings.THINK_DEFAULTS;
+            }
+            throw new IllegalStateException("site 已启用但旧验证码配置 extra/captcha.php 读取失败：" + e.getMessage(), null);
+        }
+        Map<String, Object> values = new LinkedHashMap<>();
+        captcha.entries().forEach((k, v) -> values.put(String.valueOf(k), scalar(v)));
+        CaptchaSettings settings = CaptchaSettings.fromLegacy(values);
+        List<Integer> missing = settings.missingZhGlyphs();
+        if (!missing.isEmpty()) {
+            // 只在装配时记一次，最多列 MISSING_GLYPHS_LOGGED 个码位；这些字照常抽取与校验，图上画缺字框
+            log.warn("legacy captcha zhSet has {} characters without built-in glyphs (drawn as missing-glyph boxes): {}",
+                    missing.size(), missing.stream().limit(MISSING_GLYPHS_LOGGED)
+                            .map(cp -> String.format("U+%04X", cp)).collect(Collectors.joining(" "))
+                            + (missing.size() > MISSING_GLYPHS_LOGGED ? " ..." : ""));
+        }
+        return settings;
+    }
+
+    /** 验证码的随机源（B08）：字符与版式都用不可预测的随机数（旧版用 {@code mt_rand}）。 */
+    @Bean
+    RandomGenerator siteCaptchaRandom() {
+        return new SecureRandom();
+    }
+
+    /** 旧 {@code app.search_timespan}（B08）：启动时读一次，没有旧配置时不限制。 */
+    @Bean
+    SearchTimespan siteSearchTimespan(LegacyConfigService legacy) {
+        if (!legacy.isConfigured()) {
+            return SearchTimespan.OFF;
+        }
+        try {
+            return SearchTimespan.from(legacy.read(LegacyConfigFile.MACCMS));
+        } catch (LegacyConfigException e) {
+            throw new IllegalStateException("site 已启用但旧配置 extra/maccms.php 读取失败：" + e.getMessage(), null);
+        }
+    }
+
+    @Bean
+    SearchThrottle siteSearchThrottle(SiteSessions sessions, SearchTimespan timespan, SiteHtmlRenderer renderer,
+                                      SitePages pages) {
+        return new SearchThrottle(sessions, timespan, renderer, pages);
+    }
+
+    private static Object scalar(PhpValue v) {
+        return switch (v) {
+            case PhpValue.PhpString s -> s.value();
+            case PhpValue.PhpInt i -> i.value();
+            case PhpValue.PhpFloat f -> f.value();
+            case PhpValue.PhpBool b -> b.value();
+            case PhpValue.PhpNull n -> null;
+            case PhpArray a -> null;
+        };
     }
 
     @Bean

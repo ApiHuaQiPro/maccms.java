@@ -83,6 +83,11 @@ public class SitePages {
         return error("站点维护中", site.closedMessage());
     }
 
+    /** 旧搜索频率限制的提示（{@code index/controller/Base.php:59-62}，B08）。 */
+    public ErrorPage tooFrequent(String message) {
+        return error("请稍后再试", message);
+    }
+
     /**
      * 内容页外壳。
      *
