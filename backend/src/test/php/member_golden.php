@@ -158,6 +158,7 @@ try {
         'java_issued' => java_issued_cases($ctx),
         'login' => login_cases($ctx),
         'captcha_check' => captcha_check_cases($ctx),
+        'verify_check' => verify_check_cases($ctx),
         'captcha_image' => captcha_image_cases($ctx),
         'timespan' => timespan_cases($ctx),
         'expire' => expire_cases($ctx),
@@ -285,6 +286,9 @@ function setcookie_cases($ctx)
     foreach ($values as $v) {
         $calls[] = ['name' => 'user_name', 'value' => bin2hex($v), 'option' => ['expire' => 2592000]];
     }
+    // user_check 加 HttpOnly 时 PHP 8.0/7.3 写出的字节（新版签发 user_check 的有意差异 D-B08-7，以 PHP 自己的写法为准）
+    $calls[] = ['name' => 'user_check', 'value' => bin2hex(md5('-b08-1-')),
+        'option' => ['expire' => 2592000, 'httponly' => true]];
     $out = [];
     foreach ($calls as $call) {
         $r = run_child($ctx, 'setcookie', ['calls' => [$call]]);
@@ -462,6 +466,15 @@ function captcha_check_cases($ctx)
         'nothing-stored' => [null, [$i('1234')]],
         'other-slot' => [$s('1234', 0, 'x'), [$i('1234'), $i('1234', 'x')]],
         'fullwidth-digits' => [$s('1234'), [$i('１２３４')]],
+        // 中文验证码（useZh）：记录同样是 authcode(strtoupper(码))，strtoupper 不改多字节字符
+        'zh-correct-then-replay' => [$s('们以我到'), [$i('们以我到'), $i('们以我到')]],
+        'zh-wrong-then-correct' => [$s('们以我到'), [$i('们以我他'), $i('们以我到')]],
+        'zh-age-1800' => [$s('们以我到', 1800), [$i('们以我到')]],
+        'zh-age-1801' => [$s('们以我到', 1801), [$i('们以我到')]],
+        'zh-traditional' => [$s('们以我到'), [$i('們以我到')]],
+        'zh-trailing-space' => [$s('们以我到'), [$i('们以我到 ')]],
+        'zh-partial' => [$s('们以我到'), [$i('们以我')]],
+        'zh-other-slot' => [$s('们以我到', 0, 'x'), [$i('们以我到'), $i('们以我到', 'x')]],
     ];
     $out = [];
     foreach ($cases as $label => $c) {
@@ -471,11 +484,41 @@ function captcha_check_cases($ctx)
     return $out;
 }
 
+/**
+ * 经过旧控制器 Verify::check($verify, $id)（application/index/controller/Verify.php:21-29）的校验：旧代码接收 id 却不传给
+ * captcha_check，所以永远校验默认槽。stored 是放入会话的记录（槽 id），calls 是依次的 check 调用。
+ */
+function verify_check_cases($ctx)
+{
+    $cases = [
+        'default-slot-ignores-id' => [['code' => '1234', 'id' => ''], [['code' => '1234', 'id' => 'x']]],
+        'named-slot-unreachable' => [['code' => '1234', 'id' => 'x'], [['code' => '1234', 'id' => 'x'],
+            ['code' => '1234', 'id' => '']]],
+        'default-slot-replay' => [['code' => '1234', 'id' => ''], [['code' => '1234', 'id' => ''],
+            ['code' => '1234', 'id' => '']]],
+        'wrong-keeps-default' => [['code' => '1234', 'id' => ''], [['code' => '0000', 'id' => 'x'],
+            ['code' => '1234', 'id' => 'x']]],
+        'zh-default-slot' => [['code' => '们以我到', 'id' => ''], [['code' => '们以我到', 'id' => 'zh']]],
+    ];
+    $out = [];
+    foreach ($cases as $label => $c) {
+        $calls = array_map(function ($x) {
+            return ['code' => bin2hex($x['code']), 'id' => $x['id']];
+        }, $c[1]);
+        $r = run_child($ctx, 'verify_check', ['stored' => $c[0], 'calls' => $calls]);
+        $out[] = ['label' => $label, 'stored' => $c[0], 'calls' => $calls] + $r;
+    }
+    return $out;
+}
+
 function captcha_image_cases($ctx)
 {
     $out = [];
+    // zh-*：useZh=true。备份的 vendor 没有 assets/zhttfs/，按原样运行时 entry() 出错（zh-backup-vendor）；zh-ttfs-font 让 fontttf
+    // 经 ../ttfs/ 指到自带的英文字体，只为得到中文分支的图片尺寸与会话记录（字形本身画不出中文）
     foreach (['repo-config' => [], 'length5-font20' => ['length' => 5, 'fontSize' => 20],
-                 'fixed-size' => ['imageW' => 150, 'imageH' => 50], 'noise-curve' => ['useNoise' => true, 'useCurve' => true]]
+                 'fixed-size' => ['imageW' => 150, 'imageH' => 50], 'noise-curve' => ['useNoise' => true, 'useCurve' => true],
+                 'zh-backup-vendor' => ['useZh' => true], 'zh-ttfs-font' => ['useZh' => true, 'fontttf' => '../ttfs/1.ttf']]
              as $label => $override) {
         $r = run_child($ctx, 'captcha_image', ['override' => $override, 'id' => '']);
         $out[] = ['label' => $label, 'override' => $override] + $r;

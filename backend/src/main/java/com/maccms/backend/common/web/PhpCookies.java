@@ -20,8 +20,9 @@ import java.util.Map;
  * 解成空格，是两版之间唯一的解析差异）。值按字节解码后以 UTF-8 解释，非法字节序列在 {@link Value#bytes()} 中原样保留。
  *
  * <p>写出（{@link #setCookie}、{@link #deleteCookie}）复刻 PHP 8.0 {@code setcookie} 的头格式：值用 {@code rawurlencode}，
- * 有效期写 {@code expires=…; Max-Age=…}，{@code path} 小写；不加 HttpOnly/Secure/SameSite（与旧 {@code application/config.php}
- * 的 cookie 设置相同）。删除写成 {@code name=deleted; expires=Thu, 01-Jan-1970 00:00:01 GMT; Max-Age=0; path=…}。
+ * 有效期写 {@code expires=…; Max-Age=…}，{@code path} 小写；默认不加 HttpOnly/Secure/SameSite（与旧 {@code application/config.php}
+ * 的 cookie 设置相同），需要时可加 HttpOnly（与 PHP 8.0 {@code setcookie(…, httponly: true)} 的写法相同，黄金 setcookie 用例锁定）。
+ * 删除写成 {@code name=deleted; expires=Thu, 01-Jan-1970 00:00:01 GMT; Max-Age=0; path=…}。
  */
 public final class PhpCookies {
 
@@ -209,6 +210,12 @@ public final class PhpCookies {
      * @param path          cookie 路径
      */
     public static String setCookie(String name, String value, long expiresEpoch, long nowEpoch, String path) {
+        return setCookie(name, value, expiresEpoch, nowEpoch, path, false);
+    }
+
+    /** 同上；{@code httpOnly} 为真时在末尾加 {@code ; HttpOnly}（PHP 8.0 的位置与大小写）。 */
+    public static String setCookie(String name, String value, long expiresEpoch, long nowEpoch, String path,
+                                   boolean httpOnly) {
         if (value.isEmpty()) {
             return deleteCookie(name, path);
         }
@@ -217,7 +224,8 @@ public final class PhpCookies {
             sb.append("; expires=").append(httpDate(expiresEpoch)).append("; Max-Age=")
                     .append(Math.max(0, expiresEpoch - nowEpoch));
         }
-        return sb.append("; path=").append(path).toString();
+        sb.append("; path=").append(path);
+        return httpOnly ? sb.append("; HttpOnly").toString() : sb.toString();
     }
 
     /** PHP {@code setcookie(name, '', 过去的时间, path)}：ThinkPHP {@code Cookie::delete} 的写法。 */

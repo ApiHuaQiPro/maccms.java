@@ -73,8 +73,9 @@ class PhpCookiesGoldenTest {
             String expected = php.get(0);
             String maxAge = expected.replaceAll(".*Max-Age=(\\d+).*", "$1");
             long now = requestTime + 2592000L - Long.parseLong(maxAge);
-            assertThat(PhpCookies.setCookie(call.get("name").asString(), value, requestTime + 2592000L, now, "/"))
-                    .as(value).isEqualTo(expected);
+            boolean httpOnly = call.get("option").path("httponly").asBoolean(false);
+            assertThat(PhpCookies.setCookie(call.get("name").asString(), value, requestTime + 2592000L, now, "/",
+                    httpOnly)).as(value).isEqualTo(expected);
             n++;
         }
         assertThat(n).isGreaterThanOrEqualTo(13);

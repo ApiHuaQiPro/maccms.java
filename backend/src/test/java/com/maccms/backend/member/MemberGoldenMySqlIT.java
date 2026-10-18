@@ -5,10 +5,19 @@ import static org.assertj.core.api.Assertions.fail;
 
 import com.maccms.backend.MaccmsBackendApplication;
 import com.maccms.backend.common.web.PhpCookies;
+import com.maccms.backend.common.write.WriteDataSourceProperties;
+import com.maccms.backend.common.write.WriteDataSourceSettings;
+import com.maccms.backend.common.write.WriteDatabase;
+import com.maccms.backend.common.write.WriteRegistry;
+import com.maccms.backend.drill.infrastructure.DrillWriteMapper;
 import com.maccms.backend.member.application.MemberSessionService;
 import com.maccms.backend.member.application.view.MemberState;
 import com.maccms.backend.member.infrastructure.MemberMapper;
+import com.maccms.backend.schema.SchemaFingerprint;
+import com.maccms.backend.writedrill.ConcurrentWrites;
 import com.maccms.backend.writedrill.DatabaseSnapshot;
+import com.maccms.backend.writedrill.DmlRestore;
+import com.maccms.backend.writedrill.DrillRegistry;
 import com.maccms.backend.writedrill.SnapshotDiff;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -27,6 +36,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -51,7 +61,9 @@ import tools.jackson.databind.JsonNode;
  * <p>流程：外部管理账号新建一次性库 maccms_it_&lt;时间&gt;_&lt;随机&gt; → 原样导入 install.sql（自带 1/2/3 三个会员组）→ 写入 PHP 黄金
  * 中同样的合成会员 → 数据快照 S0 → 用应用的只读 {@link MemberMapper} 逐条复放 PHP 8.0/7.3 黄金的 label_user 用例、到期边界、
  * PHP 真实登录签发的 cookie（PHP → Java）与新版签发的 cookie → 每段之后核对 {@code mac_user}/{@code mac_group} 与 S0 逐行相同
- * （B08 不写库）→ 删库并确认不存在。
+ * （B08 不写库）→ ⑤ 测试侧降级演练（演练登记表 + 测试类路径上的 {@link DrillWriteMapper}，正式登记表仍为空）：批量降级的 {@code <=}
+ * 边界与 PHP {@code User::expire} 黄金一致、单行降级 16 线程并发只命中 1 次、续费与降级竞态、快照 → 只用 DML 恢复 → 逐行 diff 为空、
+ * 表结构指纹与导入时相同 → 删库并确认不存在。
  *
  * <p>与 PHP 结果不同的用例只有 17 文档第 5 节登记的有意差异：库内 {@code user_random} 为空时伪造的 cookie（D-B08-2）、
  * {@code 0e…} 宽松比较（D-B08-1）、PHP 8 对数组 cookie 抛类型错误（新版按游客）、PHP 7.3 把 cookie 中的 {@code +} 解成空格。
@@ -75,6 +87,7 @@ class MemberGoldenMySqlIT {
     private static String dbName;
     private static boolean dbCreated;
     private static DatabaseSnapshot s0;
+    private static Map<String, String> schemaAtImport;
     private static ConfigurableApplicationContext app;
     private static MemberMapper mapper;
 
@@ -101,6 +114,7 @@ class MemberGoldenMySqlIT {
                     st.execute(sql);
                 }
             }
+            schemaAtImport = SchemaFingerprint.of(c, dbName);
             try (PreparedStatement ps = c.prepareStatement("INSERT INTO mac_user (user_id, group_id, user_name, "
                     + "user_pwd, user_status, user_random, user_end_time) VALUES (?, ?, ?, MD5(?), ?, ?, 0)")) {
                 for (JsonNode u : MemberGolden.load(MemberGolden.PHP80).get("users")) {
@@ -136,6 +150,12 @@ class MemberGoldenMySqlIT {
             app.close();
         }
         if (dbCreated && DB_NAME.matcher(dbName).matches()) {
+            Map<String, String> schemaNow = null;
+            if (schemaAtImport != null) {
+                try (Connection c = admin(dbName)) {
+                    schemaNow = SchemaFingerprint.of(c, dbName);
+                }
+            }
             try (Connection c = admin(null); Statement st = c.createStatement()) {
                 st.execute("DROP DATABASE `" + dbName + "`");
                 try (ResultSet rs = st.executeQuery("SELECT COUNT(*) FROM information_schema.schemata "
@@ -145,6 +165,9 @@ class MemberGoldenMySqlIT {
                 }
             }
             System.out.println("[mysql-it] dropped disposable database " + dbName + " (verified absent)");
+            if (schemaNow != null) {
+                assertThat(SchemaFingerprint.diff(schemaAtImport, schemaNow)).as("表结构与导入 install.sql 时一致").isEmpty();
+            }
         }
     }
 
@@ -300,7 +323,100 @@ class MemberGoldenMySqlIT {
         assertUnchanged("java issued");
     }
 
+    /**
+     * ⑤ 测试侧降级演练（17 文档第 7 节）。语句只在测试类路径的 {@link DrillWriteMapper}，经演练登记表打开写连接；正式登记表
+     * {@link WriteRegistry#registered()} 仍为空。正式写入：checkLogin 单行降级归 B09，批量到期任务归 B10，后台会员列表第 1 页归 B14。
+     */
+    @Test
+    @Order(5)
+    void downgradeDrillBoundaryConcurrencyRaceAndDmlRestore() throws Exception {
+        assertThat(WriteRegistry.registered().permissions()).as("B08 不登记正式业务写入").isEmpty();
+        String url = jdbcUrlFor(dbName);
+        try (WriteDatabase drill = WriteDatabase.open(WriteDataSourceSettings.from(
+                new WriteDataSourceProperties(true, url, adminUser, adminPassword, true, 8), url),
+                DrillRegistry.registry())) {
+            DatabaseSnapshot before = snapshot();
+            DrillWriteMapper m = drill.mapper(DrillWriteMapper.class);
+            long now = Instant.now().getEpochSecond();
+
+            // 批量降级（<=）：与 PHP User::expire 黄金相同的 6 行设置；命中行数与逐行判定一致，结果与 PHP 的 group_after 相同
+            JsonNode golden = MemberGolden.load(MemberGolden.PHP80).get("expire");
+            for (JsonNode r : golden.get("rows")) {
+                setRow(r.get("user_id").asLong(), r.get("group_before").asInt(), now + r.get("offset").asLong(), null);
+            }
+            int expected = 0;
+            Map<Long, Integer> expectedGroup = new HashMap<>();
+            try (Connection c = admin(dbName); Statement st = c.createStatement();
+                 ResultSet rs = st.executeQuery("SELECT user_id, group_id, user_end_time FROM mac_user")) {
+                while (rs.next()) {
+                    boolean expire = rs.getInt(2) > 2 && rs.getLong(3) <= now;
+                    expected += expire ? 1 : 0;
+                    expectedGroup.put(rs.getLong(1), expire ? 2 : rs.getInt(2));
+                }
+            }
+            assertThat(m.expireMembers(now)).as("命中行数 = group_id > 2 且 user_end_time <= now 的行数").isEqualTo(expected);
+            for (JsonNode r : golden.get("rows")) {
+                long id = r.get("user_id").asLong();
+                assertThat(currentGroup(id)).as("user " + id + " 与 PHP expire 黄金相同")
+                        .isEqualTo(r.get("group_after").asInt()).isEqualTo(expectedGroup.get(id));
+            }
+            assertThat(m.expireMembers(now)).as("再次执行没有可降级的会员").isZero();
+
+            // 单行降级（<）：16 线程并发只有 1 个命中
+            setRow(5, 3, now - 1, null);
+            ConcurrentWrites.Outcome<Integer> single = ConcurrentWrites.run(16, i -> m.expireMember(5, now));
+            assertThat(single.failures()).isEmpty();
+            assertThat(single.count(1)).isEqualTo(1);
+            assertThat(single.count(0)).isEqualTo(15);
+            assertThat(currentGroup(5)).isEqualTo(2);
+
+            // 边界与条件：end == now 不降级（checkLogin 用 <），续费到将来后不降级，停用账号不降级
+            assertThat(m.renewMember(22, 3, now)).isEqualTo(1);
+            assertThat(m.expireMember(22, now)).as("end == now").isZero();
+            assertThat(m.renewMember(22, 3, now + 100)).isEqualTo(1);
+            assertThat(m.expireMember(22, now)).as("已续费").isZero();
+            assertThat(m.renewMember(22, 3, now - 1)).isEqualTo(1);
+            assertThat(m.expireMember(22, now)).as("end == now - 1").isEqualTo(1);
+            setRow(9, 3, now - 1, null);
+            assertThat(m.expireMember(9, now)).as("user_status = 0").isZero();
+
+            // 续费与降级竞态：两种执行顺序的结果都是 3 组、到期在将来（降级先：续费写回 3 组；续费先：降级匹配 0 行）
+            for (int round = 0; round < 20; round++) {
+                setRow(22, 3, now - 1, null);
+                ConcurrentWrites.Outcome<Integer> race = ConcurrentWrites.run(2,
+                        i -> i == 0 ? m.renewMember(22, 3, now + 1000) : m.expireMember(22, now));
+                assertThat(race.failures()).isEmpty();
+                assertThat(currentGroup(22)).as("round " + round).isEqualTo(3);
+                assertThat(endTime(22)).as("round " + round).isEqualTo(now + 1000);
+            }
+
+            // 回滚演练：只用 DML 恢复到演练前，逐行 diff 为空
+            DatabaseSnapshot after = snapshot();
+            SnapshotDiff written = SnapshotDiff.between(before, after);
+            assertThat(written.isEmpty()).isFalse();
+            System.out.println("[mysql-it] member downgrade drill writes:\n" + written.summary());
+            List<DmlRestore.Statement> plan = DmlRestore.plan(before, after);
+            int applied;
+            try (Connection c = admin(dbName)) {
+                applied = DmlRestore.apply(c, plan);
+            }
+            System.out.println("[mysql-it] member downgrade drill DML restore statements applied: " + applied);
+            assertThat(applied).isEqualTo(plan.size());
+            assertThat(SnapshotDiff.between(before, snapshot()).isEmpty()).isTrue();
+        }
+        assertUnchanged("downgrade drill restore");
+        try (Connection c = admin(dbName)) {
+            assertThat(SchemaFingerprint.diff(schemaAtImport, SchemaFingerprint.of(c, dbName))).as("表结构指纹不变").isEmpty();
+        }
+    }
+
     // ------------------------------------------------------------------ 辅助
+
+    private static DatabaseSnapshot snapshot() throws SQLException {
+        try (Connection c = admin(dbName)) {
+            return DatabaseSnapshot.take(c, TABLES);
+        }
+    }
 
     private static void assertUnchanged(String phase) throws SQLException {
         try (Connection c = admin(dbName)) {
@@ -334,6 +450,14 @@ class MemberGoldenMySqlIT {
             }
         }
         fail("no user " + id);
+    }
+
+    private static long endTime(long id) throws SQLException {
+        try (Connection c = admin(dbName); Statement st = c.createStatement();
+             ResultSet rs = st.executeQuery("SELECT user_end_time FROM mac_user WHERE user_id = " + id)) {
+            rs.next();
+            return rs.getLong(1);
+        }
     }
 
     private static int currentGroup(long id) throws SQLException {

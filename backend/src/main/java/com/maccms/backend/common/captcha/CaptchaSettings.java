@@ -13,13 +13,17 @@ import java.util.Map;
  * <p>校验用的参数（有效期 1800 秒、通过后作废）不在这里：旧 {@code captcha_check()} 不传配置，总是用 think-captcha 的默认值
  * （见 {@link Captchas}）。{@code seKey}、{@code expire}、{@code reset}、{@code fontttf}、{@code useImgBg}、{@code bg} 以外的
  * 未知键忽略。
+ *
+ * <p>中文验证码：{@code useZh} 为真时码字从 {@code zhSet} 按字（码位）均匀抽取（旧 {@code iconv_substr(zhSet, mt_rand(0,
+ * mb_strlen−1), 1)}），{@code codeSet} 不用；{@code zhSet} 默认是 think-captcha 自带的 1500 字码表，旧配置可以覆盖。字形由
+ * {@link ZhGlyphs} 内置，所以 {@code zhSet} 里的字都必须有内置字形（GB2312 一、二级汉字）。
  */
 public record CaptchaSettings(String codeSet, int length, double fontSize, boolean useNoise, boolean useCurve,
-                              int imageW, int imageH, int[] bg, boolean useZh) {
+                              int imageW, int imageH, int[] bg, boolean useZh, String zhSet) {
 
     public static final CaptchaSettings THINK_DEFAULTS = new CaptchaSettings(
             "2345678abcdefhijkmnpqrstuvwxyzABCDEFGHJKLMNPQRTUVWXY", 5, 25, true, true, 0, 0,
-            new int[] {243, 251, 254}, false);
+            new int[] {243, 251, 254}, false, ZhGlyphs.thinkZhSet());
 
     /** 允许的码长与字号（防止配置失误生成超大图片）。 */
     static final int MAX_LENGTH = 16;
@@ -47,8 +51,8 @@ public record CaptchaSettings(String codeSet, int length, double fontSize, boole
     /**
      * 以 think-captcha 默认值为底，按旧 {@code captcha.php} 的键覆盖。值的类型是 PHP {@code var_export} 能产生的
      * {@code String}、{@code Long}、{@code Double}、{@code Boolean} 或 null（调用方从旧配置读取后转换）。
-     * 新版不支持的取值（中文验证码 {@code useZh=true}、码表含非 ASCII 可见字符、码长或字号越界）抛 {@link IllegalStateException}，
-     * 信息只含键名。
+     * 新版不支持的取值（英文码表含非 ASCII 可见字符、中文码表含没有内置字形的字、码长或字号越界）抛
+     * {@link IllegalStateException}，信息只含键名。
      */
     public static CaptchaSettings fromLegacy(Map<String, Object> legacy) {
         CaptchaSettings d = THINK_DEFAULTS;
@@ -61,6 +65,7 @@ public record CaptchaSettings(String codeSet, int length, double fontSize, boole
         int h = d.imageH;
         int[] bg = d.bg;
         boolean zh = d.useZh;
+        String zhSet = d.zhSet;
         List<String> errors = new ArrayList<>();
         for (Map.Entry<String, Object> e : legacy.entrySet()) {
             Object v = e.getValue();
@@ -73,15 +78,17 @@ public record CaptchaSettings(String codeSet, int length, double fontSize, boole
                 case "imageW" -> w = (int) number(v);
                 case "imageH" -> h = (int) number(v);
                 case "useZh" -> zh = truthy(v);
+                case "zhSet" -> zhSet = v == null ? "" : String.valueOf(v);
                 default -> {
                     // seKey/expire/reset/fontttf/useImgBg/bg 等：校验参数固定为默认值，字体与背景图由新版自带的笔画字形代替
                 }
             }
         }
         if (zh) {
-            errors.add("useZh（新版不提供中文验证码）");
-        }
-        if (codeSet.isEmpty() || !codeSet.chars().allMatch(c -> c > 0x20 && c < 0x7F)) {
+            if (zhSet.isEmpty() || !zhSet.codePoints().allMatch(ZhGlyphs::has)) {
+                errors.add("zhSet（只支持 GB2312 一、二级汉字）");
+            }
+        } else if (codeSet.isEmpty() || !codeSet.chars().allMatch(c -> c > 0x20 && c < 0x7F)) {
             errors.add("codeSet（只支持 ASCII 可见字符）");
         }
         if (length < 1 || length > MAX_LENGTH) {
@@ -96,7 +103,7 @@ public record CaptchaSettings(String codeSet, int length, double fontSize, boole
         if (!errors.isEmpty()) {
             throw new IllegalStateException("旧验证码配置 extra/captcha.php 不受支持：" + String.join("；", errors));
         }
-        return new CaptchaSettings(codeSet, length, fontSize, noise, curve, w, h, bg, false);
+        return new CaptchaSettings(codeSet, length, fontSize, noise, curve, w, h, bg, zh, zhSet);
     }
 
     /** PHP 的数值转换（数字字符串取数值，其余为 0）。 */

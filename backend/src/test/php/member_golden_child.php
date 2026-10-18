@@ -10,6 +10,7 @@
  *   - setcookie：ThinkPHP cookie() 助手（thinkphp/helper.php:323-341、library/think/Cookie.php）；
  *   - parse：$_COOKIE 原样；
  *   - captcha_check / captcha_image：think-captcha 的 Captcha::check / entry（会话里放入构造的验证码记录）；
+ *   - verify_check：旧控制器 app\index\controller\Verify::check（index/controller/Verify.php:21-29）；
  *   - timespan：mac_get_time_span（application/common.php:306-316）；
  *   - expire：model('User')->expire()（User.php:394-408）。
  * 不修改任何旧 PHP 文件；数据库只连父进程新建的一次性库 maccms_it_*；缓存与会话目录是父进程为本次运行新建的临时目录。
@@ -183,6 +184,21 @@ try {
                 $ok = captcha_check(hex2bin($in['code']), $in['id']);
                 $checks[] = ['ok' => $ok, 'still_stored' => \think\Session::has($key . ($args['stored'] === null
                     ? '' : $args['stored']['id']), '')];
+            }
+            $result['same_second'] = time() === $now;
+            $result['checks'] = $checks;
+            break;
+
+        case 'verify_check':
+            $now = time();
+            $key = captcha_authcode('ThinkPHP.CN');
+            \think\Session::set($key . $args['stored']['id'], [
+                'verify_code' => captcha_authcode(strtoupper($args['stored']['code'])), 'verify_time' => $now], '');
+            $controller = (new ReflectionClass('app\index\controller\Verify'))->newInstanceWithoutConstructor();
+            $checks = [];
+            foreach ($args['calls'] as $call) {
+                $ret = $controller->check(hex2bin($call['code']), $call['id']);
+                $checks[] = ['return' => $ret, 'still_stored' => \think\Session::has($key . $args['stored']['id'], '')];
             }
             $result['same_second'] = time() === $now;
             $result['checks'] = $checks;

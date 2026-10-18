@@ -6,6 +6,7 @@ import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Path2D;
+import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -22,6 +23,10 @@ import javax.imageio.ImageIO;
  * <p>与旧版的差异（D-B08-5）：字形不用 TrueType 字体（旧版随机取 {@code assets/ttfs/*.ttf}，这些文件在不入 git 的 vendor 里，
  * 服务器上也不一定有可用字体），改为内置的笔画字形（0-9、A-Z，小写按大写画；校验本来就不分大小写），只用 Java2D 画线，
  * 不加载任何字体文件。图片尺寸与旧公式相同，像素内容不同（旧版本身每次随机）。
+ *
+ * <p>中文验证码（{@code useZh}）按旧版中文分支的版式：第 i 个字（从 0 起）的左边距 {@code fontSize × (i+1) × 1.5}、基线
+ * {@code fontSize + 10～20}、旋转 −40°～40°；字形是 {@link ZhGlyphs} 的 16×16 点阵，按 GD 的磅→像素（96/72）放大到
+ * {@code fontSize} 磅的字面大小，同样不加载字体文件。
  */
 final class CaptchaImage {
 
@@ -99,6 +104,15 @@ final class CaptchaImage {
                 drawCurve(g, ink, w, h, fs, random);
             }
             g.setColor(ink);
+            if (s.useZh()) {
+                int[] cps = code.codePoints().toArray();
+                for (int i = 0; i < cps.length; i++) {
+                    double baseline = fs + between(random, 10, 20);
+                    double angle = Math.toRadians(between(random, -40, 40));
+                    drawZhGlyph(g, cps[i], fs * (i + 1) * 1.5, baseline, fs * 96 / 72, angle);
+                }
+                return png(img);
+            }
             double x = 0;
             float stroke = (float) Math.max(1.5, fs / 8);
             for (int i = 0; i < code.length(); i++) {
@@ -109,6 +123,10 @@ final class CaptchaImage {
         } finally {
             g.dispose();
         }
+        return png(img);
+    }
+
+    private static byte[] png(BufferedImage img) {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         try {
             ImageIO.write(img, "png", out);
@@ -141,6 +159,31 @@ final class CaptchaImage {
         g.rotate(angle, x + 2 * unit, top + 3 * unit);
         g.setStroke(new BasicStroke(stroke, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
         g.draw(path);
+        g.setTransform(saved);
+    }
+
+    /**
+     * 在左边距 {@code x}、基线 {@code baseline} 处画一个边长 {@code em} 的点阵字（Unifont 的基线在第 14 行下沿），绕字中心旋转
+     * {@code angle}。
+     */
+    private static void drawZhGlyph(Graphics2D g, int codePoint, double x, double baseline, double em, double angle) {
+        int[] rows = ZhGlyphs.rows(codePoint);
+        if (rows == null) {
+            return;
+        }
+        double cell = em / ZhGlyphs.SIZE;
+        double top = baseline - cell * 14;
+        Path2D.Double path = new Path2D.Double();
+        for (int r = 0; r < ZhGlyphs.SIZE; r++) {
+            for (int c = 0; c < ZhGlyphs.SIZE; c++) {
+                if ((rows[r] & (0x8000 >>> c)) != 0) {
+                    path.append(new Rectangle2D.Double(x + c * cell, top + r * cell, cell + 0.35, cell + 0.35), false);
+                }
+            }
+        }
+        AffineTransform saved = g.getTransform();
+        g.rotate(angle, x + em / 2, top + em / 2);
+        g.fill(path);
         g.setTransform(saved);
     }
 

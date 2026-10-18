@@ -19,6 +19,7 @@ import com.maccms.backend.content.application.RoleReadService;
 import com.maccms.backend.content.application.TopicReadService;
 import com.maccms.backend.content.application.VideoPlotReadService;
 import com.maccms.backend.content.application.WebsiteReadService;
+import com.maccms.backend.member.MemberGolden;
 import com.maccms.backend.site.config.SiteConfiguration;
 import jakarta.servlet.http.Cookie;
 import java.awt.image.BufferedImage;
@@ -46,6 +47,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
+import tools.jackson.databind.JsonNode;
 
 /**
  * B08 的站点接线（17 文档第 2.3–2.5 节）：本地验证码 {@code verify/index}、{@code verify/check} 与搜索频率限制
@@ -165,13 +167,51 @@ class SiteVerifyThrottleMvcTest {
         assertThat(check(forged, "1111")).isEqualTo("0");
     }
 
+    /**
+     * 经过控制器复放黄金 verify_check 序列（旧 {@code Verify::check($verify, $id)} 不把 id 传给 captcha_check，永远校验默认槽）。
+     * 黄金里与记录相同的码换成本测试固定的 {@code 1111}，不同的换成 {@code 2222}。唯一有意差异：{@code wrong-keeps-default}
+     * 第 2 次旧版通过，新版因猜错即作废而不通过（D-B08-4）。中文序列见 {@link SiteVerifyZhMvcTest}。
+     */
     @Test
-    void slotsAreSeparateAndBadIdIs404() throws Exception {
+    void checkIgnoresIdAndAlwaysUsesTheDefaultSlotLikeLegacyController() throws Exception {
+        for (String v : List.of(MemberGolden.PHP80, MemberGolden.PHP73)) {
+            int n = 0;
+            for (JsonNode c : MemberGolden.load(v).get("verify_check")) {
+                String label = c.get("label").asString();
+                if (label.startsWith("zh-")) {
+                    continue;
+                }
+                assertThat(c.get("same_second").asBoolean()).isTrue();
+                String storedId = c.get("stored").get("id").asString();
+                String storedCode = c.get("stored").get("code").asString();
+                Cookie session = sessionOf(mvc.perform(get(URI.create("/index.php/verify/index"
+                        + (storedId.isEmpty() ? "" : "?id=" + storedId)))).andReturn());
+                JsonNode calls = c.get("calls");
+                for (int i = 0; i < calls.size(); i++) {
+                    String input = new String(MemberGolden.bytes(calls.get(i).get("code")), StandardCharsets.UTF_8);
+                    String java = check(session, input.equals(storedCode) ? "1111" : "2222",
+                            calls.get(i).get("id").asString());
+                    int php = c.get("checks").get(i).get("return").asInt();
+                    if (label.equals("wrong-keeps-default") && i == 1) {
+                        assertThat(php).isEqualTo(1);
+                        assertThat(java).as("D-B08-4：猜错一次后已作废").isEqualTo("0");
+                    } else {
+                        assertThat(java).as(v + " " + label + "#" + i).isEqualTo(Integer.toString(php));
+                    }
+                }
+                n++;
+            }
+            assertThat(n).isEqualTo(4);
+        }
+    }
+
+    @Test
+    void namedSlotCodeIsNotCheckableAndBadIdIs404OnlyForTheImage() throws Exception {
         Cookie session = sessionOf(mvc.perform(get("/index.php/verify/index?id=a")).andReturn());
         assertThat(check(session, "1111")).as("默认槽没有验证码").isEqualTo("0");
-        MvcResult r = mvc.perform(get(URI.create("/index.php/verify/check?verify=1111&id=a")).cookie(session))
-                .andReturn();
-        assertThat(r.getResponse().getContentAsString()).isEqualTo("1");
+        assertThat(check(session, "1111", "a")).as("check 忽略 id").isEqualTo("0");
+        newCaptcha(session);
+        assertThat(check(session, "1111", "..%2Fx")).as("check 不校验 id 的格式（旧版接受任意 id）").isEqualTo("1");
         assertThat(mvc.perform(get(URI.create("/index.php/verify/index?id=..%2Fx"))).andReturn().getResponse()
                 .getStatus()).isEqualTo(404);
     }
@@ -273,7 +313,12 @@ class SiteVerifyThrottleMvcTest {
     }
 
     private String check(Cookie session, String code) throws Exception {
-        MockHttpServletRequestBuilder req = get(URI.create("/index.php/verify/check?verify=" + code));
+        return check(session, code, null);
+    }
+
+    private String check(Cookie session, String code, String id) throws Exception {
+        MockHttpServletRequestBuilder req = get(URI.create("/index.php/verify/check?verify=" + code
+                + (id == null ? "" : "&id=" + id)));
         if (session != null) {
             req = req.cookie(session);
         }

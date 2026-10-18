@@ -6,7 +6,8 @@ import java.util.random.RandomGenerator;
 
 /**
  * 本地验证码的签发与校验（B08，17 文档第 2.4 节），对应 think-captcha 的 {@code Captcha::entry} 与 {@code captcha_check()}。
- * 验证码记录放在进程内会话（{@link SessionState}），按 {@code id} 分槽（旧版 {@code authcode(seKey) . $id}）。
+ * 验证码记录放在进程内会话（{@link SessionState}），按 {@code id} 分槽（旧版 {@code authcode(seKey) . $id}）；前台所有校验点
+ * 只用默认槽 {@link #DEFAULT_SLOT}。中文验证码（{@code useZh}）与英文共用同一套记录与校验规则。
  *
  * <p>校验语义由 {@code member/php{80,73}-golden.json} 的 captcha_check 用例锁定：
  * <ul>
@@ -17,11 +18,16 @@ import java.util.random.RandomGenerator;
  * <li>不相同 → 不通过。<b>与旧版不同</b>：旧版保留记录，30 分钟内可以对同一个 4 位数字验证码无限次猜测；新版同样删除记录，
  * 猜错一次就必须换新验证码（D-B08-4）。</li>
  * </ul>
+ * 中文码按 Java {@code char} 比较：旧版 {@code strtoupper} 在 C 区域设置下只改 ASCII 字母，UTF-8 的多字节序列原样比较，二者等价；
+ * 半角/全角、简繁不互通（黄金 captcha_check 的 zh-* 用例锁定）。
  */
 public final class Captchas {
 
     /** think-captcha 默认有效期；旧 {@code captcha_check()} 不传配置，所以总是这个值。 */
     public static final long EXPIRE_SECONDS = 1800;
+
+    /** 旧 {@code captcha_check($code)} 不传 id 时的槽。 */
+    public static final String DEFAULT_SLOT = "";
 
     private static final String SLOT = "captcha:";
 
@@ -43,9 +49,19 @@ public final class Captchas {
         return png;
     }
 
-    /** 按码表随机取 {@code length} 个字符（码表按字节索引，与旧版相同；码表已限定为 ASCII）。 */
+    /**
+     * 随机取 {@code length} 个字符：英文按 {@code codeSet} 字节索引（与旧版相同；码表已限定为 ASCII），中文按 {@code zhSet} 的
+     * 码位索引（旧版按 UTF-8 字符），码表里重复的字被抽中的概率相应更高，与旧版一致。
+     */
     static String code(CaptchaSettings settings, RandomGenerator random) {
-        StringBuilder sb = new StringBuilder(settings.length());
+        StringBuilder sb = new StringBuilder(settings.length() * 2);
+        if (settings.useZh()) {
+            int[] set = settings.zhSet().codePoints().toArray();
+            for (int i = 0; i < settings.length(); i++) {
+                sb.appendCodePoint(set[random.nextInt(set.length)]);
+            }
+            return sb.toString();
+        }
         String set = settings.codeSet();
         for (int i = 0; i < settings.length(); i++) {
             sb.append(set.charAt(random.nextInt(set.length())));
@@ -69,7 +85,7 @@ public final class Captchas {
     }
 
     private static String slot(String id) {
-        return id == null ? "" : id;
+        return id == null ? DEFAULT_SLOT : id;
     }
 
     /** PHP 7.3/8.0 {@code strtoupper}（C 区域设置）只转换 ASCII 字母。 */

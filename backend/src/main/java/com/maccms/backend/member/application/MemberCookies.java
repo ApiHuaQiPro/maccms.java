@@ -6,11 +6,15 @@ import java.util.List;
 /**
  * 旧会员 cookie 的写出（B08，17 文档第 2.2 节），供 B09 登录/注销使用；B08 自身不在任何响应中写这些 cookie。
  * 名称、编码与属性与 PHP 8.0 + ThinkPHP {@code cookie()} 写出的 {@code Set-Cookie} 逐字节相同（{@code member/php80-golden.json}
- * 的 setcookie、login 用例；有效期按传入的当前时刻计算）：
+ * 的 setcookie、login 用例；有效期按传入的当前时刻计算），唯一的有意差异是 {@code user_check} 加 HttpOnly（D-B08-7）：
  * <ul>
  * <li>登录（{@code User.php:385-390}）：{@code user_id}、{@code user_name}、{@code group_id}、{@code group_name}、{@code user_check}、
- * {@code user_portrait} 六个，{@code expire=2592000}（30 天），{@code path=/}，不设 domain，不加 HttpOnly/Secure；</li>
- * <li>注销（{@code User.php:411-419}）：同名六个按 ThinkPHP {@code Cookie::delete} 写成已过期；</li>
+ * {@code user_portrait} 六个，{@code expire=2592000}（30 天），{@code path=/}，不设 domain，不加 Secure。{@code user_check} 是 30 天
+ * 有效、等同凭证的值，前端没有任何地方读取（仓库内 {@code *.js}/{@code *.html} 全量检索），所以加 HttpOnly，字节与 PHP 8.0
+ * {@code setcookie(…, httponly: true)} 相同；其余五个旧 {@code home.js} 要读（{@code static/js/home.js:596-602}），保持旧契约
+ * 不加 HttpOnly；</li>
+ * <li>注销（{@code User.php:411-419}）：同名六个按 ThinkPHP {@code Cookie::delete} 写成已过期（与旧版逐字节相同；服务端
+ * 的 {@code Set-Cookie} 可以覆盖/删除 HttpOnly cookie，回滚到 PHP 后旧注销同样能删掉它）；</li>
  * <li>{@code label_user} 校验失败时的回写（{@code All.php:136-138}）：只有 {@code user_id=0}、{@code user_name=游客} 两个会话 cookie
  * （第三句 {@code cookie('user_check','')} 在 ThinkPHP 助手里是读取，不会写出）。</li>
  * </ul>
@@ -46,7 +50,7 @@ public final class MemberCookies {
                 PhpCookies.setCookie("group_id", Integer.toString(groupId), expires, nowEpochSeconds, PATH),
                 PhpCookies.setCookie("group_name", groupName, expires, nowEpochSeconds, PATH),
                 PhpCookies.setCookie("user_check", UserCheck.of(userRandom, userName, userId), expires,
-                        nowEpochSeconds, PATH),
+                        nowEpochSeconds, PATH, true),
                 PhpCookies.setCookie("user_portrait", portrait, expires, nowEpochSeconds, PATH));
     }
 
