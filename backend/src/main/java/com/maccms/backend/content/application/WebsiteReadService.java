@@ -57,7 +57,7 @@ public class WebsiteReadService {
 
     /** 分类范围（categoryId 为 null 时是全部可见分类）与条件下的切片；B05 的 LibrarySearchService 以 SSR 内部条件调用。 */
     LibrarySlice<WebsiteSummaryDto> slice(Integer categoryId, ContentCriteria criteria) {
-        CategoryCatalog catalog = catalogs.catalog(TYPE_MID, catalogs.guest());
+        CategoryCatalog catalog = catalogs.catalog(TYPE_MID, catalogs.viewer());
         Set<Integer> typeIds = ArticleReadService.typeIds(catalog, categoryId);
         if (typeIds.isEmpty()) {
             return LibrarySlice.empty();
@@ -82,10 +82,10 @@ public class WebsiteReadService {
             if (row == null) {
                 throw notFound();
             }
-            GuestPermission guest = catalogs.guest();
-            CategoryCatalog catalog = catalogs.catalog(TYPE_MID, guest);
+            GroupPermission viewer = catalogs.viewer();
+            CategoryCatalog catalog = catalogs.catalog(TYPE_MID, viewer);
             int categoryId = nz(row.categoryId());
-            if (!catalog.isVisible(categoryId) || !catalogs.guestMayViewDetail(guest, categoryId)) {
+            if (!catalog.isVisible(categoryId) || !catalogs.mayViewDetail(viewer, categoryId)) {
                 throw notFound();
             }
             return toDetail(row, catalog);

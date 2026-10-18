@@ -34,10 +34,10 @@ public class VideoPlotReadService {
             if (row == null) {
                 throw notFound();
             }
-            GuestPermission guest = catalogs.guest();
-            CategoryCatalog catalog = catalogs.vodCatalog(guest);
+            GroupPermission viewer = catalogs.viewer();
+            CategoryCatalog catalog = catalogs.vodCatalog(viewer);
             int categoryId = nz(row.categoryId());
-            if (!catalog.isVisible(categoryId) || !catalogs.guestMayViewDetail(guest, categoryId)) {
+            if (!catalog.isVisible(categoryId) || !catalogs.mayViewDetail(viewer, categoryId)) {
                 throw notFound();
             }
             if (nz(row.detailPasswordRequired()) != 0) {

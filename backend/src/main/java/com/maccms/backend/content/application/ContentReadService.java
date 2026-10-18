@@ -124,7 +124,7 @@ public class ContentReadService {
 
     public CategoryListResponse listCategories() {
         return read(() -> {
-            CategoryCatalog catalog = loadCatalog(loadGuest());
+            CategoryCatalog catalog = loadCatalog(loadViewer());
             return new CategoryListResponse(toTree(catalog, catalog.roots()));
         });
     }
@@ -230,7 +230,7 @@ public class ContentReadService {
     }
 
     private PageResponse<VideoSummaryDto> doListVideos(VideoListQuery query) {
-        CategoryCatalog catalog = loadCatalog(loadGuest());
+        CategoryCatalog catalog = loadCatalog(loadViewer());
         Set<Integer> typeIds = typeIds(catalog, query);
         if (typeIds.isEmpty()) {
             return PageResponse.of(List.of(), query.page(), query.pageSize(), 0);
@@ -396,14 +396,14 @@ public class ContentReadService {
         if (row == null) {
             throw notFound();
         }
-        GuestPermission guest = loadGuest();
-        CategoryCatalog catalog = loadCatalog(guest);
+        GroupPermission viewer = loadViewer();
+        CategoryCatalog catalog = loadCatalog(viewer);
         int categoryId = nz(row.categoryId());
         if (!catalog.isVisible(categoryId)) {
             throw notFound();
         }
         // 旧详情页对游客检查"详情"权限位 2（common/controller/All.php:408-414 → index/controller/Base.php:170-173）
-        if (properties.enforceGuestPopedom() && !guest.allows(categoryId, GuestPermission.DETAIL)) {
+        if (properties.enforceGuestPopedom() && !viewer.allows(categoryId, GroupPermission.DETAIL)) {
             throw notFound();
         }
         // 旧详情页：vod_pwd 非空且本会话未验证时改为显示密码页（index/controller/Vod.php:61-63）
@@ -421,15 +421,15 @@ public class ContentReadService {
         return new ApiException(ErrorCode.VIDEO_NOT_FOUND, "视频不存在");
     }
 
-    private GuestPermission loadGuest() {
+    private GroupPermission loadViewer() {
         if (!properties.enforceGuestPopedom()) {
-            return GuestPermission.from(null);
+            return GroupPermission.from(null);
         }
-        return GuestPermission.from(groupMapper.selectGroupPermission(ContentProperties.GUEST_GROUP_ID));
+        return GroupPermission.from(groupMapper.selectGroupPermission(ContentViewer.groupId()));
     }
 
-    private CategoryCatalog loadCatalog(GuestPermission guest) {
-        return CategoryCatalog.build(typeMapper.selectEnabledVodTypes(), guest, properties.enforceGuestPopedom());
+    private CategoryCatalog loadCatalog(GroupPermission viewer) {
+        return CategoryCatalog.build(typeMapper.selectEnabledVodTypes(), viewer, properties.enforceGuestPopedom());
     }
 
     /** 分类树（文章/演员/网址分类经 ContentCatalogs 复用）。 */

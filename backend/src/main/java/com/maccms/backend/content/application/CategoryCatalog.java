@@ -34,10 +34,10 @@ public final class CategoryCatalog {
     }
 
     /** rows 须已按 type_sort、type_id 升序（TypeMapper 保证），快照内保持该顺序。 */
-    public static CategoryCatalog build(List<TypeRow> rows, GuestPermission guest, boolean enforceGuestPopedom) {
+    public static CategoryCatalog build(List<TypeRow> rows, GroupPermission viewer, boolean enforceGuestPopedom) {
         Map<Integer, TypeRow> candidates = new LinkedHashMap<>();
         for (TypeRow row : rows) {
-            if (!enforceGuestPopedom || guest.allows(row.id(), GuestPermission.LIST)) {
+            if (!enforceGuestPopedom || viewer.allows(row.id(), GroupPermission.LIST)) {
                 candidates.put(row.id(), row);
             }
         }

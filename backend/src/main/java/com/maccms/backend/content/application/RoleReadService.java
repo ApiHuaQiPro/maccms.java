@@ -97,7 +97,7 @@ public class RoleReadService {
         if (ids.isEmpty()) {
             return out;
         }
-        CategoryCatalog catalog = catalogs.vodCatalog(catalogs.guest());
+        CategoryCatalog catalog = catalogs.vodCatalog(catalogs.viewer());
         for (VodRefRow r : vodMapper.selectPublishedRefs(ids)) {
             int categoryId = nz(r.categoryId());
             if (catalog.isVisible(categoryId)) {

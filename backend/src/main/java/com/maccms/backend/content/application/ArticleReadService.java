@@ -58,7 +58,7 @@ public class ArticleReadService {
 
     /** 分类范围（categoryId 为 null 时是全部可见分类）与条件下的切片；B05 的 LibrarySearchService 以 SSR 内部条件调用。 */
     LibrarySlice<ArticleSummaryDto> slice(Integer categoryId, ContentCriteria criteria) {
-        CategoryCatalog catalog = catalogs.catalog(TYPE_MID, catalogs.guest());
+        CategoryCatalog catalog = catalogs.catalog(TYPE_MID, catalogs.viewer());
         Set<Integer> typeIds = typeIds(catalog, categoryId);
         if (typeIds.isEmpty()) {
             return LibrarySlice.empty();
@@ -93,17 +93,17 @@ public class ArticleReadService {
             if (row == null) {
                 throw notFound();
             }
-            GuestPermission guest = catalogs.guest();
-            CategoryCatalog catalog = catalogs.catalog(TYPE_MID, guest);
+            GroupPermission viewer = catalogs.viewer();
+            CategoryCatalog catalog = catalogs.catalog(TYPE_MID, viewer);
             int categoryId = nz(row.categoryId());
-            if (!catalog.isVisible(categoryId) || !catalogs.guestMayViewDetail(guest, categoryId)) {
+            if (!catalog.isVisible(categoryId) || !catalogs.mayViewDetail(viewer, categoryId)) {
                 throw notFound();
             }
-            // 旧版游客（group_id<3）访问需积分的文章时改为显示扣积分确认页（index/controller/Base.php:105-112、:118-142）：
-            // 积分列由 user.art_points_type 决定，'1' 时为 art_points（整篇），否则为 art_points_detail（按页，:108-111）；
-            // user.status=0 时不检查（:115-117）。B05 起按配置取列（此前两列任一大于 0 即拒绝）
+            // 旧版会员组 group_id<3（游客与默认会员）访问需积分的文章时改为显示扣积分确认页（index/controller/Base.php:105-112、
+            // :118-142）：积分列由 user.art_points_type 决定，'1' 时为 art_points（整篇），否则为 art_points_detail（按页，:108-111）；
+            // user.status=0 时不检查（:115-117）。B05 起按配置取列；B09 起按观看者的会员组（组 ≥ 3 不检查；是否已购买归 B10）
             int points = catalogs.artPointsWholeArticle() ? nz(row.pointsRequired()) : nz(row.pointsDetailRequired());
-            if (catalogs.enforceGuestPopedom() && points != 0) {
+            if (catalogs.enforceGuestPopedom() && points != 0 && viewer.groupId() < 3) {
                 throw new ApiException(ErrorCode.ARTICLE_POINTS_REQUIRED, "该文章需要积分才能查看");
             }
             // 旧版 art_pwd 非空且本会话未验证时显示密码页（index/controller/Art.php:56-61）
@@ -126,7 +126,7 @@ public class ArticleReadService {
         }
         return read(() -> {
             ArtDetailRow row = artMapper.selectPublishedDetail(id);
-            if (row == null || !catalogs.catalog(TYPE_MID, catalogs.guest()).isVisible(nz(row.categoryId()))) {
+            if (row == null || !catalogs.catalog(TYPE_MID, catalogs.viewer()).isVisible(nz(row.categoryId()))) {
                 return false;
             }
             return artMapper.countPasswordMatch(id, candidate) > 0;

@@ -34,30 +34,33 @@ class ContentCatalogs {
         return properties.artPointsWholeArticle();
     }
 
-    GuestPermission guest() {
+    /**
+     * 当前请求观看者的会员组权限（B09：{@link ContentViewer}，没有设置时为游客组 1）。user.status=0 时不判定，不查库。
+     */
+    GroupPermission viewer() {
         if (!properties.enforceGuestPopedom()) {
-            return GuestPermission.from(null);
+            return GroupPermission.from(null);
         }
-        return GuestPermission.from(groupMapper.selectGroupPermission(ContentProperties.GUEST_GROUP_ID));
+        return GroupPermission.from(groupMapper.selectGroupPermission(ContentViewer.groupId()));
     }
 
-    CategoryCatalog catalog(int typeMid, GuestPermission guest) {
-        return CategoryCatalog.build(typeMapper.selectEnabledTypes(typeMid), guest, properties.enforceGuestPopedom());
+    CategoryCatalog catalog(int typeMid, GroupPermission viewer) {
+        return CategoryCatalog.build(typeMapper.selectEnabledTypes(typeMid), viewer, properties.enforceGuestPopedom());
     }
 
     /** 视频分类（type_mid=1），与 ContentReadService 使用同一条 SQL。 */
-    CategoryCatalog vodCatalog(GuestPermission guest) {
-        return CategoryCatalog.build(typeMapper.selectEnabledVodTypes(), guest, properties.enforceGuestPopedom());
+    CategoryCatalog vodCatalog(GroupPermission viewer) {
+        return CategoryCatalog.build(typeMapper.selectEnabledVodTypes(), viewer, properties.enforceGuestPopedom());
     }
 
     CategoryListResponse tree(int typeMid) {
-        CategoryCatalog catalog = catalog(typeMid, guest());
+        CategoryCatalog catalog = catalog(typeMid, viewer());
         return new CategoryListResponse(ContentReadService.toTree(catalog, catalog.roots()));
     }
 
-    /** 启用游客权限校验时，游客组对该分类有"详情"权限位 2（index/controller/Base.php:92-100、:115-121）。 */
-    boolean guestMayViewDetail(GuestPermission guest, int categoryId) {
-        return !properties.enforceGuestPopedom() || guest.allows(categoryId, GuestPermission.DETAIL);
+    /** 启用权限校验时，观看者的会员组对该分类有"详情"权限位 2（index/controller/Base.php:92-100、:115-121）。 */
+    boolean mayViewDetail(GroupPermission viewer, int categoryId) {
+        return !properties.enforceGuestPopedom() || viewer.allows(categoryId, GroupPermission.DETAIL);
     }
 
     // ------------------------------------------------------------------ 取值
