@@ -41,9 +41,7 @@ class JavaIssuedCookiesTest {
             Files.writeString(FILE, json, StandardCharsets.UTF_8);
         }
         // 按 LF 比较（core.autocrlf 检出时文件可能是 CRLF）
-        assertThat(Files.readString(FILE, StandardCharsets.UTF_8).replace("
-", "
-")).isEqualTo(json);
+        assertThat(Files.readString(FILE, StandardCharsets.UTF_8).replace("\r\n", "\n")).isEqualTo(json);
     }
 
     @Test
