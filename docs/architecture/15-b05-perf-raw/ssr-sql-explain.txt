@@ -1,0 +1,1545 @@
+=== v.area1  /index.php/vod/search.html?area=%E6%97%A5%E6%9C%AC
+-- GroupMapper.selectGroupPermission  3.2 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledVodTypes  5.6 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = 1 AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: []
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=28 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- GroupMapper.selectGroupPermission  2.1 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledVodTypes  6.5 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = 1 AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: []
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=28 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- VodMapper.countPublishedMatching  435.5 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) AND vod_area = ?
+-- binds: [1, 2, 3, 4, 5, 6] … [23, 24, 25, 日本] (26 个)
+   explain: select_type=SIMPLE table=mac_vod type=ref key=vod_area key_len=62 rows=30079 filtered=9.45 Extra=Using where
+
+-- VodMapper.selectPublishedMatchingPage  508.7 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) AND vod_area = ? ORDER BY vod_time DESC, vod_id DESC LIMIT ?, ?
+-- binds: [1, 2, 3, 4, 5, 6] … [25, 日本, 0, 20] (28 个)
+   explain: select_type=SIMPLE table=mac_vod type=ref key=vod_area key_len=62 rows=30079 filtered=9.45 Extra=Using index condition; Using where; Using filesort
+
+=== v.area3  /index.php/vod/search.html?area=%E6%97%A5%E6%9C%AC%2C%E9%9F%A9%E5%9B%BD%2C%E7%BE%8E%E5%9B%BD
+-- GroupMapper.selectGroupPermission  2.7 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledVodTypes  4.2 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = 1 AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: []
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=28 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- GroupMapper.selectGroupPermission  3.6 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledVodTypes  4.5 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = 1 AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: []
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=28 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- VodMapper.countPublishedMatching  1758.5 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) AND vod_area IN ( ? , ? , ? )
+-- binds: [1, 2, 3, 4, 5, 6] … [25, 日本, 韩国, 美国] (28 个)
+   explain: select_type=SIMPLE table=mac_vod type=range key=vod_area key_len=62 rows=103644 filtered=9.45 Extra=Using index condition; Using where
+
+-- VodMapper.selectPublishedMatchingPage  1639.1 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) AND vod_area IN ( ? , ? , ? ) ORDER BY vod_time DESC, vod_id DESC LIMIT ?, ?
+-- binds: [1, 2, 3, 4, 5, 6] … [韩国, 美国, 0, 20] (30 个)
+   explain: select_type=SIMPLE table=mac_vod type=range key=vod_area key_len=62 rows=103644 filtered=9.45 Extra=Using index condition; Using where; Using filesort
+
+=== v.lang3  /index.php/vod/search.html?lang=%E7%B2%A4%E8%AF%AD%2C%E9%9F%A9%E8%AF%AD%2C%E6%97%A5%E8%AF%AD
+-- GroupMapper.selectGroupPermission  2.4 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledVodTypes  3.9 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = 1 AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: []
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=28 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- GroupMapper.selectGroupPermission  4.5 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledVodTypes  4.4 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = 1 AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: []
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=28 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- VodMapper.countPublishedMatching  1417.1 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) AND vod_lang IN ( ? , ? , ? )
+-- binds: [1, 2, 3, 4, 5, 6] … [25, 粤语, 韩语, 日语] (28 个)
+   explain: select_type=SIMPLE table=mac_vod type=range key=vod_lang key_len=32 rows=100633 filtered=9.45 Extra=Using index condition; Using where
+
+-- VodMapper.selectPublishedMatchingPage  1291.2 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) AND vod_lang IN ( ? , ? , ? ) ORDER BY vod_time DESC, vod_id DESC LIMIT ?, ?
+-- binds: [1, 2, 3, 4, 5, 6] … [韩语, 日语, 0, 20] (30 个)
+   explain: select_type=SIMPLE table=mac_vod type=range key=vod_lang key_len=32 rows=100633 filtered=9.45 Extra=Using index condition; Using where; Using filesort
+
+=== v.letter3  /index.php/vod/search.html?letter=A%2CB%2CC
+-- GroupMapper.selectGroupPermission  1.4 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledVodTypes  2.4 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = 1 AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: []
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=28 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- GroupMapper.selectGroupPermission  1.4 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledVodTypes  3.3 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = 1 AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: []
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=28 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- VodMapper.countPublishedMatching  427.1 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) AND vod_letter IN ( ? , ? , ? )
+-- binds: [1, 2, 3, 4, 5, 6] … [25, A, B, C] (28 个)
+   explain: select_type=SIMPLE table=mac_vod type=range key=vod_letter key_len=3 rows=32468 filtered=9.45 Extra=Using index condition; Using where
+
+-- VodMapper.selectPublishedMatchingPage  443.9 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) AND vod_letter IN ( ? , ? , ? ) ORDER BY vod_time DESC, vod_id DESC LIMIT ?, ?
+-- binds: [1, 2, 3, 4, 5, 6] … [B, C, 0, 20] (30 个)
+   explain: select_type=SIMPLE table=mac_vod type=range key=vod_letter key_len=3 rows=32468 filtered=9.45 Extra=Using index condition; Using where; Using filesort
+
+=== v.ids50  /index.php/vod/search.html?ids=997%2C1994%2C2991%2C3988%2C4985%2C5982%2C6979%2C7976%2C8973%2C9970%2C10967%2C11964%2C12961%2C13958%2C14955%2C15952%2C16949%2C17946%2C18943%2C19940%2C20937%2C21934%2C22931%2C23928%2C24925%2C25922%2C26919%2C27916%2C28913%2C29910%2C30907%2C31904%2C32901%2C33898%2C34895%2C35892%2C36889%2C37886%2C38883%2C39880%2C40877%2C41874%2C42871%2C43868%2C44865%2C45862%2C46859%2C47856%2C48853%2C49850
+-- GroupMapper.selectGroupPermission  1.3 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledVodTypes  2.0 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = 1 AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: []
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=28 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- GroupMapper.selectGroupPermission  1.3 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledVodTypes  2.0 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = 1 AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: []
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=28 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- VodMapper.countPublishedMatching  2.8 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) AND vod_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? )
+-- binds: [1, 2, 3, 4, 5, 6] … [46859, 47856, 48853, 49850] (75 个)
+   explain: select_type=SIMPLE table=mac_vod type=range key=PRIMARY key_len=4 rows=50 filtered=9.45 Extra=Using index condition; Using where
+
+-- VodMapper.selectPublishedMatchingPage  33.2 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) AND vod_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) ORDER BY vod_time DESC, vod_id DESC LIMIT ?, ?
+-- binds: [1, 2, 3, 4, 5, 6] … [48853, 49850, 0, 20] (77 个)
+   explain: select_type=SIMPLE table=mac_vod type=range key=PRIMARY key_len=4 rows=50 filtered=9.45 Extra=Using index condition; Using where; Using filesort
+
+=== v.class3  /index.php/vod/search.html?class=%E7%A7%91%E5%B9%BB%2C%E6%88%98%E4%BA%89%2C%E6%AD%A6%E4%BE%A0
+-- GroupMapper.selectGroupPermission  1.7 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledVodTypes  3.4 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = 1 AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: []
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=28 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- GroupMapper.selectGroupPermission  1.2 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledVodTypes  3.0 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = 1 AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: []
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=28 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- VodMapper.countPublishedMatching  953.4 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) AND ( vod_class LIKE ? ESCAPE '!' OR vod_class LIKE ? ESCAPE '!' OR vod_class LIKE ? ESCAPE '!' )
+-- binds: [1, 2, 3, 4, 5, 6] … [25, %科幻%, %战争%, %武侠%] (28 个)
+   explain: select_type=SIMPLE table=mac_vod type=ALL key=null key_len=null rows=300000 filtered=2.81 Extra=Using where
+
+-- VodMapper.selectPublishedMatchingPage  730.3 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) AND ( vod_class LIKE ? ESCAPE '!' OR vod_class LIKE ? ESCAPE '!' OR vod_class LIKE ? ESCAPE '!' ) ORDER BY vod_time DESC, vod_id DESC LIMIT ?, ?
+-- binds: [1, 2, 3, 4, 5, 6] … [%战争%, %武侠%, 0, 20] (30 个)
+   explain: select_type=SIMPLE table=mac_vod type=ALL key=null key_len=null rows=300000 filtered=2.81 Extra=Using where; Using filesort
+
+=== v.actor2  /index.php/vod/search.html?actor=%E5%BC%A0%E4%BC%9F%2C%E7%8E%8B%E8%8A%B3
+-- GroupMapper.selectGroupPermission  0.8 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledVodTypes  1.2 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = 1 AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: []
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=28 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- GroupMapper.selectGroupPermission  0.5 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledVodTypes  1.4 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = 1 AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: []
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=28 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- VodMapper.countPublishedMatching  832.2 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) AND ( vod_actor LIKE ? ESCAPE '!' OR vod_actor LIKE ? ESCAPE '!' )
+-- binds: [1, 2, 3, 4, 5, 6] … [24, 25, %张伟%, %王芳%] (27 个)
+   explain: select_type=SIMPLE table=mac_vod type=ALL key=null key_len=null rows=300000 filtered=1.98 Extra=Using where
+
+-- VodMapper.selectPublishedMatchingPage  669.7 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) AND ( vod_actor LIKE ? ESCAPE '!' OR vod_actor LIKE ? ESCAPE '!' ) ORDER BY vod_time DESC, vod_id DESC LIMIT ?, ?
+-- binds: [1, 2, 3, 4, 5, 6] … [%张伟%, %王芳%, 0, 20] (29 个)
+   explain: select_type=SIMPLE table=mac_vod type=ALL key=null key_len=null rows=300000 filtered=1.98 Extra=Using where; Using filesort
+
+=== v.tid-top  /index.php/vod/search.html?tid=1
+-- GroupMapper.selectGroupPermission  1.7 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledVodTypes  2.7 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = 1 AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: []
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=28 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- GroupMapper.selectGroupPermission  1.0 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledVodTypes  2.0 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = 1 AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: []
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=28 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- VodMapper.countPublishedMatching  793.7 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) AND (type_id = ? OR type_id_1 = ?)
+-- binds: [1, 2, 3, 4, 5, 6] … [24, 25, 1, 1] (27 个)
+   explain: select_type=SIMPLE table=mac_vod type=index_merge key=type_id,type_id_1 key_len=2,2 rows=56677 filtered=10.0 Extra=Using union(type_id,type_id_1); Using where
+
+-- VodMapper.selectPublishedMatchingPage  608.4 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) AND (type_id = ? OR type_id_1 = ?) ORDER BY vod_time DESC, vod_id DESC LIMIT ?, ?
+-- binds: [1, 2, 3, 4, 5, 6] … [1, 1, 0, 20] (29 个)
+   explain: select_type=SIMPLE table=mac_vod type=index_merge key=type_id,type_id_1 key_len=2,2 rows=56677 filtered=10.0 Extra=Using union(type_id,type_id_1); Using where; Using filesort
+
+=== v.tid-child  /index.php/vod/search.html?tid=7
+-- GroupMapper.selectGroupPermission  1.1 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledVodTypes  2.0 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = 1 AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: []
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=28 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- GroupMapper.selectGroupPermission  0.8 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledVodTypes  2.1 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = 1 AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: []
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=28 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- VodMapper.countPublishedMatching  180.5 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) AND (type_id = ? OR type_id_1 = ?)
+-- binds: [1, 2, 3, 4, 5, 6] … [24, 25, 7, 7] (27 个)
+   explain: select_type=SIMPLE table=mac_vod type=index_merge key=type_id,type_id_1 key_len=2,2 rows=13723 filtered=10.0 Extra=Using union(type_id,type_id_1); Using where
+
+-- VodMapper.selectPublishedMatchingPage  195.4 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) AND (type_id = ? OR type_id_1 = ?) ORDER BY vod_time DESC, vod_id DESC LIMIT ?, ?
+-- binds: [1, 2, 3, 4, 5, 6] … [7, 7, 0, 20] (29 个)
+   explain: select_type=SIMPLE table=mac_vod type=index_merge key=type_id,type_id_1 key_len=2,2 rows=13723 filtered=10.0 Extra=Using union(type_id,type_id_1); Using where; Using filesort
+
+=== v.year1  /index.php/vod/search.html?year=2010
+-- GroupMapper.selectGroupPermission  1.1 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledVodTypes  1.7 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = 1 AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: []
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=28 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- GroupMapper.selectGroupPermission  0.7 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledVodTypes  1.7 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = 1 AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: []
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=28 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- VodMapper.countPublishedMatching  147.1 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) AND vod_year = ?
+-- binds: [1, 2, 3, 4, 5, 6] … [23, 24, 25, 2010] (26 个)
+   explain: select_type=SIMPLE table=mac_vod type=ref key=vod_year key_len=32 rows=11035 filtered=9.45 Extra=Using where
+
+-- VodMapper.selectPublishedMatchingPage  190.7 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) AND vod_year = ? ORDER BY vod_time DESC, vod_id DESC LIMIT ?, ?
+-- binds: [1, 2, 3, 4, 5, 6] … [25, 2010, 0, 20] (28 个)
+   explain: select_type=SIMPLE table=mac_vod type=ref key=vod_year key_len=32 rows=11035 filtered=9.45 Extra=Using index condition; Using where; Using filesort
+
+=== v.year2000-2010  /index.php/vod/search.html?year=2000-2010
+-- GroupMapper.selectGroupPermission  1.0 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledVodTypes  1.7 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = 1 AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: []
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=28 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- GroupMapper.selectGroupPermission  0.8 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledVodTypes  1.6 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = 1 AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: []
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=28 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- VodMapper.countPublishedMatching  1647.1 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) AND vod_year IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? )
+-- binds: [1, 2, 3, 4, 5, 6] … [2007, 2008, 2009, 2010] (36 个)
+   explain: select_type=SIMPLE table=mac_vod type=range key=vod_year key_len=32 rows=107089 filtered=9.45 Extra=Using index condition; Using where
+
+-- VodMapper.selectPublishedMatchingPage  1570.0 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) AND vod_year IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) ORDER BY vod_time DESC, vod_id DESC LIMIT ?, ?
+-- binds: [1, 2, 3, 4, 5, 6] … [2009, 2010, 0, 20] (38 个)
+   explain: select_type=SIMPLE table=mac_vod type=range key=vod_year key_len=32 rows=107089 filtered=9.45 Extra=Using index condition; Using where; Using filesort
+
+=== v.year1990-2021  /index.php/vod/search.html?year=1990-2021
+-- GroupMapper.selectGroupPermission  1.1 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledVodTypes  2.1 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = 1 AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: []
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=28 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- GroupMapper.selectGroupPermission  0.7 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledVodTypes  2.4 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = 1 AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: []
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=28 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- VodMapper.countPublishedMatching  1227.3 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) AND vod_year IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? )
+-- binds: [1, 2, 3, 4, 5, 6] … [2018, 2019, 2020, 2021] (57 个)
+   explain: select_type=SIMPLE table=mac_vod type=ALL key=null key_len=null rows=300000 filtered=9.25 Extra=Using where
+
+-- VodMapper.selectPublishedMatchingPage  1048.8 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) AND vod_year IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) ORDER BY vod_time DESC, vod_id DESC LIMIT ?, ?
+-- binds: [1, 2, 3, 4, 5, 6] … [2020, 2021, 0, 20] (59 个)
+   explain: select_type=SIMPLE table=mac_vod type=ALL key=null key_len=null rows=300000 filtered=9.25 Extra=Using where; Using filesort
+
+=== v.rnd1  /index.php/vod/search.html?by=rnd&area=%E6%96%B0%E5%8A%A0%E5%9D%A1%2C%E5%8D%B0%E5%BA%A6&letter=Q%2CX%2CZ
+-- GroupMapper.selectGroupPermission  1.1 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledVodTypes  2.0 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = 1 AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: []
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=28 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- GroupMapper.selectGroupPermission  1.1 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledVodTypes  2.3 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = 1 AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: []
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=28 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- VodMapper.countPublishedMatching  115.5 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) AND vod_area IN ( ? , ? ) AND vod_letter IN ( ? , ? , ? )
+-- binds: [1, 2, 3, 4, 5, 6] … [印度, Q, X, Z] (30 个)
+   explain: select_type=SIMPLE table=mac_vod type=range key=vod_area key_len=62 rows=7105 filtered=1.12 Extra=Using index condition; Using where
+
+-- VodMapper.selectPublishedMatchingPage  112.8 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) AND vod_area IN ( ? , ? ) AND vod_letter IN ( ? , ? , ? ) ORDER BY vod_hits_week DESC, vod_id DESC LIMIT ?, ?
+-- binds: [1, 2, 3, 4, 5, 6] … [X, Z, 300, 20] (32 个)
+   explain: select_type=SIMPLE table=mac_vod type=range key=vod_area key_len=62 rows=7105 filtered=1.12 Extra=Using index condition; Using where; Using filesort
+
+=== v.rnd2-letter  /index.php/vod/search.html?by=rnd&letter=A
+-- GroupMapper.selectGroupPermission  1.6 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledVodTypes  2.6 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = 1 AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: []
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=28 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- GroupMapper.selectGroupPermission  1.1 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledVodTypes  1.9 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = 1 AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: []
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=28 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- VodMapper.countPublishedMatching  185.4 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) AND vod_letter IN ( ? )
+-- binds: [1, 2, 3, 4, 5, 6] … [23, 24, 25, A] (26 个)
+   explain: select_type=SIMPLE table=mac_vod type=ref key=vod_letter key_len=3 rows=10749 filtered=9.45 Extra=Using where
+
+-- VodMapper.selectIdRange  1.5 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ MIN(vod_id) AS minId, MAX(vod_id) AS maxId FROM mac_vod
+-- binds: []
+   explain: select_type=SIMPLE table=null type=null key=null key_len=null rows=null filtered=null Extra=Select tables optimized away
+
+-- VodMapper.countPublishedMatching  37.8 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) AND vod_letter IN ( ? ) AND vod_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? )
+-- binds: [1, 2, 3, 4, 5, 6] … [299351, 299593, 299775, 299967] (1026 个)
+   explain: select_type=SIMPLE table=mac_vod type=range key=PRIMARY key_len=4 rows=1000 filtered=0.34 Extra=Using index condition; Using where; Using MRR
+
+-- VodMapper.selectPublishedMatchingPage  33.7 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) AND vod_letter IN ( ? ) AND vod_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) ORDER BY vod_hits_week DESC, vod_id DESC LIMIT ?, ?
+-- binds: [1, 2, 3, 4, 5, 6] … [299775, 299967, 0, 20] (1028 个)
+   explain: select_type=SIMPLE table=mac_vod type=range key=PRIMARY key_len=4 rows=1000 filtered=0.34 Extra=Using index condition; Using where; Using MRR; Using filesort
+
+=== v.rnd2-class  /index.php/vod/search.html?by=rnd&class=%E7%A7%91%E5%B9%BB
+-- GroupMapper.selectGroupPermission  0.9 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledVodTypes  2.0 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = 1 AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: []
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=28 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- GroupMapper.selectGroupPermission  0.7 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledVodTypes  1.6 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = 1 AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: []
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=28 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- VodMapper.countPublishedMatching  852.5 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) AND vod_class LIKE ? ESCAPE '!'
+-- binds: [1, 2, 3, 4, 5, 6] … [23, 24, 25, %科幻%] (26 个)
+   explain: select_type=SIMPLE table=mac_vod type=ALL key=null key_len=null rows=300000 filtered=1.05 Extra=Using where
+
+-- VodMapper.selectIdRange  1.2 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ MIN(vod_id) AS minId, MAX(vod_id) AS maxId FROM mac_vod
+-- binds: []
+   explain: select_type=SIMPLE table=null type=null key=null key_len=null rows=null filtered=null Extra=Select tables optimized away
+
+-- VodMapper.countPublishedMatching  30.6 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) AND vod_class LIKE ? ESCAPE '!' AND vod_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? )
+-- binds: [1, 2, 3, 4, 5, 6] … [299527, 299609, 299912, 299970] (1026 个)
+   explain: select_type=SIMPLE table=mac_vod type=range key=PRIMARY key_len=4 rows=1000 filtered=1.05 Extra=Using index condition; Using where; Using MRR
+
+-- VodMapper.selectPublishedMatchingPage  41.8 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) AND vod_class LIKE ? ESCAPE '!' AND vod_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) ORDER BY vod_hits_week DESC, vod_id DESC LIMIT ?, ?
+-- binds: [1, 2, 3, 4, 5, 6] … [299912, 299970, 0, 20] (1028 个)
+   explain: select_type=SIMPLE table=mac_vod type=range key=PRIMARY key_len=4 rows=1000 filtered=1.05 Extra=Using index condition; Using where; Using MRR; Using filesort
+
+=== v.rnd2-tid  /index.php/vod/search.html?by=rnd&tid=7
+-- GroupMapper.selectGroupPermission  1.0 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledVodTypes  1.9 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = 1 AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: []
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=28 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- GroupMapper.selectGroupPermission  0.6 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledVodTypes  1.7 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = 1 AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: []
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=28 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- VodMapper.countPublishedMatching  216.7 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) AND (type_id = ? OR type_id_1 = ?)
+-- binds: [1, 2, 3, 4, 5, 6] … [24, 25, 7, 7] (27 个)
+   explain: select_type=SIMPLE table=mac_vod type=index_merge key=type_id,type_id_1 key_len=2,2 rows=13723 filtered=10.0 Extra=Using union(type_id,type_id_1); Using where
+
+-- VodMapper.selectIdRange  1.1 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ MIN(vod_id) AS minId, MAX(vod_id) AS maxId FROM mac_vod
+-- binds: []
+   explain: select_type=SIMPLE table=null type=null key=null key_len=null rows=null filtered=null Extra=Select tables optimized away
+
+-- VodMapper.countPublishedMatching  31.6 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) AND vod_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) AND (type_id = ? OR type_id_1 = ?)
+-- binds: [1, 2, 3, 4, 5, 6] … [298826, 299841, 7, 7] (1027 个)
+   explain: select_type=SIMPLE table=mac_vod type=range key=PRIMARY key_len=4 rows=1000 filtered=0.46 Extra=Using index condition; Using where; Using MRR
+
+-- VodMapper.selectPublishedMatchingPage  44.1 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) AND vod_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) AND (type_id = ? OR type_id_1 = ?) ORDER BY vod_hits_week DESC, vod_id DESC LIMIT ?, ?
+-- binds: [1, 2, 3, 4, 5, 6] … [7, 7, 0, 20] (1029 个)
+   explain: select_type=SIMPLE table=mac_vod type=range key=PRIMARY key_len=4 rows=1000 filtered=0.46 Extra=Using index condition; Using where; Using MRR; Using filesort
+
+=== v.deep  /index.php/vod/search.html?letter=A&page=500
+-- GroupMapper.selectGroupPermission  2.1 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledVodTypes  3.4 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = 1 AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: []
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=28 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- GroupMapper.selectGroupPermission  1.6 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledVodTypes  3.5 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = 1 AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: []
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=28 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- VodMapper.countPublishedMatching  226.9 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) AND vod_letter IN ( ? )
+-- binds: [1, 2, 3, 4, 5, 6] … [23, 24, 25, A] (26 个)
+   explain: select_type=SIMPLE table=mac_vod type=ref key=vod_letter key_len=3 rows=10749 filtered=9.45 Extra=Using where
+
+=== v.show-top  /index.php/vod/show/id/1.html
+-- GroupMapper.selectGroupPermission  0.9 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledVodTypes  1.7 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = 1 AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: []
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=28 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- GroupMapper.selectGroupPermission  0.8 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledVodTypes  1.7 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = 1 AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: []
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=28 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- VodMapper.countPublished  984.0 ms
+SELECT COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? )
+-- binds: [1, 6, 7, 8, 9]
+   explain: select_type=SIMPLE table=mac_vod type=range key=type_id key_len=2 rows=56677 filtered=10.0 Extra=Using index condition; Using where
+
+-- VodMapper.selectPublishedPage  910.8 ms
+SELECT <summaryColumns> FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? ) ORDER BY vod_time DESC, vod_id DESC LIMIT ?, ?
+-- binds: [1, 6, 7, 8, 9, 0, 20]
+   explain: select_type=SIMPLE table=mac_vod type=range key=type_id key_len=2 rows=56677 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+=== v.show-child-area  /index.php/vod/show/id/7.html?area=%E5%A4%A7%E9%99%86
+-- GroupMapper.selectGroupPermission  1.0 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledVodTypes  2.4 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = 1 AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: []
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=28 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- GroupMapper.selectGroupPermission  0.6 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledVodTypes  2.2 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = 1 AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: []
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=28 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- VodMapper.countPublishedMatching  222.2 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? ) AND vod_area = ?
+-- binds: [7, 大陆]
+   explain: select_type=SIMPLE table=mac_vod type=ref key=type_id key_len=2 rows=13722 filtered=3.09 Extra=Using where
+
+-- VodMapper.selectPublishedMatchingPage  207.7 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? ) AND vod_area = ? ORDER BY vod_time DESC, vod_id DESC LIMIT ?, ?
+-- binds: [7, 大陆, 0, 20]
+   explain: select_type=SIMPLE table=mac_vod type=ref key=type_id key_len=2 rows=13722 filtered=3.09 Extra=Using index condition; Using where; Using filesort
+
+=== v.show-rnd  /index.php/vod/show/id/1.html?by=rnd
+-- GroupMapper.selectGroupPermission  0.9 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledVodTypes  2.1 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = 1 AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: []
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=28 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- GroupMapper.selectGroupPermission  0.6 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledVodTypes  1.8 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = 1 AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: []
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=28 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- VodMapper.countPublished  770.6 ms
+SELECT COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? )
+-- binds: [1, 6, 7, 8, 9]
+   explain: select_type=SIMPLE table=mac_vod type=range key=type_id key_len=2 rows=56677 filtered=10.0 Extra=Using index condition; Using where
+
+-- VodMapper.selectIdRange  0.5 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ MIN(vod_id) AS minId, MAX(vod_id) AS maxId FROM mac_vod
+-- binds: []
+   explain: select_type=SIMPLE table=null type=null key=null key_len=null rows=null filtered=null Extra=Select tables optimized away
+
+-- VodMapper.countPublishedMatching  20.3 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? ) AND vod_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? )
+-- binds: [1, 6, 7, 8, 9, 217] … [298278, 298486, 298782, 299822] (1005 个)
+   explain: select_type=SIMPLE table=mac_vod type=range key=PRIMARY key_len=4 rows=1000 filtered=1.89 Extra=Using index condition; Using where; Using MRR
+
+-- VodMapper.selectPublishedMatchingPage  26.2 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? ) AND vod_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) ORDER BY vod_hits_week DESC, vod_id DESC LIMIT ?, ?
+-- binds: [1, 6, 7, 8, 9, 217] … [298782, 299822, 0, 20] (1007 个)
+   explain: select_type=SIMPLE table=mac_vod type=range key=PRIMARY key_len=4 rows=1000 filtered=1.89 Extra=Using index condition; Using where; Using MRR; Using filesort
+
+=== art.wd  /index.php/art/search.html?wd=%E6%98%9F
+-- GroupMapper.selectGroupPermission  0.7 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledTypes  0.8 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = ? AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: [2]
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=4 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- ArtMapper.countPublished  144.8 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_art WHERE art_status = 1 AND type_id IN ( ? , ? , ? , ? ) AND ( art_name LIKE ? ESCAPE '!' OR art_en LIKE ? ESCAPE '!' OR art_sub LIKE ? ESCAPE '!' )
+-- binds: [29, 41, 42, 43, %星%, %星%, %星%]
+   explain: select_type=SIMPLE table=mac_art type=ALL key=null key_len=null rows=100000 filtered=2.98 Extra=Using where
+
+-- ArtMapper.selectPublishedPage  190.1 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_art WHERE art_status = 1 AND type_id IN ( ? , ? , ? , ? ) AND ( art_name LIKE ? ESCAPE '!' OR art_en LIKE ? ESCAPE '!' OR art_sub LIKE ? ESCAPE '!' ) ORDER BY art_time DESC, art_id DESC LIMIT ?, ?
+-- binds: [29, 41, 42, 43, %星%, %星%, %星%, 0, 20]
+   explain: select_type=SIMPLE table=mac_art type=ALL key=null key_len=null rows=100000 filtered=2.98 Extra=Using where; Using filesort
+
+=== art.letter3  /index.php/art/search.html?letter=A%2CB%2CC
+-- GroupMapper.selectGroupPermission  1.0 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledTypes  1.1 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = ? AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: [2]
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=4 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- ArtMapper.countPublished  88.7 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_art WHERE art_status = 1 AND type_id IN ( ? , ? , ? , ? ) AND art_letter IN ( ? , ? , ? )
+-- binds: [29, 41, 42, 43, A, B, C]
+   explain: select_type=SIMPLE table=mac_art type=range key=art_letter key_len=3 rows=7942 filtered=10.0 Extra=Using index condition; Using where; Using MRR
+
+-- ArtMapper.selectPublishedPage  78.8 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_art WHERE art_status = 1 AND type_id IN ( ? , ? , ? , ? ) AND art_letter IN ( ? , ? , ? ) ORDER BY art_time DESC, art_id DESC LIMIT ?, ?
+-- binds: [29, 41, 42, 43, A, B, C, 0, 20]
+   explain: select_type=SIMPLE table=mac_art type=range key=art_letter key_len=3 rows=7942 filtered=10.0 Extra=Using index condition; Using where; Using MRR; Using filesort
+
+=== art.tag2  /index.php/art/search.html?tag=%E7%A7%91%E5%B9%BB%2C%E6%88%98%E4%BA%89
+-- GroupMapper.selectGroupPermission  0.5 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledTypes  0.7 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = ? AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: [2]
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=4 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- ArtMapper.countPublished  129.5 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_art WHERE art_status = 1 AND type_id IN ( ? , ? , ? , ? ) AND ( art_tag LIKE ? ESCAPE '!' OR art_tag LIKE ? ESCAPE '!' )
+-- binds: [29, 41, 42, 43, %科幻%, %战争%]
+   explain: select_type=SIMPLE table=mac_art type=ALL key=null key_len=null rows=100000 filtered=2.1 Extra=Using where
+
+-- ArtMapper.selectPublishedPage  199.3 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_art WHERE art_status = 1 AND type_id IN ( ? , ? , ? , ? ) AND ( art_tag LIKE ? ESCAPE '!' OR art_tag LIKE ? ESCAPE '!' ) ORDER BY art_time DESC, art_id DESC LIMIT ?, ?
+-- binds: [29, 41, 42, 43, %科幻%, %战争%, 0, 20]
+   explain: select_type=SIMPLE table=mac_art type=ALL key=null key_len=null rows=100000 filtered=2.1 Extra=Using where; Using filesort
+
+=== art.tid  /index.php/art/search.html?tid=41
+-- GroupMapper.selectGroupPermission  0.9 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledTypes  1.1 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = ? AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: [2]
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=4 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- ArtMapper.countPublished  957.4 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_art WHERE art_status = 1 AND type_id IN ( ? , ? , ? , ? ) AND (type_id = ? OR type_id_1 = ?)
+-- binds: [29, 41, 42, 43, 41, 41]
+   explain: select_type=SIMPLE table=mac_art type=index_merge key=type_id,type_id_1 key_len=2,2 rows=72541 filtered=10.0 Extra=Using union(type_id,type_id_1); Using where
+
+-- ArtMapper.selectPublishedPage  1987.7 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_art WHERE art_status = 1 AND type_id IN ( ? , ? , ? , ? ) AND (type_id = ? OR type_id_1 = ?) ORDER BY art_time DESC, art_id DESC LIMIT ?, ?
+-- binds: [29, 41, 42, 43, 41, 41, 0, 20]
+   explain: select_type=SIMPLE table=mac_art type=index_merge key=type_id,type_id_1 key_len=2,2 rows=72541 filtered=10.0 Extra=Using union(type_id,type_id_1); Using where; Using filesort
+
+=== art.level  /index.php/art/search.html?level=5
+-- GroupMapper.selectGroupPermission  38.7 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledTypes  2.2 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = ? AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: [2]
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=4 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- ArtMapper.countPublished  721.9 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_art WHERE art_status = 1 AND type_id IN ( ? , ? , ? , ? ) AND art_level = ?
+-- binds: [29, 41, 42, 43, 5]
+   explain: select_type=SIMPLE table=mac_art type=ref key=art_level key_len=1 rows=9716 filtered=10.0 Extra=Using where
+
+-- ArtMapper.selectPublishedPage  506.4 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_art WHERE art_status = 1 AND type_id IN ( ? , ? , ? , ? ) AND art_level = ? ORDER BY art_time DESC, art_id DESC LIMIT ?, ?
+-- binds: [29, 41, 42, 43, 5, 0, 20]
+   explain: select_type=SIMPLE table=mac_art type=ref key=art_level key_len=1 rows=9716 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+=== art.show  /index.php/art/show/id/41.html
+-- GroupMapper.selectGroupPermission  1.0 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledTypes  1.0 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = ? AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: [2]
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=4 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- GroupMapper.selectGroupPermission  0.8 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledTypes  1.0 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = ? AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: [2]
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=4 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- ArtMapper.countPublished  229.4 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_art WHERE art_status = 1 AND type_id IN ( ? , ? )
+-- binds: [41, 42]
+   explain: select_type=SIMPLE table=mac_art type=ALL key=null key_len=null rows=100000 filtered=7.95 Extra=Using where
+
+-- ArtMapper.selectPublishedPage  225.1 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_art WHERE art_status = 1 AND type_id IN ( ? , ? ) ORDER BY art_time DESC, art_id DESC LIMIT ?, ?
+-- binds: [41, 42, 0, 20]
+   explain: select_type=SIMPLE table=mac_art type=ALL key=null key_len=null rows=100000 filtered=7.95 Extra=Using where; Using filesort
+
+=== art.show-rnd  /index.php/art/show/id/41.html?by=rnd
+-- GroupMapper.selectGroupPermission  1.3 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledTypes  1.3 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = ? AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: [2]
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=4 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- GroupMapper.selectGroupPermission  0.8 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledTypes  1.2 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = ? AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: [2]
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=4 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- ArtMapper.countPublished  235.4 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_art WHERE art_status = 1 AND type_id IN ( ? , ? )
+-- binds: [41, 42]
+   explain: select_type=SIMPLE table=mac_art type=ALL key=null key_len=null rows=100000 filtered=7.95 Extra=Using where
+
+-- ArtMapper.selectPublishedPage  1870.5 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_art WHERE art_status = 1 AND type_id IN ( ? , ? ) ORDER BY art_hits_week DESC, art_id DESC LIMIT ?, ?
+-- binds: [41, 42, 68840, 20]
+   explain: select_type=SIMPLE table=mac_art type=ALL key=null key_len=null rows=100000 filtered=7.95 Extra=Using where; Using filesort
+
+=== actor.area3  /index.php/actor/search.html?area=%E5%A4%A7%E9%99%86%2C%E9%A6%99%E6%B8%AF%2C%E6%97%A5%E6%9C%AC
+-- GroupMapper.selectGroupPermission  1.5 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledTypes  1.2 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = ? AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: [8]
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=2 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- ActorMapper.countPublished  123.7 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_actor WHERE actor_status = 1 AND type_id IN ( ? , ? ) AND actor_area IN ( ? , ? , ? )
+-- binds: [51, 52, 大陆, 香港, 日本]
+   explain: select_type=SIMPLE table=mac_actor type=ALL key=null key_len=null rows=50000 filtered=5.7 Extra=Using where
+
+-- ActorMapper.selectPublishedPage  120.5 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_actor WHERE actor_status = 1 AND type_id IN ( ? , ? ) AND actor_area IN ( ? , ? , ? ) ORDER BY actor_time DESC, actor_id DESC LIMIT ?, ?
+-- binds: [51, 52, 大陆, 香港, 日本, 0, 20]
+   explain: select_type=SIMPLE table=mac_actor type=ALL key=null key_len=null rows=50000 filtered=5.7 Extra=Using where; Using filesort
+
+=== actor.show-starsign  /index.php/actor/show/id/51.html?starsign=%E7%99%BD%E7%BE%8A%E5%BA%A7%2C%E5%8F%8C%E5%AD%90%E5%BA%A7
+-- GroupMapper.selectGroupPermission  1.2 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledTypes  1.2 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = ? AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: [8]
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=2 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- GroupMapper.selectGroupPermission  1.0 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledTypes  1.1 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = ? AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: [8]
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=2 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- ActorMapper.countPublished  100.2 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_actor WHERE actor_status = 1 AND type_id IN ( ? , ? ) AND actor_starsign IN ( ? , ? )
+-- binds: [51, 52, 白羊座, 双子座]
+   explain: select_type=SIMPLE table=mac_actor type=ALL key=null key_len=null rows=50000 filtered=2.0 Extra=Using where
+
+-- ActorMapper.selectPublishedPage  104.7 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_actor WHERE actor_status = 1 AND type_id IN ( ? , ? ) AND actor_starsign IN ( ? , ? ) ORDER BY actor_time DESC, actor_id DESC LIMIT ?, ?
+-- binds: [51, 52, 白羊座, 双子座, 0, 20]
+   explain: select_type=SIMPLE table=mac_actor type=ALL key=null key_len=null rows=50000 filtered=2.0 Extra=Using where; Using filesort
+
+=== actor.show-rnd  /index.php/actor/show/id/51.html?by=rnd
+-- GroupMapper.selectGroupPermission  1.0 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledTypes  0.9 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = ? AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: [8]
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=2 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- GroupMapper.selectGroupPermission  0.8 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledTypes  1.3 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = ? AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: [8]
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=2 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- ActorMapper.countPublished  86.3 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_actor WHERE actor_status = 1 AND type_id IN ( ? , ? )
+-- binds: [51, 52]
+   explain: select_type=SIMPLE table=mac_actor type=ALL key=null key_len=null rows=50000 filtered=10.0 Extra=Using where
+
+-- ActorMapper.selectPublishedPage  1180.3 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_actor WHERE actor_status = 1 AND type_id IN ( ? , ? ) ORDER BY actor_hits_week DESC, actor_id DESC LIMIT ?, ?
+-- binds: [51, 52, 46120, 20]
+   explain: select_type=SIMPLE table=mac_actor type=ALL key=null key_len=null rows=50000 filtered=10.0 Extra=Using where; Using filesort
+
+=== role.show  /index.php/role/show.html
+-- RoleMapper.countPublished  129.8 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_role WHERE role_status = 1
+-- binds: []
+   explain: select_type=SIMPLE table=mac_role type=ALL key=null key_len=null rows=100000 filtered=10.0 Extra=Using where
+
+-- RoleMapper.selectPublishedPage  122.4 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_role WHERE role_status = 1 ORDER BY role_time DESC, role_id DESC LIMIT ?, ?
+-- binds: [0, 20]
+   explain: select_type=SIMPLE table=mac_role type=ALL key=null key_len=null rows=100000 filtered=10.0 Extra=Using where; Using filesort
+
+-- GroupMapper.selectGroupPermission  0.9 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledVodTypes  2.3 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = 1 AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: []
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=28 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- VodMapper.selectPublishedRefs  1.8 ms
+SELECT vod_id AS id, type_id AS categoryId, vod_name AS name, vod_en AS enName FROM mac_vod WHERE vod_status = 1 AND vod_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? )
+-- binds: [975, 62693, 243744, 184248, 4988, 65956] … [14837, 135106, 255924, 259401] (20 个)
+   explain: select_type=SIMPLE table=mac_vod type=range key=PRIMARY key_len=4 rows=20 filtered=10.0 Extra=Using index condition; Using where
+
+=== role.show-deep  /index.php/role/show.html?page=1000
+-- RoleMapper.countPublished  136.6 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_role WHERE role_status = 1
+-- binds: []
+   explain: select_type=SIMPLE table=mac_role type=ALL key=null key_len=null rows=100000 filtered=10.0 Extra=Using where
+
+-- RoleMapper.selectPublishedPage  586.0 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_role WHERE role_status = 1 ORDER BY role_time DESC, role_id DESC LIMIT ?, ?
+-- binds: [19980, 20]
+   explain: select_type=SIMPLE table=mac_role type=ALL key=null key_len=null rows=100000 filtered=10.0 Extra=Using where; Using filesort
+
+-- GroupMapper.selectGroupPermission  1.2 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledVodTypes  2.6 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = 1 AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: []
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=28 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- VodMapper.selectPublishedRefs  2.5 ms
+SELECT vod_id AS id, type_id AS categoryId, vod_name AS name, vod_en AS enName FROM mac_vod WHERE vod_status = 1 AND vod_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? )
+-- binds: [168231, 48289, 108661, 294405, 178655, 58811] … [74422, 135515, 16832, 199916] (20 个)
+   explain: select_type=SIMPLE table=mac_vod type=range key=PRIMARY key_len=4 rows=20 filtered=10.0 Extra=Using index condition; Using where
+
+=== role.show-rnd  /index.php/role/show.html?by=rnd
+-- RoleMapper.countPublished  136.2 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_role WHERE role_status = 1
+-- binds: []
+   explain: select_type=SIMPLE table=mac_role type=ALL key=null key_len=null rows=100000 filtered=10.0 Extra=Using where
+
+-- RoleMapper.selectPublishedPage  1851.7 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_role WHERE role_status = 1 ORDER BY role_hits_week DESC, role_id DESC LIMIT ?, ?
+-- binds: [77780, 20]
+   explain: select_type=SIMPLE table=mac_role type=ALL key=null key_len=null rows=100000 filtered=10.0 Extra=Using where; Using filesort
+
+-- GroupMapper.selectGroupPermission  1.0 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledVodTypes  2.4 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = 1 AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: []
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=28 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- VodMapper.selectPublishedRefs  1.8 ms
+SELECT vod_id AS id, type_id AS categoryId, vod_name AS name, vod_en AS enName FROM mac_vod WHERE vod_status = 1 AND vod_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? )
+-- binds: [153970, 153971, 153959, 153965, 3955, 153961] … [3835, 53834, 103812, 153793] (20 个)
+   explain: select_type=SIMPLE table=mac_vod type=range key=PRIMARY key_len=4 rows=20 filtered=10.0 Extra=Using index condition; Using where
+
+=== role.rid  /index.php/role/search.html?rid=1234
+-- RoleMapper.countPublished  1.0 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_role WHERE role_status = 1 AND role_rid = ?
+-- binds: [1234]
+   explain: select_type=SIMPLE table=mac_role type=ref key=role_rid key_len=4 rows=1 filtered=10.0 Extra=Using where
+
+=== role.wd  /index.php/role/search.html?wd=%E6%98%9F
+-- RoleMapper.countPublished  192.2 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_role WHERE role_status = 1 AND ( role_name LIKE ? ESCAPE '!' OR role_en LIKE ? ESCAPE '!' )
+-- binds: [%星%, %星%]
+   explain: select_type=SIMPLE table=mac_role type=ALL key=null key_len=null rows=100000 filtered=2.1 Extra=Using where
+
+-- RoleMapper.selectPublishedPage  266.0 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_role WHERE role_status = 1 AND ( role_name LIKE ? ESCAPE '!' OR role_en LIKE ? ESCAPE '!' ) ORDER BY role_time DESC, role_id DESC LIMIT ?, ?
+-- binds: [%星%, %星%, 0, 20]
+   explain: select_type=SIMPLE table=mac_role type=ALL key=null key_len=null rows=100000 filtered=2.1 Extra=Using where; Using filesort
+
+-- GroupMapper.selectGroupPermission  1.1 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledVodTypes  3.5 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = 1 AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: []
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=28 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- VodMapper.selectPublishedRefs  1.9 ms
+SELECT vod_id AS id, type_id AS categoryId, vod_name AS name, vod_en AS enName FROM mac_vod WHERE vod_status = 1 AND vod_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? )
+-- binds: [69812, 32772, 293252, 190532, 185320, 129572] … [228612, 50172, 268280, 36880] (20 个)
+   explain: select_type=SIMPLE table=mac_vod type=range key=PRIMARY key_len=4 rows=20 filtered=10.0 Extra=Using index condition; Using where
+
+=== website.area-lang  /index.php/website/search.html?area=%E5%A4%A7%E9%99%86%2C%E9%A6%99%E6%B8%AF&lang=%E5%9B%BD%E8%AF%AD%2C%E7%B2%A4%E8%AF%AD
+-- GroupMapper.selectGroupPermission  1.3 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledTypes  1.2 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = ? AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: [11]
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=2 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- WebsiteMapper.countPublished  83.4 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_website WHERE website_status = 1 AND type_id IN ( ? , ? ) AND website_area IN ( ? , ? ) AND website_lang IN ( ? , ? )
+-- binds: [61, 62, 大陆, 香港, 国语, 粤语]
+   explain: select_type=SIMPLE table=mac_website type=ALL key=null key_len=null rows=50000 filtered=0.4 Extra=Using where
+
+-- WebsiteMapper.selectPublishedPage  98.7 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_website WHERE website_status = 1 AND type_id IN ( ? , ? ) AND website_area IN ( ? , ? ) AND website_lang IN ( ? , ? ) ORDER BY website_time DESC, website_id DESC LIMIT ?, ?
+-- binds: [61, 62, 大陆, 香港, 国语, 粤语, 0, 20]
+   explain: select_type=SIMPLE table=mac_website type=ALL key=null key_len=null rows=50000 filtered=0.4 Extra=Using where; Using filesort
+
+=== website.in  /index.php/website/search.html?by=in&name=%E5%89%91%E5%AE%A2%E7%AB%990%2C%E5%B1%B1%E6%B2%B3%E7%AB%992%2C%E5%A4%9C%E8%A1%8C%E7%AB%993
+-- GroupMapper.selectGroupPermission  1.2 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledTypes  1.5 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = ? AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: [11]
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=2 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- WebsiteMapper.countPublished  1.6 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_website WHERE website_status = 1 AND type_id IN ( ? , ? ) AND website_name IN ( ? , ? , ? )
+-- binds: [61, 62, 剑客站0, 山河站2, 夜行站3]
+   explain: select_type=SIMPLE table=mac_website type=range key=website_name key_len=182 rows=3 filtered=10.0 Extra=Using index condition; Using where
+
+-- WebsiteMapper.selectPublishedPage  4.0 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_website WHERE website_status = 1 AND type_id IN ( ? , ? ) AND website_name IN ( ? , ? , ? ) ORDER BY FIND_IN_SET(website_name, ?) ASC, website_id ASC LIMIT ?, ?
+-- binds: [61, 62, 剑客站0, 山河站2, 夜行站3, 剑客站0,山河站2,夜行站3, 0, 20]
+   explain: select_type=SIMPLE table=mac_website type=range key=website_name key_len=182 rows=3 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+=== website.referer  /index.php/website/show/id/61.html?by=referer
+-- GroupMapper.selectGroupPermission  1.5 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledTypes  1.6 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = ? AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: [11]
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=2 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- GroupMapper.selectGroupPermission  1.1 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledTypes  1.6 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = ? AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: [11]
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=2 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- WebsiteMapper.countPublished  108.1 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_website WHERE website_status = 1 AND type_id IN ( ? , ? )
+-- binds: [61, 62]
+   explain: select_type=SIMPLE table=mac_website type=ALL key=null key_len=null rows=50000 filtered=10.0 Extra=Using where
+
+-- WebsiteMapper.selectPublishedPage  100.5 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_website WHERE website_status = 1 AND type_id IN ( ? , ? ) ORDER BY website_referer DESC, website_id DESC LIMIT ?, ?
+-- binds: [61, 62, 0, 20]
+   explain: select_type=SIMPLE table=mac_website type=ALL key=null key_len=null rows=50000 filtered=10.0 Extra=Using where; Using filesort
+
+=== topic.wd  /index.php/topic/search.html?wd=%E4%B8%93%E9%A2%98
+-- TopicMapper.countPublished  33.5 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_topic WHERE topic_status = 1 AND ( topic_name LIKE ? ESCAPE '!' OR topic_en LIKE ? ESCAPE '!' OR topic_sub LIKE ? ESCAPE '!' )
+-- binds: [%专题%, %专题%, %专题%]
+   explain: select_type=SIMPLE table=mac_topic type=ALL key=null key_len=null rows=20000 filtered=2.98 Extra=Using where
+
+-- TopicMapper.selectPublishedPage  43.0 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_topic WHERE topic_status = 1 AND ( topic_name LIKE ? ESCAPE '!' OR topic_en LIKE ? ESCAPE '!' OR topic_sub LIKE ? ESCAPE '!' ) ORDER BY topic_time DESC, topic_id DESC LIMIT ?, ?
+-- binds: [%专题%, %专题%, %专题%, 0, 20]
+   explain: select_type=SIMPLE table=mac_topic type=ALL key=null key_len=null rows=20000 filtered=2.98 Extra=Using where; Using filesort
+
+=== topic.rnd  /index.php/topic/search.html?by=rnd&letter=A%2CB
+-- TopicMapper.countPublished  32.5 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_topic WHERE topic_status = 1 AND topic_letter IN ( ? , ? )
+-- binds: [A, B]
+   explain: select_type=SIMPLE table=mac_topic type=ALL key=null key_len=null rows=20000 filtered=2.0 Extra=Using where
+
+-- TopicMapper.selectPublishedPage  42.0 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_topic WHERE topic_status = 1 AND topic_letter IN ( ? , ? ) ORDER BY topic_hits_week DESC, topic_id DESC LIMIT ?, ?
+-- binds: [A, B, 920, 20]
+   explain: select_type=SIMPLE table=mac_topic type=ALL key=null key_len=null rows=20000 filtered=2.0 Extra=Using where; Using filesort
+
+=== plot.letter  /index.php/plot/search.html?letter=A%2CB
+-- GroupMapper.selectGroupPermission  1.5 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledVodTypes  3.4 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = 1 AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: []
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=28 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- VodMapper.countPublishedMatching  463.6 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) AND vod_letter IN ( ? , ? ) AND vod_plot = ?
+-- binds: [1, 2, 3, 4, 5, 6] … [25, A, B, 1] (28 个)
+   explain: select_type=SIMPLE table=mac_vod type=range key=vod_letter key_len=3 rows=21576 filtered=0.95 Extra=Using index condition; Using where
+
+-- VodMapper.selectPublishedMatchingPage  473.0 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) AND vod_letter IN ( ? , ? ) AND vod_plot = ? ORDER BY vod_time DESC, vod_id DESC LIMIT ?, ?
+-- binds: [1, 2, 3, 4, 5, 6] … [B, 1, 0, 20] (30 个)
+   explain: select_type=SIMPLE table=mac_vod type=range key=vod_letter key_len=3 rows=21576 filtered=0.95 Extra=Using index condition; Using where; Using filesort
+
+=== plot.tid  /index.php/plot/search.html?tid=7
+-- GroupMapper.selectGroupPermission  1.2 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledVodTypes  2.0 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = 1 AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: []
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=28 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- VodMapper.countPublishedMatching  200.7 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) AND (type_id = ? OR type_id_1 = ?) AND vod_plot = ?
+-- binds: [1, 2, 3, 4, 5, 6] … [25, 7, 7, 1] (28 个)
+   explain: select_type=SIMPLE table=mac_vod type=index_merge key=type_id,type_id_1 key_len=2,2 rows=13723 filtered=1.01 Extra=Using union(type_id,type_id_1); Using where
+
+-- VodMapper.selectPublishedMatchingPage  214.9 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) AND (type_id = ? OR type_id_1 = ?) AND vod_plot = ? ORDER BY vod_time DESC, vod_id DESC LIMIT ?, ?
+-- binds: [1, 2, 3, 4, 5, 6] … [7, 1, 0, 20] (30 个)
+   explain: select_type=SIMPLE table=mac_vod type=index_merge key=type_id,type_id_1 key_len=2,2 rows=13723 filtered=1.01 Extra=Using union(type_id,type_id_1); Using where; Using filesort
+
+=== plot.rnd  /index.php/plot/search.html?by=rnd&letter=A
+-- GroupMapper.selectGroupPermission  0.7 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledVodTypes  1.7 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = 1 AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: []
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=28 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- VodMapper.countPublishedMatching  29.2 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) AND vod_letter IN ( ? ) AND vod_plot = ?
+-- binds: [1, 2, 3, 4, 5, 6] … [24, 25, A, 1] (27 个)
+   explain: select_type=SIMPLE table=mac_vod type=index_merge key=vod_letter,vod_plot key_len=3,1 rows=1083 filtered=9.45 Extra=Using intersect(vod_letter,vod_plot); Using where
+
+-- VodMapper.selectPublishedMatchingPage  49.7 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) AND vod_letter IN ( ? ) AND vod_plot = ? ORDER BY vod_hits_week DESC, vod_id DESC LIMIT ?, ?
+-- binds: [1, 2, 3, 4, 5, 6] … [A, 1, 760, 20] (29 个)
+   explain: select_type=SIMPLE table=mac_vod type=index_merge key=vod_letter,vod_plot key_len=3,1 rows=1083 filtered=9.45 Extra=Using intersect(vod_letter,vod_plot); Using where; Using filesort
+
+=== t.isend1  ContentReadService.listVideos：VideoLegacyConditions[tid=null, types=null, typeNot=null, notIds=null, relIds=null, rel=null, levels=null, weekday=null, tvs=null, addedAfter=null, hitsTimeAfter=null, updatedAfter=null, hitsMonth=null, hitsWeek=null, hitsDay=null, hits=null, isEnd=1, plot=null, start=0]
+-- GroupMapper.selectGroupPermission  0.7 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledVodTypes  1.4 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = 1 AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: []
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=28 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- VodMapper.countPublishedMatching  2234.3 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) AND vod_isend = ?
+-- binds: [1, 2, 3, 4, 5, 6] … [23, 24, 25, 1] (26 个)
+   explain: select_type=SIMPLE table=mac_vod type=ref key=vod_isend key_len=1 rows=168276 filtered=9.45 Extra=Using where
+
+-- VodMapper.selectPublishedMatchingPage  2173.5 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) AND vod_isend = ? ORDER BY vod_time DESC, vod_id DESC LIMIT ?, ?
+-- binds: [1, 2, 3, 4, 5, 6] … [25, 1, 0, 20] (28 个)
+   explain: select_type=SIMPLE table=mac_vod type=ref key=vod_isend key_len=1 rows=168276 filtered=9.45 Extra=Using index condition; Using where; Using filesort
+
+=== t.hits-between  ContentReadService.listVideos：VideoLegacyConditions[tid=null, types=null, typeNot=null, notIds=null, relIds=null, rel=null, levels=null, weekday=null, tvs=null, addedAfter=null, hitsTimeAfter=null, updatedAfter=null, hitsMonth=null, hitsWeek=null, hitsDay=null, hits=LegacyRange[op=BETWEEN, values=[1000, 50000]], isEnd=null, plot=null, start=0]
+-- GroupMapper.selectGroupPermission  1.0 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledVodTypes  1.9 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = 1 AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: []
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=28 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- VodMapper.countPublishedMatching  1556.6 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) AND vod_hits BETWEEN ? AND ?
+-- binds: [1, 2, 3, 4, 5, 6] … [24, 25, 1000, 50000] (27 个)
+   explain: select_type=SIMPLE table=mac_vod type=range key=vod_hits key_len=3 rows=87355 filtered=9.45 Extra=Using index condition; Using where
+
+-- VodMapper.selectPublishedMatchingPage  1601.0 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) AND vod_hits BETWEEN ? AND ? ORDER BY vod_time DESC, vod_id DESC LIMIT ?, ?
+-- binds: [1, 2, 3, 4, 5, 6] … [1000, 50000, 0, 20] (29 个)
+   explain: select_type=SIMPLE table=mac_vod type=range key=vod_hits key_len=3 rows=87355 filtered=9.45 Extra=Using index condition; Using where; Using filesort
+
+=== t.hits-gt  ContentReadService.listVideos：VideoLegacyConditions[tid=null, types=null, typeNot=null, notIds=null, relIds=null, rel=null, levels=null, weekday=null, tvs=null, addedAfter=null, hitsTimeAfter=null, updatedAfter=null, hitsMonth=null, hitsWeek=null, hitsDay=null, hits=LegacyRange[op=GT, values=[200000]], isEnd=null, plot=null, start=0]
+-- GroupMapper.selectGroupPermission  1.0 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledVodTypes  1.9 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = 1 AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: []
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=28 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- VodMapper.countPublishedMatching  2178.0 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) AND vod_hits > ?
+-- binds: [1, 2, 3, 4, 5, 6] … [23, 24, 25, 200000] (26 个)
+   explain: select_type=SIMPLE table=mac_vod type=range key=vod_hits key_len=3 rows=101789 filtered=9.45 Extra=Using index condition; Using where
+
+-- VodMapper.selectPublishedMatchingPage  2386.8 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) AND vod_hits > ? ORDER BY vod_time DESC, vod_id DESC LIMIT ?, ?
+-- binds: [1, 2, 3, 4, 5, 6] … [25, 200000, 0, 20] (28 个)
+   explain: select_type=SIMPLE table=mac_vod type=range key=vod_hits key_len=3 rows=101789 filtered=9.45 Extra=Using index condition; Using where; Using filesort
+
+=== t.hitsweek-in  ContentReadService.listVideos：VideoLegacyConditions[tid=null, types=null, typeNot=null, notIds=null, relIds=null, rel=null, levels=null, weekday=null, tvs=null, addedAfter=null, hitsTimeAfter=null, updatedAfter=null, hitsMonth=null, hitsWeek=LegacyRange[op=IN, values=[0, 1, 2, 3]], hitsDay=null, hits=null, isEnd=null, plot=null, start=0]
+-- GroupMapper.selectGroupPermission  0.6 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledVodTypes  1.7 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = 1 AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: []
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=28 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- VodMapper.countPublishedMatching  383.8 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) AND vod_hits_week IN ( ? , ? , ? , ? )
+-- binds: [1, 2, 3, 4, 5, 6] … [0, 1, 2, 3] (29 个)
+   explain: select_type=SIMPLE table=mac_vod type=range key=vod_hits_week key_len=3 rows=28187 filtered=9.45 Extra=Using index condition; Using where
+
+-- VodMapper.selectPublishedMatchingPage  480.7 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) AND vod_hits_week IN ( ? , ? , ? , ? ) ORDER BY vod_time DESC, vod_id DESC LIMIT ?, ?
+-- binds: [1, 2, 3, 4, 5, 6] … [2, 3, 0, 20] (31 个)
+   explain: select_type=SIMPLE table=mac_vod type=range key=vod_hits_week key_len=3 rows=28187 filtered=9.45 Extra=Using index condition; Using where; Using filesort
+
+=== t.timeadd-30d  ContentReadService.listVideos：VideoLegacyConditions[tid=null, types=null, typeNot=null, notIds=null, relIds=null, rel=null, levels=null, weekday=null, tvs=null, addedAfter=1787408000, hitsTimeAfter=null, updatedAfter=null, hitsMonth=null, hitsWeek=null, hitsDay=null, hits=null, isEnd=null, plot=null, start=0]
+-- GroupMapper.selectGroupPermission  0.7 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledVodTypes  1.8 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = 1 AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: []
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=28 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- VodMapper.countPublishedMatching  4.5 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) AND vod_time_add > ?
+-- binds: [1, 2, 3, 4, 5, 6] … [23, 24, 25, 1787408000] (26 个)
+   explain: select_type=SIMPLE table=mac_vod type=range key=vod_time_add key_len=4 rows=411 filtered=9.45 Extra=Using index condition; Using where
+
+-- VodMapper.selectPublishedMatchingPage  10.7 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) AND vod_time_add > ? ORDER BY vod_time DESC, vod_id DESC LIMIT ?, ?
+-- binds: [1, 2, 3, 4, 5, 6] … [25, 1787408000, 0, 20] (28 个)
+   explain: select_type=SIMPLE table=mac_vod type=range key=vod_time_add key_len=4 rows=411 filtered=9.45 Extra=Using index condition; Using where; Using filesort
+
+=== t.timeadd-365d  ContentReadService.listVideos：VideoLegacyConditions[tid=null, types=null, typeNot=null, notIds=null, relIds=null, rel=null, levels=null, weekday=null, tvs=null, addedAfter=1758464000, hitsTimeAfter=null, updatedAfter=null, hitsMonth=null, hitsWeek=null, hitsDay=null, hits=null, isEnd=null, plot=null, start=0]
+-- GroupMapper.selectGroupPermission  0.7 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledVodTypes  1.4 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = 1 AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: []
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=28 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- VodMapper.countPublishedMatching  555.0 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) AND vod_time_add > ?
+-- binds: [1, 2, 3, 4, 5, 6] … [23, 24, 25, 1758464000] (26 个)
+   explain: select_type=SIMPLE table=mac_vod type=range key=vod_time_add key_len=4 rows=31800 filtered=9.45 Extra=Using index condition; Using where
+
+-- VodMapper.selectPublishedMatchingPage  606.6 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) AND vod_time_add > ? ORDER BY vod_time DESC, vod_id DESC LIMIT ?, ?
+-- binds: [1, 2, 3, 4, 5, 6] … [25, 1758464000, 0, 20] (28 个)
+   explain: select_type=SIMPLE table=mac_vod type=range key=vod_time_add key_len=4 rows=31800 filtered=9.45 Extra=Using index condition; Using where; Using filesort
+
+=== t.not100  ContentReadService.listVideos：VideoLegacyConditions[tid=null, types=null, typeNot=null, notIds=[2003, 4006, 6009, 8012, 10015, 12018, 14021, 16024, 18027, 20030, 22033, 24036, 26039, 28042, 30045, 32048, 34051, 36054, 38057, 40060, 42063, 44066, 46069, 48072, 50075, 52078, 54081, 56084, 58087, 60090, 62093, 64096, 66099, 68102, 70105, 72108, 74111, 76114, 78117, 80120, 82123, 84126, 86129, 88132, 90135, 92138, 94141, 96144, 98147, 100150, 102153, 104156, 106159, 108162, 110165, 112168, 114171, 116174, 118177, 120180, 122183, 124186, 126189, 128192, 130195, 132198, 134201, 136204, 138207, 140210, 142213, 144216, 146219, 148222, 150225, 152228, 154231, 156234, 158237, 160240, 162243, 164246, 166249, 168252, 170255, 172258, 174261, 176264, 178267, 180270, 182273, 184276, 186279, 188282, 190285, 192288, 194291, 196294, 198297, 200300], relIds=null, rel=null, levels=null, weekday=null, tvs=null, addedAfter=null, hitsTimeAfter=null, updatedAfter=null, hitsMonth=null, hitsWeek=null, hitsDay=null, hits=null, isEnd=null, plot=null, start=0]
+-- GroupMapper.selectGroupPermission  0.6 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledVodTypes  1.4 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = 1 AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: []
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=28 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- VodMapper.countPublishedMatching  813.4 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) AND vod_id NOT IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? )
+-- binds: [1, 2, 3, 4, 5, 6] … [194291, 196294, 198297, 200300] (125 个)
+   explain: select_type=SIMPLE table=mac_vod type=ALL key=null key_len=null rows=300000 filtered=9.44 Extra=Using where
+
+-- VodMapper.selectPublishedMatchingPage  891.7 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) AND vod_id NOT IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) ORDER BY vod_time DESC, vod_id DESC LIMIT ?, ?
+-- binds: [1, 2, 3, 4, 5, 6] … [198297, 200300, 0, 20] (127 个)
+   explain: select_type=SIMPLE table=mac_vod type=ALL key=null key_len=null rows=300000 filtered=9.44 Extra=Using where; Using filesort
+
+=== t.rel-ids  ContentReadService.listVideos：VideoLegacyConditions[tid=null, types=null, typeNot=null, notIds=null, relIds=[7001, 14002, 21003, 28004, 35005, 42006, 49007, 56008, 63009, 70010, 77011, 84012, 91013, 98014, 105015, 112016, 119017, 126018, 133019, 140020, 147021, 154022, 161023, 168024, 175025, 182026, 189027, 196028, 203029, 210030], rel=null, levels=null, weekday=null, tvs=null, addedAfter=null, hitsTimeAfter=null, updatedAfter=null, hitsMonth=null, hitsWeek=null, hitsDay=null, hits=null, isEnd=null, plot=null, start=0]
+-- GroupMapper.selectGroupPermission  0.6 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledVodTypes  1.8 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = 1 AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: []
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=28 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- VodMapper.countPublishedMatching  1.9 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) AND vod_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? )
+-- binds: [1, 2, 3, 4, 5, 6] … [189027, 196028, 203029, 210030] (55 个)
+   explain: select_type=SIMPLE table=mac_vod type=range key=PRIMARY key_len=4 rows=30 filtered=9.45 Extra=Using index condition; Using where
+
+-- VodMapper.selectPublishedMatchingPage  7.3 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) AND vod_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) ORDER BY vod_time DESC, vod_id DESC LIMIT ?, ?
+-- binds: [1, 2, 3, 4, 5, 6] … [203029, 210030, 0, 20] (57 个)
+   explain: select_type=SIMPLE table=mac_vod type=range key=PRIMARY key_len=4 rows=30 filtered=9.45 Extra=Using index condition; Using where; Using filesort
+
+=== t.rel-text  ContentReadService.listVideos：VideoLegacyConditions[tid=null, types=null, typeNot=null, notIds=null, relIds=null, rel=星辰, levels=null, weekday=null, tvs=null, addedAfter=null, hitsTimeAfter=null, updatedAfter=null, hitsMonth=null, hitsWeek=null, hitsDay=null, hits=null, isEnd=null, plot=null, start=0]
+-- GroupMapper.selectGroupPermission  0.7 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledVodTypes  1.6 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = 1 AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: []
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=28 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- VodMapper.countPublishedMatching  863.7 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) AND ( vod_rel_vod LIKE ? ESCAPE '!' )
+-- binds: [1, 2, 3, 4, 5, 6] … [23, 24, 25, %星辰%] (26 个)
+   explain: select_type=SIMPLE table=mac_vod type=ALL key=null key_len=null rows=300000 filtered=1.05 Extra=Using where
+
+=== t.weekday  ContentReadService.listVideos：VideoLegacyConditions[tid=null, types=null, typeNot=null, notIds=null, relIds=null, rel=null, levels=null, weekday=一,三, tvs=null, addedAfter=null, hitsTimeAfter=null, updatedAfter=null, hitsMonth=null, hitsWeek=null, hitsDay=null, hits=null, isEnd=null, plot=null, start=0]
+-- GroupMapper.selectGroupPermission  0.6 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledVodTypes  1.1 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = 1 AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: []
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=28 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- VodMapper.countPublishedMatching  979.1 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) AND ( vod_weekday LIKE ? ESCAPE '!' OR vod_weekday LIKE ? ESCAPE '!' )
+-- binds: [1, 2, 3, 4, 5, 6] … [24, 25, %一%, %三%] (27 个)
+   explain: select_type=SIMPLE table=mac_vod type=ALL key=null key_len=null rows=300000 filtered=1.98 Extra=Using where
+
+-- VodMapper.selectPublishedMatchingPage  1095.1 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) AND ( vod_weekday LIKE ? ESCAPE '!' OR vod_weekday LIKE ? ESCAPE '!' ) ORDER BY vod_time DESC, vod_id DESC LIMIT ?, ?
+-- binds: [1, 2, 3, 4, 5, 6] … [%一%, %三%, 0, 20] (29 个)
+   explain: select_type=SIMPLE table=mac_vod type=ALL key=null key_len=null rows=300000 filtered=1.98 Extra=Using where; Using filesort
+
+=== t.type-current  ContentReadService.listVideos：VideoLegacyConditions[tid=null, types=[1], typeNot=null, notIds=null, relIds=null, rel=null, levels=null, weekday=null, tvs=null, addedAfter=null, hitsTimeAfter=null, updatedAfter=null, hitsMonth=null, hitsWeek=null, hitsDay=null, hits=null, isEnd=null, plot=null, start=0]
+-- GroupMapper.selectGroupPermission  2.4 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledVodTypes  2.5 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = 1 AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: []
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=28 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- VodMapper.countPublished  1442.7 ms
+SELECT COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? )
+-- binds: [1, 6, 7, 8, 9]
+   explain: select_type=SIMPLE table=mac_vod type=range key=type_id key_len=2 rows=56677 filtered=10.0 Extra=Using index condition; Using where
+
+-- VodMapper.selectPublishedPage  1512.7 ms
+SELECT <summaryColumns> FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? ) ORDER BY vod_time DESC, vod_id DESC LIMIT ?, ?
+-- binds: [1, 6, 7, 8, 9, 0, 20]
+   explain: select_type=SIMPLE table=mac_vod type=range key=type_id key_len=2 rows=56677 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+=== t.typenot  ContentReadService.listVideos：VideoLegacyConditions[tid=null, types=null, typeNot=[1, 2, 3], notIds=null, relIds=null, rel=null, levels=null, weekday=null, tvs=null, addedAfter=null, hitsTimeAfter=null, updatedAfter=null, hitsMonth=null, hitsWeek=null, hitsDay=null, hits=null, isEnd=null, plot=null, start=0]
+-- GroupMapper.selectGroupPermission  0.8 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledVodTypes  2.4 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = 1 AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: []
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=28 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- VodMapper.countPublished  948.4 ms
+SELECT COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? )
+-- binds: [4, 5, 6, 7, 8, 9] … [22, 23, 24, 25] (22 个)
+   explain: select_type=SIMPLE table=mac_vod type=ALL key=null key_len=null rows=300000 filtered=9.27 Extra=Using where
+
+-- VodMapper.selectPublishedPage  991.8 ms
+SELECT <summaryColumns> FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) ORDER BY vod_time DESC, vod_id DESC LIMIT ?, ?
+-- binds: [4, 5, 6, 7, 8, 9] … [24, 25, 0, 20] (24 个)
+   explain: select_type=SIMPLE table=mac_vod type=ALL key=null key_len=null rows=300000 filtered=9.27 Extra=Using where; Using filesort
+
+=== t.tv  ContentReadService.listVideos：VideoLegacyConditions[tid=null, types=null, typeNot=null, notIds=null, relIds=null, rel=null, levels=null, weekday=null, tvs=[CCTV1, ], addedAfter=null, hitsTimeAfter=null, updatedAfter=null, hitsMonth=null, hitsWeek=null, hitsDay=null, hits=null, isEnd=null, plot=null, start=0]
+-- GroupMapper.selectGroupPermission  0.7 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledVodTypes  1.7 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = 1 AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: []
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=28 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- VodMapper.countPublishedMatching  829.4 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) AND vod_tv IN ( ? , ? )
+-- binds: [1, 2, 3, 4, 5, 6] … [24, 25, CCTV1, ] (27 个)
+   explain: select_type=SIMPLE table=mac_vod type=ALL key=null key_len=null rows=300000 filtered=1.89 Extra=Using where
+
+-- VodMapper.selectPublishedMatchingPage  848.4 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) AND vod_tv IN ( ? , ? ) ORDER BY vod_time DESC, vod_id DESC LIMIT ?, ?
+-- binds: [1, 2, 3, 4, 5, 6] … [CCTV1, , 0, 20] (29 个)
+   explain: select_type=SIMPLE table=mac_vod type=ALL key=null key_len=null rows=300000 filtered=1.89 Extra=Using where; Using filesort
+
+=== t.plot  ContentReadService.listVideos：VideoLegacyConditions[tid=null, types=null, typeNot=null, notIds=null, relIds=null, rel=null, levels=null, weekday=null, tvs=null, addedAfter=null, hitsTimeAfter=null, updatedAfter=null, hitsMonth=null, hitsWeek=null, hitsDay=null, hits=null, isEnd=null, plot=1, start=0]
+-- GroupMapper.selectGroupPermission  0.8 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledVodTypes  2.3 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = 1 AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: []
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=28 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- VodMapper.countPublishedMatching  415.1 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) AND vod_plot = ?
+-- binds: [1, 2, 3, 4, 5, 6] … [23, 24, 25, 1] (26 个)
+   explain: select_type=SIMPLE table=mac_vod type=ref key=vod_plot key_len=1 rows=30228 filtered=9.45 Extra=Using where
+
+-- VodMapper.selectPublishedMatchingPage  396.3 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) AND vod_plot = ? ORDER BY vod_time DESC, vod_id DESC LIMIT ?, ?
+-- binds: [1, 2, 3, 4, 5, 6] … [25, 1, 0, 20] (28 个)
+   explain: select_type=SIMPLE table=mac_vod type=ref key=vod_plot key_len=1 rows=30228 filtered=9.45 Extra=Using index condition; Using where; Using filesort
+
+=== t.level-multi  ContentReadService.listVideos：VideoLegacyConditions[tid=null, types=null, typeNot=null, notIds=null, relIds=null, rel=null, levels=[1, 2, 3, 4, 5, 6, 7, 8, 9], weekday=null, tvs=null, addedAfter=null, hitsTimeAfter=null, updatedAfter=null, hitsMonth=null, hitsWeek=null, hitsDay=null, hits=null, isEnd=null, plot=null, start=0]
+-- GroupMapper.selectGroupPermission  0.7 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledVodTypes  1.3 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = 1 AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: []
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=28 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- VodMapper.countPublishedMatching  123.7 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) AND vod_level IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? )
+-- binds: [1, 2, 3, 4, 5, 6] … [6, 7, 8, 9] (34 个)
+   explain: select_type=SIMPLE table=mac_vod type=range key=vod_level key_len=1 rows=13203 filtered=9.45 Extra=Using index condition; Using where
+
+-- VodMapper.selectPublishedMatchingPage  133.4 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) AND vod_level IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? ) ORDER BY vod_time DESC, vod_id DESC LIMIT ?, ?
+-- binds: [1, 2, 3, 4, 5, 6] … [8, 9, 0, 20] (36 个)
+   explain: select_type=SIMPLE table=mac_vod type=range key=vod_level key_len=1 rows=13203 filtered=9.45 Extra=Using index condition; Using where; Using filesort
+
+=== t.start  ContentReadService.listVideos：VideoLegacyConditions[tid=null, types=null, typeNot=null, notIds=null, relIds=null, rel=null, levels=null, weekday=null, tvs=null, addedAfter=null, hitsTimeAfter=null, updatedAfter=null, hitsMonth=null, hitsWeek=null, hitsDay=null, hits=null, isEnd=0, plot=null, start=50]
+-- GroupMapper.selectGroupPermission  0.7 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledVodTypes  1.3 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = 1 AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: []
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=28 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- VodMapper.countPublishedMatching  1418.6 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) AND vod_isend = ?
+-- binds: [1, 2, 3, 4, 5, 6] … [23, 24, 25, 0] (26 个)
+   explain: select_type=SIMPLE table=mac_vod type=ref key=vod_isend key_len=1 rows=131721 filtered=9.45 Extra=Using where
+
+-- VodMapper.selectPublishedMatchingPage  1470.8 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) AND vod_isend = ? ORDER BY vod_time DESC, vod_id DESC LIMIT ?, ?
+-- binds: [1, 2, 3, 4, 5, 6] … [25, 0, 49, 20] (28 个)
+   explain: select_type=SIMPLE table=mac_vod type=ref key=vod_isend key_len=1 rows=131721 filtered=9.45 Extra=Using index condition; Using where; Using filesort
+
+=== t.tid  ContentReadService.listVideos：VideoLegacyConditions[tid=1, types=null, typeNot=null, notIds=null, relIds=null, rel=null, levels=null, weekday=null, tvs=null, addedAfter=null, hitsTimeAfter=null, updatedAfter=null, hitsMonth=null, hitsWeek=null, hitsDay=null, hits=null, isEnd=null, plot=null, start=0]
+-- GroupMapper.selectGroupPermission  0.7 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledVodTypes  1.9 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = 1 AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: []
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=28 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- VodMapper.countPublishedMatching  791.8 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) AND (type_id = ? OR type_id_1 = ?)
+-- binds: [1, 2, 3, 4, 5, 6] … [24, 25, 1, 1] (27 个)
+   explain: select_type=SIMPLE table=mac_vod type=index_merge key=type_id,type_id_1 key_len=2,2 rows=56677 filtered=10.0 Extra=Using union(type_id,type_id_1); Using where
+
+-- VodMapper.selectPublishedMatchingPage  956.2 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) AND (type_id = ? OR type_id_1 = ?) ORDER BY vod_time DESC, vod_id DESC LIMIT ?, ?
+-- binds: [1, 2, 3, 4, 5, 6] … [1, 1, 0, 20] (29 个)
+   explain: select_type=SIMPLE table=mac_vod type=index_merge key=type_id,type_id_1 key_len=2,2 rows=56677 filtered=10.0 Extra=Using union(type_id,type_id_1); Using where; Using filesort
+
+=== t.combo  ContentReadService.listVideos：VideoLegacyConditions[tid=null, types=null, typeNot=null, notIds=null, relIds=null, rel=null, levels=null, weekday=null, tvs=null, addedAfter=1758464000, hitsTimeAfter=null, updatedAfter=null, hitsMonth=null, hitsWeek=null, hitsDay=null, hits=LegacyRange[op=GT, values=[200000]], isEnd=1, plot=null, start=0]
+-- GroupMapper.selectGroupPermission  1.3 ms
+SELECT group_id AS id, group_type AS typeIds, group_popedom AS popedomJson FROM mac_group WHERE group_id = ?
+-- binds: [1]
+   explain: select_type=SIMPLE table=mac_group type=const key=PRIMARY key_len=2 rows=1 filtered=100.0 Extra=null
+
+-- TypeMapper.selectEnabledVodTypes  3.6 ms
+SELECT <summaryColumns> FROM mac_type WHERE type_mid = 1 AND type_status = 1 ORDER BY type_sort ASC, type_id ASC
+-- binds: []
+   explain: select_type=SIMPLE table=mac_type type=ref key=type_mid key_len=2 rows=28 filtered=10.0 Extra=Using index condition; Using where; Using filesort
+
+-- VodMapper.countPublishedMatching  1114.2 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) AND vod_time_add > ? AND vod_hits > ? AND vod_isend = ?
+-- binds: [1, 2, 3, 4, 5, 6] … [25, 1758464000, 200000, 1] (28 个)
+   explain: select_type=SIMPLE table=mac_vod type=range key=vod_time_add key_len=4 rows=31800 filtered=1.8 Extra=Using index condition; Using where
+
+-- VodMapper.selectPublishedMatchingPage  1352.0 ms
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ <summaryColumns> FROM mac_vod WHERE vod_status = 1 AND type_id IN ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) AND vod_time_add > ? AND vod_hits > ? AND vod_isend = ? ORDER BY vod_time DESC, vod_id DESC LIMIT ?, ?
+-- binds: [1, 2, 3, 4, 5, 6] … [200000, 1, 0, 20] (30 个)
+   explain: select_type=SIMPLE table=mac_vod type=range key=vod_time_add key_len=4 rows=31800 filtered=1.8 Extra=Using index condition; Using where; Using filesort

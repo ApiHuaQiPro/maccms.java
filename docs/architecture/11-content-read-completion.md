@@ -125,7 +125,7 @@ php backend/src/test/php/content_multivalue_golden.php > backend/src/test/resour
 | 3 | 多值筛选 | level/area/lang/starsign/blood 支持逗号多值，level 支持 all | 单值；逗号 → 400；all → 400 | 与 1.1.0 视频筛选一致 |
 | 4 | 未实现的列表参数 | ids、tid、wd、name、tag、class、rnd、in、timeadd、hits* 范围、not、rel、typenot 等 | 被忽略（未声明参数） | 见第 7 节 |
 | 5 | 友链 type 取值 | font/pic 以外的值被忽略（列出全部） | 400 | 契约明确取值 |
-| 6 | 文章积分判断 | 按 `user.art_points_type`（仓库 '1'，`application/extra/maccms.php:122`）只看 art_points 或 art_points_detail 之一，游客且积分>0 显示扣积分确认页 | 两列任一大于 0 即 403 `ARTICLE_POINTS_REQUIRED` | 本批不读取旧配置（B02），取更严格的一侧；B02 接入后可按配置收窄 |
+| 6 | 文章积分判断 | 按 `user.art_points_type`（仓库 '1'，`application/extra/maccms.php:122`）只看 art_points 或 art_points_detail 之一，游客且积分>0 显示扣积分确认页 | 两列任一大于 0 即 403 `ARTICLE_POINTS_REQUIRED` | 本批不读取旧配置（B02），取更严格的一侧；B02 接入后可按配置收窄。**B05 起已按配置**（`maccms.content.art-points-type`，15 文档第 4 节） |
 | 7 | 无权限/需密码/需积分 | HTML 提示页、密码页、确认页 | 404 / 403 + 固定错误码，不返回任何字段 | API 契约；与视频详情一致 |
 | 8 | 分集剧情页的密码与版权 | plot/detail 只检查权限，不检查 vod_pwd 与版权（`Plot.php:38-42`） | 与视频详情相同，有密码或版权限制时 403 | 剧情页展示的是同一视频的内容，取更严格的一侧 |
 | 9 | 角色所属视频 | 不看视频状态（`Role.php:41-51、296-303`） | 只在视频已审核且分类可见时给出摘要，否则 id=0 | 不暴露隐藏视频的名称 |
@@ -167,7 +167,7 @@ php backend/src/test/php/content_library_golden.php > backend/src/test/resources
 |---|---|---|
 | 播放/下载分组的对外接口、`player_aaaa`、`playerconfig.js` | 需要旧配置读取（vodplayer/voddowner/vodserver，B02）与 W2 外部地址放行参数；解码函数已就绪 | B05 |
 | 包含匹配参数 wd、tag、class、name（文章） | 全表 LIKE，须按 02 规范第 3 节先定开关、时限、并发与测量（视频的同类参数用了整个 MACC-16～19） | 与 B04 的筛选框架一起，或单列批次 |
-| ids、tid、not、rel、typenot、timeadd/timehits/time、hits*/referer* 范围、start、rnd、in、level=all、逗号多值 | 多为模板标签参数（模板来源 D9 待定），请求参数中可到达的 ids/tid/rnd 需与 B04 统一设计 | B04/B05 |
+| ids、tid、not、rel、typenot、timeadd/timehits/time、hits*/referer* 范围、start、rnd、in、level=all、逗号多值 | 多为模板标签参数（模板来源 D9 待定），请求参数中可到达的部分需与 B04 统一设计 | **B05 已承接 URL 可达的部分**（15 文档第 7.3 节）：各模块 SSR 筛选/搜索页的 ids、文章 tid、专题 id、rid、letter/area/lang/starsign/blood 逗号多值、by=rnd/in/referer*；URL 的 level 经 mac_param_url 先 intval（多值取首段、all 为不筛选），level 多值/all 与其余标签专属条件只来自模板，不是 URL 输入；公开 API 1.2.0 仍为单值，不变 |
 | 编码（写入）方向：把分组拼回 `$$$`/`#` 串 | 只在后台保存时使用 | B13 |
 | 文章积分按 art_points_type 精确判断 | 需要旧配置读取 | B02 之后 |
 

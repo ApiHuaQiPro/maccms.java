@@ -16,6 +16,7 @@ import com.maccms.backend.content.infrastructure.ArtDetailRow;
 import com.maccms.backend.content.infrastructure.ArtMapper;
 import com.maccms.backend.content.infrastructure.ArtSummaryRow;
 import com.maccms.backend.content.infrastructure.ContentCriteria;
+import com.maccms.backend.content.infrastructure.SortColumn;
 import java.util.List;
 import java.util.Set;
 import org.springframework.stereotype.Service;
@@ -43,28 +44,50 @@ public class ArticleReadService {
     }
 
     public PageResponse<ArticleSummaryDto> listArticles(ContentListQuery query) {
+        return read(() -> page(query, query.filter().toCriteria()));
+    }
+
+    /** 一页（异常转换由调用方的 read 负责）。 */
+    PageResponse<ArticleSummaryDto> page(ContentListQuery query, ContentCriteria criteria) {
         if (query.kind() != ContentKind.ARTICLE) {
             throw new IllegalArgumentException("kind");
         }
-        return read(() -> {
-            CategoryCatalog catalog = catalogs.catalog(TYPE_MID, catalogs.guest());
-            Set<Integer> typeIds = typeIds(catalog, query.categoryId());
-            if (typeIds.isEmpty()) {
-                return PageResponse.of(List.of(), query.page(), query.pageSize(), 0);
+        return LibrarySlice.page(slice(query.categoryId(), criteria), query.sort(), query.descending(), query.page(),
+                query.pageSize());
+    }
+
+    /** 分类范围（categoryId 为 null 时是全部可见分类）与条件下的切片；B05 的 LibrarySearchService 以 SSR 内部条件调用。 */
+    LibrarySlice<ArticleSummaryDto> slice(Integer categoryId, ContentCriteria criteria) {
+        CategoryCatalog catalog = catalogs.catalog(TYPE_MID, catalogs.guest());
+        Set<Integer> typeIds = typeIds(catalog, categoryId);
+        if (typeIds.isEmpty()) {
+            return LibrarySlice.empty();
+        }
+        return new LibrarySlice<>() {
+            @Override
+            public long count() {
+                return artMapper.countPublished(typeIds, criteria);
             }
-            ContentCriteria criteria = query.filter().toCriteria();
-            long total = artMapper.countPublished(typeIds, criteria);
-            if (total == 0 || query.offset() >= total) {
-                return PageResponse.of(List.of(), query.page(), query.pageSize(), total);
+
+            @Override
+            public List<ArticleSummaryDto> rows(SortColumn sort, boolean descending, long offset, int limit) {
+                return artMapper.selectPublishedPage(typeIds, criteria, sort, descending, offset, limit).stream()
+                        .map(r -> toSummary(r, catalog)).toList();
             }
-            List<ArticleSummaryDto> items = artMapper.selectPublishedPage(typeIds, criteria, query.sort(),
-                    query.descending(), query.offset(), query.pageSize()).stream()
-                    .map(r -> toSummary(r, catalog)).toList();
-            return PageResponse.of(items, query.page(), query.pageSize(), total);
-        });
+        };
     }
 
     public ArticleDetailDto getArticle(long id) {
+        return getArticle(id, null);
+    }
+
+    /**
+     * 文章详情；有访问密码的文章只在凭据与当前密码一致时返回（B05，D-B05-3，{@link PasswordProof}），否则仍是
+     * ARTICLE_PASSWORD_REQUIRED。判定顺序 404 → 积分 → 密码不变。
+     *
+     * @param proof 访问密码凭据（site 的签名票据校验通过后），可为 null
+     */
+    public ArticleDetailDto getArticle(long id, PasswordProof proof) {
         return read(() -> {
             ArtDetailRow row = artMapper.selectPublishedDetail(id);
             if (row == null) {
@@ -76,16 +99,37 @@ public class ArticleReadService {
             if (!catalog.isVisible(categoryId) || !catalogs.guestMayViewDetail(guest, categoryId)) {
                 throw notFound();
             }
-            // 旧版游客（group_id<3）访问 art_points/art_points_detail>0 的文章时改为显示扣积分确认页（index/controller/Base.php:105-112、:118-142）；
-            // user.status=0 时不检查（:115-117）
-            if (catalogs.enforceGuestPopedom() && nz(row.pointsRequired()) != 0) {
+            // 旧版游客（group_id<3）访问需积分的文章时改为显示扣积分确认页（index/controller/Base.php:105-112、:118-142）：
+            // 积分列由 user.art_points_type 决定，'1' 时为 art_points（整篇），否则为 art_points_detail（按页，:108-111）；
+            // user.status=0 时不检查（:115-117）。B05 起按配置取列（此前两列任一大于 0 即拒绝）
+            int points = catalogs.artPointsWholeArticle() ? nz(row.pointsRequired()) : nz(row.pointsDetailRequired());
+            if (catalogs.enforceGuestPopedom() && points != 0) {
                 throw new ApiException(ErrorCode.ARTICLE_POINTS_REQUIRED, "该文章需要积分才能查看");
             }
             // 旧版 art_pwd 非空且本会话未验证时显示密码页（index/controller/Art.php:56-61）
-            if (nz(row.detailPasswordRequired()) != 0) {
+            if (nz(row.detailPasswordRequired()) != 0 && (proof == null
+                    || artMapper.countPasswordProven(id, proof.salt(), proof.fingerprint()) == 0)) {
                 throw new ApiException(ErrorCode.ARTICLE_PASSWORD_REQUIRED, "该文章需要访问密码");
             }
             return toDetail(row, catalog);
+        });
+    }
+
+    /**
+     * 文章访问密码校验（B05）：文章已审核、分类可见、art_pwd 非空且与 candidate 逐字节相等。candidate 为空或超过
+     * {@link VideoPlaybackService#MAX_PASSWORD_LENGTH} 个码点时直接为 false（不查库）。只返回布尔值，密码列不读入内存。
+     */
+    public boolean verifyPassword(long id, String candidate) {
+        if (id < 1 || candidate == null || candidate.isEmpty()
+                || candidate.codePointCount(0, candidate.length()) > VideoPlaybackService.MAX_PASSWORD_LENGTH) {
+            return false;
+        }
+        return read(() -> {
+            ArtDetailRow row = artMapper.selectPublishedDetail(id);
+            if (row == null || !catalogs.catalog(TYPE_MID, catalogs.guest()).isVisible(nz(row.categoryId()))) {
+                return false;
+            }
+            return artMapper.countPasswordMatch(id, candidate) > 0;
         });
     }
 

@@ -25,7 +25,7 @@
 5. 按出现顺序逐项：未知键 → 400 `field=query`；同键第二次出现 → 400；值按表单规则**只解码一次**（`+` 为空格，`%HH` 大小写均可，`H` 只认 ASCII `0-9`/`A-F`/`a-f`——全角 `%４１`、阿拉伯-印度数字 `%٤١` 不是转义，判 400；`?s=` 兼容路径同一解码规则，此类值交 PHP），原始字符不在 0x21–0x7E、`%` 不完整或结果不是合法 UTF-8 → 400。
 6. `by` 去首尾空白后为 `rnd` → empty。
 7. 旧站式归一：`wd/area/lang/year/level/class/by/order` 去掉首尾 W 字符（ECMAScript `\s` 集合，与 content 相同），结果为 `''` 或 `'0'` 按未传；`page` 为 `''` 按未传，否则 1..1000、无前导 0。
-8. 交给 content 的同一套校验：`VideoListQuery.parse`（`by`→`sort`、`order`）在前，`VideoFilter.parse`（`wd`→`keyword`、`class`→`classes`，码点上限、禁用字符、逗号、年份、`level` 词法与数值）在后；开关不在解析器判断，由页面在查库前判断。结果是 `SiteRoute.VodSearch(SearchFilters, page)`。
+8. 交给 content 的同一套校验：`VideoListQuery.parse`（`by`→`sort`、`order`）在前，`VideoFilter.parse`（`wd`→`keyword`、`class`→`classes`，码点上限、禁用字符、逗号、年份、`level` 词法与数值；契约 1.3.0 起 `area/lang/class` 接受逗号多值、`year` 接受 9 字符区间，搜索页随之接受，见 14 文档第 2.4 节）在后；开关不在解析器判断，由页面在查库前判断。结果是 `SiteRoute.VodSearch(SearchFilters, page)`。
 9. `canonical` = 原始路径等于搜索基址 B，且原始查询串与 `vodSearchLink(条件, page).query()` 逐字相同。非规范请求（键顺序、小写十六进制、`page=1`、首尾空白、空项、`level=09` 等）照常渲染，只输出 canonical，不 301。
 
 `SearchFilters` 是不可变 record：文本值必须满足 content 规则**且是归一的不动点**（不是 `''`/`'0'`、首尾无 W），`level` 为整数，`by`/`order` 为枚举；不满足时 `IllegalArgumentException`。

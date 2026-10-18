@@ -292,7 +292,7 @@ public class ContentPages {
         return LegacyTextEntities.decodeOnce(raw);
     }
 
-    private static String truncate(String s) {
+    static String truncate(String s) {
         String oneLine = s.replaceAll("\\s+", " ").strip();
         if (oneLine.codePointCount(0, oneLine.length()) <= DESCRIPTION_MAX) {
             return oneLine;

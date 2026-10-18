@@ -162,6 +162,47 @@ class SiteGuardrailsTest {
         return out;
     }
 
+    /** B05（D-B05-1）：外层播放页唯一的同源 iframe 与播放器内页的 nonce 外部脚本，完整写法固定。 */
+    private static final Pattern IFRAME = Pattern.compile("(?i)<iframe\\b[^>]*>");
+    private static final Pattern IFRAME_ALLOWED = Pattern.compile("<iframe class=\"player-frame__iframe\" "
+            + "src=\"\\$\\{page\\.playerUrl\\(\\)\\.href\\(\\)}\" title=\"\\$\\{page\\.playerTitle\\(\\)}\" allowfullscreen>");
+    private static final Pattern SCRIPT = Pattern.compile("(?is)<script\\b.*?</script\\s*>");
+    private static final Pattern SCRIPT_ALLOWED = Pattern.compile(
+            "<script nonce=\"\\$\\{page\\.nonce\\(\\)}\" src=\"\\$\\{[\\w.()]+\\.href\\(\\)}\"></script>");
+
+    @Test
+    void iframeOnlyOnThePlayPageAndScriptsOnlyAsNoncedExternalScriptsInThePlayerFrame() throws IOException {
+        Path play = SITE_TEMPLATES.resolve(Path.of("pages", "play.jte"));
+        Path player = SITE_TEMPLATES.resolve(Path.of("player", "player.jte"));
+        int iframes = 0;
+        int scripts = 0;
+        for (Path f : files(JTE_ROOT, ".jte")) {
+            String src = Files.readString(f, StandardCharsets.UTF_8);
+            Matcher i = IFRAME.matcher(src);
+            while (i.find()) {
+                assertThat(f).as("只有外层播放页可以有 iframe").isEqualTo(play);
+                assertThat(i.group()).as("iframe 的写法").matches(IFRAME_ALLOWED);
+                iframes++;
+            }
+            Matcher sc = SCRIPT.matcher(src);
+            while (sc.find()) {
+                assertThat(f).as("只有播放器内页可以有 script").isEqualTo(player);
+                assertThat(sc.group()).as("script 只能是带本响应 nonce 的同源外部脚本，没有内联内容").matches(SCRIPT_ALLOWED);
+                scripts++;
+            }
+            assertThat(src.toLowerCase(java.util.Locale.ROOT).split("<script", -1).length - 1)
+                    .as(f + " 中每个 <script 都已按完整写法检查").isEqualTo(f.equals(player) ? 2 : 0);
+        }
+        assertThat(iframes).isEqualTo(1);
+        assertThat(scripts).isEqualTo(2);
+        for (String bad : List.of("<script>alert(1)</script>",
+                "<script nonce=\"${page.nonce()}\">${page.data()}</script>",
+                "<script nonce=\"x\" src=\"${s.href()}\"></script>",
+                "<script nonce=\"${page.nonce()}\" src=\"/static/a.js\"></script>")) {
+            assertThat(bad).as(bad).doesNotMatch(SCRIPT_ALLOWED);
+        }
+    }
+
     @Test
     void onlySafeUrlDeclaresHref() throws IOException {
         Pattern declares = Pattern.compile("record\\s+\\w+\\s*\\([^)]*\\bhref\\b|\\bhref\\s*\\(\\s*\\)\\s*\\{");

@@ -31,12 +31,21 @@ public final class LegacyUrlBuilder {
     /** vod/show 可用的筛选参数（application/route.php 的 vodshow 变量，id、page 另行传入）。 */
     public static final List<String> SHOW_KEYS = List.of("area", "by", "class", "lang", "letter", "level", "order",
             "state", "tag", "year");
-    /** Java SSR 搜索页链接的查询串键（MACC-20），也是输出顺序（按键排序，与 mac_url 一致）。 */
-    public static final List<String> SEARCH_LINK_KEYS = List.of("area", "by", "class", "lang", "level", "order", "page",
-            "wd", "year");
     /**
-     * 搜索链接查询串的最大长度：各值取 content 的码点上限、每个码点 3 字节（U+FFFF 以上字符被拒绝）编码为 9 个字符，
-     * 加上最长的 by、order、level、page 与 4 位年份（09 方案第 7.2.4 节）。
+     * Java SSR 搜索页链接的查询串键（MACC-20；B05 加入 B04 的新键与 tid），也是输出顺序（按键排序，与 mac_url 一致，
+     * docs/architecture/15-b05-readonly-pages.md 第 3.3 节）。
+     */
+    public static final List<String> SEARCH_LINK_KEYS = List.of("actor", "area", "by", "class", "director", "ids",
+            "lang", "letter", "level", "name", "order", "page", "state", "tag", "tid", "version", "wd", "year");
+    /**
+     * 模块筛选/搜索页（B05 D-B05-5，{@link #moduleListLink}）另用的查询串键：演员的 sex/starsign/blood、角色的 rid、专题的 id
+     * （其余键与 {@link #SEARCH_LINK_KEYS} 相同）。
+     */
+    public static final List<String> MODULE_LINK_KEYS = List.of("blood", "id", "rid", "sex", "starsign");
+    /**
+     * 搜索链接查询串的最大长度：MACC-20 的 wd/area/lang/class 各取 content 的码点上限、每个码点 3 字节（U+FFFF 以上字符被拒绝）
+     * 编码为 9 个字符，加上最长的 by、order、level、page 与 4 位年份（09 方案第 7.2.4 节）。B05 起这是预算而不是推论：
+     * 新键会占用同一预算，超出预算的条件组合在 {@link SearchFilters} 中被拒绝（搜索页 400），所以生成的链接仍在 {@link SafeUrl} 上限内。
      */
     static final int MAX_SEARCH_LINK_QUERY = 1209;
 
@@ -75,7 +84,29 @@ public final class LegacyUrlBuilder {
             case SiteRoute.VodType t -> vodType(t.typeId(), t.page());
             case SiteRoute.VodDetail d -> vodDetail(d.vodId());
             case SiteRoute.VodSearch s -> vodSearch(Map.of(), 1);
+            case SiteRoute.VodShow s -> vodShowLink(s.categoryId(), SearchFilters.NONE, 1).path();
+            case SiteRoute.ModuleList m -> moduleListLink(m.page(), m.categoryId(), ModuleFilters.none(m.page().module()),
+                    1).path();
+            case SiteRoute.Legacy l -> legacy(l);
         };
+    }
+
+    /**
+     * B05 的"模块/操作 + 数字参数"页面（{@link LegacyPage}），参数按 {@link LegacyPage#keys()} 的顺序输出，页码 1 不输出。
+     * 与 PHP 黄金向量 site/url-golden/b05-vectors.json 逐字一致（B05UrlGoldenVectorsTest）。
+     */
+    public String legacy(SiteRoute.Legacy route) {
+        Map<String, String> vars = new LinkedHashMap<>();
+        for (String key : route.page().keys()) {
+            switch (key) {
+                case "id" -> vars.put("id", Long.toString(route.id()));
+                case "sid" -> vars.put("sid", Integer.toString(route.sid()));
+                case "nid" -> vars.put("nid", Integer.toString(route.nid()));
+                case "page" -> vars.put("page", pageValue(route.pageNo()));
+                default -> throw new IllegalStateException("未知参数");
+            }
+        }
+        return macUrl(route.page().target(), vars, route.page().suffix());
     }
 
     /** 首页：旧模板用 {@code {$maccms.path}}，即 {@code MAC_PATH}（All.php:61），不经 mac_url。 */
@@ -134,7 +165,49 @@ public final class LegacyUrlBuilder {
             throw new IllegalStateException("搜索页链接只支持 pathinfo_depr=/、不启用路由别名的形态");
         }
         new SiteRoute.VodSearch(filters, page);
-        Map<String, String> vars = new TreeMap<>(filters.params());
+        return new SiteLink(vodSearch(Map.of(), 1), searchQuery(filters, page));
+    }
+
+    /**
+     * Java SSR 分类筛选页（旧 {@code vod/show}，B05 D-B05-7）的链接：固定路径 {@code vod/show/id/<分类>}（{@code mac_url} 的
+     * 写法，与 {@link #vodShow} 无筛选条件时相同）+ 与 {@link #vodSearchLink} 相同的查询串（不含 tid）。旧版的路径参数形式
+     * （{@code vod/show/area/…/id/1.html}）与 {@code vodshow/…} 位置参数形式只作为输入被认可（{@link LegacyUrlParser#parseVodList}）。
+     */
+    public SiteLink vodShowLink(int categoryId, SearchFilters filters, int page) {
+        if (style.routeAliases() || style.depr() != '/') {
+            throw new IllegalStateException("筛选页链接只支持 pathinfo_depr=/、不启用路由别名的形态");
+        }
+        new SiteRoute.VodShow(categoryId, filters, page);
+        Map<String, String> vars = new LinkedHashMap<>();
+        vars.put("id", Integer.toString(categoryId));
+        return new SiteLink(macUrl("vod/show", vars), searchQuery(filters, page));
+    }
+
+    /**
+     * 文章、专题、演员、角色、网址、剧情的筛选/搜索页链接（B05 D-B05-5）：固定路径（搜索页 {@code <模块>/search}，筛选页
+     * {@code <模块>/show/id/<分类>}，{@code mac_url} 的写法）+ 与视频搜索页相同写法的查询串。ajax 入口的链接指向完整页面。
+     * 只支持 site 的 URL 形态（分隔符 /、不启用路由别名）。
+     */
+    public SiteLink moduleListLink(ModuleListPage page, Integer categoryId, ModuleFilters filters, int pageNo) {
+        if (style.routeAliases() || style.depr() != '/') {
+            throw new IllegalStateException("筛选/搜索页链接只支持 pathinfo_depr=/、不启用路由别名的形态");
+        }
+        ModuleListPage target = page.page();
+        new SiteRoute.ModuleList(target, categoryId, filters, pageNo);
+        Map<String, String> vars = new LinkedHashMap<>();
+        if (categoryId != null) {
+            vars.put("id", Integer.toString(categoryId));
+        }
+        return new SiteLink(macUrl(target.target(), vars), query(filters.params(), pageNo));
+    }
+
+    /** 搜索/筛选页链接的查询串：已设置的条件按键排序（mac_url 的 ksort），页码只在 &gt; 1 时输出，值用 PHP urlencode。 */
+    private static String searchQuery(SearchFilters filters, int page) {
+        return query(filters.params(), page);
+    }
+
+    private static String query(Map<String, String> params, int page) {
+        Map<String, String> vars = new TreeMap<>(params);
         if (page > 1) {
             vars.put("page", Integer.toString(page));
         }
@@ -146,10 +219,10 @@ public final class LegacyUrlBuilder {
             q.append(e.getKey()).append('=').append(urlencode(e.getValue()));
         }
         if (q.length() > MAX_SEARCH_LINK_QUERY) {
-            // 由第 4 节的码点上限推出不可能发生（第 7.2.4 节）；发生即是编码或上限被改动
+            // SearchFilters 的不变式保证不会发生（含 page=1000 的预算）；发生即是编码或上限被改动
             throw new IllegalStateException("搜索链接查询串超出上限");
         }
-        return new SiteLink(vodSearch(Map.of(), 1), q.toString());
+        return q.toString();
     }
 
     /** 旧筛选页（仍归 PHP），等价 {@code mac_url_type($info, $filters + ['page'=>$page], 'show')}。 */
@@ -203,7 +276,12 @@ public final class LegacyUrlBuilder {
     // ---- mac_url 尾部处理（common.php:2376-2426，动态页分支，ENTRANCE=index） ----
 
     private String macUrl(String model, Map<String, String> vars) {
-        String url = thinkUrl(model, vars);
+        return macUrl(model, vars, "html");
+    }
+
+    /** @param suffix ThinkPHP url() 的后缀（{@code html}；站点级 RSS 为 {@code xml}，common.php:1782-1793） */
+    private String macUrl(String model, Map<String, String> vars, String suffix) {
+        String url = thinkUrl(model, vars, suffix);
         if (style.rewrite()) {
             url = url.replace("index.php/", "");
         }
@@ -235,7 +313,7 @@ public final class LegacyUrlBuilder {
 
     // ---- ThinkPHP url()：Url::build，Request root=/index.php，模块绑定 index（index.php:20） ----
 
-    private String thinkUrl(String model, Map<String, String> vars) {
+    private String thinkUrl(String model, Map<String, String> vars, String suffix) {
         Map<String, String> rest = new LinkedHashMap<>(vars);
         String path = model;
         if (style.routeAliases() && ROUTES.containsKey(model)) {
@@ -253,7 +331,7 @@ public final class LegacyUrlBuilder {
                 url.append(depr).append(e.getKey()).append(depr).append(urlencode(e.getValue()));
             }
         }
-        url.append(".html");
+        url.append('.').append(suffix);
         String u = url.toString();
         int i = 0;
         while (i < u.length() && u.charAt(i) == '/') {

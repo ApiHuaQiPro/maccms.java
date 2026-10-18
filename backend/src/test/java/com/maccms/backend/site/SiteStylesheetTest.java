@@ -80,6 +80,23 @@ class SiteStylesheetTest {
         assertThat(m.find()).as("CSS 应包含至少一个契约 class").isTrue();
     }
 
+    /** B06（MACC-55）地图/帮助/版权页：页面根有规则，标题与地图链接、版权提示能断开超长无空格文本。 */
+    @Test
+    void b06MiscPagesWrapLongText() throws IOException {
+        String body = stripComments(css());
+        for (String klass : new String[]{"map-page", "help-page", "copyright-page", "map-section__title",
+                "map-tree", "map-links", "copyright-notice"}) {
+            assertThat(body).as("缺少 .%s 的规则", klass)
+                    .containsPattern(Pattern.compile("\\." + Pattern.quote(klass) + "\\b").pattern());
+        }
+        Matcher title = Pattern.compile("\\.copyright-page > h1\\s*\\{([^}]*)}").matcher(body);
+        assertThat(title.find()).isTrue();
+        assertThat(title.group(1)).contains("overflow-wrap: anywhere");
+        Matcher links = Pattern.compile("\\.map-tree,[^{]*\\{([^}]*)}").matcher(body);
+        assertThat(links.find()).isTrue();
+        assertThat(links.group(1)).contains("overflow-wrap: anywhere");
+    }
+
     @Test
     void isValidUtf8WithoutBom() throws IOException {
         byte[] raw = Files.readAllBytes(CSS);

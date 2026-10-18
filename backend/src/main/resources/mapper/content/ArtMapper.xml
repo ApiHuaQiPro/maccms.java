@@ -4,7 +4,8 @@
   只读映射：沿用旧表 mac_art（install.sql:3）。禁止在此文件加入写语句，禁止 ${} 拼接。
   不查询的列（不得出现在任何 select 中）：art_pwd 及 art_pwd_url（只以 CHAR_LENGTH(art_pwd) > 0 的布尔结果出现；比 PHP 的 !empty 更严：值为 "0" 也视为有密码）、
   art_points、art_points_detail（只以 > 0 的布尔结果出现）、group_id、art_lock、art_tpl、art_jumpurl、art_time_make、
-  art_time_hits、art_rel_art、art_rel_vod、type_id_1。旧规则依据：application/common/model/Art.php。
+  art_time_hits、art_rel_art、art_rel_vod、type_id_1（type_id_1 只出现在 B05 SSR 的 tid 条件中，作 WHERE 比较）。
+  旧规则依据：application/common/model/Art.php。
 -->
 <mapper namespace="com.maccms.backend.content.infrastructure.ArtMapper">
 
@@ -21,6 +22,19 @@
         <if test="criteria.letters != null">
             AND art_letter IN <foreach collection="criteria.letters" item="l" open="(" separator="," close=")">#{l}</foreach>
         </if>
+        <!--
+          B05 SSR 筛选/搜索页（docs/architecture/15-b05-readonly-pages.md 第 7.2 节，LibraryMatch）：只由 site 经
+          content.application.LibrarySearchService 构造，公开 API 从不设置（不设置时上面的 SQL 文本不变）。列名固定，
+          LIKE 模式已按 ESCAPE '!' 转义。旧规则：wd Art.php:331-337（art_name 加 search_art_rule 列，仓库值 art_en|art_sub，application/extra/maccms.php:71）；name/tag/class :338-346（mac_like_arr）；ids :238-242；tid :173-174、:291-292（type_id|type_id_1）。
+        -->
+        <if test="criteria.keywordPatterns != null">AND (<foreach collection="criteria.keywordPatterns" item="p" separator=" OR ">art_name LIKE #{p} ESCAPE '!' OR art_en LIKE #{p} ESCAPE '!' OR art_sub LIKE #{p} ESCAPE '!'</foreach>)</if>
+        <if test="criteria.namePatterns != null">AND (<foreach collection="criteria.namePatterns" item="p" separator=" OR ">art_name LIKE #{p} ESCAPE '!'</foreach>)</if>
+        <if test="criteria.tagPatterns != null">AND (<foreach collection="criteria.tagPatterns" item="p" separator=" OR ">art_tag LIKE #{p} ESCAPE '!'</foreach>)</if>
+        <if test="criteria.classPatterns != null">AND (<foreach collection="criteria.classPatterns" item="p" separator=" OR ">art_class LIKE #{p} ESCAPE '!'</foreach>)</if>
+        <if test="criteria.ids != null">AND art_id IN <foreach collection="criteria.ids" item="id" open="(" separator="," close=")">#{id}</foreach></if>
+        <if test="criteria.tid != null">AND (type_id = #{criteria.tid} OR type_id_1 = #{criteria.tid})</if>
+        <!-- level：旧 mac_param_url 的 intval（application/common.php:1577）后 art_level IN (那个整数)，Art.php:230-235 -->
+        <if test="criteria.legacyLevel != null">AND art_level = #{criteria.legacyLevel}</if>
     </sql>
 
     <sql id="summaryColumns">
@@ -65,7 +79,7 @@
         <include refid="criteriaConditions"/>
     </select>
 
-    <!-- 排序白名单对应旧 by（Art.php:370-376，不含 rnd），追加 art_id 同向排序保证分页稳定。 -->
+    <!-- 排序白名单对应旧 by（Art.php:370-376）；by=rnd 由 content.application 换成 hits_week desc 的随机页。追加 art_id 同向排序保证分页稳定。 -->
     <select id="selectPublishedPage" resultType="com.maccms.backend.content.infrastructure.ArtSummaryRow">
         SELECT /*+ MAX_EXECUTION_TIME(3000) */ <include refid="summaryColumns"/>
         FROM mac_art
@@ -92,7 +106,10 @@
         LIMIT #{offset}, #{limit}
     </select>
 
-    <!-- 对应旧 mac_label_art_detail 的 art_id + art_status=1 条件（application/common.php:2693-2713）。 -->
+    <!--
+      对应旧 mac_label_art_detail 的 art_id + art_status=1 条件（application/common.php:2693-2713）。积分两列分别给出布尔值，
+      由 content.application 按 user.art_points_type 取其一（index/controller/Base.php:108-111，B05）。
+    -->
     <select id="selectPublishedDetail" resultType="com.maccms.backend.content.infrastructure.ArtDetailRow">
         SELECT art_id                   AS id,
                type_id                  AS categoryId,
@@ -127,10 +144,34 @@
                art_content              AS content,
                art_pic_screenshot       AS screenshots,
                (CHAR_LENGTH(art_pwd) &gt; 0) AS detailPasswordRequired,
-               (art_points &gt; 0 OR art_points_detail &gt; 0) AS pointsRequired
+               (art_points &gt; 0)        AS pointsRequired,
+               (art_points_detail &gt; 0) AS pointsDetailRequired
         FROM mac_art
         WHERE art_id = #{id}
           AND art_status = 1
+    </select>
+
+    <!--
+      文章访问密码（B05，docs/architecture/15-b05-readonly-pages.md 第 6.4 节）：旧 Art::detail 在 art_pwd 非空且会话 2-1-id 未验证时显示密码页
+      （application/index/controller/Art.php:55-61），ajax/pwd 以 PHP != 宽松比较（Ajax.php:444-453，不看 art_status）。新版只认已审核的文章，
+      密码列只以布尔表达式出现：凭据的 SHA2 比较（改密码后旧凭据失效）与 BINARY 逐字节相等；密码本身不读出。
+    -->
+    <select id="countPasswordProven" resultType="int">
+        SELECT COUNT(*)
+        FROM mac_art
+        WHERE art_id = #{id}
+          AND art_status = 1
+          AND CHAR_LENGTH(art_pwd) &gt; 0
+          AND SHA2(CONCAT(#{proofSalt}, art_pwd), 256) = #{proofHash}
+    </select>
+
+    <select id="countPasswordMatch" resultType="int">
+        SELECT COUNT(*)
+        FROM mac_art
+        WHERE art_id = #{id}
+          AND art_status = 1
+          AND CHAR_LENGTH(art_pwd) &gt; 0
+          AND BINARY art_pwd = BINARY #{candidate}
     </select>
 
     <!--

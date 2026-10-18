@@ -350,8 +350,13 @@ class ContentApiMySqlIT {
             assertThat(r.body().get("code").asString()).isEqualTo("CATEGORY_NOT_FOUND");
         }
 
+        // sort=rnd 从契约 1.3.0（B04）起合法：8 条已发布视频全部是候选，顺序随机，黄金样本见 VideoListGoldenMySqlIT
+        Resp rnd = checked("/api/v1/videos", "/api/v1/videos?sort=rnd", 200);
+        assertThat(rnd.body().get("total").asInt()).isEqualTo(8);
+        assertThat(ids(rnd)).containsExactlyInAnyOrder(112L, 111L, 110L, 105L, 104L, 103L, 102L, 101L);
+
         // 非法参数
-        for (String q : List.of("page=0", "pageSize=101", "sort=rnd", "sort=vod_id", "order=random",
+        for (String q : List.of("page=0", "pageSize=101", "sort=RND", "sort=vod_id", "order=random",
                 "categoryId=1%20OR%201=1", "page=1001")) {
             Resp r = checked("/api/v1/videos", "/api/v1/videos?" + q, 400);
             assertThat(r.body().get("code").asString()).isEqualTo("INVALID_PARAMETER");

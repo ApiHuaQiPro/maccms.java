@@ -45,6 +45,15 @@ maccms:
     enforce-guest-popedom: ${MACCMS_CONTENT_ENFORCE_GUEST_POPEDOM:true}
     # 对齐 PHP 配置 app.copyright_status==2（内容页跳转）：vod_copyright=1 的视频详情返回 403
     copyright-hides-detail: ${MACCMS_CONTENT_COPYRIGHT_HIDES_DETAIL:true}
+    # 对齐 PHP 配置 user.art_points_type（B05）：1 按 art_points（整篇收费），0 按 art_points_detail（按页收费），留空按仓库值 1
+    art-points-type: ${MACCMS_CONTENT_ART_POINTS_TYPE:}
+    # 播放/下载授权（B05，docs/architecture/15-b05-readonly-pages.md 第 6 节），对齐旧 PHP 配置，留空按仓库值：
+    # vod-points-type 对应 user.vod_points_type（1 每数据、0 每集）；trysee 对应 user.trysee（全局试看分钟数，0 关闭）；
+    # copyright-status 对应 app.copyright_status（0..4，留空时按 copyright-hides-detail 取 2 或 1；设置时须与 copyright-hides-detail 一致）
+    playback:
+      vod-points-type: ${MACCMS_CONTENT_VOD_POINTS_TYPE:}
+      trysee: ${MACCMS_CONTENT_TRYSEE:}
+      copyright-status: ${MACCMS_CONTENT_COPYRIGHT_STATUS:}
     # 视频搜索（契约 1.1.0，docs/architecture/09-content-search-filter-plan.md 第 6.3-6.4 节）。只读本应用环境变量，不读取 PHP 配置。
     search:
       # 是否接受包含匹配参数 keyword、classes（true/false），默认关闭；area/lang/year/level 精确筛选不受影响。
@@ -63,6 +72,18 @@ maccms:
     w1: ${MACCMS_BROWSER_EXTERNAL_W1:true}
     w2: ${MACCMS_BROWSER_EXTERNAL_W2:true}
     w3: ${MACCMS_BROWSER_EXTERNAL_W3:false}
+  # 客户端 IP 解析（B06，D2 ④，docs/architecture/16-b06-misc-pages-provide.md 第 2 节）：部署级参数。默认只用连接对端；
+  # trusted-proxies 为逗号分隔的 IP/CIDR，只有对端落在其中时才采用 header 指定的转发头（X-Forwarded-For 列表，或单值头
+  # X-Real-IP/CF-Connecting-IP/True-Client-IP/Ali-CDN-Real-IP）。部署在 CDN/反向代理后面时必须填写代理出口网段，否则客户端 IP
+  # 全部是代理地址；不要填 0.0.0.0/0 之类的宽网段（任何人都能伪造转发头）。
+  client-ip:
+    trusted-proxies: ${MACCMS_TRUSTED_PROXIES:}
+    header: ${MACCMS_CLIENT_IP_HEADER:}
+  # Provide 资源站接口（B06，docs/architecture/16-b06-misc-pages-provide.md 第 3 节）：默认关闭，关闭时不注册 /api.php/provide/**
+  # 路由。打开后各模块再按旧配置 extra/maccms.php 的 api.<模块>.status 判定（仓库值全部关闭），未设置 maccms.legacy-config.dir 时
+  # 全部输出 closed。charge=1 的白名单按 maccms.client-ip 解析客户端 IP。只读：detail_inc_hits 开启时也不写计数（B11）。
+  openapi:
+    enabled: ${MACCMS_OPENAPI_ENABLED:false}
   # site 服务端页面（MACC-9 骨架）：默认关闭，关闭时不注册任何 site 路由。
   # 启用时 name、base-url 必填并校验，缺失或不合法即启动失败（不回显取值）。规则见 docs/architecture/05-site-skeleton.md。
   # 设置了 maccms.legacy-config.dir 时，name、keywords、description、icp、logo-url、status、closed-message、url.*、image.* 按字段
@@ -86,6 +107,15 @@ maccms:
     # 关键字 wd、扩展分类 class 仍受 maccms.content.search.enabled 控制（关闭时搜索页对它们返回 400）。
     search:
       enabled: ${MACCMS_SITE_SEARCH_ENABLED:false}
+    # 访问密码签名票据的部署密钥（B05，D-B05-3）：32～256 个可打印 ASCII 字符，只经环境变量提供、没有内置值；
+    # 留空时播放/下载/文章密码页保持 403 并说明暂不支持在线验证。不要写进任何文件或日志。
+    password-tickets:
+      secret: ${MACCMS_SITE_PASSWORD_SECRET:}
+    # 旧前台页面开关（B05）：ajax-page 对应 app.ajax_page（各模块 ajax_detail/ajax_show/ajax_search），show 对应 app.show
+    # （各模块 show 筛选页）。true/false，留空取旧配置，没有旧配置按关闭（仓库值 0）。
+    features:
+      ajax-page: ${MACCMS_SITE_AJAX_PAGE:}
+      show: ${MACCMS_SITE_SHOW:}
     # 旧站 URL 形态（MACC-14，对应旧 rewrite.status / rewrite.suffix_hide），只接受 true/false，留空时取旧配置，没有旧配置按 false；
     # pathinfo_depr 固定 /、不启用路由别名。规则见 docs/architecture/08-site-pages.md。
     url:

@@ -5,7 +5,7 @@ MacCMS 重构的 Java 后端（模块化单体）。本批（MACC-4）只包含 
 | 接口 | 说明 |
 |---|---|
 | `GET /api/v1/video-categories` | 视频分类树 |
-| `GET /api/v1/videos` | 视频分页列表，可按分类筛选；契约 1.1.0（MACC-18）起可按关键字、地区、语言、年份、推荐等级、扩展分类查询 |
+| `GET /api/v1/videos` | 视频分页列表，可按分类筛选；契约 1.1.0（MACC-18）起可按关键字、地区、语言、年份、推荐等级、扩展分类查询；1.3.0（B04）起另有首字母、资源类别、版本、主演、导演、标签、片名、ID 列表、年份区间与随机排序（`sort=rnd`），地区、语言、扩展分类可按逗号传多个值 |
 | `GET /api/v1/videos/{id}` | 视频公开详情元数据（不含播放/下载地址） |
 | `GET /api/v1/videos/{id}/plots` | 契约 1.2.0（MACC-27）：视频分集剧情，可见性同视频详情 |
 | `GET /api/v1/{article,actor,website}-categories` | 1.2.0：文章、演员、网址分类树（规则同视频分类） |
@@ -18,6 +18,8 @@ MacCMS 重构的 Java 后端（模块化单体）。本批（MACC-4）只包含 
 关键字与扩展分类（`keyword`、`classes`）是包含匹配，默认关闭（`MACCMS_CONTENT_SEARCH_ENABLED=false`，关闭时这两个参数返回 400）；
 开启后受并发上限 `MACCMS_CONTENT_SEARCH_MAX_CONCURRENT`（默认 4）与 3 秒服务端执行时限约束，超限返回 503。开启前须先按 09 方案第 6.5 节做合成库测量。
 1.2.0（文章/专题/演员/角色/网址/友链与多值字段解码）的规则、与旧版差异和 PHP 黄金样本见 `docs/architecture/11-content-read-completion.md`。
+1.3.0（视频列表其余筛选参数与随机排序）见 `docs/architecture/14-video-list-filter-completion.md`；其中 `actor`、`director`、`tag`、`name`
+同样是包含匹配，与 `keyword`、`classes` 共用上述开关、并发上限与时限。
 开发规范：`docs/architecture/02-agent-development-rules.md`。
 
 另有 `site` 服务端渲染页面（jte 3.2.4）：默认关闭（`MACCMS_SITE_ENABLED=false`）。骨架（MACC-9，占位页 `GET /_site/placeholder`、
@@ -34,6 +36,12 @@ B07（MACC-31）建了写入基础设施，见 `docs/architecture/12-write-infra
 **默认关闭**，打开时 `MACCMS_WRITE_DB_URL/USERNAME/PASSWORD` 必须单独提供，地址须与 `MACCMS_DB_URL` 同库）、"模块 + 表 + 操作"写入登记表
 与静态/运行期护栏、写 SQL 规范（条件更新、匹配行数、固定顺序与补偿），以及测试侧的并发写测试支撑与回滚演练工具（快照、逐行 diff、
 只用 DML 恢复）。本批没有任何业务写入，正式登记表为空。整体切换（D3）方案见 `docs/architecture/13-cutover-plan.md`。
+
+B06（MACC-30）见 `docs/architecture/16-b06-misc-pages-provide.md`：客户端 IP 组件（`MACCMS_TRUSTED_PROXIES`、`MACCMS_CLIENT_IP_HEADER`，
+默认只信连接对端）；Provide 资源站接口（`/api.php/provide/**`，`MACCMS_OPENAPI_ENABLED` **默认关闭**，各模块再按旧配置 `api.*.status`
+判定，JSON/XML、白名单、`cachetime` 转为 HTTP 缓存头，只读）；site 新增地图、帮助、版权提示、站点级 RSS 与 6 种搜索引擎地图、
+自定义标签页（无内置标签页时一律"非法请求"）、本地生成的二维码、桌面快捷方式、`ajax/suggest`（随搜索开关）与 `ajax/data`。
+PHP 黄金样本：`src/test/php/provide_golden.php`（php-cgi 跑完整 ThinkPHP 路由）；对照测试 `ProvideGoldenMySqlIT`、`AjaxGoldenMySqlIT`。
 
 ### 环境
 

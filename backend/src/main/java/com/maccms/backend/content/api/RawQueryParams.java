@@ -1,5 +1,6 @@
 package com.maccms.backend.content.api;
 
+import com.maccms.backend.content.application.VideoFilter;
 import com.maccms.backend.content.application.VideoFilter.RawParam;
 import jakarta.servlet.http.HttpServletRequest;
 import java.io.ByteArrayOutputStream;
@@ -14,7 +15,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * GET /api/v1/videos 的查询参数（09 方案第 4.3 节）。值是按 application/x-www-form-urlencoded 解码<b>一次</b>的结果
+ * content 列表接口的查询参数（视频列表见 09 方案第 4.3 节）。值是按 application/x-www-form-urlencoded 解码<b>一次</b>的结果
  * （{@code +} 为空格），不再二次解码；不记录、不回显任何值。
  *
  * <p>正常情况下取容器解析的参数（与契约 1.0.0 时 {@code @RequestParam} 相同的来源），另扫描一遍原始查询串，统计
@@ -22,13 +23,15 @@ import java.util.Set;
  *
  * <p>Tomcat 11 遇到任一参数的编码不合法时拒绝解析整个查询串（{@code InvalidParameterException}，
  * 是 {@link IllegalStateException}），1.0.0 时这会成为 500。为让 {@code keyword=%FF} 等得到 400：只有当不合法的编码全部
- * 出现在 6 个新参数中时，才改用本类按同一规则自行解析的结果；不合法编码出现在既有参数、未知参数或键名中时原样抛出
- * （与 1.0.0 相同）。
+ * 出现在这些新参数（{@link #FILTER_PARAMS}）中时，才改用本类按同一规则自行解析的结果；不合法编码出现在既有参数、未知参数或键名中时原样抛出
+ * （与 1.0.0 相同）。这一回退只用于视频列表（{@link #forVideoList}）；文章/专题/演员/角色/网址/友链列表（{@link #of}）
+ * 遇到任何非法编码都原样抛出，与契约 1.2.0 写明的 500 一致（B04 之前它们与视频列表共用回退集合，{@code area=%FF} 等会被当成
+ * 字面值 {@code "null"}）。
  */
 final class RawQueryParams {
 
-    /** 契约 1.1.0 新增的参数。 */
-    static final Set<String> FILTER_PARAMS = Set.of("keyword", "area", "lang", "year", "level", "classes");
+    /** 契约 1.1.0 起新增的搜索/筛选参数（1.3.0 再增 letter、state、version、actor、director、tag、name、ids）。 */
+    static final Set<String> FILTER_PARAMS = Set.copyOf(VideoFilter.PARAMETERS);
 
     /** 每个键的各次出现的值；自行解析时值为 {@code null} 表示该次出现的值编码不合法。 */
     private final Map<String, List<String>> values;
@@ -40,8 +43,18 @@ final class RawQueryParams {
         this.scan = scan;
     }
 
+    /** 视频列表：非法编码只出现在 {@link #FILTER_PARAMS} 中时改用自行解析的结果（由 {@link #filterParam} 报 400）。 */
+    static RawQueryParams forVideoList(HttpServletRequest request) {
+        return of(request, FILTER_PARAMS);
+    }
+
+    /** 其他列表：只取容器解析的参数，非法编码由容器拒绝（500）。 */
     static RawQueryParams of(HttpServletRequest request) {
-        Scan scan = scan(request.getQueryString());
+        return of(request, Set.of());
+    }
+
+    private static RawQueryParams of(HttpServletRequest request, Set<String> fallbackParams) {
+        Scan scan = scan(request.getQueryString(), fallbackParams);
         Map<String, String[]> container;
         try {
             container = request.getParameterMap();
@@ -78,7 +91,7 @@ final class RawQueryParams {
         boolean malformedOutsideFilterParams;
     }
 
-    private static Scan scan(String query) {
+    private static Scan scan(String query, Set<String> fallbackParams) {
         Scan s = new Scan();
         if (query == null) {
             return s;
@@ -92,7 +105,7 @@ final class RawQueryParams {
             String value = eq < 0 ? "" : decode(part.substring(eq + 1));
             if (key == null || value == null) {
                 s.anyMalformed = true;
-                if (key == null || !FILTER_PARAMS.contains(key)) {
+                if (key == null || !fallbackParams.contains(key)) {
                     s.malformedOutsideFilterParams = true;
                     continue;
                 }

@@ -2,10 +2,9 @@
 @import com.maccms.backend.site.web.view.FilterGroup
 @import com.maccms.backend.site.web.view.HiddenField
 @import com.maccms.backend.site.web.view.SearchPage
-@import com.maccms.backend.site.web.view.VideoCardView
 @param SearchPage page
 @template.site.layout.page(chrome = page.chrome(), content = @`
-<div class="search-page" data-site-page="search">
+<div class="search-page" data-site-page="${page.siteKind()}">
   <h1 class="search-page__title">${page.heading()}</h1>
   @if(page.invalid())
   <p class="search-page__error notice notice--error" id="search-page-error">搜索条件不合法，请修改关键字或筛选条件后重新搜索。</p>
@@ -47,24 +46,6 @@
     @endfor
   </nav>
   @endif
-  @if(page.total().isPresent())
-  <section class="search-page__results" aria-labelledby="search-results-title">
-    <h2 class="search-page__results-title" id="search-results-title">搜索结果</h2>
-    @if(page.videos().isEmpty())
-    <p class="search-empty notice">没有找到相关视频</p>
-    @else
-    <ul class="video-grid">
-      @for(VideoCardView v : page.videos())
-      <li class="video-grid__item">
-        @template.site.components.videoCard(title = v.title(), remarks = v.remarks(), detailUrl = v.detailUrl(), imageUrl = v.imageUrl())
-      </li>
-      @endfor
-    </ul>
-    @endif
-  </section>
-  @endif
-  @if(page.pagination().isPresent())
-  @template.site.components.pagination(currentPage = page.pagination().get().currentPage(), pageCount = page.pagination().get().pageCount(), previousUrl = page.pagination().get().previousUrl(), nextUrl = page.pagination().get().nextUrl())
-  @endif
+  @template.site.fragments.searchResults(page = page)
 </div>
 `)

@@ -1,0 +1,10 @@
+{
+ "started": "2026-10-17T15:19:45",
+ "database": "maccms_it_20261017151945_48605a0a",
+ "rows": 300000,
+ "generateSeconds": 80.2,
+ "context": "300010\t294009\t900\t94",
+ "pid": 9012,
+ "databaseDropped": true,
+ "finished": "2026-10-17T15:23:23"
+}

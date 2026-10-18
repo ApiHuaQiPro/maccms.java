@@ -238,6 +238,17 @@ class LegacyUrlGoldenVectorsTest {
             }
             // parse() 不产生搜索页路由（搜索页走 parseSearch，见 SearchLinkRoundTripTest）
             case SiteRoute.VodSearch s -> throw new AssertionError(where + " parse() 不应识别搜索页");
+            case SiteRoute.VodShow s -> throw new AssertionError(where + " parse() 不应识别筛选页");
+            case SiteRoute.ModuleList m -> throw new AssertionError(where + " parse() 不应识别模块筛选/搜索页");
+            case SiteRoute.Legacy l -> {
+                assertThat(php.get("dispatch").asString()).as(where).isEqualTo(l.page().target());
+                assertThat(param.get("id").asString()).as(where).isEqualTo(Long.toString(l.id()));
+                if (l.page().episode()) {
+                    assertThat(param.get("sid").asInt()).as(where).isEqualTo(l.sid());
+                    assertThat(param.get("nid").asInt()).as(where).isEqualTo(l.nid());
+                }
+                assertThat(param.get("page").asInt()).as(where).isEqualTo(l.pageNo());
+            }
         }
     }
 
@@ -260,7 +271,8 @@ class LegacyUrlGoldenVectorsTest {
             entry("detail.dash", "unsupported"), entry("detail.route", "unsupported"),
             entry("detail.s.slash", "detail 123"), entry("detail.s.slash.html", "detail 123"),
             entry("detail.s.dash", "unsupported"), entry("detail.s.route", "unsupported"),
-            entry("play", "unsupported"), entry("play.route", "unsupported"), entry("search", "unsupported"),
+            // B05：vod/play 由 Java 承接（LegacyPage，B05UrlGoldenVectorsTest 锁定生成结果）
+            entry("play", "legacy vod/play 123 1 2 1"), entry("play.route", "unsupported"), entry("search", "unsupported"),
             entry("search.route", "unsupported"), entry("show.route", "unsupported"), entry("user.login", "unsupported"),
             // MACC-20：搜索页的固定路径 + 查询串由 parseSearch 承接（SearchGoldenVectorsTest），parse() 仍不认识
             entry("search.q.base", "unsupported"), entry("search.q.wd", "unsupported"),
@@ -358,6 +370,10 @@ class LegacyUrlGoldenVectorsTest {
                 case SiteRoute.VodType t -> "type " + t.typeId() + " " + t.page();
                 case SiteRoute.VodDetail d -> "detail " + d.vodId();
                 case SiteRoute.VodSearch s -> "search";
+                case SiteRoute.VodShow s -> "show";
+                case SiteRoute.ModuleList list -> "module " + list.page().target();
+                case SiteRoute.Legacy l -> "legacy " + l.page().target() + " " + l.id() + " " + l.sid() + " " + l.nid()
+                        + " " + l.pageNo();
             };
         } catch (ApiException e) {
             assertThat(e.code()).isEqualTo(ErrorCode.INVALID_PARAMETER);
@@ -371,6 +387,8 @@ class LegacyUrlGoldenVectorsTest {
             case "home" -> Optional.of(new SiteRoute.Home());
             case "type" -> Optional.of(new SiteRoute.VodType(Integer.parseInt(p[1]), Integer.parseInt(p[2])));
             case "detail" -> Optional.of(new SiteRoute.VodDetail(Long.parseLong(p[1])));
+            case "legacy" -> Optional.of(new SiteRoute.Legacy(LegacyPage.byTarget(p[1]), Long.parseLong(p[2]),
+                    Integer.parseInt(p[3]), Integer.parseInt(p[4]), Integer.parseInt(p[5])));
             default -> Optional.empty();
         };
     }

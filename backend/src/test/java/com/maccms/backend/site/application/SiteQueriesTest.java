@@ -13,7 +13,7 @@ class SiteQueriesTest {
     @ParameterizedTest
     @ValueSource(strings = {"wd=a", "page=2", "area=%E5%A4%A7&wd=C%2B%2B+a", "wd=a%2Fb%5Cc%2Ed%25", "wd=..",
             "wd=a.html", "wd=-_.+", "area=1&by=hits&class=2&lang=3&level=9&order=asc&page=1000&wd=4&year=2020",
-            "wd=%C3%A9", "year=2020&area=a"})
+            "wd=%C3%A9", "year=2020&area=a", "actor=x&ids=1%2C2&tid=-1&by=rnd"})
     void acceptsGeneratorOutput(String q) {
         assertThat(SiteQueries.isValid(q)).isTrue();
         assertThat(SiteQueries.check(q)).isEqualTo(q);
@@ -22,7 +22,7 @@ class SiteQueriesTest {
     @ParameterizedTest
     @ValueSource(strings = {"", "?wd=a", "wd=a#f", "wd=a?b", "wd=%e4", "wd=%2f", "wd=%00", "wd=%1F", "wd=%7F", "wd=%",
             "wd=%4", "wd=%G0", "wd=a b", "wd=a\tb", "wd=中", "wd=a'b", "wd=a\"b", "wd=a<b", "wd=a\\b", "wd=a/b",
-            "wd=a~b", "wd=a*b", "wd=a=b", "foo=1", "keyword=a", "WD=a", "s=vod/detail/id/1", "actor=x", "wd=a&wd=b",
+            "wd=a~b", "wd=a*b", "wd=a=b", "foo=1", "keyword=a", "WD=a", "s=vod/detail/id/1", "isend=1", "wd=a&wd=b",
             "wd=", "wd", "=a", "wd=a&", "&wd=a", "wd=a&&page=2", "wd=a;page=2", "pageSize=10"})
     void rejectsEverythingElse(String q) {
         assertThat(SiteQueries.isValid(q)).as(q).isFalse();

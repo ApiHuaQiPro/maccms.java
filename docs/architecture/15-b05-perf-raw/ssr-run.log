@@ -1,0 +1,74 @@
+[b05perf 11:57:56.6862674] created disposable database maccms_it_20261017115756_6b2125e7
+[b05perf 11:57:56.9759134] schema imported from application/install/sql/install.sql; 30 categories seeded
+[b05perf 11:58:53.0967942] inserted up to 100000
+[b05perf 11:59:57.5215358] inserted up to 200000
+[b05perf 12:01:31.5310429] inserted up to 300000
+[b05perf 12:04:37.4343157] analyze: status Table is already up to date
+[b05perf 12:04:37.4377785] grow 0 -> 300000: insert 210.0s, enable keys 185.9s, analyze 0.0s
+[b05-ssr-perf] module tables grown in 70753 ms
+[b05-ssr-perf] v.area1                statuses=[200, 200, 200, 200, 200, 200] ms=[1981, 999, 890, 1125, 1091, 965] total=27194 statements=6
+[b05-ssr-perf] v.area3                statuses=[200, 200, 200, 200, 200, 200] ms=[3242, 3439, 3650, 3574, 3450, 3520] total=94639 statements=6
+[b05-ssr-perf] v.lang3                statuses=[200, 200, 200, 200, 200, 200] ms=[3021, 2741, 2563, 2140, 2500, 2372] total=75753 statements=6
+[b05-ssr-perf] v.letter3              statuses=[200, 200, 200, 200, 200, 200] ms=[821, 905, 875, 975, 910, 872] total=29634 statements=6
+[b05-ssr-perf] v.ids50                statuses=[200, 200, 200, 200, 200, 200] ms=[32, 57, 61, 81, 154, 56] total=46 statements=6
+[b05-ssr-perf] v.class3               statuses=[200, 200, 200, 200, 200, 200] ms=[2122, 1704, 1622, 1608, 1488, 1938] total=95746 statements=6
+[b05-ssr-perf] v.actor2               statuses=[200, 200, 200, 200, 200, 200] ms=[1737, 1513, 1549, 1728, 1827, 1856] total=50620 statements=6
+[b05-ssr-perf] v.tid-top              statuses=[200, 200, 200, 200, 200, 200] ms=[1669, 1423, 1609, 1439, 1423, 1897] total=54076 statements=6
+[b05-ssr-perf] v.tid-child            statuses=[200, 200, 200, 200, 200, 200] ms=[535, 391, 408, 546, 467, 375] total=13042 statements=6
+[b05-ssr-perf] v.year1                statuses=[200, 200, 200, 200, 200, 200] ms=[356, 354, 406, 433, 427, 379] total=9692 statements=6
+[b05-ssr-perf] v.year2000-2010        statuses=[200, 200, 200, 200, 200, 200] ms=[3131, 3231, 3223, 3247, 3768, 3315] total=93582 statements=6
+[b05-ssr-perf] v.year1990-2021        statuses=[200, 200, 200, 200, 200, 200] ms=[2012, 2292, 2161, 2016, 1864, 2105] total=265339 statements=6
+[b05-ssr-perf] v.rnd1                 statuses=[200, 200, 200, 200, 200, 200] ms=[226, 245, 261, 273, 239, 291] total=601 statements=6
+[b05-ssr-perf] v.rnd2-letter          statuses=[200, 200, 200, 200, 200, 200] ms=[342, 287, 236, 278, 273, 263] total=27 statements=8
+[b05-ssr-perf] v.rnd2-class           statuses=[200, 200, 200, 200, 200, 200] ms=[1018, 951, 1146, 1066, 999, 1006] total=144 statements=8
+[b05-ssr-perf] v.rnd2-tid             statuses=[200, 200, 200, 200, 200, 200] ms=[317, 316, 325, 276, 232, 359] total=44 statements=8
+[b05-ssr-perf] v.deep                 statuses=[404, 404, 404, 404, 404, 404] ms=[316, 247, 247, 191, 227, 202] total= statements=5
+[b05-ssr-perf] v.show-top             statuses=[200, 200, 200, 200, 200, 200] ms=[1820, 1909, 1498, 1696, 1889, 1429] total=54076 statements=6
+[b05-ssr-perf] v.show-child-area      statuses=[200, 200, 200, 200, 200, 200] ms=[462, 446, 431, 394, 393, 463] total=4608 statements=6
+[b05-ssr-perf] v.show-rnd             statuses=[200, 200, 200, 200, 200, 200] ms=[785, 836, 813, 606, 804, 977] total=183 statements=8
+[b05-ssr-perf] art.wd                 statuses=[200, 200, 200, 200, 200, 200] ms=[424, 349, 591, 498, 364, 514] total=9841 statements=4
+[b05-ssr-perf] art.letter3            statuses=[200, 200, 200, 200, 200, 200] ms=[261, 193, 220, 269, 271, 266] total=7984 statements=4
+[b05-ssr-perf] art.tag2               statuses=[200, 200, 200, 200, 200, 200] ms=[338, 363, 398, 364, 374, 328] total=29023 statements=4
+[b05-ssr-perf] art.tid                statuses=[200, 200, 200, 200, 200, 200] ms=[1702, 2956, 4135, 4768, 2711, 3338] total=72880 statements=4
+[b05-ssr-perf] art.level              statuses=[200, 200, 200, 200, 200, 200] ms=[1551, 1320, 661, 524, 526, 428] total=9368 statements=4
+[b05-ssr-perf] art.show               statuses=[200, 200, 200, 200, 200, 200] ms=[493, 467, 541, 428, 563, 700] total=80005 statements=6
+[b05-ssr-perf] art.show-rnd           statuses=[200, 200, 200, 200, 200, 200] ms=[2106, 2122, 2687, 2703, 1417, 1472] total=80005 statements=6
+[b05-ssr-perf] actor.area3            statuses=[200, 200, 200, 200, 200, 200] ms=[268, 256, 239, 252, 277, 255] total=29502 statements=4
+[b05-ssr-perf] actor.show-starsign    statuses=[200, 200, 200, 200, 200, 200] ms=[228, 227, 211, 243, 252, 220] total=7896 statements=6
+[b05-ssr-perf] actor.show-rnd         statuses=[200, 200, 200, 200, 200, 200] ms=[393, 1278, 1044, 1072, 334, 1023] total=47466 statements=6
+[b05-ssr-perf] role.show              statuses=[200, 200, 200, 200, 200, 200] ms=[328, 264, 287, 354, 399, 352] total=94852 statements=5
+[b05-ssr-perf] role.show-deep         statuses=[200, 200, 200, 200, 200, 200] ms=[1033, 739, 846, 829, 845, 746] total=94852 statements=5
+[b05-ssr-perf] role.show-rnd          statuses=[200, 200, 200, 200, 200, 200] ms=[2017, 2001, 1559, 685, 558, 517] total=94852 statements=5
+[b05-ssr-perf] role.rid               statuses=[200, 200, 200, 200, 200, 200] ms=[7, 6, 7, 8, 7, 6] total=0 statements=1
+[b05-ssr-perf] role.wd                statuses=[200, 200, 200, 200, 200, 200] ms=[449, 474, 419, 518, 481, 519] total=4495 statements=5
+[b05-ssr-perf] website.area-lang      statuses=[200, 200, 200, 200, 200, 200] ms=[243, 193, 308, 313, 330, 318] total=23783 statements=4
+[b05-ssr-perf] website.in             statuses=[200, 200, 200, 200, 200, 200] ms=[22, 17, 22, 16, 15, 20] total=3 statements=4
+[b05-ssr-perf] website.referer        statuses=[200, 200, 200, 200, 200, 200] ms=[237, 223, 196, 194, 174, 173] total=47466 statements=6
+[b05-ssr-perf] topic.wd               statuses=[200, 200, 200, 200, 200, 200] ms=[91, 83, 77, 72, 72, 75] total=18988 statements=2
+[b05-ssr-perf] topic.rnd              statuses=[200, 200, 200, 200, 200, 200] ms=[68, 80, 64, 68, 93, 100] total=1113 statements=2
+[b05-ssr-perf] plot.letter            statuses=[200, 200, 200, 200, 200, 200] ms=[927, 953, 839, 848, 858, 847] total=2018 statements=4
+[b05-ssr-perf] plot.tid               statuses=[200, 200, 200, 200, 200, 200] ms=[492, 429, 481, 257, 425, 474] total=1309 statements=4
+[b05-ssr-perf] plot.rnd               statuses=[200, 200, 200, 200, 200, 200] ms=[102, 91, 117, 142, 132, 128] total=983 statements=4
+[b05-ssr-perf] t.isend1               statuses=[200, 200, 200, 200, 200, 200] ms=[4585, 4412, 4633, 4801, 4826, 3872] total=149048 statements=4
+[b05-ssr-perf] t.hits-between         statuses=[200, 200, 200, 200, 200, 200] ms=[3537, 3163, 3228, 3217, 3512, 3562] total=79560 statements=4
+[b05-ssr-perf] t.hits-gt              statuses=[200, 200, 200, 200, 200, 200] ms=[4534, 4571, 4875, 4247, 4300, 4395] total=90307 statements=4
+[b05-ssr-perf] t.hitsweek-in          statuses=[200, 200, 200, 200, 200, 200] ms=[844, 869, 1030, 788, 1071, 1018] total=25668 statements=4
+[b05-ssr-perf] t.timeadd-30d          statuses=[200, 200, 200, 200, 200, 200] ms=[22, 20, 21, 21, 23, 24] total=182 statements=4
+[b05-ssr-perf] t.timeadd-365d         statuses=[200, 200, 200, 200, 200, 200] ms=[986, 1166, 1018, 1157, 923, 1052] total=27046 statements=4
+[b05-ssr-perf] t.not100               statuses=[200, 200, 200, 200, 200, 200] ms=[1996, 1710, 1706, 1758, 1550, 1495] total=270675 statements=4
+[b05-ssr-perf] t.rel-ids              statuses=[200, 200, 200, 200, 200, 200] ms=[17, 13, 12, 13, 14, 14] total=29 statements=4
+[b05-ssr-perf] t.rel-text             statuses=[200, 200, 200, 200, 200, 200] ms=[912, 867, 829, 783, 883, 942] total=0 statements=3
+[b05-ssr-perf] t.weekday              statuses=[200, 200, 200, 200, 200, 200] ms=[2029, 2078, 1892, 2421, 4476, 3207] total=2753 statements=4
+[b05-ssr-perf] t.type-current         statuses=[200, 200, 200, 200, 200, 200] ms=[2031, 2961, 2850, 2355, 2100, 2435] total=54076 statements=4
+[b05-ssr-perf] t.typenot              statuses=[200, 200, 200, 200, 200, 200] ms=[2380, 1944, 2011, 1752, 2026, 1815] total=265621 statements=4
+[b05-ssr-perf] t.tv                   statuses=[200, 200, 200, 200, 200, 200] ms=[1526, 1682, 1839, 1750, 1698, 1524] total=270766 statements=4
+[b05-ssr-perf] t.plot                 statuses=[200, 200, 200, 200, 200, 200] ms=[901, 817, 776, 703, 690, 769] total=27119 statements=4
+[b05-ssr-perf] t.level-multi          statuses=[200, 200, 200, 200, 200, 200] ms=[181, 261, 241, 193, 178, 169] total=5441 statements=4
+[b05-ssr-perf] t.start                statuses=[200, 200, 200, 200, 200, 200] ms=[2600, 2893, 2847, 2612, 4600, 5123] total=121718 statements=4
+[b05-ssr-perf] t.tid                  statuses=[200, 200, 200, 200, 200, 200] ms=[1657, 1753, 3010, 3613, 4776, 4915] total=54076 statements=4
+[b05-ssr-perf] t.combo                statuses=[200, 200, 200, 200, 200, 200] ms=[2006, 2481, 1962, 1639, 1268, 1202] total=4893 statements=4
+[b05-ssr-perf] wrote C:\Users\Administrator\multica_workspaces_desktop-localhost-8080\maccms-a5afce71bc1f\macc-29-f4d8c5f57f43\worktree\backend\target\perf-b05-ssr at 2026-10-17T12:15:20.771800500
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 549.5 s -- in com.maccms.backend.perf.B05SsrPerfRun
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS
+[b05perf 12:15:38.0447586] dropped disposable database maccms_it_20261017115756_6b2125e7 (information_schema.schemata count = 0, verified absent)

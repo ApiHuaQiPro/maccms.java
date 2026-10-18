@@ -1,0 +1,245 @@
+{
+    "php": "8.0.30",
+    "vectors": [
+        {
+            "input": "http://www.example.test/index.php/vod/detail/id/1.html",
+            "valid": true
+        },
+        {
+            "input": "https://www.example.test/",
+            "valid": true
+        },
+        {
+            "input": "http://www.example.test",
+            "valid": true
+        },
+        {
+            "input": "http://www.example.test:8080/a?b=1&c=2#frag",
+            "valid": true
+        },
+        {
+            "input": "http://user:pass@www.example.test/",
+            "valid": true
+        },
+        {
+            "input": "http://127.0.0.1/",
+            "valid": true
+        },
+        {
+            "input": "http://[::1]/",
+            "valid": true
+        },
+        {
+            "input": "http://[2001:db8::1]:8080/x",
+            "valid": true
+        },
+        {
+            "input": "http://localhost/",
+            "valid": true
+        },
+        {
+            "input": "http://a/",
+            "valid": true
+        },
+        {
+            "input": "http://a.b-c.d_e/",
+            "valid": false
+        },
+        {
+            "input": "http://-a.test/",
+            "valid": false
+        },
+        {
+            "input": "http://a-.test/",
+            "valid": false
+        },
+        {
+            "input": "http://a..test/",
+            "valid": false
+        },
+        {
+            "input": "http://.a.test/",
+            "valid": false
+        },
+        {
+            "input": "http://a.test./",
+            "valid": true
+        },
+        {
+            "input": "http://exa mple.test/",
+            "valid": false
+        },
+        {
+            "input": "http://例子.测试/",
+            "valid": false
+        },
+        {
+            "input": "http://www.example.test/路径",
+            "valid": false
+        },
+        {
+            "input": "http://www.example.test/%E8%B7%AF",
+            "valid": true
+        },
+        {
+            "input": "http://www.example.test/a b",
+            "valid": false
+        },
+        {
+            "input": "http://www.example.test/<script>",
+            "valid": true
+        },
+        {
+            "input": "http://www.example.test/\"q\"",
+            "valid": true
+        },
+        {
+            "input": "http://www.example.test/\u0001",
+            "valid": false
+        },
+        {
+            "input": "http:/www.example.test/",
+            "valid": false
+        },
+        {
+            "input": "http:www.example.test",
+            "valid": false
+        },
+        {
+            "input": "http://",
+            "valid": false
+        },
+        {
+            "input": "http:///path",
+            "valid": false
+        },
+        {
+            "input": "//www.example.test/",
+            "valid": false
+        },
+        {
+            "input": "www.example.test",
+            "valid": false
+        },
+        {
+            "input": "ftp://ftp.example.test/file",
+            "valid": true
+        },
+        {
+            "input": "mailto:user@example.test",
+            "valid": true
+        },
+        {
+            "input": "news:comp.lang.php",
+            "valid": true
+        },
+        {
+            "input": "file:///etc/passwd",
+            "valid": true
+        },
+        {
+            "input": "javascript:alert(1)",
+            "valid": false
+        },
+        {
+            "input": "data:text/plain,hello",
+            "valid": false
+        },
+        {
+            "input": "foo://bar",
+            "valid": true
+        },
+        {
+            "input": "a1+.-://host/",
+            "valid": true
+        },
+        {
+            "input": "1http://host/",
+            "valid": true
+        },
+        {
+            "input": "HTTP://WWW.EXAMPLE.TEST/",
+            "valid": true
+        },
+        {
+            "input": "http://www.example.test:0/",
+            "valid": true
+        },
+        {
+            "input": "http://www.example.test:65535/",
+            "valid": true
+        },
+        {
+            "input": "http://www.example.test:65536/",
+            "valid": false
+        },
+        {
+            "input": "http://www.example.test:abc/",
+            "valid": false
+        },
+        {
+            "input": "http://www.example.test?x",
+            "valid": true
+        },
+        {
+            "input": "http://www.example.test#x",
+            "valid": true
+        },
+        {
+            "input": "http://www.example.test/?a[]=1",
+            "valid": true
+        },
+        {
+            "input": "http://www.example.test/~user/",
+            "valid": true
+        },
+        {
+            "input": "http://www.example.test/a|b",
+            "valid": true
+        },
+        {
+            "input": "http://www.example.test/a{b}",
+            "valid": true
+        },
+        {
+            "input": "http://www.example.test/a\\b",
+            "valid": true
+        },
+        {
+            "input": "http://www.example.test/a^b",
+            "valid": true
+        },
+        {
+            "input": "http://www.example.test/a`b",
+            "valid": true
+        },
+        {
+            "input": "http://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.test/",
+            "valid": true
+        },
+        {
+            "input": "http://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.test/",
+            "valid": false
+        },
+        {
+            "input": "http://a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.test/",
+            "valid": true
+        },
+        {
+            "input": " http://www.example.test/",
+            "valid": false
+        },
+        {
+            "input": "http://www.example.test/ ",
+            "valid": false
+        },
+        {
+            "input": "0",
+            "valid": false
+        },
+        {
+            "input": "",
+            "valid": false
+        }
+    ]
+}

@@ -1,0 +1,4689 @@
+{
+ "started": "2026-10-17T12:27:07",
+ "database": "maccms_it_20261017122707_410caf5e",
+ "runs": {
+  "root W1W2=00": {
+   "failures": [],
+   "http": {
+    "home": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "type": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "detail": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "search": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "show": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "vodsearch-positional": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "play": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "player": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'none'; script-src 'self' 'nonce-ySJjlaRzcJ3rw9jEru3znw=='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self' blob:; frame-sr",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "player-external": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "play-multi": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "trial-player": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'none'; script-src 'self' 'nonce-M5iTe79ihs4f50R7iBH+0A=='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self' blob:; frame-sr",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "trial-external": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "pwd-player": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 403,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "down": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "downer": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "downer-local": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [
+      "/upload/down/20.zip"
+     ],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "art": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "art-p2": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "art-beyond": {
+     "richTextNavigationLink": true,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "art-pwd": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 403,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "art-search": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "art-show": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "topic": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "actor": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "role": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "website": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "plot": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "art-index": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "rss": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "ajax-detail": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "ajax-search": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "playerconfig": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "role-show": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "art-show-rnd": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "plot-search": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "password": {
+     "wrongStatus": 403,
+     "wrongEcho": false,
+     "goodStatus": 303,
+     "cookieFlags": [
+      "Path",
+      "Max-Age",
+      "Expires",
+      "HttpOnly",
+      "SameSite"
+     ],
+     "afterStatus": 200
+    }
+   },
+   "browser": {
+    "cspViolations": [],
+    "pages": {
+     "home": {
+      "title": "合成站"
+     },
+     "play": {
+      "title": "站内播放样本 第1集 - 合成站"
+     },
+     "player": {
+      "title": "站内播放样本 - 合成站",
+      "stage": {
+       "children": 7,
+       "html": "\n  \n  <script nonce=\"\" src=\"/site-player/player-boot.js\"></script>\n  \n  <script nonce=\"\" src=\"/static/js/jquery.js\"></script>\n  \n  <script nonce=\"\" src=\"/static/js/playerconfig.js\"></script>\n  \n  <scr",
+       "iframes": 3,
+       "playerVar": "object",
+       "macPlayer": "object"
+      }
+     },
+     "player-external": {
+      "title": "版权样本五 - 合成站",
+      "notice": "无法播放\n\n该地址位于外部站点，本站当前未开放外部播放。",
+      "stagePresent": false
+     },
+     "play-multi": {
+      "title": "分组样本六 外链 - 合成站"
+     },
+     "down": {
+      "title": "版权样本五 下载 - 合成站"
+     },
+     "downer": {
+      "title": "版权样本五 下载 下载 - 合成站"
+     },
+     "art": {
+      "title": "长文章样本 - 合成站"
+     },
+     "search": {
+      "title": "搜索：样本 - 合成站"
+     },
+     "art-search": {
+      "title": "搜索文章：星 - 合成站"
+     },
+     "show": {
+      "title": "电影 - 合成站"
+     },
+     "actor": {
+      "title": "星野 - 合成站"
+     }
+    },
+    "trial": {
+     "hidden": false,
+     "text": "试看已结束，请登录后继续观看。",
+     "media": 0,
+     "minutes": "1",
+     "mediaBefore": 3
+    },
+    "blockedHosts": [],
+    "unexpectedBlocked": []
+   }
+  },
+  "root W1W2=01": {
+   "failures": [],
+   "http": {
+    "home": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [
+      "logo.example.invalid"
+     ],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "type": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [
+      "logo.example.invalid"
+     ],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "detail": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [
+      "logo.example.invalid"
+     ],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "search": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [
+      "logo.example.invalid"
+     ],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "show": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [
+      "logo.example.invalid"
+     ],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "vodsearch-positional": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [
+      "logo.example.invalid"
+     ],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "play": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [
+      "logo.example.invalid"
+     ],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "player": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'none'; script-src 'self' 'nonce-FfR5Ff0UNUyOU+P1tV9SIg=='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self' blob:; frame-sr",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "player-external": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'none'; script-src 'self' 'nonce-c+tZ5WjtnA+BUZD7cZjFgQ=='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://media.example.invalid; me",
+     "externalHosts": [
+      "media.example.invalid"
+     ],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "play-multi": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [
+      "logo.example.invalid"
+     ],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "trial-player": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'none'; script-src 'self' 'nonce-zb7+YqEQhYpKeQlqSBX5dg=='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self' blob:; frame-sr",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "trial-external": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'none'; script-src 'self' 'nonce-fYw8OPmfRF+3oTgpq0udzQ=='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://media.example.invalid; me",
+     "externalHosts": [
+      "media.example.invalid"
+     ],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "pwd-player": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 403,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "down": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [
+      "logo.example.invalid"
+     ],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "downer": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [
+      "dl.example.invalid",
+      "logo.example.invalid"
+     ],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "downer-local": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [
+      "/upload/down/20.zip"
+     ],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [
+      "logo.example.invalid"
+     ],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "art": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [
+      "logo.example.invalid"
+     ],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "art-p2": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [
+      "logo.example.invalid"
+     ],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "art-beyond": {
+     "richTextNavigationLink": true,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [
+      "logo.example.invalid"
+     ],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "art-pwd": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 403,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [
+      "logo.example.invalid"
+     ],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "art-search": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [
+      "logo.example.invalid"
+     ],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "art-show": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [
+      "logo.example.invalid"
+     ],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "topic": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [
+      "logo.example.invalid"
+     ],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "actor": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [
+      "logo.example.invalid"
+     ],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "role": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [
+      "logo.example.invalid"
+     ],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "website": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [
+      "logo.example.invalid"
+     ],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "plot": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [
+      "logo.example.invalid"
+     ],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "art-index": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [
+      "logo.example.invalid"
+     ],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "rss": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "ajax-detail": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "ajax-search": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "playerconfig": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "role-show": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [
+      "logo.example.invalid"
+     ],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "art-show-rnd": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [
+      "logo.example.invalid"
+     ],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "plot-search": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [
+      "logo.example.invalid"
+     ],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "password": {
+     "wrongStatus": 403,
+     "wrongEcho": false,
+     "goodStatus": 303,
+     "cookieFlags": [
+      "Path",
+      "Max-Age",
+      "Expires",
+      "HttpOnly",
+      "SameSite"
+     ],
+     "afterStatus": 200
+    }
+   },
+   "browser": {
+    "cspViolations": [],
+    "pages": {
+     "home": {
+      "title": "合成站"
+     },
+     "play": {
+      "title": "站内播放样本 第1集 - 合成站"
+     },
+     "player": {
+      "title": "站内播放样本 - 合成站",
+      "stage": {
+       "children": 7,
+       "html": "\n  \n  <script nonce=\"\" src=\"/site-player/player-boot.js\"></script>\n  \n  <script nonce=\"\" src=\"/static/js/jquery.js\"></script>\n  \n  <script nonce=\"\" src=\"/static/js/playerconfig.js\"></script>\n  \n  <scr",
+       "iframes": 3,
+       "playerVar": "object",
+       "macPlayer": "object"
+      }
+     },
+     "player-external": {
+      "title": "版权样本五 - 合成站",
+      "notice": "",
+      "stagePresent": true
+     },
+     "play-multi": {
+      "title": "分组样本六 外链 - 合成站"
+     },
+     "down": {
+      "title": "版权样本五 下载 - 合成站"
+     },
+     "downer": {
+      "title": "版权样本五 下载 下载 - 合成站"
+     },
+     "art": {
+      "title": "长文章样本 - 合成站"
+     },
+     "search": {
+      "title": "搜索：样本 - 合成站"
+     },
+     "art-search": {
+      "title": "搜索文章：星 - 合成站"
+     },
+     "show": {
+      "title": "电影 - 合成站"
+     },
+     "actor": {
+      "title": "星野 - 合成站"
+     }
+    },
+    "trial": {
+     "hidden": false,
+     "text": "试看已结束，请登录后继续观看。",
+     "media": 0,
+     "minutes": "1",
+     "mediaBefore": 3
+    },
+    "blockedHosts": [
+     "logo.example.invalid",
+     "media.example.invalid",
+     "player.example.invalid"
+    ],
+    "unexpectedBlocked": []
+   }
+  },
+  "root W1W2=10": {
+   "failures": [],
+   "http": {
+    "home": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "type": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "detail": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "search": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "show": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "vodsearch-positional": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "play": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "player": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'none'; script-src 'self' 'nonce-mKwSpAryquzN8QMVc0zt1Q=='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self' blob:; frame-sr",
+     "externalHosts": [
+      "ad.example.invalid"
+     ],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "player-external": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "play-multi": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "trial-player": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'none'; script-src 'self' 'nonce-m9wBF2h/OtSUViIyWwmY+A=='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self' blob:; frame-sr",
+     "externalHosts": [
+      "ad.example.invalid"
+     ],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "trial-external": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "pwd-player": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 403,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "down": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "downer": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "downer-local": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [
+      "/upload/down/20.zip"
+     ],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "art": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "art-p2": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "art-beyond": {
+     "richTextNavigationLink": true,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "art-pwd": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 403,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "art-search": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "art-show": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "topic": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "actor": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "role": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "website": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "plot": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "art-index": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "rss": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "ajax-detail": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "ajax-search": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "playerconfig": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "",
+     "externalHosts": [
+      "ad.example.invalid",
+      "dlparse.example.invalid",
+      "jx.example.invalid",
+      "jx2.example.invalid"
+     ],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "role-show": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "art-show-rnd": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "plot-search": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "password": {
+     "wrongStatus": 403,
+     "wrongEcho": false,
+     "goodStatus": 303,
+     "cookieFlags": [
+      "Path",
+      "Max-Age",
+      "Expires",
+      "HttpOnly",
+      "SameSite"
+     ],
+     "afterStatus": 200
+    }
+   },
+   "browser": {
+    "cspViolations": [],
+    "pages": {
+     "home": {
+      "title": "合成站"
+     },
+     "play": {
+      "title": "站内播放样本 第1集 - 合成站"
+     },
+     "player": {
+      "title": "站内播放样本 - 合成站",
+      "stage": {
+       "children": 7,
+       "html": "\n  \n  <script nonce=\"\" src=\"/site-player/player-boot.js\"></script>\n  \n  <script nonce=\"\" src=\"/static/js/jquery.js\"></script>\n  \n  <script nonce=\"\" src=\"/static/js/playerconfig.js\"></script>\n  \n  <scr",
+       "iframes": 3,
+       "playerVar": "object",
+       "macPlayer": "object"
+      }
+     },
+     "player-external": {
+      "title": "版权样本五 - 合成站",
+      "notice": "无法播放\n\n该地址位于外部站点，本站当前未开放外部播放。",
+      "stagePresent": false
+     },
+     "play-multi": {
+      "title": "分组样本六 外链 - 合成站"
+     },
+     "down": {
+      "title": "版权样本五 下载 - 合成站"
+     },
+     "downer": {
+      "title": "版权样本五 下载 下载 - 合成站"
+     },
+     "art": {
+      "title": "长文章样本 - 合成站"
+     },
+     "search": {
+      "title": "搜索：样本 - 合成站"
+     },
+     "art-search": {
+      "title": "搜索文章：星 - 合成站"
+     },
+     "show": {
+      "title": "电影 - 合成站"
+     },
+     "actor": {
+      "title": "星野 - 合成站"
+     }
+    },
+    "trial": {
+     "hidden": false,
+     "text": "试看已结束，请登录后继续观看。",
+     "media": 0,
+     "minutes": "1",
+     "mediaBefore": 3
+    },
+    "blockedHosts": [
+     "ad.example.invalid"
+    ],
+    "unexpectedBlocked": []
+   }
+  },
+  "root W1W2=11": {
+   "failures": [],
+   "http": {
+    "home": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [
+      "logo.example.invalid"
+     ],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "type": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [
+      "logo.example.invalid"
+     ],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "detail": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [
+      "logo.example.invalid"
+     ],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "search": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [
+      "logo.example.invalid"
+     ],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "show": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [
+      "logo.example.invalid"
+     ],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "vodsearch-positional": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [
+      "logo.example.invalid"
+     ],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "play": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [
+      "logo.example.invalid"
+     ],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "player": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'none'; script-src 'self' 'nonce-6nyePEIVxdaCyzIDwanl5A=='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self' blob:; frame-sr",
+     "externalHosts": [
+      "ad.example.invalid"
+     ],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "player-external": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'none'; script-src 'self' 'nonce-SIqEnF5a9qh8ZMEZPJ3u3A=='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://media.example.invalid; me",
+     "externalHosts": [
+      "ad.example.invalid",
+      "media.example.invalid"
+     ],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "play-multi": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [
+      "logo.example.invalid"
+     ],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "trial-player": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'none'; script-src 'self' 'nonce-DhwW5tDzamfU8d6PIsNzjA=='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self' blob:; frame-sr",
+     "externalHosts": [
+      "ad.example.invalid"
+     ],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "trial-external": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'none'; script-src 'self' 'nonce-/PgooO2bOwoziI7A+SjerA=='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://media.example.invalid; me",
+     "externalHosts": [
+      "ad.example.invalid",
+      "media.example.invalid"
+     ],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "pwd-player": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 403,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "down": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [
+      "logo.example.invalid"
+     ],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "downer": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [
+      "dl.example.invalid",
+      "logo.example.invalid"
+     ],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "downer-local": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [
+      "/upload/down/20.zip"
+     ],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [
+      "logo.example.invalid"
+     ],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "art": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [
+      "logo.example.invalid"
+     ],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "art-p2": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [
+      "logo.example.invalid"
+     ],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "art-beyond": {
+     "richTextNavigationLink": true,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [
+      "logo.example.invalid"
+     ],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "art-pwd": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 403,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [
+      "logo.example.invalid"
+     ],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "art-search": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [
+      "logo.example.invalid"
+     ],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "art-show": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [
+      "logo.example.invalid"
+     ],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "topic": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [
+      "logo.example.invalid"
+     ],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "actor": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [
+      "logo.example.invalid"
+     ],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "role": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [
+      "logo.example.invalid"
+     ],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "website": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [
+      "logo.example.invalid"
+     ],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "plot": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [
+      "logo.example.invalid"
+     ],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "art-index": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [
+      "logo.example.invalid"
+     ],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "rss": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "ajax-detail": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "ajax-search": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "playerconfig": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "",
+     "externalHosts": [
+      "ad.example.invalid",
+      "dlparse.example.invalid",
+      "jx.example.invalid",
+      "jx2.example.invalid"
+     ],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "role-show": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [
+      "logo.example.invalid"
+     ],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "art-show-rnd": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [
+      "logo.example.invalid"
+     ],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "plot-search": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [
+      "logo.example.invalid"
+     ],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "password": {
+     "wrongStatus": 403,
+     "wrongEcho": false,
+     "goodStatus": 303,
+     "cookieFlags": [
+      "Path",
+      "Max-Age",
+      "Expires",
+      "HttpOnly",
+      "SameSite"
+     ],
+     "afterStatus": 200
+    }
+   },
+   "browser": {
+    "cspViolations": [],
+    "pages": {
+     "home": {
+      "title": "合成站"
+     },
+     "play": {
+      "title": "站内播放样本 第1集 - 合成站"
+     },
+     "player": {
+      "title": "站内播放样本 - 合成站",
+      "stage": {
+       "children": 7,
+       "html": "\n  \n  <script nonce=\"\" src=\"/site-player/player-boot.js\"></script>\n  \n  <script nonce=\"\" src=\"/static/js/jquery.js\"></script>\n  \n  <script nonce=\"\" src=\"/static/js/playerconfig.js\"></script>\n  \n  <scr",
+       "iframes": 3,
+       "playerVar": "object",
+       "macPlayer": "object"
+      }
+     },
+     "player-external": {
+      "title": "版权样本五 - 合成站",
+      "notice": "",
+      "stagePresent": true
+     },
+     "play-multi": {
+      "title": "分组样本六 外链 - 合成站"
+     },
+     "down": {
+      "title": "版权样本五 下载 - 合成站"
+     },
+     "downer": {
+      "title": "版权样本五 下载 下载 - 合成站"
+     },
+     "art": {
+      "title": "长文章样本 - 合成站"
+     },
+     "search": {
+      "title": "搜索：样本 - 合成站"
+     },
+     "art-search": {
+      "title": "搜索文章：星 - 合成站"
+     },
+     "show": {
+      "title": "电影 - 合成站"
+     },
+     "actor": {
+      "title": "星野 - 合成站"
+     }
+    },
+    "trial": {
+     "hidden": false,
+     "text": "试看已结束，请登录后继续观看。",
+     "media": 0,
+     "minutes": "1",
+     "mediaBefore": 3
+    },
+    "layout": {
+     "home@320": 0,
+     "search@320": 0,
+     "show@320": 0,
+     "detail@320": 0,
+     "play@320": 0,
+     "down@320": 0,
+     "art@320": 0,
+     "art-search@320": 0,
+     "actor@320": 0,
+     "website@320": 0,
+     "art-pwd@320": 0,
+     "role-show@320": 0,
+     "art-show-rnd@320": 0,
+     "home@360": 0,
+     "search@360": 0,
+     "show@360": 0,
+     "detail@360": 0,
+     "play@360": 0,
+     "down@360": 0,
+     "art@360": 0,
+     "art-search@360": 0,
+     "actor@360": 0,
+     "website@360": 0,
+     "art-pwd@360": 0,
+     "role-show@360": 0,
+     "art-show-rnd@360": 0,
+     "home@768": 0,
+     "search@768": 0,
+     "show@768": 0,
+     "detail@768": 0,
+     "play@768": 0,
+     "down@768": 0,
+     "art@768": 0,
+     "art-search@768": 0,
+     "actor@768": 0,
+     "website@768": 0,
+     "art-pwd@768": 0,
+     "role-show@768": 0,
+     "art-show-rnd@768": 0,
+     "home@1280": 0,
+     "search@1280": 0,
+     "show@1280": 0,
+     "detail@1280": 0,
+     "play@1280": 0,
+     "down@1280": 0,
+     "art@1280": 0,
+     "art-search@1280": 0,
+     "actor@1280": 0,
+     "website@1280": 0,
+     "art-pwd@1280": 0,
+     "role-show@1280": 0,
+     "art-show-rnd@1280": 0
+    },
+    "keyboard": {
+     "home": [
+      {
+       "tag": "A",
+       "cls": "skip-link",
+       "text": "跳到主要内容",
+       "outline": true
+      },
+      {
+       "tag": "A",
+       "cls": "site-brand",
+       "text": "合成站",
+       "outline": true
+      },
+      {
+       "tag": "A",
+       "cls": "site-nav__link",
+       "text": "电影",
+       "outline": true
+      },
+      {
+       "tag": "A",
+       "cls": "site-nav__link",
+       "text": "电视剧",
+       "outline": true
+      },
+      {
+       "tag": "A",
+       "cls": "site-nav__link",
+       "text": "纪录片",
+       "outline": true
+      },
+      {
+       "tag": "INPUT",
+       "cls": "site-search__input",
+       "text": "",
+       "outline": true
+      },
+      {
+       "tag": "BUTTON",
+       "cls": "site-search__button",
+       "text": "搜索",
+       "outline": true
+      },
+      {
+       "tag": "A",
+       "cls": "site-login",
+       "text": "登录 / 会员中心",
+       "outline": true
+      },
+      {
+       "tag": "A",
+       "cls": "category-grid__link",
+       "text": "电影",
+       "outline": true
+      },
+      {
+       "tag": "A",
+       "cls": "category-grid__link",
+       "text": "电视剧",
+       "outline": true
+      },
+      {
+       "tag": "A",
+       "cls": "category-grid__link",
+       "text": "纪录片",
+       "outline": true
+      },
+      {
+       "tag": "A",
+       "cls": "video-card__link",
+       "text": "城市剧",
+       "outline": true
+      }
+     ],
+     "search": [
+      {
+       "tag": "A",
+       "cls": "skip-link",
+       "text": "跳到主要内容",
+       "outline": true
+      },
+      {
+       "tag": "A",
+       "cls": "site-brand",
+       "text": "合成站",
+       "outline": true
+      },
+      {
+       "tag": "A",
+       "cls": "site-nav__link",
+       "text": "电影",
+       "outline": true
+      },
+      {
+       "tag": "A",
+       "cls": "site-nav__link",
+       "text": "电视剧",
+       "outline": true
+      },
+      {
+       "tag": "A",
+       "cls": "site-nav__link",
+       "text": "纪录片",
+       "outline": true
+      },
+      {
+       "tag": "INPUT",
+       "cls": "site-search__input",
+       "text": "",
+       "outline": true
+      },
+      {
+       "tag": "BUTTON",
+       "cls": "site-search__button",
+       "text": "搜索",
+       "outline": true
+      },
+      {
+       "tag": "A",
+       "cls": "site-login",
+       "text": "登录 / 会员中心",
+       "outline": true
+      },
+      {
+       "tag": "INPUT",
+       "cls": "search-form__input",
+       "text": "样本",
+       "outline": true
+      },
+      {
+       "tag": "BUTTON",
+       "cls": "search-form__button",
+       "text": "搜索",
+       "outline": true
+      },
+      {
+       "tag": "A",
+       "cls": "filter-chip",
+       "text": "全部",
+       "outline": true
+      },
+      {
+       "tag": "A",
+       "cls": "filter-chip",
+       "text": "A",
+       "outline": true
+      }
+     ],
+     "art": [
+      {
+       "tag": "A",
+       "cls": "skip-link",
+       "text": "跳到主要内容",
+       "outline": true
+      },
+      {
+       "tag": "A",
+       "cls": "site-brand",
+       "text": "合成站",
+       "outline": true
+      },
+      {
+       "tag": "INPUT",
+       "cls": "site-search__input",
+       "text": "",
+       "outline": true
+      },
+      {
+       "tag": "BUTTON",
+       "cls": "site-search__button",
+       "text": "搜索",
+       "outline": true
+      },
+      {
+       "tag": "A",
+       "cls": "site-login",
+       "text": "登录 / 会员中心",
+       "outline": true
+      },
+      {
+       "tag": "A",
+       "cls": "breadcrumb__link",
+       "text": "首页",
+       "outline": true
+      },
+      {
+       "tag": "A",
+       "cls": "breadcrumb__link",
+       "text": "新闻",
+       "outline": true
+      },
+      {
+       "tag": "A",
+       "cls": "pagination__link",
+       "text": "下一页",
+       "outline": true
+      },
+      {
+       "tag": "BODY",
+       "cls": "",
+       "text": "跳到主要内容\n\n  \n ",
+       "outline": false
+      },
+      {
+       "tag": "A",
+       "cls": "skip-link",
+       "text": "跳到主要内容",
+       "outline": true
+      },
+      {
+       "tag": "A",
+       "cls": "site-brand",
+       "text": "合成站",
+       "outline": true
+      },
+      {
+       "tag": "INPUT",
+       "cls": "site-search__input",
+       "text": "",
+       "outline": true
+      }
+     ],
+     "play": [
+      {
+       "tag": "A",
+       "cls": "skip-link",
+       "text": "跳到主要内容",
+       "outline": true
+      },
+      {
+       "tag": "A",
+       "cls": "site-brand",
+       "text": "合成站",
+       "outline": true
+      },
+      {
+       "tag": "A",
+       "cls": "site-nav__link",
+       "text": "电影",
+       "outline": true
+      },
+      {
+       "tag": "A",
+       "cls": "site-nav__link",
+       "text": "电视剧",
+       "outline": true
+      },
+      {
+       "tag": "A",
+       "cls": "site-nav__link",
+       "text": "纪录片",
+       "outline": true
+      },
+      {
+       "tag": "INPUT",
+       "cls": "site-search__input",
+       "text": "",
+       "outline": true
+      },
+      {
+       "tag": "BUTTON",
+       "cls": "site-search__button",
+       "text": "搜索",
+       "outline": true
+      },
+      {
+       "tag": "A",
+       "cls": "site-login",
+       "text": "登录 / 会员中心",
+       "outline": true
+      },
+      {
+       "tag": "A",
+       "cls": "breadcrumb__link",
+       "text": "首页",
+       "outline": true
+      },
+      {
+       "tag": "A",
+       "cls": "breadcrumb__link",
+       "text": "电视剧",
+       "outline": true
+      },
+      {
+       "tag": "A",
+       "cls": "breadcrumb__link",
+       "text": "站内播放样本",
+       "outline": true
+      },
+      {
+       "tag": "IFRAME",
+       "cls": "player-frame__iframe",
+       "text": "",
+       "outline": false
+      }
+     ],
+     "art-search": [
+      {
+       "tag": "A",
+       "cls": "skip-link",
+       "text": "跳到主要内容",
+       "outline": true
+      },
+      {
+       "tag": "A",
+       "cls": "site-brand",
+       "text": "合成站",
+       "outline": true
+      },
+      {
+       "tag": "INPUT",
+       "cls": "site-search__input",
+       "text": "",
+       "outline": true
+      },
+      {
+       "tag": "BUTTON",
+       "cls": "site-search__button",
+       "text": "搜索",
+       "outline": true
+      },
+      {
+       "tag": "A",
+       "cls": "site-login",
+       "text": "登录 / 会员中心",
+       "outline": true
+      },
+      {
+       "tag": "A",
+       "cls": "breadcrumb__link",
+       "text": "首页",
+       "outline": true
+      },
+      {
+       "tag": "A",
+       "cls": "breadcrumb__link",
+       "text": "文章",
+       "outline": true
+      },
+      {
+       "tag": "INPUT",
+       "cls": "search-form__input",
+       "text": "星",
+       "outline": true
+      },
+      {
+       "tag": "BUTTON",
+       "cls": "search-form__button",
+       "text": "搜索",
+       "outline": true
+      },
+      {
+       "tag": "A",
+       "cls": "filter-chip",
+       "text": "全部",
+       "outline": true
+      },
+      {
+       "tag": "A",
+       "cls": "filter-chip",
+       "text": "A",
+       "outline": true
+      },
+      {
+       "tag": "A",
+       "cls": "filter-chip",
+       "text": "B",
+       "outline": true
+      }
+     ],
+     "art-pwd": [
+      {
+       "tag": "A",
+       "cls": "skip-link",
+       "text": "跳到主要内容",
+       "outline": true
+      },
+      {
+       "tag": "A",
+       "cls": "site-brand",
+       "text": "合成站",
+       "outline": true
+      },
+      {
+       "tag": "INPUT",
+       "cls": "site-search__input",
+       "text": "",
+       "outline": true
+      },
+      {
+       "tag": "BUTTON",
+       "cls": "site-search__button",
+       "text": "搜索",
+       "outline": true
+      },
+      {
+       "tag": "A",
+       "cls": "site-login",
+       "text": "登录 / 会员中心",
+       "outline": true
+      },
+      {
+       "tag": "INPUT",
+       "cls": "password-page__input",
+       "text": "",
+       "outline": true
+      },
+      {
+       "tag": "BUTTON",
+       "cls": "password-page__button",
+       "text": "确定",
+       "outline": true
+      },
+      {
+       "tag": "BODY",
+       "cls": "",
+       "text": "跳到主要内容\n\n  \n ",
+       "outline": false
+      },
+      {
+       "tag": "A",
+       "cls": "skip-link",
+       "text": "跳到主要内容",
+       "outline": true
+      },
+      {
+       "tag": "A",
+       "cls": "site-brand",
+       "text": "合成站",
+       "outline": true
+      },
+      {
+       "tag": "INPUT",
+       "cls": "site-search__input",
+       "text": "",
+       "outline": true
+      },
+      {
+       "tag": "BUTTON",
+       "cls": "site-search__button",
+       "text": "搜索",
+       "outline": true
+      }
+     ]
+    },
+    "reducedMotion": {
+     "reduce": "0s",
+     "no-preference": "0.12s"
+    },
+    "blockedHosts": [
+     "ad.example.invalid",
+     "logo.example.invalid",
+     "media.example.invalid",
+     "player.example.invalid"
+    ],
+    "unexpectedBlocked": []
+   }
+  },
+  "subdir W1W2=00": {
+   "failures": [],
+   "http": {
+    "home": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "type": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "detail": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "search": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "show": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "vodsearch-positional": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "play": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "player": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'none'; script-src 'self' 'nonce-384K14y+QLF5fw5GqjpbEw=='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self' blob:; frame-sr",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "player-external": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "play-multi": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "trial-player": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'none'; script-src 'self' 'nonce-bVflgPCVTKFfXZZfyNlVqg=='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self' blob:; frame-sr",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "trial-external": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "pwd-player": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 403,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "down": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "downer": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "downer-local": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [
+      "/upload/down/20.zip"
+     ],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "art": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "art-p2": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "art-beyond": {
+     "richTextNavigationLink": true,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "art-pwd": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 403,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "art-search": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "art-show": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "topic": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "actor": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "role": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "website": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "plot": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "art-index": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "rss": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "ajax-detail": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "ajax-search": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "playerconfig": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "role-show": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "art-show-rnd": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "plot-search": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "password": {
+     "wrongStatus": 403,
+     "wrongEcho": false,
+     "goodStatus": 303,
+     "cookieFlags": [
+      "Path",
+      "Max-Age",
+      "Expires",
+      "HttpOnly",
+      "SameSite"
+     ],
+     "afterStatus": 200
+    }
+   },
+   "browser": {
+    "cspViolations": [],
+    "pages": {
+     "home": {
+      "title": "合成站"
+     },
+     "play": {
+      "title": "站内播放样本 第1集 - 合成站"
+     },
+     "player": {
+      "title": "站内播放样本 - 合成站",
+      "stage": {
+       "children": 7,
+       "html": "\n  \n  <script nonce=\"\" src=\"/sub/site-player/player-boot.js\"></script>\n  \n  <script nonce=\"\" src=\"/sub/static/js/jquery.js\"></script>\n  \n  <script nonce=\"\" src=\"/sub/static/js/playerconfig.js\"></scrip",
+       "iframes": 3,
+       "playerVar": "object",
+       "macPlayer": "object"
+      }
+     },
+     "player-external": {
+      "title": "版权样本五 - 合成站",
+      "notice": "无法播放\n\n该地址位于外部站点，本站当前未开放外部播放。",
+      "stagePresent": false
+     },
+     "play-multi": {
+      "title": "分组样本六 外链 - 合成站"
+     },
+     "down": {
+      "title": "版权样本五 下载 - 合成站"
+     },
+     "downer": {
+      "title": "版权样本五 下载 下载 - 合成站"
+     },
+     "art": {
+      "title": "长文章样本 - 合成站"
+     },
+     "search": {
+      "title": "搜索：样本 - 合成站"
+     },
+     "art-search": {
+      "title": "搜索文章：星 - 合成站"
+     },
+     "show": {
+      "title": "电影 - 合成站"
+     },
+     "actor": {
+      "title": "星野 - 合成站"
+     }
+    },
+    "trial": {
+     "hidden": false,
+     "text": "试看已结束，请登录后继续观看。",
+     "media": 0,
+     "minutes": "1",
+     "mediaBefore": 3
+    },
+    "blockedHosts": [],
+    "unexpectedBlocked": []
+   }
+  },
+  "subdir W1W2=01": {
+   "failures": [],
+   "http": {
+    "home": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "type": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "detail": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "search": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "show": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "vodsearch-positional": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "play": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "player": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'none'; script-src 'self' 'nonce-riT6pLdJToBxNdZ2sT+6bQ=='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self' blob:; frame-sr",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "player-external": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'none'; script-src 'self' 'nonce-RaLufuQRbgmVwkaIOb2IHQ=='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://media.example.invalid; me",
+     "externalHosts": [
+      "media.example.invalid"
+     ],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "play-multi": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "trial-player": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'none'; script-src 'self' 'nonce-ADUbgatKqIw01kS4bPpQOg=='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self' blob:; frame-sr",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "trial-external": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'none'; script-src 'self' 'nonce-byXeEU+9JGHOoMD1Fz/tbg=='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://media.example.invalid; me",
+     "externalHosts": [
+      "media.example.invalid"
+     ],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "pwd-player": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 403,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "down": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "downer": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [
+      "dl.example.invalid"
+     ],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "downer-local": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [
+      "/upload/down/20.zip"
+     ],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "art": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "art-p2": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "art-beyond": {
+     "richTextNavigationLink": true,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "art-pwd": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 403,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "art-search": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "art-show": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "topic": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "actor": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "role": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "website": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "plot": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "art-index": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "rss": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "ajax-detail": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "ajax-search": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "playerconfig": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "role-show": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "art-show-rnd": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "plot-search": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "password": {
+     "wrongStatus": 403,
+     "wrongEcho": false,
+     "goodStatus": 303,
+     "cookieFlags": [
+      "Path",
+      "Max-Age",
+      "Expires",
+      "HttpOnly",
+      "SameSite"
+     ],
+     "afterStatus": 200
+    }
+   },
+   "browser": {
+    "cspViolations": [],
+    "pages": {
+     "home": {
+      "title": "合成站"
+     },
+     "play": {
+      "title": "站内播放样本 第1集 - 合成站"
+     },
+     "player": {
+      "title": "站内播放样本 - 合成站",
+      "stage": {
+       "children": 7,
+       "html": "\n  \n  <script nonce=\"\" src=\"/sub/site-player/player-boot.js\"></script>\n  \n  <script nonce=\"\" src=\"/sub/static/js/jquery.js\"></script>\n  \n  <script nonce=\"\" src=\"/sub/static/js/playerconfig.js\"></scrip",
+       "iframes": 3,
+       "playerVar": "object",
+       "macPlayer": "object"
+      }
+     },
+     "player-external": {
+      "title": "版权样本五 - 合成站",
+      "notice": "",
+      "stagePresent": true
+     },
+     "play-multi": {
+      "title": "分组样本六 外链 - 合成站"
+     },
+     "down": {
+      "title": "版权样本五 下载 - 合成站"
+     },
+     "downer": {
+      "title": "版权样本五 下载 下载 - 合成站"
+     },
+     "art": {
+      "title": "长文章样本 - 合成站"
+     },
+     "search": {
+      "title": "搜索：样本 - 合成站"
+     },
+     "art-search": {
+      "title": "搜索文章：星 - 合成站"
+     },
+     "show": {
+      "title": "电影 - 合成站"
+     },
+     "actor": {
+      "title": "星野 - 合成站"
+     }
+    },
+    "trial": {
+     "hidden": false,
+     "text": "试看已结束，请登录后继续观看。",
+     "media": 0,
+     "minutes": "1",
+     "mediaBefore": 3
+    },
+    "blockedHosts": [
+     "player.example.invalid"
+    ],
+    "unexpectedBlocked": []
+   }
+  },
+  "subdir W1W2=10": {
+   "failures": [],
+   "http": {
+    "home": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "type": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "detail": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "search": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "show": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "vodsearch-positional": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "play": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "player": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'none'; script-src 'self' 'nonce-cOVBY3lt93+qZWICG70p2w=='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self' blob:; frame-sr",
+     "externalHosts": [
+      "ad.example.invalid"
+     ],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "player-external": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "play-multi": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "trial-player": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'none'; script-src 'self' 'nonce-qVta8IeVDPW/1COqxOkCZg=='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self' blob:; frame-sr",
+     "externalHosts": [
+      "ad.example.invalid"
+     ],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "trial-external": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "pwd-player": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 403,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "down": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "downer": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "downer-local": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [
+      "/upload/down/20.zip"
+     ],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "art": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "art-p2": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "art-beyond": {
+     "richTextNavigationLink": true,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "art-pwd": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 403,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "art-search": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "art-show": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "topic": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "actor": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "role": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "website": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "plot": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "art-index": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "rss": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "ajax-detail": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "ajax-search": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "playerconfig": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "",
+     "externalHosts": [
+      "ad.example.invalid",
+      "dlparse.example.invalid",
+      "jx.example.invalid",
+      "jx2.example.invalid"
+     ],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "role-show": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "art-show-rnd": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "plot-search": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "password": {
+     "wrongStatus": 403,
+     "wrongEcho": false,
+     "goodStatus": 303,
+     "cookieFlags": [
+      "Path",
+      "Max-Age",
+      "Expires",
+      "HttpOnly",
+      "SameSite"
+     ],
+     "afterStatus": 200
+    }
+   },
+   "browser": {
+    "cspViolations": [],
+    "pages": {
+     "home": {
+      "title": "合成站"
+     },
+     "play": {
+      "title": "站内播放样本 第1集 - 合成站"
+     },
+     "player": {
+      "title": "站内播放样本 - 合成站",
+      "stage": {
+       "children": 7,
+       "html": "\n  \n  <script nonce=\"\" src=\"/sub/site-player/player-boot.js\"></script>\n  \n  <script nonce=\"\" src=\"/sub/static/js/jquery.js\"></script>\n  \n  <script nonce=\"\" src=\"/sub/static/js/playerconfig.js\"></scrip",
+       "iframes": 3,
+       "playerVar": "object",
+       "macPlayer": "object"
+      }
+     },
+     "player-external": {
+      "title": "版权样本五 - 合成站",
+      "notice": "无法播放\n\n该地址位于外部站点，本站当前未开放外部播放。",
+      "stagePresent": false
+     },
+     "play-multi": {
+      "title": "分组样本六 外链 - 合成站"
+     },
+     "down": {
+      "title": "版权样本五 下载 - 合成站"
+     },
+     "downer": {
+      "title": "版权样本五 下载 下载 - 合成站"
+     },
+     "art": {
+      "title": "长文章样本 - 合成站"
+     },
+     "search": {
+      "title": "搜索：样本 - 合成站"
+     },
+     "art-search": {
+      "title": "搜索文章：星 - 合成站"
+     },
+     "show": {
+      "title": "电影 - 合成站"
+     },
+     "actor": {
+      "title": "星野 - 合成站"
+     }
+    },
+    "trial": {
+     "hidden": false,
+     "text": "试看已结束，请登录后继续观看。",
+     "media": 0,
+     "minutes": "1",
+     "mediaBefore": 3
+    },
+    "blockedHosts": [
+     "ad.example.invalid"
+    ],
+    "unexpectedBlocked": []
+   }
+  },
+  "subdir W1W2=11": {
+   "failures": [],
+   "http": {
+    "home": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "type": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "detail": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "search": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "show": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "vodsearch-positional": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "play": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "player": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'none'; script-src 'self' 'nonce-KdU8cHt3q1qZYuIi21iWKw=='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self' blob:; frame-sr",
+     "externalHosts": [
+      "ad.example.invalid"
+     ],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "player-external": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'none'; script-src 'self' 'nonce-wQFvqH1Cc8890De/JQqtVg=='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://media.example.invalid; me",
+     "externalHosts": [
+      "ad.example.invalid",
+      "media.example.invalid"
+     ],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "play-multi": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "trial-player": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'none'; script-src 'self' 'nonce-jBcCjmslNMcxJE03QUFnEQ=='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self' blob:; frame-sr",
+     "externalHosts": [
+      "ad.example.invalid"
+     ],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "trial-external": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'none'; script-src 'self' 'nonce-sq6oA6munE05rJMzAvUmFg=='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://media.example.invalid; me",
+     "externalHosts": [
+      "ad.example.invalid",
+      "media.example.invalid"
+     ],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "pwd-player": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 403,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "down": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "downer": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [
+      "dl.example.invalid"
+     ],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "downer-local": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [
+      "/upload/down/20.zip"
+     ],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "art": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "art-p2": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "art-beyond": {
+     "richTextNavigationLink": true,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "art-pwd": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 403,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "art-search": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "art-show": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "topic": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "actor": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "role": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "website": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "plot": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "art-index": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "rss": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "ajax-detail": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "ajax-search": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "playerconfig": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-cache",
+     "csp": "",
+     "externalHosts": [
+      "ad.example.invalid",
+      "dlparse.example.invalid",
+      "jx.example.invalid",
+      "jx2.example.invalid"
+     ],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": false,
+     "ok": true
+    },
+    "role-show": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "art-show-rnd": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "plot-search": {
+     "richTextNavigationLink": false,
+     "storedAbsolutePaths": [],
+     "status": 200,
+     "cache": "no-store",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'",
+     "externalHosts": [],
+     "unexpectedHosts": [],
+     "linksOutsidePrefix": [],
+     "logo": true,
+     "ok": true
+    },
+    "password": {
+     "wrongStatus": 403,
+     "wrongEcho": false,
+     "goodStatus": 303,
+     "cookieFlags": [
+      "Path",
+      "Max-Age",
+      "Expires",
+      "HttpOnly",
+      "SameSite"
+     ],
+     "afterStatus": 200
+    }
+   },
+   "browser": {
+    "cspViolations": [],
+    "pages": {
+     "home": {
+      "title": "合成站"
+     },
+     "play": {
+      "title": "站内播放样本 第1集 - 合成站"
+     },
+     "player": {
+      "title": "站内播放样本 - 合成站",
+      "stage": {
+       "children": 7,
+       "html": "\n  \n  <script nonce=\"\" src=\"/sub/site-player/player-boot.js\"></script>\n  \n  <script nonce=\"\" src=\"/sub/static/js/jquery.js\"></script>\n  \n  <script nonce=\"\" src=\"/sub/static/js/playerconfig.js\"></scrip",
+       "iframes": 3,
+       "playerVar": "object",
+       "macPlayer": "object"
+      }
+     },
+     "player-external": {
+      "title": "版权样本五 - 合成站",
+      "notice": "",
+      "stagePresent": true
+     },
+     "play-multi": {
+      "title": "分组样本六 外链 - 合成站"
+     },
+     "down": {
+      "title": "版权样本五 下载 - 合成站"
+     },
+     "downer": {
+      "title": "版权样本五 下载 下载 - 合成站"
+     },
+     "art": {
+      "title": "长文章样本 - 合成站"
+     },
+     "search": {
+      "title": "搜索：样本 - 合成站"
+     },
+     "art-search": {
+      "title": "搜索文章：星 - 合成站"
+     },
+     "show": {
+      "title": "电影 - 合成站"
+     },
+     "actor": {
+      "title": "星野 - 合成站"
+     }
+    },
+    "trial": {
+     "hidden": false,
+     "text": "试看已结束，请登录后继续观看。",
+     "media": 0,
+     "minutes": "1",
+     "mediaBefore": 3
+    },
+    "blockedHosts": [
+     "ad.example.invalid",
+     "player.example.invalid"
+    ],
+    "unexpectedBlocked": []
+   }
+  }
+ },
+ "databaseDropped": true,
+ "finished": "2026-10-17T12:30:33",
+ "failures": 0
+}

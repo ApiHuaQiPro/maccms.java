@@ -181,10 +181,12 @@ class LegacyUrlParserSearchTest {
         for (LegacyUrlStyle style : STYLES) {
             assertThat(filters(style, "level=0000000009").level()).isEqualTo(9);
             assertThat(filters(style, "level=09").level()).isEqualTo(9);
-            assertThat(invalid(style, "level=00000000009").field()).isEqualTo("level");
-            assertThat(invalid(style, "level=00").field()).isEqualTo("level");
+            // B05 逐键零值归一（Q2）：level 按旧 mac_param_url 的 intval（application/common.php:1576），结果为 0 时不筛选；
+            // 范围外的非 0 值仍按 content 规则 400（旧版筛选 vod_level IN (10)，无结果）。更多向量见 LegacyUrlParserSearchB05Test
+            assertThat(filters(style, "level=00000000009").level()).isEqualTo(9);
+            assertThat(filters(style, "level=00").level()).as("intval 为 0").isNull();
             assertThat(invalid(style, "level=10").field()).isEqualTo("level");
-            assertThat(invalid(style, "level=%2B9").field()).isEqualTo("level");
+            assertThat(filters(style, "level=%2B9").level()).as("intval(\"+9\")").isEqualTo(9);
             assertThat(filters(style, "level=+9+").level()).as("首尾空白先裁掉").isEqualTo(9);
             SearchFilters s = filters(style, "by=hits_month&order=asc");
             assertThat(s.sort()).isEqualTo(VideoSort.HITS_MONTH);
@@ -209,11 +211,24 @@ class LegacyUrlParserSearchTest {
         for (LegacyUrlStyle style : STYLES) {
             assertThat(invalid(style, "wd=" + "%E4%B8%AD".repeat(65)).field()).isEqualTo("keyword");
             assertThat(filters(style, "wd=" + "%E4%B8%AD".repeat(64)).keyword()).hasSize(64);
-            assertThat(invalid(style, "area=a%2Cb").field()).as("精确字段不支持多值").isEqualTo("area");
+            // 契约 1.3.0（MACC-28 Q1）：area/lang/class 按旧版逗号多值交给 content，原始值原样保留（含空项、全角逗号）
+            assertThat(filters(style, "area=a%2Cb").area()).as("逗号多值").isEqualTo("a,b");
+            assertThat(filters(style, "area=a,b").area()).as("未编码的逗号").isEqualTo("a,b");
+            assertThat(filters(style, "lang=" + "%E5%9B%BD%E8%AF%AD,").lang()).as("尾逗号").isEqualTo("国语,");
+            assertThat(filters(style, "class=,").classes()).as("只有空项").isEqualTo(",");
+            assertThat(filters(style, "area=%E5%A4%A7%E9%99%86%EF%BC%8C%E9%A6%99%E6%B8%AF").area()).as("全角逗号")
+                    .isEqualTo("大陆，香港");
+            assertThat(filters(style, "area=+a,b+").area()).as("SSR 只去整个值的首尾空白").isEqualTo("a,b");
+            assertThat(filters(style, "area=a,+b").area()).as("项内空白保留").isEqualTo("a, b");
+            assertThat(filters(style, "area=0,").area()).as("只有整个值为 0 才按未传").isEqualTo("0,");
+            assertThat(filters(style, "area=0").area()).isNull();
+            assertThat(invalid(style, "lang=a,b,c,d,e,f").field()).as("长度上限作用于整个值").isEqualTo("lang");
             assertThat(filters(style, "wd=a%2Cb").keyword()).as("关键字中的逗号是字面字符").isEqualTo("a,b");
             assertThat(invalid(style, "lang=" + "a".repeat(11)).field()).isEqualTo("lang");
             assertThat(invalid(style, "year=20").field()).isEqualTo("year");
-            assertThat(invalid(style, "year=2020-2022").field()).isEqualTo("year");
+            assertThat(invalid(style, "year=2020-202").field()).isEqualTo("year");
+            // 契约 1.3.0（B04）：9 字符年份区间由 content 接受，搜索页随之接受（旧站同样接受）
+            assertThat(filters(style, "year=2020-2022").year()).isEqualTo("2020-2022");
             assertThat(filters(style, "year=+2020+").year()).isEqualTo("2020");
             assertThat(invalid(style, "class=" + "a".repeat(33)).field()).isEqualTo("classes");
             assertThat(invalid(style, "wd=a%00b").field()).as("控制字符").isEqualTo("keyword");
@@ -268,13 +283,16 @@ class LegacyUrlParserSearchTest {
             assertThat(invalid(style, "foo=1&wd=%FF").field()).isEqualTo("query");
             assertThat(invalid(style, "wd=%FF&foo=1").field()).isEqualTo("wd");
             assertThat(invalid(style, "wd=a&wd=%FF").field()).isEqualTo("wd");
-            // 交 PHP：兼容模式 s、首批不承接的旧键、rnd（任何位置）
-            for (String q : List.of("s=/vod/detail/id/1", "wd=x&s=vod/search", "actor=x", "director=x", "tag=x",
-                    "letter=A", "state=x", "version=x", "tid=1", "name=x", "ids=1", "isend=1", "ajax=1", "by=rnd",
-                    "by=+rnd+", "foo=1&actor=x", "wd=%FF&tid=1")) {
+            // 交 PHP：只剩兼容模式 s（任何位置）；B05 起 actor 等旧键、tid、by=rnd 由 Java 承接（LegacyUrlParserSearchB05Test），
+            // isend、ajax 旧代码读不到或不使用，按未知参数 400
+            for (String q : List.of("s=/vod/detail/id/1", "foo=1&s=x", "wd=%FF&s=x")) {
                 assertThat(parser(style).parseSearch(base(style), q)).as(q).isEmpty();
             }
-            // rnd 判断在第 5 步之后：前面的错误先报
+            // B05：s 指向搜索页时按搜索页处理（LegacyUrlParserSearchB05Test）；ajax 接受并忽略（D-B05-6）
+            assertThat(parser(style).parseSearch(base(style), "wd=x&s=vod/search")).isPresent();
+            for (String q : List.of("isend=1", "foo=1&actor=x")) {
+                assertThat(invalid(style, q).field()).as(q).isEqualTo("query");
+            }
             assertThat(invalid(style, "foo=1&by=rnd").field()).isEqualTo("query");
         }
     }

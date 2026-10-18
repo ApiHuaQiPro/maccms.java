@@ -397,6 +397,40 @@ class ContentSearchMySqlIT {
         assertThat(idsAsc("classes=" + enc("剧情"))).containsExactly(201L, 221L);
         assertThat(idsAsc("classes=" + enc("动作"))).containsExactly(201L, 202L);
 
+        // 契约 1.3.0（MACC-28 Q1）：area/lang 逗号多值 = IN（并集），classes 逗号多值 = 各项包含匹配 OR；保留空项，全角逗号是字面字符
+        assertThat(idsAsc("area=" + enc("大陆,香港"))).as("并集").containsExactly(201L, 202L, 203L, 204L, 221L);
+        assertThat(idsAsc("area=" + enc("香港,"))).as("尾逗号的空项命中地区为空的行")
+                .containsExactly(203L, 204L, 205L, 206L, 207L, 208L, 209L, 210L, 211L, 212L, 213L, 214L, 215L, 216L,
+                        222L, 223L);
+        assertThat(idsAsc("area=" + enc(","))).as("只有空项").containsExactly(205L, 206L, 207L, 208L, 209L, 210L,
+                211L, 212L, 213L, 214L, 215L, 216L, 222L, 223L);
+        assertThat(idsAsc("area=" + enc("大陆，香港"))).as("全角逗号不拆分，整串无命中").isEmpty();
+        assertThat(idsAsc("area=" + enc("大陆, 香港"))).as("各项不裁剪：' 香港' 不命中").containsExactly(201L, 202L, 221L);
+        assertThat(idsAsc("lang=" + enc("国语,粤语"))).containsExactly(201L, 202L, 203L, 221L);
+        assertThat(idsAsc("lang=" + enc("粤语") + "&area=" + enc("大陆,香港"))).containsExactly(202L, 203L);
+        assertThat(idsAsc("classes=" + enc("剧情,冒险"))).containsExactly(201L, 202L, 221L);
+        assertThat(idsAsc("classes=" + enc("悬疑,冒险,不存在"))).containsExactly(202L, 221L);
+        assertThat(checked("classes=" + enc("剧情,") + "&pageSize=100", 200).body().get("total").asLong())
+                .as("空项为 %%，命中全部可见行（与旧 mac_like_arr 相同）").isEqualTo(50);
+        assertThat(idsAsc("classes=" + enc("剧情，动作"))).as("全角逗号不拆分").isEmpty();
+        assertThat(idsAsc("classes=" + enc("a_b,100%"))).as("各项 % _ 按字面").isEmpty();
+        // 单值回归：与 1.1.0 相同
+        assertThat(idsAsc("area=" + enc("香港"))).containsExactly(203L, 204L);
+        assertThat(idsAsc("classes=" + enc("剧情"))).containsExactly(201L, 221L);
+        // 多值条件下分页：逐页拼接 = 一次取全，total 与列表一致
+        for (String q : List.of("area=" + enc("日本,台湾"), "lang=" + enc("日语,") + "&area=" + enc("日本,台湾"),
+                "classes=" + enc(",剧情") + "&area=" + enc("日本,台湾"))) {
+            List<Long> full = ids(q);
+            assertThat(full).as(q).hasSize(31).contains(226L);
+            List<Long> paged = new ArrayList<>();
+            for (int p = 1; p <= 5; p++) {
+                Resp page = checked(q + "&pageSize=7&page=" + p, 200);
+                assertThat(page.body().get("total").asLong()).as(q + " total（count 与列表条件一致）").isEqualTo(31);
+                page.body().get("items").forEach(n -> paged.add(n.get("id").asLong()));
+            }
+            assertThat(paged).as(q).containsExactlyElementsOf(full);
+        }
+
         // 组合：全部 AND，再按分类收窄
         String combo = "keyword=" + enc("合成") + "&area=" + enc("大陆") + "&lang=" + enc("国语")
                 + "&year=2020&level=9&classes=" + enc("剧情");
@@ -432,10 +466,11 @@ class ContentSearchMySqlIT {
         }
         assertThat(ids("area=" + enc("日本"))).as("默认 time desc，并列按 vod_id desc").startsWith(259L, 258L, 257L);
 
-        // 参数错误（真实 Tomcat）：非法 UTF-8、多值、首尾空白、重复
+        // 参数错误（真实 Tomcat）：非法 UTF-8、首尾空白（含多值的末项）、超长（整个原始值）、重复
         for (String[] bad : new String[][]{{"keyword=%FF", "keyword"}, {"keyword=%E4%B8", "keyword"},
-                {"area=%FF", "area"}, {"area=a,b", "area"}, {"keyword=%20x", "keyword"}, {"area=&area=", "area"},
-                {"year=2020-2022", "year"}, {"level=00000000009", "level"}, {"classes=a%2Cb", "classes"}}) {
+                {"area=%FF", "area"}, {"area=a,%20", "area"}, {"keyword=%20x", "keyword"}, {"area=&area=", "area"},
+                {"year=2020-202", "year"}, {"level=00000000009", "level"}, {"classes=" + enc(",".repeat(33)), "classes"},
+                {"lang=" + enc("a,b,c,d,e,f"), "lang"}, {"classes=a,b&classes=c", "classes"}}) {
             Resp r = checked(bad[0], 400);
             assertThat(r.body().get("fieldErrors").get(0).get("field").asString()).as(bad[0]).isEqualTo(bad[1]);
         }
@@ -466,6 +501,26 @@ class ContentSearchMySqlIT {
         assertThat(output.getAll()).contains("database statement timeout").doesNotContain("大陆")
                 .doesNotContain("MAX_EXECUTION_TIME");
 
+        // 契约 1.3.0（MACC-28 Q1）：逗号多值同样受服务端时限约束；classes 多值/空项占用并发许可，超时后归还
+        try (Connection locker = admin(dbName); Statement st = locker.createStatement()) {
+            st.execute("LOCK TABLES mac_vod WRITE");
+            try {
+                for (String q : List.of("area=" + enc("大陆,香港"), "classes=" + enc("剧情,动作"), "classes=" + enc(","))) {
+                    long t0 = System.nanoTime();
+                    Resp r = get("/api/v1/videos?" + q);
+                    long ms = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - t0);
+                    System.out.println("[mysql-it] multi-value request under table lock: HTTP " + r.status()
+                            + " after " + ms + " ms");
+                    assertThat(r.status()).as(q).isEqualTo(503);
+                    assertThat(r.raw()).isEqualTo(UNAVAILABLE);
+                    assertThat(ms).isBetween(2_500L, 8_000L);
+                }
+            } finally {
+                st.execute("UNLOCK TABLES");
+            }
+        }
+        assertThat(output.getAll()).doesNotContain("香港").doesNotContain("剧情");
+
         try (Connection locker = admin(dbName); Statement st = locker.createStatement()) {
             st.execute("LOCK TABLES mac_vod WRITE");
             List<CompletableFuture<HttpResponse<String>>> blocked = new ArrayList<>();
@@ -475,13 +530,15 @@ class ContentSearchMySqlIT {
                             + enc("合成影片"))).GET().build(), HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8)));
                 }
                 waitForWaitingQueries(locker, 2);
-                // 并发上限 2 已占满：第 3 个包含匹配请求立即 503，不排队
-                long t0 = System.nanoTime();
-                Resp third = get("/api/v1/videos?classes=" + enc("剧情"));
-                long ms = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - t0);
-                assertThat(third.status()).isEqualTo(503);
-                assertThat(third.raw()).isEqualTo(UNAVAILABLE);
-                assertThat(ms).isLessThan(2_000L);
+                // 并发上限 2 已占满：第 3 个包含匹配请求立即 503，不排队（classes 多值、只有空项同样占许可）
+                for (String q : List.of("classes=" + enc("剧情"), "classes=" + enc("剧情,动作"), "classes=" + enc(","))) {
+                    long t0 = System.nanoTime();
+                    Resp third = get("/api/v1/videos?" + q);
+                    long ms = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - t0);
+                    assertThat(third.status()).as(q).isEqualTo(503);
+                    assertThat(third.raw()).isEqualTo(UNAVAILABLE);
+                    assertThat(ms).isLessThan(2_000L);
+                }
             } finally {
                 st.execute("UNLOCK TABLES");
             }
@@ -493,6 +550,7 @@ class ContentSearchMySqlIT {
         }
         // 许可已释放：之后的搜索恢复正常
         assertThat(idsAsc("keyword=" + enc("合成影片"))).containsExactly(201L, 202L, 221L, 226L);
+        assertThat(idsAsc("classes=" + enc("剧情,冒险"))).containsExactly(201L, 202L, 221L);
         assertThat(output.getAll()).contains("content search rejected: concurrency limit reached");
         assertThat(snapshot()).isEqualTo(before);
     }

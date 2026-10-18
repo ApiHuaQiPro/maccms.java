@@ -1,0 +1,28 @@
+database maccms_it_20261017115756_6b2125e7
+> SELECT VERSION()
+  5.7.44
+> SELECT table_name, engine, table_rows, avg_row_length, data_length, index_length FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name IN ('mac_vod','mac_art','mac_actor','mac_role','mac_website','mac_topic') ORDER BY table_name
+  mac_actor	MyISAM	50000	1652	82631176	7443456
+  mac_art	MyISAM	100000	2445	244581000	18997248
+  mac_role	MyISAM	100000	1627	162795776	12768256
+  mac_topic	MyISAM	20000	1642	32851624	3198976
+  mac_vod	MyISAM	300000	3654	1096430864	84251648
+  mac_website	MyISAM	50000	1660	83019012	12465152
+> SELECT COUNT(*) AS vod_visible FROM mac_vod WHERE vod_status = 1 AND type_id BETWEEN 1 AND 25
+  270766
+> SELECT COUNT(*) AS vod_plot FROM mac_vod WHERE vod_status = 1 AND vod_plot = 1
+  28540
+> SELECT type_id, COUNT(*) FROM mac_art WHERE art_status = 1 GROUP BY type_id
+  41	29831
+  42	50174
+  43	14847
+> SELECT type_id, COUNT(*) FROM mac_actor WHERE actor_status = 1 GROUP BY type_id
+  51	31791
+  52	15675
+> SELECT type_id, COUNT(*) FROM mac_website WHERE website_status = 1 GROUP BY type_id
+  61	31791
+  62	15675
+> SELECT COUNT(*) AS role_published FROM mac_role WHERE role_status = 1
+  94852
+> SELECT COUNT(*) AS topic_published FROM mac_topic WHERE topic_status = 1
+  18988

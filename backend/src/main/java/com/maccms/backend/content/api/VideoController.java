@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-/** 契约：docs/contracts/content-read.openapi.yaml 中 /api/v1/videos、/api/v1/videos/{id} 与 /api/v1/videos/{id}/plots（1.2.0）。 */
+/** 契约：docs/contracts/content-read.openapi.yaml 中 /api/v1/videos（1.3.0）、/api/v1/videos/{id} 与 /api/v1/videos/{id}/plots（1.2.0）。 */
 @RestController
 @RequestMapping("/api/v1/videos")
 public class VideoController {
@@ -30,18 +30,17 @@ public class VideoController {
 
     /**
      * 参数以字符串读取，由 VideoListQuery 统一校验，保证错误响应格式固定。既有 5 个参数先校验，规则与 1.0.0 相同
-     * （多次出现时与原 {@code @RequestParam String} 一样逗号连接后按原规则判错）；契约 1.1.0 的 6 个搜索/筛选参数随后
-     * 由 {@link VideoFilter#parse} 按固定顺序校验，重复与非法 UTF-8 由 {@link RawQueryParams} 从请求中显式判断。
+     * （多次出现时与原 {@code @RequestParam String} 一样逗号连接后按原规则判错，{@code sort=rnd} 为 1.3.0 的随机取页）；
+     * 1.1.0 起的搜索/筛选参数（{@link VideoFilter#PARAMETERS}）随后由 {@link VideoFilter#parse} 按固定顺序校验，
+     * 重复与非法 UTF-8 由 {@link RawQueryParams} 从请求中显式判断。
      * 不用 {@code @RequestParam}：它会在进入方法前触发容器解析，非法编码的新参数就无法得到 400。
      */
     @GetMapping
     public PageResponse<VideoSummaryDto> list(HttpServletRequest request) {
-        RawQueryParams params = RawQueryParams.of(request);
+        RawQueryParams params = RawQueryParams.forVideoList(request);
         VideoListQuery query = VideoListQuery.parse(params.joined("categoryId"), params.joined("sort"),
                 params.joined("order"), params.joined("page"), params.joined("pageSize"));
-        VideoFilter filter = VideoFilter.parse(params.filterParam("keyword"), params.filterParam("area"),
-                params.filterParam("lang"), params.filterParam("year"), params.filterParam("level"),
-                params.filterParam("classes"), service.searchEnabled());
+        VideoFilter filter = VideoFilter.parse(params::filterParam, service.searchEnabled());
         return service.listVideos(query.withFilter(filter));
     }
 

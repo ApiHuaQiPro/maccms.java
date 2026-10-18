@@ -41,7 +41,17 @@ class LegacyUrlParserTest {
             "/|s=%2Fvod%2Fdetail%2Fid%2F9|detail 9|false",
             "/|s=%2fvod%2fdetail%2fid%2F%39|detail 9|false",
             "/index.php|s=vod/detail/id/9.html|detail 9|false",
-            "/index.php/index/index.html|NULL|home|false"})
+            "/index.php/index/index.html|NULL|home|false",
+            // B05：播放/下载与内容页（LegacyPage），参数顺序不是生成器顺序时为非规范地址
+            "/index.php/vod/play/id/1/sid/1/nid/1.html|NULL|legacy vod/play 1 1 1 1|true",
+            "/index.php/vod/play/nid/1/sid/1/id/1.html|NULL|legacy vod/play 1 1 1 1|false",
+            "/index.php/vod/player/id/1/nid/2/sid/3.html|NULL|legacy vod/player 1 3 2 1|true",
+            "/index.php/vod/player/id/1/sid/3/nid/2.html|NULL|legacy vod/player 1 3 2 1|false",
+            "/index.php/art/detail/id/55/page/3.html|NULL|legacy art/detail 55 0 0 3|true",
+            "/index.php/art/index.html|NULL|legacy art/index 0 0 0 1|true",
+            "/index.php/art/index/page/2.html|NULL|legacy art/index 0 0 0 2|true",
+            "/index.php/vod/ajax_detail/id/9.html|NULL|legacy vod/ajax_detail 9 0 0 1|true",
+            "/|s=vod/plot/id/9/page/2|legacy vod/plot 9 0 0 2|false"})
     void recognisedForms(String path, String query, String expected, boolean canonical) {
         assertThat(outcome(PARSER, path, query)).isEqualTo(expected);
         assertThat(PARSER.parse(path, query).orElseThrow().canonical()).isEqualTo(canonical);
@@ -59,13 +69,13 @@ class LegacyUrlParserTest {
             "/index.php/vod/detail/id/1\r\n.html", "/index.php/vod/detail/id/1 .html", "/index.php/vod/detail/id/1\u0000",
             // 大小写、其他后缀、其他控制器、拼音 id、非数字页码
             "/index.php/VOD/DETAIL/id/1.html", "/index.php/vod/detail/id/1.HTML", "/index.php/vod/detail/id/1.htm",
-            "/index.php/vod/detail/id/1.html.html", "/index.php/vod/play/id/1/sid/1/nid/1.html",
+            "/index.php/vod/detail/id/1.html.html", "/index.php/vod/play/id/x/sid/1/nid/1.html",
             "/index.php/vod/search/wd/x.html", "/index.php/vod/show/id/1.html", "/index.php/user/login.html",
             "/index.php/vod/detail/id/hechengshipin.html", "/index.php/vod/type/id/1/page/abc.html",
             "/index.php/vod/type/id/-1.html", "/index.php/vod/type/id/1/page/+2.html",
             // 当前配置下不认的形态：路由别名、去 index.php、- 分隔
             "/index.php/voddetail/1.html", "/vod/detail/id/1.html", "/index.php/vod-detail-id-1.html",
-            "/index.php/vod", "/index.php/vod/play.html", "/index.php/.html", "/index.php/index.html",
+            "/index.php/vod", "/index.php/vod/plays.html", "/index.php/.html", "/index.php/index.html",
             "/index.php/index/index/page/2.html", "/index.php5/vod/detail/id/1.html", "/admin.php/vod/detail/id/1.html"})
     void unrecognisedFormsAreLeftToPhp(String path) {
         assertThat(PARSER.parse(path, null)).as(path).isEmpty();
@@ -101,6 +111,15 @@ class LegacyUrlParserTest {
             "/index.php/vod/type/page/2.html|''|id",
             "/index.php/vod/type.html|''|id",
             "/index.php/vod/type/id/1/page.html|''|path",
+            // B05：播放/下载入口缺少或越界的 sid/nid、未知参数，无参数的模块页
+            "/index.php/vod/play.html|''|id",
+            "/index.php/vod/play/id/1.html|''|sid",
+            "/index.php/vod/play/id/1/sid/0/nid/1.html|''|sid",
+            "/index.php/vod/play/id/1/sid/256/nid/1.html|''|sid",
+            "/index.php/vod/play/id/1/sid/1/nid/100000.html|''|nid",
+            "/index.php/vod/play/id/1/sid/1/nid/1/page/2.html|''|page",
+            "/index.php/art/detail/id/1/sid/2.html|''|sid",
+            "/index.php/art/index/id/2.html|''|id",
             // 查询串（旧代码中会覆盖路径参数）
             "/index.php/vod/type/id/1.html|page=2|query",
             "/index.php/vod/detail/id/1.html|id=2|query",

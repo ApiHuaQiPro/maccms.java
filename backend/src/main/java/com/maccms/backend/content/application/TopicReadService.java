@@ -14,6 +14,7 @@ import com.maccms.backend.content.application.view.TopicSummaryDto;
 import com.maccms.backend.content.application.view.VideoSummaryDto;
 import com.maccms.backend.content.infrastructure.ArtMapper;
 import com.maccms.backend.content.infrastructure.ContentCriteria;
+import com.maccms.backend.content.infrastructure.SortColumn;
 import com.maccms.backend.content.infrastructure.TopicDetailRow;
 import com.maccms.backend.content.infrastructure.TopicMapper;
 import com.maccms.backend.content.infrastructure.TopicSummaryRow;
@@ -56,19 +57,31 @@ public class TopicReadService {
     }
 
     public PageResponse<TopicSummaryDto> listTopics(ContentListQuery query) {
+        return read(() -> page(query, query.filter().toCriteria()));
+    }
+
+    /** 一页（异常转换由调用方的 read 负责）。 */
+    PageResponse<TopicSummaryDto> page(ContentListQuery query, ContentCriteria criteria) {
         if (query.kind() != ContentKind.TOPIC) {
             throw new IllegalArgumentException("kind");
         }
-        return read(() -> {
-            ContentCriteria criteria = query.filter().toCriteria();
-            long total = topicMapper.countPublished(criteria);
-            if (total == 0 || query.offset() >= total) {
-                return PageResponse.of(List.of(), query.page(), query.pageSize(), total);
+        return LibrarySlice.page(slice(criteria), query.sort(), query.descending(), query.page(), query.pageSize());
+    }
+
+    /** 条件下的切片（专题没有分类）；B05 的 LibrarySearchService 以 SSR 内部条件调用。 */
+    LibrarySlice<TopicSummaryDto> slice(ContentCriteria criteria) {
+        return new LibrarySlice<>() {
+            @Override
+            public long count() {
+                return topicMapper.countPublished(criteria);
             }
-            List<TopicSummaryDto> items = topicMapper.selectPublishedPage(criteria, query.sort(), query.descending(),
-                    query.offset(), query.pageSize()).stream().map(TopicReadService::toSummary).toList();
-            return PageResponse.of(items, query.page(), query.pageSize(), total);
-        });
+
+            @Override
+            public List<TopicSummaryDto> rows(SortColumn sort, boolean descending, long offset, int limit) {
+                return topicMapper.selectPublishedPage(criteria, sort, descending, offset, limit).stream()
+                        .map(TopicReadService::toSummary).toList();
+            }
+        };
     }
 
     public TopicDetailDto getTopic(long id) {

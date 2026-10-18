@@ -4,7 +4,8 @@ import java.math.BigDecimal;
 
 /**
  * mac_art 详情的公开列（ArtMapper.xml）。pageTitles/pageNotes/content 是 {@code $$$} 分隔的分页原文（art_title/art_note/art_content），
- * 由 content.application 解码；detailPasswordRequired、pointsRequired 只以 SQL 计算的布尔值出现，密码与积分值不读入内存。
+ * 由 content.application 解码；detailPasswordRequired、pointsRequired（art_points &gt; 0）、pointsDetailRequired
+ * （art_points_detail &gt; 0）只以 SQL 计算的布尔值出现，密码与积分值不读入内存。
  */
 public record ArtDetailRow(
         Long id,
@@ -40,5 +41,6 @@ public record ArtDetailRow(
         String content,
         String screenshots,
         Integer detailPasswordRequired,
-        Integer pointsRequired) {
+        Integer pointsRequired,
+        Integer pointsDetailRequired) {
 }

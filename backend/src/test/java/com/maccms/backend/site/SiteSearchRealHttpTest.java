@@ -100,6 +100,18 @@ class SiteSearchRealHttpTest {
                 "http://maccms.local.test/sub/index.php/vod/search.html?area=%E5%A4%A7%E9%99%86&page=2&wd=a%2Fb%5C..%25");
     }
 
+    /** 契约 1.3.0（MACC-28 Q1）：真实 Tomcat 下未编码与编码的逗号多值都被接受，canonical 统一为 %2C。 */
+    @Test
+    void multiValueFiltersAreAcceptedAndCanonicalEncodesTheComma() throws Exception {
+        for (String q : new String[] {"?class=a,&area=%e5%a4%a7%e9%99%86,b&wd=x",
+                "?wd=x&class=a%2C&area=%E5%A4%A7%E9%99%86%2Cb"}) {
+            RawHttp.Response r = RawHttp.get(port, SEARCH + q);
+            assertComplete(r, 200);
+            assertThat(Jsoup.parse(r.body()).select("link[rel=canonical]").attr("href")).as(q).isEqualTo(
+                    "http://maccms.local.test/sub/index.php/vod/search.html?area=%E5%A4%A7%E9%99%86%2Cb&class=a%2C&wd=x");
+        }
+    }
+
     @Test
     void headHasSameHeadersWithoutBody() throws Exception {
         RawHttp.Response get = RawHttp.get(port, SEARCH + "?wd=x");
@@ -117,7 +129,7 @@ class SiteSearchRealHttpTest {
     /** 非法百分号编码：Tomcat 不解析查询串参数（控制器不调用 getParameter），由解析器判 400，页面不回显。 */
     @ParameterizedTest
     @ValueSource(strings = {"?wd=%FF", "?wd=%E4%B8", "?wd=%", "?wd=%ZZ", "?foo=" + LEAK, "?wd=&wd=" + LEAK,
-            "?page=01", "?level=00000000009", "?wd=%%EF%BC%94%EF%BC%91"})
+            "?page=01", "?level=-9", "?wd=%%EF%BC%94%EF%BC%91"})
     void invalidParametersAreComplete400(String query, CapturedOutput output) throws Exception {
         RawHttp.Response r = RawHttp.get(port, SEARCH + query);
         assertComplete(r, 400);
@@ -143,7 +155,8 @@ class SiteSearchRealHttpTest {
 
     @Test
     void handedOffAndOverlongAreComplete404() throws Exception {
-        for (String q : new String[] {"?by=rnd", "?s=/vod/detail/id/1", "?tid=1", "?wd=x&" + "&".repeat(2044)}) {
+        // B05 起 by=rnd、tid 由 Java 承接，只剩兼容模式 s 与超长查询串交 PHP
+        for (String q : new String[] {"?s=/vod/detail/id/1", "?wd=x&" + "&".repeat(2044)}) {
             RawHttp.Response r = RawHttp.get(port, SEARCH + q);
             assertComplete(r, 404);
             assertThat(r.body()).contains("data-site-page=\"error\"");
