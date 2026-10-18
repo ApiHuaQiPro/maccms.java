@@ -2,6 +2,8 @@ package com.maccms.backend.site;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -11,9 +13,11 @@ import com.maccms.backend.member.application.MemberAccountService;
 import com.maccms.backend.member.application.MemberCookies;
 import com.maccms.backend.member.application.MemberSessionService;
 import com.maccms.backend.member.application.view.AccountReply;
+import com.maccms.backend.member.application.view.MemberGroup;
 import com.maccms.backend.member.application.view.MemberPageSettings;
 import com.maccms.backend.member.application.view.MemberState;
 import com.maccms.backend.member.application.view.PageMember;
+import com.maccms.backend.member.application.view.PortraitReply;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -32,7 +36,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 /**
  * B09 会员入口在真实 Tomcat 上的字节（原始套接字，18 文档第 4 节）：登录响应的 6 个 {@code Set-Cookie} 逐字节等于
  * {@link MemberCookies}（与 PHP 黄金相同的写法，{@code user_check} 带 HttpOnly），游客回写的 2 个同样；表单正文按字节到达服务；
- * JSON 的 Content-Type 与正文。数据源不可达（服务是替身）。
+ * JSON 的 Content-Type 与正文；超过上传上限的头像请求与旧版 PHP 一样丢弃上传、仍按 JSON 答复。数据源不可达（服务是替身）。
  */
 @SpringBootTest(classes = MaccmsBackendApplication.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         properties = {
@@ -89,6 +93,42 @@ class SiteUserRealHttpTest {
         List<String> expected = new ArrayList<>(MemberCookies.guestReset());
         expected.addAll(MemberCookies.logout());
         assertThat(protectedPage.headers("Set-Cookie")).isEqualTo(expected);
+    }
+
+    /**
+     * 上传上限（{@code spring.servlet.multipart} 2 MB / 3 MB）：旧版 PHP 丢弃超限的文件（{@code $_FILES} 没有 {@code tmp_name}），
+     * 超过 {@code post_max_size} 时连其他字段一起丢弃，头像返回"未找到上传的文件…"的 JSON。新版按需解析 multipart，解析失败时把
+     * 文件与 {@code imgdata} 都当作没有，交给服务得出同一提示；此前在进入处理器前就成了 500。
+     */
+    @Test
+    void oversizedPortraitUploadsAreDroppedLikeLegacyPhp() throws Exception {
+        when(accounts.available()).thenReturn(true);
+        when(accounts.pageSettings()).thenReturn(new MemberPageSettings(true, false, false, true, false, false, true));
+        MemberState member = new MemberState(true, 7, "member07", 3, 3, new MemberGroup(3, "VIP会员", 1, ",1,", "{}"), 0,
+                false);
+        when(sessions.resolvePage(any())).thenReturn(new PageMember(member, List.of(), true));
+        String noInput = "未找到上传的文件(原因：表单名可能错误，默认表单名“file”或“imgdata”)！";
+        when(accounts.portrait(any(), any(), any(), any())).thenReturn(new PortraitReply(0, noInput, "/?1234", false));
+        // 文件超过 2 MB、整个请求不到 3 MB（头像实际会遇到的情形）。请求超过 3 MB 时 Tomcat 按 Content-Length 直接拒绝且不读完
+        // 正文（超过默认 2 MB 的 maxSwallowSize），直连的客户端会收到连接重置；经 nginx 的表现见 18 文档第 14 节
+        for (int size : new int[] {2 * 1024 * 1024 + 1, 2 * 1024 * 1024 + 4096, 3 * 1000 * 1000 - 4096}) {
+            clearInvocations(accounts);
+            String boundary = "----b09webp";
+            ByteArrayOutputStream body = new ByteArrayOutputStream();
+            body.writeBytes(("--" + boundary + "\r\nContent-Disposition: form-data; name=\"imgdata\"\r\n\r\n"
+                    + "data:image/webp;base64,AAAA\r\n--" + boundary + "\r\nContent-Disposition: form-data; name=\"file\"; "
+                    + "filename=\"big.webp\"\r\nContent-Type: image/webp\r\n\r\n").getBytes(StandardCharsets.US_ASCII));
+            body.writeBytes(new byte[size]);
+            body.writeBytes(("\r\n--" + boundary + "--\r\n").getBytes(StandardCharsets.US_ASCII));
+            Raw r = request("POST /index.php/user/portrait.html HTTP/1.1",
+                    List.of("Content-Type: multipart/form-data; boundary=" + boundary, "X-Requested-With: XMLHttpRequest"),
+                    body.toByteArray());
+            assertThat(r.status()).as("文件 %d 字节", size).isEqualTo(200);
+            assertThat(r.headers("Content-Type")).containsExactly("application/json;charset=UTF-8");
+            assertThat(new String(r.body(), StandardCharsets.UTF_8)).isEqualTo(
+                    "{\"msg\":\"" + noInput + "\",\"code\":0,\"file\":\"\\/?1234\"}");
+            verify(accounts).portrait(any(), isNull(), isNull(), isNull());
+        }
     }
 
     private record Raw(int status, List<String> lines, byte[] body) {

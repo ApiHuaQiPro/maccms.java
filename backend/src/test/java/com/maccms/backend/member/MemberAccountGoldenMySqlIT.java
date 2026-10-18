@@ -26,9 +26,11 @@ import com.maccms.backend.writedrill.DatabaseSnapshot;
 import com.maccms.backend.writedrill.DmlRestore;
 import com.maccms.backend.writedrill.SnapshotDiff;
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -44,6 +46,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -516,6 +519,28 @@ class MemberAccountGoldenMySqlIT {
         assertThat(bad.file()).matches("/\\?[0-9]{4}");
         AccountReply login = service.login(form("user_name", "portrait01", "user_pwd", "x"), () -> true, CLIENT_IP);
         assertThat(login.setCookies().get(5)).startsWith("user_portrait=%2Fupload%2Fuser%2F1%2F801.jpg;");
+
+        // WebP（18 文档第 14 节）：动图取第一帧（蓝），覆盖写成同一路径的真实 JPEG；失败时不动已有头像
+        byte[] webp;
+        try (InputStream in = getClass().getResourceAsStream("/member/webp/animated.webp")) {
+            webp = in.readAllBytes();
+        }
+        PortraitReply fromWebP = service.portrait(member, webp, "me.webp", null);
+        assertThat(fromWebP.code()).isEqualTo(1);
+        assertThat(fromWebP.file()).matches("/upload/user/1/801\\.jpg\\?[0-9]{4}");
+        byte[] onDisk = Files.readAllBytes(uploadDir.resolve("user/1/801.jpg"));
+        assertThat(new byte[] {onDisk[0], onDisk[1], onDisk[2]}).as("JPEG SOI").containsExactly(0xFF, 0xD8, 0xFF);
+        BufferedImage blue = ImageIO.read(new ByteArrayInputStream(onDisk));
+        assertThat(blue.getWidth()).isEqualTo(100);
+        assertThat(blue.getHeight()).isEqualTo(100);
+        assertThat(blue.getRGB(50, 50) & 0xFF).as("第一帧是蓝色").isGreaterThan(200);
+        assertThat(blue.getRGB(50, 50) >> 8 & 0xFF).isLessThan(40);
+        PortraitReply truncated = service.portrait(member, Arrays.copyOf(webp, webp.length / 2), "me.webp", null);
+        assertThat(truncated.code()).isZero();
+        assertThat(truncated.msg()).isEqualTo("文件上传失败！");
+        assertThat(Files.readAllBytes(uploadDir.resolve("user/1/801.jpg"))).isEqualTo(onDisk);
+        assertThat(new String(row("portrait01").get("user_portrait"), StandardCharsets.UTF_8))
+                .isEqualTo("upload/user/1/801.jpg");
     }
 
     // ------------------------------------------------------------------ ⑦ 回滚演练

@@ -56,6 +56,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 
@@ -289,8 +290,10 @@ public class SiteUserController {
                 byte[] raw = PhpInput.scalar(params, "imgdata");
                 imgdata = raw == null ? null : new String(raw, StandardCharsets.ISO_8859_1);
             }
-        } catch (IOException e) {
+        } catch (IOException | MultipartException e) {
+            // 超过 2 MB / 3 MB 或正文无法解析：同旧版 PHP 丢弃上传（$_FILES 无 tmp_name），按"未找到上传的文件"
             file = null;
+            imgdata = null;
         }
         PortraitReply reply = account.portrait(member, file, fileName, imgdata);
         Map<String, Object> body = new LinkedHashMap<>();
@@ -451,6 +454,7 @@ public class SiteUserController {
 
     /**
      * 参数按 ThinkPHP {@code input()} 合并（18 文档第 3.1 节）：查询串与 urlencoded 正文按字节解析；multipart 正文的文本字段经容器读取。
+     * multipart 按需解析（{@code spring.servlet.multipart.resolve-lazily}），超限或无法解析时与旧版 PHP 一样当作没有 POST 字段。
      */
     private static Map<String, PhpInput.Value> params(HttpServletRequest request, Map<String, String> pathVars) {
         Map<String, PhpInput.Value> get = PhpInput.parseQuery(request.getQueryString());
@@ -461,12 +465,16 @@ public class SiteUserController {
                 post = PhpInput.parse(body(request));
             } else if (request instanceof MultipartHttpServletRequest mr) {
                 Map<String, PhpInput.Value> m = new LinkedHashMap<>();
-                for (Map.Entry<String, String[]> e : mr.getParameterMap().entrySet()) {
-                    String[] values = e.getValue();
-                    if (values.length > 0) {
-                        m.put(e.getKey(), new PhpInput.Value(values[values.length - 1].getBytes(StandardCharsets.UTF_8),
-                                false));
+                try {
+                    for (Map.Entry<String, String[]> e : mr.getParameterMap().entrySet()) {
+                        String[] values = e.getValue();
+                        if (values.length > 0) {
+                            m.put(e.getKey(), new PhpInput.Value(
+                                    values[values.length - 1].getBytes(StandardCharsets.UTF_8), false));
+                        }
                     }
+                } catch (MultipartException e) {
+                    m.clear();
                 }
                 post = m;
             }

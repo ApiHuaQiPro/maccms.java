@@ -1,5 +1,6 @@
 package com.maccms.backend.member.application;
 
+import com.twelvemonkeys.imageio.plugins.webp.WebPImageReaderSpi;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
@@ -20,8 +21,10 @@ import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
 import javax.imageio.ImageWriteParam;
 import javax.imageio.ImageWriter;
+import javax.imageio.spi.IIORegistry;
 import javax.imageio.stream.ImageInputStream;
 import javax.imageio.stream.ImageOutputStream;
+import javax.imageio.stream.MemoryCacheImageInputStream;
 
 /**
  * 头像的检查与转换（B09，18 文档第 3.8 节），纯内存计算，不读写文件。检查顺序与提示照搬旧 {@code Upload::upload}
@@ -29,8 +32,13 @@ import javax.imageio.stream.ImageOutputStream;
  * 重新编码为 JPEG（质量 80，与 think-image 保存 jpg 的默认质量相同），透明处按白底。
  *
  * <p>与旧版的差异（D-B09-9）：旧版先把上传的原文件落盘再用缩略图覆盖，扩展名在允许表内但不是图片的文件会留在磁盘上；新版只产出重新
- * 编码的 JPEG。{@code webp} 没有 JDK 解码器，按"文件上传失败！"处理。旧版按 {@code finfo} 判断 {@code text/x-php}，新版按内容以
- * {@code <?php} 开头判断（同一提示）。
+ * 编码的 JPEG。旧版按 {@code finfo} 判断 {@code text/x-php}，新版按内容以 {@code <?php} 开头判断（同一提示）。
+ *
+ * <p>WebP（MACC-23 队长裁定方案 B，18 文档第 14 节）：由 TwelveMonkeys {@code imageio-webp} 解码（JDK 没有 WebP 解码器），同样
+ * 重新编码为 JPEG；动图只取第一帧（旧版 GD 对动图 Fatal error，D-B09-13）。解码前由 {@link WebPHeaders} 检查容器里声明的全部尺寸，
+ * 且 WebP 另有更低的像素上限 {@link #MAX_WEBP_PIXELS}（该解码器同样像素数的耗时约为 JDK PNG 的 8 倍）。读取器在本类加载时显式
+ * 注册，不依赖首次使用 ImageIO 的线程能否看到可执行 jar 内的 SPI 声明；图片流显式用 {@link MemoryCacheImageInputStream}，不经
+ * imageio-core 注册的 {@code ImageInputStreamSpi}，也不写临时文件，并给"读到流尾"的次数设上限 {@link #MAX_EOF_READS}。
  */
 final class PortraitImages {
 
@@ -49,7 +57,22 @@ final class PortraitImages {
             + "|(3C534352495054)|(2F5343524950543E)|(3C736372697074)|(2F7363726970743E)",
             Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
     /** 解码前按图片头部声明的尺寸拒绝过大的图片（防解压炸弹）。 */
-    private static final long MAX_PIXELS = 40_000_000L;
+    static final long MAX_PIXELS = 40_000_000L;
+    /**
+     * WebP 的像素上限（2048×2048）。实测（JDK 21，单线程，预热后）该解码器 4 MP 约 0.9 s、16.7 MP 约 4.7 s、36 MP 约 4.5～7 s，
+     * 而 JDK 解码 36 MP 的 PNG/JPEG 约 0.4～0.6 s；按这个上限，WebP 最坏耗时与其他格式在 {@link #MAX_PIXELS} 下的同一量级。
+     */
+    static final long MAX_WEBP_PIXELS = 2048L * 2048L;
+    /**
+     * 解码器在流结束后还在要数据的次数上限。TwelveMonkeys 的无损位读取器在文件尾吞掉 {@code EOFException} 继续用残留的位解码，
+     * 截断或损坏的文件因此会空转（去掉本上限时 PortraitImagesWebPTest 的 1600 个变异样本 9 分钟没有跑完，线程停在该读取器的
+     * {@code refillBuffer}；加上后最慢的一个约 0.1 s）。合法样本（含 2000×2000 有损/无损）解码时最多 31 次。
+     */
+    static final int MAX_EOF_READS = 1024;
+
+    static {
+        IIORegistry.getDefaultInstance().registerServiceProvider(new WebPImageReaderSpi());
+    }
 
     private final int width;
     private final int height;
@@ -135,10 +158,11 @@ final class PortraitImages {
     }
 
     private static BufferedImage decode(byte[] content) {
-        try (ImageInputStream in = ImageIO.createImageInputStream(new ByteArrayInputStream(content))) {
-            if (in == null) {
-                return null;
-            }
+        boolean webp = WebPHeaders.isWebP(content);
+        if (webp && !WebPHeaders.withinLimits(content, MAX_WEBP_PIXELS)) {
+            return null;
+        }
+        try (ImageInputStream in = new EofBudgetInputStream(content)) {
             Iterator<ImageReader> readers = ImageIO.getImageReaders(in);
             if (!readers.hasNext()) {
                 return null;
@@ -147,7 +171,7 @@ final class PortraitImages {
             try {
                 reader.setInput(in, true, true);
                 long pixels = (long) reader.getWidth(0) * reader.getHeight(0);
-                if (pixels <= 0 || pixels > MAX_PIXELS) {
+                if (pixels <= 0 || pixels > (webp ? MAX_WEBP_PIXELS : MAX_PIXELS)) {
                     return null;
                 }
                 return reader.read(0);
@@ -156,6 +180,32 @@ final class PortraitImages {
             }
         } catch (IOException | RuntimeException e) {
             return null;
+        }
+    }
+
+    /** 读到流尾超过 {@link #MAX_EOF_READS} 次后抛非受检异常，越过解码器内部对 {@code EOFException} 的捕获。 */
+    private static final class EofBudgetInputStream extends MemoryCacheImageInputStream {
+        private int eofReads;
+
+        EofBudgetInputStream(byte[] content) {
+            super(new ByteArrayInputStream(content));
+        }
+
+        @Override
+        public int read() throws IOException {
+            return counted(super.read());
+        }
+
+        @Override
+        public int read(byte[] b, int off, int len) throws IOException {
+            return counted(super.read(b, off, len));
+        }
+
+        private int counted(int n) {
+            if (n < 0 && ++eofReads > MAX_EOF_READS) {
+                throw new IllegalStateException("image data exhausted", null);
+            }
+            return n;
         }
     }
 

@@ -10,8 +10,8 @@
   <form class="member-form" method="post" action="${page.action().get().href()}" enctype="multipart/form-data" data-member-form="portrait">
     <div class="member-form__field">
       <label class="member-form__label" for="member-portrait-file">选择图片</label>
-      <input class="member-form__input" id="member-portrait-file" name="file" type="file" accept="image/jpeg,image/png,image/gif" required aria-describedby="member-portrait-hint">
-      <p class="member-form__hint" id="member-portrait-hint">支持 jpg、png、gif，不超过 2 MB。</p>
+      <input class="member-form__input" id="member-portrait-file" name="file" type="file" accept="image/jpeg,image/png,image/gif,image/webp" required aria-describedby="member-portrait-hint">
+      <p class="member-form__hint" id="member-portrait-hint">支持 jpg、png、gif、webp（动图取第一帧），不超过 2 MB。</p>
     </div>
     <p class="member-form__message" role="status" aria-live="polite" data-member-message hidden></p>
     <button class="member-form__submit" type="submit">上传</button>

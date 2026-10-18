@@ -19,11 +19,14 @@ spring:
       mode: never
   jackson:
     default-property-inclusion: always
-  # 会员头像上传（B09，18 文档第 3.8 节）：旧版取 PHP upload_max_filesize（默认 2M）
+  # 会员头像上传（B09，18 文档第 3.8 节）：旧版取 PHP upload_max_filesize（默认 2M）。
+  # resolve-lazily：multipart 在处理器第一次取参数时才解析，超限等解析失败由 SiteUserController 按旧版"上传的文件被丢弃"处理
+  # （头像返回"未找到上传的文件…"的 JSON），不在进入处理器前变成 500。
   servlet:
     multipart:
       max-file-size: 2MB
       max-request-size: 3MB
+      resolve-lazily: true
 
 mybatis:
   mapper-locations: classpath:mapper/**/*.xml

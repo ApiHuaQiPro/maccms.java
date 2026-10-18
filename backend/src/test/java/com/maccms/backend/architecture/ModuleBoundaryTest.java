@@ -116,6 +116,27 @@ class ModuleBoundaryTest {
         assertThat(MAIN_JAVA.resolve(Path.of("com", "maccms", "backend", "content", "api", "dto"))).doesNotExist();
     }
 
+    /**
+     * TwelveMonkeys（B09 WebP 头像，18 文档第 14 节）只由 {@code member.application.PortraitImages} 引用，且只引用 WebP 读取器的 SPI；
+     * 其余类型（含 common-io 的 {@code com.twelvemonkeys.net}）一律不用。扩充须在任务中说明。
+     */
+    @Test
+    void twelveMonkeysIsOnlyUsedForThePortraitWebPReader() throws IOException {
+        Pattern ref = Pattern.compile("\\bcom\\.twelvemonkeys\\.[\\w.*]+");
+        List<String> found = new ArrayList<>();
+        try (Stream<Path> s = Files.walk(MAIN_JAVA)) {
+            for (Path p : s.filter(f -> f.toString().endsWith(".java")).toList()) {
+                String file = MAIN_JAVA.relativize(p).toString().replace('\\', '/');
+                Matcher m = ref.matcher(code(Files.readString(p, StandardCharsets.UTF_8)));
+                while (m.find()) {
+                    found.add(file + ": " + m.group());
+                }
+            }
+        }
+        assertThat(found).containsExactly("com/maccms/backend/member/application/PortraitImages.java: "
+                + "com.twelvemonkeys.imageio.plugins.webp.WebPImageReaderSpi");
+    }
+
     @Test
     void siteHasNoMapperXml() {
         assertThat(MAPPER_XML.resolve("site")).doesNotExist();
