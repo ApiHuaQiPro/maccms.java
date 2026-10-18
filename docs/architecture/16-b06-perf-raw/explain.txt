@@ -1,0 +1,305 @@
+## provide-list
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN ( 1 , 2 , 3 , 4 , 11 ) AND vod_status = 1
++---+--------+---------+------+------+---------+------+------+------+--------+-------+-------------+
+| 1 | SIMPLE | mac_vod | NULL | ALL  | type_id | NULL | NULL | NULL | 300010 | 10.00 | Using where |
++---+--------+---------+------+------+---------+------+------+------+--------+-------+-------------+
+
+## provide-list
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ vod_id, vod_name, type_id, '' AS type_name, vod_en, vod_time, vod_remarks, vod_play_from FROM mac_vod WHERE vod_status = 1 AND type_id IN ( 1 , 2 , 3 , 4 , 11 ) AND vod_status = 1 ORDER BY vod_time DESC, vod_id DESC LIMIT 0, 20
++---+--------+---------+------+------+---------+------+------+------+--------+-------+-----------------------------+
+| 1 | SIMPLE | mac_vod | NULL | ALL  | type_id | NULL | NULL | NULL | 300010 | 10.00 | Using where; Using filesort |
++---+--------+---------+------+------+---------+------+------+------+--------+-------+-----------------------------+
+
+## provide-list
+SELECT type_id, type_name, type_en, type_sort, type_mid, type_pid, type_status, type_tpl, type_tpl_list, type_tpl_detail, type_tpl_play, type_tpl_down, type_key, type_des, type_title, type_union, type_extend, type_logo, type_pic, type_jumpurl FROM mac_type ORDER BY type_id ASC
++---+--------+----------+------+------+------+------+------+------+------+--------+----------------+
+| 1 | SIMPLE | mac_type | NULL | ALL  | NULL | NULL | NULL | NULL | 9    | 100.00 | Using filesort |
++---+--------+----------+------+------+------+------+------+------+------+--------+----------------+
+
+## provide-list-xml
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN ( 1 , 2 , 3 , 4 , 11 ) AND vod_status = 1
++---+--------+---------+------+------+---------+------+------+------+--------+-------+-------------+
+| 1 | SIMPLE | mac_vod | NULL | ALL  | type_id | NULL | NULL | NULL | 300010 | 10.00 | Using where |
++---+--------+---------+------+------+---------+------+------+------+--------+-------+-------------+
+
+## provide-list-xml
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ vod_id, vod_name, type_id, '' AS type_name, vod_en, vod_time, vod_remarks, vod_play_from FROM mac_vod WHERE vod_status = 1 AND type_id IN ( 1 , 2 , 3 , 4 , 11 ) AND vod_status = 1 ORDER BY vod_time DESC, vod_id DESC LIMIT 0, 20
++---+--------+---------+------+------+---------+------+------+------+--------+-------+-----------------------------+
+| 1 | SIMPLE | mac_vod | NULL | ALL  | type_id | NULL | NULL | NULL | 300010 | 10.00 | Using where; Using filesort |
++---+--------+---------+------+------+---------+------+------+------+--------+-------+-----------------------------+
+
+## provide-list-xml
+SELECT type_id, type_name, type_en, type_sort, type_mid, type_pid, type_status, type_tpl, type_tpl_list, type_tpl_detail, type_tpl_play, type_tpl_down, type_key, type_des, type_title, type_union, type_extend, type_logo, type_pic, type_jumpurl FROM mac_type ORDER BY type_id ASC
++---+--------+----------+------+------+------+------+------+------+------+--------+----------------+
+| 1 | SIMPLE | mac_type | NULL | ALL  | NULL | NULL | NULL | NULL | 9    | 100.00 | Using filesort |
++---+--------+----------+------+------+------+------+------+------+------+--------+----------------+
+
+## provide-list-pg100
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN ( 1 , 2 , 3 , 4 , 11 ) AND vod_status = 1
++---+--------+---------+------+------+---------+------+------+------+--------+-------+-------------+
+| 1 | SIMPLE | mac_vod | NULL | ALL  | type_id | NULL | NULL | NULL | 300010 | 10.00 | Using where |
++---+--------+---------+------+------+---------+------+------+------+--------+-------+-------------+
+
+## provide-list-pg100
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ vod_id, vod_name, type_id, '' AS type_name, vod_en, vod_time, vod_remarks, vod_play_from FROM mac_vod WHERE vod_status = 1 AND type_id IN ( 1 , 2 , 3 , 4 , 11 ) AND vod_status = 1 ORDER BY vod_time DESC, vod_id DESC LIMIT 1980, 20
++---+--------+---------+------+------+---------+------+------+------+--------+-------+-----------------------------+
+| 1 | SIMPLE | mac_vod | NULL | ALL  | type_id | NULL | NULL | NULL | 300010 | 10.00 | Using where; Using filesort |
++---+--------+---------+------+------+---------+------+------+------+--------+-------+-----------------------------+
+
+## provide-list-pg100
+SELECT type_id, type_name, type_en, type_sort, type_mid, type_pid, type_status, type_tpl, type_tpl_list, type_tpl_detail, type_tpl_play, type_tpl_down, type_key, type_des, type_title, type_union, type_extend, type_logo, type_pic, type_jumpurl FROM mac_type ORDER BY type_id ASC
++---+--------+----------+------+------+------+------+------+------+------+--------+----------------+
+| 1 | SIMPLE | mac_type | NULL | ALL  | NULL | NULL | NULL | NULL | 9    | 100.00 | Using filesort |
++---+--------+----------+------+------+------+------+------+------+------+--------+----------------+
+
+## provide-list-pg10000
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN ( 1 , 2 , 3 , 4 , 11 ) AND vod_status = 1
++---+--------+---------+------+------+---------+------+------+------+--------+-------+-------------+
+| 1 | SIMPLE | mac_vod | NULL | ALL  | type_id | NULL | NULL | NULL | 300010 | 10.00 | Using where |
++---+--------+---------+------+------+---------+------+------+------+--------+-------+-------------+
+
+## provide-list-pg10000
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ vod_id, vod_name, type_id, '' AS type_name, vod_en, vod_time, vod_remarks, vod_play_from FROM mac_vod WHERE vod_status = 1 AND type_id IN ( 1 , 2 , 3 , 4 , 11 ) AND vod_status = 1 ORDER BY vod_time DESC, vod_id DESC LIMIT 199980, 20
++---+--------+---------+------+------+---------+------+------+------+--------+-------+-----------------------------+
+| 1 | SIMPLE | mac_vod | NULL | ALL  | type_id | NULL | NULL | NULL | 300010 | 10.00 | Using where; Using filesort |
++---+--------+---------+------+------+---------+------+------+------+--------+-------+-----------------------------+
+
+## provide-list-pg10000
+SELECT type_id, type_name, type_en, type_sort, type_mid, type_pid, type_status, type_tpl, type_tpl_list, type_tpl_detail, type_tpl_play, type_tpl_down, type_key, type_des, type_title, type_union, type_extend, type_logo, type_pic, type_jumpurl FROM mac_type ORDER BY type_id ASC
++---+--------+----------+------+------+------+------+------+------+------+--------+----------------+
+| 1 | SIMPLE | mac_type | NULL | ALL  | NULL | NULL | NULL | NULL | 9    | 100.00 | Using filesort |
++---+--------+----------+------+------+------+------+------+------+------+--------+----------------+
+
+## provide-videolist
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN ( 1 , 2 , 3 , 4 , 11 ) AND vod_status = 1
++---+--------+---------+------+------+---------+------+------+------+--------+-------+-------------+
+| 1 | SIMPLE | mac_vod | NULL | ALL  | type_id | NULL | NULL | NULL | 300010 | 10.00 | Using where |
++---+--------+---------+------+------+---------+------+------+------+--------+-------+-------------+
+
+## provide-videolist
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ vod_id, type_id, type_id_1, group_id, vod_name, vod_sub, vod_en, vod_status, vod_letter, vod_color, vod_tag, vod_class, vod_pic, vod_pic_thumb, vod_pic_slide, vod_pic_screenshot, vod_actor, vod_director, vod_writer, vod_behind, vod_blurb, vod_remarks, vod_pubdate, vod_total, vod_serial, vod_tv, vod_weekday, vod_area, vod_lang, vod_year, vod_version, vod_state, vod_author, vod_jumpurl, vod_tpl, vod_tpl_play, vod_tpl_down, vod_isend, vod_lock, vod_level, vod_copyright, vod_points, vod_points_play, vod_points_down, vod_hits, vod_hits_day, vod_hits_week, vod_hits_month, vod_duration, vod_up, vod_down, vod_score, vod_score_all, vod_score_num, vod_time, vod_time_add, vod_time_hits, vod_time_make, vod_trysee, vod_douban_id, vod_douban_score, vod_reurl, vod_rel_vod, vod_rel_art, vod_content, vod_play_from, vod_play_server, vod_play_note, vod_play_url, vod_down_from, vod_down_server, vod_down_note, vod_down_url, vod_plot, vod_plot_name, vod_plot_detail, (CHAR_LENGTH(vod_pwd) > 0) AS _pwd, (CHAR_LENGTH(vod_pwd_play) > 0) AS _pwd_play, (CHAR_LENGTH(vod_pwd_down) > 0) AS _pwd_down FROM mac_vod WHERE vod_status = 1 AND type_id IN ( 1 , 2 , 3 , 4 , 11 ) AND vod_status = 1 ORDER BY vod_time DESC, vod_id DESC LIMIT 0, 20
++---+--------+---------+------+------+---------+------+------+------+--------+-------+-----------------------------+
+| 1 | SIMPLE | mac_vod | NULL | ALL  | type_id | NULL | NULL | NULL | 300010 | 10.00 | Using where; Using filesort |
++---+--------+---------+------+------+---------+------+------+------+--------+-------+-----------------------------+
+
+## provide-videolist
+SELECT type_id, type_name, type_en, type_sort, type_mid, type_pid, type_status, type_tpl, type_tpl_list, type_tpl_detail, type_tpl_play, type_tpl_down, type_key, type_des, type_title, type_union, type_extend, type_logo, type_pic, type_jumpurl FROM mac_type ORDER BY type_id ASC
++---+--------+----------+------+------+------+------+------+------+------+--------+----------------+
+| 1 | SIMPLE | mac_type | NULL | ALL  | NULL | NULL | NULL | NULL | 9    | 100.00 | Using filesort |
++---+--------+----------+------+------+------+------+------+------+------+--------+----------------+
+
+## provide-detail-ids20
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN ( 1 , 2 , 3 , 4 , 11 ) AND vod_id IN ( '1000' , '1997' , '2994' , '3991' , '4988' , '5985' , '6982' , '7979' , '8976' , '9973' , '10970' , '11967' , '12964' , '13961' , '14958' , '15955' , '16952' , '17949' , '18946' , '19943' ) AND vod_status = 1
++---+--------+---------+------+-------+-----------------+---------+------+------+------+-------+------------------------------------+
+| 1 | SIMPLE | mac_vod | NULL | range | PRIMARY,type_id | PRIMARY | 4    | NULL | 20   | 10.00 | Using index condition; Using where |
++---+--------+---------+------+-------+-----------------+---------+------+------+------+-------+------------------------------------+
+
+## provide-detail-ids20
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ vod_id, type_id, type_id_1, group_id, vod_name, vod_sub, vod_en, vod_status, vod_letter, vod_color, vod_tag, vod_class, vod_pic, vod_pic_thumb, vod_pic_slide, vod_pic_screenshot, vod_actor, vod_director, vod_writer, vod_behind, vod_blurb, vod_remarks, vod_pubdate, vod_total, vod_serial, vod_tv, vod_weekday, vod_area, vod_lang, vod_year, vod_version, vod_state, vod_author, vod_jumpurl, vod_tpl, vod_tpl_play, vod_tpl_down, vod_isend, vod_lock, vod_level, vod_copyright, vod_points, vod_points_play, vod_points_down, vod_hits, vod_hits_day, vod_hits_week, vod_hits_month, vod_duration, vod_up, vod_down, vod_score, vod_score_all, vod_score_num, vod_time, vod_time_add, vod_time_hits, vod_time_make, vod_trysee, vod_douban_id, vod_douban_score, vod_reurl, vod_rel_vod, vod_rel_art, vod_content, vod_play_from, vod_play_server, vod_play_note, vod_play_url, vod_down_from, vod_down_server, vod_down_note, vod_down_url, vod_plot, vod_plot_name, vod_plot_detail, (CHAR_LENGTH(vod_pwd) > 0) AS _pwd, (CHAR_LENGTH(vod_pwd_play) > 0) AS _pwd_play, (CHAR_LENGTH(vod_pwd_down) > 0) AS _pwd_down FROM mac_vod WHERE vod_status = 1 AND type_id IN ( 1 , 2 , 3 , 4 , 11 ) AND vod_id IN ( '1000' , '1997' , '2994' , '3991' , '4988' , '5985' , '6982' , '7979' , '8976' , '9973' , '10970' , '11967' , '12964' , '13961' , '14958' , '15955' , '16952' , '17949' , '18946' , '19943' ) AND vod_status = 1 ORDER BY vod_time DESC, vod_id DESC LIMIT 0, 20
++---+--------+---------+------+-------+-----------------+---------+------+------+------+-------+----------------------------------------------------+
+| 1 | SIMPLE | mac_vod | NULL | range | PRIMARY,type_id | PRIMARY | 4    | NULL | 20   | 10.00 | Using index condition; Using where; Using filesort |
++---+--------+---------+------+-------+-----------------+---------+------+------+------+-------+----------------------------------------------------+
+
+## provide-detail-ids20
+SELECT type_id, type_name, type_en, type_sort, type_mid, type_pid, type_status, type_tpl, type_tpl_list, type_tpl_detail, type_tpl_play, type_tpl_down, type_key, type_des, type_title, type_union, type_extend, type_logo, type_pic, type_jumpurl FROM mac_type ORDER BY type_id ASC
++---+--------+----------+------+------+------+------+------+------+------+--------+----------------+
+| 1 | SIMPLE | mac_type | NULL | ALL  | NULL | NULL | NULL | NULL | 9    | 100.00 | Using filesort |
++---+--------+----------+------+------+------+------+------+------+------+--------+----------------+
+
+## provide-t
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN ( 1 , 2 , 3 , 4 , 11 ) AND type_id = '3' AND vod_status = 1
++---+--------+---------+------+------+---------+---------+------+-------+-------+-------+------------------------------------+
+| 1 | SIMPLE | mac_vod | NULL | ref  | type_id | type_id | 2    | const | 74569 | 10.00 | Using index condition; Using where |
++---+--------+---------+------+------+---------+---------+------+-------+-------+-------+------------------------------------+
+
+## provide-t
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ vod_id, vod_name, type_id, '' AS type_name, vod_en, vod_time, vod_remarks, vod_play_from FROM mac_vod WHERE vod_status = 1 AND type_id IN ( 1 , 2 , 3 , 4 , 11 ) AND type_id = '3' AND vod_status = 1 ORDER BY vod_time DESC, vod_id DESC LIMIT 0, 20
++---+--------+---------+------+------+---------+---------+------+-------+-------+-------+----------------------------------------------------+
+| 1 | SIMPLE | mac_vod | NULL | ref  | type_id | type_id | 2    | const | 74569 | 10.00 | Using index condition; Using where; Using filesort |
++---+--------+---------+------+------+---------+---------+------+-------+-------+-------+----------------------------------------------------+
+
+## provide-t
+SELECT type_id, type_name, type_en, type_sort, type_mid, type_pid, type_status, type_tpl, type_tpl_list, type_tpl_detail, type_tpl_play, type_tpl_down, type_key, type_des, type_title, type_union, type_extend, type_logo, type_pic, type_jumpurl FROM mac_type ORDER BY type_id ASC
++---+--------+----------+------+------+------+------+------+------+------+--------+----------------+
+| 1 | SIMPLE | mac_type | NULL | ALL  | NULL | NULL | NULL | NULL | 9    | 100.00 | Using filesort |
++---+--------+----------+------+------+------+------+------+------+------+--------+----------------+
+
+## provide-h24
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN ( 1 , 2 , 3 , 4 , 11 ) AND vod_time > 1792189331 AND vod_time < 1792339200 AND vod_status = 1
++---+--------+---------+------+-------+------------------+----------+------+------+------+-------+------------------------------------+
+| 1 | SIMPLE | mac_vod | NULL | range | type_id,vod_time | vod_time | 4    | NULL | 1    | 10.00 | Using index condition; Using where |
++---+--------+---------+------+-------+------------------+----------+------+------+------+-------+------------------------------------+
+
+## provide-h24
+SELECT type_id, type_name, type_en, type_sort, type_mid, type_pid, type_status, type_tpl, type_tpl_list, type_tpl_detail, type_tpl_play, type_tpl_down, type_key, type_des, type_title, type_union, type_extend, type_logo, type_pic, type_jumpurl FROM mac_type ORDER BY type_id ASC
++---+--------+----------+------+------+------+------+------+------+------+--------+----------------+
+| 1 | SIMPLE | mac_type | NULL | ALL  | NULL | NULL | NULL | NULL | 9    | 100.00 | Using filesort |
++---+--------+----------+------+------+------+------+------+------+------+--------+----------------+
+
+## provide-year
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN ( 1 , 2 , 3 , 4 , 11 ) AND vod_year IN ( '2015' ) AND vod_status = 1
++---+--------+---------+------+------+------------------+----------+------+-------+-------+-------+-------------+
+| 1 | SIMPLE | mac_vod | NULL | ref  | type_id,vod_year | vod_year | 32   | const | 13108 | 10.00 | Using where |
++---+--------+---------+------+------+------------------+----------+------+-------+-------+-------+-------------+
+
+## provide-year
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ vod_id, vod_name, type_id, '' AS type_name, vod_en, vod_time, vod_remarks, vod_play_from FROM mac_vod WHERE vod_status = 1 AND type_id IN ( 1 , 2 , 3 , 4 , 11 ) AND vod_year IN ( '2015' ) AND vod_status = 1 ORDER BY vod_time DESC, vod_id DESC LIMIT 0, 20
++---+--------+---------+------+------+------------------+----------+------+-------+-------+-------+----------------------------------------------------+
+| 1 | SIMPLE | mac_vod | NULL | ref  | type_id,vod_year | vod_year | 32   | const | 13108 | 10.00 | Using index condition; Using where; Using filesort |
++---+--------+---------+------+------+------------------+----------+------+-------+-------+-------+----------------------------------------------------+
+
+## provide-year
+SELECT type_id, type_name, type_en, type_sort, type_mid, type_pid, type_status, type_tpl, type_tpl_list, type_tpl_detail, type_tpl_play, type_tpl_down, type_key, type_des, type_title, type_union, type_extend, type_logo, type_pic, type_jumpurl FROM mac_type ORDER BY type_id ASC
++---+--------+----------+------+------+------+------+------+------+------+--------+----------------+
+| 1 | SIMPLE | mac_type | NULL | ALL  | NULL | NULL | NULL | NULL | 9    | 100.00 | Using filesort |
++---+--------+----------+------+------+------+------+------+------+------+--------+----------------+
+
+## provide-year-range
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN ( 1 , 2 , 3 , 4 , 11 ) AND vod_year IN ( '2000' , '2001' , '2002' , '2003' , '2004' , '2005' , '2006' , '2007' , '2008' , '2009' , '2010' , '2011' , '2012' , '2013' , '2014' , '2015' , '2016' , '2017' , '2018' , '2019' , '2020' ) AND vod_status = 1
++---+--------+---------+------+------+------------------+------+------+------+--------+------+-------------+
+| 1 | SIMPLE | mac_vod | NULL | ALL  | type_id,vod_year | NULL | NULL | NULL | 300010 | 9.24 | Using where |
++---+--------+---------+------+------+------------------+------+------+------+--------+------+-------------+
+
+## provide-year-range
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ vod_id, vod_name, type_id, '' AS type_name, vod_en, vod_time, vod_remarks, vod_play_from FROM mac_vod WHERE vod_status = 1 AND type_id IN ( 1 , 2 , 3 , 4 , 11 ) AND vod_year IN ( '2000' , '2001' , '2002' , '2003' , '2004' , '2005' , '2006' , '2007' , '2008' , '2009' , '2010' , '2011' , '2012' , '2013' , '2014' , '2015' , '2016' , '2017' , '2018' , '2019' , '2020' ) AND vod_status = 1 ORDER BY vod_time DESC, vod_id DESC LIMIT 0, 20
++---+--------+---------+------+------+------------------+------+------+------+--------+------+-----------------------------+
+| 1 | SIMPLE | mac_vod | NULL | ALL  | type_id,vod_year | NULL | NULL | NULL | 300010 | 9.24 | Using where; Using filesort |
++---+--------+---------+------+------+------------------+------+------+------+--------+------+-----------------------------+
+
+## provide-year-range
+SELECT type_id, type_name, type_en, type_sort, type_mid, type_pid, type_status, type_tpl, type_tpl_list, type_tpl_detail, type_tpl_play, type_tpl_down, type_key, type_des, type_title, type_union, type_extend, type_logo, type_pic, type_jumpurl FROM mac_type ORDER BY type_id ASC
++---+--------+----------+------+------+------+------+------+------+------+--------+----------------+
+| 1 | SIMPLE | mac_type | NULL | ALL  | NULL | NULL | NULL | NULL | 9    | 100.00 | Using filesort |
++---+--------+----------+------+------+------+------+------+------+------+--------+----------------+
+
+## provide-isend
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN ( 1 , 2 , 3 , 4 , 11 ) AND vod_isend = 1 AND vod_status = 1
++---+--------+---------+------+------+-------------------+-----------+------+-------+--------+-------+-------------+
+| 1 | SIMPLE | mac_vod | NULL | ref  | type_id,vod_isend | vod_isend | 1    | const | 153643 | 10.00 | Using where |
++---+--------+---------+------+------+-------------------+-----------+------+-------+--------+-------+-------------+
+
+## provide-isend
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ vod_id, vod_name, type_id, '' AS type_name, vod_en, vod_time, vod_remarks, vod_play_from FROM mac_vod WHERE vod_status = 1 AND type_id IN ( 1 , 2 , 3 , 4 , 11 ) AND vod_isend = 1 AND vod_status = 1 ORDER BY vod_time DESC, vod_id DESC LIMIT 0, 20
++---+--------+---------+------+------+-------------------+-----------+------+-------+--------+-------+----------------------------------------------------+
+| 1 | SIMPLE | mac_vod | NULL | ref  | type_id,vod_isend | vod_isend | 1    | const | 153643 | 10.00 | Using index condition; Using where; Using filesort |
++---+--------+---------+------+------+-------------------+-----------+------+-------+--------+-------+----------------------------------------------------+
+
+## provide-isend
+SELECT type_id, type_name, type_en, type_sort, type_mid, type_pid, type_status, type_tpl, type_tpl_list, type_tpl_detail, type_tpl_play, type_tpl_down, type_key, type_des, type_title, type_union, type_extend, type_logo, type_pic, type_jumpurl FROM mac_type ORDER BY type_id ASC
++---+--------+----------+------+------+------+------+------+------+------+--------+----------------+
+| 1 | SIMPLE | mac_type | NULL | ALL  | NULL | NULL | NULL | NULL | 9    | 100.00 | Using filesort |
++---+--------+----------+------+------+------+------+------+------+------+--------+----------------+
+
+## provide-wd
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN ( 1 , 2 , 3 , 4 , 11 ) AND vod_name LIKE '%合成视频12345%' ESCAPE '!' AND vod_status = 1
++---+--------+---------+------+------+---------+------+------+------+--------+------+-------------+
+| 1 | SIMPLE | mac_vod | NULL | ALL  | type_id | NULL | NULL | NULL | 300010 | 1.11 | Using where |
++---+--------+---------+------+------+---------+------+------+------+--------+------+-------------+
+
+## provide-wd
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ vod_id, vod_name, type_id, '' AS type_name, vod_en, vod_time, vod_remarks, vod_play_from FROM mac_vod WHERE vod_status = 1 AND type_id IN ( 1 , 2 , 3 , 4 , 11 ) AND vod_name LIKE '%合成视频12345%' ESCAPE '!' AND vod_status = 1 ORDER BY vod_time DESC, vod_id DESC LIMIT 0, 20
++---+--------+---------+------+------+---------+------+------+------+--------+------+-----------------------------+
+| 1 | SIMPLE | mac_vod | NULL | ALL  | type_id | NULL | NULL | NULL | 300010 | 1.11 | Using where; Using filesort |
++---+--------+---------+------+------+---------+------+------+------+--------+------+-----------------------------+
+
+## provide-wd
+SELECT type_id, type_name, type_en, type_sort, type_mid, type_pid, type_status, type_tpl, type_tpl_list, type_tpl_detail, type_tpl_play, type_tpl_down, type_key, type_des, type_title, type_union, type_extend, type_logo, type_pic, type_jumpurl FROM mac_type ORDER BY type_id ASC
++---+--------+----------+------+------+------+------+------+------+------+--------+----------------+
+| 1 | SIMPLE | mac_type | NULL | ALL  | NULL | NULL | NULL | NULL | 9    | 100.00 | Using filesort |
++---+--------+----------+------+------+------+------+------+------+------+--------+----------------+
+
+## provide-from
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN ( 1 , 2 , 3 , 4 , 11 ) AND ( vod_play_from LIKE '%m3u8%' ESCAPE '!' ) AND vod_status = 1
++---+--------+---------+------+------+---------+------+------+------+--------+------+-------------+
+| 1 | SIMPLE | mac_vod | NULL | ALL  | type_id | NULL | NULL | NULL | 300010 | 1.11 | Using where |
++---+--------+---------+------+------+---------+------+------+------+--------+------+-------------+
+
+## provide-from
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ vod_id, vod_name, type_id, '' AS type_name, vod_en, vod_time, vod_remarks, vod_play_from FROM mac_vod WHERE vod_status = 1 AND type_id IN ( 1 , 2 , 3 , 4 , 11 ) AND ( vod_play_from LIKE '%m3u8%' ESCAPE '!' ) AND vod_status = 1 ORDER BY vod_time DESC, vod_id DESC LIMIT 0, 20
++---+--------+---------+------+------+---------+------+------+------+--------+------+-----------------------------+
+| 1 | SIMPLE | mac_vod | NULL | ALL  | type_id | NULL | NULL | NULL | 300010 | 1.11 | Using where; Using filesort |
++---+--------+---------+------+------+---------+------+------+------+--------+------+-----------------------------+
+
+## provide-from
+SELECT type_id, type_name, type_en, type_sort, type_mid, type_pid, type_status, type_tpl, type_tpl_list, type_tpl_detail, type_tpl_play, type_tpl_down, type_key, type_des, type_title, type_union, type_extend, type_logo, type_pic, type_jumpurl FROM mac_type ORDER BY type_id ASC
++---+--------+----------+------+------+------+------+------+------+------+--------+----------------+
+| 1 | SIMPLE | mac_type | NULL | ALL  | NULL | NULL | NULL | NULL | 9    | 100.00 | Using filesort |
++---+--------+----------+------+------+------+------+------+------+------+--------+----------------+
+
+## provide-from-videolist
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN ( 1 , 2 , 3 , 4 , 11 ) AND ( vod_play_from LIKE '%m3u8%' ESCAPE '!' ) AND vod_status = 1
++---+--------+---------+------+------+---------+------+------+------+--------+------+-------------+
+| 1 | SIMPLE | mac_vod | NULL | ALL  | type_id | NULL | NULL | NULL | 300010 | 1.11 | Using where |
++---+--------+---------+------+------+---------+------+------+------+--------+------+-------------+
+
+## provide-from-videolist
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ vod_id, type_id, type_id_1, group_id, vod_name, vod_sub, vod_en, vod_status, vod_letter, vod_color, vod_tag, vod_class, vod_pic, vod_pic_thumb, vod_pic_slide, vod_pic_screenshot, vod_actor, vod_director, vod_writer, vod_behind, vod_blurb, vod_remarks, vod_pubdate, vod_total, vod_serial, vod_tv, vod_weekday, vod_area, vod_lang, vod_year, vod_version, vod_state, vod_author, vod_jumpurl, vod_tpl, vod_tpl_play, vod_tpl_down, vod_isend, vod_lock, vod_level, vod_copyright, vod_points, vod_points_play, vod_points_down, vod_hits, vod_hits_day, vod_hits_week, vod_hits_month, vod_duration, vod_up, vod_down, vod_score, vod_score_all, vod_score_num, vod_time, vod_time_add, vod_time_hits, vod_time_make, vod_trysee, vod_douban_id, vod_douban_score, vod_reurl, vod_rel_vod, vod_rel_art, vod_content, vod_play_from, vod_play_server, vod_play_note, vod_play_url, vod_down_from, vod_down_server, vod_down_note, vod_down_url, vod_plot, vod_plot_name, vod_plot_detail, (CHAR_LENGTH(vod_pwd) > 0) AS _pwd, (CHAR_LENGTH(vod_pwd_play) > 0) AS _pwd_play, (CHAR_LENGTH(vod_pwd_down) > 0) AS _pwd_down FROM mac_vod WHERE vod_status = 1 AND type_id IN ( 1 , 2 , 3 , 4 , 11 ) AND ( vod_play_from LIKE '%m3u8%' ESCAPE '!' ) AND vod_status = 1 ORDER BY vod_time DESC, vod_id DESC LIMIT 0, 20
++---+--------+---------+------+------+---------+------+------+------+--------+------+-----------------------------+
+| 1 | SIMPLE | mac_vod | NULL | ALL  | type_id | NULL | NULL | NULL | 300010 | 1.11 | Using where; Using filesort |
++---+--------+---------+------+------+---------+------+------+------+--------+------+-----------------------------+
+
+## provide-from-videolist
+SELECT type_id, type_name, type_en, type_sort, type_mid, type_pid, type_status, type_tpl, type_tpl_list, type_tpl_detail, type_tpl_play, type_tpl_down, type_key, type_des, type_title, type_union, type_extend, type_logo, type_pic, type_jumpurl FROM mac_type ORDER BY type_id ASC
++---+--------+----------+------+------+------+------+------+------+------+--------+----------------+
+| 1 | SIMPLE | mac_type | NULL | ALL  | NULL | NULL | NULL | NULL | 9    | 100.00 | Using filesort |
++---+--------+----------+------+------+------+------+------+------+------+--------+----------------+
+
+## ajax-data
+SELECT type_id, type_name, type_en, type_sort, type_mid, type_pid, type_status, type_tpl, type_tpl_list, type_tpl_detail, type_tpl_play, type_tpl_down, type_key, type_des, type_title, type_union, type_extend, type_logo, type_pic, type_jumpurl FROM mac_type ORDER BY type_id ASC
++---+--------+----------+------+------+------+------+------+------+------+--------+----------------+
+| 1 | SIMPLE | mac_type | NULL | ALL  | NULL | NULL | NULL | NULL | 9    | 100.00 | Using filesort |
++---+--------+----------+------+------+------+------+------+------+------+--------+----------------+
+
+## ajax-data
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN ( 1 , 2 , 3 , 4 , 11 )
++---+--------+---------+------+------+---------+------+------+------+--------+-------+-------------+
+| 1 | SIMPLE | mac_vod | NULL | ALL  | type_id | NULL | NULL | NULL | 300010 | 10.00 | Using where |
++---+--------+---------+------+------+---------+------+------+------+--------+-------+-------------+
+
+## ajax-data
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ vod_id, type_id, type_id_1, group_id, vod_name, vod_sub, vod_en, vod_status, vod_letter, vod_color, vod_tag, vod_class, vod_pic, vod_pic_thumb, vod_pic_slide, vod_pic_screenshot, vod_actor, vod_director, vod_writer, vod_behind, vod_blurb, vod_remarks, vod_pubdate, vod_total, vod_serial, vod_tv, vod_weekday, vod_area, vod_lang, vod_year, vod_version, vod_state, vod_author, vod_jumpurl, vod_tpl, vod_tpl_play, vod_tpl_down, vod_isend, vod_lock, vod_level, vod_copyright, vod_points, vod_points_play, vod_points_down, vod_hits, vod_hits_day, vod_hits_week, vod_hits_month, vod_duration, vod_up, vod_down, vod_score, vod_score_all, vod_score_num, vod_time, vod_time_add, vod_time_hits, vod_time_make, vod_trysee, vod_douban_id, vod_douban_score, vod_reurl, vod_rel_vod, vod_rel_art, vod_content, vod_play_from, vod_play_server, vod_play_note, vod_play_url, vod_down_from, vod_down_server, vod_down_note, vod_down_url, vod_plot, vod_plot_name, vod_plot_detail, (CHAR_LENGTH(vod_pwd) > 0) AS _pwd, (CHAR_LENGTH(vod_pwd_play) > 0) AS _pwd_play, (CHAR_LENGTH(vod_pwd_down) > 0) AS _pwd_down FROM mac_vod WHERE vod_status = 1 AND type_id IN ( 1 , 2 , 3 , 4 , 11 ) ORDER BY vod_time DESC, vod_id DESC LIMIT 570, 30
++---+--------+---------+------+------+---------+------+------+------+--------+-------+-----------------------------+
+| 1 | SIMPLE | mac_vod | NULL | ALL  | type_id | NULL | NULL | NULL | 300010 | 10.00 | Using where; Using filesort |
++---+--------+---------+------+------+---------+------+------+------+--------+-------+-----------------------------+
+
+## ajax-data-tid
+SELECT type_id, type_name, type_en, type_sort, type_mid, type_pid, type_status, type_tpl, type_tpl_list, type_tpl_detail, type_tpl_play, type_tpl_down, type_key, type_des, type_title, type_union, type_extend, type_logo, type_pic, type_jumpurl FROM mac_type ORDER BY type_id ASC
++---+--------+----------+------+------+------+------+------+------+------+--------+----------------+
+| 1 | SIMPLE | mac_type | NULL | ALL  | NULL | NULL | NULL | NULL | 9    | 100.00 | Using filesort |
++---+--------+----------+------+------+------+------+------+------+------+--------+----------------+
+
+## ajax-data-tid
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN ( 1 , 2 , 3 , 4 , 11 ) AND (type_id IN ( 2 , 3 ) OR type_id_1 IN ( 2 , 3 ) )
++---+--------+---------+------+------+-------------------+------+------+------+--------+------+-------------+
+| 1 | SIMPLE | mac_vod | NULL | ALL  | type_id,type_id_1 | NULL | NULL | NULL | 300010 | 4.97 | Using where |
++---+--------+---------+------+------+-------------------+------+------+------+--------+------+-------------+
+
+## ajax-data-tid
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ vod_id, type_id, type_id_1, group_id, vod_name, vod_sub, vod_en, vod_status, vod_letter, vod_color, vod_tag, vod_class, vod_pic, vod_pic_thumb, vod_pic_slide, vod_pic_screenshot, vod_actor, vod_director, vod_writer, vod_behind, vod_blurb, vod_remarks, vod_pubdate, vod_total, vod_serial, vod_tv, vod_weekday, vod_area, vod_lang, vod_year, vod_version, vod_state, vod_author, vod_jumpurl, vod_tpl, vod_tpl_play, vod_tpl_down, vod_isend, vod_lock, vod_level, vod_copyright, vod_points, vod_points_play, vod_points_down, vod_hits, vod_hits_day, vod_hits_week, vod_hits_month, vod_duration, vod_up, vod_down, vod_score, vod_score_all, vod_score_num, vod_time, vod_time_add, vod_time_hits, vod_time_make, vod_trysee, vod_douban_id, vod_douban_score, vod_reurl, vod_rel_vod, vod_rel_art, vod_content, vod_play_from, vod_play_server, vod_play_note, vod_play_url, vod_down_from, vod_down_server, vod_down_note, vod_down_url, vod_plot, vod_plot_name, vod_plot_detail, (CHAR_LENGTH(vod_pwd) > 0) AS _pwd, (CHAR_LENGTH(vod_pwd_play) > 0) AS _pwd_play, (CHAR_LENGTH(vod_pwd_down) > 0) AS _pwd_down FROM mac_vod WHERE vod_status = 1 AND type_id IN ( 1 , 2 , 3 , 4 , 11 ) AND (type_id IN ( 2 , 3 ) OR type_id_1 IN ( 2 , 3 ) ) ORDER BY vod_time DESC, vod_id DESC LIMIT 0, 10
++---+--------+---------+------+------+-------------------+------+------+------+--------+------+-----------------------------+
+| 1 | SIMPLE | mac_vod | NULL | ALL  | type_id,type_id_1 | NULL | NULL | NULL | 300010 | 4.97 | Using where; Using filesort |
++---+--------+---------+------+------+-------------------+------+------+------+--------+------+-----------------------------+
+
+## ajax-suggest
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN ( 1 , 2 , 3 , 4 , 11 ) AND (vod_name LIKE '%视频9999%' ESCAPE '!' OR vod_en LIKE '%视频9999%' ESCAPE '!')
++---+--------+---------+------+------+---------+------+------+------+--------+------+-------------+
+| 1 | SIMPLE | mac_vod | NULL | ALL  | type_id | NULL | NULL | NULL | 300010 | 2.10 | Using where |
++---+--------+---------+------+------+---------+------+------+------+--------+------+-------------+
+
+## ajax-suggest
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ vod_id AS id, vod_name AS name, vod_en AS en, vod_pic AS pic FROM mac_vod WHERE vod_status = 1 AND type_id IN ( 1 , 2 , 3 , 4 , 11 ) AND (vod_name LIKE '%视频9999%' ESCAPE '!' OR vod_en LIKE '%视频9999%' ESCAPE '!') ORDER BY vod_id DESC LIMIT 0, 20
++---+--------+---------+------+-------+---------+---------+------+------+------+------+-------------+
+| 1 | SIMPLE | mac_vod | NULL | index | type_id | PRIMARY | 4    | NULL | 20   | 2.10 | Using where |
++---+--------+---------+------+-------+---------+---------+------+------+------+------+-------------+
+
+## rss-baidu
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE vod_status = 1 AND type_id IN ( 1 , 2 , 3 , 4 , 11 )
++---+--------+---------+------+------+---------+------+------+------+--------+-------+-------------+
+| 1 | SIMPLE | mac_vod | NULL | ALL  | type_id | NULL | NULL | NULL | 300010 | 10.00 | Using where |
++---+--------+---------+------+------+---------+------+------+------+--------+-------+-------------+
+
+## rss-baidu
+SELECT /*+ MAX_EXECUTION_TIME(3000) */ vod_id, vod_name, type_id, '' AS type_name, vod_en, vod_time, vod_remarks, vod_play_from FROM mac_vod WHERE vod_status = 1 AND type_id IN ( 1 , 2 , 3 , 4 , 11 ) ORDER BY vod_time DESC, vod_id DESC LIMIT 0, 1000
++---+--------+---------+------+------+---------+------+------+------+--------+-------+-----------------------------+
+| 1 | SIMPLE | mac_vod | NULL | ALL  | type_id | NULL | NULL | NULL | 300010 | 10.00 | Using where; Using filesort |
++---+--------+---------+------+------+---------+------+------+------+--------+-------+-----------------------------+

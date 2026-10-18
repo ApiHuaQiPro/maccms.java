@@ -106,7 +106,7 @@ public final class LegacyUrlBuilder {
                 default -> throw new IllegalStateException("未知参数");
             }
         }
-        return macUrl(route.page().target(), vars);
+        return macUrl(route.page().target(), vars, route.page().suffix());
     }
 
     /** 首页：旧模板用 {@code {$maccms.path}}，即 {@code MAC_PATH}（All.php:61），不经 mac_url。 */
@@ -276,7 +276,12 @@ public final class LegacyUrlBuilder {
     // ---- mac_url 尾部处理（common.php:2376-2426，动态页分支，ENTRANCE=index） ----
 
     private String macUrl(String model, Map<String, String> vars) {
-        String url = thinkUrl(model, vars);
+        return macUrl(model, vars, "html");
+    }
+
+    /** @param suffix ThinkPHP url() 的后缀（{@code html}；站点级 RSS 为 {@code xml}，common.php:1782-1793） */
+    private String macUrl(String model, Map<String, String> vars, String suffix) {
+        String url = thinkUrl(model, vars, suffix);
         if (style.rewrite()) {
             url = url.replace("index.php/", "");
         }
@@ -308,7 +313,7 @@ public final class LegacyUrlBuilder {
 
     // ---- ThinkPHP url()：Url::build，Request root=/index.php，模块绑定 index（index.php:20） ----
 
-    private String thinkUrl(String model, Map<String, String> vars) {
+    private String thinkUrl(String model, Map<String, String> vars, String suffix) {
         Map<String, String> rest = new LinkedHashMap<>(vars);
         String path = model;
         if (style.routeAliases() && ROUTES.containsKey(model)) {
@@ -326,7 +331,7 @@ public final class LegacyUrlBuilder {
                 url.append(depr).append(e.getKey()).append(depr).append(urlencode(e.getValue()));
             }
         }
-        url.append(".html");
+        url.append('.').append(suffix);
         String u = url.toString();
         int i = 0;
         while (i < u.length() && u.charAt(i) == '/') {

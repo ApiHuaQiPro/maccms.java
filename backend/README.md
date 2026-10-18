@@ -37,6 +37,12 @@ B07（MACC-31）建了写入基础设施，见 `docs/architecture/12-write-infra
 与静态/运行期护栏、写 SQL 规范（条件更新、匹配行数、固定顺序与补偿），以及测试侧的并发写测试支撑与回滚演练工具（快照、逐行 diff、
 只用 DML 恢复）。本批没有任何业务写入，正式登记表为空。整体切换（D3）方案见 `docs/architecture/13-cutover-plan.md`。
 
+B06（MACC-30）见 `docs/architecture/16-b06-misc-pages-provide.md`：客户端 IP 组件（`MACCMS_TRUSTED_PROXIES`、`MACCMS_CLIENT_IP_HEADER`，
+默认只信连接对端）；Provide 资源站接口（`/api.php/provide/**`，`MACCMS_OPENAPI_ENABLED` **默认关闭**，各模块再按旧配置 `api.*.status`
+判定，JSON/XML、白名单、`cachetime` 转为 HTTP 缓存头，只读）；site 新增地图、帮助、版权提示、站点级 RSS 与 6 种搜索引擎地图、
+自定义标签页（无内置标签页时一律"非法请求"）、本地生成的二维码、桌面快捷方式、`ajax/suggest`（随搜索开关）与 `ajax/data`。
+PHP 黄金样本：`src/test/php/provide_golden.php`（php-cgi 跑完整 ThinkPHP 路由）；对照测试 `ProvideGoldenMySqlIT`、`AjaxGoldenMySqlIT`。
+
 ### 环境
 
 - JDK 21（本机 `D:\Tools\Java\jdk-21`，`JAVA_HOME` 已指向它）。

@@ -593,8 +593,13 @@ public final class LegacyUrlParser {
             return Optional.of(new SiteRoute.Home());
         }
         String p;
+        boolean xml = false;
         if (pathInfo.endsWith(".html")) {
             p = pathInfo.substring(0, pathInfo.length() - ".html".length());
+        } else if (pathInfo.endsWith(".xml")) {
+            // B06：站点级 RSS 的规范地址以 .xml 结尾（url($model, $param, 'xml')，application/common.php:1782-1793）
+            p = pathInfo.substring(0, pathInfo.length() - ".xml".length());
+            xml = true;
         } else if (pathInfo.endsWith("/")) {
             p = pathInfo.substring(0, pathInfo.length() - 1);
         } else {
@@ -603,7 +608,12 @@ public final class LegacyUrlParser {
         if (p.isEmpty() || p.indexOf('.') >= 0 || p.endsWith("/")) {
             return Optional.empty();
         }
-        return style.routeAliases() ? routeAlias(p) : modulePath(p);
+        Optional<SiteRoute> route = style.routeAliases() ? routeAlias(p) : modulePath(p);
+        if (xml && !(route.isPresent() && route.get() instanceof SiteRoute.Legacy l && l.page().feed())) {
+            // .xml 只用于站点级 RSS；其他页面的 .xml 形态不认（与 B05 相同只认 .html）
+            return Optional.empty();
+        }
+        return route;
     }
 
     /**
@@ -631,6 +641,11 @@ public final class LegacyUrlParser {
             if (s.isEmpty()) {
                 return Optional.empty();
             }
+        }
+        if (seg.length == 1) {
+            // ThinkPHP 的默认操作 index：map、help、rss 只写控制器名时就是 map/index 等（B06，只作输入，canonical 指向完整地址）
+            LegacyPage page = LegacyPage.byTarget(seg[0] + "/index");
+            return page != null && page.misc() ? Optional.of(SiteRoute.Legacy.of(page, 0)) : Optional.empty();
         }
         if (seg.length < 2) {
             return Optional.empty();

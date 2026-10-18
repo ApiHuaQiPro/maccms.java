@@ -17,6 +17,7 @@ import com.maccms.backend.site.application.PlayerSettings;
 import com.maccms.backend.site.application.RichTextCache;
 import com.maccms.backend.site.application.RichTextSanitizer;
 import com.maccms.backend.site.application.SiteFeatures;
+import com.maccms.backend.site.application.SiteMiscSettings;
 import com.maccms.backend.site.application.SiteImageProperties;
 import com.maccms.backend.site.application.SiteLegacyConfig;
 import com.maccms.backend.site.application.SitePasswordProperties;
@@ -153,6 +154,19 @@ public class SiteConfiguration {
             }
         }
         return SiteFeatures.from(properties, maccms);
+    }
+
+    /** B06 杂项页用到的旧配置（版权提示文案、联想词开关）：启动时读一次，没有旧配置时按仓库值。 */
+    @Bean
+    SiteMiscSettings siteMiscSettings(LegacyConfigService legacy) {
+        if (!legacy.isConfigured()) {
+            return SiteMiscSettings.from(null);
+        }
+        try {
+            return SiteMiscSettings.from(legacy.read(LegacyConfigFile.MACCMS));
+        } catch (LegacyConfigException e) {
+            throw new IllegalStateException("site 已启用但旧配置 extra/maccms.php 读取失败：" + e.getMessage(), null);
+        }
     }
 
     /** 访问密码签名票据（B05，D-B05-3）：部署密钥只来自环境变量，留空时不提供在线验证。 */

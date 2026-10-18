@@ -1,0 +1,596 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+  只读映射（B06，MACC-30，docs/architecture/16-b06-misc-pages-provide.md 第 3.5、3.6、4.9、4.10 节）：旧协议需要的"整行"读取，
+  供 Provide（api/controller/Provide.php，旧 SELECT *）、ajax/data（index/controller/Ajax.php:21-86，旧 SELECT *）与 ajax/suggest
+  （:88-121）使用。旧版的 SELECT * 在这里明确列出 install.sql 的全部列（列名固定写在本文件，不由请求决定）。
+  不查询的列（不得出现在任何 select 列表中）：vod_pwd、vod_pwd_url、vod_pwd_play、vod_pwd_play_url、vod_pwd_down、vod_pwd_down_url、
+  art_pwd、art_pwd_url。访问密码只以 CHAR_LENGTH(...) &gt; 0 的布尔结果（_pwd、_pwd_play、_pwd_down）出现，由 content.application
+  据此把受保护的正文/地址置空（16 文档第 3.6 节）。
+  条件的列名与运算符写死在本文件；值只经 #{} 绑定，包含匹配的模式由 content.application 按 ESCAPE '!' 转义。
+  count 与分页共用同一个条件片段。MAX_EXECUTION_TIME(3000) 为服务端执行时限（字面常量），超时由 content.application 归为 503。
+  本文件由 install.sql 的列清单生成，LegacyRowMapperMySqlIT 核对列清单与一次性库的 information_schema 一致。
+-->
+<mapper namespace="com.maccms.backend.content.infrastructure.LegacyRowMapper">
+
+    <!-- 全部旧表列的 Java 类型（整数列为 long，DECIMAL 与文本列为 String），各表同名列类型相同。只映射结果集中出现的列。 -->
+    <resultMap id="row" type="java.util.HashMap">
+        <result column="actor_id" property="actor_id" javaType="long"/>
+        <result column="type_id" property="type_id" javaType="long"/>
+        <result column="type_id_1" property="type_id_1" javaType="long"/>
+        <result column="actor_name" property="actor_name" javaType="string"/>
+        <result column="actor_en" property="actor_en" javaType="string"/>
+        <result column="actor_alias" property="actor_alias" javaType="string"/>
+        <result column="actor_status" property="actor_status" javaType="long"/>
+        <result column="actor_lock" property="actor_lock" javaType="long"/>
+        <result column="actor_letter" property="actor_letter" javaType="string"/>
+        <result column="actor_sex" property="actor_sex" javaType="string"/>
+        <result column="actor_color" property="actor_color" javaType="string"/>
+        <result column="actor_pic" property="actor_pic" javaType="string"/>
+        <result column="actor_blurb" property="actor_blurb" javaType="string"/>
+        <result column="actor_remarks" property="actor_remarks" javaType="string"/>
+        <result column="actor_area" property="actor_area" javaType="string"/>
+        <result column="actor_height" property="actor_height" javaType="string"/>
+        <result column="actor_weight" property="actor_weight" javaType="string"/>
+        <result column="actor_birthday" property="actor_birthday" javaType="string"/>
+        <result column="actor_birtharea" property="actor_birtharea" javaType="string"/>
+        <result column="actor_blood" property="actor_blood" javaType="string"/>
+        <result column="actor_starsign" property="actor_starsign" javaType="string"/>
+        <result column="actor_school" property="actor_school" javaType="string"/>
+        <result column="actor_works" property="actor_works" javaType="string"/>
+        <result column="actor_tag" property="actor_tag" javaType="string"/>
+        <result column="actor_class" property="actor_class" javaType="string"/>
+        <result column="actor_level" property="actor_level" javaType="long"/>
+        <result column="actor_time" property="actor_time" javaType="long"/>
+        <result column="actor_time_add" property="actor_time_add" javaType="long"/>
+        <result column="actor_time_hits" property="actor_time_hits" javaType="long"/>
+        <result column="actor_time_make" property="actor_time_make" javaType="long"/>
+        <result column="actor_hits" property="actor_hits" javaType="long"/>
+        <result column="actor_hits_day" property="actor_hits_day" javaType="long"/>
+        <result column="actor_hits_week" property="actor_hits_week" javaType="long"/>
+        <result column="actor_hits_month" property="actor_hits_month" javaType="long"/>
+        <result column="actor_score" property="actor_score" javaType="string"/>
+        <result column="actor_score_all" property="actor_score_all" javaType="long"/>
+        <result column="actor_score_num" property="actor_score_num" javaType="long"/>
+        <result column="actor_up" property="actor_up" javaType="long"/>
+        <result column="actor_down" property="actor_down" javaType="long"/>
+        <result column="actor_tpl" property="actor_tpl" javaType="string"/>
+        <result column="actor_jumpurl" property="actor_jumpurl" javaType="string"/>
+        <result column="actor_content" property="actor_content" javaType="string"/>
+        <result column="art_id" property="art_id" javaType="long"/>
+        <result column="group_id" property="group_id" javaType="long"/>
+        <result column="art_name" property="art_name" javaType="string"/>
+        <result column="art_sub" property="art_sub" javaType="string"/>
+        <result column="art_en" property="art_en" javaType="string"/>
+        <result column="art_status" property="art_status" javaType="long"/>
+        <result column="art_letter" property="art_letter" javaType="string"/>
+        <result column="art_color" property="art_color" javaType="string"/>
+        <result column="art_from" property="art_from" javaType="string"/>
+        <result column="art_author" property="art_author" javaType="string"/>
+        <result column="art_tag" property="art_tag" javaType="string"/>
+        <result column="art_class" property="art_class" javaType="string"/>
+        <result column="art_pic" property="art_pic" javaType="string"/>
+        <result column="art_pic_thumb" property="art_pic_thumb" javaType="string"/>
+        <result column="art_pic_slide" property="art_pic_slide" javaType="string"/>
+        <result column="art_pic_screenshot" property="art_pic_screenshot" javaType="string"/>
+        <result column="art_blurb" property="art_blurb" javaType="string"/>
+        <result column="art_remarks" property="art_remarks" javaType="string"/>
+        <result column="art_jumpurl" property="art_jumpurl" javaType="string"/>
+        <result column="art_tpl" property="art_tpl" javaType="string"/>
+        <result column="art_level" property="art_level" javaType="long"/>
+        <result column="art_lock" property="art_lock" javaType="long"/>
+        <result column="art_points" property="art_points" javaType="long"/>
+        <result column="art_points_detail" property="art_points_detail" javaType="long"/>
+        <result column="art_up" property="art_up" javaType="long"/>
+        <result column="art_down" property="art_down" javaType="long"/>
+        <result column="art_hits" property="art_hits" javaType="long"/>
+        <result column="art_hits_day" property="art_hits_day" javaType="long"/>
+        <result column="art_hits_week" property="art_hits_week" javaType="long"/>
+        <result column="art_hits_month" property="art_hits_month" javaType="long"/>
+        <result column="art_time" property="art_time" javaType="long"/>
+        <result column="art_time_add" property="art_time_add" javaType="long"/>
+        <result column="art_time_hits" property="art_time_hits" javaType="long"/>
+        <result column="art_time_make" property="art_time_make" javaType="long"/>
+        <result column="art_score" property="art_score" javaType="string"/>
+        <result column="art_score_all" property="art_score_all" javaType="long"/>
+        <result column="art_score_num" property="art_score_num" javaType="long"/>
+        <result column="art_rel_art" property="art_rel_art" javaType="string"/>
+        <result column="art_rel_vod" property="art_rel_vod" javaType="string"/>
+        <result column="art_title" property="art_title" javaType="string"/>
+        <result column="art_note" property="art_note" javaType="string"/>
+        <result column="art_content" property="art_content" javaType="string"/>
+        <result column="group_name" property="group_name" javaType="string"/>
+        <result column="group_status" property="group_status" javaType="long"/>
+        <result column="group_type" property="group_type" javaType="string"/>
+        <result column="group_popedom" property="group_popedom" javaType="string"/>
+        <result column="group_points_day" property="group_points_day" javaType="long"/>
+        <result column="group_points_week" property="group_points_week" javaType="long"/>
+        <result column="group_points_month" property="group_points_month" javaType="long"/>
+        <result column="group_points_year" property="group_points_year" javaType="long"/>
+        <result column="group_points_free" property="group_points_free" javaType="long"/>
+        <result column="role_id" property="role_id" javaType="long"/>
+        <result column="role_rid" property="role_rid" javaType="long"/>
+        <result column="role_name" property="role_name" javaType="string"/>
+        <result column="role_en" property="role_en" javaType="string"/>
+        <result column="role_status" property="role_status" javaType="long"/>
+        <result column="role_lock" property="role_lock" javaType="long"/>
+        <result column="role_letter" property="role_letter" javaType="string"/>
+        <result column="role_color" property="role_color" javaType="string"/>
+        <result column="role_actor" property="role_actor" javaType="string"/>
+        <result column="role_remarks" property="role_remarks" javaType="string"/>
+        <result column="role_pic" property="role_pic" javaType="string"/>
+        <result column="role_sort" property="role_sort" javaType="long"/>
+        <result column="role_level" property="role_level" javaType="long"/>
+        <result column="role_time" property="role_time" javaType="long"/>
+        <result column="role_time_add" property="role_time_add" javaType="long"/>
+        <result column="role_time_hits" property="role_time_hits" javaType="long"/>
+        <result column="role_time_make" property="role_time_make" javaType="long"/>
+        <result column="role_hits" property="role_hits" javaType="long"/>
+        <result column="role_hits_day" property="role_hits_day" javaType="long"/>
+        <result column="role_hits_week" property="role_hits_week" javaType="long"/>
+        <result column="role_hits_month" property="role_hits_month" javaType="long"/>
+        <result column="role_score" property="role_score" javaType="string"/>
+        <result column="role_score_all" property="role_score_all" javaType="long"/>
+        <result column="role_score_num" property="role_score_num" javaType="long"/>
+        <result column="role_up" property="role_up" javaType="long"/>
+        <result column="role_down" property="role_down" javaType="long"/>
+        <result column="role_tpl" property="role_tpl" javaType="string"/>
+        <result column="role_jumpurl" property="role_jumpurl" javaType="string"/>
+        <result column="role_content" property="role_content" javaType="string"/>
+        <result column="topic_id" property="topic_id" javaType="long"/>
+        <result column="topic_name" property="topic_name" javaType="string"/>
+        <result column="topic_en" property="topic_en" javaType="string"/>
+        <result column="topic_sub" property="topic_sub" javaType="string"/>
+        <result column="topic_status" property="topic_status" javaType="long"/>
+        <result column="topic_sort" property="topic_sort" javaType="long"/>
+        <result column="topic_letter" property="topic_letter" javaType="string"/>
+        <result column="topic_color" property="topic_color" javaType="string"/>
+        <result column="topic_tpl" property="topic_tpl" javaType="string"/>
+        <result column="topic_type" property="topic_type" javaType="string"/>
+        <result column="topic_pic" property="topic_pic" javaType="string"/>
+        <result column="topic_pic_thumb" property="topic_pic_thumb" javaType="string"/>
+        <result column="topic_pic_slide" property="topic_pic_slide" javaType="string"/>
+        <result column="topic_key" property="topic_key" javaType="string"/>
+        <result column="topic_des" property="topic_des" javaType="string"/>
+        <result column="topic_title" property="topic_title" javaType="string"/>
+        <result column="topic_blurb" property="topic_blurb" javaType="string"/>
+        <result column="topic_remarks" property="topic_remarks" javaType="string"/>
+        <result column="topic_level" property="topic_level" javaType="long"/>
+        <result column="topic_up" property="topic_up" javaType="long"/>
+        <result column="topic_down" property="topic_down" javaType="long"/>
+        <result column="topic_score" property="topic_score" javaType="string"/>
+        <result column="topic_score_all" property="topic_score_all" javaType="long"/>
+        <result column="topic_score_num" property="topic_score_num" javaType="long"/>
+        <result column="topic_hits" property="topic_hits" javaType="long"/>
+        <result column="topic_hits_day" property="topic_hits_day" javaType="long"/>
+        <result column="topic_hits_week" property="topic_hits_week" javaType="long"/>
+        <result column="topic_hits_month" property="topic_hits_month" javaType="long"/>
+        <result column="topic_time" property="topic_time" javaType="long"/>
+        <result column="topic_time_add" property="topic_time_add" javaType="long"/>
+        <result column="topic_time_hits" property="topic_time_hits" javaType="long"/>
+        <result column="topic_time_make" property="topic_time_make" javaType="long"/>
+        <result column="topic_tag" property="topic_tag" javaType="string"/>
+        <result column="topic_rel_vod" property="topic_rel_vod" javaType="string"/>
+        <result column="topic_rel_art" property="topic_rel_art" javaType="string"/>
+        <result column="topic_content" property="topic_content" javaType="string"/>
+        <result column="topic_extend" property="topic_extend" javaType="string"/>
+        <result column="type_name" property="type_name" javaType="string"/>
+        <result column="type_en" property="type_en" javaType="string"/>
+        <result column="type_sort" property="type_sort" javaType="long"/>
+        <result column="type_mid" property="type_mid" javaType="long"/>
+        <result column="type_pid" property="type_pid" javaType="long"/>
+        <result column="type_status" property="type_status" javaType="long"/>
+        <result column="type_tpl" property="type_tpl" javaType="string"/>
+        <result column="type_tpl_list" property="type_tpl_list" javaType="string"/>
+        <result column="type_tpl_detail" property="type_tpl_detail" javaType="string"/>
+        <result column="type_tpl_play" property="type_tpl_play" javaType="string"/>
+        <result column="type_tpl_down" property="type_tpl_down" javaType="string"/>
+        <result column="type_key" property="type_key" javaType="string"/>
+        <result column="type_des" property="type_des" javaType="string"/>
+        <result column="type_title" property="type_title" javaType="string"/>
+        <result column="type_union" property="type_union" javaType="string"/>
+        <result column="type_extend" property="type_extend" javaType="string"/>
+        <result column="type_logo" property="type_logo" javaType="string"/>
+        <result column="type_pic" property="type_pic" javaType="string"/>
+        <result column="type_jumpurl" property="type_jumpurl" javaType="string"/>
+        <result column="vod_id" property="vod_id" javaType="long"/>
+        <result column="vod_name" property="vod_name" javaType="string"/>
+        <result column="vod_sub" property="vod_sub" javaType="string"/>
+        <result column="vod_en" property="vod_en" javaType="string"/>
+        <result column="vod_status" property="vod_status" javaType="long"/>
+        <result column="vod_letter" property="vod_letter" javaType="string"/>
+        <result column="vod_color" property="vod_color" javaType="string"/>
+        <result column="vod_tag" property="vod_tag" javaType="string"/>
+        <result column="vod_class" property="vod_class" javaType="string"/>
+        <result column="vod_pic" property="vod_pic" javaType="string"/>
+        <result column="vod_pic_thumb" property="vod_pic_thumb" javaType="string"/>
+        <result column="vod_pic_slide" property="vod_pic_slide" javaType="string"/>
+        <result column="vod_pic_screenshot" property="vod_pic_screenshot" javaType="string"/>
+        <result column="vod_actor" property="vod_actor" javaType="string"/>
+        <result column="vod_director" property="vod_director" javaType="string"/>
+        <result column="vod_writer" property="vod_writer" javaType="string"/>
+        <result column="vod_behind" property="vod_behind" javaType="string"/>
+        <result column="vod_blurb" property="vod_blurb" javaType="string"/>
+        <result column="vod_remarks" property="vod_remarks" javaType="string"/>
+        <result column="vod_pubdate" property="vod_pubdate" javaType="string"/>
+        <result column="vod_total" property="vod_total" javaType="long"/>
+        <result column="vod_serial" property="vod_serial" javaType="string"/>
+        <result column="vod_tv" property="vod_tv" javaType="string"/>
+        <result column="vod_weekday" property="vod_weekday" javaType="string"/>
+        <result column="vod_area" property="vod_area" javaType="string"/>
+        <result column="vod_lang" property="vod_lang" javaType="string"/>
+        <result column="vod_year" property="vod_year" javaType="string"/>
+        <result column="vod_version" property="vod_version" javaType="string"/>
+        <result column="vod_state" property="vod_state" javaType="string"/>
+        <result column="vod_author" property="vod_author" javaType="string"/>
+        <result column="vod_jumpurl" property="vod_jumpurl" javaType="string"/>
+        <result column="vod_tpl" property="vod_tpl" javaType="string"/>
+        <result column="vod_tpl_play" property="vod_tpl_play" javaType="string"/>
+        <result column="vod_tpl_down" property="vod_tpl_down" javaType="string"/>
+        <result column="vod_isend" property="vod_isend" javaType="long"/>
+        <result column="vod_lock" property="vod_lock" javaType="long"/>
+        <result column="vod_level" property="vod_level" javaType="long"/>
+        <result column="vod_copyright" property="vod_copyright" javaType="long"/>
+        <result column="vod_points" property="vod_points" javaType="long"/>
+        <result column="vod_points_play" property="vod_points_play" javaType="long"/>
+        <result column="vod_points_down" property="vod_points_down" javaType="long"/>
+        <result column="vod_hits" property="vod_hits" javaType="long"/>
+        <result column="vod_hits_day" property="vod_hits_day" javaType="long"/>
+        <result column="vod_hits_week" property="vod_hits_week" javaType="long"/>
+        <result column="vod_hits_month" property="vod_hits_month" javaType="long"/>
+        <result column="vod_duration" property="vod_duration" javaType="string"/>
+        <result column="vod_up" property="vod_up" javaType="long"/>
+        <result column="vod_down" property="vod_down" javaType="long"/>
+        <result column="vod_score" property="vod_score" javaType="string"/>
+        <result column="vod_score_all" property="vod_score_all" javaType="long"/>
+        <result column="vod_score_num" property="vod_score_num" javaType="long"/>
+        <result column="vod_time" property="vod_time" javaType="long"/>
+        <result column="vod_time_add" property="vod_time_add" javaType="long"/>
+        <result column="vod_time_hits" property="vod_time_hits" javaType="long"/>
+        <result column="vod_time_make" property="vod_time_make" javaType="long"/>
+        <result column="vod_trysee" property="vod_trysee" javaType="long"/>
+        <result column="vod_douban_id" property="vod_douban_id" javaType="long"/>
+        <result column="vod_douban_score" property="vod_douban_score" javaType="string"/>
+        <result column="vod_reurl" property="vod_reurl" javaType="string"/>
+        <result column="vod_rel_vod" property="vod_rel_vod" javaType="string"/>
+        <result column="vod_rel_art" property="vod_rel_art" javaType="string"/>
+        <result column="vod_content" property="vod_content" javaType="string"/>
+        <result column="vod_play_from" property="vod_play_from" javaType="string"/>
+        <result column="vod_play_server" property="vod_play_server" javaType="string"/>
+        <result column="vod_play_note" property="vod_play_note" javaType="string"/>
+        <result column="vod_play_url" property="vod_play_url" javaType="string"/>
+        <result column="vod_down_from" property="vod_down_from" javaType="string"/>
+        <result column="vod_down_server" property="vod_down_server" javaType="string"/>
+        <result column="vod_down_note" property="vod_down_note" javaType="string"/>
+        <result column="vod_down_url" property="vod_down_url" javaType="string"/>
+        <result column="vod_plot" property="vod_plot" javaType="long"/>
+        <result column="vod_plot_name" property="vod_plot_name" javaType="string"/>
+        <result column="vod_plot_detail" property="vod_plot_detail" javaType="string"/>
+        <result column="website_id" property="website_id" javaType="long"/>
+        <result column="website_name" property="website_name" javaType="string"/>
+        <result column="website_sub" property="website_sub" javaType="string"/>
+        <result column="website_en" property="website_en" javaType="string"/>
+        <result column="website_status" property="website_status" javaType="long"/>
+        <result column="website_letter" property="website_letter" javaType="string"/>
+        <result column="website_color" property="website_color" javaType="string"/>
+        <result column="website_lock" property="website_lock" javaType="long"/>
+        <result column="website_sort" property="website_sort" javaType="long"/>
+        <result column="website_jumpurl" property="website_jumpurl" javaType="string"/>
+        <result column="website_pic" property="website_pic" javaType="string"/>
+        <result column="website_pic_screenshot" property="website_pic_screenshot" javaType="string"/>
+        <result column="website_logo" property="website_logo" javaType="string"/>
+        <result column="website_area" property="website_area" javaType="string"/>
+        <result column="website_lang" property="website_lang" javaType="string"/>
+        <result column="website_level" property="website_level" javaType="long"/>
+        <result column="website_time" property="website_time" javaType="long"/>
+        <result column="website_time_add" property="website_time_add" javaType="long"/>
+        <result column="website_time_hits" property="website_time_hits" javaType="long"/>
+        <result column="website_time_make" property="website_time_make" javaType="long"/>
+        <result column="website_time_referer" property="website_time_referer" javaType="long"/>
+        <result column="website_hits" property="website_hits" javaType="long"/>
+        <result column="website_hits_day" property="website_hits_day" javaType="long"/>
+        <result column="website_hits_week" property="website_hits_week" javaType="long"/>
+        <result column="website_hits_month" property="website_hits_month" javaType="long"/>
+        <result column="website_score" property="website_score" javaType="string"/>
+        <result column="website_score_all" property="website_score_all" javaType="long"/>
+        <result column="website_score_num" property="website_score_num" javaType="long"/>
+        <result column="website_up" property="website_up" javaType="long"/>
+        <result column="website_down" property="website_down" javaType="long"/>
+        <result column="website_referer" property="website_referer" javaType="long"/>
+        <result column="website_referer_day" property="website_referer_day" javaType="long"/>
+        <result column="website_referer_week" property="website_referer_week" javaType="long"/>
+        <result column="website_referer_month" property="website_referer_month" javaType="long"/>
+        <result column="website_tag" property="website_tag" javaType="string"/>
+        <result column="website_class" property="website_class" javaType="string"/>
+        <result column="website_remarks" property="website_remarks" javaType="string"/>
+        <result column="website_tpl" property="website_tpl" javaType="string"/>
+        <result column="website_blurb" property="website_blurb" javaType="string"/>
+        <result column="website_content" property="website_content" javaType="string"/>
+        <result column="id" property="id" javaType="long"/>
+        <result column="name" property="name" javaType="string"/>
+        <result column="en" property="en" javaType="string"/>
+        <result column="pic" property="pic" javaType="string"/>
+        <result column="_pwd" property="_pwd" javaType="boolean"/>
+        <result column="_pwd_play" property="_pwd_play" javaType="boolean"/>
+        <result column="_pwd_down" property="_pwd_down" javaType="boolean"/>
+    </resultMap>
+
+    <sql id="vodConditions">
+        vod_status = 1
+        AND type_id IN <foreach collection="q.typeIds" item="tid" open="(" separator="," close=")">#{tid}</foreach>
+        <if test="q.typeIdEquals != null">AND type_id = #{q.typeIdEquals}</if>
+        <if test="q.typeIdIn != null">AND type_id IN <foreach collection="q.typeIdIn" item="x" open="(" separator="," close=")">#{x}</foreach></if>
+        <if test="q.typeOrParentIn != null">AND (type_id IN <foreach collection="q.typeOrParentIn" item="x" open="(" separator="," close=")">#{x}</foreach> OR type_id_1 IN <foreach collection="q.typeOrParentIn" item="x" open="(" separator="," close=")">#{x}</foreach>)</if>
+        <if test="q.ids != null">AND vod_id IN <foreach collection="q.ids" item="x" open="(" separator="," close=")">#{x}</foreach></if>
+        <if test="q.timeAfter != null">AND vod_time &gt; #{q.timeAfter}</if>
+        <if test="q.timeBefore != null">AND vod_time &lt; #{q.timeBefore}</if>
+        <if test="q.namePattern != null">AND vod_name LIKE #{q.namePattern} ESCAPE '!'</if>
+        <if test="q.nameOrEnPattern != null">AND (vod_name LIKE #{q.nameOrEnPattern} ESCAPE '!' OR vod_en LIKE #{q.nameOrEnPattern} ESCAPE '!')</if>
+        <if test="q.isEnd != null">AND vod_isend = #{q.isEnd}</if>
+        <if test="q.years != null">AND vod_year IN <foreach collection="q.years" item="x" open="(" separator="," close=")">#{x}</foreach></if>
+        <if test="q.playFromPatterns != null">AND (<foreach collection="q.playFromPatterns" item="x" separator=" OR ">vod_play_from LIKE #{x} ESCAPE '!'</foreach>)</if>
+        <if test="q.conditions != null"><foreach collection="q.conditions" item="c">
+            AND <choose>
+                <when test="c.column.name() == 'STATUS'">vod_status</when>
+                <when test="c.column.name() == 'LEVEL'">vod_level</when>
+                <when test="c.column.name() == 'LOCK'">vod_lock</when>
+                <when test="c.column.name() == 'ISEND'">vod_isend</when>
+                <when test="c.column.name() == 'COPYRIGHT'">vod_copyright</when>
+                <when test="c.column.name() == 'PLOT'">vod_plot</when>
+                <otherwise>vod_status</otherwise>
+            </choose>
+            <choose>
+                <when test="c.op.name() == 'EQ'">=</when>
+                <when test="c.op.name() == 'NE'">&lt;&gt;</when>
+                <when test="c.op.name() == 'GT'">&gt;</when>
+                <when test="c.op.name() == 'GE'">&gt;=</when>
+                <when test="c.op.name() == 'LT'">&lt;</when>
+                <when test="c.op.name() == 'LE'">&lt;=</when>
+                <otherwise>=</otherwise>
+            </choose> #{c.value}
+        </foreach></if>
+    </sql>
+
+    <sql id="artConditions">
+        art_status = 1
+        AND type_id IN <foreach collection="q.typeIds" item="tid" open="(" separator="," close=")">#{tid}</foreach>
+        <if test="q.typeIdEquals != null">AND type_id = #{q.typeIdEquals}</if>
+        <if test="q.typeIdIn != null">AND type_id IN <foreach collection="q.typeIdIn" item="x" open="(" separator="," close=")">#{x}</foreach></if>
+        <if test="q.typeOrParentIn != null">AND (type_id IN <foreach collection="q.typeOrParentIn" item="x" open="(" separator="," close=")">#{x}</foreach> OR type_id_1 IN <foreach collection="q.typeOrParentIn" item="x" open="(" separator="," close=")">#{x}</foreach>)</if>
+        <if test="q.ids != null">AND art_id IN <foreach collection="q.ids" item="x" open="(" separator="," close=")">#{x}</foreach></if>
+        <if test="q.timeAfter != null">AND art_time &gt; #{q.timeAfter}</if>
+        <if test="q.timeBefore != null">AND art_time &lt; #{q.timeBefore}</if>
+        <if test="q.namePattern != null">AND art_name LIKE #{q.namePattern} ESCAPE '!'</if>
+        <if test="q.nameOrEnPattern != null">AND (art_name LIKE #{q.nameOrEnPattern} ESCAPE '!' OR art_en LIKE #{q.nameOrEnPattern} ESCAPE '!')</if>
+        <if test="q.conditions != null"><foreach collection="q.conditions" item="c">
+            AND <choose>
+                <when test="c.column.name() == 'STATUS'">art_status</when>
+                <when test="c.column.name() == 'LEVEL'">art_level</when>
+                <when test="c.column.name() == 'LOCK'">art_lock</when>
+                <otherwise>art_status</otherwise>
+            </choose>
+            <choose>
+                <when test="c.op.name() == 'EQ'">=</when>
+                <when test="c.op.name() == 'NE'">&lt;&gt;</when>
+                <when test="c.op.name() == 'GT'">&gt;</when>
+                <when test="c.op.name() == 'GE'">&gt;=</when>
+                <when test="c.op.name() == 'LT'">&lt;</when>
+                <when test="c.op.name() == 'LE'">&lt;=</when>
+                <otherwise>=</otherwise>
+            </choose> #{c.value}
+        </foreach></if>
+    </sql>
+
+    <sql id="topicConditions">
+        topic_status = 1
+        <if test="q.ids != null">AND topic_id IN <foreach collection="q.ids" item="x" open="(" separator="," close=")">#{x}</foreach></if>
+        <if test="q.timeAfter != null">AND topic_time &gt; #{q.timeAfter}</if>
+        <if test="q.timeBefore != null">AND topic_time &lt; #{q.timeBefore}</if>
+        <if test="q.namePattern != null">AND topic_name LIKE #{q.namePattern} ESCAPE '!'</if>
+        <if test="q.nameOrEnPattern != null">AND (topic_name LIKE #{q.nameOrEnPattern} ESCAPE '!' OR topic_en LIKE #{q.nameOrEnPattern} ESCAPE '!')</if>
+        <if test="q.conditions != null"><foreach collection="q.conditions" item="c">
+            AND <choose>
+                <when test="c.column.name() == 'STATUS'">topic_status</when>
+                <when test="c.column.name() == 'LEVEL'">topic_level</when>
+                <when test="c.column.name() == 'LOCK'">topic_lock</when>
+                <otherwise>topic_status</otherwise>
+            </choose>
+            <choose>
+                <when test="c.op.name() == 'EQ'">=</when>
+                <when test="c.op.name() == 'NE'">&lt;&gt;</when>
+                <when test="c.op.name() == 'GT'">&gt;</when>
+                <when test="c.op.name() == 'GE'">&gt;=</when>
+                <when test="c.op.name() == 'LT'">&lt;</when>
+                <when test="c.op.name() == 'LE'">&lt;=</when>
+                <otherwise>=</otherwise>
+            </choose> #{c.value}
+        </foreach></if>
+    </sql>
+
+    <sql id="actorConditions">
+        actor_status = 1
+        AND type_id IN <foreach collection="q.typeIds" item="tid" open="(" separator="," close=")">#{tid}</foreach>
+        <if test="q.typeIdEquals != null">AND type_id = #{q.typeIdEquals}</if>
+        <if test="q.typeIdIn != null">AND type_id IN <foreach collection="q.typeIdIn" item="x" open="(" separator="," close=")">#{x}</foreach></if>
+        <if test="q.typeOrParentIn != null">AND (type_id IN <foreach collection="q.typeOrParentIn" item="x" open="(" separator="," close=")">#{x}</foreach> OR type_id_1 IN <foreach collection="q.typeOrParentIn" item="x" open="(" separator="," close=")">#{x}</foreach>)</if>
+        <if test="q.ids != null">AND actor_id IN <foreach collection="q.ids" item="x" open="(" separator="," close=")">#{x}</foreach></if>
+        <if test="q.timeAfter != null">AND actor_time &gt; #{q.timeAfter}</if>
+        <if test="q.timeBefore != null">AND actor_time &lt; #{q.timeBefore}</if>
+        <if test="q.namePattern != null">AND actor_name LIKE #{q.namePattern} ESCAPE '!'</if>
+        <if test="q.nameOrEnPattern != null">AND (actor_name LIKE #{q.nameOrEnPattern} ESCAPE '!' OR actor_en LIKE #{q.nameOrEnPattern} ESCAPE '!')</if>
+        <if test="q.conditions != null"><foreach collection="q.conditions" item="c">
+            AND <choose>
+                <when test="c.column.name() == 'STATUS'">actor_status</when>
+                <when test="c.column.name() == 'LEVEL'">actor_level</when>
+                <when test="c.column.name() == 'LOCK'">actor_lock</when>
+                <otherwise>actor_status</otherwise>
+            </choose>
+            <choose>
+                <when test="c.op.name() == 'EQ'">=</when>
+                <when test="c.op.name() == 'NE'">&lt;&gt;</when>
+                <when test="c.op.name() == 'GT'">&gt;</when>
+                <when test="c.op.name() == 'GE'">&gt;=</when>
+                <when test="c.op.name() == 'LT'">&lt;</when>
+                <when test="c.op.name() == 'LE'">&lt;=</when>
+                <otherwise>=</otherwise>
+            </choose> #{c.value}
+        </foreach></if>
+    </sql>
+
+    <sql id="roleConditions">
+        role_status = 1
+        <if test="q.ids != null">AND role_id IN <foreach collection="q.ids" item="x" open="(" separator="," close=")">#{x}</foreach></if>
+        <if test="q.timeAfter != null">AND role_time &gt; #{q.timeAfter}</if>
+        <if test="q.timeBefore != null">AND role_time &lt; #{q.timeBefore}</if>
+        <if test="q.namePattern != null">AND role_name LIKE #{q.namePattern} ESCAPE '!'</if>
+        <if test="q.nameOrEnPattern != null">AND (role_name LIKE #{q.nameOrEnPattern} ESCAPE '!' OR role_en LIKE #{q.nameOrEnPattern} ESCAPE '!')</if>
+        <if test="q.conditions != null"><foreach collection="q.conditions" item="c">
+            AND <choose>
+                <when test="c.column.name() == 'STATUS'">role_status</when>
+                <when test="c.column.name() == 'LEVEL'">role_level</when>
+                <when test="c.column.name() == 'LOCK'">role_lock</when>
+                <otherwise>role_status</otherwise>
+            </choose>
+            <choose>
+                <when test="c.op.name() == 'EQ'">=</when>
+                <when test="c.op.name() == 'NE'">&lt;&gt;</when>
+                <when test="c.op.name() == 'GT'">&gt;</when>
+                <when test="c.op.name() == 'GE'">&gt;=</when>
+                <when test="c.op.name() == 'LT'">&lt;</when>
+                <when test="c.op.name() == 'LE'">&lt;=</when>
+                <otherwise>=</otherwise>
+            </choose> #{c.value}
+        </foreach></if>
+    </sql>
+
+    <sql id="websiteConditions">
+        website_status = 1
+        AND type_id IN <foreach collection="q.typeIds" item="tid" open="(" separator="," close=")">#{tid}</foreach>
+        <if test="q.typeIdEquals != null">AND type_id = #{q.typeIdEquals}</if>
+        <if test="q.typeIdIn != null">AND type_id IN <foreach collection="q.typeIdIn" item="x" open="(" separator="," close=")">#{x}</foreach></if>
+        <if test="q.typeOrParentIn != null">AND (type_id IN <foreach collection="q.typeOrParentIn" item="x" open="(" separator="," close=")">#{x}</foreach> OR type_id_1 IN <foreach collection="q.typeOrParentIn" item="x" open="(" separator="," close=")">#{x}</foreach>)</if>
+        <if test="q.ids != null">AND website_id IN <foreach collection="q.ids" item="x" open="(" separator="," close=")">#{x}</foreach></if>
+        <if test="q.timeAfter != null">AND website_time &gt; #{q.timeAfter}</if>
+        <if test="q.timeBefore != null">AND website_time &lt; #{q.timeBefore}</if>
+        <if test="q.namePattern != null">AND website_name LIKE #{q.namePattern} ESCAPE '!'</if>
+        <if test="q.nameOrEnPattern != null">AND (website_name LIKE #{q.nameOrEnPattern} ESCAPE '!' OR website_en LIKE #{q.nameOrEnPattern} ESCAPE '!')</if>
+        <if test="q.conditions != null"><foreach collection="q.conditions" item="c">
+            AND <choose>
+                <when test="c.column.name() == 'STATUS'">website_status</when>
+                <when test="c.column.name() == 'LEVEL'">website_level</when>
+                <when test="c.column.name() == 'LOCK'">website_lock</when>
+                <otherwise>website_status</otherwise>
+            </choose>
+            <choose>
+                <when test="c.op.name() == 'EQ'">=</when>
+                <when test="c.op.name() == 'NE'">&lt;&gt;</when>
+                <when test="c.op.name() == 'GT'">&gt;</when>
+                <when test="c.op.name() == 'GE'">&gt;=</when>
+                <when test="c.op.name() == 'LT'">&lt;</when>
+                <when test="c.op.name() == 'LE'">&lt;=</when>
+                <otherwise>=</otherwise>
+            </choose> #{c.value}
+        </foreach></if>
+    </sql>
+
+    <!-- 总数：与列表共用同一个条件片段。 -->
+    <select id="count" resultType="long">
+        <choose>
+            <when test="q.table.name() == 'VOD'">SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_vod WHERE <include refid="vodConditions"/></when>
+            <when test="q.table.name() == 'ART'">SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_art WHERE <include refid="artConditions"/></when>
+            <when test="q.table.name() == 'TOPIC'">SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_topic WHERE <include refid="topicConditions"/></when>
+            <when test="q.table.name() == 'ACTOR'">SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_actor WHERE <include refid="actorConditions"/></when>
+            <when test="q.table.name() == 'ROLE'">SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_role WHERE <include refid="roleConditions"/></when>
+            <when test="q.table.name() == 'WEBSITE'">SELECT /*+ MAX_EXECUTION_TIME(3000) */ COUNT(*) FROM mac_website WHERE <include refid="websiteConditions"/></when>
+            <otherwise>SELECT 0</otherwise>
+        </choose>
+    </select>
+
+    <!-- 分页：列集合 FULL（旧 SELECT *，去掉密码列）、LIST（Provide 列表字段）、SUGGEST（联想词）、BRIEF（角色关联视频）；
+         排序列固定，并列时按主键同向（02 规范第 3 节）。 -->
+    <select id="select" resultMap="row">
+        <choose>
+            <when test="q.table.name() == 'VOD'">
+                SELECT /*+ MAX_EXECUTION_TIME(3000) */
+                <choose>
+                    <when test="q.columns.name() == 'FULL'">vod_id, type_id, type_id_1, group_id, vod_name, vod_sub, vod_en, vod_status, vod_letter, vod_color, vod_tag, vod_class, vod_pic, vod_pic_thumb, vod_pic_slide, vod_pic_screenshot, vod_actor, vod_director, vod_writer, vod_behind, vod_blurb, vod_remarks, vod_pubdate, vod_total, vod_serial, vod_tv, vod_weekday, vod_area, vod_lang, vod_year, vod_version, vod_state, vod_author, vod_jumpurl, vod_tpl, vod_tpl_play, vod_tpl_down, vod_isend, vod_lock, vod_level, vod_copyright, vod_points, vod_points_play, vod_points_down, vod_hits, vod_hits_day, vod_hits_week, vod_hits_month, vod_duration, vod_up, vod_down, vod_score, vod_score_all, vod_score_num, vod_time, vod_time_add, vod_time_hits, vod_time_make, vod_trysee, vod_douban_id, vod_douban_score, vod_reurl, vod_rel_vod, vod_rel_art, vod_content, vod_play_from, vod_play_server, vod_play_note, vod_play_url, vod_down_from, vod_down_server, vod_down_note, vod_down_url, vod_plot, vod_plot_name, vod_plot_detail, (CHAR_LENGTH(vod_pwd) &gt; 0) AS _pwd, (CHAR_LENGTH(vod_pwd_play) &gt; 0) AS _pwd_play, (CHAR_LENGTH(vod_pwd_down) &gt; 0) AS _pwd_down</when>
+                    <when test="q.columns.name() == 'LIST'">vod_id, vod_name, type_id, '' AS type_name, vod_en, vod_time, vod_remarks, vod_play_from</when>
+                    <when test="q.columns.name() == 'SUGGEST'">vod_id AS id, vod_name AS name, vod_en AS en, vod_pic AS pic</when>
+                    <when test="q.columns.name() == 'BRIEF'">vod_id, vod_douban_id, vod_name, vod_director</when>
+                    <otherwise>vod_id</otherwise>
+                </choose>
+                FROM mac_vod WHERE <include refid="vodConditions"/>
+                ORDER BY <choose><when test="q.order.name() == 'TIME_ASC'">vod_time ASC, vod_id ASC</when><when test="q.order.name() == 'ID_DESC'">vod_id DESC</when><otherwise>vod_time DESC, vod_id DESC</otherwise></choose>
+                LIMIT #{q.offset}, #{q.limit}
+            </when>
+            <when test="q.table.name() == 'ART'">
+                SELECT /*+ MAX_EXECUTION_TIME(3000) */
+                <choose>
+                    <when test="q.columns.name() == 'FULL'">art_id, type_id, type_id_1, group_id, art_name, art_sub, art_en, art_status, art_letter, art_color, art_from, art_author, art_tag, art_class, art_pic, art_pic_thumb, art_pic_slide, art_pic_screenshot, art_blurb, art_remarks, art_jumpurl, art_tpl, art_level, art_lock, art_points, art_points_detail, art_up, art_down, art_hits, art_hits_day, art_hits_week, art_hits_month, art_time, art_time_add, art_time_hits, art_time_make, art_score, art_score_all, art_score_num, art_rel_art, art_rel_vod, art_title, art_note, art_content, (CHAR_LENGTH(art_pwd) &gt; 0) AS _pwd</when>
+                    <when test="q.columns.name() == 'LIST'">art_id, art_name, type_id, '' AS type_name, art_en, art_time, art_author, art_from, art_remarks, art_pic</when>
+                    <when test="q.columns.name() == 'SUGGEST'">art_id AS id, art_name AS name, art_en AS en, art_pic AS pic</when>
+                    <otherwise>art_id</otherwise>
+                </choose>
+                FROM mac_art WHERE <include refid="artConditions"/>
+                ORDER BY <choose><when test="q.order.name() == 'TIME_ASC'">art_time ASC, art_id ASC</when><when test="q.order.name() == 'ID_DESC'">art_id DESC</when><otherwise>art_time DESC, art_id DESC</otherwise></choose>
+                LIMIT #{q.offset}, #{q.limit}
+            </when>
+            <when test="q.table.name() == 'TOPIC'">
+                SELECT /*+ MAX_EXECUTION_TIME(3000) */
+                <choose>
+                    <when test="q.columns.name() == 'FULL'">topic_id, topic_name, topic_en, topic_sub, topic_status, topic_sort, topic_letter, topic_color, topic_tpl, topic_type, topic_pic, topic_pic_thumb, topic_pic_slide, topic_key, topic_des, topic_title, topic_blurb, topic_remarks, topic_level, topic_up, topic_down, topic_score, topic_score_all, topic_score_num, topic_hits, topic_hits_day, topic_hits_week, topic_hits_month, topic_time, topic_time_add, topic_time_hits, topic_time_make, topic_tag, topic_rel_vod, topic_rel_art, topic_content, topic_extend</when>
+                    <when test="q.columns.name() == 'LIST'">topic_id, topic_name, topic_en, topic_time, topic_pic</when>
+                    <when test="q.columns.name() == 'SUGGEST'">topic_id AS id, topic_name AS name, topic_en AS en, topic_pic AS pic</when>
+                    <otherwise>topic_id</otherwise>
+                </choose>
+                FROM mac_topic WHERE <include refid="topicConditions"/>
+                ORDER BY <choose><when test="q.order.name() == 'TIME_ASC'">topic_time ASC, topic_id ASC</when><when test="q.order.name() == 'ID_DESC'">topic_id DESC</when><otherwise>topic_time DESC, topic_id DESC</otherwise></choose>
+                LIMIT #{q.offset}, #{q.limit}
+            </when>
+            <when test="q.table.name() == 'ACTOR'">
+                SELECT /*+ MAX_EXECUTION_TIME(3000) */
+                <choose>
+                    <when test="q.columns.name() == 'FULL'">actor_id, type_id, type_id_1, actor_name, actor_en, actor_alias, actor_status, actor_lock, actor_letter, actor_sex, actor_color, actor_pic, actor_blurb, actor_remarks, actor_area, actor_height, actor_weight, actor_birthday, actor_birtharea, actor_blood, actor_starsign, actor_school, actor_works, actor_tag, actor_class, actor_level, actor_time, actor_time_add, actor_time_hits, actor_time_make, actor_hits, actor_hits_day, actor_hits_week, actor_hits_month, actor_score, actor_score_all, actor_score_num, actor_up, actor_down, actor_tpl, actor_jumpurl, actor_content</when>
+                    <when test="q.columns.name() == 'LIST'">actor_id, actor_name, type_id, '' AS type_name, actor_en, actor_area, actor_time, actor_alias, actor_sex, actor_pic</when>
+                    <when test="q.columns.name() == 'SUGGEST'">actor_id AS id, actor_name AS name, actor_en AS en, actor_pic AS pic</when>
+                    <otherwise>actor_id</otherwise>
+                </choose>
+                FROM mac_actor WHERE <include refid="actorConditions"/>
+                ORDER BY <choose><when test="q.order.name() == 'TIME_ASC'">actor_time ASC, actor_id ASC</when><when test="q.order.name() == 'ID_DESC'">actor_id DESC</when><otherwise>actor_time DESC, actor_id DESC</otherwise></choose>
+                LIMIT #{q.offset}, #{q.limit}
+            </when>
+            <when test="q.table.name() == 'ROLE'">
+                SELECT /*+ MAX_EXECUTION_TIME(3000) */
+                <choose>
+                    <when test="q.columns.name() == 'FULL'">role_id, role_rid, role_name, role_en, role_status, role_lock, role_letter, role_color, role_actor, role_remarks, role_pic, role_sort, role_level, role_time, role_time_add, role_time_hits, role_time_make, role_hits, role_hits_day, role_hits_week, role_hits_month, role_score, role_score_all, role_score_num, role_up, role_down, role_tpl, role_jumpurl, role_content</when>
+                    <when test="q.columns.name() == 'LIST'">role_id, role_name, role_rid, role_en, role_actor, role_time, role_pic</when>
+                    <when test="q.columns.name() == 'SUGGEST'">role_id AS id, role_name AS name, role_en AS en, role_pic AS pic</when>
+                    <otherwise>role_id</otherwise>
+                </choose>
+                FROM mac_role WHERE <include refid="roleConditions"/>
+                ORDER BY <choose><when test="q.order.name() == 'TIME_ASC'">role_time ASC, role_id ASC</when><when test="q.order.name() == 'ID_DESC'">role_id DESC</when><otherwise>role_time DESC, role_id DESC</otherwise></choose>
+                LIMIT #{q.offset}, #{q.limit}
+            </when>
+            <when test="q.table.name() == 'WEBSITE'">
+                SELECT /*+ MAX_EXECUTION_TIME(3000) */
+                <choose>
+                    <when test="q.columns.name() == 'FULL'">website_id, type_id, type_id_1, website_name, website_sub, website_en, website_status, website_letter, website_color, website_lock, website_sort, website_jumpurl, website_pic, website_pic_screenshot, website_logo, website_area, website_lang, website_level, website_time, website_time_add, website_time_hits, website_time_make, website_time_referer, website_hits, website_hits_day, website_hits_week, website_hits_month, website_score, website_score_all, website_score_num, website_up, website_down, website_referer, website_referer_day, website_referer_week, website_referer_month, website_tag, website_class, website_remarks, website_tpl, website_blurb, website_content</when>
+                    <when test="q.columns.name() == 'LIST'">website_id, website_name, type_id, '' AS type_name, website_en, website_time, website_area, website_lang, website_pic</when>
+                    <when test="q.columns.name() == 'SUGGEST'">website_id AS id, website_name AS name, website_en AS en, website_pic AS pic</when>
+                    <otherwise>website_id</otherwise>
+                </choose>
+                FROM mac_website WHERE <include refid="websiteConditions"/>
+                ORDER BY <choose><when test="q.order.name() == 'TIME_ASC'">website_time ASC, website_id ASC</when><when test="q.order.name() == 'ID_DESC'">website_id DESC</when><otherwise>website_time DESC, website_id DESC</otherwise></choose>
+                LIMIT #{q.offset}, #{q.limit}
+            </when>
+            <otherwise>SELECT 0 AS id FROM mac_type WHERE 1 = 0</otherwise>
+        </choose>
+    </select>
+
+    <!-- 全部分类（旧 Type::setCache 按 type_id 升序取整表，common/model/Type.php:350-360），配置表，不分页。 -->
+    <select id="selectTypes" resultMap="row">
+        SELECT type_id, type_name, type_en, type_sort, type_mid, type_pid, type_status, type_tpl, type_tpl_list, type_tpl_detail, type_tpl_play, type_tpl_down, type_key, type_des, type_title, type_union, type_extend, type_logo, type_pic, type_jumpurl
+        FROM mac_type
+        ORDER BY type_id ASC
+    </select>
+</mapper>

@@ -86,6 +86,17 @@
             <version>1.23.2</version>
         </dependency>
 
+        <!--
+          二维码本地生成（B06，旧 index/controller/Qrcode.php 用 phpqrcode，docs/architecture/16-b06-misc-pages-provide.md 第 4.7 节）：
+          ZXing core 固定 3.5.3，Apache-2.0，纯计算、无网络 API、无运行时传递依赖。只用 qrcode.encoder 生成矩阵，PNG 由 javax.imageio 输出；
+          测试另用它的解码器核对与 phpqrcode 输出解码出同一文本。不使用 zxing javase 模块。
+        -->
+        <dependency>
+            <groupId>com.google.zxing</groupId>
+            <artifactId>core</artifactId>
+            <version>3.5.3</version>
+        </dependency>
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
