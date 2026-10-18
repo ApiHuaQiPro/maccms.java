@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 只读映射：沿用旧表 mac_user（install.sql:629）、mac_group（install.sql:361）。B08 会员登录态校验。 -->
+<mapper namespace="com.maccms.backend.member.infrastructure.MemberMapper">
+
+    <select id="selectActiveUser" resultType="com.maccms.backend.member.infrastructure.MemberLoginRow">
+        SELECT user_id       AS userId,
+               group_id      AS groupId,
+               user_name     AS userName,
+               user_random   AS userRandom,
+               user_end_time AS userEndTime
+        FROM mac_user
+        WHERE user_id = #{userId}
+          AND user_name = #{userName}
+          AND user_status = 1
+        LIMIT 1
+    </select>
+
+    <select id="selectGroup" resultType="com.maccms.backend.member.infrastructure.MemberGroupRow">
+        SELECT group_id      AS id,
+               group_name    AS name,
+               group_status  AS status,
+               group_type    AS typeIds,
+               group_popedom AS popedomJson
+        FROM mac_group
+        WHERE group_id = #{groupId}
+    </select>
+</mapper>

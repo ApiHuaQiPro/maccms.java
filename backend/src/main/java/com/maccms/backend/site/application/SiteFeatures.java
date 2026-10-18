@@ -17,7 +17,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * </ul>
  * 取值：环境变量（{@code maccms.site.features.*}，true/false）非空时用它；否则取旧配置（{@code extra/maccms.php}）；都没有时按仓库值关闭。
  *
- * <p>验证码（{@code show_verify}、{@code search_verify}）新版尚未提供：本地验证码与会话在 B08、{@code ajax/verify_check} 在 B11 接线。
+ * <p>验证码放行（{@code show_verify}、{@code search_verify}）新版尚未提供：本地验证码与会话已在 B08 提供（{@code verify/index}），
+ * 通过后放行页面的 {@code ajax/verify_check} 在 B11 接线。
  * 在此之前按<b>临时关闭</b>处理，不能被环境变量绕过——旧配置 {@code show_verify=1} 时筛选页与 ajax_show 一律关闭（旧版 ajax_show 不验证，
  * 新版更保守）；{@code search_verify=1} 时视频与各模块的搜索页关闭、ajax_search 照常（旧版 ajax 入口不验证）。接线后按旧行为恢复。
  */

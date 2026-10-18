@@ -19,6 +19,7 @@ import com.maccms.backend.site.application.SiteFeatures;
 import com.maccms.backend.site.config.ConditionalOnSiteEnabled;
 import com.maccms.backend.site.web.view.ModuleListView;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -32,8 +33,8 @@ import org.springframework.web.bind.annotation.GetMapping;
  * <p>开关（与旧 Base.php:27-79 的 check_show/check_ajax/check_search 对应）：搜索页随视频搜索页
  * （{@code maccms.site.search.enabled}，旧 app.search）；筛选页随旧 {@code app.show}（{@link SiteFeatures#show()}，默认关闭）；
  * ajax 入口另需旧 {@code app.ajax_page}。关闭时 404，不查库。旧版的验证码（search_verify、show_verify）在 B08/B11 接线前按临时关闭处理
- * （{@link SiteFeatures}，不能被环境变量绕过）；搜索频率限制（search_timespan，会话计时 mac_get_time_span）随 B08 的会话接线
- * （15 文档第 11 节）。
+ * （{@link SiteFeatures}，不能被环境变量绕过）；搜索频率限制（search_timespan，会话计时 mac_get_time_span）在 B08 接线
+ * （{@link SearchThrottle}，搜索页与 ajax_search 的第 1 页，过快时 429）。
  *
  * <p>状态：不认识的形态、分类不存在或不可见、越界页 → 404；参数不合法 → 400（固定提示页或空片段，不回显输入）；
  * 503/500 与站点关闭沿用 SiteExceptionHandler 与 SiteStatusInterceptor。页面 noindex、no-store。
@@ -47,14 +48,16 @@ public class SiteModuleListController {
     private final ModuleListPages pages;
     private final SiteFeatures features;
     private final boolean searchEnabled;
+    private final SearchThrottle throttle;
 
     public SiteModuleListController(SiteHtmlRenderer renderer, SitePages sitePages, LegacyUrlBuilder urls,
                                     LegacyUrlParser parser, ImageUrlNormalizer images, RichTextCache richText,
                                     ContentReadService content, ArticleReadService articles, TopicReadService topics,
                                     ActorReadService actors, RoleReadService roles, WebsiteReadService websites,
                                     VideoPlotReadService plots, LibrarySearchService search, SiteFeatures features,
-                                    Environment environment) {
+                                    Environment environment, SearchThrottle throttle) {
         this.renderer = renderer;
+        this.throttle = throttle;
         this.parser = parser;
         this.features = features;
         this.searchEnabled = SiteSearchEnabledCondition.isEnabled(
@@ -93,7 +96,7 @@ public class SiteModuleListController {
         "/art/show/**", "/actor/show/**", "/website/show/**", "/art/ajax_show/**", "/actor/ajax_show/**",
         "/website/ajax_show/**", "/actor/show.html", "/actor/ajax_show.html", "/role/show/**", "/role/ajax_show/**",
         "/role/show.html", "/role/ajax_show.html"})
-    public ResponseEntity<String> list(HttpServletRequest request) {
+    public ResponseEntity<String> list(HttpServletRequest request, HttpServletResponse response) {
         // getRequestURI / getQueryString 都是未解码的原始值；应用挂在根路径（base-url 子目录由反向代理映射）
         String rawPath = request.getRequestURI().substring(request.getContextPath().length());
         ModuleListPage requested = requested(rawPath);
@@ -110,6 +113,13 @@ public class SiteModuleListController {
             LegacyUrlParser.ModuleMatch m = parser.parseModuleList(rawPath, request.getQueryString())
                     .filter(x -> x.route().page() == requested)
                     .orElseThrow(() -> new ApiException(ErrorCode.NOT_FOUND, "页面不存在"));
+            if (!requested.show()) {
+                // 旧 check_search 的频率限制（B08）：搜索页与 ajax_search 的第 1 页按会话计时，过快时 429，不查库
+                ResponseEntity<String> limited = throttle.check(m.route().pageNo(), request, response);
+                if (limited != null) {
+                    return limited;
+                }
+            }
             // 先组装视图模型（读取数据）再渲染：读取失败的业务异常（404/503）不能被渲染器包装成 500
             view = pages.render(m.route());
             status = HttpStatus.OK;
