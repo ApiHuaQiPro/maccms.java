@@ -40,7 +40,10 @@ class JavaIssuedCookiesTest {
         if ("1".equals(System.getenv("MEMBER_GOLDEN_WRITE"))) {
             Files.writeString(FILE, json, StandardCharsets.UTF_8);
         }
-        assertThat(Files.readString(FILE, StandardCharsets.UTF_8)).isEqualTo(json);
+        // 按 LF 比较（core.autocrlf 检出时文件可能是 CRLF）
+        assertThat(Files.readString(FILE, StandardCharsets.UTF_8).replace("
+", "
+")).isEqualTo(json);
     }
 
     @Test
