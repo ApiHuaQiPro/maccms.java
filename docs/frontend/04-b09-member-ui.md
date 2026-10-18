@@ -96,7 +96,7 @@ mvnw test -Dtest=SiteStylesheetTest
 | 资料：当前密码错 → 正确 | `error` 显示"原密码错误"；然后 `success` 显示"保存成功!"，留在本页（没有 `data-success-url`） |
 | 头像（根路径） | `success`，"文件上传成功！"，`img[data-member-portrait]` 从 `/static/images/touxiang.png` 换成 `/upload/user/<n>/<id>.jpg?<随机>` |
 | 头像（子目录） | 请求发到 `/sub/index.php/user/portrait.html`。新地址 `/sub/upload/user/…`，经 nginx 实际加载，尺寸 100×100。默认头像 `/sub/static/images/touxiang.png` 也能加载 |
-| WebP 头像 | `error`，"文件上传失败！"（WebP 待队长裁定，见 18 文档第 14 节） |
+| WebP 头像（MACC-23 裁定方案 B 实施后重测，18 文档第 14.5 节） | 动图 WebP：`success`，"文件上传成功！"，头像换成 100×100 JPEG（第一帧，蓝），根路径与子目录都经 nginx 加载；截断的 WebP：`error`，"文件上传失败！"，头像不变。`accept` 含 `image/webp` |
 | 找回（总要验证码）填错验证码 | `error`，"验证码错误"。验证码图换成 `…/verify/index.html?r=…` 并重新加载成功，`verify` 输入被清空 |
 | 子目录登录填错验证码 | 请求发到 `/sub/index.php/user/login.html`，`error`，验证码刷新为 `/sub/index.php/verify/index.html?r=…` |
 | 退出（子目录会员中心"退出登录"） | 跳到 `/sub/index.php/user/login.html`，会员 cookie 全部删除；再访问会员中心得到跳转提示页"未登录"（`role="alert"`） |

@@ -1,6 +1,6 @@
 ## B09 会员账号：注册、登录、资料、头像、密保找回（路线图 B09，MACC-33）
 
-> **状态：前后端已整合，待验收（2026-10-18）。** 后端由 Claude 实施；前端 K1–K4 由 Kimi 交付（`4f15676`），以普通 merge 并入本分支，最终接线与真实页面检查由后端完成（第 12.7 节）。WebP 头像待队长裁定（第 14 节）。 契约稿 v1 随提交 `3008228` 发布；实施中按黄金向量与实现修订的地方见第 13 节"契约修订记录"。实现说明在第 11 节，验证记录与验收对照在第 12 节。
+> **状态：前后端已整合，待验收（2026-10-18）。** 后端由 Claude 实施；前端 K1–K4 由 Kimi 交付（`4f15676`），以普通 merge 并入本分支，最终接线与真实页面检查由后端完成（第 12.7 节）。WebP 头像按 MACC-23 队长裁定方案 B 实施（第 14 节）。 契约稿 v1 随提交 `3008228` 发布；实施中按黄金向量与实现修订的地方见第 13 节"契约修订记录"。实现说明在第 11 节，验证记录与验收对照在第 12 节。
 > 依据：路线图 `09-roadmap.md` 第 5.3 节 B09 行与第 5.5 节 D2 ①②⑥；03 草稿第 4.3 (1)(4)(6) 节；B08 文档 `17-b08-member-session-captcha.md`；B07 文档 `12-write-infrastructure.md`。旧代码位置一律相对仓库根目录。
 
 ### 0. 起点、分支与提交
@@ -160,10 +160,10 @@ POST 字段：`user_pwd`（当前密码，必填）、`user_pwd1`、`user_pwd2`�
 #### 3.8 `portrait`（`index/controller/User.php:384-398`、`common/model/Upload.php`）
 
 - `user.portrait_status=0` 或未配置头像目录（第 7 节）→ `{"code":0,"msg":"未开启自定义头像功能"}`（键顺序同旧版：`code` 在前）。
-- 输入：`multipart/form-data` 的 `file` 字段，或表单参数 `imgdata`（`data:image/<类型>;base64,…`，旧版两种都接受）。上限 2 MiB（旧版取 PHP `upload_max_filesize`，默认 2M）。
+- 输入：`multipart/form-data` 的 `file` 字段，或表单参数 `imgdata`（`data:image/<类型>;base64,…`，旧版两种都接受）。上限 2 MiB（旧版取 PHP `upload_max_filesize`，默认 2M）。超过上限（文件超过 2 MB，或整个请求超过 3 MB）时与旧版一样丢弃上传，按"没有文件"返回下面的失败 JSON（第 14.4 节）。
 - 失败结果 `{"msg":<提示>,"code":0,"file":"<站点根路径>?<4 位随机数>"}`（旧 `upload_return` 在没有文件时的拼法）：没有文件 → "未找到上传的文件(原因：表单名可能错误，默认表单名“file”或“imgdata”)！"；扩展名不是 `jpg,jpeg,png,gif,webp`（`imgdata` 按 data URL 的类型）→ "非系统允许的上传格式！"；内容不能解码为图片 → "文件上传失败！"（旧 `make_thumb_faild` 的文案）。
 - 成功：缩放为 `user.portrait_size`（如 `100x100`，只给一个数时为正方形；旧 `think\Image::thumb(w, h, 6)` 固定尺寸拉伸）后以 JPEG 写到 `<头像目录>/user/<id%10>/<id>.jpg`，`UPDATE mac_user SET user_portrait = 'upload/user/<id%10>/<id>.jpg' WHERE user_id = ?`；返回 `{"msg":"文件上传成功！","code":1,"file":"<站点根路径>upload/user/<id%10>/<id>.jpg?<4 位随机数>"}`。
-- 新版只把**重新编码后的图片**写盘，上传的原始字节不落盘（旧版先把原文件存成 `<id>.jpg`，再用缩略图覆盖；扩展名在允许表内但不是图片的文件会留在磁盘上）。`webp` 本机 JDK 没有解码器，按"文件上传失败！"处理（第 10 节）；旧版实际行为与可选方案见第 14 节，待队长裁定。
+- 新版只把**重新编码后的图片**写盘，上传的原始字节不落盘（旧版先把原文件存成 `<id>.jpg`，再用缩略图覆盖；扩展名在允许表内但不是图片的文件会留在磁盘上）。`webp` 由 TwelveMonkeys `imageio-webp` 解码后同样重新编码为 JPEG，动图取第一帧（第 14 节，D-B09-13）。
 - `/upload/…` 静态文件仍由部署层（nginx）直接提供，新系统不提供该路径。
 
 #### 3.9 `findpass`（`index/controller/User.php:400-409`、`common/model/User.php:480-526`）
@@ -341,10 +341,11 @@ POST 字段：`user_pwd`（当前密码，必填）、`user_pwd1`、`user_pwd2`�
 | D-B09-6 | "两次密码一致"用 PHP `!=`（数值串按数值比较，`10` 与 `1e1` 相等） | 按字节比较 | 只会更严 |
 | D-B09-7 | 推广注册给邀请人加积分并记 `mac_plog` | 本批只写 `user_pid` 链；加积分与流水在 B10 | 分批缺口 |
 | D-B09-8 | 短信/邮件"未配置"时的提示取决于线上配置与 `extend/` | 固定为"未配置短信/邮箱发送服务"；不读 `mac_msg` | 分批缺口（B25） |
-| D-B09-9 | 头像：原始上传先落盘再被缩略图覆盖；允许扩展名内的非图片文件留在磁盘；写 `mac_annex` | 只写重新编码后的 JPEG；不写 `mac_annex`（B13）；`webp` 不支持 | 加固 + 分批缺口 |
+| D-B09-9 | 头像：原始上传先落盘再被缩略图覆盖；允许扩展名内的非图片文件留在磁盘；写 `mac_annex` | 只写重新编码后的 JPEG；不写 `mac_annex`（B13） | 加固 + 分批缺口 |
 | D-B09-10 | 超长字段（如 31 个字符的用户名、17 位 QQ）在严格模式下 SQL 报错，页面为异常页 | 返回该入口的失败提示（注册 1010、资料"保存失败!"） | 非法输入差异 |
 | D-B09-11 | 会员组 ≤2 访问收费数据时查 `mac_ulog` 判断是否已购买 | B10 前不查，统一按"需要积分" | 分批缺口（B10） |
 | D-B09-12 | 可写数据源不存在的情形 | 会员入口 503 | 部署差异 |
+| D-B09-13 | WebP 头像（GD 带 WebP 时）：静态图按原格式把 WebP 字节写进 `.jpg`；动图 PHP Fatal error、返回错误页；GD 不带 WebP 时"文件上传失败！"（第 14 节） | 静态图与动图都重新编码为真实 JPEG（100×100 等 `portrait_size`），透明处按白底，动图取第一帧；宽×高超过 2048×2048、截断、伪造或声明尺寸自相矛盾的 WebP 按"文件上传失败！" | 有意差异（MACC-23 裁定方案 B）+ 加固 |
 
 ### 11. 实现说明
 
@@ -353,11 +354,12 @@ POST 字段：`user_pwd`（当前密码，必填）、`user_pwd1`、`user_pwd2`�
 | common | `common.web.PhpInput` | 查询串与 urlencoded 正文按字节解析（PHP `php_default_treat_data` 的名字规则，后到覆盖），`merge` 按 ThinkPHP `input()` 合并 GET → POST → 路由参数 |
 | common | `common.write.ConditionalOnWriteEnabled` | 写 Mapper 的装配条件（与 `WriteDatabase` 同条件；`maccms.write` 配置名只在 `common.write`，`WriteGuardTest` 锁定） |
 | content | `GroupPermission`（原 `GuestPermission`）、`ContentViewer`、`ContentCatalogs`、`VideoPlaybackService`、`ArticleReadService` | 组权限带组号（组不存在为 0）；`ContentViewer` 是请求作用域的观看者会员组，未设置时为游客 1；播放/下载/文章积分按旧 `check_user_popedom` 的组号分支 |
-| member | `MemberSessionService.resolvePage`、`MemberAccountService`、`MemberSettings`、`PortraitImages`、`MemberCookies`（可空会员组）、`LegacyText`（原 `LegacyCookieText`） | 第 3、5 节的规则；`MemberAccountService` 只在站点启用时装配（`MemberAccountConfiguration`），站点根路径取 `maccms.site.base-url` 的路径 |
+| member | `MemberSessionService.resolvePage`、`MemberAccountService`、`MemberSettings`、`PortraitImages`、`WebPHeaders`、`MemberCookies`（可空会员组）、`LegacyText`（原 `LegacyCookieText`） | 第 3、5 节的规则；`MemberAccountService` 只在站点启用时装配（`MemberAccountConfiguration`），站点根路径取 `maccms.site.base-url` 的路径；WebP 解码的限制见第 14.3 节 |
 | member.infrastructure | `MemberMapper`（新增 7 条只读查询）、`MemberWriteMapper` + `mapper-write/member/MemberWriteMapper.xml`（8 条写语句）、`PortraitStore`、`MemberInfrastructureConfiguration` | 写 Mapper 只经 `WriteDatabase.mapper()`；头像先写临时文件再改名 |
 | site | `SiteUserController`、`SiteMemberInterceptor`、`SiteMemberCacheFilter`、`SitePages.member/memberUnavailable`、`SiteHtmlRenderer.member/memberPlain`、`LegacyUrlBuilder.user(action, vars)`、`view/User*`、`view/Member*` | 路由、参数、JSON 与提示页、cookie、`label_user` 接线、会员页的 nonce CSP |
 | jte | `pages/user*.jte`（7 页 + 提示页）、`ajax/userLogin.jte`、`ajax/userInfo.jte`、`member/script.jte`、`member/captcha.jte`、`member/loginForm.jte`、`member/messageBlock.jte` | 只输出第 8.2 节的结构与钩子，不带样式与内联脚本 |
-| 配置 | `application.yml`：`maccms.member.upload-dir`、`spring.servlet.multipart`（2 MB / 3 MB）；`config/maccms-backend.env.example` | — |
+| 配置 | `application.yml`：`maccms.member.upload-dir`、`spring.servlet.multipart`（2 MB / 3 MB，`resolve-lazily`，第 14.4 节）；`config/maccms-backend.env.example` | — |
+| 依赖 | `pom.xml`：`com.twelvemonkeys.imageio:imageio-webp:3.12.0`；随包许可 `src/main/resources/licenses/twelvemonkeys-imageio-3.12.0.txt` | 第 14.1 节 |
 
 **为什么用 `ContentViewer`（请求作用域）而不是给内容服务加参数**：页面对内容服务的调用有 79 处（`site.web` 中），逐个加"观看者会员组"参数改动面大、容易漏；旧版本身也是"每个请求一个 `$GLOBALS['user']`"。作用域只由 `SiteMemberInterceptor.preHandle` 打开、`afterCompletion` 关闭（异常时 Spring 同样调用），嵌套时逐层恢复；公开 JSON API 与 Provide 不经过它，始终按游客。内容服务都在请求线程上同步执行（没有线程池或异步调用）。测试：`GroupPopedomGoldenTest.viewerScopeRestoresThePreviousGroup`、`SiteUserMvcTest.labelUserWritesGuestResetAndScopesTheViewerGroupForTheRequestOnly`（请求中为 3 组，结束后回到游客）。
 
@@ -377,6 +379,7 @@ POST 字段：`user_pwd`（当前密码，必填）、`user_pwd1`、`user_pwd2`�
 | 打包 jar 实际 HTTP（第 12.3 节） | 通过：16 个请求，见第 12.3 节；结束后进程已停、一次性库已删并确认不存在、临时目录已删 |
 | 黄金生成 | `account_golden.php` 8.0.30 / 7.3.33 各 203 用例，0 个 PHP 侧错误，两版返回码与提示逐条相同；`member_golden.php` 两版重新生成（含 `expiry_repro`） |
 | `git diff --check`、UTF-8 无 BOM、路径与密钥扫描 | 通过（提交前逐次执行；测试只用假密码与一次性库，管理账号只经环境变量） |
+| WebP 轮（MACC-23 裁定方案 B，最终树） | Node 23/23；`./mvnw verify` 2386 个测试；`-Pmysql-it` 单元 2386 + 集成 53；打包 jar HTTP 46 项与浏览器 12 项（第 14.5 节） |
 
 #### 12.2 测试与覆盖
 
@@ -388,7 +391,7 @@ POST 字段：`user_pwd`（当前密码，必填）、`user_pwd1`、`user_pwd2`�
 | 同名并发注册只 1 行、IP 限额不超额 | `MemberAccountGoldenMySqlIT` ③：5 轮 × 16 线程（大小写混合同名）每轮 1 成功 15 个 1005、库里 1 行；`reg_num=2` 时 16 个不同用户名并发只成功 2 个 |
 | 到期单行降级、并发只命中 1 行、续费不误降、组/游客 cookie 字节 | `MemberAccountGoldenMySqlIT` ④：16 个并发页面请求都按 2 组、库里降一次；`expireMember` 16 线程恰好 1 次匹配；续费与降级竞态 20 轮后都是 3 组且不重发 cookie；重发的 2 个组 cookie 与 PHP 8.0/7.3 黄金 `expiry-5-g3--1`（修正后为 2 个）除有效期外逐字节相同；游客回写与黄金 `guest_reset` 逐字节相同；前置判断不通过时不写 cookie |
 | 有效组与到期后 2 组的页面权限 | `GroupPopedomGoldenTest`：黄金 96 个播放/下载/文章用例 × 2 版（游客、2 组、3 组、组不存在）；到期会员的有效组为 2（`MemberSessionService` 与 IT ④） |
-| 头像 | `MemberAccountUnitTest`（检查顺序、扩展名、`<?php`、危险内容正则、重新编码尺寸）、`MemberAccountGoldenMySqlIT` ⑥（写盘、`user_portrait`、登录 cookie 的头像地址） |
+| 头像 | `MemberAccountUnitTest`（检查顺序、扩展名、`<?php`、危险内容正则、重新编码尺寸）、`PortraitImagesWebPTest`（WebP，第 14.5 节）、`MemberAccountGoldenMySqlIT` ⑥（写盘、`user_portrait`、登录 cookie 的头像地址；WebP 动图写成第一帧的 JPEG、截断时不动已有头像）、`SiteUserRealHttpTest`（超过上传上限时的 JSON，第 14.4 节） |
 | HTTP 契约 | `SiteUserMvcTest`（11 个：字节参数、JSON 字节与键顺序、跳转、未登录与 503、注销、uid cookie、regcheck、info 的 success/error 形态、头像、label_user 接线与观看者作用域、verify 不参与）、`SiteUserRealHttpTest`（真实 Tomcat：6 个登录 `Set-Cookie` 与 2 个游客回写逐字节、表单字节到达服务） |
 | 回滚演练与零 DDL | `MemberAccountGoldenMySqlIT` ⑦：S0 → 本 IT 全部写入 → `DmlRestore` → diff 为空 → 表结构指纹不变；删库后确认不存在 |
 | 护栏 | `WriteGuardTest`、`WriteRegistryTest`、`ModuleBoundaryTest`、`SiteTemplatePolicyTest`、`SiteGuardrailsTest`、`SchemaGuardTest`（不变） |
@@ -426,15 +429,16 @@ POST 字段：`user_pwd`（当前密码，必填）、`user_pwd1`、`user_pwd2`�
 | 4 | MyISAM 无唯一约束下同名并发注册只 1 行，方案与作用范围；只登记必要写路径；可写数据源默认关闭，B07 零 DDL/写入护栏保留 | ✅ 第 6 节；登记两条；`MACCMS_WRITE_ENABLED` 默认 false |
 | 5 | `./mvnw verify` 与 `-Pmysql-it`；并发写、DML 回滚演练、前后 information_schema 一致；打包 jar 实际 HTTP、测试库与进程清理有证据 | 见第 12.1、12.3 节 |
 | 6 | `git diff --check`、UTF-8 无 BOM、路径与密钥检查；交付 SHA/tree、分支、验证摘要、差异、未验证项、回滚点；文档与路线图状态 | ✅ 本文、路线图 B09 行；SHA/tree 见交付评论 |
-| — | 契约与前端接线（整批验收） | ✅ 第 12.7 节：`4f15676` 普通 merge、`member.js` 补第 6 条、根路径与子目录接线、四宽度/纯键盘/reduced-motion 实测；WebP 待裁定（第 14 节） |
+| — | 契约与前端接线（整批验收） | ✅ 第 12.7 节：`4f15676` 普通 merge、`member.js` 补第 6 条、根路径与子目录接线、四宽度/纯键盘/reduced-motion 实测 |
+| — | WebP 头像（MACC-23 裁定方案 B） | ✅ 第 14 节：依赖与许可核对、打包 jar 能发现读取器、有损/无损透明/有损透明/动图首帧、截断/伪造/超限、上传大小上限的失败 JSON、根路径与子目录真实 HTTP 上传与读回 |
 
 #### 12.5 未验证与遗留
 
 - 浏览器内的完整交互已在第 12.7 节实测；只验证了 Chromium（Playwright 1.60 / Chromium 148），没有测 Firefox、Safari 和真机。
 - 线上 `maccms.php` 的 `user` 段、`sms`/`email` 配置与 `extend/` 是否存在无法核实（D9-b），"未配置"时的提示按仓库值与黄金的"未配置"设定。
-- `webp` 头像、`mac_annex` 登记、推广积分与流水、组 ≤2 的已购买判定为分批缺口（第 10 节）。
+- `mac_annex` 登记、推广积分与流水、组 ≤2 的已购买判定为分批缺口（第 10 节）。
 - 头像目录 `/upload/` 和默认头像 `/static/images/touxiang.png` 都由部署层提供。第 12.7 节已在一个只为检查而起的 nginx（子目录 `/sub/`）上验证过，生产 nginx 配置不在本批范围。
-- WebP 头像待裁定（第 14 节）。
+- WebP 的遗留见第 14.6 节。
 
 #### 12.7 前后端整合（MACC-23 队长指令，2026-10-18）
 
@@ -467,9 +471,12 @@ POST 字段：`user_pwd`（当前密码，必填）、`user_pwd1`、`user_pwd2`�
 | 非 ajax 的提示页 | `<meta refresh>` 自动跳转 | 只给链接，不自动跳转 | 页面不输出额外的跳转机制，保持无脚本 |
 | 表单正文超限 | 413 | 400 | 不新增对外错误码（`ErrorCode` 属于 OpenAPI 契约） |
 | `member.js` | 6 条 | 7 条，新增 `[data-member-send]` 发送验证码 | 注册页/找回页的"发送验证码"按钮需要从同一表单取 `ac`、`to` |
-| 头像 `accept` | 含 webp | 不含 webp | JDK 没有 webp 解码器（D-B09-9） |
+| 头像 `accept` | 含 webp | 含 webp（曾改为不含，WebP 裁定方案 B 后恢复） | 曾因 JDK 没有 webp 解码器去掉；方案 B 引入解码器后恢复（第 14 节） |
+| 超过上传上限的 multipart | 未定义 | 同旧版丢弃上传，头像返回"未找到上传的文件…"的 JSON | 此前在进入处理器前就成了 500（`INTERNAL_ERROR`），不符合失败 JSON 契约（第 14.4 节） |
 
-### 14. WebP 头像：旧版实际行为与待裁定方案（MACC-23 队长要求）
+### 14. WebP 头像：旧版实际行为、裁定与实施（MACC-23）
+
+**裁定**（MACC-23 队长，2026-10-18）：方案 B。旧版在 GD 带 WebP 时可以上传静态 WebP，新版保留这项能力，用 TwelveMonkeys `imageio-webp` 3.12.0 纯 Java 解码；输出统一为真实 JPEG；透明处沿用现有头像处理（白底）；动图取第一帧，作为与旧版错误页的有意差异（D-B09-13）。裁定前的三个方案（A 保持现状、B、C 外部工具）记录在提交 `5747ae0` 的本节。
 
 **旧版实际行为**：用仓库代码与恢复的 `vendor/topthink/think-image` 在本机实测，PHP 7.3.33 与 8.0.30 的 GD 都带 WebP。
 
@@ -478,14 +485,120 @@ POST 字段：`user_pwd`（当前密码，必填）、`user_pwd1`、`user_pwd2`�
 - **动图 WebP**：GD 解码时报 PHP Fatal error（`gd-webp cannot allocate temporary buffer`），请求得到的是错误页，不是 JSON。
 - PHP 编译时不带 WebP 的 GD：没有 `imagecreatefromwebp`，`think-image` 抛异常，返回"文件上传失败！"（`make_thumb_faild`）。线上 PHP 的 GD 是否带 WebP 无法核实（D9-b）。
 
-**新版现状**：JDK 21 的 ImageIO 没有 WebP 解码器（本机实测三种样本都读成 `null`）。扩展名检查放行，解码失败，返回"文件上传失败！"；头像页的 `accept` 不列 webp。浏览器实测见前端文档第 4.3 节。
+#### 14.1 依赖、来源与许可
 
-**可选方案（请队长裁定）**：
+`./mvnw dependency:tree` 显示 `imageio-webp` 只带 5 个传递依赖，全部是 compile 作用域、版本 3.12.0。6 个 jar 都取自 Maven Central（本地仓库的 `_remote.repositories` 记为 `central`），原样打进可执行 jar 的 `BOOT-INF/lib/`：
 
-| 方案 | 依赖与许可 | 行为 | 代价 |
+| 构件 | 字节 | SHA-256 | 经 SPI 注册（`META-INF/services`） |
 |---|---|---|---|
-| A 保持现状（推荐作为默认，直到裁定） | 无 | WebP 一律"文件上传失败！"，与旧版"GD 不带 WebP"时相同；与"GD 带 WebP"时不同（D-B09-9） | 带 WebP 的旧站上能传的头像，新版不能传 |
-| B 引入 TwelveMonkeys `imageio-webp` 3.12.0 | `com.twelvemonkeys.imageio:imageio-webp` 及其依赖 `imageio-core`、`imageio-metadata`、`common-lang`、`common-io`、`common-image`，共 6 个 jar、约 576 KB，**BSD 3-Clause**，纯 Java，没有本地库；通过 ImageIO SPI 注册（只有读，没有写） | 静态 WebP 解码后按现有流程重新编码为 JPEG 写盘，不照搬旧版"WebP 字节写进 `.jpg`"的做法。本机用 JDK 21 实测：有损 300×200、无损带透明 300×200、两帧动图（只取第一帧）都能解码 | 新增第三方依赖，需要许可登记和依赖更新；SPI 注册对整个 JVM 生效（只多了 WebP 读取器）；解码器的资源消耗需要配合现有的 2 MiB 上限与像素上限 |
-| C 外部工具（cwebp/dwebp、libvips） | 本地二进制与 JNI/进程调用 | 同 B | 部署复杂度和进程调用风险都更高，不推荐 |
+| `com.twelvemonkeys.imageio:imageio-webp:3.12.0` | 79 713 | `43dc447c…68526` | `ImageReaderSpi`：`WebPImageReaderSpi`（只读，没有写入器） |
+| `com.twelvemonkeys.imageio:imageio-core:3.12.0` | 119 909 | `34c6f91b…d9815` | `ImageInputStreamSpi`：`BufferedFileImageInputStreamSpi`、`BufferedRAFImageInputStreamSpi`、`BufferedInputStreamImageInputStreamSpi`、`ProfileDeferralActivator$Spi` |
+| `com.twelvemonkeys.imageio:imageio-metadata:3.12.0` | 83 615 | `797d026b…0caa` | 无 |
+| `com.twelvemonkeys.common:common-lang:3.12.0` | 121 817 | `5c65e504…3bc66d` | 无 |
+| `com.twelvemonkeys.common:common-io:3.12.0` | 92 346 | `bfacfeb0…6f6647` | 无 |
+| `com.twelvemonkeys.common:common-image:3.12.0` | 79 655 | `62a3821c…dd92bc` | 无 |
 
-选 B 时的实施要点：加依赖；`PortraitImages` 不用改解码路径（`ImageIO.getImageReaders` 会自动发现）；头像页 `accept` 加 `image/webp`；增加三种样本的单元测试，以及动图只取首帧的说明；在 D-B09-9 中记录"WebP 重新编码为 JPEG"，以及动图与旧版"Fatal error"的差异。
+合计 576 055 字节。完整 SHA-256 见随包许可文件。
+
+- **许可**：父 POM `com.twelvemonkeys:twelvemonkeys:3.12.0` 声明 "The BSD License"；上游标签 `twelvemonkeys-3.12.0` 的 `LICENSE.txt` 是 BSD 3-Clause。又逐个检查了 6 个构件同版本 `-sources.jar` 里的全部源文件头：
+  - 都是同一份 BSD 3 条款，版权人 Harald Kuhr（2008～2022）；`imageio-webp` 的 `vp8/` 下 11 个文件（VP8 有损解码）版权人是 "Brooss, Harald Kuhr"。
+  - `common-image` 的 `IndexImage.java` 另带 Apache Software License 1.1（取自 Batik），要求在文档或软件里给出致谢语。
+  - `ResampleOp.java`、`LittleEndianDataInputStream/OutputStream.java` 带公有领域说明。
+  - 没有发现 GPL、LGPL 等其他许可。
+- **随包声明**：这些 jar 本身不带许可文件。所以把 BSD 全文、Brooss 共同版权、ASF 1.1 全文和致谢语、公有领域说明逐字照录到 `backend/src/main/resources/licenses/twelvemonkeys-imageio-3.12.0.txt`。它打进可执行 jar 的 `BOOT-INF/classes/licenses/`（打包后已核对），不在任何对外 URL 下。
+- **格式范围不扩大**：
+  - `PortraitImagesWebPTest.onlyAWebPReaderIsAddedToImageIo`：JDK 之外注册的 `ImageReaderSpi` 恰好只有 WebP 一个，没有新增 `ImageWriterSpi`。
+  - 扩展名表 `jpg,jpeg,png,gif,webp` 与 data URL 类型表不变，`.bmp` 仍是"非系统允许的上传格式！"。
+  - 本应用用 ImageIO 读图只有 `PortraitImages` 一处（验证码、二维码只写 PNG）。它显式使用 `MemoryCacheImageInputStream`，不经 imageio-core 注册的流 SPI，也不写临时文件。
+  - `ModuleBoundaryTest.twelveMonkeysIsOnlyUsedForThePortraitWebPReader`：主代码中只有 `PortraitImages` 引用 TwelveMonkeys，而且只引用 `WebPImageReaderSpi`。`common-io` 里有网络工具类 `com.twelvemonkeys.net`，不使用。
+- **读取器的发现**：`PortraitImages` 加载时用 `IIORegistry.registerServiceProvider(new WebPImageReaderSpi())` 显式注册（同一个类重复注册只是替换）。这样不依赖首次初始化 ImageIO 的线程能否通过上下文类加载器看到 `BOOT-INF/lib`。打包 jar 的实测见第 14.5 节。
+
+#### 14.2 行为
+
+- 支持有损（`VP8 `）、无损（`VP8L`）、带透明（无损 alpha、有损 + `ALPH`）和动图（`VP8X` + `ANIM`/`ANMF`）。解码后与其他格式走同一路径：拉伸为 `portrait_size`，以 JPEG（质量 80）写盘。透明像素画在白底上，在两个采样点上与同样内容的 PNG 透明图相差不超过 4。动图取第 0 帧。
+- 检查顺序与失败提示不变：没有文件 → 扩展名 / `<?php` → 危险内容正则 → 解码。失败 JSON 的键顺序也不变。
+- 头像页 `accept` 恢复 `image/webp`，提示改为"支持 jpg、png、gif、webp（动图取第一帧），不超过 2 MB。"
+
+#### 14.3 资源限制：实测发现的问题与处理
+
+1. **帧尺寸绕过像素检查，导致 OutOfMemoryError**。读取器的 `getWidth/getHeight` 只报画布尺寸。一个 140 字节的伪造文件，画布 100×100，首帧（`ANMF` + `VP8L`）声明 16384×16384，能通过原有的画布像素检查，解码时按帧尺寸分配内存，`-Xmx512m` 下 OutOfMemoryError。
+   - 处理：`WebPHeaders` 在解码前逐块检查。画布、每个 `ANMF` 帧、每个 `VP8 `/`VP8L` 位流的宽×高都不能超过上限；帧必须在画布内；位流不能大于所属的帧（静态图则不能大于画布）；没有动图标志时不能出现帧；块长度不能越界；有损位流必须有起始码 `9d 01 2a`。
+2. **截断或损坏的数据让解码器空转**。`LSBBitReader.refillBuffer` 在流尾捕获 `EOFException` 后继续用残留的位解码。1600 个随机变异样本的测试 9 分钟没有跑完，线程栈停在 `refillBuffer` ← `HuffmanTable.readCodeLengths`。
+   - 处理：解码用的流在"读到流尾"超过 1024 次后抛非受检异常，该样本按"文件上传失败！"。合法样本解码时最多 31 次（含 2000×2000 有损/无损）。加上后最慢的变异样本约 0.1 s。
+3. **解码耗时，以及 WebP 自己的像素上限**。本机实测（JDK 21，单线程，预热后）：
+
+   | 样本 | 耗时 |
+   |---|---|
+   | WebP 有损 2000×2000 / 3000×3000 / 4096×4096（噪声） | 0.9 s / 2.3～2.6 s / 4.6～4.9 s |
+   | WebP 无损 2000×2000 / 4096×4096（噪声） | 0.7 s / 3.0～3.4 s |
+   | WebP 有损 6000×6000 纯色（文件只有 64 KB） | 4.2～4.8 s |
+   | JDK PNG 6000×6000 纯色 / 4096×4096 噪声；JPEG 6000×6000 | 0.6 s / 0.45 s；0.4～0.6 s |
+
+   同样的像素数，WebP 约是 PNG 的 8 倍。所以 WebP 另设像素上限 2048×2048（4 194 304，等于时通过），超过时按"文件上传失败！"；其他格式仍是 40 000 000。按这个上限，单个 WebP 最多约 1 s CPU，与其他格式在原上限下同一量级。另外，3.12.0 解码 6000×6000 以上的纯色无损图会抛 `ArrayIndexOutOfBoundsException`，这已超出上限，不影响结果。
+
+#### 14.4 上传大小上限的失败 JSON
+
+- **旧版**：超过 `upload_max_filesize` 的文件被 PHP 丢弃（`$_FILES` 没有 `tmp_name`，`request()->file()` 为空，`thinkphp/library/think/Request.php:917`），`Upload.php:136-139` 返回 `no_input_file`。超过 `post_max_size` 时整个 POST 被丢弃，提示相同。
+- **新版此前**：Spring 在进入处理器之前解析 multipart，超限时抛 `MaxUploadSizeExceededException`，被全局处理成 500 `{"code":"INTERNAL_ERROR",…}`，并记一行 ERROR 日志。打包 jar 实测如此，与图片格式无关。
+- **现在**：
+  - 设置 `spring.servlet.multipart.resolve-lazily=true`。`SiteUserController` 在取参数和文件时捕获 `MultipartException`，当作没有 POST 字段和文件。头像返回 HTTP 200 `{"msg":"未找到上传的文件(原因：表单名可能错误，默认表单名“file”或“imgdata”)！","code":0,"file":"<站点根路径>?<4 位随机数>"}`，已有头像不变。
+  - 其他读取 multipart 参数的入口（ajax、verify、Provide、公开 API）此前在解析失败时就是 500，现在仍是（只是发生在处理器内）。不读参数的入口不再因此 500。
+- **部署注意**：
+  - 直连 Tomcat 时，整个请求超过 3 MB 会被 Tomcat 按 `Content-Length` 直接拒绝，正文不读完。剩余部分超过默认 2 MB 的 `maxSwallowSize` 时 Tomcat 关闭连接，客户端可能收到连接重置。
+  - 部署在 nginx 之后（nginx 先收完请求体），实测仍得到上面的 JSON。
+  - nginx 的 `client_max_body_size` 需要不小于 3 MB。默认是 1 MB，这时 nginx 自己返回 413。
+
+#### 14.5 验证
+
+- **样本**：`backend/src/test/resources/member/webp/` 下 6 个，由同目录的 `generate.py`（Pillow 12.3.0）合成，没有外部素材：
+  - 有损 300×200 渐变；
+  - 无损带透明、有损带透明各一，300×200，左半透明、右半红；
+  - 两帧动图 120×80，第一帧蓝、第二帧绿；
+  - 2048×2048 与 2049×2048 纯色无损。
+  伪造、截断和变异样本在测试里构造。
+- **`PortraitImagesWebPTest`（10 项）**：
+  - 只多 WebP 读取器；
+  - 有损的像素；
+  - 两种透明都是白底红右，并与 PNG 一致；
+  - 动图第一帧，样本确有 2 帧；
+  - `imgdata` 的 WebP；扩展名表不变；危险内容仍先于解码；
+  - 上限 2048×2048 通过、2049×2048 失败；
+  - 10 种伪造头部（过大的无损位流、过大的有损位流、大画布、小画布大位流、小画布大帧、帧内位流大于帧、帧越出画布、无动图标志的帧、块长度越界、缺起始码）都在解码前拒绝；
+  - 合法样本通过头部检查；
+  - 乱码位流；4 个样本截断到每一种长度；
+  - 4 × 400 个随机变异样本，每个要么得到 100×100 JPEG，要么"文件上传失败！"，最慢的小于 10 s（实测约 0.1 s）。
+- **`MemberAccountGoldenMySqlIT` ⑥**：WebP 动图经服务写成同路径的真实 JPEG（SOI、100×100、第一帧蓝）；截断的 WebP 返回"文件上传失败！"，磁盘上的头像字节和 `user_portrait` 都不变。
+- **`SiteUserRealHttpTest.oversizedPortraitUploadsAreDroppedLikeLegacyPhp`**：在真实 Tomcat 上，文件为 2 MiB + 1、2 MiB + 4 KiB、2 995 904 字节时，都得到上面的 JSON，服务收到的文件和 `imgdata` 都是 null。
+- **`ModuleBoundaryTest.twelveMonkeysIsOnlyUsedForThePortraitWebPReader`**：见第 14.1 节。
+- **命令（最终树，串行）**：
+  - `node --test backend/src/test/js/site/*.test.js`：23/23；
+  - `./mvnw verify`：2386 个测试，0 失败、0 错误、0 跳过（比整合轮的 2374 多 12 个：WebP 10、边界护栏 1、超限 1）；
+  - `./mvnw verify -Pmysql-it`：单元 2386、集成 53，0 跳过。
+
+  实际输出摘要与 SHA/tree 见交付评论。
+- **打包 jar 实测**：用 `-Pmysql-it` 产出的最终 jar 起两个实例。根路径实例的 base-url 为 `/`，子目录实例为 `/sub/`。两个实例各用一个一次性库 `maccms_it_b09webp_*`（导入 `install.sql`），各有一个临时头像目录，可写数据源打开，旧配置目录为仓库 `application/`（`portrait_size=100x100`）。前面是一个只为检查而起的 nginx：根路径实例由它提供 `/upload/`，子目录实例提供 `/sub/upload/`，`client_max_body_size 4m`。脚本只用假密码，经 nginx 发请求。每个实例 23 项，共 46 项，全部通过：
+  - 注册后头像页 `accept` 含 `image/webp`，CSP 带 nonce；
+  - 有损、无损透明、有损透明、动图、2048×2048 五种 WebP 上传都得到 `{"msg":"文件上传成功！","code":1,"file":"<前缀>upload/user/1/1.jpg?…"}`（键顺序同旧版）。再经 nginx GET 该地址：200 `image/jpeg`，内容是 100×100 的 JPEG，与磁盘文件逐字节相同；透明处是白底，动图中心像素为 (0,0,254)；
+  - `imgdata=data:image/webp;base64,…` 成功；
+  - 截断、乱码、"小画布大帧"（修复前会 OOM）、大画布、2049×2048、6000×6000 有损（64 KB）都得到 `{"msg":"文件上传失败！","code":0,"file":"<前缀>?…"}`，每个都在 0.2 s 内返回；
+  - `.bmp` 扩展名仍是"非系统允许的上传格式！"；
+  - 失败后头像文件不变，会员中心显示上传后的头像；
+  - 文件 2 MiB + 1 与 2 MiB + 4 KiB 时得到"未找到上传的文件…"的 JSON，头像不变；整个请求 3.5 MiB 时经 nginx 同样得到该 JSON；略小于 2 MiB 的 WebP 照常成功。
+- **浏览器实测**：Playwright 1.60 / Chromium，1280 宽，用真实头像页和 `member.js`，根路径和子目录各 6 项，全部通过：
+  - `accept` 与提示文案正确；
+  - 选动图 WebP 提交后，表单 `data-state=success`，消息"文件上传成功！"。`img[data-member-portrait]` 换成 `<前缀>upload/user/1/1.jpg?…`，经 nginx 加载为 100×100，中心像素为蓝；
+  - 截断的 WebP 得到 `data-state=error`、"文件上传失败！"，头像不变；
+  - 没有页面错误或控制台错误（包括 CSP 违规）。
+- **清理**：
+  - 两个 jar 进程按启动时记录的 PID 结束；自起的 nginx 用 `-s stop` 停止，共享 nginx 服务没有动；
+  - 两个一次性库已删除，并确认 `maccms\_it\_%` 为 0；
+  - 应用日志 0 行 ERROR、0 行 WARN，不含 JDBC 地址；
+  - 临时目录（样本、脚本、nginx 前缀、头像目录）已删除。
+
+#### 14.6 遗留与请队长确认
+
+- **WebP 像素上限 2048×2048 是新增的限制**（第 14.3 节）。旧版在 GD 带 WebP、内存够用时能处理更大的 WebP，新版对这类图片返回"文件上传失败！"，例如 4000×3000 的手机照片转成的 WebP（文件小于 2 MB 时）。常量在 `PortraitImages.MAX_WEBP_PIXELS`，如需放宽请裁定。
+- imageio-core 的 `ImageInputStreamSpi` 对整个 JVM 生效。以后如果有代码用 `ImageIO.createImageInputStream(File/InputStream)`，拿到的会是 TwelveMonkeys 的流实现。目前主代码没有这种用法（第 14.1 节）。
+- 没有专门处理 ICC 配置文件和 EXIF 方向，与其他格式的现状相同。只测了 Chromium。
+- 部署要求：nginx 的 `client_max_body_size` 不小于 3 MB（第 14.4 节）。
+- 已有限制，不在本轮范围：`imgdata` 用 urlencoded 提交时受表单正文 64 KiB 上限约束（第 3.1 节，超出返回 400 站点错误页）；用 multipart 提交时上限 3 MB。
