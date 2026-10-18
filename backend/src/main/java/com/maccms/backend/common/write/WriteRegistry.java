@@ -16,10 +16,16 @@ import java.util.regex.Pattern;
 public final class WriteRegistry {
 
     /**
-     * 已登记的写入权限。B07 交付时为空：本批只建写入基础设施，不实现任何业务写入。B08 起每个写库批次在自己的合并提交里
-     * 只登记本批的条目，表与批次必须符合路线图的写入方矩阵（{@code WriteGuardTest.OWNER_MATRIX} 锁定）。
+     * 已登记的写入权限。B07、B08 交付时为空。每个写库批次在自己的合并提交里只登记本批的条目，表与批次必须符合路线图的写入方矩阵
+     * （{@code WriteGuardTest.OWNER_MATRIX} 锁定）。
+     * <ul>
+     * <li>B09（MACC-33，18 文档第 6 节）：会员注册（条件插入）；登录、注销轮换、资料与改密、密保重置、头像、推广关系、
+     * {@code checkLogin} 到期单行降级。</li>
+     * </ul>
      */
-    static final List<WritePermission> REGISTERED = List.of();
+    static final List<WritePermission> REGISTERED = List.of(
+            new WritePermission("member", "mac_user", WriteOperation.INSERT, "B09"),
+            new WritePermission("member", "mac_user", WriteOperation.UPDATE, "B09"));
 
     /** 写 Mapper 的全限定名：{@code com.maccms.backend.<module>.infrastructure[.子包].<类型>}。 */
     private static final Pattern MAPPER_TYPE = Pattern.compile(

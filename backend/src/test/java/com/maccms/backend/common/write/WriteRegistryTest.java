@@ -21,9 +21,14 @@ class WriteRegistryTest {
     private static final String MEMBER = "com.maccms.backend.member.infrastructure.UserWriteMapper";
 
     @Test
-    void productionRegistryIsEmptyInB07() {
-        assertThat(WriteRegistry.registered().permissions()).isEmpty();
-        assertThat(WriteRegistry.registered().allows("member", "mac_user", WriteOperation.UPDATE)).isFalse();
+    void productionRegistryHasOnlyTheB09MemberWrites() {
+        // B07、B08 为空；B09（MACC-33）只登记会员模块对 mac_user 的插入与更新
+        assertThat(WriteRegistry.registered().allows("member", "mac_user", WriteOperation.UPDATE)).isTrue();
+        assertThat(WriteRegistry.registered().allows("member", "mac_user", WriteOperation.INSERT)).isTrue();
+        assertThat(WriteRegistry.registered().allows("member", "mac_user", WriteOperation.DELETE)).isFalse();
+        assertThat(WriteRegistry.registered().allows("member", "mac_plog", WriteOperation.INSERT)).isFalse();
+        assertThat(WriteRegistry.registered().allows("content", "mac_user", WriteOperation.UPDATE)).isFalse();
+        assertThat(WriteRegistry.registered().permissions()).hasSize(2);
     }
 
     @Test

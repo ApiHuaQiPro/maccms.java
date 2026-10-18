@@ -19,6 +19,11 @@ spring:
       mode: never
   jackson:
     default-property-inclusion: always
+  # 会员头像上传（B09，18 文档第 3.8 节）：旧版取 PHP upload_max_filesize（默认 2M）
+  servlet:
+    multipart:
+      max-file-size: 2MB
+      max-request-size: 3MB
 
 mybatis:
   mapper-locations: classpath:mapper/**/*.xml
@@ -61,6 +66,10 @@ maccms:
       enabled: ${MACCMS_CONTENT_SEARCH_ENABLED:false}
       # 带 keyword/classes 的请求同时执行的上限（1 到连接池大小减 1），超过即 503，不排队
       max-concurrent: ${MACCMS_CONTENT_SEARCH_MAX_CONCURRENT:4}
+  # 会员账号（B09，docs/architecture/18-b09-member-account.md 第 7 节）：账号写入需要上面的可写数据源；关闭时会员入口返回 503。
+  # upload-dir 为旧站根目录下 upload/ 的本地路径（头像写到其下 user/<id%10>/<id>.jpg，由部署层的 nginx 直接提供），留空时头像上传不可用。
+  member:
+    upload-dir: ${MACCMS_MEMBER_UPLOAD_DIR:}
   # 旧配置只读层（B02，docs/architecture/11-guards-and-legacy-config.md 第 4 节）：旧站 application 目录（含 extra/*.php、route.php），
   # 可以在仓库之外。留空表示未配置；只读解析 var_export 格式，不执行 PHP，不写回。不要指向线上目录。
   legacy-config:

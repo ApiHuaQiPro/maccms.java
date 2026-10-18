@@ -233,14 +233,30 @@ public final class LegacyUrlBuilder {
         return macUrl("vod/show", vars);
     }
 
-    /** 旧会员页（仍归 PHP），等价 {@code mac_url('user/<action>')}。 */
+    /** 会员页（B09 起由 Java 处理），等价 {@code mac_url('user/<action>')}。 */
     public String user(String action) {
+        return user(action, Map.of());
+    }
+
+    /**
+     * 带参数的会员页（B09：{@code findpass_msg} 的 {@code ac}），等价 {@code mac_url('user/<action>', $vars)}：参数按键排序、空值去掉
+     * （{@code common.php:1734-1746}）。键须是小写字母与下划线，值须是小写字母。
+     */
+    public String user(String action, Map<String, String> vars) {
         if (action == null || !USER_ACTION.matcher(action).matches()) {
             throw new IllegalArgumentException("会员页操作名不合法");
         }
-        Map<String, String> vars = new LinkedHashMap<>();
-        vars.put("page", "");
-        return macUrl("user/" + action, vars);
+        Map<String, String> sorted = new TreeMap<>();
+        for (Map.Entry<String, String> e : vars.entrySet()) {
+            if (!USER_ACTION.matcher(e.getKey()).matches() || !e.getValue().matches("[a-z]{1,16}")) {
+                throw new IllegalArgumentException("会员页参数不合法");
+            }
+            sorted.put(e.getKey(), e.getValue());
+        }
+        Map<String, String> all = new LinkedHashMap<>();
+        all.put("page", "");
+        all.putAll(sorted);
+        return macUrl("user/" + action, all);
     }
 
     // ---- mac_url 的参数预处理（common.php:1734-1746）：去掉 empty() 的值，page=1 置空，按键排序 ----

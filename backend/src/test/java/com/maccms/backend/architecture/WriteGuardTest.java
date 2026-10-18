@@ -128,8 +128,10 @@ class WriteGuardTest {
     @Test
     void registeredPermissionsFollowTheOwnerMatrix() {
         assertThat(registryViolations(WriteRegistry.registered().permissions(), false)).isEmpty();
-        // B07 只建基础设施，不登记任何业务写入
-        assertThat(WriteRegistry.registered().permissions()).isEmpty();
+        // B07、B08 不登记业务写入；B09（MACC-33）只登记会员模块对 mac_user 的插入与更新（18 文档第 6.1 节）
+        assertThat(WriteRegistry.registered().permissions()).extracting(p -> p.module() + " " + p.table() + " "
+                + p.operation() + " " + p.batch())
+                .containsExactly("member mac_user INSERT B09", "member mac_user UPDATE B09");
     }
 
     @Test

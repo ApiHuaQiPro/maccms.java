@@ -89,9 +89,19 @@ class SiteTemplatePolicyTest {
     }
 
     /** B05 已裁定的例外：模板 → 额外允许的标签。 */
-    static final Map<String, Set<String>> EXCEPTIONS = Map.of(
-            "site/pages/play.jte", Set.of("iframe"),
-            "site/player/player.jte", Set.of("script"));
+    static final Map<String, Set<String>> EXCEPTIONS = Map.ofEntries(
+            Map.entry("site/pages/play.jte", Set.of("iframe")),
+            Map.entry("site/player/player.jte", Set.of("script")),
+            // B09（MACC-33，18 文档第 8.1 节）：会员页面末尾的 member.js 只写在 member/script.jte（同样只能带 nonce 与 src），
+            // 引用它的会员页面随之按例外编译；这些页面自己没有 <script>（SiteGuardrailsTest 按文本检查）
+            Map.entry("site/member/script.jte", Set.of("script")),
+            Map.entry("site/pages/userLogin.jte", Set.of("script")),
+            Map.entry("site/pages/userReg.jte", Set.of("script")),
+            Map.entry("site/pages/userIndex.jte", Set.of("script")),
+            Map.entry("site/pages/userInfo.jte", Set.of("script")),
+            Map.entry("site/pages/userPortrait.jte", Set.of("script")),
+            Map.entry("site/pages/userFindpass.jte", Set.of("script")),
+            Map.entry("site/pages/userFindpassMsg.jte", Set.of("script")));
 
     private static TemplateEngine engine(Path sourceDir, String classDir) {
         return engine(sourceDir, classDir, Set.of());

@@ -10,6 +10,7 @@ import com.maccms.backend.legacyconfig.application.LegacyConfigFile;
 import com.maccms.backend.legacyconfig.application.LegacyConfigService;
 import com.maccms.backend.legacyconfig.application.view.PhpArray;
 import com.maccms.backend.legacyconfig.application.view.PhpValue;
+import com.maccms.backend.member.application.MemberSessionService;
 import com.maccms.backend.site.application.BrowserAddress;
 import com.maccms.backend.site.application.ImageUrlNormalizer;
 import com.maccms.backend.site.application.LegacyUrlBuilder;
@@ -32,6 +33,8 @@ import com.maccms.backend.site.web.SearchThrottle;
 import com.maccms.backend.site.web.SiteHtmlRenderer;
 import com.maccms.backend.site.web.SitePages;
 import com.maccms.backend.site.web.SiteSessions;
+import com.maccms.backend.site.web.SiteMemberCacheFilter;
+import com.maccms.backend.site.web.SiteMemberInterceptor;
 import com.maccms.backend.site.web.SiteStatusInterceptor;
 import com.maccms.backend.site.web.jte.StaticTemplates;
 import java.security.SecureRandom;
@@ -43,7 +46,9 @@ import java.util.random.RandomGenerator;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
@@ -281,14 +286,28 @@ public class SiteConfiguration {
         return new SiteHtmlRenderer(new StaticTemplates());
     }
 
+    /**
+     * 站点状态（维护页）在前、会员 {@code label_user} 接线在后（B09，旧版先 check_site_status 再 label_user，Base.php:11-18）。
+     * 会员服务在只装配部分 Bean 的测试里可能没有，此时一律按游客。
+     */
     @Bean
-    WebMvcConfigurer siteStatusWebMvcConfigurer(SiteSettings settings) {
+    WebMvcConfigurer siteStatusWebMvcConfigurer(SiteSettings settings, ObjectProvider<MemberSessionService> members) {
         SiteStatusInterceptor interceptor = new SiteStatusInterceptor(settings);
+        SiteMemberInterceptor member = new SiteMemberInterceptor(members);
         return new WebMvcConfigurer() {
             @Override
             public void addInterceptors(InterceptorRegistry registry) {
                 registry.addInterceptor(interceptor);
+                registry.addInterceptor(member);
             }
         };
+    }
+
+    /** 会员页面的缓存头替换（B09，{@link SiteMemberCacheFilter}）。 */
+    @Bean
+    FilterRegistrationBean<SiteMemberCacheFilter> siteMemberCacheFilter() {
+        FilterRegistrationBean<SiteMemberCacheFilter> bean = new FilterRegistrationBean<>(new SiteMemberCacheFilter());
+        bean.addUrlPatterns("/*");
+        return bean;
     }
 }

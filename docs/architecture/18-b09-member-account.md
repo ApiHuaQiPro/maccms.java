@@ -1,6 +1,6 @@
 ## B09 会员账号：注册、登录、资料、头像、密保找回（路线图 B09，MACC-33）
 
-> **状态：契约稿 v1（2026-10-18，后端 Claude）。** 本文先给出接口契约（第 2～8 节），供队长派前端（Kimi）配合；实现与验证记录在实施后补进第 11、12 节。契约中标"待核实"的地方以黄金向量为准，实施时如有出入在本文修订并在任务评论中说明。
+> **状态：后端已实施（2026-10-18，后端 Claude）；前端 K1–K4（第 8 节）待队长安排。** 契约稿 v1 随提交 `3008228` 发布；实施中按黄金向量与实现修订的地方见第 13 节"契约修订记录"。实现说明在第 11 节，验证记录与验收对照在第 12 节。
 > 依据：路线图 `09-roadmap.md` 第 5.3 节 B09 行与第 5.5 节 D2 ①②⑥；03 草稿第 4.3 (1)(4)(6) 节；B08 文档 `17-b08-member-session-captcha.md`；B07 文档 `12-write-infrastructure.md`。旧代码位置一律相对仓库根目录。
 
 ### 0. 起点、分支与提交
@@ -38,7 +38,7 @@
 | `index` | GET/HEAD | 是 | 会员中心首页（`pages/userIndex.jte`） |
 | `reg` | GET/HEAD | 否 | 注册页（`pages/userReg.jte`）；带 `uid` 参数时写 `uid` 会话 cookie |
 | `reg` | POST | 否 | JSON；注册成功后按旧版立即登录（成功时写 6 个登录 cookie） |
-| `regcheck` | GET/HEAD/POST | 否 | JSON `{"code":1,"msg":"ok"}`，或（已注册/验证码错）正文为处理后的 `str`，`text/html` |
+| `regcheck` | GET/HEAD/POST | **是**（旧白名单 `User.php:19` 不含 `regcheck`，游客调用得到"未登录"，照搬） | JSON `{"code":1,"msg":"ok"}`，或（已注册/验证码错）正文为处理后的 `str`，`text/html` |
 | `reg_msg` | POST | 否 | JSON（B25 前固定为发送失败，第 3.6 节） |
 | `info` | GET/HEAD | 是 | 资料页（`pages/userInfo.jte`） |
 | `info` | POST | 是 | ajax → JSON `{"code":1|0,"msg":"…","data":"","url":…,"wait":3}`；非 ajax → 跳转提示页（`pages/userJump.jte`，200） |
@@ -48,9 +48,9 @@
 | `findpass` | POST | 否 | JSON |
 | `findpass_msg` | GET/HEAD | 否 | 邮箱/手机找回页（`pages/userFindpassMsg.jte`，`ac=email|phone`） |
 | `findpass_msg`、`findpass_reset` | POST | 否 | JSON（B25 前按未配置，第 3.6 节） |
-| 其他 `user/*` | 任意 | — | 404（站点 404 页）；归属见第 1 节 |
+| 其他 `user/*` | 任意 | 按旧白名单 | 不在白名单的操作先检查登录态（游客得到"未登录"，同旧构造函数），已登录时 404；白名单里未实现的 `oauth`、`logincallback`、`visit` 直接 404。归属见第 1 节 |
 
-- **需登录的操作未登录时**（旧 `index/controller/User.php:19-25`）：先写 6 个删除 cookie（旧 `logout()`），再按 ThinkPHP `error('未登录', url('user/login'))`：ajax → JSON `{"code":0,"msg":"未登录","data":"","url":"\/index.php\/user\/login.html","wait":3}`；非 ajax → 跳转提示页（200，3 秒后转到登录页）。
+- **需登录的操作未登录时**（旧 `index/controller/User.php:19-25`）：先写 6 个删除 cookie（旧 `logout()`），再按 ThinkPHP `error('未登录', url('user/login'))`：ajax → JSON `{"code":0,"msg":"未登录","data":"","url":"\/index.php\/user\/login.html","wait":3}`；非 ajax → 提示页（`pages/userJump.jte`，200，带去登录页的链接；旧模板用脚本倒计时跳转，新版页面不带脚本、不自动跳转）。
 - **ajax 判定**（ThinkPHP `Request::isAjax`）：请求头 `X-Requested-With` 不分大小写等于 `XMLHttpRequest`，或合并后的参数 `_ajax` 为 PHP 真值。
 - **可写数据源关闭时**（`MACCMS_WRITE_ENABLED=false`，没有 `WriteDatabase`）：全部 `user/*` 返回 503 维护提示（ajax 为 JSON `{"code":503,"msg":"会员功能暂未开放"}`），页面不提供无法提交的表单；`label_user` 判定照常（只读），到期只做内存判定、不写库也不重发组 cookie（同 B08）。
 - 站点关闭（`site_status=0`）时与其他页面相同，返回维护页 503。
@@ -60,7 +60,7 @@
 
 #### 3.1 通用：参数与字节语义
 
-- **参数合并**按 ThinkPHP `input()`：查询串 → 表单正文（POST 覆盖 GET）→ 路径 `键/值`（覆盖前两者）。查询串与 `application/x-www-form-urlencoded` 正文按 PHP 的规则**按字节**解析（`&` 分段、`+` 为空格、`%XX` 解码一次；名字里的空格与 `.` 变 `_`；同名取最后一个），不经 Servlet 的字符集转换，所以非法 UTF-8、`\0` 等字节原样进入下面的处理。名字带 `[` 的数组参数：该字段按"缺失"处理（旧版 PHP 8 对数组调用 `trim` 抛类型错误、500；新版不复刻 500）。表单正文上限 64 KiB，超过 413。
+- **参数合并**按 ThinkPHP `input()`：查询串 → 表单正文（POST 覆盖 GET）→ 路径 `键/值`（覆盖前两者）。查询串与 `application/x-www-form-urlencoded` 正文按 PHP 的规则**按字节**解析（`&` 分段、`+` 为空格、`%XX` 解码一次；名字里的空格与 `.` 变 `_`；同名取最后一个），不经 Servlet 的字符集转换，所以非法 UTF-8、`\0` 等字节原样进入下面的处理。名字带 `[` 的数组参数：该字段按"缺失"处理（旧版 PHP 8 对数组调用 `trim` 抛类型错误、500；新版不复刻 500）。表单正文上限 64 KiB，超过时按参数不合法返回 400（站点错误页）。
 - **清洗**：旧代码大量使用 `htmlspecialchars(urldecode(trim($x)))`（下文记作 `clean(x)`）：PHP `trim` 去首尾 `" \t\n\r\0\x0B"`，`urldecode` 再解一次 `%XX` 与 `+`，`htmlspecialchars` 只转 `& " < >`、非法 UTF-8 得空串（与 B08 `LegacyCookieText.clean` 相同）。
 - **密码字节语义**（03 第 4.3 (1) 节，黄金向量逐入口锁定）：
 
@@ -155,7 +155,7 @@ POST 字段：`user_pwd`（当前密码，必填）、`user_pwd1`、`user_pwd2`�
 
 - 写库：`user_qq = clean`、`user_question = clean`、`user_answer = clean`（**空值也照写**，所以表单必须回填当前值）、`user_nick_name = clean`（原值非空时才写）、`user_pwd = md5(trim(user_pwd2))`（`user_pwd2` 原值非空时才写）；条件 `user_id = ? AND user_pwd = <校验通过时读到的值>`。
 - **改了密码时**（D2 ⑥）同一条语句写新的 `user_random`，并在本响应里重新签发 6 个登录 cookie：当前设备保持登录，其他设备上的旧 `user_check` 立即失效。
-- 响应：ajax → `{"code":1,"msg":"保存成功!","data":"","url":<Referer 或 null>,"wait":3}` / `{"code":0,"msg":"…","data":"","url":"","wait":3}`；非 ajax → 跳转提示页（成功时 3 秒后转到 Referer 中的本站地址，没有则不跳转；失败时只给"返回"链接）。
+- 响应：ajax → `{"code":1,"msg":"保存成功!","data":"","url":<Referer 或 null>,"wait":3}` / `{"code":0,"msg":"…","data":"","url":"","wait":3}`；非 ajax → 提示页（成功/失败的提示 + 回到资料页的"继续"链接，不自动跳转）。
 
 #### 3.8 `portrait`（`index/controller/User.php:384-398`、`common/model/Upload.php`）
 
@@ -301,7 +301,7 @@ POST 字段：`user_pwd`（当前密码，必填）、`user_pwd1`、`user_pwd2`�
 ```
 
 - `data-member-form` 取值：`login`、`reg`、`info`、`portrait`、`findpass`、`findpass_msg`（发送验证码，B25 前固定失败）、`findpass_reset`、`reg_msg`（注册页的"发送验证码"按钮所在的小表单）。`data-success-url` 只在成功后需要跳转的表单上输出（`login`、`reg` → 会员中心；`findpass` → 登录页）。
-- 其他 class：`member-form__hint`（字段说明）、`member-form__field--inline`；会员中心 `member-profile`（`<dl>`）、`member-profile__avatar`（`<img data-member-portrait>`）、`member-nav`（资料/头像/退出链接）；头像页 `member-portrait`、`<input type="file" name="file" accept="image/jpeg,image/png,image/gif,image/webp">`；跳转提示页 `jump-page`、`jump-page__message`、`jump-page__link`（服务端输出 `<meta http-equiv="refresh">`，不依赖脚本）；片段 `member-fragment`。
+- 其他 class：`member-form__hint`（字段说明）、`member-form__value`（只读显示的值，如资料页的用户名）、`member-form__field--inline` 与其中的 `member-form__send`（"发送验证码"按钮，带 `data-member-send`、`data-send-url`）；会员中心 `member-profile`（`<dl>`）、`member-profile__avatar`（`<img data-member-portrait>`）、`member-nav`（资料/头像/退出链接）；头像页 `member-portrait`、`<input type="file" name="file" accept="image/jpeg,image/png,image/gif,image/webp">`；提示页 `jump-page`、`jump-page__message`（成功 `role="status"`，失败 `role="alert"` 并带 `notice--error`）、`jump-page__link`（不自动跳转、不依赖脚本）；片段 `member-fragment`。
 - 状态：脚本在表单上设置 `data-state="pending|success|error"`，样式按它区分。
 
 #### 8.3 `member.js` 行为契约
@@ -311,7 +311,8 @@ POST 字段：`user_pwd`（当前密码，必填）、`user_pwd1`、`user_pwd2`�
 3. 失败（`code !== 1`）：显示 `msg`，`data-state="error"`；表单内有 `[data-captcha-refresh]` 时**刷新验证码并清空 `verify` 输入**（新版猜错即作废）。成功但不跳转时同样刷新验证码。
 4. 网络错误或响应不是 JSON：显示固定文案"请求失败，请稍后重试。"。
 5. 点击 `[data-captcha-refresh]`：把其中 `img` 的 `src` 设为 `data-captcha-src` + `?r=` + 随机数。
-6. 不读写 cookie，不使用 `innerHTML`，不访问外部域名，不引入依赖。
+6. 点击 `[data-member-send]`（注册页的手机/邮箱验证区、邮箱/手机找回页）：取所在表单的 `ac`、`to` 两个字段，按第 1 条的方式 POST 到 `data-send-url`，在该表单的 `[data-member-message]` 显示 `msg`（B25 前固定是"验证码发送失败：未配置短信/邮箱发送服务"）。
+7. 不读写 cookie，不使用 `innerHTML`，不访问外部域名，不引入依赖。
 
 ### 9. B08 的 PHP 7.3 `label_user/expiry-5-g3--1`：复现与结论
 
@@ -347,7 +348,23 @@ POST 字段：`user_pwd`（当前密码，必填）、`user_pwd1`、`user_pwd2`�
 
 ### 11. 实现说明
 
-（实施后补：模块与依赖、`ContentViewer` 的作用域与护栏、`ModuleBoundaryTest` 调整、黄金脚本。）
+| 层 | 文件 | 要点 |
+|---|---|---|
+| common | `common.web.PhpInput` | 查询串与 urlencoded 正文按字节解析（PHP `php_default_treat_data` 的名字规则，后到覆盖），`merge` 按 ThinkPHP `input()` 合并 GET → POST → 路由参数 |
+| common | `common.write.ConditionalOnWriteEnabled` | 写 Mapper 的装配条件（与 `WriteDatabase` 同条件；`maccms.write` 配置名只在 `common.write`，`WriteGuardTest` 锁定） |
+| content | `GroupPermission`（原 `GuestPermission`）、`ContentViewer`、`ContentCatalogs`、`VideoPlaybackService`、`ArticleReadService` | 组权限带组号（组不存在为 0）；`ContentViewer` 是请求作用域的观看者会员组，未设置时为游客 1；播放/下载/文章积分按旧 `check_user_popedom` 的组号分支 |
+| member | `MemberSessionService.resolvePage`、`MemberAccountService`、`MemberSettings`、`PortraitImages`、`MemberCookies`（可空会员组）、`LegacyText`（原 `LegacyCookieText`） | 第 3、5 节的规则；`MemberAccountService` 只在站点启用时装配（`MemberAccountConfiguration`），站点根路径取 `maccms.site.base-url` 的路径 |
+| member.infrastructure | `MemberMapper`（新增 7 条只读查询）、`MemberWriteMapper` + `mapper-write/member/MemberWriteMapper.xml`（8 条写语句）、`PortraitStore`、`MemberInfrastructureConfiguration` | 写 Mapper 只经 `WriteDatabase.mapper()`；头像先写临时文件再改名 |
+| site | `SiteUserController`、`SiteMemberInterceptor`、`SiteMemberCacheFilter`、`SitePages.member/memberUnavailable`、`SiteHtmlRenderer.member/memberPlain`、`LegacyUrlBuilder.user(action, vars)`、`view/User*`、`view/Member*` | 路由、参数、JSON 与提示页、cookie、`label_user` 接线、会员页的 nonce CSP |
+| jte | `pages/user*.jte`（7 页 + 提示页）、`ajax/userLogin.jte`、`ajax/userInfo.jte`、`member/script.jte`、`member/captcha.jte`、`member/loginForm.jte`、`member/messageBlock.jte` | 只输出第 8.2 节的结构与钩子，不带样式与内联脚本 |
+| 配置 | `application.yml`：`maccms.member.upload-dir`、`spring.servlet.multipart`（2 MB / 3 MB）；`config/maccms-backend.env.example` | — |
+
+**为什么用 `ContentViewer`（请求作用域）而不是给内容服务加参数**：页面对内容服务的调用有 79 处（`site.web` 中），逐个加"观看者会员组"参数改动面大、容易漏；旧版本身也是"每个请求一个 `$GLOBALS['user']`"。作用域只由 `SiteMemberInterceptor.preHandle` 打开、`afterCompletion` 关闭（异常时 Spring 同样调用），嵌套时逐层恢复；公开 JSON API 与 Provide 不经过它，始终按游客。内容服务都在请求线程上同步执行（没有线程池或异步调用）。测试：`GroupPopedomGoldenTest.viewerScopeRestoresThePreviousGroup`、`SiteUserMvcTest.labelUserWritesGuestResetAndScopesTheViewerGroupForTheRequestOnly`（请求中为 3 组，结束后回到游客）。
+
+**护栏调整**（随本批提交）：`ModuleBoundaryTest` 允许 site 引用 `member.application(.view)`、`common.web.PhpInput`、`common.clientip.ClientIpResolver`；`WriteGuardTest`/`WriteRegistryTest` 锁定正式登记表只有两条 B09 条目；`SiteTemplatePolicyTest.EXCEPTIONS` 与 `SiteGuardrailsTest` 允许 `member/script.jte` 一处 nonce 外部脚本（引用它的会员页面按例外编译）；`WriteInfrastructureMySqlIT` ②、`MemberGoldenMySqlIT` ⑤ 原来断言"正式登记表为空"，改为"只有 member 的 mac_user 写入、没有演练模块"。02 规范第 2、3、4 节同步。
+
+**黄金脚本**：`backend/src/test/php/account_golden.php`（父进程，用例定义）+ `account_golden_child.php`（php-cgi 子进程，调用旧 `model('User')` 的各方法与 `Base::check_user_popedom`）；输出 `member/account-php80-golden.json`、`account-php73-golden.json`，各 203 个用例：注册 40、登录 18、资料 11、密保找回 7、regcheck 6、短信/邮件"未配置" 13、页面权限 108（4 种组 × 3 种权限位 × 播放 4 / 下载 2 / 文章 2 / 视频详情 1）。两版 PHP 的返回码与提示逐条相同。命令（仓库根目录，需恢复 `vendor/`，管理账号只经环境变量）：
+`PHP_CGI=D:/Tools/php/8.0/php-cgi.exe D:/Tools/php/8.0/php.exe backend/src/test/php/account_golden.php > backend/src/test/resources/member/account-php80-golden.json`（7.3 同理）。
 
 ### 12. 验证记录与验收对照
 
