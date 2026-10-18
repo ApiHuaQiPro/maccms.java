@@ -1,6 +1,6 @@
 ## B09 会员账号：注册、登录、资料、头像、密保找回（路线图 B09，MACC-33）
 
-> **状态：后端已实施（2026-10-18，后端 Claude）；前端 K1–K4（第 8 节）待队长安排。** 契约稿 v1 随提交 `3008228` 发布；实施中按黄金向量与实现修订的地方见第 13 节"契约修订记录"。实现说明在第 11 节，验证记录与验收对照在第 12 节。
+> **状态：前后端已整合，待验收（2026-10-18）。** 后端由 Claude 实施；前端 K1–K4 由 Kimi 交付（`4f15676`），以普通 merge 并入本分支，最终接线与真实页面检查由后端完成（第 12.7 节）。WebP 头像待队长裁定（第 14 节）。 契约稿 v1 随提交 `3008228` 发布；实施中按黄金向量与实现修订的地方见第 13 节"契约修订记录"。实现说明在第 11 节，验证记录与验收对照在第 12 节。
 > 依据：路线图 `09-roadmap.md` 第 5.3 节 B09 行与第 5.5 节 D2 ①②⑥；03 草稿第 4.3 (1)(4)(6) 节；B08 文档 `17-b08-member-session-captcha.md`；B07 文档 `12-write-infrastructure.md`。旧代码位置一律相对仓库根目录。
 
 ### 0. 起点、分支与提交
@@ -10,7 +10,7 @@
 | 运行起点 | 平台基线 `836653af739688c47a79b903cb87d9d14021ecb6`（本任务工作区的快照提交），tree `03c0e610c948c63e4bc6fa597016614dfec8b87a`，与已验收 main `363d7bf0a72e873aafad6aaae98d88d88fa35335`（B08 普通 merge）的 tree 相同 |
 | 分支 | `agent/claude/macc-33`（只用普通提交；没有 reset/rebase/amend/force，不自行合并 main） |
 | 起始工作树 | 只有平台生成的 `.claude/`、`CLAUDE.md`（未跟踪，不提交）；没有发现重叠工作或冲突 |
-| 提交 | 见交付评论（最终 SHA/tree 以评论为准） |
+| 提交 | 见交付评论（最终 SHA/tree 以评论为准）；前端 `4f15676` 经普通 merge 并入（只合该提交，不合 Kimi 分支头 `9fe0506` 的 `.qwen/tmp/` 临时文件） |
 
 ### 1. 范围
 
@@ -163,7 +163,7 @@ POST 字段：`user_pwd`（当前密码，必填）、`user_pwd1`、`user_pwd2`�
 - 输入：`multipart/form-data` 的 `file` 字段，或表单参数 `imgdata`（`data:image/<类型>;base64,…`，旧版两种都接受）。上限 2 MiB（旧版取 PHP `upload_max_filesize`，默认 2M）。
 - 失败结果 `{"msg":<提示>,"code":0,"file":"<站点根路径>?<4 位随机数>"}`（旧 `upload_return` 在没有文件时的拼法）：没有文件 → "未找到上传的文件(原因：表单名可能错误，默认表单名“file”或“imgdata”)！"；扩展名不是 `jpg,jpeg,png,gif,webp`（`imgdata` 按 data URL 的类型）→ "非系统允许的上传格式！"；内容不能解码为图片 → "文件上传失败！"（旧 `make_thumb_faild` 的文案）。
 - 成功：缩放为 `user.portrait_size`（如 `100x100`，只给一个数时为正方形；旧 `think\Image::thumb(w, h, 6)` 固定尺寸拉伸）后以 JPEG 写到 `<头像目录>/user/<id%10>/<id>.jpg`，`UPDATE mac_user SET user_portrait = 'upload/user/<id%10>/<id>.jpg' WHERE user_id = ?`；返回 `{"msg":"文件上传成功！","code":1,"file":"<站点根路径>upload/user/<id%10>/<id>.jpg?<4 位随机数>"}`。
-- 新版只把**重新编码后的图片**写盘，上传的原始字节不落盘（旧版先把原文件存成 `<id>.jpg`，再用缩略图覆盖；扩展名在允许表内但不是图片的文件会留在磁盘上）。`webp` 本机 JDK 没有解码器，按"文件上传失败！"处理（第 10 节）。
+- 新版只把**重新编码后的图片**写盘，上传的原始字节不落盘（旧版先把原文件存成 `<id>.jpg`，再用缩略图覆盖；扩展名在允许表内但不是图片的文件会留在磁盘上）。`webp` 本机 JDK 没有解码器，按"文件上传失败！"处理（第 10 节）；旧版实际行为与可选方案见第 14 节，待队长裁定。
 - `/upload/…` 静态文件仍由部署层（nginx）直接提供，新系统不提供该路径。
 
 #### 3.9 `findpass`（`index/controller/User.php:400-409`、`common/model/User.php:480-526`）
@@ -271,7 +271,7 @@ POST 字段：`user_pwd`（当前密码，必填）、`user_pwd1`、`user_pwd2`�
 | `docs/frontend/04-b09-member-ui.md` | 前端（Kimi） | 前端说明与检查记录 |
 | `jte/site/layout/`、`jte/site/components/` | 不改 | 外壳的"登录 / 会员中心"链接保持不变 |
 
-会员页面的 CSP 在站点默认策略上把 `script-src 'none'` 换成 `script-src 'nonce-<每次随机>'`（与播放器内页相同的做法），页面末尾一个 `<script nonce src=".../site/member.js" defer>`；不允许内联脚本与事件属性。
+会员页面的 CSP 在站点默认策略上把 `script-src 'none'` 换成 `script-src 'nonce-<每次随机>'`（与播放器内页相同的做法），页面内容末尾（全部表单之后）一个 `<script nonce src=".../site/member.js">`，只带 `nonce` 与 `src` 两个属性（`SiteGuardrailsTest` 按文本锁定，所以不加 `defer`；脚本自己按 `readyState` 决定立即还是在 `DOMContentLoaded` 后挂接）；不允许内联脚本与事件属性。
 
 #### 8.2 DOM 钩子（后端输出，前端只依赖这些）
 
@@ -426,14 +426,32 @@ POST 字段：`user_pwd`（当前密码，必填）、`user_pwd1`、`user_pwd2`�
 | 4 | MyISAM 无唯一约束下同名并发注册只 1 行，方案与作用范围；只登记必要写路径；可写数据源默认关闭，B07 零 DDL/写入护栏保留 | ✅ 第 6 节；登记两条；`MACCMS_WRITE_ENABLED` 默认 false |
 | 5 | `./mvnw verify` 与 `-Pmysql-it`；并发写、DML 回滚演练、前后 information_schema 一致；打包 jar 实际 HTTP、测试库与进程清理有证据 | 见第 12.1、12.3 节 |
 | 6 | `git diff --check`、UTF-8 无 BOM、路径与密钥检查；交付 SHA/tree、分支、验证摘要、差异、未验证项、回滚点；文档与路线图状态 | ✅ 本文、路线图 B09 行；SHA/tree 见交付评论 |
-| — | 契约与前端接线（整批验收） | ❌ 前端 K1–K4（`member.js` 与样式）未完成，待队长安排；在此之前页面表单提交后看到的是 JSON 原文 |
+| — | 契约与前端接线（整批验收） | ✅ 第 12.7 节：`4f15676` 普通 merge、`member.js` 补第 6 条、根路径与子目录接线、四宽度/纯键盘/reduced-motion 实测；WebP 待裁定（第 14 节） |
 
 #### 12.5 未验证与遗留
 
-- 前端 `static/site/member.js` 与样式（第 8 节）尚未提供；浏览器内的完整交互（提交、刷新验证码、跳转）没有验证。
+- 浏览器内的完整交互已在第 12.7 节实测；只验证了 Chromium（Playwright 1.60 / Chromium 148），没有测 Firefox、Safari 和真机。
 - 线上 `maccms.php` 的 `user` 段、`sms`/`email` 配置与 `extend/` 是否存在无法核实（D9-b），"未配置"时的提示按仓库值与黄金的"未配置"设定。
 - `webp` 头像、`mac_annex` 登记、推广积分与流水、组 ≤2 的已购买判定为分批缺口（第 10 节）。
-- 头像目录与 `/upload/` 的静态服务由部署层负责，未在 nginx 上验证。
+- 头像目录 `/upload/` 和默认头像 `/static/images/touxiang.png` 都由部署层提供。第 12.7 节已在一个只为检查而起的 nginx（子目录 `/sub/`）上验证过，生产 nginx 配置不在本批范围。
+- WebP 头像待裁定（第 14 节）。
+
+#### 12.7 前后端整合（MACC-23 队长指令，2026-10-18）
+
+- **合并**：`git merge --no-ff 4f15676`（Kimi 的 K1–K4），没有冲突。双方历史都保留，没有合 Kimi 分支头 `9fe0506`。
+- **接线**：
+  - 会员页面末尾的 `site/member/script.jte` 输出 `<script nonce src="<站点根路径>site/member.js">`，nonce 与本响应 CSP 中的相同（第 8.1 节）。
+  - 表单 `action`、`data-success-url`、`data-captcha-src`、默认头像和上传后的头像地址，都由 `SiteSettings.publicPath` 按 base-url 的路径部分生成，子目录部署时带前缀。
+  - 契约第 8.2 节的钩子（`data-member-form`、`data-success-url`、`data-captcha-src`、`data-captcha-refresh`、`img[data-member-portrait]`、`data-member-message`、`data-member-send`/`data-send-url`、`data-state`）与 `member.js` 的选择器逐个对过。
+  - 前端依据的契约稿 v1 只有 6 条，没有第 6 条"发送验证码"（第 13 节修订记录），整合时补进 `member.js`，测试增加 2 项。
+- **ContentViewer 门槛**：新增 `SiteContentViewerIsolationTest`，在真实 Tomcat 上运行，线程池 4 个线程，共 3 项：
+  1. 处理器抛异常退出 60 轮。每轮之后不断发公开 API 请求，直到有一个落在刚才那个工作线程上，并断言它按游客组 1 取权限。站点页面每次都会重新进入作用域，看不出泄漏，所以用不设作用域的 API 去探测。
+  2. 4 个会员组不同的请求在处理器里用栅栏等齐，确保同时在途，各自看到自己的组。共 25 轮，每轮之后游客页面和 API 都按组 1。
+  3. 带会员 cookie 的公开 API 按组 1 取权限，而且不调用会员判定。
+
+  变异检查：去掉 `afterCompletion` 里的 `close()` 后，3 项全部失败；恢复后全部通过。
+- **真实页面**：四个宽度、纯键盘、reduced-motion、表单状态、出错后刷新验证码、头像更新、CSP nonce、根路径与子目录接线，结果见 `docs/frontend/04-b09-member-ui.md` 第 4.3 节。
+- **部署要求（补充）**：除 `/upload/` 外，默认头像 `<站点根路径>static/images/touxiang.png` 也由 web 服务器从旧站 `static/` 提供，新应用不提供 `/static/`。这与 B05 起旧静态资源的做法相同。
 
 #### 12.6 回滚
 
@@ -450,3 +468,24 @@ POST 字段：`user_pwd`（当前密码，必填）、`user_pwd1`、`user_pwd2`�
 | 表单正文超限 | 413 | 400 | 不新增对外错误码（`ErrorCode` 属于 OpenAPI 契约） |
 | `member.js` | 6 条 | 7 条，新增 `[data-member-send]` 发送验证码 | 注册页/找回页的"发送验证码"按钮需要从同一表单取 `ac`、`to` |
 | 头像 `accept` | 含 webp | 不含 webp | JDK 没有 webp 解码器（D-B09-9） |
+
+### 14. WebP 头像：旧版实际行为与待裁定方案（MACC-23 队长要求）
+
+**旧版实际行为**：用仓库代码与恢复的 `vendor/topthink/think-image` 在本机实测，PHP 7.3.33 与 8.0.30 的 GD 都带 WebP。
+
+- 扩展名表 `jpg,jpeg,png,gif,webp`（`common/model/Upload.php:55`）允许 webp。原文件先移动成 `<id>.jpg`，再执行 `think\Image::open(...)->thumb(w, h, 6)->save('./upload/user/<n>/<id>.jpg')`（`Upload.php:186-199`）。
+- `save()` 没有传类型，所以按原图类型保存（think-image `Image.php:118-144`）：静态 WebP（有损，以及无损带透明）得到 **WebP 字节、文件名是 `.jpg`** 的 100×100 头像，返回"文件上传成功！"。PNG、GIF 也同样按原格式写进 `.jpg`，新版统一重新编码为 JPEG，已列为 D-B09-9 的加固。
+- **动图 WebP**：GD 解码时报 PHP Fatal error（`gd-webp cannot allocate temporary buffer`），请求得到的是错误页，不是 JSON。
+- PHP 编译时不带 WebP 的 GD：没有 `imagecreatefromwebp`，`think-image` 抛异常，返回"文件上传失败！"（`make_thumb_faild`）。线上 PHP 的 GD 是否带 WebP 无法核实（D9-b）。
+
+**新版现状**：JDK 21 的 ImageIO 没有 WebP 解码器（本机实测三种样本都读成 `null`）。扩展名检查放行，解码失败，返回"文件上传失败！"；头像页的 `accept` 不列 webp。浏览器实测见前端文档第 4.3 节。
+
+**可选方案（请队长裁定）**：
+
+| 方案 | 依赖与许可 | 行为 | 代价 |
+|---|---|---|---|
+| A 保持现状（推荐作为默认，直到裁定） | 无 | WebP 一律"文件上传失败！"，与旧版"GD 不带 WebP"时相同；与"GD 带 WebP"时不同（D-B09-9） | 带 WebP 的旧站上能传的头像，新版不能传 |
+| B 引入 TwelveMonkeys `imageio-webp` 3.12.0 | `com.twelvemonkeys.imageio:imageio-webp` 及其依赖 `imageio-core`、`imageio-metadata`、`common-lang`、`common-io`、`common-image`，共 6 个 jar、约 576 KB，**BSD 3-Clause**，纯 Java，没有本地库；通过 ImageIO SPI 注册（只有读，没有写） | 静态 WebP 解码后按现有流程重新编码为 JPEG 写盘，不照搬旧版"WebP 字节写进 `.jpg`"的做法。本机用 JDK 21 实测：有损 300×200、无损带透明 300×200、两帧动图（只取第一帧）都能解码 | 新增第三方依赖，需要许可登记和依赖更新；SPI 注册对整个 JVM 生效（只多了 WebP 读取器）；解码器的资源消耗需要配合现有的 2 MiB 上限与像素上限 |
+| C 外部工具（cwebp/dwebp、libvips） | 本地二进制与 JNI/进程调用 | 同 B | 部署复杂度和进程调用风险都更高，不推荐 |
+
+选 B 时的实施要点：加依赖；`PortraitImages` 不用改解码路径（`ImageIO.getImageReaders` 会自动发现）；头像页 `accept` 加 `image/webp`；增加三种样本的单元测试，以及动图只取首帧的说明；在 D-B09-9 中记录"WebP 重新编码为 JPEG"，以及动图与旧版"Fatal error"的差异。
