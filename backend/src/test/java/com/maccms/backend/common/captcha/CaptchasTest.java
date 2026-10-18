@@ -8,12 +8,21 @@ import com.maccms.backend.common.session.SessionStore;
 import com.maccms.backend.member.MemberGolden;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
+import java.nio.ByteBuffer;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetDecoder;
+import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 import java.util.random.RandomGenerator;
 import javax.imageio.ImageIO;
 import org.junit.jupiter.api.Test;
@@ -116,10 +125,10 @@ class CaptchasTest {
                 .as("中文模式不用 codeSet").isEqualTo(CaptchaSettings.THINK_DEFAULTS.zhSet());
         assertThatThrownBy(() -> CaptchaSettings.fromLegacy(Map.of("codeSet", "一二三")))
                 .hasMessageContaining("codeSet");
-        assertThatThrownBy(() -> CaptchaSettings.fromLegacy(Map.of("useZh", true, "zhSet", "中文abc")))
-                .isInstanceOf(IllegalStateException.class).hasMessageContaining("zhSet");
+        assertThat(CaptchaSettings.fromLegacy(Map.of("useZh", true, "zhSet", "中文abc")).zhSet())
+                .as("中文码表可以含 ASCII（旧 1.ttf 能画）").isEqualTo("中文abc");
         assertThatThrownBy(() -> CaptchaSettings.fromLegacy(Map.of("useZh", true, "zhSet", "")))
-                .hasMessageContaining("zhSet");
+                .isInstanceOf(IllegalStateException.class).hasMessageContaining("zhSet");
         assertThatThrownBy(() -> CaptchaSettings.fromLegacy(Map.of("length", 0L))).hasMessageContaining("length");
         assertThatThrownBy(() -> CaptchaSettings.fromLegacy(Map.of("fontSize", 1000L)))
                 .hasMessageContaining("fontSize");
@@ -148,7 +157,119 @@ class CaptchasTest {
         assertThat(zh.codePoints().allMatch(ZhGlyphs::has)).isTrue();
         assertThat(ZhGlyphs.rows('一')).as("Unifont U+4E00").containsExactly(0, 0, 0, 0, 0, 0, 0, 0xFFFE, 0, 0, 0, 0,
                 0, 0, 0, 0);
-        assertThat(ZhGlyphs.has('a')).isFalse();
+        assertThat(ZhGlyphs.glyph('a').width()).as("ASCII 是 8×16 半宽字").isEqualTo(8);
+        assertThat(ZhGlyphs.rows('a')).as("Unifont U+0061，半宽字只用左 8 位").containsExactly(0, 0, 0, 0, 0, 0,
+                0x3C00, 0x4200, 0x0200, 0x3E00, 0x4200, 0x4200, 0x4600, 0x3A00, 0, 0);
+        assertThat(ZhGlyphs.glyph('，').width()).isEqualTo(16);
+    }
+
+    /**
+     * 内置字形的范围与旧 think-captcha v1.0.7 {@code zhttfs/1.ttf} 能画的字相同（不含私用区）：GB2312 全部汉字与符号、ASCII
+     * 0x20–0x7E、全角 U+FF01–U+FF5E，以及 1.ttf 按 GBK 映射的小写罗马数字与竖排标点。1.ttf 没有的繁体、扩展区汉字、私用区，
+     * 以及 GB2312 A1A4、A1AA 的另一种映射 U+30FB、U+2015（1.ttf 映射为 U+00B7、U+2014）没有内置字形。
+     */
+    @Test
+    void builtInGlyphsCoverWhatTheLegacyFontCanDraw() {
+        Charset gb2312 = Charset.forName("GB2312");
+        int gb = 0;
+        for (int hi = 0xA1; hi <= 0xF7; hi++) {
+            for (int lo = 0xA1; lo <= 0xFE; lo++) {
+                CharsetDecoder d = gb2312.newDecoder().onMalformedInput(CodingErrorAction.REPORT)
+                        .onUnmappableCharacter(CodingErrorAction.REPORT);
+                int cp;
+                try {
+                    cp = d.decode(ByteBuffer.wrap(new byte[] {(byte) hi, (byte) lo})).toString().codePointAt(0);
+                } catch (CharacterCodingException e) {
+                    continue;
+                }
+                gb++;
+                if (cp != 0x30FB && cp != 0x2015) {
+                    assertThat(ZhGlyphs.has(cp)).as("GB2312 %02X%02X U+%04X", hi, lo, cp).isTrue();
+                }
+            }
+        }
+        assertThat(gb).isEqualTo(6763 + 682);
+        for (int cp = 0x20; cp < 0x7F; cp++) {
+            assertThat(ZhGlyphs.has(cp)).as("ASCII %02X", cp).isTrue();
+        }
+        for (int cp = 0xFF01; cp <= 0xFF5E; cp++) {
+            assertThat(ZhGlyphs.has(cp)).as("全角 U+%04X", cp).isTrue();
+        }
+        assertThat(ZhGlyphs.missing("ⅰⅹ︱﹄·—")).isEmpty();
+        assertThat(ZhGlyphs.missing("們國龍㐀𠀀―・們")).as("1.ttf 也没有，去重")
+                .containsExactly((int) '們', (int) '國', (int) '龍', 0x3400, 0x20000, 0xE000, 0x2015, 0x30FB);
+    }
+
+    /**
+     * zhSet 混有 ASCII、全角标点与字母、繁体与扩展区汉字：配置照常加载（不启动失败），码表原样保留，码字照常从中抽取；有字形的字
+     * 照画，没有字形的字按单字画缺字框；校验语义不变（旧版两侧都用 strtoupper：ASCII 字母不分大小写，全角字母区分）。
+     */
+    @Test
+    void mixedZhSetLoadsDrawsMissingGlyphBoxesAndChecksLikeTheLegacy() throws Exception {
+        String mixed = "我A，ａ們㐀𠀀";
+        CaptchaSettings settings = zh(mixed);
+        assertThat(settings.zhSet()).isEqualTo(mixed);
+        assertThat(settings.missingZhGlyphs()).containsExactly((int) '們', 0x3400, 0x20000);
+        assertThat(repoSettings().missingZhGlyphs()).isEmpty();
+        assertThat(CaptchaSettings.THINK_DEFAULTS.missingZhGlyphs()).isEmpty();
+
+        SessionState s = SessionStore.withDefaults(Clock.systemUTC()).create();
+        Set<Integer> seen = new HashSet<>();
+        for (int seed = 0; seed < 60; seed++) {
+            String code = issue(s, settings, seed, NOW);
+            assertThat(code.codePointCount(0, code.length())).isEqualTo(4);
+            code.codePoints().forEach(seen::add);
+            assertThat(Captchas.check(s, code, "", NOW)).as(code).isTrue();
+        }
+        assertThat(seen).as("每个字（含缺字形的字）都会被抽到")
+                .containsExactlyInAnyOrderElementsOf(mixed.codePoints().boxed().toList());
+
+        // 每种字单独成码：图上都有墨迹，校验按旧规则（第 0 项通过，第 1 项不通过且作废）
+        Map<String, List<String>> cases = new LinkedHashMap<>();
+        cases.put("A", List.of("a", "Ａ"));
+        cases.put("a", List.of("A", "ａ"));
+        cases.put("，", List.of("，", ","));
+        cases.put("ａ", List.of("ａ", "Ａ"));
+        cases.put("們", List.of("們", "们"));
+        cases.put("㐀", List.of("㐀", "?"));
+        cases.put("𠀀", List.of("𠀀", "\uD840"));
+        for (Map.Entry<String, List<String>> e : cases.entrySet()) {
+            CaptchaSettings one = zh(e.getKey());
+            BufferedImage img = ImageIO.read(new ByteArrayInputStream(Captchas.issue(s, "", one, NOW, new Random(9))));
+            assertThat(img.getWidth()).isEqualTo(128);
+            assertThat(ink(img)).as(e.getKey() + " 画出来了").isGreaterThan(4 * 8);
+            assertThat(Captchas.check(s, e.getValue().get(0).repeat(4), "", NOW)).as(e.getKey()).isTrue();
+            Captchas.issue(s, "", one, NOW, new Random(9));
+            assertThat(Captchas.check(s, e.getValue().get(1).repeat(4), "", NOW)).as(e.getKey() + " 错").isFalse();
+            assertThat(Captchas.check(s, e.getValue().get(0).repeat(4), "", NOW)).as("猜错即作废").isFalse();
+        }
+
+        // 所有缺字形的字画同一个缺字框，与空白、与有字形的字都不同
+        assertThat(render("們")).isEqualTo(render("㐀")).isNotEqualTo(render("我")).isNotEqualTo(render(" "));
+    }
+
+    private static CaptchaSettings zh(String zhSet) {
+        return CaptchaSettings.fromLegacy(Map.of("useZh", true, "zhSet", zhSet, "length", 4L, "fontSize", 16L,
+                "useNoise", false, "useCurve", false));
+    }
+
+    private static int ink(BufferedImage img) {
+        int bg = img.getRGB(0, 0);
+        int ink = 0;
+        for (int y = 0; y < img.getHeight(); y++) {
+            for (int x = 0; x < img.getWidth(); x++) {
+                ink += img.getRGB(x, y) != bg ? 1 : 0;
+            }
+        }
+        return ink;
+    }
+
+    private static List<Integer> render(String zhSet) throws Exception {
+        SessionState s = SessionStore.withDefaults(Clock.systemUTC()).create();
+        BufferedImage img = ImageIO.read(new ByteArrayInputStream(Captchas.issue(s, "", zh(zhSet), NOW,
+                new Random(11))));
+        return Arrays.stream(img.getRGB(0, 0, img.getWidth(), img.getHeight(), null, 0, img.getWidth())).boxed()
+                .toList();
     }
 
     @Test

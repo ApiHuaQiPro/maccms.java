@@ -3,6 +3,7 @@ package com.maccms.backend.site.config;
 import static com.maccms.backend.site.config.SiteConfigurationTest.stackTrace;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.maccms.backend.common.captcha.CaptchaSettings;
 import com.maccms.backend.site.application.ImageUrlNormalizer;
 import com.maccms.backend.site.application.LegacyUrlBuilder;
 import com.maccms.backend.site.application.SiteSettings;
@@ -10,7 +11,10 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.boot.test.context.runner.WebApplicationContextRunner;
 
 /**
@@ -120,6 +124,51 @@ class SiteLegacyConfigStartupTest {
             assertThat(ctx.getStartupFailure()).rootCause().hasMessageContaining("extra/maccms.php")
                     .hasMessageContaining("NOT_FOUND");
         });
+    }
+
+    /**
+     * 中文码表含内置字形以外的字（B08 第二轮修正）：上一版启动失败；现在照常启动、码表原样保留，装配时记一条告警（最多列
+     * {@link SiteConfiguration#MISSING_GLYPHS_LOGGED} 个码位）。码表为空仍启动失败。
+     */
+    @Test
+    @ExtendWith(OutputCaptureExtension.class)
+    void zhSetWithCharactersBeyondBuiltInGlyphsStartsAndWarnsOnce(CapturedOutput out) throws Exception {
+        write(valid("旧站", "1", "0"));
+        String zhSet = "们以我到們";
+        writeCaptcha("'useZh' => true, 'zhSet' => '" + zhSet + "'");
+        site().run(ctx -> {
+            assertThat(ctx).hasNotFailed();
+            CaptchaSettings settings = ctx.getBean(CaptchaSettings.class);
+            assertThat(settings.useZh()).isTrue();
+            assertThat(settings.zhSet()).isEqualTo(zhSet);
+            assertThat(settings.missingZhGlyphs()).containsExactly((int) '們');
+        });
+        assertThat(out).containsOnlyOnce("legacy captcha zhSet has 1 characters without built-in glyphs")
+                .contains("U+5011").doesNotContain("U+5011 ...");
+
+        StringBuilder many = new StringBuilder("A，ａ𠀀");
+        for (char c = '㐀'; c < '㐀' + 20; c++) {
+            many.append(c);
+        }
+        writeCaptcha("'useZh' => 1, 'zhSet' => '" + many + "', 'fontttf' => '2.ttf'");
+        site().run(ctx -> {
+            assertThat(ctx).hasNotFailed();
+            assertThat(ctx.getBean(CaptchaSettings.class).zhSet()).isEqualTo(many.toString());
+        });
+        assertThat(out).contains("has 21 characters without built-in glyphs").contains("U+20000 U+3400")
+                .contains("U+340E ...").doesNotContain("U+340F");
+
+        writeCaptcha("'useZh' => true, 'zhSet' => ''");
+        site().run(ctx -> {
+            assertThat(ctx).hasFailed();
+            assertThat(ctx.getStartupFailure()).rootCause().hasMessageContaining("zhSet");
+        });
+    }
+
+    private void writeCaptcha(String entries) throws Exception {
+        Files.writeString(dir.resolve("extra/captcha.php"), "<?php\nreturn [\n  'codeSet' => '1234567890', 'length' => 4, "
+                + "'fontSize' => 16, 'useNoise' => false, 'useCurve' => false, " + entries + ",\n];\n",
+                StandardCharsets.UTF_8);
     }
 
     @Test

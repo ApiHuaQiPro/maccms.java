@@ -53,8 +53,22 @@
 
 #### 2.4 本地验证码（`common.captcha` + `site.web.SiteVerifyController`）
 
-- 参数：think-captcha 默认值，由 `extra/captcha.php` 覆盖（仓库值 `codeSet=1234567890`、`length=4`、`fontSize=16`、无杂点无曲线 → 图片 128×40）；宽高为 0 时按旧公式 `length×fontSize×1.5 + length×fontSize/2`、`fontSize×2.5`。英文码表含非 ASCII 可见字符、中文码表含没有内置字形的字、码长 1～16 或字号 4～100 以外 → 启动失败（信息只含键名；这些是旧版也画不出的配置）。没有旧配置目录时用仓库值；目录里没有 `captcha.php` 时用 think-captcha 默认值。
-- 中文验证码（`useZh=true`）：码字从 `zhSet`（默认 think-captcha 自带的 1500 字码表 `captcha/think-zhset.txt`，原样复制，md5 `7cc4f3b4…`；旧配置可覆盖）按字均匀抽取，重复的字概率更高，与旧 `iconv_substr(zhSet, mt_rand(0, mb_strlen−1), 1)` 相同；`codeSet` 不用。版式按旧中文分支：第 i 个字左边距 `fontSize×(i+1)×1.5`、基线 `fontSize + 10～20`、旋转 ±40°。字形是打包在 jar 里的 16×16 点阵 `captcha/zh-glyphs.hex`（GNU Unifont 17.0.05 的 GB2312 一、二级汉字子集，6763 字，SIL OFL 1.1，来源与许可全文在同目录 `zh-glyphs-LICENSE.txt`），不加载字体文件。校验与英文共用同一规则（只转 ASCII 大写，中文按字逐个比较；简繁、全半角不互通）。
+- 参数：think-captcha 默认值，由 `extra/captcha.php` 覆盖（仓库值 `codeSet=1234567890`、`length=4`、`fontSize=16`、无杂点无曲线 → 图片 128×40）；宽高为 0 时按旧公式 `length×fontSize×1.5 + length×fontSize/2`、`fontSize×2.5`。以下取值启动失败（信息只含键名）：英文码表为空或含 ASCII 可见字符以外的字符（旧版按字节抽取，会切出半个 UTF-8 字符）；中文码表为空（旧版 `mt_rand(0, -1)` 报错：PHP 8 抛 ValueError，7.x 为 Warning）；码长 1～16、字号 4～100 以外（新版防止超大图片的限制，旧版不限）。中文码表含内置字形以外的字**不会**启动失败（见下）。没有旧配置目录时用仓库值；目录里没有 `captcha.php` 时用 think-captcha 默认值。
+- 中文验证码（`useZh=true`）：码字从 `zhSet`（默认 think-captcha 自带的 1500 字码表 `captcha/think-zhset.txt`，原样复制，md5 `7cc4f3b4…`；旧配置可覆盖，原样保留，含重复、ASCII、标点与繁体）按字均匀抽取，重复的字概率更高，与旧 `iconv_substr(zhSet, mt_rand(0, mb_strlen−1), 1)` 相同；`codeSet` 不用。版式按旧中文分支：第 i 个字左边距 `fontSize×(i+1)×1.5`、基线 `fontSize + 10～20`、旋转 ±40°。字形是打包在 jar 里的点阵 `captcha/zh-glyphs.hex`，不加载字体文件：GNU Unifont 17.0.05 的子集，范围与 think-captcha v1.0.7 自带的 `zhttfs/1.ttf` 能画的字相同（除私用区外 7573 个码位：GB2312 一、二级汉字 6763、GB2312 符号 680、ASCII 0x20–0x7E 95、1.ttf 按 GBK 映射的 35 个符号如 `·`（U+00B7）、`—`（U+2014）、小写罗马数字、竖排标点），汉字与全角符号为 16×16，ASCII 等为 8×16 半宽（左对齐）；SIL OFL 1.1，确切来源文件、完整校验值、上游版权声明原文与许可全文在同目录 `zh-glyphs-LICENSE.txt`。
+- 内置字形以外的字（繁体、扩展区汉字、私用区等）：配置照常加载，这些字照常被抽中、照常参与校验，图上**按单字画缺字框**（空心方框），其余字不受影响；装配时记一条 warn（`legacy captcha zhSet has N characters without built-in glyphs …`，最多列 16 个码位，之后不再记）。旧版对 1.ttf 没有的字画它的 `.notdef`，该字形没有轮廓，即一块空白；两者用户都认不出这个字，区别只在新版能看出"这里缺了一个字"。
+- 校验与英文共用同一规则：生成侧与校验侧都只转 ASCII 大写（旧版两侧都是 `strtoupper`，C 区域设置下只改 ASCII 字母；新版生成侧原先用 Java `toUpperCase`，码表只有汉字时等价，码表可以含全角字母、希腊/西里尔字母后改为同样只转 ASCII），所以码表里的 ASCII 字母不分大小写，全角字母、希腊字母区分大小写；中文按字逐个比较，简繁、全半角不互通。
+- 与旧版的能力对比（`useZh=true`）：
+
+  | 情形 | 备份里的旧站（vendor 没有 `zhttfs/`） | 装好 think-captcha v1.0.7 的旧站（`zhttfs/1.ttf`，7686 个码位） | 新版 |
+  |---|---|---|---|
+  | 默认 zhSet、或只含 GB2312 汉字 | `entry()` 出错，没有验证码 | 正常 | 正常 |
+  | zhSet 含 ASCII、GB2312 符号、全角标点/字母 | 同上 | 正常 | 正常（内置字形覆盖相同） |
+  | zhSet 含繁体、扩展区汉字等 1.ttf 没有的字 | 同上 | 该字画成空白，其余正常 | 该字画缺字框，其余正常，启动时一条 warn |
+  | zhSet 含私用区字符（1.ttf 有 113 个私用区字形） | 同上 | 画 1.ttf 的私用区字形 | 缺字框（Unifont 不含这些私用区字形） |
+  | `fontttf` 指定字体 | 同上 | 只能是 `assets/zhttfs/`（英文为 `ttfs/`）下的文件名，官方包里只有 `1.ttf`；站长自己往该目录加字体可以扩大可画的字 | **不支持**：配置了也忽略，固定用内置点阵；自加字体能画、内置点阵没有的字画缺字框 |
+
+  线上 `captcha.php` 是否自定义了 `zhSet`、`fontttf` 或往 `zhttfs/` 加过字体，仓库里无法核实（D9-a）。
+- 可读性（如实记录）：16×16 点阵按字号放大并旋转 ±40° 后笔画是方块状，比旧版 TrueType 字体粗糙。上一轮验收复核时，复核方凭肉眼识读 3 张默认码表的随机图都没有通过（用固定单字码表时通过，说明校验正确、是字难认）。本批没有做可用性评估；是否换更大点阵或减小旋转角留给前端评估，改动会影响与旧版版式的一致性。
 - 刷新验证码（接口契约）：前端重新 `GET verify/index.html?r=<随机数>`（`home.js:184-192` 的写法；`r` 只防缓存，服务端忽略）即换一张新图，新码覆盖会话里同槽的旧码。`verify/check` 返回 `0` 后（猜错、过期、已用过或没有验证码）旧码已作废，必须刷新后再提交；返回 `1` 后同样作废（一次一用）。
 - 校验：旧 `captcha_check()` 不传配置，所以有效期恒为 1800 秒、通过后作废。规则见 `Captchas` 类注释，由黄金向量锁定；唯一差异是猜错也作废（D-B08-4）。
 - `GET/HEAD /index.php/verify/index[.html|/]`（及去掉 `/index.php` 的形式）：PNG、no-store、nosniff；可选 `?id=`（`[A-Za-z0-9_-]{0,32}`，否则 404）选择验证码槽（旧 `entry($id)`；前台没有任何地方校验非默认槽）。
@@ -110,7 +124,7 @@
 | D-B08-2 | 注册后从未登录（注册不写 `user_random`，默认空串）或后台建的会员，任何人都能用 `md5("-用户名-ID-")` 登录（黄金 `neverlogin-forged`） | 库里 `user_random` 为空时不认任何 cookie | 安全修复：旧版正常签发的 cookie 都带非空 random（登录时写入），不受影响 |
 | D-B08-3 | 到期时 `checkLogin` 写库 `group_id=2` 并重发 `group_id`/`group_name` cookie；那一次请求里 `$info['group_id']` 仍是原组 | B08 只在内存中判定（`groupId=2`、`storedGroupId` 为原组），不写库、不发 cookie。**这是分批的功能缺口，不是终态差异**：单行降级写库与 cookie 重发、游客回写、页面权限接线已列入 B09 验收，批量任务列入 B10、后台第 1 页列入 B14（路线图第 5.3 节） | 按 B07 写入方矩阵分批；B09 合入前页面一律按游客组判定 |
 | D-B08-4 | 验证码猜错不作废，30 分钟内可对同一个 4 位数字码无限次尝试（≤10 000 次必中） | 猜错即作废，必须换新图 | 安全修复；用户输错时需刷新验证码（前端本来就会刷新） |
-| D-B08-5 | 验证码字形来自 vendor 里的 TTF 字体（不入 git），`useImgBg` 的背景目录在 vendor 中并不存在；`useZh=true` 需要 `assets/zhttfs/*.ttf`，备份里没有，开启后旧站验证码直接出错 | 英文用内置笔画字形（0-9、A-Z，小写按大写画）；中文用内置 Unifont 16×16 点阵（GB2312 一、二级汉字），都不加载字体文件；`useImgBg`、`fontttf`、`bg` 忽略。`useZh=true` 可用（修正轮实现） | 实现差异，尺寸、码表抽取与校验语义不变；中文验证码在新版可用而备份的旧站不可用 |
+| D-B08-5 | 验证码字形来自 vendor 里的 TTF 字体（不入 git），`useImgBg` 的背景目录在 vendor 中并不存在；`useZh=true` 需要 `assets/zhttfs/*.ttf`，备份里没有，开启后旧站验证码直接出错 | 英文用内置笔画字形（0-9、A-Z，小写按大写画）；中文用内置 Unifont 点阵（范围与 1.ttf 能画的字相同，私用区除外），都不加载字体文件；`useImgBg`、`fontttf`、`bg` 忽略。`useZh=true` 可用（修正轮实现）；1.ttf 也没有的字画缺字框（旧版画空白），不启动失败（第二轮修正）。能力对比见第 2.4 节 | 实现差异，尺寸、码表抽取与校验语义不变；中文验证码在新版可用而备份的旧站不可用；与装好字体的旧站相比，只有私用区字符、`fontttf` 自加字体两种情形新版画不出 |
 | D-B08-7 | `user_check` 与其余 5 个会员 cookie 一样不带 HttpOnly（`application/config.php:232`） | `user_check` 加 HttpOnly（字节与 PHP `httponly` 写法相同），其余 5 个不变 | 加固：30 天有效、等同凭证，前端无处读取（仓库内全量检索；线上自定义模板不在仓库，D9-a）；B09 起登录响应生效 |
 | — | 数组形式的会员 cookie：8.0 抛 TypeError（500） | 游客（同 7.3） | 不保留 PHP 8 的类型错误（同 B06 D-B06-8 的取向） |
 | — | 会话：PHP 会话文件、沿用客户端给的会话标识、cookie 不带 HttpOnly | 进程内、有界、只认本进程签发的标识，HttpOnly + SameSite=Lax（https 加 Secure），Path 为站点根；重启后验证码与搜索计时清零 | 实现差异 + 加固 |
@@ -128,6 +142,9 @@
 | 会员判定（真实 MySQL 比较语义）、到期边界、PHP → Java、并发、不写库 | `MemberGoldenMySqlIT`（`-Pmysql-it`；每段后 `mac_user`/`mac_group` 与导入后快照逐行相同） |
 | 会话、`mac_get_time_span`、并发只放行一个、被拒也刷新计时与恢复、有界淘汰、空闲过期、伪造标识 | `SessionStoreTest` |
 | 验证码校验序列（含中文）、过期、重放、尺寸公式（含 `useZh`）、配置校验、字母大小写、中文码表原样复制与字形覆盖、中文码按字抽取 | `CaptchasTest` |
+| 内置字形覆盖 1.ttf 能画的字（GB2312 全部汉字与符号、ASCII、全角 FF01–FF5E、GBK 映射符号；1.ttf 没有的繁体/扩展区/私用区不在内）；混合码表（ASCII、全角标点与字母、繁体、扩展区 A/B）照常加载与抽取、逐类成图有墨迹、缺字框与空白和正常字不同、校验大小写规则与猜错作废 | `CaptchasTest.builtInGlyphsCoverWhatTheLegacyFontCanDraw`、`mixedZhSetLoadsDrawsMissingGlyphBoxesAndChecksLikeTheLegacy` |
+| 混合码表经控制器：码表原样、5 个字逐段都有墨迹（含缺字框）、ASCII 不分大小写通过一次、重放、半角逗号/简体/少字/全角字母即作废 | `SiteVerifyZhMixedSetMvcTest` |
+| 混合码表经旧配置文件装配：上一轮会启动失败的 `zhSet='们以我到們'` 照常启动并只记一条 warn；21 个缺字只列 16 个；`fontttf` 忽略；空码表仍启动失败 | `SiteLegacyConfigStartupTest.zhSetWithCharactersBeyondBuiltInGlyphsStartsAndWarnsOnce` |
 | 中文验证码经控制器：图片尺寸与笔画、GET/POST（UTF-8）通过一次、重放、猜错/少字/繁体/尾空格即作废、1800/1801 秒、`id` 被忽略 | `SiteVerifyZhMvcTest` |
 | `verify/check` 忽略 `id`：经控制器复放黄金 `verify_check` 序列（8.0 与 7.3） | `SiteVerifyThrottleMvcTest.checkIgnoresIdAndAlwaysUsesTheDefaultSlotLikeLegacyController` |
 | 测试侧降级演练：批量 `<=` 与 PHP `expire` 黄金一致、单行 16 线程并发只命中 1 次、`end == now`/续费/停用不降级、续费与降级竞态 20 轮、DML 恢复后逐行 diff 为空、结构指纹不变、正式登记表为空 | `MemberGoldenMySqlIT` ⑤（`-Pmysql-it`） |
@@ -163,3 +180,12 @@
 | 文档 | 路线图 B08/B09/B10/B14 行、12 文档第 3.1 节、本文第 1、2、5、7、8 节 | — |
 
 黄金文件按第 3 节的命令重新生成（需恢复 `vendor/`，管理账号只经环境变量；一次性库用完即删）。
+
+### 10. 第二轮修正（MACC-32，队长 2026-10-18 验收阻断）
+
+| 阻断 | 修正 | 证据 |
+|---|---|---|
+| 自定义 zhSet 含内置字形以外的字时整站启动失败；本文把它说成"旧版也画不出的配置"，与事实不符 | 内置字形补齐旧 `1.ttf` 覆盖的 ASCII、GB2312 符号与 GBK 映射符号（6763 → 7573 个码位，原有 6763 行逐字节不变）；其余缺字按单字画缺字框、装配时记一条有上限的 warn，码表原样保留、校验语义不变；生成侧大写改为与旧版一样只转 ASCII；第 2.4 节与 D-B08-5 更正能力对比，写明 `fontttf` 不支持的边界 | 第 6 节新增 4 条；打包 jar 用上一轮失败的配置实测启动 |
+| 许可文件的版权声明不是上游原文（缺 Minseo Lee），来源写得不够确切 | `zh-glyphs-LICENSE.txt` 逐字照录 `font/Makefile` 第 26-31 行 COPYRIGHT；写明来源是源码包内 `font/precompiled/unifont-17.0.05.hex`（不是 `unifont_all`），附源码包、来源文件、1.ttf 与本子集的完整 SHA-256 | 许可文件；OFL 正文与上游 `OFL-1.1.txt` 一致（忽略行尾空白） |
+
+字形资源由脚本从上游文件重新生成：取 `1.ttf` 的 cmap（fontTools 读取）去掉 U+E000–U+F8FF，逐码位从 `unifont-17.0.05.hex` 原样摘行、按码位排序、LF 行尾。所用点阵在上游 `font/plane00/` 的 `wqy.hex`、`unifont-base.hex`、`spaces.hex`、`t-source.hex` 中，不含 jiskan16 文件，所以都在 COPYING 的双许可范围内。

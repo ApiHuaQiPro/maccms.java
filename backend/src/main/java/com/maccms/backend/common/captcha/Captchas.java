@@ -1,7 +1,6 @@
 package com.maccms.backend.common.captcha;
 
 import com.maccms.backend.common.session.SessionState;
-import java.util.Locale;
 import java.util.random.RandomGenerator;
 
 /**
@@ -18,8 +17,9 @@ import java.util.random.RandomGenerator;
  * <li>不相同 → 不通过。<b>与旧版不同</b>：旧版保留记录，30 分钟内可以对同一个 4 位数字验证码无限次猜测；新版同样删除记录，
  * 猜错一次就必须换新验证码（D-B08-4）。</li>
  * </ul>
- * 中文码按 Java {@code char} 比较：旧版 {@code strtoupper} 在 C 区域设置下只改 ASCII 字母，UTF-8 的多字节序列原样比较，二者等价；
- * 半角/全角、简繁不互通（黄金 captcha_check 的 zh-* 用例锁定）。
+ * 中文码按 Java {@code char} 比较：旧版生成和校验两侧都用 {@code strtoupper}，在 C 区域设置下只改 ASCII 字母，UTF-8 的多字节
+ * 序列原样比较，二者等价；所以 zhSet 里的 ASCII 小写字母不分大小写，全角字母、希腊/西里尔字母区分大小写，半角/全角、简繁不互通
+ * （黄金 captcha_check 的 zh-* 用例锁定）。
  */
 public final class Captchas {
 
@@ -45,7 +45,7 @@ public final class Captchas {
                                RandomGenerator random) {
         String code = code(settings, random);
         byte[] png = CaptchaImage.render(code, settings, random);
-        session.put(SLOT + slot(id), new Issued(code.toUpperCase(Locale.ROOT), nowEpochSeconds));
+        session.put(SLOT + slot(id), new Issued(asciiUpper(code), nowEpochSeconds));
         return png;
     }
 

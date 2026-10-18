@@ -37,8 +37,10 @@ import com.maccms.backend.site.web.jte.StaticTemplates;
 import java.security.SecureRandom;
 import java.time.Clock;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.random.RandomGenerator;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -68,6 +70,9 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 public class SiteConfiguration {
 
     private static final Logger log = LoggerFactory.getLogger(SiteConfiguration.class);
+
+    /** 中文码表缺字形告警最多列出的码位数。 */
+    static final int MISSING_GLYPHS_LOGGED = 16;
 
     /**
      * 站点设置的来源：设置了 {@code maccms.legacy-config.dir} 时，启动时读一次旧配置 {@code extra/maccms.php}，
@@ -223,7 +228,16 @@ public class SiteConfiguration {
         }
         Map<String, Object> values = new LinkedHashMap<>();
         captcha.entries().forEach((k, v) -> values.put(String.valueOf(k), scalar(v)));
-        return CaptchaSettings.fromLegacy(values);
+        CaptchaSettings settings = CaptchaSettings.fromLegacy(values);
+        List<Integer> missing = settings.missingZhGlyphs();
+        if (!missing.isEmpty()) {
+            // 只在装配时记一次，最多列 MISSING_GLYPHS_LOGGED 个码位；这些字照常抽取与校验，图上画缺字框
+            log.warn("legacy captcha zhSet has {} characters without built-in glyphs (drawn as missing-glyph boxes): {}",
+                    missing.size(), missing.stream().limit(MISSING_GLYPHS_LOGGED)
+                            .map(cp -> String.format("U+%04X", cp)).collect(Collectors.joining(" "))
+                            + (missing.size() > MISSING_GLYPHS_LOGGED ? " ..." : ""));
+        }
+        return settings;
     }
 
     /** 验证码的随机源（B08）：字符与版式都用不可预测的随机数（旧版用 {@code mt_rand}）。 */

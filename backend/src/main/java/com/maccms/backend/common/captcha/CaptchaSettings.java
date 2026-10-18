@@ -15,8 +15,10 @@ import java.util.Map;
  * 未知键忽略。
  *
  * <p>中文验证码：{@code useZh} 为真时码字从 {@code zhSet} 按字（码位）均匀抽取（旧 {@code iconv_substr(zhSet, mt_rand(0,
- * mb_strlen−1), 1)}），{@code codeSet} 不用；{@code zhSet} 默认是 think-captcha 自带的 1500 字码表，旧配置可以覆盖。字形由
- * {@link ZhGlyphs} 内置，所以 {@code zhSet} 里的字都必须有内置字形（GB2312 一、二级汉字）。
+ * mb_strlen−1), 1)}），{@code codeSet} 不用；{@code zhSet} 默认是 think-captcha 自带的 1500 字码表，旧配置可以覆盖，原样保留
+ * （含重复、标点、ASCII 与繁体）。字形由 {@link ZhGlyphs} 内置，范围与旧 {@code zhttfs/1.ttf} 相同；码表里没有内置字形的字照常
+ * 抽取和校验，图上画缺字框（{@link #missingZhGlyphs()}，装配时记一条告警），不会启动失败。{@code fontttf} 不支持：旧版只在
+ * {@code assets/zhttfs/}（英文为 {@code ttfs/}）里按文件名选字体，新版固定用内置点阵，配置了也忽略。
  */
 public record CaptchaSettings(String codeSet, int length, double fontSize, boolean useNoise, boolean useCurve,
                               int imageW, int imageH, int[] bg, boolean useZh, String zhSet) {
@@ -51,7 +53,7 @@ public record CaptchaSettings(String codeSet, int length, double fontSize, boole
     /**
      * 以 think-captcha 默认值为底，按旧 {@code captcha.php} 的键覆盖。值的类型是 PHP {@code var_export} 能产生的
      * {@code String}、{@code Long}、{@code Double}、{@code Boolean} 或 null（调用方从旧配置读取后转换）。
-     * 新版不支持的取值（英文码表含非 ASCII 可见字符、中文码表含没有内置字形的字、码长或字号越界）抛
+     * 新版不支持的取值（英文码表含非 ASCII 可见字符、中文码表为空、码长或字号越界）抛
      * {@link IllegalStateException}，信息只含键名。
      */
     public static CaptchaSettings fromLegacy(Map<String, Object> legacy) {
@@ -85,8 +87,8 @@ public record CaptchaSettings(String codeSet, int length, double fontSize, boole
             }
         }
         if (zh) {
-            if (zhSet.isEmpty() || !zhSet.codePoints().allMatch(ZhGlyphs::has)) {
-                errors.add("zhSet（只支持 GB2312 一、二级汉字）");
+            if (zhSet.isEmpty()) {
+                errors.add("zhSet（不能为空）");
             }
         } else if (codeSet.isEmpty() || !codeSet.chars().allMatch(c -> c > 0x20 && c < 0x7F)) {
             errors.add("codeSet（只支持 ASCII 可见字符）");
@@ -104,6 +106,13 @@ public record CaptchaSettings(String codeSet, int length, double fontSize, boole
             throw new IllegalStateException("旧验证码配置 extra/captcha.php 不受支持：" + String.join("；", errors));
         }
         return new CaptchaSettings(codeSet, length, fontSize, noise, curve, w, h, bg, zh, zhSet);
+    }
+
+    /**
+     * 中文码表里没有内置字形的码位（去重、保持顺序）；英文验证码为空列表。这些字照常抽取与校验，图上按单字画缺字框。
+     */
+    public List<Integer> missingZhGlyphs() {
+        return useZh ? ZhGlyphs.missing(zhSet) : List.of();
     }
 
     /** PHP 的数值转换（数字字符串取数值，其余为 0）。 */
