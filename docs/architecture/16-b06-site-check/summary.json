@@ -1,0 +1,1513 @@
+{
+ "started": "2026-10-17T20:19:43",
+ "database": "maccms_it_20261017201943_6bf2dbb6",
+ "runs": {
+  "root W1W2=00": {
+   "failures": [],
+   "http": {
+    "map": {
+     "status": 200,
+     "type": "text/html;charset=UTF-8",
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'sel",
+     "canonical": "http://maccms.local.test/index.php/map/index.html",
+     "linksOutsidePrefix": [],
+     "externalHosts": []
+    },
+    "help": {
+     "status": 200,
+     "type": "text/html;charset=UTF-8",
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'sel",
+     "canonical": "http://maccms.local.test/index.php/help/index.html",
+     "linksOutsidePrefix": [],
+     "externalHosts": []
+    },
+    "copyright": {
+     "status": 200,
+     "type": "text/html;charset=UTF-8",
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'sel",
+     "canonical": "http://maccms.local.test/index.php/vod/copyright/id/1.html",
+     "linksOutsidePrefix": [],
+     "externalHosts": []
+    },
+    "rss-index": {
+     "status": 200,
+     "type": "application/rss+xml;charset=UTF-8",
+     "root": "rss",
+     "locs": 14,
+     "badLocs": []
+    },
+    "rss-baidu": {
+     "status": 200,
+     "type": "application/xml;charset=UTF-8",
+     "root": "urlset",
+     "locs": 14,
+     "badLocs": []
+    },
+    "rss-google": {
+     "status": 200,
+     "type": "application/xml;charset=UTF-8",
+     "root": "urlset",
+     "locs": 14,
+     "badLocs": []
+    },
+    "rss-so": {
+     "status": 200,
+     "type": "application/xml;charset=UTF-8",
+     "root": "urlset",
+     "locs": 14,
+     "badLocs": []
+    },
+    "rss-sogou": {
+     "status": 200,
+     "type": "application/xml;charset=UTF-8",
+     "root": "urlset",
+     "locs": 14,
+     "badLocs": []
+    },
+    "rss-bing": {
+     "status": 200,
+     "type": "application/xml;charset=UTF-8",
+     "root": "urlset",
+     "locs": 14,
+     "badLocs": []
+    },
+    "rss-sm": {
+     "status": 200,
+     "type": "application/xml;charset=UTF-8",
+     "root": "urlset",
+     "locs": 14,
+     "badLocs": []
+    },
+    "label": {
+     "status": 404
+    },
+    "qrcode": {
+     "status": 200,
+     "type": "image/png",
+     "bytes": 551,
+     "cache": "max-age=86400, public"
+    },
+    "qrcode-invalid": {
+     "status": 200,
+     "bytes": 0
+    },
+    "desktop": {
+     "status": 200,
+     "disposition": "attachment; filename=\"___.url\"; filename*=UTF-8''%E5%90%88%E6%88%90%E7%AB%99.url",
+     "firstLine": "[InternetShortcut]\r\n        URL=http://maccms.local.test\r\n  "
+    },
+    "desktop-injection": {
+     "status": 400
+    },
+    "ajax-data": {
+     "status": 200,
+     "rows": 10,
+     "externalImages": false,
+     "firstLink": [
+      "/index.php/vod/detail/id/36.html"
+     ]
+    },
+    "ajax-suggest": {
+     "status": 200,
+     "url": "/index.php/vod/search.html?wd=mac_wd",
+     "total": 1
+    },
+    "provide-json": {
+     "status": 200,
+     "type": "application/json;charset=utf-8",
+     "cache": "public, max-age=30"
+    },
+    "provide-xml": {
+     "status": 200,
+     "wellFormed": true
+    },
+    "provide-closed": {
+     "status": 200,
+     "body": "closed"
+    },
+    "provide-head": {
+     "status": 200
+    }
+   },
+   "browser": {
+    "cspViolations": [],
+    "pages": {
+     "map": {
+      "title": "网站地图 - 合成站",
+      "h1": "网站地图"
+     },
+     "help": {
+      "title": "帮助 - 合成站",
+      "h1": "帮助"
+     },
+     "copyright": {
+      "title": "星际穿越 - 合成站",
+      "h1": "星际穿越"
+     }
+    },
+    "blockedHosts": []
+   }
+  },
+  "root W1W2=01": {
+   "failures": [],
+   "http": {
+    "map": {
+     "status": 200,
+     "type": "text/html;charset=UTF-8",
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'sel",
+     "canonical": "http://maccms.local.test/index.php/map/index.html",
+     "linksOutsidePrefix": [],
+     "externalHosts": []
+    },
+    "help": {
+     "status": 200,
+     "type": "text/html;charset=UTF-8",
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'sel",
+     "canonical": "http://maccms.local.test/index.php/help/index.html",
+     "linksOutsidePrefix": [],
+     "externalHosts": []
+    },
+    "copyright": {
+     "status": 200,
+     "type": "text/html;charset=UTF-8",
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'sel",
+     "canonical": "http://maccms.local.test/index.php/vod/copyright/id/1.html",
+     "linksOutsidePrefix": [],
+     "externalHosts": []
+    },
+    "rss-index": {
+     "status": 200,
+     "type": "application/rss+xml;charset=UTF-8",
+     "root": "rss",
+     "locs": 14,
+     "badLocs": []
+    },
+    "rss-baidu": {
+     "status": 200,
+     "type": "application/xml;charset=UTF-8",
+     "root": "urlset",
+     "locs": 14,
+     "badLocs": []
+    },
+    "rss-google": {
+     "status": 200,
+     "type": "application/xml;charset=UTF-8",
+     "root": "urlset",
+     "locs": 14,
+     "badLocs": []
+    },
+    "rss-so": {
+     "status": 200,
+     "type": "application/xml;charset=UTF-8",
+     "root": "urlset",
+     "locs": 14,
+     "badLocs": []
+    },
+    "rss-sogou": {
+     "status": 200,
+     "type": "application/xml;charset=UTF-8",
+     "root": "urlset",
+     "locs": 14,
+     "badLocs": []
+    },
+    "rss-bing": {
+     "status": 200,
+     "type": "application/xml;charset=UTF-8",
+     "root": "urlset",
+     "locs": 14,
+     "badLocs": []
+    },
+    "rss-sm": {
+     "status": 200,
+     "type": "application/xml;charset=UTF-8",
+     "root": "urlset",
+     "locs": 14,
+     "badLocs": []
+    },
+    "label": {
+     "status": 404
+    },
+    "qrcode": {
+     "status": 200,
+     "type": "image/png",
+     "bytes": 551,
+     "cache": "max-age=86400, public"
+    },
+    "qrcode-invalid": {
+     "status": 200,
+     "bytes": 0
+    },
+    "desktop": {
+     "status": 200,
+     "disposition": "attachment; filename=\"___.url\"; filename*=UTF-8''%E5%90%88%E6%88%90%E7%AB%99.url",
+     "firstLine": "[InternetShortcut]\r\n        URL=http://maccms.local.test\r\n  "
+    },
+    "desktop-injection": {
+     "status": 400
+    },
+    "ajax-data": {
+     "status": 200,
+     "rows": 10,
+     "externalImages": true,
+     "firstLink": [
+      "/index.php/vod/detail/id/36.html"
+     ]
+    },
+    "ajax-suggest": {
+     "status": 200,
+     "url": "/index.php/vod/search.html?wd=mac_wd",
+     "total": 1
+    },
+    "provide-json": {
+     "status": 200,
+     "type": "application/json;charset=utf-8",
+     "cache": "public, max-age=30"
+    },
+    "provide-xml": {
+     "status": 200,
+     "wellFormed": true
+    },
+    "provide-closed": {
+     "status": 200,
+     "body": "closed"
+    },
+    "provide-head": {
+     "status": 200
+    }
+   },
+   "browser": {
+    "cspViolations": [],
+    "pages": {
+     "map": {
+      "title": "网站地图 - 合成站",
+      "h1": "网站地图"
+     },
+     "help": {
+      "title": "帮助 - 合成站",
+      "h1": "帮助"
+     },
+     "copyright": {
+      "title": "星际穿越 - 合成站",
+      "h1": "星际穿越"
+     }
+    },
+    "blockedHosts": []
+   }
+  },
+  "root W1W2=10": {
+   "failures": [],
+   "http": {
+    "map": {
+     "status": 200,
+     "type": "text/html;charset=UTF-8",
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'sel",
+     "canonical": "http://maccms.local.test/index.php/map/index.html",
+     "linksOutsidePrefix": [],
+     "externalHosts": []
+    },
+    "help": {
+     "status": 200,
+     "type": "text/html;charset=UTF-8",
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'sel",
+     "canonical": "http://maccms.local.test/index.php/help/index.html",
+     "linksOutsidePrefix": [],
+     "externalHosts": []
+    },
+    "copyright": {
+     "status": 200,
+     "type": "text/html;charset=UTF-8",
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'sel",
+     "canonical": "http://maccms.local.test/index.php/vod/copyright/id/1.html",
+     "linksOutsidePrefix": [],
+     "externalHosts": []
+    },
+    "rss-index": {
+     "status": 200,
+     "type": "application/rss+xml;charset=UTF-8",
+     "root": "rss",
+     "locs": 14,
+     "badLocs": []
+    },
+    "rss-baidu": {
+     "status": 200,
+     "type": "application/xml;charset=UTF-8",
+     "root": "urlset",
+     "locs": 14,
+     "badLocs": []
+    },
+    "rss-google": {
+     "status": 200,
+     "type": "application/xml;charset=UTF-8",
+     "root": "urlset",
+     "locs": 14,
+     "badLocs": []
+    },
+    "rss-so": {
+     "status": 200,
+     "type": "application/xml;charset=UTF-8",
+     "root": "urlset",
+     "locs": 14,
+     "badLocs": []
+    },
+    "rss-sogou": {
+     "status": 200,
+     "type": "application/xml;charset=UTF-8",
+     "root": "urlset",
+     "locs": 14,
+     "badLocs": []
+    },
+    "rss-bing": {
+     "status": 200,
+     "type": "application/xml;charset=UTF-8",
+     "root": "urlset",
+     "locs": 14,
+     "badLocs": []
+    },
+    "rss-sm": {
+     "status": 200,
+     "type": "application/xml;charset=UTF-8",
+     "root": "urlset",
+     "locs": 14,
+     "badLocs": []
+    },
+    "label": {
+     "status": 404
+    },
+    "qrcode": {
+     "status": 200,
+     "type": "image/png",
+     "bytes": 551,
+     "cache": "max-age=86400, public"
+    },
+    "qrcode-invalid": {
+     "status": 200,
+     "bytes": 0
+    },
+    "desktop": {
+     "status": 200,
+     "disposition": "attachment; filename=\"___.url\"; filename*=UTF-8''%E5%90%88%E6%88%90%E7%AB%99.url",
+     "firstLine": "[InternetShortcut]\r\n        URL=http://maccms.local.test\r\n  "
+    },
+    "desktop-injection": {
+     "status": 400
+    },
+    "ajax-data": {
+     "status": 200,
+     "rows": 10,
+     "externalImages": false,
+     "firstLink": [
+      "/index.php/vod/detail/id/36.html"
+     ]
+    },
+    "ajax-suggest": {
+     "status": 200,
+     "url": "/index.php/vod/search.html?wd=mac_wd",
+     "total": 1
+    },
+    "provide-json": {
+     "status": 200,
+     "type": "application/json;charset=utf-8",
+     "cache": "public, max-age=30"
+    },
+    "provide-xml": {
+     "status": 200,
+     "wellFormed": true
+    },
+    "provide-closed": {
+     "status": 200,
+     "body": "closed"
+    },
+    "provide-head": {
+     "status": 200
+    }
+   },
+   "browser": {
+    "cspViolations": [],
+    "pages": {
+     "map": {
+      "title": "网站地图 - 合成站",
+      "h1": "网站地图"
+     },
+     "help": {
+      "title": "帮助 - 合成站",
+      "h1": "帮助"
+     },
+     "copyright": {
+      "title": "星际穿越 - 合成站",
+      "h1": "星际穿越"
+     }
+    },
+    "blockedHosts": []
+   }
+  },
+  "root W1W2=11": {
+   "failures": [],
+   "http": {
+    "map": {
+     "status": 200,
+     "type": "text/html;charset=UTF-8",
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'sel",
+     "canonical": "http://maccms.local.test/index.php/map/index.html",
+     "linksOutsidePrefix": [],
+     "externalHosts": []
+    },
+    "help": {
+     "status": 200,
+     "type": "text/html;charset=UTF-8",
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'sel",
+     "canonical": "http://maccms.local.test/index.php/help/index.html",
+     "linksOutsidePrefix": [],
+     "externalHosts": []
+    },
+    "copyright": {
+     "status": 200,
+     "type": "text/html;charset=UTF-8",
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'sel",
+     "canonical": "http://maccms.local.test/index.php/vod/copyright/id/1.html",
+     "linksOutsidePrefix": [],
+     "externalHosts": []
+    },
+    "rss-index": {
+     "status": 200,
+     "type": "application/rss+xml;charset=UTF-8",
+     "root": "rss",
+     "locs": 14,
+     "badLocs": []
+    },
+    "rss-baidu": {
+     "status": 200,
+     "type": "application/xml;charset=UTF-8",
+     "root": "urlset",
+     "locs": 14,
+     "badLocs": []
+    },
+    "rss-google": {
+     "status": 200,
+     "type": "application/xml;charset=UTF-8",
+     "root": "urlset",
+     "locs": 14,
+     "badLocs": []
+    },
+    "rss-so": {
+     "status": 200,
+     "type": "application/xml;charset=UTF-8",
+     "root": "urlset",
+     "locs": 14,
+     "badLocs": []
+    },
+    "rss-sogou": {
+     "status": 200,
+     "type": "application/xml;charset=UTF-8",
+     "root": "urlset",
+     "locs": 14,
+     "badLocs": []
+    },
+    "rss-bing": {
+     "status": 200,
+     "type": "application/xml;charset=UTF-8",
+     "root": "urlset",
+     "locs": 14,
+     "badLocs": []
+    },
+    "rss-sm": {
+     "status": 200,
+     "type": "application/xml;charset=UTF-8",
+     "root": "urlset",
+     "locs": 14,
+     "badLocs": []
+    },
+    "label": {
+     "status": 404
+    },
+    "qrcode": {
+     "status": 200,
+     "type": "image/png",
+     "bytes": 551,
+     "cache": "max-age=86400, public"
+    },
+    "qrcode-invalid": {
+     "status": 200,
+     "bytes": 0
+    },
+    "desktop": {
+     "status": 200,
+     "disposition": "attachment; filename=\"___.url\"; filename*=UTF-8''%E5%90%88%E6%88%90%E7%AB%99.url",
+     "firstLine": "[InternetShortcut]\r\n        URL=http://maccms.local.test\r\n  "
+    },
+    "desktop-injection": {
+     "status": 400
+    },
+    "ajax-data": {
+     "status": 200,
+     "rows": 10,
+     "externalImages": true,
+     "firstLink": [
+      "/index.php/vod/detail/id/36.html"
+     ]
+    },
+    "ajax-suggest": {
+     "status": 200,
+     "url": "/index.php/vod/search.html?wd=mac_wd",
+     "total": 1
+    },
+    "provide-json": {
+     "status": 200,
+     "type": "application/json;charset=utf-8",
+     "cache": "public, max-age=30"
+    },
+    "provide-xml": {
+     "status": 200,
+     "wellFormed": true
+    },
+    "provide-closed": {
+     "status": 200,
+     "body": "closed"
+    },
+    "provide-head": {
+     "status": 200
+    }
+   },
+   "browser": {
+    "cspViolations": [],
+    "pages": {
+     "map": {
+      "title": "网站地图 - 合成站",
+      "h1": "网站地图"
+     },
+     "help": {
+      "title": "帮助 - 合成站",
+      "h1": "帮助"
+     },
+     "copyright": {
+      "title": "星际穿越 - 合成站",
+      "h1": "星际穿越"
+     }
+    },
+    "layout": {
+     "map@320": 0,
+     "map@320 stress": 0,
+     "help@320": 0,
+     "help@320 stress": 0,
+     "copyright@320": 0,
+     "copyright@320 stress": 0,
+     "map@360": 0,
+     "map@360 stress": 0,
+     "help@360": 0,
+     "help@360 stress": 0,
+     "copyright@360": 0,
+     "copyright@360 stress": 0,
+     "map@768": 0,
+     "map@768 stress": 0,
+     "help@768": 0,
+     "help@768 stress": 0,
+     "copyright@768": 0,
+     "copyright@768 stress": 0,
+     "map@1280": 0,
+     "map@1280 stress": 0,
+     "help@1280": 0,
+     "help@1280 stress": 0,
+     "copyright@1280": 0,
+     "copyright@1280 stress": 0
+    },
+    "keyboard": {
+     "map": [
+      {
+       "tag": "A",
+       "cls": "skip-link",
+       "text": "跳到主要内容",
+       "outline": true
+      },
+      {
+       "tag": "A",
+       "cls": "site-brand",
+       "text": "合成站",
+       "outline": true
+      },
+      {
+       "tag": "A",
+       "cls": "site-nav__link",
+       "text": "电影",
+       "outline": true
+      },
+      {
+       "tag": "A",
+       "cls": "site-nav__link",
+       "text": "电视剧",
+       "outline": true
+      },
+      {
+       "tag": "A",
+       "cls": "site-nav__link",
+       "text": "动漫",
+       "outline": true
+      },
+      {
+       "tag": "A",
+       "cls": "site-nav__link",
+       "text": "R&B<片>",
+       "outline": true
+      },
+      {
+       "tag": "INPUT",
+       "cls": "site-search__input",
+       "text": "",
+       "outline": true
+      },
+      {
+       "tag": "BUTTON",
+       "cls": "site-search__button",
+       "text": "搜索",
+       "outline": true
+      },
+      {
+       "tag": "A",
+       "cls": "site-login",
+       "text": "登录 / 会员中心",
+       "outline": true
+      },
+      {
+       "tag": "A",
+       "cls": "",
+       "text": "电影",
+       "outline": true
+      },
+      {
+       "tag": "A",
+       "cls": "",
+       "text": "动作片",
+       "outline": true
+      },
+      {
+       "tag": "A",
+       "cls": "",
+       "text": "喜剧片",
+       "outline": true
+      },
+      {
+       "tag": "A",
+       "cls": "",
+       "text": "电视剧",
+       "outline": true
+      },
+      {
+       "tag": "A",
+       "cls": "",
+       "text": "动漫",
+       "outline": true
+      }
+     ],
+     "help": [
+      {
+       "tag": "A",
+       "cls": "skip-link",
+       "text": "跳到主要内容",
+       "outline": true
+      },
+      {
+       "tag": "A",
+       "cls": "site-brand",
+       "text": "合成站",
+       "outline": true
+      },
+      {
+       "tag": "A",
+       "cls": "site-nav__link",
+       "text": "电影",
+       "outline": true
+      },
+      {
+       "tag": "A",
+       "cls": "site-nav__link",
+       "text": "电视剧",
+       "outline": true
+      },
+      {
+       "tag": "A",
+       "cls": "site-nav__link",
+       "text": "动漫",
+       "outline": true
+      },
+      {
+       "tag": "A",
+       "cls": "site-nav__link",
+       "text": "R&B<片>",
+       "outline": true
+      },
+      {
+       "tag": "INPUT",
+       "cls": "site-search__input",
+       "text": "",
+       "outline": true
+      },
+      {
+       "tag": "BUTTON",
+       "cls": "site-search__button",
+       "text": "搜索",
+       "outline": true
+      },
+      {
+       "tag": "A",
+       "cls": "site-login",
+       "text": "登录 / 会员中心",
+       "outline": true
+      },
+      {
+       "tag": "A",
+       "cls": "",
+       "text": "视频搜索",
+       "outline": true
+      },
+      {
+       "tag": "A",
+       "cls": "",
+       "text": "网站地图",
+       "outline": true
+      },
+      {
+       "tag": "A",
+       "cls": "",
+       "text": "RSS 订阅",
+       "outline": true
+      },
+      {
+       "tag": "BODY",
+       "cls": "",
+       "text": "跳到主要内容\n\n  \n ",
+       "outline": false
+      },
+      {
+       "tag": "A",
+       "cls": "skip-link",
+       "text": "跳到主要内容",
+       "outline": true
+      }
+     ],
+     "copyright": [
+      {
+       "tag": "A",
+       "cls": "skip-link",
+       "text": "跳到主要内容",
+       "outline": true
+      },
+      {
+       "tag": "A",
+       "cls": "site-brand",
+       "text": "合成站",
+       "outline": true
+      },
+      {
+       "tag": "A",
+       "cls": "site-nav__link",
+       "text": "电影",
+       "outline": true
+      },
+      {
+       "tag": "A",
+       "cls": "site-nav__link",
+       "text": "电视剧",
+       "outline": true
+      },
+      {
+       "tag": "A",
+       "cls": "site-nav__link",
+       "text": "动漫",
+       "outline": true
+      },
+      {
+       "tag": "A",
+       "cls": "site-nav__link",
+       "text": "R&B<片>",
+       "outline": true
+      },
+      {
+       "tag": "INPUT",
+       "cls": "site-search__input",
+       "text": "",
+       "outline": true
+      },
+      {
+       "tag": "BUTTON",
+       "cls": "site-search__button",
+       "text": "搜索",
+       "outline": true
+      },
+      {
+       "tag": "A",
+       "cls": "site-login",
+       "text": "登录 / 会员中心",
+       "outline": true
+      },
+      {
+       "tag": "A",
+       "cls": "",
+       "text": "返回首页",
+       "outline": true
+      },
+      {
+       "tag": "BODY",
+       "cls": "",
+       "text": "跳到主要内容\n\n  \n ",
+       "outline": false
+      },
+      {
+       "tag": "A",
+       "cls": "skip-link",
+       "text": "跳到主要内容",
+       "outline": true
+      },
+      {
+       "tag": "A",
+       "cls": "site-brand",
+       "text": "合成站",
+       "outline": true
+      },
+      {
+       "tag": "A",
+       "cls": "site-nav__link",
+       "text": "电影",
+       "outline": true
+      }
+     ]
+    },
+    "reducedMotion": {
+     "map reduce": {
+      "reduceMatches": true,
+      "moving": []
+     },
+     "help reduce": {
+      "reduceMatches": true,
+      "moving": []
+     },
+     "copyright reduce": {
+      "reduceMatches": true,
+      "moving": []
+     },
+     "map no-preference": {
+      "reduceMatches": false,
+      "moving": []
+     },
+     "help no-preference": {
+      "reduceMatches": false,
+      "moving": []
+     },
+     "copyright no-preference": {
+      "reduceMatches": false,
+      "moving": []
+     }
+    },
+    "blockedHosts": []
+   }
+  },
+  "subdir W1W2=00": {
+   "failures": [],
+   "http": {
+    "map": {
+     "status": 200,
+     "type": "text/html;charset=UTF-8",
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'sel",
+     "canonical": "http://127.0.0.1:58172/sub/index.php/map/index.html",
+     "linksOutsidePrefix": [],
+     "externalHosts": []
+    },
+    "help": {
+     "status": 200,
+     "type": "text/html;charset=UTF-8",
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'sel",
+     "canonical": "http://127.0.0.1:58172/sub/index.php/help/index.html",
+     "linksOutsidePrefix": [],
+     "externalHosts": []
+    },
+    "copyright": {
+     "status": 200,
+     "type": "text/html;charset=UTF-8",
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'sel",
+     "canonical": "http://127.0.0.1:58172/sub/index.php/vod/copyright/id/1.html",
+     "linksOutsidePrefix": [],
+     "externalHosts": []
+    },
+    "rss-index": {
+     "status": 200,
+     "type": "application/rss+xml;charset=UTF-8",
+     "root": "rss",
+     "locs": 14,
+     "badLocs": []
+    },
+    "rss-baidu": {
+     "status": 200,
+     "type": "application/xml;charset=UTF-8",
+     "root": "urlset",
+     "locs": 14,
+     "badLocs": []
+    },
+    "rss-google": {
+     "status": 200,
+     "type": "application/xml;charset=UTF-8",
+     "root": "urlset",
+     "locs": 14,
+     "badLocs": []
+    },
+    "rss-so": {
+     "status": 200,
+     "type": "application/xml;charset=UTF-8",
+     "root": "urlset",
+     "locs": 14,
+     "badLocs": []
+    },
+    "rss-sogou": {
+     "status": 200,
+     "type": "application/xml;charset=UTF-8",
+     "root": "urlset",
+     "locs": 14,
+     "badLocs": []
+    },
+    "rss-bing": {
+     "status": 200,
+     "type": "application/xml;charset=UTF-8",
+     "root": "urlset",
+     "locs": 14,
+     "badLocs": []
+    },
+    "rss-sm": {
+     "status": 200,
+     "type": "application/xml;charset=UTF-8",
+     "root": "urlset",
+     "locs": 14,
+     "badLocs": []
+    },
+    "label": {
+     "status": 404
+    },
+    "qrcode": {
+     "status": 200,
+     "type": "image/png",
+     "bytes": 551,
+     "cache": "max-age=86400, public"
+    },
+    "qrcode-invalid": {
+     "status": 200,
+     "bytes": 0
+    },
+    "desktop": {
+     "status": 200,
+     "disposition": "attachment; filename=\"___.url\"; filename*=UTF-8''%E5%90%88%E6%88%90%E7%AB%99.url",
+     "firstLine": "[InternetShortcut]\r\n        URL=http://127.0.0.1:58172/sub\r\n"
+    },
+    "desktop-injection": {
+     "status": 400
+    },
+    "ajax-data": {
+     "status": 200,
+     "rows": 10,
+     "externalImages": false,
+     "firstLink": [
+      "/sub/index.php/vod/detail/id/36.html"
+     ]
+    },
+    "ajax-suggest": {
+     "status": 200,
+     "url": "/sub/index.php/vod/search.html?wd=mac_wd",
+     "total": 1
+    },
+    "provide-json": {
+     "status": 200,
+     "type": "application/json;charset=utf-8",
+     "cache": "public, max-age=30"
+    },
+    "provide-xml": {
+     "status": 200,
+     "wellFormed": true
+    },
+    "provide-closed": {
+     "status": 200,
+     "body": "closed"
+    },
+    "provide-head": {
+     "status": 200
+    }
+   },
+   "browser": {
+    "cspViolations": [],
+    "pages": {
+     "map": {
+      "title": "网站地图 - 合成站",
+      "h1": "网站地图"
+     },
+     "help": {
+      "title": "帮助 - 合成站",
+      "h1": "帮助"
+     },
+     "copyright": {
+      "title": "星际穿越 - 合成站",
+      "h1": "星际穿越"
+     }
+    },
+    "blockedHosts": []
+   }
+  },
+  "subdir W1W2=01": {
+   "failures": [],
+   "http": {
+    "map": {
+     "status": 200,
+     "type": "text/html;charset=UTF-8",
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'sel",
+     "canonical": "http://127.0.0.1:58172/sub/index.php/map/index.html",
+     "linksOutsidePrefix": [],
+     "externalHosts": []
+    },
+    "help": {
+     "status": 200,
+     "type": "text/html;charset=UTF-8",
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'sel",
+     "canonical": "http://127.0.0.1:58172/sub/index.php/help/index.html",
+     "linksOutsidePrefix": [],
+     "externalHosts": []
+    },
+    "copyright": {
+     "status": 200,
+     "type": "text/html;charset=UTF-8",
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'sel",
+     "canonical": "http://127.0.0.1:58172/sub/index.php/vod/copyright/id/1.html",
+     "linksOutsidePrefix": [],
+     "externalHosts": []
+    },
+    "rss-index": {
+     "status": 200,
+     "type": "application/rss+xml;charset=UTF-8",
+     "root": "rss",
+     "locs": 14,
+     "badLocs": []
+    },
+    "rss-baidu": {
+     "status": 200,
+     "type": "application/xml;charset=UTF-8",
+     "root": "urlset",
+     "locs": 14,
+     "badLocs": []
+    },
+    "rss-google": {
+     "status": 200,
+     "type": "application/xml;charset=UTF-8",
+     "root": "urlset",
+     "locs": 14,
+     "badLocs": []
+    },
+    "rss-so": {
+     "status": 200,
+     "type": "application/xml;charset=UTF-8",
+     "root": "urlset",
+     "locs": 14,
+     "badLocs": []
+    },
+    "rss-sogou": {
+     "status": 200,
+     "type": "application/xml;charset=UTF-8",
+     "root": "urlset",
+     "locs": 14,
+     "badLocs": []
+    },
+    "rss-bing": {
+     "status": 200,
+     "type": "application/xml;charset=UTF-8",
+     "root": "urlset",
+     "locs": 14,
+     "badLocs": []
+    },
+    "rss-sm": {
+     "status": 200,
+     "type": "application/xml;charset=UTF-8",
+     "root": "urlset",
+     "locs": 14,
+     "badLocs": []
+    },
+    "label": {
+     "status": 404
+    },
+    "qrcode": {
+     "status": 200,
+     "type": "image/png",
+     "bytes": 551,
+     "cache": "max-age=86400, public"
+    },
+    "qrcode-invalid": {
+     "status": 200,
+     "bytes": 0
+    },
+    "desktop": {
+     "status": 200,
+     "disposition": "attachment; filename=\"___.url\"; filename*=UTF-8''%E5%90%88%E6%88%90%E7%AB%99.url",
+     "firstLine": "[InternetShortcut]\r\n        URL=http://127.0.0.1:58172/sub\r\n"
+    },
+    "desktop-injection": {
+     "status": 400
+    },
+    "ajax-data": {
+     "status": 200,
+     "rows": 10,
+     "externalImages": true,
+     "firstLink": [
+      "/sub/index.php/vod/detail/id/36.html"
+     ]
+    },
+    "ajax-suggest": {
+     "status": 200,
+     "url": "/sub/index.php/vod/search.html?wd=mac_wd",
+     "total": 1
+    },
+    "provide-json": {
+     "status": 200,
+     "type": "application/json;charset=utf-8",
+     "cache": "public, max-age=30"
+    },
+    "provide-xml": {
+     "status": 200,
+     "wellFormed": true
+    },
+    "provide-closed": {
+     "status": 200,
+     "body": "closed"
+    },
+    "provide-head": {
+     "status": 200
+    }
+   },
+   "browser": {
+    "cspViolations": [],
+    "pages": {
+     "map": {
+      "title": "网站地图 - 合成站",
+      "h1": "网站地图"
+     },
+     "help": {
+      "title": "帮助 - 合成站",
+      "h1": "帮助"
+     },
+     "copyright": {
+      "title": "星际穿越 - 合成站",
+      "h1": "星际穿越"
+     }
+    },
+    "blockedHosts": []
+   }
+  },
+  "subdir W1W2=10": {
+   "failures": [],
+   "http": {
+    "map": {
+     "status": 200,
+     "type": "text/html;charset=UTF-8",
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'sel",
+     "canonical": "http://127.0.0.1:58172/sub/index.php/map/index.html",
+     "linksOutsidePrefix": [],
+     "externalHosts": []
+    },
+    "help": {
+     "status": 200,
+     "type": "text/html;charset=UTF-8",
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'sel",
+     "canonical": "http://127.0.0.1:58172/sub/index.php/help/index.html",
+     "linksOutsidePrefix": [],
+     "externalHosts": []
+    },
+    "copyright": {
+     "status": 200,
+     "type": "text/html;charset=UTF-8",
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'sel",
+     "canonical": "http://127.0.0.1:58172/sub/index.php/vod/copyright/id/1.html",
+     "linksOutsidePrefix": [],
+     "externalHosts": []
+    },
+    "rss-index": {
+     "status": 200,
+     "type": "application/rss+xml;charset=UTF-8",
+     "root": "rss",
+     "locs": 14,
+     "badLocs": []
+    },
+    "rss-baidu": {
+     "status": 200,
+     "type": "application/xml;charset=UTF-8",
+     "root": "urlset",
+     "locs": 14,
+     "badLocs": []
+    },
+    "rss-google": {
+     "status": 200,
+     "type": "application/xml;charset=UTF-8",
+     "root": "urlset",
+     "locs": 14,
+     "badLocs": []
+    },
+    "rss-so": {
+     "status": 200,
+     "type": "application/xml;charset=UTF-8",
+     "root": "urlset",
+     "locs": 14,
+     "badLocs": []
+    },
+    "rss-sogou": {
+     "status": 200,
+     "type": "application/xml;charset=UTF-8",
+     "root": "urlset",
+     "locs": 14,
+     "badLocs": []
+    },
+    "rss-bing": {
+     "status": 200,
+     "type": "application/xml;charset=UTF-8",
+     "root": "urlset",
+     "locs": 14,
+     "badLocs": []
+    },
+    "rss-sm": {
+     "status": 200,
+     "type": "application/xml;charset=UTF-8",
+     "root": "urlset",
+     "locs": 14,
+     "badLocs": []
+    },
+    "label": {
+     "status": 404
+    },
+    "qrcode": {
+     "status": 200,
+     "type": "image/png",
+     "bytes": 551,
+     "cache": "max-age=86400, public"
+    },
+    "qrcode-invalid": {
+     "status": 200,
+     "bytes": 0
+    },
+    "desktop": {
+     "status": 200,
+     "disposition": "attachment; filename=\"___.url\"; filename*=UTF-8''%E5%90%88%E6%88%90%E7%AB%99.url",
+     "firstLine": "[InternetShortcut]\r\n        URL=http://127.0.0.1:58172/sub\r\n"
+    },
+    "desktop-injection": {
+     "status": 400
+    },
+    "ajax-data": {
+     "status": 200,
+     "rows": 10,
+     "externalImages": false,
+     "firstLink": [
+      "/sub/index.php/vod/detail/id/36.html"
+     ]
+    },
+    "ajax-suggest": {
+     "status": 200,
+     "url": "/sub/index.php/vod/search.html?wd=mac_wd",
+     "total": 1
+    },
+    "provide-json": {
+     "status": 200,
+     "type": "application/json;charset=utf-8",
+     "cache": "public, max-age=30"
+    },
+    "provide-xml": {
+     "status": 200,
+     "wellFormed": true
+    },
+    "provide-closed": {
+     "status": 200,
+     "body": "closed"
+    },
+    "provide-head": {
+     "status": 200
+    }
+   },
+   "browser": {
+    "cspViolations": [],
+    "pages": {
+     "map": {
+      "title": "网站地图 - 合成站",
+      "h1": "网站地图"
+     },
+     "help": {
+      "title": "帮助 - 合成站",
+      "h1": "帮助"
+     },
+     "copyright": {
+      "title": "星际穿越 - 合成站",
+      "h1": "星际穿越"
+     }
+    },
+    "blockedHosts": []
+   }
+  },
+  "subdir W1W2=11": {
+   "failures": [],
+   "http": {
+    "map": {
+     "status": 200,
+     "type": "text/html;charset=UTF-8",
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'sel",
+     "canonical": "http://127.0.0.1:58172/sub/index.php/map/index.html",
+     "linksOutsidePrefix": [],
+     "externalHosts": []
+    },
+    "help": {
+     "status": 200,
+     "type": "text/html;charset=UTF-8",
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'sel",
+     "canonical": "http://127.0.0.1:58172/sub/index.php/help/index.html",
+     "linksOutsidePrefix": [],
+     "externalHosts": []
+    },
+    "copyright": {
+     "status": 200,
+     "type": "text/html;charset=UTF-8",
+     "cache": "no-cache",
+     "csp": "default-src 'self'; img-src 'self' http: https:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'sel",
+     "canonical": "http://127.0.0.1:58172/sub/index.php/vod/copyright/id/1.html",
+     "linksOutsidePrefix": [],
+     "externalHosts": []
+    },
+    "rss-index": {
+     "status": 200,
+     "type": "application/rss+xml;charset=UTF-8",
+     "root": "rss",
+     "locs": 14,
+     "badLocs": []
+    },
+    "rss-baidu": {
+     "status": 200,
+     "type": "application/xml;charset=UTF-8",
+     "root": "urlset",
+     "locs": 14,
+     "badLocs": []
+    },
+    "rss-google": {
+     "status": 200,
+     "type": "application/xml;charset=UTF-8",
+     "root": "urlset",
+     "locs": 14,
+     "badLocs": []
+    },
+    "rss-so": {
+     "status": 200,
+     "type": "application/xml;charset=UTF-8",
+     "root": "urlset",
+     "locs": 14,
+     "badLocs": []
+    },
+    "rss-sogou": {
+     "status": 200,
+     "type": "application/xml;charset=UTF-8",
+     "root": "urlset",
+     "locs": 14,
+     "badLocs": []
+    },
+    "rss-bing": {
+     "status": 200,
+     "type": "application/xml;charset=UTF-8",
+     "root": "urlset",
+     "locs": 14,
+     "badLocs": []
+    },
+    "rss-sm": {
+     "status": 200,
+     "type": "application/xml;charset=UTF-8",
+     "root": "urlset",
+     "locs": 14,
+     "badLocs": []
+    },
+    "label": {
+     "status": 404
+    },
+    "qrcode": {
+     "status": 200,
+     "type": "image/png",
+     "bytes": 551,
+     "cache": "max-age=86400, public"
+    },
+    "qrcode-invalid": {
+     "status": 200,
+     "bytes": 0
+    },
+    "desktop": {
+     "status": 200,
+     "disposition": "attachment; filename=\"___.url\"; filename*=UTF-8''%E5%90%88%E6%88%90%E7%AB%99.url",
+     "firstLine": "[InternetShortcut]\r\n        URL=http://127.0.0.1:58172/sub\r\n"
+    },
+    "desktop-injection": {
+     "status": 400
+    },
+    "ajax-data": {
+     "status": 200,
+     "rows": 10,
+     "externalImages": true,
+     "firstLink": [
+      "/sub/index.php/vod/detail/id/36.html"
+     ]
+    },
+    "ajax-suggest": {
+     "status": 200,
+     "url": "/sub/index.php/vod/search.html?wd=mac_wd",
+     "total": 1
+    },
+    "provide-json": {
+     "status": 200,
+     "type": "application/json;charset=utf-8",
+     "cache": "public, max-age=30"
+    },
+    "provide-xml": {
+     "status": 200,
+     "wellFormed": true
+    },
+    "provide-closed": {
+     "status": 200,
+     "body": "closed"
+    },
+    "provide-head": {
+     "status": 200
+    }
+   },
+   "browser": {
+    "cspViolations": [],
+    "pages": {
+     "map": {
+      "title": "网站地图 - 合成站",
+      "h1": "网站地图"
+     },
+     "help": {
+      "title": "帮助 - 合成站",
+      "h1": "帮助"
+     },
+     "copyright": {
+      "title": "星际穿越 - 合成站",
+      "h1": "星际穿越"
+     }
+    },
+    "blockedHosts": []
+   }
+  }
+ },
+ "databaseDropped": true,
+ "finished": "2026-10-17T20:22:55",
+ "failures": 0
+}

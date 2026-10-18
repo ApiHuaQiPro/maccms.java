@@ -37,18 +37,21 @@ public class SiteContentController {
     private final ObjectProvider<SiteSearchController> search;
     private final ObjectProvider<SitePlaybackController> playback;
     private final ObjectProvider<SiteLibraryController> library;
+    private final ObjectProvider<SiteMiscController> misc;
 
     public SiteContentController(SiteHtmlRenderer renderer, SitePages sitePages, LegacyUrlBuilder urls,
                                  LegacyUrlParser parser, ImageUrlNormalizer images, RichTextCache richText,
                                  ContentReadService content, ObjectProvider<SiteSearchController> search,
                                  ObjectProvider<SitePlaybackController> playback,
-                                 ObjectProvider<SiteLibraryController> library) {
+                                 ObjectProvider<SiteLibraryController> library,
+                                 ObjectProvider<SiteMiscController> misc) {
         this.renderer = renderer;
         this.parser = parser;
         this.pages = new ContentPages(content, sitePages, urls, images, richText);
         this.search = search;
         this.playback = playback;
         this.library = library;
+        this.misc = misc;
     }
 
     @GetMapping({"/", "/index.php", "/index.php/",
@@ -89,7 +92,7 @@ public class SiteContentController {
             case SiteRoute.ModuleList m -> throw new ApiException(ErrorCode.NOT_FOUND, "页面不存在");
             // B05 的其他页面经 ?s= 兼容模式到达入口路径时，交给承接该页面的 Controller（它们按同一请求重新解析）
             case SiteRoute.Legacy l -> l.page().episode() ? playback.getObject().page(request)
-                    : library.getObject().page(request);
+                    : l.page().misc() ? misc.getObject().page(request) : library.getObject().page(request);
         };
     }
 

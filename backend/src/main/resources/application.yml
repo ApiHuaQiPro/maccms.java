@@ -72,6 +72,18 @@ maccms:
     w1: ${MACCMS_BROWSER_EXTERNAL_W1:true}
     w2: ${MACCMS_BROWSER_EXTERNAL_W2:true}
     w3: ${MACCMS_BROWSER_EXTERNAL_W3:false}
+  # 客户端 IP 解析（B06，D2 ④，docs/architecture/16-b06-misc-pages-provide.md 第 2 节）：部署级参数。默认只用连接对端；
+  # trusted-proxies 为逗号分隔的 IP/CIDR，只有对端落在其中时才采用 header 指定的转发头（X-Forwarded-For 列表，或单值头
+  # X-Real-IP/CF-Connecting-IP/True-Client-IP/Ali-CDN-Real-IP）。部署在 CDN/反向代理后面时必须填写代理出口网段，否则客户端 IP
+  # 全部是代理地址；不要填 0.0.0.0/0 之类的宽网段（任何人都能伪造转发头）。
+  client-ip:
+    trusted-proxies: ${MACCMS_TRUSTED_PROXIES:}
+    header: ${MACCMS_CLIENT_IP_HEADER:}
+  # Provide 资源站接口（B06，docs/architecture/16-b06-misc-pages-provide.md 第 3 节）：默认关闭，关闭时不注册 /api.php/provide/**
+  # 路由。打开后各模块再按旧配置 extra/maccms.php 的 api.<模块>.status 判定（仓库值全部关闭），未设置 maccms.legacy-config.dir 时
+  # 全部输出 closed。charge=1 的白名单按 maccms.client-ip 解析客户端 IP。只读：detail_inc_hits 开启时也不写计数（B11）。
+  openapi:
+    enabled: ${MACCMS_OPENAPI_ENABLED:false}
   # site 服务端页面（MACC-9 骨架）：默认关闭，关闭时不注册任何 site 路由。
   # 启用时 name、base-url 必填并校验，缺失或不合法即启动失败（不回显取值）。规则见 docs/architecture/05-site-skeleton.md。
   # 设置了 maccms.legacy-config.dir 时，name、keywords、description、icp、logo-url、status、closed-message、url.*、image.* 按字段

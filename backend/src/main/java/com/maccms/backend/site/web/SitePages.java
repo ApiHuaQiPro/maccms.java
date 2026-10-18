@@ -66,6 +66,11 @@ public class SitePages {
         return error("页面不存在", "您访问的页面不存在或已被移除。");
     }
 
+    /** 旧 {@code error(lang('illegal_request'))}（自定义标签页不存在，index/controller/Label.php:19-21，B06）。 */
+    public ErrorPage illegalRequest() {
+        return error("非法请求", "请求的页面不存在。");
+    }
+
     public ErrorPage serverError() {
         return error("页面暂时无法显示", "服务器处理请求时出错，请稍后再试。");
     }

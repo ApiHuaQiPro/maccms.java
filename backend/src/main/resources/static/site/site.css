@@ -923,3 +923,33 @@ img {
 
 /* 动效统一遵守 reduced-motion（新增元素不引入必须动画；
  * 链接/按钮仅颜色变化，不做位移，故无须额外媒体查询）。 */
+
+/* B06（MACC-55）：地图、帮助、版权页。不新增视觉，只做与既有页面一致的容器与标题规则，
+ * 以及长片名/长分类名断行；正文与提示框沿用 detail-content、notice。 */
+.map-page,
+.help-page,
+.copyright-page {
+  min-width: 0;
+}
+
+.map-page > h1,
+.help-page > h1,
+.copyright-page > h1 {
+  margin: var(--site-space-3) 0;
+  font-size: var(--site-font-size-xl);
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.map-section__title {
+  font-size: var(--site-font-size-lg);
+  margin: var(--site-space-4) 0 var(--site-space-2);
+  overflow-wrap: anywhere;
+}
+
+.map-tree,
+.map-links,
+.copyright-notice,
+.copyright-page__back {
+  overflow-wrap: anywhere;
+}
