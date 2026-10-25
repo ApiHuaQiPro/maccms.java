@@ -539,7 +539,133 @@ function generate($repo, $pdo, $phpCgi, $work, $host, $port, $db, $user, $passwo
     }
     return json_encode(['generator' => 'backend/src/test/php/finance_golden.php', 'php' => PHP_VERSION,
             'timezone' => 'PRC', 'fixture' => fixture_sql(), 'seed' => SEED_SQL, 'baseConfig' => base_config(),
-            'cases' => $out], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) . "\n";
+            'cases' => $out, 'popedom' => popedom_golden($repo, $pdo, $phpCgi, $work, $host, $port, $db, $user,
+                $password)], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) . "\n";
+}
+
+/**
+ * D-B09-11：有购买记录时旧 check_user_popedom（index/controller/Base.php:92-227）的判定。经 B09 的 account_golden_child.php
+ * （op=popedom，反射调用 Base::check_user_popedom，$GLOBALS['user'] 为会员 99）执行；用例前写入会员 99 的 mac_ulog 购买记录。
+ * 返回码：1 放行；3002 试看；3003/4003 扣积分确认；4001 先登录；5001/5002 试看结束（可支付/积分不足）。
+ */
+function popedom_golden($repo, $pdo, $phpCgi, $work, $host, $port, $db, $user, $password)
+{
+    $pdo->exec('DELETE FROM mac_ulog');
+    $ulog = function ($mid, $type, $rid, $sid, $nid, $points) use ($pdo) {
+        $pdo->exec("INSERT INTO mac_ulog (user_id, ulog_mid, ulog_type, ulog_rid, ulog_sid, ulog_nid, ulog_points, ulog_time)"
+            . " VALUES (99, $mid, $type, $rid, $sid, $nid, $points, 1700000000)");
+    };
+    $ulog(1, 4, 9, 0, 0, 5);   // 视频 9 整片播放（vod_points_type=1，5 积分）
+    $ulog(1, 4, 9, 1, 2, 3);   // 视频 9 第 1 组第 2 集播放（vod_points_type=0，3 积分）
+    $ulog(1, 5, 9, 0, 0, 5);   // 视频 9 整片下载
+    $ulog(2, 1, 100, 0, 0, 6); // 文章 100 整篇（art_points_type=1，6 积分）
+    $ulog(2, 1, 100, 2, 0, 2); // 文章 100 第 2 页（art_points_type=0，2 积分）
+    $rows = $pdo->query('SELECT user_id, ulog_mid, ulog_type, ulog_rid, ulog_sid, ulog_nid, ulog_points FROM mac_ulog'
+        . ' ORDER BY ulog_id')->fetchAll(PDO::FETCH_ASSOC);
+    $perm = function ($bits) {
+        $p = [];
+        foreach ($bits as $b) {
+            $p[$b] = '1';
+        }
+        return json_encode(['1' => $p]);
+    };
+    $g2 = ['group_id' => 2, 'group_type' => ',1,', 'group_popedom' => $perm(['1', '2', '3', '4', '5'])];
+    $g2trial = ['group_id' => 2, 'group_type' => ',1,', 'group_popedom' => $perm(['1', '2', '5'])];
+    $g1 = ['group_id' => 1, 'group_type' => ',1,', 'group_popedom' => $perm(['1', '2', '3', '4', '5'])];
+    $vod = function ($whole, $play, $down) {
+        return ['vod_points' => $whole, 'vod_points_play' => $play, 'vod_points_down' => $down];
+    };
+    $p = function ($id, $sid = 1, $nid = 1, $page = 1) {
+        return ['id' => $id, 'sid' => $sid, 'nid' => $nid, 'page' => $page];
+    };
+    $whole = ['user.vod_points_type' => '1', 'user.art_points_type' => '1'];
+    $per = ['user.vod_points_type' => '0', 'user.art_points_type' => '0'];
+    $cases = [
+        ['play-whole-purchased', $g2, 3, 'play', $p(9), $vod(5, 3, 4), 0, 0, $whole],
+        ['play-whole-not-purchased', $g2, 3, 'play', $p(10), $vod(5, 3, 4), 0, 0, $whole],
+        ['play-whole-price-changed', $g2, 3, 'play', $p(9), $vod(6, 3, 4), 0, 0, $whole],
+        ['play-episode-purchased', $g2, 3, 'play', $p(9, 1, 2), $vod(5, 3, 4), 0, 0, $per],
+        ['play-episode-other', $g2, 3, 'play', $p(9, 1, 3), $vod(5, 3, 4), 0, 0, $per],
+        ['player-trial-purchased', $g2trial, 5, 'play', $p(9), $vod(5, 3, 4), 10, 0, $whole],
+        ['player-trial-can-buy', $g2trial, 5, 'play', $p(10), $vod(5, 3, 4), 10, 8, $whole],
+        ['player-trial-not-enough', $g2trial, 5, 'play', $p(10), $vod(5, 3, 4), 10, 3, $whole],
+        ['play-trial-page-purchased', $g2trial, 3, 'play', $p(9), $vod(5, 3, 4), 10, 0, $whole],
+        ['down-whole-purchased', $g2, 4, 'down', $p(9), $vod(5, 3, 4), 0, 0, $whole],
+        ['down-not-purchased', $g2, 4, 'down', $p(10), $vod(5, 3, 4), 0, 0, $whole],
+        ['down-guest-group', $g1, 4, 'down', $p(9), $vod(5, 3, 4), 0, 0, $whole],
+        ['art-whole-purchased', $g2, 2, 'art', $p(100), ['art_points' => 6, 'art_points_detail' => 2], 0, 0, $whole],
+        ['art-whole-not-purchased', $g2, 2, 'art', $p(101), ['art_points' => 6, 'art_points_detail' => 2], 0, 0,
+            $whole],
+        ['art-page-purchased', $g2, 2, 'art', $p(100, 1, 1, 2), ['art_points' => 6, 'art_points_detail' => 2], 0, 0,
+            $per],
+        ['art-page-other', $g2, 2, 'art', $p(100, 1, 1, 3), ['art_points' => 6, 'art_points_detail' => 2], 0, 0, $per],
+    ];
+    @mkdir($work . '/popedom/runtime', 0777, true);
+    $ctx = ['repo' => $repo, 'php_cgi' => $phpCgi, 'work' => $work . '/popedom', 'db' => [$host, $port, $db, $user,
+        $password]];
+    $out = [];
+    foreach ($cases as $c) {
+        list($label, $group, $popedom, $flag, $param, $info, $trysee, $userPoints, $config) = $c;
+        $args = ['label' => $label, 'op' => 'popedom', 'group' => $group, 'type_id' => 1, 'popedom' => $popedom,
+            'flag' => $flag, 'param' => $param, 'info' => $info, 'trysee' => $trysee, 'user_points' => $userPoints,
+            'config' => $config + ['user.status' => '1']];
+        $r = run_popedom_child($ctx, $args);
+        $out[] = ['label' => $label, 'args' => $args, 'code' => isset($r['code']) ? $r['code'] : null,
+            'msg' => isset($r['msg']) ? hex2bin($r['msg']) : null, 'error' => isset($r['error']) ? $r['error'] : null];
+    }
+    $pdo->exec('DELETE FROM mac_ulog');
+    return ['ulog' => $rows, 'cases' => $out];
+}
+
+/** 以 php-cgi 执行 account_golden_child.php 的一个用例（同 account_golden.php 的 run_child）。 */
+function run_popedom_child($ctx, $args)
+{
+    list($host, $port, $db, $user, $password) = $ctx['db'];
+    $child = __DIR__ . DIRECTORY_SEPARATOR . 'account_golden_child.php';
+    $env = [
+        'GOLDEN_ARGS' => json_encode($args, JSON_UNESCAPED_SLASHES),
+        'GOLDEN_RUNTIME_PATH' => $ctx['work'],
+        'GOLDEN_DB_HOST' => $host, 'GOLDEN_DB_PORT' => $port, 'GOLDEN_DB_NAME' => $db, 'GOLDEN_DB_USER' => $user,
+        'GOLDEN_DB_PASSWORD' => $password,
+        'REDIRECT_STATUS' => '200',
+        'GATEWAY_INTERFACE' => 'CGI/1.1',
+        'SERVER_PROTOCOL' => 'HTTP/1.1',
+        'SERVER_SOFTWARE' => 'golden',
+        'SERVER_NAME' => 'www.example.test',
+        'SERVER_PORT' => '80',
+        'HTTP_HOST' => 'www.example.test',
+        'REQUEST_METHOD' => 'GET',
+        'SCRIPT_FILENAME' => $child,
+        'SCRIPT_NAME' => '/index.php',
+        'PHP_SELF' => '/index.php',
+        'REQUEST_URI' => '/index.php',
+        'QUERY_STRING' => '',
+        'REMOTE_ADDR' => '127.0.0.1',
+        'REMOTE_PORT' => '50000',
+        'DOCUMENT_ROOT' => dirname($child),
+        'SystemRoot' => getenv('SystemRoot') ?: 'C:\\Windows',
+        'TEMP' => $ctx['work'],
+        'TMP' => $ctx['work'],
+    ];
+    $cmd = escapeshellarg($ctx['php_cgi']) . ' -d session.save_path=' . escapeshellarg($ctx['work'] . '/runtime')
+        . ' -d display_errors=0 -d error_reporting=0 -d session.gc_probability=0';
+    $proc = proc_open($cmd, [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes, $ctx['repo'], $env,
+        ['bypass_shell' => true]);
+    if (!is_resource($proc)) {
+        throw new RuntimeException('php-cgi');
+    }
+    fclose($pipes[0]);
+    $raw = stream_get_contents($pipes[1]);
+    stream_get_contents($pipes[2]);
+    fclose($pipes[1]);
+    fclose($pipes[2]);
+    proc_close($proc);
+    $sep = strpos($raw, "\r\n\r\n");
+    $json = json_decode($sep === false ? $raw : substr($raw, $sep + 4), true);
+    if (!is_array($json)) {
+        throw new RuntimeException('popedom child output is not JSON for ' . $args['label']);
+    }
+    return $json;
 }
 
 function users_for($opt)

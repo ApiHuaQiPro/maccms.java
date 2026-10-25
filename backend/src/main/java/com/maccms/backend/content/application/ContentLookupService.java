@@ -38,10 +38,11 @@ public class ContentLookupService {
     private final ContentProperties properties;
     private final PlaybackSettings playback;
 
-    public ContentLookupService(ContentLookupMapper mapper, ContentProperties properties, VideoPlaybackService videos) {
+    /** @param playback 与 {@link VideoPlaybackService} 同一份播放设置（{@code user.vod_points_type}） */
+    public ContentLookupService(ContentLookupMapper mapper, ContentProperties properties, PlaybackProperties playback) {
         this.mapper = mapper;
         this.properties = properties;
-        this.playback = videos.settings();
+        this.playback = PlaybackSettings.from(playback, properties.copyrightHidesDetail());
     }
 
     /** {@code user.vod_points_type == '1'}：视频按整片收费（vod_points），购买记录的 sid、nid 为 0。 */

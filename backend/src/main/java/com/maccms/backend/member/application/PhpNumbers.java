@@ -3,6 +3,7 @@ package com.maccms.backend.member.application;
 import com.maccms.backend.content.application.PhpIntval;
 import java.math.BigDecimal;
 import java.math.MathContext;
+import java.math.RoundingMode;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -65,8 +66,8 @@ final class PhpNumbers {
     }
 
     /**
-     * PHP 7.3/8.0 的 {@code (string)$float}（{@code precision=14}，{@code %.14G}）：14 位有效数字、去掉末尾的 0；整数值不带小数点。
-     * 只用于金额等常规范围的值（指数 &lt; -4 或 ≥ 15 时用 {@code 1.0E+25} 形式）。
+     * PHP 7.3/8.0 的 {@code (string)$float}（{@code precision=14}，{@code %.14G}）：14 位有效数字（逢 5 取偶，与 zend_dtoa 相同）、去掉末尾
+     * 的 0；整数值不带小数点；指数 &lt; -4 或 ≥ 14 时用 {@code 1.0E+14} 形式。
      */
     static String phpString(double d) {
         if (!Double.isFinite(d)) {
@@ -75,9 +76,9 @@ final class PhpNumbers {
         if (d == 0) {
             return d == 0 && 1 / d < 0 ? "-0" : "0";
         }
-        BigDecimal v = new BigDecimal(d).round(new MathContext(14)).stripTrailingZeros();
+        BigDecimal v = new BigDecimal(d).round(new MathContext(14, RoundingMode.HALF_EVEN)).stripTrailingZeros();
         int exponent = v.precision() - v.scale() - 1;
-        if (exponent < -4 || exponent >= 15) {
+        if (exponent < -4 || exponent >= 14) {
             String digits = v.unscaledValue().abs().toString();
             String mantissa = digits.charAt(0) + "." + (digits.length() > 1 ? digits.substring(1) : "0");
             return (v.signum() < 0 ? "-" : "") + mantissa + "E" + (exponent < 0 ? "-" : "+") + Math.abs(exponent);

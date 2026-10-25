@@ -22,8 +22,7 @@
   <p class="player-page__current">${page.current()}</p>
   @if(page.trial())
   <p class="player-page__trial notice">当前为试看模式，试看时间到后播放会停止。</p>
-  @endif
-  @if(page.trialOffer().isPresent())
+  @endif@if(page.trialOffer().isPresent())
   <div class="trial-offer notice">
     <p class="trial-offer__message">${page.trialOffer().get().message()}</p>
     @if(page.trialOffer().get().form().isPresent())
