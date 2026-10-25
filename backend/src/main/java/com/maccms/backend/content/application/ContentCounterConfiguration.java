@@ -34,4 +34,10 @@ public class ContentCounterConfiguration {
     VodSearchOptimise vodSearchOptimise(ObjectProvider<LegacyConfigService> legacy) {
         return new VodSearchOptimise(legacy.getIfAvailable());
     }
+
+    /** 后台"清理缓存"用到的内容侧清理（B12）。 */
+    @Bean
+    ContentCacheMaintenance contentCacheMaintenance(VodSearchCache cache, VodSearchOptimise optimise) {
+        return new ContentCacheMaintenance(cache, optimise);
+    }
 }

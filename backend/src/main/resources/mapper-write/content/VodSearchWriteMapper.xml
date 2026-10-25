@@ -18,4 +18,13 @@
         SET search_hit_count = search_hit_count + 1, search_last_hit_time = #{now}
         WHERE search_key = #{key}
     </update>
+
+    <!--
+      B12 后台"清理缓存"（admin/controller/Index.php:158-167 → VodSearch::clearOldResult(true)，VodSearch.php:146-167）：强制清理时不排除
+      vod_actor，删除 search_update_time 早于"现在 − 缓存分钟数 × 60"的全部行（登记 content / mac_vod_search DELETE，B12）。
+    -->
+    <delete id="deleteUpdatedBefore">
+        DELETE FROM mac_vod_search
+        WHERE search_update_time &lt; #{before}
+    </delete>
 </mapper>

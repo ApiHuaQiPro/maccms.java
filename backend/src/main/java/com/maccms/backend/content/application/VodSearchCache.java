@@ -108,6 +108,20 @@ public class VodSearchCache {
     }
 
     /**
+     * 旧 {@code VodSearch::clearOldResult(true)}（后台"清理缓存"，admin/controller/Index.php:164；VodSearch.php:146-167）：删除结果更新时间早于
+     * "现在 − {@code cacheMinutes} × 60"的全部行（强制清理不排除 vod_actor）。旧版"每天最多清理一次"的间隔记录只约束非强制清理，这里不需要。
+     *
+     * @return 可写数据源关闭时为 false（什么都不做）
+     */
+    public boolean clearOld(long cacheMinutes) {
+        if (writer == null) {
+            return false;
+        }
+        writer.deleteUpdatedBefore(clock.instant().getEpochSecond() - cacheMinutes * 60);
+        return true;
+    }
+
+    /**
      * 旧 Vod.php:404-459：按 wd、name、tag、class、actor、director 的顺序，结果不超过 1000 个的条件把结果按键合并进总列表、并去掉该字段的
      * LIKE 条件。返回去重后的 vod_id（为空时不加 IN 条件）与被替换掉的字段。
      *

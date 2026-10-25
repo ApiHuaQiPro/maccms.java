@@ -72,7 +72,7 @@ class WriteGuardTest {
             entry("mac_website", CONTENT),
             entry("mac_link", Set.of("B13", "B19", "B20")),
             entry("mac_type", Set.of("B13", "B19", "B20", "B22")),
-            entry("mac_vod_search", Set.of("B11", "B19")),
+            entry("mac_vod_search", Set.of("B11", "B12", "B19")),
             entry("mac_admin", Set.of("B12", "B22")),
             entry("mac_annex", Set.of("B13")),
             entry("mac_collect", Set.of("B17")),
@@ -129,7 +129,8 @@ class WriteGuardTest {
     void registeredPermissionsFollowTheOwnerMatrix() {
         assertThat(registryViolations(WriteRegistry.registered().permissions(), false)).isEmpty();
         // B07、B08 不登记业务写入；B09（MACC-33）登记会员模块对 mac_user 的插入与更新（18 文档第 6.1 节）；
-        // B10（MACC-34）登记会员模块对 mac_ulog/mac_plog/mac_card/mac_cash/mac_order/mac_visit 的写入（19 文档第 6.1 节）
+        // B10（MACC-34）登记会员模块对 mac_ulog/mac_plog/mac_card/mac_cash/mac_order/mac_visit 的写入（19 文档第 6.1 节）；
+        // B12（MACC-36）登记后台模块对 mac_admin 的写入与后台"清理缓存"对 mac_vod_search 的删除（21 文档第 5 节）
         assertThat(WriteRegistry.registered().permissions()).extracting(p -> p.module() + " " + p.table() + " "
                 + p.operation() + " " + p.batch())
                 .containsExactly("member mac_user INSERT B09", "member mac_user UPDATE B09",
@@ -140,7 +141,8 @@ class WriteGuardTest {
                         "content mac_topic UPDATE B11", "content mac_actor UPDATE B11", "content mac_role UPDATE B11",
                         "content mac_website UPDATE B11", "content mac_vod_search INSERT B11",
                         "content mac_vod_search UPDATE B11", "comment mac_comment INSERT B11",
-                        "comment mac_comment UPDATE B11", "comment mac_gbook INSERT B11");
+                        "comment mac_comment UPDATE B11", "comment mac_gbook INSERT B11", "admin mac_admin INSERT B12",
+                        "admin mac_admin UPDATE B12", "admin mac_admin DELETE B12", "content mac_vod_search DELETE B12");
     }
 
     @Test

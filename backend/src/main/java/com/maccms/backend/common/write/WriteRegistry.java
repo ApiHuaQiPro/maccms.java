@@ -28,6 +28,8 @@ public final class WriteRegistry {
      * （content / UPDATE）；视频搜索缓存（content / mac_vod_search INSERT、UPDATE）；评论发表、举报与顶踩（comment / mac_comment
      * INSERT、UPDATE）；留言发表（comment / mac_gbook INSERT）。ajax/referer 的来路访问记录沿用 B10 已登记的
      * {@code member/mac_visit/INSERT}（同一条条件插入，{@code user_id = 0}）。</li>
+     * <li>B12（MACC-36，21 文档第 5 节）：管理员登录记录、新增、编辑、删除与状态（admin / mac_admin INSERT、UPDATE、DELETE）；后台"清理缓存"
+     * 删除过期的视频搜索缓存（content / mac_vod_search DELETE）。</li>
      * </ul>
      */
     static final List<WritePermission> REGISTERED = List.of(
@@ -53,7 +55,11 @@ public final class WriteRegistry {
             new WritePermission("content", "mac_vod_search", WriteOperation.UPDATE, "B11"),
             new WritePermission("comment", "mac_comment", WriteOperation.INSERT, "B11"),
             new WritePermission("comment", "mac_comment", WriteOperation.UPDATE, "B11"),
-            new WritePermission("comment", "mac_gbook", WriteOperation.INSERT, "B11"));
+            new WritePermission("comment", "mac_gbook", WriteOperation.INSERT, "B11"),
+            new WritePermission("admin", "mac_admin", WriteOperation.INSERT, "B12"),
+            new WritePermission("admin", "mac_admin", WriteOperation.UPDATE, "B12"),
+            new WritePermission("admin", "mac_admin", WriteOperation.DELETE, "B12"),
+            new WritePermission("content", "mac_vod_search", WriteOperation.DELETE, "B12"));
 
     /** 写 Mapper 的全限定名：{@code com.maccms.backend.<module>.infrastructure[.子包].<类型>}。 */
     private static final Pattern MAPPER_TYPE = Pattern.compile(

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+  B12 管理员的写入（docs/architecture/21-b12-admin-framework.md 第 5 节；登记 WriteRegistry：admin / mac_admin / INSERT、UPDATE、DELETE）。
+  全部是单表语句，前置条件写进 WHERE，调用方检查匹配行数（可写数据源 useAffectedRows=false）。旧表 MyISAM，没有事务。
+-->
+<mapper namespace="com.maccms.backend.admin.infrastructure.AdminWriteMapper">
+
+    <!--
+      登录（旧 common/model/Admin.php:130-141）：上次登录时间/IP 先取旧值（MySQL 单表 UPDATE 按从左到右赋值），登录次数原子加一
+      （旧版是读出的值 + 1）；条件为查到的 admin_id、本次比较的 admin_pwd 与 admin_status=1（旧版按 admin_name + admin_pwd + 状态，
+      同名同密码的多行会一起被改，新版只改登录的那一行）。
+    -->
+    <update id="recordLogin">
+        UPDATE mac_admin
+        SET admin_last_login_time = admin_login_time,
+            admin_last_login_ip = admin_login_ip,
+            admin_login_time = #{now},
+            admin_login_ip = #{ip},
+            admin_login_num = admin_login_num + 1,
+            admin_random = #{random}
+        WHERE admin_id = #{adminId} AND admin_pwd = #{pwd} AND admin_status = 1
+    </update>
+
+    <!-- 新增（旧 Admin.php:68-77）：只写表单的四列，其余列取表默认值（旧版把整个 POST 交给 insert，见 21 文档 D-B12-9） -->
+    <insert id="insert">
+        INSERT INTO mac_admin (admin_name, admin_pwd, admin_status, admin_auth)
+        VALUES (#{name}, #{pwd}, #{status}, #{auth})
+    </insert>
+
+    <!-- 编辑（旧 Admin.php:56-66）：密码留空不改；表单没有状态字段时不改 -->
+    <update id="update">
+        UPDATE mac_admin
+        SET admin_name = #{name}, admin_auth = #{auth}
+        <if test="pwd != null">, admin_pwd = #{pwd}</if>
+        <if test="status != null">, admin_status = #{status}</if>
+        WHERE admin_id = #{adminId}
+    </update>
+
+    <!-- 删除（旧 admin/controller/Admin.php:99-120 → common/model/Admin.php:81-88） -->
+    <delete id="delete">
+        DELETE FROM mac_admin
+        WHERE admin_id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
+    </delete>
+
+    <!-- 状态（旧 admin/controller/Admin.php:122-140 → common/model/Admin.php:90-103），只允许 admin_status -->
+    <update id="setStatus">
+        UPDATE mac_admin
+        SET admin_status = #{status}
+        WHERE admin_id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
+    </update>
+</mapper>

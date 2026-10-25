@@ -290,6 +290,22 @@ class ModuleBoundaryTest {
                 }
                 continue;
             }
+            if ("admin".equals(module)) {
+                // 后台：不引用站点模块；application/infrastructure 不引用本模块的 web 与 config；web 不直接用 Mapper（经 application）
+                if ("site".equals(refModule)) {
+                    out.add("admin 不得引用 site：" + ref);
+                    continue;
+                }
+                if (refModule.equals("admin") && ("application".equals(layer) || "infrastructure".equals(layer))
+                        && ("web".equals(refLayer) || "config".equals(refLayer))) {
+                    out.add(layer + " 不得引用本模块 " + refLayer + "：" + ref);
+                    continue;
+                }
+                if (refModule.equals("admin") && "web".equals(layer) && "infrastructure".equals(refLayer)) {
+                    out.add("admin.web 不得直接引用 Mapper：" + ref);
+                    continue;
+                }
+            }
             if ("common".equals(module)) {
                 if (!"common".equals(refModule)) {
                     out.add("common 不得引用业务模块 " + ref);
