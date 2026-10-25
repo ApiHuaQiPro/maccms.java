@@ -117,7 +117,7 @@ class InteractionGoldenMySqlIT {
     private static final Set<String> CUSTOM_ROWS = Set.of("cs.forged-cookie", "cs.forged-id-only", "cs.mass-assign",
             "gs.forged-cookie", "gs.mass-assign", "gs.mass-assign-guest", "cs.ip-forwarded", "ref.update",
             "ref.referer-contains-host", "ref.visit-other-ip", "ref.visit-yesterday", "ref.visit-member-row",
-            "ref.visit-limit-config", "ref.read");
+            "ref.visit-limit-config", "ref.read", "ref.prev-week", "ref.prev-month");
     /** 非 ajax 的提交：新版返回提示页（D-B11-10），正文含该提示；写入与 cookie 与旧版相同。 */
     private static final Map<String, String> JAVA_PAGE = Map.of("cs.non-ajax", "感谢你的留言！",
             "gs.non-ajax", "感谢你的留言！", "vc.bad-type-non-ajax", "参数错误", "vc.wrong-non-ajax", "验证码错误",
@@ -284,6 +284,7 @@ class InteractionGoldenMySqlIT {
         Map<String, JsonNode> by73 = new LinkedHashMap<>();
         load(GOLDEN73).get("cases").forEach(c -> by73.put(c.get("id").asString(), c));
         int compared = 0;
+        List<String> failures = new ArrayList<>();
         for (JsonNode c : golden.get("cases")) {
             String id = c.get("id").asString();
             if (SKIPPED.contains(id)) {
@@ -297,10 +298,17 @@ class InteractionGoldenMySqlIT {
             } else if (!id.startsWith("provide.") && by73.containsKey(id)) {
                 expected = c.get("status").asInt() >= 500 && by73.get(id).get("status").asInt() < 500 ? by73.get(id) : c;
             }
-            replay(golden.get("php").asString() + " " + id, golden, c, expected);
+            try {
+                replay(golden.get("php").asString() + " " + id, golden, c, expected);
+            } catch (AssertionError e) {
+                // 收集全部不一致再一起报告，便于一次看清
+                failures.add(e.getMessage().strip());
+            }
             compared++;
         }
-        System.out.println("[mysql-it] B11 http golden " + golden.get("php").asString() + " cases compared: " + compared);
+        System.out.println("[mysql-it] B11 http golden " + golden.get("php").asString() + " cases compared: " + compared
+                + ", mismatched: " + failures.size());
+        assertThat(failures).as("与黄金不一致的用例").isEmpty();
         assertThat(compared).isGreaterThan(250);
     }
 
@@ -380,8 +388,7 @@ class InteractionGoldenMySqlIT {
         assertThat(r.status()).as(what + " status").isEqualTo(expected.get("status").asInt());
         String goldenBody = new String(Base64.getDecoder().decode(expected.get("body").asString()), StandardCharsets.UTF_8);
         assertThat(r.body()).as(what + " body").isEqualTo(goldenBody);
-        assertThat(normalizeCookies(r.setCookies())).as(what + " cookies")
-                .isEqualTo(normalizeCookies(goldenCookies(expected)));
+        assertCookies(what, r.setCookies(), expected, started);
         if (CUSTOM_ROWS.contains(id)) {
             assertThat(rows).as(what + " rows").isEqualTo(rowsExpectation(id, expected, started));
         } else {
@@ -469,6 +476,9 @@ class InteractionGoldenMySqlIT {
         for (String resource : List.of(GOLDEN80, GOLDEN73)) {
             JsonNode golden = load(resource);
             int compared = 0;
+            // 各用例接着上一个用例的缓存行跑；黄金里 php-cgi 写入的时刻可能落到下一秒，新版的时钟固定在各用例的 started，
+            // 所以"现在"按整段的时间窗规范化
+            long sectionStart = golden.get("search").get(0).get("started").asLong();
             try (Connection c = admin(dbName); Statement st = c.createStatement()) {
                 st.execute("DELETE FROM mac_vod_search");
             }
@@ -495,8 +505,8 @@ class InteractionGoldenMySqlIT {
                 List<Long> expected = new ArrayList<>();
                 s.get("ids").forEach(n -> expected.add(n.asLong()));
                 assertThat(ids).as(resource + " " + label + " ids").isEqualTo(expected);
-                assertThat(searchRows(s.get("started").asLong())).as(resource + " " + label + " mac_vod_search")
-                        .isEqualTo(goldenSearchRows(s));
+                assertThat(readRows(sectionStart, s.get("after").asLong()).get("mac_vod_search"))
+                        .as(resource + " " + label + " mac_vod_search").isEqualTo(goldenSearchRows(s, sectionStart));
                 compared++;
             }
             assertThat(compared).isEqualTo(golden.get("search").size() - 1);
@@ -746,6 +756,43 @@ class InteractionGoldenMySqlIT {
         return out;
     }
 
+    private static final DateTimeFormatter COOKIE_DATE = DateTimeFormatter.ofPattern("EEE, dd-MMM-yyyy HH:mm:ss 'GMT'",
+            java.util.Locale.ROOT);
+    private static final java.util.regex.Pattern COOKIE_EXPIRES = java.util.regex.Pattern.compile("; expires=([^;]*)");
+    private static final java.util.regex.Pattern COOKIE_MAX_AGE = java.util.regex.Pattern.compile("; Max-Age=(\\d+)");
+
+    /**
+     * 旧版的到期时刻是 {@code $_SERVER['REQUEST_TIME'] + 有效期}（ThinkPHP {@code Cookie::set}），Max-Age 却是 PHP 发送头时按
+     * {@code time()} 现算的，黄金请求本身慢（php-cgi 冷启动）时会少几秒。新版的时钟固定在 started，Max-Age 就是有效期。
+     * 所以：未过期的 cookie 的 Max-Age 只要落在黄金的 [到期 − after, 到期 − started] 内即可（REQUEST_TIME 在这两个时刻之间），
+     * 其余部分（名、值、path，以及已过期 cookie 的 Max-Age=0）逐字比较。
+     */
+    private static void assertCookies(String what, List<String> actual, JsonNode expected, long started) {
+        List<String> golden = goldenCookies(expected);
+        long after = expected.get("after").asLong();
+        List<String> javaCookies = normalizeCookies(actual);
+        assertThat(javaCookies.size()).as(what + " cookies " + javaCookies + " vs " + golden).isEqualTo(golden.size());
+        for (int i = 0; i < golden.size(); i++) {
+            String g = golden.get(i);
+            String j = javaCookies.get(i);
+            java.util.regex.Matcher exp = COOKIE_EXPIRES.matcher(g);
+            java.util.regex.Matcher gAge = COOKIE_MAX_AGE.matcher(g);
+            java.util.regex.Matcher jAge = COOKIE_MAX_AGE.matcher(j);
+            if (exp.find() && gAge.find() && jAge.find()) {
+                long expiresAt = LocalDateTime.parse(exp.group(1), COOKIE_DATE).toEpochSecond(ZoneOffset.UTC);
+                if (expiresAt >= started) {
+                    long age = Long.parseLong(jAge.group(1));
+                    assertThat(age).as(what + " cookie Max-Age " + j + " vs " + g)
+                            .isBetween(Math.max(0, expiresAt - after), expiresAt - started);
+                    g = gAge.replaceFirst("; Max-Age=~");
+                    j = jAge.replaceFirst("; Max-Age=~");
+                }
+            }
+            assertThat(j.replaceAll("; expires=[^;]*", "")).as(what + " cookies")
+                    .isEqualTo(g.replaceAll("; expires=[^;]*", ""));
+        }
+    }
+
     /** Set-Cookie 去掉 expires 日期（两边各按自己的"现在"计算），其余（名、值、Max-Age、path）逐字比较。 */
     private static List<String> normalizeCookies(List<String> cookies) {
         return cookies.stream().filter(x -> !x.startsWith("PHPSESSID="))
@@ -837,12 +884,7 @@ class InteractionGoldenMySqlIT {
         return row;
     }
 
-    private static List<Map<String, String>> searchRows(long now) throws SQLException {
-        return readRows(now, now).get("mac_vod_search");
-    }
-
-    private static List<Map<String, String>> goldenSearchRows(JsonNode s) {
-        long from = s.get("started").asLong();
+    private static List<Map<String, String>> goldenSearchRows(JsonNode s, long from) {
         long to = s.get("after").asLong();
         List<Map<String, String>> rows = new ArrayList<>();
         for (JsonNode r : s.get("rows")) {
