@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+  B11 内容计数的写入（docs/architecture/20-b11-comment-gbook-counters.md 第 5 节；登记 WriteRegistry：content / mac_vod、mac_art、mac_topic、
+  mac_actor、mac_role、mac_website UPDATE）。全部是单表 UPDATE，数值变化用原子表达式；旧版先读出计数、在 PHP 里算好再整体写回
+  （application/index/controller/Ajax.php:172-203、255-286、375-379），并发时会丢计数，新版不会。
+  MySQL 单表 UPDATE 的 SET 从左到右求值，后面的表达式看到前面已赋的新值：所以日/周/月的判定都写在 *_time_hits 改写之前，
+  评分的平均分用的是本条语句里已经加过的 score_all 与 score_num。列越界（mediumint unsigned、decimal(3,1) unsigned）时严格模式拒绝整条语句。
+-->
+<mapper namespace="com.maccms.backend.content.infrastructure.ContentCounterWriteMapper">
+
+    <!-- vod 点击（Ajax.php:172-203）：月/周/日落在区间内 +1，否则置 1；总点击 +1；最后写计数时间 -->
+    <update id="hitVod">
+        UPDATE mac_vod
+        SET vod_hits_month = IF(vod_time_hits &gt;= #{p.monthStart} AND vod_time_hits &lt; #{p.monthEnd}, vod_hits_month + 1, 1),
+            vod_hits_week = IF(vod_time_hits &gt;= #{p.weekStart} AND vod_time_hits &lt;= #{p.weekEnd}, vod_hits_week + 1, 1),
+            vod_hits_day = IF(vod_time_hits &gt;= #{p.dayStart} AND vod_time_hits &lt; #{p.dayEnd}, vod_hits_day + 1, 1),
+            vod_hits = vod_hits + 1,
+            vod_time_hits = #{p.now}
+        WHERE vod_id = #{id}
+    </update>
+
+    <!-- art 点击（Ajax.php:172-203）：月/周/日落在区间内 +1，否则置 1；总点击 +1；最后写计数时间 -->
+    <update id="hitArt">
+        UPDATE mac_art
+        SET art_hits_month = IF(art_time_hits &gt;= #{p.monthStart} AND art_time_hits &lt; #{p.monthEnd}, art_hits_month + 1, 1),
+            art_hits_week = IF(art_time_hits &gt;= #{p.weekStart} AND art_time_hits &lt;= #{p.weekEnd}, art_hits_week + 1, 1),
+            art_hits_day = IF(art_time_hits &gt;= #{p.dayStart} AND art_time_hits &lt; #{p.dayEnd}, art_hits_day + 1, 1),
+            art_hits = art_hits + 1,
+            art_time_hits = #{p.now}
+        WHERE art_id = #{id}
+    </update>
+
+    <!-- topic 点击（Ajax.php:172-203）：月/周/日落在区间内 +1，否则置 1；总点击 +1；最后写计数时间 -->
+    <update id="hitTopic">
+        UPDATE mac_topic
+        SET topic_hits_month = IF(topic_time_hits &gt;= #{p.monthStart} AND topic_time_hits &lt; #{p.monthEnd}, topic_hits_month + 1, 1),
+            topic_hits_week = IF(topic_time_hits &gt;= #{p.weekStart} AND topic_time_hits &lt;= #{p.weekEnd}, topic_hits_week + 1, 1),
+            topic_hits_day = IF(topic_time_hits &gt;= #{p.dayStart} AND topic_time_hits &lt; #{p.dayEnd}, topic_hits_day + 1, 1),
+            topic_hits = topic_hits + 1,
+            topic_time_hits = #{p.now}
+        WHERE topic_id = #{id}
+    </update>
+
+    <!-- actor 点击（Ajax.php:172-203）：月/周/日落在区间内 +1，否则置 1；总点击 +1；最后写计数时间 -->
+    <update id="hitActor">
+        UPDATE mac_actor
+        SET actor_hits_month = IF(actor_time_hits &gt;= #{p.monthStart} AND actor_time_hits &lt; #{p.monthEnd}, actor_hits_month + 1, 1),
+            actor_hits_week = IF(actor_time_hits &gt;= #{p.weekStart} AND actor_time_hits &lt;= #{p.weekEnd}, actor_hits_week + 1, 1),
+            actor_hits_day = IF(actor_time_hits &gt;= #{p.dayStart} AND actor_time_hits &lt; #{p.dayEnd}, actor_hits_day + 1, 1),
+            actor_hits = actor_hits + 1,
+            actor_time_hits = #{p.now}
+        WHERE actor_id = #{id}
+    </update>
+
+    <!-- role 点击（Ajax.php:172-203）：月/周/日落在区间内 +1，否则置 1；总点击 +1；最后写计数时间 -->
+    <update id="hitRole">
+        UPDATE mac_role
+        SET role_hits_month = IF(role_time_hits &gt;= #{p.monthStart} AND role_time_hits &lt; #{p.monthEnd}, role_hits_month + 1, 1),
+            role_hits_week = IF(role_time_hits &gt;= #{p.weekStart} AND role_time_hits &lt;= #{p.weekEnd}, role_hits_week + 1, 1),
+            role_hits_day = IF(role_time_hits &gt;= #{p.dayStart} AND role_time_hits &lt; #{p.dayEnd}, role_hits_day + 1, 1),
+            role_hits = role_hits + 1,
+            role_time_hits = #{p.now}
+        WHERE role_id = #{id}
+    </update>
+
+    <!-- website 点击（Ajax.php:172-203）：月/周/日落在区间内 +1，否则置 1；总点击 +1；最后写计数时间 -->
+    <update id="hitWebsite">
+        UPDATE mac_website
+        SET website_hits_month = IF(website_time_hits &gt;= #{p.monthStart} AND website_time_hits &lt; #{p.monthEnd}, website_hits_month + 1, 1),
+            website_hits_week = IF(website_time_hits &gt;= #{p.weekStart} AND website_time_hits &lt;= #{p.weekEnd}, website_hits_week + 1, 1),
+            website_hits_day = IF(website_time_hits &gt;= #{p.dayStart} AND website_time_hits &lt; #{p.dayEnd}, website_hits_day + 1, 1),
+            website_hits = website_hits + 1,
+            website_time_hits = #{p.now}
+        WHERE website_id = #{id}
+    </update>
+
+    <!-- vod 顶踩（Ajax.php:322-327 的 setInc）：up 为真时顶 +1，否则踩 +1 -->
+    <update id="diggVod">
+        UPDATE mac_vod
+        SET vod_up = vod_up + IF(#{up}, 1, 0), vod_down = vod_down + IF(#{up}, 0, 1)
+        WHERE vod_id = #{id}
+    </update>
+
+    <!-- art 顶踩（Ajax.php:322-327 的 setInc）：up 为真时顶 +1，否则踩 +1 -->
+    <update id="diggArt">
+        UPDATE mac_art
+        SET art_up = art_up + IF(#{up}, 1, 0), art_down = art_down + IF(#{up}, 0, 1)
+        WHERE art_id = #{id}
+    </update>
+
+    <!-- topic 顶踩（Ajax.php:322-327 的 setInc）：up 为真时顶 +1，否则踩 +1 -->
+    <update id="diggTopic">
+        UPDATE mac_topic
+        SET topic_up = topic_up + IF(#{up}, 1, 0), topic_down = topic_down + IF(#{up}, 0, 1)
+        WHERE topic_id = #{id}
+    </update>
+
+    <!-- actor 顶踩（Ajax.php:322-327 的 setInc）：up 为真时顶 +1，否则踩 +1 -->
+    <update id="diggActor">
+        UPDATE mac_actor
+        SET actor_up = actor_up + IF(#{up}, 1, 0), actor_down = actor_down + IF(#{up}, 0, 1)
+        WHERE actor_id = #{id}
+    </update>
+
+    <!-- role 顶踩（Ajax.php:322-327 的 setInc）：up 为真时顶 +1，否则踩 +1 -->
+    <update id="diggRole">
+        UPDATE mac_role
+        SET role_up = role_up + IF(#{up}, 1, 0), role_down = role_down + IF(#{up}, 0, 1)
+        WHERE role_id = #{id}
+    </update>
+
+    <!-- website 顶踩（Ajax.php:322-327 的 setInc）：up 为真时顶 +1，否则踩 +1 -->
+    <update id="diggWebsite">
+        UPDATE mac_website
+        SET website_up = website_up + IF(#{up}, 1, 0), website_down = website_down + IF(#{up}, 0, 1)
+        WHERE website_id = #{id}
+    </update>
+
+    <!--
+      vod 评分（Ajax.php:375-379）：次数 +1、总分 +score，平均分 = number_format(总分 / 次数, 1)。number_format 按四舍五入（远离 0）取一位；
+      总分与次数都是非负整数，(总分 × 20 + 次数) DIV (次数 × 2) 即"总分 / 次数 × 10"四舍五入后的整数，再除以 10，与 PHP 结果相同
+      （20 文档第 5.3 节）。
+    -->
+    <update id="scoreVod">
+        UPDATE mac_vod
+        SET vod_score_num = vod_score_num + 1,
+            vod_score_all = vod_score_all + #{score},
+            vod_score = (vod_score_all * 20 + vod_score_num) DIV (vod_score_num * 2) / 10
+        WHERE vod_id = #{id}
+    </update>
+
+    <!--
+      art 评分（Ajax.php:375-379）：次数 +1、总分 +score，平均分 = number_format(总分 / 次数, 1)。number_format 按四舍五入（远离 0）取一位；
+      总分与次数都是非负整数，(总分 × 20 + 次数) DIV (次数 × 2) 即"总分 / 次数 × 10"四舍五入后的整数，再除以 10，与 PHP 结果相同
+      （20 文档第 5.3 节）。
+    -->
+    <update id="scoreArt">
+        UPDATE mac_art
+        SET art_score_num = art_score_num + 1,
+            art_score_all = art_score_all + #{score},
+            art_score = (art_score_all * 20 + art_score_num) DIV (art_score_num * 2) / 10
+        WHERE art_id = #{id}
+    </update>
+
+    <!--
+      topic 评分（Ajax.php:375-379）：次数 +1、总分 +score，平均分 = number_format(总分 / 次数, 1)。number_format 按四舍五入（远离 0）取一位；
+      总分与次数都是非负整数，(总分 × 20 + 次数) DIV (次数 × 2) 即"总分 / 次数 × 10"四舍五入后的整数，再除以 10，与 PHP 结果相同
+      （20 文档第 5.3 节）。
+    -->
+    <update id="scoreTopic">
+        UPDATE mac_topic
+        SET topic_score_num = topic_score_num + 1,
+            topic_score_all = topic_score_all + #{score},
+            topic_score = (topic_score_all * 20 + topic_score_num) DIV (topic_score_num * 2) / 10
+        WHERE topic_id = #{id}
+    </update>
+
+    <!--
+      actor 评分（Ajax.php:375-379）：次数 +1、总分 +score，平均分 = number_format(总分 / 次数, 1)。number_format 按四舍五入（远离 0）取一位；
+      总分与次数都是非负整数，(总分 × 20 + 次数) DIV (次数 × 2) 即"总分 / 次数 × 10"四舍五入后的整数，再除以 10，与 PHP 结果相同
+      （20 文档第 5.3 节）。
+    -->
+    <update id="scoreActor">
+        UPDATE mac_actor
+        SET actor_score_num = actor_score_num + 1,
+            actor_score_all = actor_score_all + #{score},
+            actor_score = (actor_score_all * 20 + actor_score_num) DIV (actor_score_num * 2) / 10
+        WHERE actor_id = #{id}
+    </update>
+
+    <!--
+      role 评分（Ajax.php:375-379）：次数 +1、总分 +score，平均分 = number_format(总分 / 次数, 1)。number_format 按四舍五入（远离 0）取一位；
+      总分与次数都是非负整数，(总分 × 20 + 次数) DIV (次数 × 2) 即"总分 / 次数 × 10"四舍五入后的整数，再除以 10，与 PHP 结果相同
+      （20 文档第 5.3 节）。
+    -->
+    <update id="scoreRole">
+        UPDATE mac_role
+        SET role_score_num = role_score_num + 1,
+            role_score_all = role_score_all + #{score},
+            role_score = (role_score_all * 20 + role_score_num) DIV (role_score_num * 2) / 10
+        WHERE role_id = #{id}
+    </update>
+
+    <!--
+      website 评分（Ajax.php:375-379）：次数 +1、总分 +score，平均分 = number_format(总分 / 次数, 1)。number_format 按四舍五入（远离 0）取一位；
+      总分与次数都是非负整数，(总分 × 20 + 次数) DIV (次数 × 2) 即"总分 / 次数 × 10"四舍五入后的整数，再除以 10，与 PHP 结果相同
+      （20 文档第 5.3 节）。
+    -->
+    <update id="scoreWebsite">
+        UPDATE mac_website
+        SET website_score_num = website_score_num + 1,
+            website_score_all = website_score_all + #{score},
+            website_score = (website_score_all * 20 + website_score_num) DIV (website_score_num * 2) / 10
+        WHERE website_id = #{id}
+    </update>
+
+    <!-- 网址来路（Ajax.php:255-286）：规则同点击；条件同 ContentCounterMapper.selectRefererSite（不排序、不限行数：匹配的网址各自计数） -->
+    <update id="refererWebsite">
+        UPDATE mac_website
+        SET website_referer_month = IF(website_time_referer &gt;= #{p.monthStart} AND website_time_referer &lt; #{p.monthEnd}, website_referer_month + 1, 1),
+            website_referer_week = IF(website_time_referer &gt;= #{p.weekStart} AND website_time_referer &lt;= #{p.weekEnd}, website_referer_week + 1, 1),
+            website_referer_day = IF(website_time_referer &gt;= #{p.dayStart} AND website_time_referer &lt; #{p.dayEnd}, website_referer_day + 1, 1),
+            website_referer = website_referer + 1,
+            website_time_referer = #{p.now}
+        WHERE website_jumpurl LIKE #{httpPattern} ESCAPE '!' OR website_jumpurl LIKE #{httpsPattern} ESCAPE '!'
+    </update>
+
+    <!-- Provide detail_inc_hits（api/controller/Provide.php:142-150，Vod::fieldData 的 ['inc', 1]）：只加总点击数，不改日/周/月与计数时间 -->
+    <update id="provideHitVod">
+        UPDATE mac_vod SET vod_hits = vod_hits + 1 WHERE vod_id = #{id}
+    </update>
+</mapper>

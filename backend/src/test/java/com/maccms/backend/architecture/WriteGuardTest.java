@@ -136,7 +136,11 @@ class WriteGuardTest {
                         "member mac_ulog INSERT B10", "member mac_ulog UPDATE B10", "member mac_ulog DELETE B10",
                         "member mac_plog INSERT B10", "member mac_plog DELETE B10", "member mac_card UPDATE B10",
                         "member mac_cash INSERT B10", "member mac_cash DELETE B10", "member mac_order INSERT B10",
-                        "member mac_visit INSERT B10");
+                        "member mac_visit INSERT B10", "content mac_vod UPDATE B11", "content mac_art UPDATE B11",
+                        "content mac_topic UPDATE B11", "content mac_actor UPDATE B11", "content mac_role UPDATE B11",
+                        "content mac_website UPDATE B11", "content mac_vod_search INSERT B11",
+                        "content mac_vod_search UPDATE B11", "comment mac_comment INSERT B11",
+                        "comment mac_comment UPDATE B11", "comment mac_gbook INSERT B11");
     }
 
     @Test

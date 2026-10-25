@@ -24,6 +24,10 @@ public final class WriteRegistry {
      * <li>B10（MACC-34，19 文档第 6.1 节）：记录与购买（mac_ulog）、积分流水（mac_plog）、卡密认领（mac_card）、提现（mac_cash）、
      * 本地建单（mac_order）、推广访问（mac_visit）；mac_user 的积分、冻结、升级与批量到期降级沿用 B09 已登记的
      * {@code member/mac_user/UPDATE}。</li>
+     * <li>B11（MACC-35，20 文档第 10 节）：内容计数（点击、顶踩、评分、网址来路、Provide 的 detail_inc_hits）只改六张内容表的计数列
+     * （content / UPDATE）；视频搜索缓存（content / mac_vod_search INSERT、UPDATE）；评论发表、举报与顶踩（comment / mac_comment
+     * INSERT、UPDATE）；留言发表（comment / mac_gbook INSERT）。ajax/referer 的来路访问记录沿用 B10 已登记的
+     * {@code member/mac_visit/INSERT}（同一条条件插入，{@code user_id = 0}）。</li>
      * </ul>
      */
     static final List<WritePermission> REGISTERED = List.of(
@@ -38,7 +42,18 @@ public final class WriteRegistry {
             new WritePermission("member", "mac_cash", WriteOperation.INSERT, "B10"),
             new WritePermission("member", "mac_cash", WriteOperation.DELETE, "B10"),
             new WritePermission("member", "mac_order", WriteOperation.INSERT, "B10"),
-            new WritePermission("member", "mac_visit", WriteOperation.INSERT, "B10"));
+            new WritePermission("member", "mac_visit", WriteOperation.INSERT, "B10"),
+            new WritePermission("content", "mac_vod", WriteOperation.UPDATE, "B11"),
+            new WritePermission("content", "mac_art", WriteOperation.UPDATE, "B11"),
+            new WritePermission("content", "mac_topic", WriteOperation.UPDATE, "B11"),
+            new WritePermission("content", "mac_actor", WriteOperation.UPDATE, "B11"),
+            new WritePermission("content", "mac_role", WriteOperation.UPDATE, "B11"),
+            new WritePermission("content", "mac_website", WriteOperation.UPDATE, "B11"),
+            new WritePermission("content", "mac_vod_search", WriteOperation.INSERT, "B11"),
+            new WritePermission("content", "mac_vod_search", WriteOperation.UPDATE, "B11"),
+            new WritePermission("comment", "mac_comment", WriteOperation.INSERT, "B11"),
+            new WritePermission("comment", "mac_comment", WriteOperation.UPDATE, "B11"),
+            new WritePermission("comment", "mac_gbook", WriteOperation.INSERT, "B11"));
 
     /** 写 Mapper 的全限定名：{@code com.maccms.backend.<module>.infrastructure[.子包].<类型>}。 */
     private static final Pattern MAPPER_TYPE = Pattern.compile(

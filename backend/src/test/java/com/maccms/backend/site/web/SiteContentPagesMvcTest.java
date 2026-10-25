@@ -70,10 +70,12 @@ class SiteContentPagesMvcTest {
     static final String TYPE1 = "/index.php/vod/type/id/1.html";
     static final String TYPE1_P2 = "/index.php/vod/type/id/1/page/2.html";
     static final String DETAIL9 = "/index.php/vod/detail/id/9.html";
-    /** 页面里不得出现的旧 PHP 写入口与带副作用的端点（03 方案 6.2）。 */
-    static final List<String> FORBIDDEN_LINKS = List.of("ajax/hits", "ajax/digg", "ajax/score", "ajax/pwd",
-            "ajax/referer", "ajax/suggest", "user/ajax_ulog", "user/ajax_buy_popedom", "user/visit", "vod/play",
-            "vod/player", "vod/down", "comment/", "home.js");
+    /**
+     * 页面里不得出现的旧 PHP 写入口与带副作用的端点（03 方案 6.2）。B11 起点击、顶踩、评分与评论由新版承接，详情页的互动区有意链接
+     * {@code ajax/hits}、{@code ajax/digg}、{@code ajax/score} 与 {@code comment/index}（20 文档第 8 节），不再列入。
+     */
+    static final List<String> FORBIDDEN_LINKS = List.of("ajax/pwd", "ajax/referer", "ajax/suggest", "user/ajax_ulog",
+            "user/ajax_buy_popedom", "user/visit", "vod/play", "vod/player", "vod/down", "home.js");
 
     @Autowired
     MockMvc mvc;
@@ -380,6 +382,15 @@ class SiteContentPagesMvcTest {
                 .containsExactly("/index.php/vod/detail/id/10.html");
         assertThat(html).doesNotContain("#ff0000").doesNotContain("播放");
         verify(content).listVideos(new VideoListQuery(6, VideoSort.TIME, true, 1, 7));
+        // B11 互动区（20 文档第 8 节）：顶、踩、评分是 POST 表单，评论是链接；点击计数开关默认关闭，不输出计数图片
+        Element panel = doc.selectFirst("section.interaction-panel");
+        assertThat(panel.select("form[method=post][action=/index.php/ajax/digg.html]")).hasSize(2);
+        assertThat(panel.select("form[method=post][action=/index.php/ajax/score.html] select[name=score] option"))
+                .hasSize(10);
+        assertThat(panel.select("input[type=hidden][name=id]").eachAttr("value")).containsOnly("9");
+        assertThat(panel.select("a").eachAttr("href")).containsExactly("/index.php/comment/index/mid/1/rid/9.html");
+        assertThat(panel.select("img")).isEmpty();
+        assertThat(html).doesNotContain("ajax/hits");
     }
 
     @Test

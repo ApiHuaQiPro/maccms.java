@@ -39,37 +39,44 @@ public class MemberFinanceConfiguration {
 
     @Bean
     MemberRecordService memberRecordService(MemberFinanceMapper reader, ObjectProvider<MemberFinanceWriteMapper> writer,
-                                            ContentLookupService content) {
-        return new MemberRecordService(reader, writer.getIfAvailable(), content, Clock.systemUTC());
+                                            ContentLookupService content, ObjectProvider<Clock> clock) {
+        return new MemberRecordService(reader, writer.getIfAvailable(), content, clock(clock));
     }
 
     @Bean
     MemberPurchaseService memberPurchaseService(MemberFinanceMapper reader,
                                                 ObjectProvider<MemberFinanceWriteMapper> writer,
-                                                ContentLookupService content, MemberFinanceSettings settings) {
-        return new MemberPurchaseService(reader, writer.getIfAvailable(), content, settings, Clock.systemUTC());
+                                                ContentLookupService content, MemberFinanceSettings settings,
+                                                ObjectProvider<Clock> clock) {
+        return new MemberPurchaseService(reader, writer.getIfAvailable(), content, settings, clock(clock));
     }
 
     @Bean
     MemberWalletService memberWalletService(MemberFinanceMapper reader, ObjectProvider<MemberFinanceWriteMapper> writer,
-                                            MemberFinanceSettings settings) {
-        return new MemberWalletService(reader, writer.getIfAvailable(), settings, Clock.systemUTC(), new SecureRandom());
+                                            MemberFinanceSettings settings, ObjectProvider<Clock> clock) {
+        return new MemberWalletService(reader, writer.getIfAvailable(), settings, clock(clock), new SecureRandom());
     }
 
     @Bean
     MemberReferralService memberReferralService(ObjectProvider<MemberFinanceWriteMapper> writer,
-                                                MemberFinanceSettings settings) {
-        return new MemberReferralService(writer.getIfAvailable(), settings, Clock.systemUTC());
+                                                MemberFinanceSettings settings, ObjectProvider<Clock> clock) {
+        return new MemberReferralService(writer.getIfAvailable(), settings, clock(clock));
     }
 
     /** {@code maccms.member.expiry-sweep-minutes}（部署参数，默认 0 = 不定时执行，第 4.14 节）。 */
     @Bean
     MemberExpiryService memberExpiryService(ObjectProvider<MemberFinanceWriteMapper> writer,
-                                            @Value("${maccms.member.expiry-sweep-minutes:0}") long minutes) {
+                                            @Value("${maccms.member.expiry-sweep-minutes:0}") long minutes,
+                                            ObjectProvider<Clock> clock) {
         if (minutes < 0 || minutes > 7 * 24 * 60) {
             throw new IllegalStateException("maccms.member.expiry-sweep-minutes 须为 0～10080");
         }
-        return new MemberExpiryService(writer.getIfAvailable(), Clock.systemUTC(),
+        return new MemberExpiryService(writer.getIfAvailable(), clock(clock),
                 minutes == 0 ? null : Duration.ofMinutes(minutes));
+    }
+
+    /** 容器里的 {@link Clock}（B11 起供集成测试把"现在"固定到黄金样本的时刻）；没有时为系统时钟。 */
+    private static Clock clock(ObjectProvider<Clock> clock) {
+        return clock.getIfAvailable(Clock::systemUTC);
     }
 }

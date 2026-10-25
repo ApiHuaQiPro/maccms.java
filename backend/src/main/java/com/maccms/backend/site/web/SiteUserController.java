@@ -1,5 +1,6 @@
 package com.maccms.backend.site.web;
 
+import com.maccms.backend.comment.application.CommentService;
 import com.maccms.backend.common.captcha.Captchas;
 import com.maccms.backend.common.clientip.ClientIpResolver;
 import com.maccms.backend.common.web.ApiException;
@@ -75,7 +76,8 @@ import org.springframework.web.multipart.MultipartHttpServletRequest;
  * 解析、按字节读取参数、验证码会话、页面与 JSON 输出、cookie。
  *
  * <p>地址：{@code /index.php/user/<操作>[.html][/键/值…]}（{@code rewrite} 打开时另认去掉 {@code /index.php} 的形态）。B10 的会员权益与
- * 财务入口在登录态检查之后交给 {@link SiteMemberFinance}（19 文档）。未实现的操作（B11/B25/B26）返回 404；但与旧版一样，先按旧控制器构造函数的
+ * 财务入口在登录态检查之后交给 {@link SiteMemberFinance}（19 文档），B11 的"我的评论/留言"交给 {@link SiteMemberBoards}（20 文档）。
+ * 未实现的操作（B25/B26）返回 404；但与旧版一样，先按旧控制器构造函数的
  * 白名单检查登录态（{@code User.php:19-25}），未登录时先给"未登录"。
  */
 @Controller
@@ -102,6 +104,8 @@ public class SiteUserController {
     private final ObjectProvider<MemberAccountService> accounts;
     /** B10 的入口（会员权益与财务）；没有对应服务（只装配了部分 Bean 的测试）时为 null，这些入口按 503。 */
     private final SiteMemberFinance finance;
+    /** B11 的"我的评论/留言"；没有评论服务时为 null，这两个入口按 404。 */
+    private SiteMemberBoards boards;
 
     public SiteUserController(SitePages pages, LegacyUrlBuilder urls, SiteHtmlRenderer renderer, SiteSessions sessions,
                               ClientIpResolver clientIp, ObjectProvider<MemberAccountService> accounts) {
@@ -113,10 +117,13 @@ public class SiteUserController {
                               ClientIpResolver clientIp, ObjectProvider<MemberAccountService> accounts,
                               ObjectProvider<ImageUrlNormalizer> images, ObjectProvider<ContentLookupService> content,
                               ObjectProvider<MemberRecordService> records, ObjectProvider<MemberPurchaseService> purchases,
-                              ObjectProvider<MemberWalletService> wallet, ObjectProvider<MemberReferralService> referral) {
+                              ObjectProvider<MemberWalletService> wallet, ObjectProvider<MemberReferralService> referral,
+                              ObjectProvider<CommentService> comments) {
         this(pages, urls, renderer, sessions, clientIp, accounts, finance(pages, urls, renderer, clientIp,
                 images.getIfAvailable(), content.getIfAvailable(), records.getIfAvailable(),
                 purchases.getIfAvailable(), wallet.getIfAvailable(), referral.getIfAvailable()));
+        CommentService c = comments.getIfAvailable();
+        this.boards = c == null ? null : new SiteMemberBoards(pages, urls, renderer, c);
     }
 
     SiteUserController(SitePages pages, LegacyUrlBuilder urls, SiteHtmlRenderer renderer, SiteSessions sessions,
@@ -209,6 +216,12 @@ public class SiteUserController {
             case "findpass" -> post ? json(account.findpass(params, captcha(request, params))) : findpassPage();
             case "findpass_msg" -> post ? json(account.sendMessage(params, 2)) : findpassMsgPage(params);
             case "findpass_reset" -> post ? json(account.findpassReset(params)) : emptyBody();
+            case "comment", "gbook" -> {
+                if (boards == null) {
+                    throw notFound();
+                }
+                yield boards.handle(route.action(), member.state(), params);
+            }
             default -> throw notFound();
         };
     }
@@ -262,6 +275,12 @@ public class SiteUserController {
                     new NavLink("我的订单", link("orders"), false), new NavLink("充值卡记录", link("cards"), false));
             promotion = List.of(new MetadataItem("推广注册", finance.promotionUrl("reg", p.userId())),
                     new MetadataItem("推广访问", finance.promotionUrl("visit", p.userId())));
+        }
+        if (boards != null) {
+            List<NavLink> links = new ArrayList<>(financeLinks);
+            links.add(new NavLink("我的评论", link("comment"), false));
+            links.add(new NavLink("我的留言", link("gbook"), false));
+            financeLinks = links;
         }
         UserIndexPage page = new UserIndexPage(shell, p, avatar(p), link("info"), link("portrait"), link("logout"),
                 financeLinks, promotion);

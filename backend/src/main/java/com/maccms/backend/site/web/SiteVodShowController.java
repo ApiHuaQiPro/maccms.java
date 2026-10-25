@@ -36,10 +36,13 @@ public class SiteVodShowController {
     private final LegacyUrlParser parser;
     private final SearchPages pages;
     private final SiteFeatures features;
+    private final org.springframework.beans.factory.ObjectProvider<SiteVerifyGate> gate;
 
     public SiteVodShowController(SiteHtmlRenderer renderer, SitePages sitePages, LegacyUrlBuilder urls,
                                  LegacyUrlParser parser, ImageUrlNormalizer images, RichTextCache richText,
-                                 ContentReadService content, SiteFeatures features) {
+                                 ContentReadService content, SiteFeatures features,
+                                 org.springframework.beans.factory.ObjectProvider<SiteVerifyGate> gate) {
+        this.gate = gate;
         this.renderer = renderer;
         this.parser = parser;
         this.features = features;
@@ -58,6 +61,17 @@ public class SiteVodShowController {
         boolean ajax = rawPath.contains("/ajax_show/");
         if (ajax && !features.ajaxPage()) {
             throw new ApiException(ErrorCode.NOT_FOUND, "页面不存在");
+        }
+        // 旧 check_show 的验证码（Base.php:35-42，B11）：ajax_show 不验证
+        if (features.showNeedsVerify(ajax)) {
+            SiteVerifyGate g = gate.getIfAvailable();
+            if (g == null) {
+                throw new ApiException(ErrorCode.NOT_FOUND, "页面不存在");
+            }
+            java.util.Optional<ResponseEntity<String>> verify = g.check(request, "show");
+            if (verify.isPresent()) {
+                return verify.get();
+            }
         }
         SearchPage page;
         HttpStatus status;

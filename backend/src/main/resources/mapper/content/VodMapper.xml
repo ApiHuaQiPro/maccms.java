@@ -52,6 +52,8 @@
         <if test="filter.namePatterns != null">AND (<foreach collection="filter.namePatterns" item="p" separator=" OR ">vod_name LIKE #{p} ESCAPE '!'</foreach>)</if>
         <if test="filter.ids != null">AND vod_id IN <foreach collection="filter.ids" item="id" open="(" separator="," close=")">#{id}</foreach></if>
         <if test="filter.candidateIds != null">AND vod_id IN <foreach collection="filter.candidateIds" item="id" open="(" separator="," close=")">#{id}</foreach></if>
+        <!-- B11 视频搜索缓存（旧 Vod.php:458-459 的 _string：vod_id IN (缓存结果)，见 docs/architecture/20-b11-comment-gbook-counters.md 第 6 节） -->
+        <if test="filter.searchIds != null">AND vod_id IN <foreach collection="filter.searchIds" item="id" open="(" separator="," close=")">#{id}</foreach></if>
         <if test="filter.legacy != null"><include refid="legacyConditions"/></if>
     </sql>
 

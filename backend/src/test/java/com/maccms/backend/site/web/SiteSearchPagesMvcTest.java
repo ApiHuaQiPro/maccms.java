@@ -16,6 +16,7 @@ import com.maccms.backend.common.web.ApiException;
 import com.maccms.backend.common.web.ErrorCode;
 import com.maccms.backend.content.application.ContentReadService;
 import com.maccms.backend.content.application.VideoFilter;
+import com.maccms.backend.content.application.VideoLegacyConditions;
 import com.maccms.backend.content.application.VideoListQuery;
 import com.maccms.backend.content.application.VideoSort;
 import com.maccms.backend.site.config.SiteConfiguration;
@@ -57,6 +58,9 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 @Import(SiteConfiguration.class)
 @ExtendWith(OutputCaptureExtension.class)
 class SiteSearchPagesMvcTest {
+
+    /** B11：搜索页按旧 listCacheData 的方式请求视频搜索缓存（vod_search_optimise 开启时才生效，20 文档第 5.6 节）。 */
+    private static final VideoLegacyConditions SEARCH_CACHE = VideoLegacyConditions.builder().searchCache(true).build();
 
     static final String BASE = "http://maccms.local.test/";
     static final String SEARCH = "/index.php/vod/search.html";
@@ -211,7 +215,7 @@ class SiteSearchPagesMvcTest {
         // 只读调用：一次分类 + 一次列表（每页 20，默认 time desc）
         verify(content).listCategories();
         verify(content).listVideos(new VideoListQuery(null, VideoSort.TIME, true, 1, 20,
-                new VideoFilter("合成", "大陆", null, null, null, null)));
+                new VideoFilter("合成", "大陆", null, null, null, null), false, SEARCH_CACHE));
         verify(content, never()).getVideo(anyLong());
         assertThat(body(r)).doesNotContain("播放").doesNotContain("vod_pwd").doesNotContain("vod/play");
     }
@@ -233,7 +237,7 @@ class SiteSearchPagesMvcTest {
         assertThat(doc.selectFirst("a.pagination__link--prev").attr("href")).isEqualTo(SEARCH + "?wd=a%2Fb");
         assertThat(doc.selectFirst("a.pagination__link--next").attr("href")).isEqualTo(SEARCH + "?page=3&wd=a%2Fb");
         verify(content).listVideos(new VideoListQuery(null, VideoSort.TIME, true, 2, 20,
-                new VideoFilter("a/b", null, null, null, null, null)));
+                new VideoFilter("a/b", null, null, null, null, null), false, SEARCH_CACHE));
     }
 
     @Test
@@ -246,7 +250,7 @@ class SiteSearchPagesMvcTest {
         assertThat(doc.select("ul[aria-labelledby=search-filter-by] a[aria-current=true]").eachText())
                 .containsExactly("评分");
         verify(content).listVideos(new VideoListQuery(null, VideoSort.SCORE, false, 1, 20,
-                new VideoFilter(null, null, null, "2026", 9, null)));
+                new VideoFilter(null, null, null, "2026", 9, null), false, SEARCH_CACHE));
     }
 
     /**
@@ -273,7 +277,7 @@ class SiteSearchPagesMvcTest {
         assertThat(doc.selectFirst("a.pagination__link--next").attr("href"))
                 .isEqualTo(SEARCH + "?area=" + area + "&class=" + cls + "&lang=" + lang + "&page=2");
         verify(content).listVideos(new VideoListQuery(null, VideoSort.TIME, true, 1, 20,
-                new VideoFilter(null, "大陆,香港", "国语,", null, null, ",动作")));
+                new VideoFilter(null, "大陆,香港", "国语,", null, null, ",动作"), false, SEARCH_CACHE));
     }
 
     @Test

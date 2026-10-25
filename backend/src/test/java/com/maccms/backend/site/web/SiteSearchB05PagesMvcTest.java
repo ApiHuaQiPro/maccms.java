@@ -116,7 +116,7 @@ class SiteSearchB05PagesMvcTest {
                 + "&name=" + enc("片") + "&tag=" + enc("标签") + "&version=" + enc("高清版") + "&director=" + enc("导演甲"));
         VideoListQuery q = lastQuery();
         assertThat(q.categoryId()).as("tid 不映射为 categoryId（Q2）").isNull();
-        assertThat(q.legacy()).isEqualTo(VideoLegacyConditions.builder().tid(6L).build());
+        assertThat(q.legacy()).isEqualTo(VideoLegacyConditions.builder().tid(6L).searchCache(true).build());
         assertThat(q.filter()).isEqualTo(new VideoFilter(null, null, null, null, null, null, "A", "正片", "高清版", "演员甲",
                 "导演甲", "标签", "片", "1,,2"));
         assertThat(q.random()).isFalse();

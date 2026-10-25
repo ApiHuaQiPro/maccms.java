@@ -196,7 +196,8 @@ public class SiteLibraryController {
             case LibraryListPage v -> renderer.ok(tpl -> tpl.sitePagesLibrary(v), false);
             case LibraryDetailPage v when ajax -> renderer.ok(tpl -> tpl.siteAjaxDetail(v), true);
             case LibraryDetailPage v -> {
-                LibraryDetailPage withFavorite = v.withFavorite(favorite(page, route.id(), member));
+                LibraryDetailPage withFavorite = v.withFavorite(favorite(page, route.id(), member))
+                        .withInteraction(interaction(page, route.id()));
                 yield renderer.ok(tpl -> tpl.sitePagesLibraryDetail(withFavorite), false);
             }
             case BuyConfirmPage v when !ajax -> renderer.noStore(r.status(), tpl -> tpl.sitePagesBuyConfirm(v));
@@ -219,6 +220,19 @@ public class SiteLibraryController {
             default -> 0;
         };
         return mid == 0 ? Optional.empty() : Optional.of(ContentForms.favorite(site, urls, mid, id));
+    }
+
+    /** 互动区（B11）：文章、专题、演员、角色、网址详情（旧 mid 2/3/8/9/11）；剧情页没有。 */
+    private Optional<com.maccms.backend.site.web.view.InteractionPanel> interaction(LegacyPage page, long id) {
+        int mid = switch (page) {
+            case ART_DETAIL -> 2;
+            case TOPIC_DETAIL -> 3;
+            case ACTOR_DETAIL -> 8;
+            case ROLE_DETAIL -> 9;
+            case WEBSITE_DETAIL -> 11;
+            default -> 0;
+        };
+        return mid == 0 ? Optional.empty() : Optional.of(ContentForms.interaction(site, urls, mid, id));
     }
 
     /** 单条 RSS：与详情页相同的可见性与访问判定；受限内容（密码、积分）不输出（403）。 */

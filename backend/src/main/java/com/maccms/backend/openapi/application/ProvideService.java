@@ -4,6 +4,7 @@ import com.maccms.backend.common.clientip.IpAddress;
 import com.maccms.backend.common.web.ApiException;
 import com.maccms.backend.common.web.ErrorCode;
 import com.maccms.backend.common.web.LegacyJson;
+import com.maccms.backend.content.application.ContentCounterService;
 import com.maccms.backend.content.application.LegacyColumnSet;
 import com.maccms.backend.content.application.LegacyRowOrder;
 import com.maccms.backend.content.application.LegacyRowQuery;
@@ -36,7 +37,8 @@ import java.util.regex.Pattern;
 /**
  * Provide 资源站接口（B06，docs/architecture/16-b06-misc-pages-provide.md 第 3 节）：对齐旧 {@code api/controller/Provide.php}
  * 的 {@code vod/art/actor/role/website}（{@code ac=list/videolist/detail}，JSON/XML），{@code comment}、{@code index} 输出空响应。
- * 只读：{@code detail_inc_hits} 开启时也不写计数（B11）。
+ * 唯一的写入是 {@code detail_inc_hits}（B11，Provide.php:142-150）：开启且 {@code ac=detail} 的 {@code ids} 是单个整数时视频点击 +1，
+ * 经 {@link ContentCounterService}（可写数据源关闭时不计数）。
  *
  * <p>判定顺序：{@code status} → {@code charge} 白名单（客户端 IP 由 {@code common.clientip} 解析）→ 参数 → 查询 → 输出。
  */
@@ -53,14 +55,22 @@ public class ProvideService {
     private final Supplier<ProvideSettings> settings;
     private final LegacyRowReadService rows;
     private final Clock clock;
+    private final ContentCounterService counters;
 
     /**
      * @param settings 旧配置（生产为启动时读出的固定值；按请求取一次，便于旧配置热加载（B15）与测试重放多组旧配置）
      */
     public ProvideService(Supplier<ProvideSettings> settings, LegacyRowReadService rows, Clock clock) {
+        this(settings, rows, clock, null);
+    }
+
+    /** @param counters B11 的 {@code detail_inc_hits}；为 null 或不可写时不计数 */
+    public ProvideService(Supplier<ProvideSettings> settings, LegacyRowReadService rows, Clock clock,
+                          ContentCounterService counters) {
         this.settings = settings;
         this.rows = rows;
         this.clock = clock;
+        this.counters = counters;
     }
 
     /**
@@ -113,7 +123,9 @@ public class ProvideService {
             p.put(e.getKey(), v.get());
         }
         try {
-            return Optional.of(render(module.get(), current, ms, p));
+            ProvideResponse response = render(module.get(), current, ms, p);
+            countDetailHit(module.get(), ms, p);
+            return Optional.of(response);
         } catch (IllegalArgumentException e) {
             return Optional.of(ProvideResponse.badRequest());
         } catch (ApiException e) {
@@ -121,6 +133,26 @@ public class ProvideService {
                 return Optional.of(ProvideResponse.unavailable());
             }
             return Optional.of(ProvideResponse.badRequest());
+        }
+    }
+
+    /**
+     * 旧 Provide.php:142-150：{@code ac == 'detail'}、{@code !empty(ids)}、{@code (int)ids == ids}（PHP 8 宽松比较：数字串按数值，
+     * 否则按字符串，所以 {@code 1abc}、{@code 1,2} 不计数，PHP 7.3 会计数）且 {@code detail_inc_hits} 打开时 {@code vod_id = (int)ids} 的点击 +1。
+     * 不看视频是否存在、是否审核，也不看本次输出是否来自缓存（旧版在输出之前计数）。
+     */
+    private void countDetailHit(ProvideModule m, ModuleSettings ms, Map<String, String> p) {
+        if (m != ProvideModule.VOD || !ms.detailIncHits() || counters == null || !counters.writable()
+                || !"detail".equals(p.get("ac"))) {
+            return;
+        }
+        String ids = p.get("ids");
+        if (PhpCompat.empty(ids)) {
+            return;
+        }
+        long id = PhpIntval.of(ids);
+        if (PhpCompat.looseEquals(ids, id)) {
+            counters.provideDetailHit(id);
         }
     }
 

@@ -108,7 +108,8 @@ public class SiteContentController {
             case SiteRoute.VodDetail d -> {
                 // B10：已登录会员多一个"收藏"表单（游客页面不变，19 文档第 5.4 节）
                 var page = pages.detail(d).withFavorite(ContentMember.of(request, records, wallet).loggedIn()
-                        ? Optional.of(ContentForms.favorite(site, urls, 1, d.vodId())) : Optional.empty());
+                        ? Optional.of(ContentForms.favorite(site, urls, 1, d.vodId())) : Optional.empty())
+                        .withInteraction(Optional.of(ContentForms.interaction(site, urls, 1, d.vodId())));
                 yield renderer.ok(tpl -> tpl.sitePagesDetail(page), false);
             }
             // parse() 不认识 vod/search；搜索页只由 SiteSearchController 经 parseSearch 承接

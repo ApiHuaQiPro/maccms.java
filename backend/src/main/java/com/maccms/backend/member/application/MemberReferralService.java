@@ -76,6 +76,48 @@ public class MemberReferralService {
     }
 
     /**
+     * 网址来路的访问记录（B11，旧 {@code Website::visit}，application/common/model/Website.php:613-642，由 {@code ajax/referer} 调用）：
+     * 同一 IP 今天（PRC 0 点之后）的来路记录（{@code user_id = 0}）未满 {@code max} 条才记一条。与推广访问共用同一条条件插入（{@code user_id}
+     * 为 0），同一 IP 并发请求不会超额（旧版先数后插可以超额）。
+     *
+     * @param clientIp {@code ClientIpResolver} 的结果
+     * @param url      旧版 {@code mac_param_url} 之后的 {@code url}（已 htmlspecialchars；旧版写库前再 htmlspecialchars 一次）
+     * @param max      旧 {@code website.refer_visit_num}（为空时 1）
+     * @return 旧版的返回码：1 成功、102 今日次数已满、103 记录失败（来路超过 {@code visit_ly} 列宽等，旧版 500）
+     */
+    public int siteVisit(String clientIp, String url, long max) {
+        if (writer == null) {
+            throw new IllegalStateException("来路记录需要可写数据源");
+        }
+        long ip = MemberAccountService.legacyIp(clientIp);
+        long now = FinanceSupport.now(clock);
+        int inserted;
+        try {
+            inserted = writer.insertVisit(0, ip, htmlspecialchars(url), now, FinanceSupport.todayStart(now), max);
+        } catch (DataAccessException e) {
+            log.warn("site referer visit rejected by database: {}", e.getClass().getSimpleName());
+            return 103;
+        }
+        return inserted == 1 ? 1 : 102;
+    }
+
+    /** PHP 7.3/8.0 {@code htmlspecialchars($s)}（ENT_COMPAT）。 */
+    static String htmlspecialchars(String text) {
+        StringBuilder sb = new StringBuilder(text.length() + 8);
+        for (int i = 0; i < text.length(); i++) {
+            char c = text.charAt(i);
+            switch (c) {
+                case '&' -> sb.append("&amp;");
+                case '"' -> sb.append("&quot;");
+                case '<' -> sb.append("&lt;");
+                case '>' -> sb.append("&gt;");
+                default -> sb.append(c);
+            }
+        }
+        return sb.toString();
+    }
+
+    /**
      * 推广注册给邀请人的积分（D-B09-7）：在新会员的推广关系写入成功之后调用（推广关系以 {@code user_pid = 0} 为条件，每个新会员只生效一次）。
      */
     public void invitedRegistration(long inviterId) {

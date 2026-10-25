@@ -18,18 +18,27 @@ import java.util.Optional;
  * @param blurb      简介纯文本（vod_blurb，解码一次）；正文为空时显示
  * @param related    同分类最新视频（不含本片）
  * @param favorite   已登录会员的"收藏"表单（B10，19 文档第 5.4 节）；游客为空
+ * @param interaction 点击计数、顶踩、评分与评论入口（B11，20 文档第 8 节）；ajax 片段与只装配了部分 Bean 的测试中为空
  */
 public record DetailPage(PageChrome chrome, String title, String subTitle, Optional<SafeUrl> poster,
                          List<NavLink> breadcrumb, List<MetadataItem> metadata, RichTextBody body, String blurb,
-                         List<VideoCardView> related, Optional<ContentForm> favorite) {
+                         List<VideoCardView> related, Optional<ContentForm> favorite,
+                         Optional<InteractionPanel> interaction) {
 
     public DetailPage(PageChrome chrome, String title, String subTitle, Optional<SafeUrl> poster,
                       List<NavLink> breadcrumb, List<MetadataItem> metadata, RichTextBody body, String blurb,
                       List<VideoCardView> related) {
-        this(chrome, title, subTitle, poster, breadcrumb, metadata, body, blurb, related, Optional.empty());
+        this(chrome, title, subTitle, poster, breadcrumb, metadata, body, blurb, related, Optional.empty(),
+                Optional.empty());
     }
 
     public DetailPage withFavorite(Optional<ContentForm> form) {
-        return new DetailPage(chrome, title, subTitle, poster, breadcrumb, metadata, body, blurb, related, form);
+        return new DetailPage(chrome, title, subTitle, poster, breadcrumb, metadata, body, blurb, related, form,
+                interaction);
+    }
+
+    public DetailPage withInteraction(Optional<InteractionPanel> panel) {
+        return new DetailPage(chrome, title, subTitle, poster, breadcrumb, metadata, body, blurb, related, favorite,
+                panel);
     }
 }

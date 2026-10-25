@@ -31,7 +31,7 @@
 | `maccms.site.status` | 空，按 `open` | `open` / `closed`（B02 起环境变量默认值为空，以便区分"未设置"） |
 | `maccms.site.closed-message` | `站点维护中，请稍后访问。` | ≤200 字符，无控制字符，按文本转义输出 |
 | `maccms.site.canonical-redirect` | `false` | D4 未批准，只接受 `false` |
-| `maccms.site.hit-counter-enabled` | `false` | D5 未决定，只接受 `false` |
+| `maccms.site.hit-counter-enabled` | `false` | 详情页的点击计数图片（`ajax/hits`）；B11 起可设为 `true`（20 文档第 8 节） |
 
 - 启用后配置缺失或不合法：启动失败，一次列出所有出错的**配置项名称与规则**，不回显取值（所有项按字符串绑定，Spring 的绑定错误分析不会打印取值）。
 - `base-url` 带子目录（如 `https://站点/sub/`）时：canonical、首页链接、样式表等页面内链接都按对外地址 `/sub/...` 生成（`SiteSettings.canonical` / `publicPath`），而本应用的路由仍挂在根路径，需要反向代理把 `/sub/` 前缀映射到本应用根路径。该映射未实现、未演练，随部署评审确定；本地只用根路径 `/`。

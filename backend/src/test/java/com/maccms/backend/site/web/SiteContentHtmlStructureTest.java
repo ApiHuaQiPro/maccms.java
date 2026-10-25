@@ -110,8 +110,8 @@ class SiteContentHtmlStructureTest {
             assertThat(Integer.parseInt(e.attr("tabindex"))).as(e.outerHtml()).isLessThanOrEqualTo(0);
         }
         assertThat(doc.select("[role=button], [role=link]")).isEmpty();
-        // 表单控件有 label；搜索是普通 GET 表单（无 JS 可用）
-        for (Element input : doc.select("input")) {
+        // 表单控件有 label（隐藏字段不是控件，B11 的评分/评论表单带 mid、id）；搜索是普通 GET 表单（无 JS 可用）
+        for (Element input : doc.select("input:not([type=hidden])")) {
             assertThat(doc.select("label[for=" + input.id() + "]")).as(input.outerHtml()).hasSize(1);
         }
         Element search = doc.selectFirst("form.site-search");

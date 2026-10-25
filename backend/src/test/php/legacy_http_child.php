@@ -9,6 +9,8 @@
  *
  * 环境变量（父进程设置）：GOLDEN_ENTRY（api|index）、GOLDEN_CONF_PATH、GOLDEN_RUNTIME_PATH，以及 CGI 变量
  * （REQUEST_METHOD、REQUEST_URI、QUERY_STRING、PATH_INFO、REMOTE_ADDR、HTTP_*）。
+ * 可选 GOLDEN_SESSION_PATH（B11）：会话文件目录。php-cgi 的 -d 值按 ini 表达式解析，Windows 8.3 短路径里的 "~" 会被当成运算符，
+ * 把路径截断成 "C:\Users\ADMINI" 这样的前缀，所以需要会话的黄金脚本改经环境变量传入。
  */
 
 $repo = realpath(__DIR__ . '/../../../..');
@@ -33,6 +35,9 @@ define('MAC_START_TIME', microtime(true));
 define('BIND_MODULE', $entry);
 define('ENTRANCE', $entry);
 define('IN_FILE', '/' . $entry . '.php');
+if (getenv('GOLDEN_SESSION_PATH')) {
+    ini_set('session.save_path', getenv('GOLDEN_SESSION_PATH'));
+}
 if (isset($_SERVER['PATH_INFO']) && !@mb_check_encoding($_SERVER['PATH_INFO'], 'utf-8')) {
     $_SERVER['PATH_INFO'] = @mb_convert_encoding($_SERVER['PATH_INFO'], 'UTF-8', 'GBK');
 }

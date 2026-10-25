@@ -1,10 +1,15 @@
 package com.maccms.backend.site.web;
 
+import com.maccms.backend.comment.application.CommentService;
+import com.maccms.backend.common.clientip.ClientIpResolver;
 import com.maccms.backend.common.web.ApiException;
 import com.maccms.backend.common.web.ErrorCode;
 import com.maccms.backend.common.web.LegacyJson;
+import com.maccms.backend.content.application.ContentCounterService;
 import com.maccms.backend.content.application.ContentReadService;
 import com.maccms.backend.content.application.LegacyRowReadService;
+import com.maccms.backend.legacyconfig.application.LegacyConfigService;
+import com.maccms.backend.member.application.MemberReferralService;
 import com.maccms.backend.site.application.ImageUrlNormalizer;
 import com.maccms.backend.site.application.LegacyParams;
 import com.maccms.backend.site.application.LegacyUrlBuilder;
@@ -23,6 +28,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Pattern;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpHeaders;
@@ -38,7 +45,8 @@ import org.springframework.web.bind.annotation.RequestMethod;
  * （B06，docs/architecture/16-b06-misc-pages-provide.md 第 4.3、4.7–4.10 节）。GET/HEAD/POST（旧版不区分方法）。
  *
  * <p>地址：{@code /index.php/<控制器>/<操作>[.html][/键/值…]}（{@code rewrite} 打开时另认去掉 {@code /index.php} 的形态）；路径按
- * PATH_INFO 解码一次。ajax 的其他操作（hits、digg、score、referer、pwd、verify_check）不在本批（写计数与会话归 B05/B11），404。
+ * PATH_INFO 解码一次。B11 起另有 {@code hits}、{@code digg}、{@code score}、{@code referer}、{@code verify_check}（{@link SiteCounterActions}，
+ * 20 文档第 5、7 节）；{@code pwd} 由 B05 的密码页承接（POST + 签名票据），这里仍为 404。
  */
 @Controller
 @ConditionalOnSiteEnabled
@@ -57,11 +65,34 @@ public class SiteAjaxController {
     private final ContentReadService content;
     private final SiteMiscSettings misc;
     private final boolean siteSearch;
+    /** B11 的计数与验证码接口；只装配了部分 Bean 的测试中为 null（这些操作按 404）。 */
+    private final SiteCounterActions counters;
 
     public SiteAjaxController(SitePages sitePages, LegacyUrlBuilder urls, SiteHtmlRenderer renderer,
                               LegacyRowReadService rows, ImageUrlNormalizer images, ContentReadService content,
                               SiteMiscSettings misc,
                               @Value("${maccms.site.search.enabled:false}") String siteSearch) {
+        this(sitePages, urls, renderer, rows, images, content, misc, siteSearch, null);
+    }
+
+    @Autowired
+    public SiteAjaxController(SitePages sitePages, LegacyUrlBuilder urls, SiteHtmlRenderer renderer,
+                              LegacyRowReadService rows, ImageUrlNormalizer images, ContentReadService content,
+                              SiteMiscSettings misc,
+                              @Value("${maccms.site.search.enabled:false}") String siteSearch,
+                              ObjectProvider<SiteSessions> sessions, ObjectProvider<ClientIpResolver> clientIp,
+                              ObjectProvider<ContentCounterService> counterService,
+                              ObjectProvider<CommentService> comments, ObjectProvider<MemberReferralService> referral,
+                              ObjectProvider<LegacyConfigService> legacy) {
+        this(sitePages, urls, renderer, rows, images, content, misc, siteSearch,
+                new SiteCounterActions(sitePages, renderer, sessions, clientIp, counterService, comments, referral,
+                        legacy.getIfAvailable()));
+    }
+
+    private SiteAjaxController(SitePages sitePages, LegacyUrlBuilder urls, SiteHtmlRenderer renderer,
+                               LegacyRowReadService rows, ImageUrlNormalizer images, ContentReadService content,
+                               SiteMiscSettings misc, String siteSearch, SiteCounterActions counters) {
+        this.counters = counters;
         this.site = sitePages.site();
         this.sitePages = sitePages;
         this.urls = urls;
@@ -75,7 +106,7 @@ public class SiteAjaxController {
     @RequestMapping(value = {"/index.php/ajax/**", "/ajax/**", "/index.php/qrcode", "/index.php/qrcode.html",
             "/index.php/qrcode/**", "/qrcode", "/qrcode.html", "/qrcode/**", "/index.php/label/**", "/label/**"},
             method = {RequestMethod.GET, RequestMethod.HEAD, RequestMethod.POST})
-    public ResponseEntity<?> handle(HttpServletRequest request) {
+    public ResponseEntity<?> handle(HttpServletRequest request, jakarta.servlet.http.HttpServletResponse response) {
         String raw = request.getRequestURI().substring(request.getContextPath().length());
         String pathInfo;
         if (raw.startsWith("/index.php/")) {
@@ -123,7 +154,29 @@ public class SiteAjaxController {
                 yield json(() -> ajax.suggest(lp), CacheControl.noStore());
             }
             case "desktop" -> desktop(lp);
+            case "hits", "digg", "score", "referer", "verify_check" -> counter(action, request, response, lp, params);
             default -> throw notFound();
+        };
+    }
+
+    /** B11 的计数与验证码接口（旧 Ajax.php:152-472）。ajax 判定同 ThinkPHP {@code Request::isAjax()}。 */
+    private ResponseEntity<?> counter(String action, HttpServletRequest request,
+                                      jakarta.servlet.http.HttpServletResponse response, LegacyParams lp,
+                                      Map<String, String> params) {
+        if (counters == null) {
+            throw notFound();
+        }
+        String h = request.getHeader("X-Requested-With");
+        String flag = params.get("_ajax");
+        boolean ajax = (h != null && h.equalsIgnoreCase("XMLHttpRequest"))
+                || (flag != null && !flag.isEmpty() && !flag.equals("0"));
+        return switch (action) {
+            case "hits" -> counters.hits(request, lp, ajax);
+            case "digg" -> counters.digg(request, lp, ajax);
+            case "score" -> counters.score(request, lp, ajax);
+            case "referer" -> counters.referer(request, lp, ajax);
+            default -> counters.verifyCheck(request, response, lp.raw("type"), lp.raw("verify"), lp.raw("back"),
+                    ajax);
         };
     }
 
