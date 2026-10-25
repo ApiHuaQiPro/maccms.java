@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+  B11 评论与留言的只读查询（docs/architecture/20-b11-comment-gbook-counters.md 第 4.4 节）。禁止写语句、禁止 ${} 拼接；排序列在固定的
+  choose 分支中选择，追加主键同向排序。旧规则：评论 application/common/model/Comment.php:97-195（status=1、pid、rid、uid、mid，
+  by=id/time/up/down、order=asc/desc），回复 :46-54；留言 application/common/model/Gbook.php:309-387（status=1、rid、uid，
+  by=id/time/reply_time）。列表有 LIMIT（调用方限制页大小与页码）。
+-->
+<mapper namespace="com.maccms.backend.comment.infrastructure.CommentMapper">
+
+    <sql id="commentColumns">
+        comment_id AS id, comment_mid AS mid, comment_rid AS rid, comment_pid AS pid, user_id AS userId,
+        comment_status AS status, comment_name AS name, comment_ip AS ip, comment_time AS time,
+        comment_content AS content, comment_up AS up, comment_down AS down, comment_reply AS reply,
+        comment_report AS report
+    </sql>
+
+    <sql id="commentWhere">
+        WHERE comment_status = 1 AND comment_pid = #{c.pid}
+        <if test="c.rid != 0">AND comment_rid = #{c.rid}</if>
+        <if test="c.userId != 0">AND user_id = #{c.userId}</if>
+        <if test="c.mid != 0">AND comment_mid = #{c.mid}</if>
+    </sql>
+
+    <sql id="commentOrder">
+        <choose>
+            <when test="sort == 'ID'">comment_id</when>
+            <when test="sort == 'UP'">comment_up</when>
+            <when test="sort == 'DOWN'">comment_down</when>
+            <otherwise>comment_time</otherwise>
+        </choose>
+        <choose><when test="descending">DESC, comment_id DESC</when><otherwise>ASC, comment_id ASC</otherwise></choose>
+    </sql>
+
+    <select id="countComments" resultType="long">
+        SELECT COUNT(*) FROM mac_comment
+        <include refid="commentWhere"/>
+    </select>
+
+    <select id="selectComments" resultType="com.maccms.backend.comment.infrastructure.CommentRow">
+        <bind name="sort" value="c.sort"/>
+        <bind name="descending" value="c.descending"/>
+        SELECT <include refid="commentColumns"/>
+        FROM mac_comment
+        <include refid="commentWhere"/>
+        ORDER BY <include refid="commentOrder"/>
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <select id="selectReplies" resultType="com.maccms.backend.comment.infrastructure.CommentRow">
+        SELECT <include refid="commentColumns"/>
+        FROM mac_comment
+        WHERE comment_status = 1 AND comment_pid IN
+        <foreach collection="pids" item="p" open="(" separator="," close=")">#{p}</foreach>
+        ORDER BY <include refid="commentOrder"/>
+        LIMIT #{limit}
+    </select>
+
+    <select id="selectComment" resultType="com.maccms.backend.comment.infrastructure.CommentRow">
+        SELECT <include refid="commentColumns"/>
+        FROM mac_comment
+        WHERE comment_id = #{id}
+        LIMIT 1
+    </select>
+
+    <sql id="gbookWhere">
+        WHERE gbook_status = 1
+        <if test="rid != 0">AND gbook_rid = #{rid}</if>
+        <if test="userId != 0">AND user_id = #{userId}</if>
+    </sql>
+
+    <select id="countGbooks" resultType="long">
+        SELECT COUNT(*) FROM mac_gbook
+        <include refid="gbookWhere"/>
+    </select>
+
+    <select id="selectGbooks" resultType="com.maccms.backend.comment.infrastructure.GbookRow">
+        SELECT gbook_id AS id, gbook_rid AS rid, user_id AS userId, gbook_status AS status, gbook_name AS name,
+               gbook_ip AS ip, gbook_time AS time, gbook_reply_time AS replyTime, gbook_content AS content,
+               gbook_reply AS reply
+        FROM mac_gbook
+        <include refid="gbookWhere"/>
+        ORDER BY
+        <choose>
+            <when test="sort == 'ID'">gbook_id</when>
+            <when test="sort == 'REPLY_TIME'">gbook_reply_time</when>
+            <otherwise>gbook_time</otherwise>
+        </choose>
+        <choose><when test="descending">DESC, gbook_id DESC</when><otherwise>ASC, gbook_id ASC</otherwise></choose>
+        LIMIT #{offset}, #{limit}
+    </select>
+</mapper>

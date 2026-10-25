@@ -3,7 +3,9 @@ package com.maccms.backend.site.web;
 import com.maccms.backend.common.web.PhpCookies;
 import com.maccms.backend.common.web.SafeExceptionLog;
 import com.maccms.backend.content.application.ContentProperties;
+import com.maccms.backend.content.application.ContentPurchases;
 import com.maccms.backend.content.application.ContentViewer;
+import com.maccms.backend.member.application.MemberRecordService;
 import com.maccms.backend.member.application.MemberSessionService;
 import com.maccms.backend.member.application.view.MemberState;
 import com.maccms.backend.member.application.view.PageMember;
@@ -23,7 +25,8 @@ import org.springframework.web.servlet.HandlerInterceptor;
  * <ol>
  * <li>按 {@link MemberSessionService#resolvePage} 判定（只有带齐三个会员 cookie 的请求才查库）；</li>
  * <li>写出游客回写或到期重发的 {@code Set-Cookie}；</li>
- * <li>本请求内的内容权限按有效会员组判定（{@link ContentViewer}，请求结束时在 {@link #afterCompletion} 关闭）；</li>
+ * <li>本请求内的内容权限按有效会员组判定，收费数据按本会员的购买记录判定（{@link ContentViewer}，B10；请求结束时在
+ * {@link #afterCompletion} 关闭）；</li>
  * <li>带会员 cookie 的响应缓存改为 {@code private, no-cache}，写了 cookie 的改为 {@code no-store}（{@link SiteMemberCacheFilter}）。</li>
  * </ol>
  * 不适用：{@code verify/*}（旧 {@code Verify} 不继承 {@code Base}）与播放器配置脚本。在站点状态拦截器之后执行（旧版先
@@ -38,9 +41,19 @@ public class SiteMemberInterceptor implements HandlerInterceptor {
     private static final PageMember GUEST = new PageMember(MemberState.guest(null), List.of(), false);
 
     private final ObjectProvider<MemberSessionService> sessions;
+    private final ObjectProvider<MemberRecordService> records;
 
     public SiteMemberInterceptor(ObjectProvider<MemberSessionService> sessions) {
+        this(sessions, null);
+    }
+
+    /**
+     * @param records 已购买查询（B10，19 文档第 5.1 节）；为 null 或没有该服务时一律未购买
+     */
+    public SiteMemberInterceptor(ObjectProvider<MemberSessionService> sessions,
+                                 ObjectProvider<MemberRecordService> records) {
         this.sessions = sessions;
+        this.records = records;
     }
 
     @Override
@@ -59,7 +72,8 @@ public class SiteMemberInterceptor implements HandlerInterceptor {
             SiteMemberCacheFilter.override(request, response, "private, no-cache");
         }
         MemberState s = member.state();
-        request.setAttribute(SCOPE, ContentViewer.enter(s.member() ? s.groupId() : ContentProperties.GUEST_GROUP_ID));
+        request.setAttribute(SCOPE, ContentViewer.enter(s.member() ? s.groupId() : ContentProperties.GUEST_GROUP_ID,
+                purchases(s)));
         return true;
     }
 
@@ -71,6 +85,12 @@ public class SiteMemberInterceptor implements HandlerInterceptor {
             request.removeAttribute(SCOPE);
             s.close();
         }
+    }
+
+    /** 本请求会员的已购买查询（B10，D-B09-11）：游客、或没有记录服务时一律未购买。 */
+    private ContentPurchases purchases(MemberState s) {
+        MemberRecordService r = records == null ? null : records.getIfAvailable();
+        return s.member() && r != null ? r.purchases(s.userId()) : ContentPurchases.NONE;
     }
 
     /** 本请求的会员判定；拦截器没有处理过（verify 等）时按游客。 */

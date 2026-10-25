@@ -41,12 +41,15 @@ import java.util.Objects;
  * @param isEnd         旧 isend：0 或 1（两者都是有效的显式筛选）
  * @param plot          旧 plot：0 或 1
  * @param start         旧 start 属性（{@code intval(abs())}，&ge; 0）
+ * @param searchCache   B11：本次查询来自旧版经 {@code Vod::listCacheData} 的前台列表（SSR 搜索页、筛选页），旧配置
+ *                      {@code vod_search_optimise} 含 {@code frontend} 时使用视频搜索缓存（{@link VodSearchCache}，会写 mac_vod_search）；
+ *                      公开 API 永远为 false（只读）
  */
 public record VideoLegacyConditions(Long tid, List<Integer> types, List<Integer> typeNot, List<Long> notIds,
                                     List<Long> relIds, String rel, List<Integer> levels, String weekday,
                                     List<String> tvs, Long addedAfter, Long hitsTimeAfter, Long updatedAfter,
                                     LegacyRange hitsMonth, LegacyRange hitsWeek, LegacyRange hitsDay, LegacyRange hits,
-                                    Integer isEnd, Integer plot, int start) {
+                                    Integer isEnd, Integer plot, int start, boolean searchCache) {
 
     public static final VideoLegacyConditions NONE = builder().build();
 
@@ -90,9 +93,9 @@ public record VideoLegacyConditions(Long tid, List<Integer> types, List<Integer>
         return new Builder();
     }
 
-    /** 没有任何条件且 start 为 0。 */
+    /** 没有任何条件且 start 为 0（不看 {@code searchCache}：它只决定是否使用搜索缓存，本身不是条件）。 */
     public boolean isEmpty() {
-        return equals(NONE);
+        return equals(NONE) || equals(builder().searchCache(true).build());
     }
 
     /** 带包含匹配条件（受搜索开关与并发许可约束）：weekday、文本形式的 rel。 */
@@ -173,6 +176,7 @@ public record VideoLegacyConditions(Long tid, List<Integer> types, List<Integer>
         private Integer isEnd;
         private Integer plot;
         private int start;
+        private boolean searchCache;
 
         private Builder() {
         }
@@ -272,9 +276,14 @@ public record VideoLegacyConditions(Long tid, List<Integer> types, List<Integer>
             return this;
         }
 
+        public Builder searchCache(boolean v) {
+            searchCache = v;
+            return this;
+        }
+
         public VideoLegacyConditions build() {
             return new VideoLegacyConditions(tid, types, typeNot, notIds, relIds, rel, levels, weekday, tvs, addedAfter,
-                    hitsTimeAfter, updatedAfter, hitsMonth, hitsWeek, hitsDay, hits, isEnd, plot, start);
+                    hitsTimeAfter, updatedAfter, hitsMonth, hitsWeek, hitsDay, hits, isEnd, plot, start, searchCache);
         }
     }
 }

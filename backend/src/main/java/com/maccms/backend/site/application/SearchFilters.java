@@ -109,9 +109,13 @@ public record SearchFilters(String keyword, String area, String lang, String yea
                 name, ids);
     }
 
-    /** content 的内部条件：只有 tid（旧 {@code type_id = tid OR type_id_1 = tid}）。 */
+    /**
+     * content 的内部条件：tid（旧 {@code type_id = tid OR type_id_1 = tid}），以及 B11 的视频搜索缓存标记（这些页面的列表来自旧
+     * {@code Vod::listCacheData}，旧配置 {@code vod_search_optimise} 含 {@code frontend} 时使用 mac_vod_search）。
+     */
     public VideoLegacyConditions toLegacyConditions() {
-        return tid == null ? VideoLegacyConditions.NONE : VideoLegacyConditions.builder().tid(tid).build();
+        VideoLegacyConditions.Builder b = VideoLegacyConditions.builder().searchCache(true);
+        return tid == null ? b.build() : b.tid(tid).build();
     }
 
     /**

@@ -12,7 +12,8 @@ package com.maccms.backend.content.application;
  */
 public final class ContentViewer {
 
-    private static final ThreadLocal<Integer> GROUP = new ThreadLocal<>();
+    private static final ThreadLocal<Viewer> VIEWER = new ThreadLocal<>();
+    private static final Viewer GUEST = new Viewer(ContentProperties.GUEST_GROUP_ID, ContentPurchases.NONE);
 
     private ContentViewer() {
     }
@@ -23,24 +24,46 @@ public final class ContentViewer {
      * @param groupId 有效会员组号（0～65535，{@code mac_group.group_id} 为 smallint unsigned；0 表示组不存在）
      */
     public static Scope enter(int groupId) {
+        return enter(groupId, ContentPurchases.NONE);
+    }
+
+    /**
+     * 同 {@link #enter(int)}，另带上本请求会员的已购买查询（B10，19 文档第 5.1 节；游客传 {@link ContentPurchases#NONE}）。
+     */
+    public static Scope enter(int groupId, ContentPurchases purchases) {
         if (groupId < 0 || groupId > 65_535) {
             throw new IllegalArgumentException("会员组号越界");
         }
-        Integer previous = GROUP.get();
-        GROUP.set(groupId);
+        if (purchases == null) {
+            throw new IllegalArgumentException("purchases");
+        }
+        Viewer previous = VIEWER.get();
+        VIEWER.set(new Viewer(groupId, purchases));
         return () -> {
             if (previous == null) {
-                GROUP.remove();
+                VIEWER.remove();
             } else {
-                GROUP.set(previous);
+                VIEWER.set(previous);
             }
         };
     }
 
     /** 当前请求的有效会员组；没有设置时为游客组。 */
     public static int groupId() {
-        Integer g = GROUP.get();
-        return g == null ? ContentProperties.GUEST_GROUP_ID : g;
+        return current().groupId();
+    }
+
+    /** 当前请求会员的已购买查询；没有设置时一律未购买。 */
+    public static ContentPurchases purchases() {
+        return current().purchases();
+    }
+
+    private static Viewer current() {
+        Viewer v = VIEWER.get();
+        return v == null ? GUEST : v;
+    }
+
+    private record Viewer(int groupId, ContentPurchases purchases) {
     }
 
     /** 观看者作用域；{@link #close()} 不抛受检异常。 */

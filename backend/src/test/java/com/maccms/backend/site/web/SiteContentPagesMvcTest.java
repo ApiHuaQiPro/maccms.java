@@ -70,10 +70,12 @@ class SiteContentPagesMvcTest {
     static final String TYPE1 = "/index.php/vod/type/id/1.html";
     static final String TYPE1_P2 = "/index.php/vod/type/id/1/page/2.html";
     static final String DETAIL9 = "/index.php/vod/detail/id/9.html";
-    /** 页面里不得出现的旧 PHP 写入口与带副作用的端点（03 方案 6.2）。 */
-    static final List<String> FORBIDDEN_LINKS = List.of("ajax/hits", "ajax/digg", "ajax/score", "ajax/pwd",
-            "ajax/referer", "ajax/suggest", "user/ajax_ulog", "user/ajax_buy_popedom", "user/visit", "vod/play",
-            "vod/player", "vod/down", "comment/", "home.js");
+    /**
+     * 页面里不得出现的旧 PHP 写入口与带副作用的端点（03 方案 6.2）。B11 起点击、顶踩、评分与评论由新版承接，详情页的互动区有意链接
+     * {@code ajax/hits}、{@code ajax/digg}、{@code ajax/score} 与 {@code comment/index}（20 文档第 8 节），不再列入。
+     */
+    static final List<String> FORBIDDEN_LINKS = List.of("ajax/pwd", "ajax/referer", "ajax/suggest", "user/ajax_ulog",
+            "user/ajax_buy_popedom", "user/visit", "vod/play", "vod/player", "vod/down", "home.js");
 
     @Autowired
     MockMvc mvc;

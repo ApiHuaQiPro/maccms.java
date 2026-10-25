@@ -1,5 +1,6 @@
 package com.maccms.backend.site.web;
 
+import com.maccms.backend.comment.application.CommentService;
 import com.maccms.backend.common.captcha.Captchas;
 import com.maccms.backend.common.clientip.ClientIpResolver;
 import com.maccms.backend.common.web.ApiException;
@@ -7,14 +8,20 @@ import com.maccms.backend.common.web.ErrorCode;
 import com.maccms.backend.common.web.LegacyJson;
 import com.maccms.backend.common.web.PhpCookies;
 import com.maccms.backend.common.web.PhpInput;
+import com.maccms.backend.content.application.ContentLookupService;
 import com.maccms.backend.member.application.MemberAccountService;
 import com.maccms.backend.member.application.MemberCookies;
+import com.maccms.backend.member.application.MemberPurchaseService;
+import com.maccms.backend.member.application.MemberRecordService;
+import com.maccms.backend.member.application.MemberReferralService;
+import com.maccms.backend.member.application.MemberWalletService;
 import com.maccms.backend.member.application.view.AccountReply;
 import com.maccms.backend.member.application.view.MemberPageSettings;
 import com.maccms.backend.member.application.view.MemberProfile;
 import com.maccms.backend.member.application.view.MemberState;
 import com.maccms.backend.member.application.view.PageMember;
 import com.maccms.backend.member.application.view.PortraitReply;
+import com.maccms.backend.site.application.ImageUrlNormalizer;
 import com.maccms.backend.site.application.LegacyUrlBuilder;
 import com.maccms.backend.site.application.PlayerFramePolicy;
 import com.maccms.backend.site.application.SafeUrl;
@@ -22,6 +29,8 @@ import com.maccms.backend.site.application.SiteSettings;
 import com.maccms.backend.site.config.ConditionalOnSiteEnabled;
 import com.maccms.backend.site.web.view.MemberCaptcha;
 import com.maccms.backend.site.web.view.MemberShell;
+import com.maccms.backend.site.web.view.MetadataItem;
+import com.maccms.backend.site.web.view.NavLink;
 import com.maccms.backend.site.web.view.UserFindpassMsgPage;
 import com.maccms.backend.site.web.view.UserFindpassPage;
 import com.maccms.backend.site.web.view.UserIndexPage;
@@ -48,6 +57,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -65,8 +75,10 @@ import org.springframework.web.multipart.MultipartHttpServletRequest;
  * 注销、注册、资料、头像、密保找回，以及 B25 前按"未配置"返回的短信/邮件入口。业务规则在 {@link MemberAccountService}；这里负责地址
  * 解析、按字节读取参数、验证码会话、页面与 JSON 输出、cookie。
  *
- * <p>地址：{@code /index.php/user/<操作>[.html][/键/值…]}（{@code rewrite} 打开时另认去掉 {@code /index.php} 的形态）。未实现的操作
- * （B10/B11/B25/B26）返回 404；但与旧版一样，先按旧控制器构造函数的白名单检查登录态（{@code User.php:19-25}），未登录时先给"未登录"。
+ * <p>地址：{@code /index.php/user/<操作>[.html][/键/值…]}（{@code rewrite} 打开时另认去掉 {@code /index.php} 的形态）。B10 的会员权益与
+ * 财务入口在登录态检查之后交给 {@link SiteMemberFinance}（19 文档），B11 的"我的评论/留言"交给 {@link SiteMemberBoards}（20 文档）。
+ * 未实现的操作（B25/B26）返回 404；但与旧版一样，先按旧控制器构造函数的
+ * 白名单检查登录态（{@code User.php:19-25}），未登录时先给"未登录"。
  */
 @Controller
 @ConditionalOnSiteEnabled
@@ -90,9 +102,33 @@ public class SiteUserController {
     private final SiteSessions sessions;
     private final ClientIpResolver clientIp;
     private final ObjectProvider<MemberAccountService> accounts;
+    /** B10 的入口（会员权益与财务）；没有对应服务（只装配了部分 Bean 的测试）时为 null，这些入口按 503。 */
+    private final SiteMemberFinance finance;
+    /** B11 的"我的评论/留言"；没有评论服务时为 null，这两个入口按 404。 */
+    private SiteMemberBoards boards;
 
     public SiteUserController(SitePages pages, LegacyUrlBuilder urls, SiteHtmlRenderer renderer, SiteSessions sessions,
                               ClientIpResolver clientIp, ObjectProvider<MemberAccountService> accounts) {
+        this(pages, urls, renderer, sessions, clientIp, accounts, null);
+    }
+
+    @Autowired
+    public SiteUserController(SitePages pages, LegacyUrlBuilder urls, SiteHtmlRenderer renderer, SiteSessions sessions,
+                              ClientIpResolver clientIp, ObjectProvider<MemberAccountService> accounts,
+                              ObjectProvider<ImageUrlNormalizer> images, ObjectProvider<ContentLookupService> content,
+                              ObjectProvider<MemberRecordService> records, ObjectProvider<MemberPurchaseService> purchases,
+                              ObjectProvider<MemberWalletService> wallet, ObjectProvider<MemberReferralService> referral,
+                              ObjectProvider<CommentService> comments) {
+        this(pages, urls, renderer, sessions, clientIp, accounts, finance(pages, urls, renderer, clientIp,
+                images.getIfAvailable(), content.getIfAvailable(), records.getIfAvailable(),
+                purchases.getIfAvailable(), wallet.getIfAvailable(), referral.getIfAvailable()));
+        CommentService c = comments.getIfAvailable();
+        this.boards = c == null ? null : new SiteMemberBoards(pages, urls, renderer, c);
+    }
+
+    SiteUserController(SitePages pages, LegacyUrlBuilder urls, SiteHtmlRenderer renderer, SiteSessions sessions,
+                       ClientIpResolver clientIp, ObjectProvider<MemberAccountService> accounts,
+                       SiteMemberFinance finance) {
         this.site = pages.site();
         this.pages = pages;
         this.urls = urls;
@@ -100,6 +136,20 @@ public class SiteUserController {
         this.sessions = sessions;
         this.clientIp = clientIp;
         this.accounts = accounts;
+        this.finance = finance;
+    }
+
+    private static SiteMemberFinance finance(SitePages pages, LegacyUrlBuilder urls, SiteHtmlRenderer renderer,
+                                             ClientIpResolver clientIp, ImageUrlNormalizer images,
+                                             ContentLookupService content, MemberRecordService records,
+                                             MemberPurchaseService purchases, MemberWalletService wallet,
+                                             MemberReferralService referral) {
+        if (images == null || content == null || records == null || purchases == null || wallet == null
+                || referral == null) {
+            return null;
+        }
+        return new SiteMemberFinance(pages, urls, renderer, clientIp, images, content, records, purchases, wallet,
+                referral);
     }
 
     @RequestMapping(value = {"/index.php/user", "/index.php/user/**", "/user", "/user/**"},
@@ -137,8 +187,15 @@ public class SiteUserController {
         ajax = isAjax(request, params);
         PageMember member = SiteMemberInterceptor.member(request);
         boolean post = "POST".equalsIgnoreCase(request.getMethod());
+        boolean b10 = SiteMemberFinance.ACTIONS.contains(route.action());
+        if (b10 && (finance == null || !finance.available())) {
+            return unavailable(ajax);
+        }
         if (!PUBLIC_ACTIONS.contains(route.action()) && !member.state().member()) {
             return notLoggedIn(ajax);
+        }
+        if (b10) {
+            return finance.handle(route.action(), request, params, member.state(), ajax, post);
         }
         return switch (route.action()) {
             case "login" -> post ? json(account.login(params, captcha(request, params), clientIp.resolve(request)))
@@ -159,6 +216,12 @@ public class SiteUserController {
             case "findpass" -> post ? json(account.findpass(params, captcha(request, params))) : findpassPage();
             case "findpass_msg" -> post ? json(account.sendMessage(params, 2)) : findpassMsgPage(params);
             case "findpass_reset" -> post ? json(account.findpassReset(params)) : emptyBody();
+            case "comment", "gbook" -> {
+                if (boards == null) {
+                    throw notFound();
+                }
+                yield boards.handle(route.action(), member.state(), params);
+            }
             default -> throw notFound();
         };
     }
@@ -201,7 +264,26 @@ public class SiteUserController {
             return notLoggedIn(false);
         }
         MemberShell shell = shell("会员中心");
-        UserIndexPage page = new UserIndexPage(shell, p, avatar(p), link("info"), link("portrait"), link("logout"));
+        List<NavLink> financeLinks = List.of();
+        List<MetadataItem> promotion = List.of();
+        if (finance != null) {
+            financeLinks = List.of(new NavLink("充值", link("buy"), false), new NavLink("升级会员", link("upgrade"), false),
+                    new NavLink("我的权限", link("popedom"), false), new NavLink("我的收藏", link("favs"), false),
+                    new NavLink("播放记录", link("plays"), false), new NavLink("下载记录", link("downs"), false),
+                    new NavLink("全部记录", link("ulog"), false), new NavLink("积分日志", link("plog"), false),
+                    new NavLink("积分提现", link("cash"), false), new NavLink("推广会员", link("reward"), false),
+                    new NavLink("我的订单", link("orders"), false), new NavLink("充值卡记录", link("cards"), false));
+            promotion = List.of(new MetadataItem("推广注册", finance.promotionUrl("reg", p.userId())),
+                    new MetadataItem("推广访问", finance.promotionUrl("visit", p.userId())));
+        }
+        if (boards != null) {
+            List<NavLink> links = new ArrayList<>(financeLinks);
+            links.add(new NavLink("我的评论", link("comment"), false));
+            links.add(new NavLink("我的留言", link("gbook"), false));
+            financeLinks = links;
+        }
+        UserIndexPage page = new UserIndexPage(shell, p, avatar(p), link("info"), link("portrait"), link("logout"),
+                financeLinks, promotion);
         return renderer.member(HttpStatus.OK, t -> t.sitePagesUserIndex(page), shell.nonce());
     }
 
@@ -376,7 +458,8 @@ public class SiteUserController {
         return jsonBody(body, reply.setCookies());
     }
 
-    private static ResponseEntity<byte[]> jsonBody(Map<String, Object> body, List<String> cookies) {
+    /** 旧版 {@code json($res)} 的响应（{@code body} 为有序 Map 或 List）；B10 的 {@link SiteMemberFinance} 共用。 */
+    static ResponseEntity<byte[]> jsonBody(Object body, List<String> cookies) {
         byte[] bytes = LegacyJson.encode(body).getBytes(StandardCharsets.UTF_8);
         return withCookies(ResponseEntity.ok(), cookies).contentType(JSON).contentLength(bytes.length)
                 .cacheControl(CacheControl.noStore()).header("X-Content-Type-Options", "nosniff")

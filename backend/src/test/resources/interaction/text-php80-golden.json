@@ -1,0 +1,2290 @@
+{
+    "generator": "backend/src/test/php/interaction_text_golden.php",
+    "php": "8.0.30",
+    "text": [
+        {
+            "words": "",
+            "input": "",
+            "filtered": "",
+            "entities": "",
+            "stored": ""
+        },
+        {
+            "words": "",
+            "input": "30",
+            "filtered": "30",
+            "entities": "30",
+            "stored": "30"
+        },
+        {
+            "words": "",
+            "input": "61",
+            "filtered": "61",
+            "entities": "61",
+            "stored": "61"
+        },
+        {
+            "words": "",
+            "input": "e5a5bde79c8b",
+            "filtered": "e5a5bde79c8b",
+            "entities": "e5a5bde79c8b",
+            "stored": "e5a5bde79c8b"
+        },
+        {
+            "words": "",
+            "input": "2020e9a696e5b0bee7a9bae799bd2020",
+            "filtered": "2020e9a696e5b0bee7a9bae799bd2020",
+            "entities": "2020e9a696e5b0bee7a9bae799bd2020",
+            "stored": "e9a696e5b0bee7a9bae799bd"
+        },
+        {
+            "words": "",
+            "input": "090a2078200d00",
+            "filtered": "090a2078200d00",
+            "entities": "090a2078200d00",
+            "stored": "78"
+        },
+        {
+            "words": "",
+            "input": "610062",
+            "filtered": "610062",
+            "entities": "610062",
+            "stored": "6162"
+        },
+        {
+            "words": "",
+            "input": "3c623ee7b2973c2f623e",
+            "filtered": "3c623ee7b2973c2f623e",
+            "entities": "266c743b622667743be7b297266c743b2f622667743b",
+            "stored": "26616d703b6c743b6226616d703b67743be7b29726616d703b6c743b2f6226616d703b67743b"
+        },
+        {
+            "words": "",
+            "input": "26",
+            "filtered": "26",
+            "entities": "26616d703b",
+            "stored": "26616d703b616d703b"
+        },
+        {
+            "words": "",
+            "input": "26616d703b",
+            "filtered": "26616d703b",
+            "entities": "26616d703b616d703b",
+            "stored": "26616d703b616d703b616d703b"
+        },
+        {
+            "words": "",
+            "input": "266c743b",
+            "filtered": "266c743b",
+            "entities": "26616d703b6c743b",
+            "stored": "26616d703b616d703b6c743b"
+        },
+        {
+            "words": "",
+            "input": "262333393b",
+            "filtered": "262333393b",
+            "entities": "26616d703b2333393b",
+            "stored": "26616d703b616d703b2333393b"
+        },
+        {
+            "words": "",
+            "input": "26233033393b",
+            "filtered": "26233033393b",
+            "entities": "26616d703b233033393b",
+            "stored": "26616d703b616d703b233033393b"
+        },
+        {
+            "words": "",
+            "input": "27e58d95e5bc95e58fb727",
+            "filtered": "27e58d95e5bc95e58fb727",
+            "entities": "27e58d95e5bc95e58fb727",
+            "stored": "26233033393be58d95e5bc95e58fb726233033393b"
+        },
+        {
+            "words": "",
+            "input": "22e58f8ce5bc95e58fb722",
+            "filtered": "22e58f8ce5bc95e58fb722",
+            "entities": "2671756f743be58f8ce5bc95e58fb72671756f743b",
+            "stored": "26616d703b71756f743be58f8ce5bc95e58fb726616d703b71756f743b"
+        },
+        {
+            "words": "",
+            "input": "c3a920c3a820c3bc20c3b120c3a720c39f20c3bf",
+            "filtered": "c3a920c3a820c3bc20c3b120c3a720c39f20c3bf",
+            "entities": "266561637574653b20266567726176653b202675756d6c3b20266e74696c64653b202663636564696c3b2026737a6c69673b202679756d6c3b",
+            "stored": "26616d703b6561637574653b2026616d703b6567726176653b2026616d703b75756d6c3b2026616d703b6e74696c64653b2026616d703b63636564696c3b2026616d703b737a6c69673b2026616d703b79756d6c3b"
+        },
+        {
+            "words": "",
+            "input": "e282ac20e284a220c2a920c2ae20c2b020c2b120c2b520c2b620c2b720c2bc20c2bd",
+            "filtered": "e282ac20e284a220c2a920c2ae20c2b020c2b120c2b520c2b620c2b720c2bc20c2bd",
+            "entities": "266575726f3b202674726164653b2026636f70793b20267265673b20266465673b2026706c75736d6e3b20266d6963726f3b2026706172613b20266d6964646f743b20266672616331343b20266672616331323b",
+            "stored": "26616d703b6575726f3b2026616d703b74726164653b2026616d703b636f70793b2026616d703b7265673b2026616d703b6465673b2026616d703b706c75736d6e3b2026616d703b6d6963726f3b2026616d703b706172613b2026616d703b6d6964646f743b2026616d703b6672616331343b2026616d703b6672616331323b"
+        },
+        {
+            "words": "",
+            "input": "e2869020e2869120e2869220e2869320e2879220e2888020e2888220e2888320e2889120e2889a20e2889e20e289a020e289a420e289a5",
+            "filtered": "e2869020e2869120e2869220e2869320e2879220e2888020e2888220e2888320e2889120e2889a20e2889e20e289a020e289a420e289a5",
+            "entities": "266c6172723b2026756172723b2026726172723b2026646172723b2026724172723b2026666f72616c6c3b2026706172743b202665786973743b202673756d3b202672616469633b2026696e66696e3b20266e653b20266c653b202667653b",
+            "stored": "26616d703b6c6172723b2026616d703b756172723b2026616d703b726172723b2026616d703b646172723b2026616d703b724172723b2026616d703b666f72616c6c3b2026616d703b706172743b2026616d703b65786973743b2026616d703b73756d3b2026616d703b72616469633b2026616d703b696e66696e3b2026616d703b6e653b2026616d703b6c653b2026616d703b67653b"
+        },
+        {
+            "words": "",
+            "input": "ceb120ceb220ceb320cea9",
+            "filtered": "ceb120ceb220ceb320cea9",
+            "entities": "26616c7068613b2026626574613b202667616d6d613b20264f6d6567613b",
+            "stored": "26616d703b616c7068613b2026616d703b626574613b2026616d703b67616d6d613b2026616d703b4f6d6567613b"
+        },
+        {
+            "words": "",
+            "input": "e2809ce2809d20e28098e2809920e2809420e2809320e280a620e280a220e280b220e280b3",
+            "filtered": "e2809ce2809d20e28098e2809920e2809420e2809320e280a620e280a220e280b220e280b3",
+            "entities": "266c6471756f3b26726471756f3b20266c7371756f3b26727371756f3b20266d646173683b20266e646173683b202668656c6c69703b202662756c6c3b20267072696d653b20265072696d653b",
+            "stored": "26616d703b6c6471756f3b26616d703b726471756f3b2026616d703b6c7371756f3b26616d703b727371756f3b2026616d703b6d646173683b2026616d703b6e646173683b2026616d703b68656c6c69703b2026616d703b62756c6c3b2026616d703b7072696d653b2026616d703b5072696d653b"
+        },
+        {
+            "words": "",
+            "input": "c2a06e627370",
+            "filtered": "c2a06e627370",
+            "entities": "266e6273703b6e627370",
+            "stored": "26616d703b6e6273703b6e627370"
+        },
+        {
+            "words": "",
+            "input": "c48020c483",
+            "filtered": "c48020c483",
+            "entities": "c48020c483",
+            "stored": "c48020c483"
+        },
+        {
+            "words": "",
+            "input": "f09f9880",
+            "filtered": "f09f9880",
+            "entities": "f09f9880",
+            "stored": "f09f9880"
+        },
+        {
+            "words": "",
+            "input": "e5a5bdc328",
+            "filtered": "e5a5bdc328",
+            "entities": "",
+            "stored": ""
+        },
+        {
+            "words": "",
+            "input": "ff",
+            "filtered": "ff",
+            "entities": "",
+            "stored": ""
+        },
+        {
+            "words": "",
+            "input": "7777772e612e636f6d20e79c8b2068747470",
+            "filtered": "7777772e612e636f6d20e79c8b2068747470",
+            "entities": "7777772e612e636f6d20e79c8b2068747470",
+            "stored": "7777772e612e636f6d20e79c8b2068747470"
+        },
+        {
+            "words": "",
+            "input": "5757572c436f6d",
+            "filtered": "5757572c436f6d",
+            "entities": "5757572c436f6d",
+            "stored": "5757572c436f6d"
+        },
+        {
+            "words": "",
+            "input": "616263266465663b",
+            "filtered": "616263266465663b",
+            "entities": "61626326616d703b6465663b",
+            "stored": "61626326616d703b616d703b6465663b"
+        },
+        {
+            "words": "",
+            "input": "266e6273703b26636f70793b",
+            "filtered": "266e6273703b26636f70793b",
+            "entities": "26616d703b6e6273703b26616d703b636f70793b",
+            "stored": "26616d703b616d703b6e6273703b26616d703b616d703b636f70793b"
+        },
+        {
+            "words": "",
+            "input": "3c7363726970743e616c6572742831293c2f7363726970743e",
+            "filtered": "3c7363726970743e616c6572742831293c2f7363726970743e",
+            "entities": "266c743b7363726970742667743b616c657274283129266c743b2f7363726970742667743b",
+            "stored": "26616d703b6c743b73637269707426616d703b67743b616c65727428312926616d703b6c743b2f73637269707426616d703b67743b"
+        },
+        {
+            "words": "",
+            "input": "6120262062203c2063203e20642022206520272066",
+            "filtered": "6120262062203c2063203e20642022206520272066",
+            "entities": "612026616d703b206220266c743b2063202667743b2064202671756f743b206520272066",
+            "stored": "612026616d703b616d703b20622026616d703b6c743b20632026616d703b67743b20642026616d703b71756f743b20652026233033393b2066"
+        },
+        {
+            "words": "",
+            "input": "e5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bd",
+            "filtered": "e5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bd",
+            "entities": "e5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bd",
+            "stored": "e5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bd"
+        },
+        {
+            "words": "www,http,com,net",
+            "input": "",
+            "filtered": "",
+            "entities": "",
+            "stored": ""
+        },
+        {
+            "words": "www,http,com,net",
+            "input": "30",
+            "filtered": "30",
+            "entities": "30",
+            "stored": "30"
+        },
+        {
+            "words": "www,http,com,net",
+            "input": "61",
+            "filtered": "61",
+            "entities": "61",
+            "stored": "61"
+        },
+        {
+            "words": "www,http,com,net",
+            "input": "e5a5bde79c8b",
+            "filtered": "e5a5bde79c8b",
+            "entities": "e5a5bde79c8b",
+            "stored": "e5a5bde79c8b"
+        },
+        {
+            "words": "www,http,com,net",
+            "input": "2020e9a696e5b0bee7a9bae799bd2020",
+            "filtered": "2020e9a696e5b0bee7a9bae799bd2020",
+            "entities": "2020e9a696e5b0bee7a9bae799bd2020",
+            "stored": "e9a696e5b0bee7a9bae799bd"
+        },
+        {
+            "words": "www,http,com,net",
+            "input": "090a2078200d00",
+            "filtered": "090a2078200d00",
+            "entities": "090a2078200d00",
+            "stored": "78"
+        },
+        {
+            "words": "www,http,com,net",
+            "input": "610062",
+            "filtered": "610062",
+            "entities": "610062",
+            "stored": "6162"
+        },
+        {
+            "words": "www,http,com,net",
+            "input": "3c623ee7b2973c2f623e",
+            "filtered": "3c623ee7b2973c2f623e",
+            "entities": "266c743b622667743be7b297266c743b2f622667743b",
+            "stored": "26616d703b6c743b6226616d703b67743be7b29726616d703b6c743b2f6226616d703b67743b"
+        },
+        {
+            "words": "www,http,com,net",
+            "input": "26",
+            "filtered": "26",
+            "entities": "26616d703b",
+            "stored": "26616d703b616d703b"
+        },
+        {
+            "words": "www,http,com,net",
+            "input": "26616d703b",
+            "filtered": "26616d703b",
+            "entities": "26616d703b616d703b",
+            "stored": "26616d703b616d703b616d703b"
+        },
+        {
+            "words": "www,http,com,net",
+            "input": "266c743b",
+            "filtered": "266c743b",
+            "entities": "26616d703b6c743b",
+            "stored": "26616d703b616d703b6c743b"
+        },
+        {
+            "words": "www,http,com,net",
+            "input": "262333393b",
+            "filtered": "262333393b",
+            "entities": "26616d703b2333393b",
+            "stored": "26616d703b616d703b2333393b"
+        },
+        {
+            "words": "www,http,com,net",
+            "input": "26233033393b",
+            "filtered": "26233033393b",
+            "entities": "26616d703b233033393b",
+            "stored": "26616d703b616d703b233033393b"
+        },
+        {
+            "words": "www,http,com,net",
+            "input": "27e58d95e5bc95e58fb727",
+            "filtered": "27e58d95e5bc95e58fb727",
+            "entities": "27e58d95e5bc95e58fb727",
+            "stored": "26233033393be58d95e5bc95e58fb726233033393b"
+        },
+        {
+            "words": "www,http,com,net",
+            "input": "22e58f8ce5bc95e58fb722",
+            "filtered": "22e58f8ce5bc95e58fb722",
+            "entities": "2671756f743be58f8ce5bc95e58fb72671756f743b",
+            "stored": "26616d703b71756f743be58f8ce5bc95e58fb726616d703b71756f743b"
+        },
+        {
+            "words": "www,http,com,net",
+            "input": "c3a920c3a820c3bc20c3b120c3a720c39f20c3bf",
+            "filtered": "c3a920c3a820c3bc20c3b120c3a720c39f20c3bf",
+            "entities": "266561637574653b20266567726176653b202675756d6c3b20266e74696c64653b202663636564696c3b2026737a6c69673b202679756d6c3b",
+            "stored": "26616d703b6561637574653b2026616d703b6567726176653b2026616d703b75756d6c3b2026616d703b6e74696c64653b2026616d703b63636564696c3b2026616d703b737a6c69673b2026616d703b79756d6c3b"
+        },
+        {
+            "words": "www,http,com,net",
+            "input": "e282ac20e284a220c2a920c2ae20c2b020c2b120c2b520c2b620c2b720c2bc20c2bd",
+            "filtered": "e282ac20e284a220c2a920c2ae20c2b020c2b120c2b520c2b620c2b720c2bc20c2bd",
+            "entities": "266575726f3b202674726164653b2026636f70793b20267265673b20266465673b2026706c75736d6e3b20266d6963726f3b2026706172613b20266d6964646f743b20266672616331343b20266672616331323b",
+            "stored": "26616d703b6575726f3b2026616d703b74726164653b2026616d703b636f70793b2026616d703b7265673b2026616d703b6465673b2026616d703b706c75736d6e3b2026616d703b6d6963726f3b2026616d703b706172613b2026616d703b6d6964646f743b2026616d703b6672616331343b2026616d703b6672616331323b"
+        },
+        {
+            "words": "www,http,com,net",
+            "input": "e2869020e2869120e2869220e2869320e2879220e2888020e2888220e2888320e2889120e2889a20e2889e20e289a020e289a420e289a5",
+            "filtered": "e2869020e2869120e2869220e2869320e2879220e2888020e2888220e2888320e2889120e2889a20e2889e20e289a020e289a420e289a5",
+            "entities": "266c6172723b2026756172723b2026726172723b2026646172723b2026724172723b2026666f72616c6c3b2026706172743b202665786973743b202673756d3b202672616469633b2026696e66696e3b20266e653b20266c653b202667653b",
+            "stored": "26616d703b6c6172723b2026616d703b756172723b2026616d703b726172723b2026616d703b646172723b2026616d703b724172723b2026616d703b666f72616c6c3b2026616d703b706172743b2026616d703b65786973743b2026616d703b73756d3b2026616d703b72616469633b2026616d703b696e66696e3b2026616d703b6e653b2026616d703b6c653b2026616d703b67653b"
+        },
+        {
+            "words": "www,http,com,net",
+            "input": "ceb120ceb220ceb320cea9",
+            "filtered": "ceb120ceb220ceb320cea9",
+            "entities": "26616c7068613b2026626574613b202667616d6d613b20264f6d6567613b",
+            "stored": "26616d703b616c7068613b2026616d703b626574613b2026616d703b67616d6d613b2026616d703b4f6d6567613b"
+        },
+        {
+            "words": "www,http,com,net",
+            "input": "e2809ce2809d20e28098e2809920e2809420e2809320e280a620e280a220e280b220e280b3",
+            "filtered": "e2809ce2809d20e28098e2809920e2809420e2809320e280a620e280a220e280b220e280b3",
+            "entities": "266c6471756f3b26726471756f3b20266c7371756f3b26727371756f3b20266d646173683b20266e646173683b202668656c6c69703b202662756c6c3b20267072696d653b20265072696d653b",
+            "stored": "26616d703b6c6471756f3b26616d703b726471756f3b2026616d703b6c7371756f3b26616d703b727371756f3b2026616d703b6d646173683b2026616d703b6e646173683b2026616d703b68656c6c69703b2026616d703b62756c6c3b2026616d703b7072696d653b2026616d703b5072696d653b"
+        },
+        {
+            "words": "www,http,com,net",
+            "input": "c2a06e627370",
+            "filtered": "c2a06e627370",
+            "entities": "266e6273703b6e627370",
+            "stored": "26616d703b6e6273703b6e627370"
+        },
+        {
+            "words": "www,http,com,net",
+            "input": "c48020c483",
+            "filtered": "c48020c483",
+            "entities": "c48020c483",
+            "stored": "c48020c483"
+        },
+        {
+            "words": "www,http,com,net",
+            "input": "f09f9880",
+            "filtered": "f09f9880",
+            "entities": "f09f9880",
+            "stored": "f09f9880"
+        },
+        {
+            "words": "www,http,com,net",
+            "input": "e5a5bdc328",
+            "filtered": "e5a5bdc328",
+            "entities": "",
+            "stored": ""
+        },
+        {
+            "words": "www,http,com,net",
+            "input": "ff",
+            "filtered": "ff",
+            "entities": "",
+            "stored": ""
+        },
+        {
+            "words": "www,http,com,net",
+            "input": "7777772e612e636f6d20e79c8b2068747470",
+            "filtered": "2a2a2a2e612e2a2a2a20e79c8b202a2a2a",
+            "entities": "2a2a2a2e612e2a2a2a20e79c8b202a2a2a",
+            "stored": "2a2a2a2e612e2a2a2a20e79c8b202a2a2a"
+        },
+        {
+            "words": "www,http,com,net",
+            "input": "5757572c436f6d",
+            "filtered": "5757572c436f6d",
+            "entities": "5757572c436f6d",
+            "stored": "5757572c436f6d"
+        },
+        {
+            "words": "www,http,com,net",
+            "input": "616263266465663b",
+            "filtered": "616263266465663b",
+            "entities": "61626326616d703b6465663b",
+            "stored": "61626326616d703b616d703b6465663b"
+        },
+        {
+            "words": "www,http,com,net",
+            "input": "266e6273703b26636f70793b",
+            "filtered": "266e6273703b26636f70793b",
+            "entities": "26616d703b6e6273703b26616d703b636f70793b",
+            "stored": "26616d703b616d703b6e6273703b26616d703b616d703b636f70793b"
+        },
+        {
+            "words": "www,http,com,net",
+            "input": "3c7363726970743e616c6572742831293c2f7363726970743e",
+            "filtered": "3c7363726970743e616c6572742831293c2f7363726970743e",
+            "entities": "266c743b7363726970742667743b616c657274283129266c743b2f7363726970742667743b",
+            "stored": "26616d703b6c743b73637269707426616d703b67743b616c65727428312926616d703b6c743b2f73637269707426616d703b67743b"
+        },
+        {
+            "words": "www,http,com,net",
+            "input": "6120262062203c2063203e20642022206520272066",
+            "filtered": "6120262062203c2063203e20642022206520272066",
+            "entities": "612026616d703b206220266c743b2063202667743b2064202671756f743b206520272066",
+            "stored": "612026616d703b616d703b20622026616d703b6c743b20632026616d703b67743b20642026616d703b71756f743b20652026233033393b2066"
+        },
+        {
+            "words": "www,http,com,net",
+            "input": "e5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bd",
+            "filtered": "e5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bd",
+            "entities": "e5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bd",
+            "stored": "e5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bd"
+        },
+        {
+            "words": "admin,cao,sex,xxx",
+            "input": "",
+            "filtered": "",
+            "entities": "",
+            "stored": ""
+        },
+        {
+            "words": "admin,cao,sex,xxx",
+            "input": "30",
+            "filtered": "30",
+            "entities": "30",
+            "stored": "30"
+        },
+        {
+            "words": "admin,cao,sex,xxx",
+            "input": "61",
+            "filtered": "61",
+            "entities": "61",
+            "stored": "61"
+        },
+        {
+            "words": "admin,cao,sex,xxx",
+            "input": "e5a5bde79c8b",
+            "filtered": "e5a5bde79c8b",
+            "entities": "e5a5bde79c8b",
+            "stored": "e5a5bde79c8b"
+        },
+        {
+            "words": "admin,cao,sex,xxx",
+            "input": "2020e9a696e5b0bee7a9bae799bd2020",
+            "filtered": "2020e9a696e5b0bee7a9bae799bd2020",
+            "entities": "2020e9a696e5b0bee7a9bae799bd2020",
+            "stored": "e9a696e5b0bee7a9bae799bd"
+        },
+        {
+            "words": "admin,cao,sex,xxx",
+            "input": "090a2078200d00",
+            "filtered": "090a2078200d00",
+            "entities": "090a2078200d00",
+            "stored": "78"
+        },
+        {
+            "words": "admin,cao,sex,xxx",
+            "input": "610062",
+            "filtered": "610062",
+            "entities": "610062",
+            "stored": "6162"
+        },
+        {
+            "words": "admin,cao,sex,xxx",
+            "input": "3c623ee7b2973c2f623e",
+            "filtered": "3c623ee7b2973c2f623e",
+            "entities": "266c743b622667743be7b297266c743b2f622667743b",
+            "stored": "26616d703b6c743b6226616d703b67743be7b29726616d703b6c743b2f6226616d703b67743b"
+        },
+        {
+            "words": "admin,cao,sex,xxx",
+            "input": "26",
+            "filtered": "26",
+            "entities": "26616d703b",
+            "stored": "26616d703b616d703b"
+        },
+        {
+            "words": "admin,cao,sex,xxx",
+            "input": "26616d703b",
+            "filtered": "26616d703b",
+            "entities": "26616d703b616d703b",
+            "stored": "26616d703b616d703b616d703b"
+        },
+        {
+            "words": "admin,cao,sex,xxx",
+            "input": "266c743b",
+            "filtered": "266c743b",
+            "entities": "26616d703b6c743b",
+            "stored": "26616d703b616d703b6c743b"
+        },
+        {
+            "words": "admin,cao,sex,xxx",
+            "input": "262333393b",
+            "filtered": "262333393b",
+            "entities": "26616d703b2333393b",
+            "stored": "26616d703b616d703b2333393b"
+        },
+        {
+            "words": "admin,cao,sex,xxx",
+            "input": "26233033393b",
+            "filtered": "26233033393b",
+            "entities": "26616d703b233033393b",
+            "stored": "26616d703b616d703b233033393b"
+        },
+        {
+            "words": "admin,cao,sex,xxx",
+            "input": "27e58d95e5bc95e58fb727",
+            "filtered": "27e58d95e5bc95e58fb727",
+            "entities": "27e58d95e5bc95e58fb727",
+            "stored": "26233033393be58d95e5bc95e58fb726233033393b"
+        },
+        {
+            "words": "admin,cao,sex,xxx",
+            "input": "22e58f8ce5bc95e58fb722",
+            "filtered": "22e58f8ce5bc95e58fb722",
+            "entities": "2671756f743be58f8ce5bc95e58fb72671756f743b",
+            "stored": "26616d703b71756f743be58f8ce5bc95e58fb726616d703b71756f743b"
+        },
+        {
+            "words": "admin,cao,sex,xxx",
+            "input": "c3a920c3a820c3bc20c3b120c3a720c39f20c3bf",
+            "filtered": "c3a920c3a820c3bc20c3b120c3a720c39f20c3bf",
+            "entities": "266561637574653b20266567726176653b202675756d6c3b20266e74696c64653b202663636564696c3b2026737a6c69673b202679756d6c3b",
+            "stored": "26616d703b6561637574653b2026616d703b6567726176653b2026616d703b75756d6c3b2026616d703b6e74696c64653b2026616d703b63636564696c3b2026616d703b737a6c69673b2026616d703b79756d6c3b"
+        },
+        {
+            "words": "admin,cao,sex,xxx",
+            "input": "e282ac20e284a220c2a920c2ae20c2b020c2b120c2b520c2b620c2b720c2bc20c2bd",
+            "filtered": "e282ac20e284a220c2a920c2ae20c2b020c2b120c2b520c2b620c2b720c2bc20c2bd",
+            "entities": "266575726f3b202674726164653b2026636f70793b20267265673b20266465673b2026706c75736d6e3b20266d6963726f3b2026706172613b20266d6964646f743b20266672616331343b20266672616331323b",
+            "stored": "26616d703b6575726f3b2026616d703b74726164653b2026616d703b636f70793b2026616d703b7265673b2026616d703b6465673b2026616d703b706c75736d6e3b2026616d703b6d6963726f3b2026616d703b706172613b2026616d703b6d6964646f743b2026616d703b6672616331343b2026616d703b6672616331323b"
+        },
+        {
+            "words": "admin,cao,sex,xxx",
+            "input": "e2869020e2869120e2869220e2869320e2879220e2888020e2888220e2888320e2889120e2889a20e2889e20e289a020e289a420e289a5",
+            "filtered": "e2869020e2869120e2869220e2869320e2879220e2888020e2888220e2888320e2889120e2889a20e2889e20e289a020e289a420e289a5",
+            "entities": "266c6172723b2026756172723b2026726172723b2026646172723b2026724172723b2026666f72616c6c3b2026706172743b202665786973743b202673756d3b202672616469633b2026696e66696e3b20266e653b20266c653b202667653b",
+            "stored": "26616d703b6c6172723b2026616d703b756172723b2026616d703b726172723b2026616d703b646172723b2026616d703b724172723b2026616d703b666f72616c6c3b2026616d703b706172743b2026616d703b65786973743b2026616d703b73756d3b2026616d703b72616469633b2026616d703b696e66696e3b2026616d703b6e653b2026616d703b6c653b2026616d703b67653b"
+        },
+        {
+            "words": "admin,cao,sex,xxx",
+            "input": "ceb120ceb220ceb320cea9",
+            "filtered": "ceb120ceb220ceb320cea9",
+            "entities": "26616c7068613b2026626574613b202667616d6d613b20264f6d6567613b",
+            "stored": "26616d703b616c7068613b2026616d703b626574613b2026616d703b67616d6d613b2026616d703b4f6d6567613b"
+        },
+        {
+            "words": "admin,cao,sex,xxx",
+            "input": "e2809ce2809d20e28098e2809920e2809420e2809320e280a620e280a220e280b220e280b3",
+            "filtered": "e2809ce2809d20e28098e2809920e2809420e2809320e280a620e280a220e280b220e280b3",
+            "entities": "266c6471756f3b26726471756f3b20266c7371756f3b26727371756f3b20266d646173683b20266e646173683b202668656c6c69703b202662756c6c3b20267072696d653b20265072696d653b",
+            "stored": "26616d703b6c6471756f3b26616d703b726471756f3b2026616d703b6c7371756f3b26616d703b727371756f3b2026616d703b6d646173683b2026616d703b6e646173683b2026616d703b68656c6c69703b2026616d703b62756c6c3b2026616d703b7072696d653b2026616d703b5072696d653b"
+        },
+        {
+            "words": "admin,cao,sex,xxx",
+            "input": "c2a06e627370",
+            "filtered": "c2a06e627370",
+            "entities": "266e6273703b6e627370",
+            "stored": "26616d703b6e6273703b6e627370"
+        },
+        {
+            "words": "admin,cao,sex,xxx",
+            "input": "c48020c483",
+            "filtered": "c48020c483",
+            "entities": "c48020c483",
+            "stored": "c48020c483"
+        },
+        {
+            "words": "admin,cao,sex,xxx",
+            "input": "f09f9880",
+            "filtered": "f09f9880",
+            "entities": "f09f9880",
+            "stored": "f09f9880"
+        },
+        {
+            "words": "admin,cao,sex,xxx",
+            "input": "e5a5bdc328",
+            "filtered": "e5a5bdc328",
+            "entities": "",
+            "stored": ""
+        },
+        {
+            "words": "admin,cao,sex,xxx",
+            "input": "ff",
+            "filtered": "ff",
+            "entities": "",
+            "stored": ""
+        },
+        {
+            "words": "admin,cao,sex,xxx",
+            "input": "7777772e612e636f6d20e79c8b2068747470",
+            "filtered": "7777772e612e636f6d20e79c8b2068747470",
+            "entities": "7777772e612e636f6d20e79c8b2068747470",
+            "stored": "7777772e612e636f6d20e79c8b2068747470"
+        },
+        {
+            "words": "admin,cao,sex,xxx",
+            "input": "5757572c436f6d",
+            "filtered": "5757572c436f6d",
+            "entities": "5757572c436f6d",
+            "stored": "5757572c436f6d"
+        },
+        {
+            "words": "admin,cao,sex,xxx",
+            "input": "616263266465663b",
+            "filtered": "616263266465663b",
+            "entities": "61626326616d703b6465663b",
+            "stored": "61626326616d703b616d703b6465663b"
+        },
+        {
+            "words": "admin,cao,sex,xxx",
+            "input": "266e6273703b26636f70793b",
+            "filtered": "266e6273703b26636f70793b",
+            "entities": "26616d703b6e6273703b26616d703b636f70793b",
+            "stored": "26616d703b616d703b6e6273703b26616d703b616d703b636f70793b"
+        },
+        {
+            "words": "admin,cao,sex,xxx",
+            "input": "3c7363726970743e616c6572742831293c2f7363726970743e",
+            "filtered": "3c7363726970743e616c6572742831293c2f7363726970743e",
+            "entities": "266c743b7363726970742667743b616c657274283129266c743b2f7363726970742667743b",
+            "stored": "26616d703b6c743b73637269707426616d703b67743b616c65727428312926616d703b6c743b2f73637269707426616d703b67743b"
+        },
+        {
+            "words": "admin,cao,sex,xxx",
+            "input": "6120262062203c2063203e20642022206520272066",
+            "filtered": "6120262062203c2063203e20642022206520272066",
+            "entities": "612026616d703b206220266c743b2063202667743b2064202671756f743b206520272066",
+            "stored": "612026616d703b616d703b20622026616d703b6c743b20632026616d703b67743b20642026616d703b71756f743b20652026233033393b2066"
+        },
+        {
+            "words": "admin,cao,sex,xxx",
+            "input": "e5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bd",
+            "filtered": "e5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bd",
+            "entities": "e5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bd",
+            "stored": "e5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bd"
+        },
+        {
+            "words": ",",
+            "input": "",
+            "filtered": "",
+            "entities": "",
+            "stored": ""
+        },
+        {
+            "words": ",",
+            "input": "30",
+            "filtered": "30",
+            "entities": "30",
+            "stored": "30"
+        },
+        {
+            "words": ",",
+            "input": "61",
+            "filtered": "61",
+            "entities": "61",
+            "stored": "61"
+        },
+        {
+            "words": ",",
+            "input": "e5a5bde79c8b",
+            "filtered": "e5a5bde79c8b",
+            "entities": "e5a5bde79c8b",
+            "stored": "e5a5bde79c8b"
+        },
+        {
+            "words": ",",
+            "input": "2020e9a696e5b0bee7a9bae799bd2020",
+            "filtered": "2020e9a696e5b0bee7a9bae799bd2020",
+            "entities": "2020e9a696e5b0bee7a9bae799bd2020",
+            "stored": "e9a696e5b0bee7a9bae799bd"
+        },
+        {
+            "words": ",",
+            "input": "090a2078200d00",
+            "filtered": "090a2078200d00",
+            "entities": "090a2078200d00",
+            "stored": "78"
+        },
+        {
+            "words": ",",
+            "input": "610062",
+            "filtered": "610062",
+            "entities": "610062",
+            "stored": "6162"
+        },
+        {
+            "words": ",",
+            "input": "3c623ee7b2973c2f623e",
+            "filtered": "3c623ee7b2973c2f623e",
+            "entities": "266c743b622667743be7b297266c743b2f622667743b",
+            "stored": "26616d703b6c743b6226616d703b67743be7b29726616d703b6c743b2f6226616d703b67743b"
+        },
+        {
+            "words": ",",
+            "input": "26",
+            "filtered": "26",
+            "entities": "26616d703b",
+            "stored": "26616d703b616d703b"
+        },
+        {
+            "words": ",",
+            "input": "26616d703b",
+            "filtered": "26616d703b",
+            "entities": "26616d703b616d703b",
+            "stored": "26616d703b616d703b616d703b"
+        },
+        {
+            "words": ",",
+            "input": "266c743b",
+            "filtered": "266c743b",
+            "entities": "26616d703b6c743b",
+            "stored": "26616d703b616d703b6c743b"
+        },
+        {
+            "words": ",",
+            "input": "262333393b",
+            "filtered": "262333393b",
+            "entities": "26616d703b2333393b",
+            "stored": "26616d703b616d703b2333393b"
+        },
+        {
+            "words": ",",
+            "input": "26233033393b",
+            "filtered": "26233033393b",
+            "entities": "26616d703b233033393b",
+            "stored": "26616d703b616d703b233033393b"
+        },
+        {
+            "words": ",",
+            "input": "27e58d95e5bc95e58fb727",
+            "filtered": "27e58d95e5bc95e58fb727",
+            "entities": "27e58d95e5bc95e58fb727",
+            "stored": "26233033393be58d95e5bc95e58fb726233033393b"
+        },
+        {
+            "words": ",",
+            "input": "22e58f8ce5bc95e58fb722",
+            "filtered": "22e58f8ce5bc95e58fb722",
+            "entities": "2671756f743be58f8ce5bc95e58fb72671756f743b",
+            "stored": "26616d703b71756f743be58f8ce5bc95e58fb726616d703b71756f743b"
+        },
+        {
+            "words": ",",
+            "input": "c3a920c3a820c3bc20c3b120c3a720c39f20c3bf",
+            "filtered": "c3a920c3a820c3bc20c3b120c3a720c39f20c3bf",
+            "entities": "266561637574653b20266567726176653b202675756d6c3b20266e74696c64653b202663636564696c3b2026737a6c69673b202679756d6c3b",
+            "stored": "26616d703b6561637574653b2026616d703b6567726176653b2026616d703b75756d6c3b2026616d703b6e74696c64653b2026616d703b63636564696c3b2026616d703b737a6c69673b2026616d703b79756d6c3b"
+        },
+        {
+            "words": ",",
+            "input": "e282ac20e284a220c2a920c2ae20c2b020c2b120c2b520c2b620c2b720c2bc20c2bd",
+            "filtered": "e282ac20e284a220c2a920c2ae20c2b020c2b120c2b520c2b620c2b720c2bc20c2bd",
+            "entities": "266575726f3b202674726164653b2026636f70793b20267265673b20266465673b2026706c75736d6e3b20266d6963726f3b2026706172613b20266d6964646f743b20266672616331343b20266672616331323b",
+            "stored": "26616d703b6575726f3b2026616d703b74726164653b2026616d703b636f70793b2026616d703b7265673b2026616d703b6465673b2026616d703b706c75736d6e3b2026616d703b6d6963726f3b2026616d703b706172613b2026616d703b6d6964646f743b2026616d703b6672616331343b2026616d703b6672616331323b"
+        },
+        {
+            "words": ",",
+            "input": "e2869020e2869120e2869220e2869320e2879220e2888020e2888220e2888320e2889120e2889a20e2889e20e289a020e289a420e289a5",
+            "filtered": "e2869020e2869120e2869220e2869320e2879220e2888020e2888220e2888320e2889120e2889a20e2889e20e289a020e289a420e289a5",
+            "entities": "266c6172723b2026756172723b2026726172723b2026646172723b2026724172723b2026666f72616c6c3b2026706172743b202665786973743b202673756d3b202672616469633b2026696e66696e3b20266e653b20266c653b202667653b",
+            "stored": "26616d703b6c6172723b2026616d703b756172723b2026616d703b726172723b2026616d703b646172723b2026616d703b724172723b2026616d703b666f72616c6c3b2026616d703b706172743b2026616d703b65786973743b2026616d703b73756d3b2026616d703b72616469633b2026616d703b696e66696e3b2026616d703b6e653b2026616d703b6c653b2026616d703b67653b"
+        },
+        {
+            "words": ",",
+            "input": "ceb120ceb220ceb320cea9",
+            "filtered": "ceb120ceb220ceb320cea9",
+            "entities": "26616c7068613b2026626574613b202667616d6d613b20264f6d6567613b",
+            "stored": "26616d703b616c7068613b2026616d703b626574613b2026616d703b67616d6d613b2026616d703b4f6d6567613b"
+        },
+        {
+            "words": ",",
+            "input": "e2809ce2809d20e28098e2809920e2809420e2809320e280a620e280a220e280b220e280b3",
+            "filtered": "e2809ce2809d20e28098e2809920e2809420e2809320e280a620e280a220e280b220e280b3",
+            "entities": "266c6471756f3b26726471756f3b20266c7371756f3b26727371756f3b20266d646173683b20266e646173683b202668656c6c69703b202662756c6c3b20267072696d653b20265072696d653b",
+            "stored": "26616d703b6c6471756f3b26616d703b726471756f3b2026616d703b6c7371756f3b26616d703b727371756f3b2026616d703b6d646173683b2026616d703b6e646173683b2026616d703b68656c6c69703b2026616d703b62756c6c3b2026616d703b7072696d653b2026616d703b5072696d653b"
+        },
+        {
+            "words": ",",
+            "input": "c2a06e627370",
+            "filtered": "c2a06e627370",
+            "entities": "266e6273703b6e627370",
+            "stored": "26616d703b6e6273703b6e627370"
+        },
+        {
+            "words": ",",
+            "input": "c48020c483",
+            "filtered": "c48020c483",
+            "entities": "c48020c483",
+            "stored": "c48020c483"
+        },
+        {
+            "words": ",",
+            "input": "f09f9880",
+            "filtered": "f09f9880",
+            "entities": "f09f9880",
+            "stored": "f09f9880"
+        },
+        {
+            "words": ",",
+            "input": "e5a5bdc328",
+            "filtered": "e5a5bdc328",
+            "entities": "",
+            "stored": ""
+        },
+        {
+            "words": ",",
+            "input": "ff",
+            "filtered": "ff",
+            "entities": "",
+            "stored": ""
+        },
+        {
+            "words": ",",
+            "input": "7777772e612e636f6d20e79c8b2068747470",
+            "filtered": "7777772e612e636f6d20e79c8b2068747470",
+            "entities": "7777772e612e636f6d20e79c8b2068747470",
+            "stored": "7777772e612e636f6d20e79c8b2068747470"
+        },
+        {
+            "words": ",",
+            "input": "5757572c436f6d",
+            "filtered": "5757572c436f6d",
+            "entities": "5757572c436f6d",
+            "stored": "5757572c436f6d"
+        },
+        {
+            "words": ",",
+            "input": "616263266465663b",
+            "filtered": "616263266465663b",
+            "entities": "61626326616d703b6465663b",
+            "stored": "61626326616d703b616d703b6465663b"
+        },
+        {
+            "words": ",",
+            "input": "266e6273703b26636f70793b",
+            "filtered": "266e6273703b26636f70793b",
+            "entities": "26616d703b6e6273703b26616d703b636f70793b",
+            "stored": "26616d703b616d703b6e6273703b26616d703b616d703b636f70793b"
+        },
+        {
+            "words": ",",
+            "input": "3c7363726970743e616c6572742831293c2f7363726970743e",
+            "filtered": "3c7363726970743e616c6572742831293c2f7363726970743e",
+            "entities": "266c743b7363726970742667743b616c657274283129266c743b2f7363726970742667743b",
+            "stored": "26616d703b6c743b73637269707426616d703b67743b616c65727428312926616d703b6c743b2f73637269707426616d703b67743b"
+        },
+        {
+            "words": ",",
+            "input": "6120262062203c2063203e20642022206520272066",
+            "filtered": "6120262062203c2063203e20642022206520272066",
+            "entities": "612026616d703b206220266c743b2063202667743b2064202671756f743b206520272066",
+            "stored": "612026616d703b616d703b20622026616d703b6c743b20632026616d703b67743b20642026616d703b71756f743b20652026233033393b2066"
+        },
+        {
+            "words": ",",
+            "input": "e5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bd",
+            "filtered": "e5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bd",
+            "entities": "e5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bd",
+            "stored": "e5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bd"
+        },
+        {
+            "words": "a,b,,c",
+            "input": "",
+            "filtered": "",
+            "entities": "",
+            "stored": ""
+        },
+        {
+            "words": "a,b,,c",
+            "input": "30",
+            "filtered": "30",
+            "entities": "30",
+            "stored": "30"
+        },
+        {
+            "words": "a,b,,c",
+            "input": "61",
+            "filtered": "2a2a2a",
+            "entities": "2a2a2a",
+            "stored": "2a2a2a"
+        },
+        {
+            "words": "a,b,,c",
+            "input": "e5a5bde79c8b",
+            "filtered": "e5a5bde79c8b",
+            "entities": "e5a5bde79c8b",
+            "stored": "e5a5bde79c8b"
+        },
+        {
+            "words": "a,b,,c",
+            "input": "2020e9a696e5b0bee7a9bae799bd2020",
+            "filtered": "2020e9a696e5b0bee7a9bae799bd2020",
+            "entities": "2020e9a696e5b0bee7a9bae799bd2020",
+            "stored": "e9a696e5b0bee7a9bae799bd"
+        },
+        {
+            "words": "a,b,,c",
+            "input": "090a2078200d00",
+            "filtered": "090a2078200d00",
+            "entities": "090a2078200d00",
+            "stored": "78"
+        },
+        {
+            "words": "a,b,,c",
+            "input": "610062",
+            "filtered": "2a2a2a002a2a2a",
+            "entities": "2a2a2a002a2a2a",
+            "stored": "2a2a2a2a2a2a"
+        },
+        {
+            "words": "a,b,,c",
+            "input": "3c623ee7b2973c2f623e",
+            "filtered": "3c2a2a2a3ee7b2973c2f2a2a2a3e",
+            "entities": "266c743b2a2a2a2667743be7b297266c743b2f2a2a2a2667743b",
+            "stored": "26616d703b6c743b2a2a2a26616d703b67743be7b29726616d703b6c743b2f2a2a2a26616d703b67743b"
+        },
+        {
+            "words": "a,b,,c",
+            "input": "26",
+            "filtered": "26",
+            "entities": "26616d703b",
+            "stored": "26616d703b616d703b"
+        },
+        {
+            "words": "a,b,,c",
+            "input": "26616d703b",
+            "filtered": "262a2a2a6d703b",
+            "entities": "26616d703b2a2a2a6d703b",
+            "stored": "26616d703b616d703b2a2a2a6d703b"
+        },
+        {
+            "words": "a,b,,c",
+            "input": "266c743b",
+            "filtered": "266c743b",
+            "entities": "26616d703b6c743b",
+            "stored": "26616d703b616d703b6c743b"
+        },
+        {
+            "words": "a,b,,c",
+            "input": "262333393b",
+            "filtered": "262333393b",
+            "entities": "26616d703b2333393b",
+            "stored": "26616d703b616d703b2333393b"
+        },
+        {
+            "words": "a,b,,c",
+            "input": "26233033393b",
+            "filtered": "26233033393b",
+            "entities": "26616d703b233033393b",
+            "stored": "26616d703b616d703b233033393b"
+        },
+        {
+            "words": "a,b,,c",
+            "input": "27e58d95e5bc95e58fb727",
+            "filtered": "27e58d95e5bc95e58fb727",
+            "entities": "27e58d95e5bc95e58fb727",
+            "stored": "26233033393be58d95e5bc95e58fb726233033393b"
+        },
+        {
+            "words": "a,b,,c",
+            "input": "22e58f8ce5bc95e58fb722",
+            "filtered": "22e58f8ce5bc95e58fb722",
+            "entities": "2671756f743be58f8ce5bc95e58fb72671756f743b",
+            "stored": "26616d703b71756f743be58f8ce5bc95e58fb726616d703b71756f743b"
+        },
+        {
+            "words": "a,b,,c",
+            "input": "c3a920c3a820c3bc20c3b120c3a720c39f20c3bf",
+            "filtered": "c3a920c3a820c3bc20c3b120c3a720c39f20c3bf",
+            "entities": "266561637574653b20266567726176653b202675756d6c3b20266e74696c64653b202663636564696c3b2026737a6c69673b202679756d6c3b",
+            "stored": "26616d703b6561637574653b2026616d703b6567726176653b2026616d703b75756d6c3b2026616d703b6e74696c64653b2026616d703b63636564696c3b2026616d703b737a6c69673b2026616d703b79756d6c3b"
+        },
+        {
+            "words": "a,b,,c",
+            "input": "e282ac20e284a220c2a920c2ae20c2b020c2b120c2b520c2b620c2b720c2bc20c2bd",
+            "filtered": "e282ac20e284a220c2a920c2ae20c2b020c2b120c2b520c2b620c2b720c2bc20c2bd",
+            "entities": "266575726f3b202674726164653b2026636f70793b20267265673b20266465673b2026706c75736d6e3b20266d6963726f3b2026706172613b20266d6964646f743b20266672616331343b20266672616331323b",
+            "stored": "26616d703b6575726f3b2026616d703b74726164653b2026616d703b636f70793b2026616d703b7265673b2026616d703b6465673b2026616d703b706c75736d6e3b2026616d703b6d6963726f3b2026616d703b706172613b2026616d703b6d6964646f743b2026616d703b6672616331343b2026616d703b6672616331323b"
+        },
+        {
+            "words": "a,b,,c",
+            "input": "e2869020e2869120e2869220e2869320e2879220e2888020e2888220e2888320e2889120e2889a20e2889e20e289a020e289a420e289a5",
+            "filtered": "e2869020e2869120e2869220e2869320e2879220e2888020e2888220e2888320e2889120e2889a20e2889e20e289a020e289a420e289a5",
+            "entities": "266c6172723b2026756172723b2026726172723b2026646172723b2026724172723b2026666f72616c6c3b2026706172743b202665786973743b202673756d3b202672616469633b2026696e66696e3b20266e653b20266c653b202667653b",
+            "stored": "26616d703b6c6172723b2026616d703b756172723b2026616d703b726172723b2026616d703b646172723b2026616d703b724172723b2026616d703b666f72616c6c3b2026616d703b706172743b2026616d703b65786973743b2026616d703b73756d3b2026616d703b72616469633b2026616d703b696e66696e3b2026616d703b6e653b2026616d703b6c653b2026616d703b67653b"
+        },
+        {
+            "words": "a,b,,c",
+            "input": "ceb120ceb220ceb320cea9",
+            "filtered": "ceb120ceb220ceb320cea9",
+            "entities": "26616c7068613b2026626574613b202667616d6d613b20264f6d6567613b",
+            "stored": "26616d703b616c7068613b2026616d703b626574613b2026616d703b67616d6d613b2026616d703b4f6d6567613b"
+        },
+        {
+            "words": "a,b,,c",
+            "input": "e2809ce2809d20e28098e2809920e2809420e2809320e280a620e280a220e280b220e280b3",
+            "filtered": "e2809ce2809d20e28098e2809920e2809420e2809320e280a620e280a220e280b220e280b3",
+            "entities": "266c6471756f3b26726471756f3b20266c7371756f3b26727371756f3b20266d646173683b20266e646173683b202668656c6c69703b202662756c6c3b20267072696d653b20265072696d653b",
+            "stored": "26616d703b6c6471756f3b26616d703b726471756f3b2026616d703b6c7371756f3b26616d703b727371756f3b2026616d703b6d646173683b2026616d703b6e646173683b2026616d703b68656c6c69703b2026616d703b62756c6c3b2026616d703b7072696d653b2026616d703b5072696d653b"
+        },
+        {
+            "words": "a,b,,c",
+            "input": "c2a06e627370",
+            "filtered": "c2a06e2a2a2a7370",
+            "entities": "266e6273703b6e2a2a2a7370",
+            "stored": "26616d703b6e6273703b6e2a2a2a7370"
+        },
+        {
+            "words": "a,b,,c",
+            "input": "c48020c483",
+            "filtered": "c48020c483",
+            "entities": "c48020c483",
+            "stored": "c48020c483"
+        },
+        {
+            "words": "a,b,,c",
+            "input": "f09f9880",
+            "filtered": "f09f9880",
+            "entities": "f09f9880",
+            "stored": "f09f9880"
+        },
+        {
+            "words": "a,b,,c",
+            "input": "e5a5bdc328",
+            "filtered": "e5a5bdc328",
+            "entities": "",
+            "stored": ""
+        },
+        {
+            "words": "a,b,,c",
+            "input": "ff",
+            "filtered": "ff",
+            "entities": "",
+            "stored": ""
+        },
+        {
+            "words": "a,b,,c",
+            "input": "7777772e612e636f6d20e79c8b2068747470",
+            "filtered": "7777772e2a2a2a2e2a2a2a6f6d20e79c8b2068747470",
+            "entities": "7777772e2a2a2a2e2a2a2a6f6d20e79c8b2068747470",
+            "stored": "7777772e2a2a2a2e2a2a2a6f6d20e79c8b2068747470"
+        },
+        {
+            "words": "a,b,,c",
+            "input": "5757572c436f6d",
+            "filtered": "5757572c436f6d",
+            "entities": "5757572c436f6d",
+            "stored": "5757572c436f6d"
+        },
+        {
+            "words": "a,b,,c",
+            "input": "616263266465663b",
+            "filtered": "2a2a2a2a2a2a2a2a2a266465663b",
+            "entities": "2a2a2a2a2a2a2a2a2a26616d703b6465663b",
+            "stored": "2a2a2a2a2a2a2a2a2a26616d703b616d703b6465663b"
+        },
+        {
+            "words": "a,b,,c",
+            "input": "266e6273703b26636f70793b",
+            "filtered": "266e2a2a2a73703b262a2a2a6f70793b",
+            "entities": "26616d703b6e2a2a2a73703b26616d703b2a2a2a6f70793b",
+            "stored": "26616d703b616d703b6e2a2a2a73703b26616d703b616d703b2a2a2a6f70793b"
+        },
+        {
+            "words": "a,b,,c",
+            "input": "3c7363726970743e616c6572742831293c2f7363726970743e",
+            "filtered": "3c732a2a2a726970743e2a2a2a6c6572742831293c2f732a2a2a726970743e",
+            "entities": "266c743b732a2a2a726970742667743b2a2a2a6c657274283129266c743b2f732a2a2a726970742667743b",
+            "stored": "26616d703b6c743b732a2a2a7269707426616d703b67743b2a2a2a6c65727428312926616d703b6c743b2f732a2a2a7269707426616d703b67743b"
+        },
+        {
+            "words": "a,b,,c",
+            "input": "6120262062203c2063203e20642022206520272066",
+            "filtered": "2a2a2a2026202a2a2a203c202a2a2a203e20642022206520272066",
+            "entities": "2a2a2a2026616d703b202a2a2a20266c743b202a2a2a202667743b2064202671756f743b206520272066",
+            "stored": "2a2a2a2026616d703b616d703b202a2a2a2026616d703b6c743b202a2a2a2026616d703b67743b20642026616d703b71756f743b20652026233033393b2066"
+        },
+        {
+            "words": "a,b,,c",
+            "input": "e5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bd",
+            "filtered": "e5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bd",
+            "entities": "e5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bd",
+            "stored": "e5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bd"
+        },
+        {
+            "words": "好,看",
+            "input": "",
+            "filtered": "",
+            "entities": "",
+            "stored": ""
+        },
+        {
+            "words": "好,看",
+            "input": "30",
+            "filtered": "30",
+            "entities": "30",
+            "stored": "30"
+        },
+        {
+            "words": "好,看",
+            "input": "61",
+            "filtered": "61",
+            "entities": "61",
+            "stored": "61"
+        },
+        {
+            "words": "好,看",
+            "input": "e5a5bde79c8b",
+            "filtered": "2a2a2a2a2a2a",
+            "entities": "2a2a2a2a2a2a",
+            "stored": "2a2a2a2a2a2a"
+        },
+        {
+            "words": "好,看",
+            "input": "2020e9a696e5b0bee7a9bae799bd2020",
+            "filtered": "2020e9a696e5b0bee7a9bae799bd2020",
+            "entities": "2020e9a696e5b0bee7a9bae799bd2020",
+            "stored": "e9a696e5b0bee7a9bae799bd"
+        },
+        {
+            "words": "好,看",
+            "input": "090a2078200d00",
+            "filtered": "090a2078200d00",
+            "entities": "090a2078200d00",
+            "stored": "78"
+        },
+        {
+            "words": "好,看",
+            "input": "610062",
+            "filtered": "610062",
+            "entities": "610062",
+            "stored": "6162"
+        },
+        {
+            "words": "好,看",
+            "input": "3c623ee7b2973c2f623e",
+            "filtered": "3c623ee7b2973c2f623e",
+            "entities": "266c743b622667743be7b297266c743b2f622667743b",
+            "stored": "26616d703b6c743b6226616d703b67743be7b29726616d703b6c743b2f6226616d703b67743b"
+        },
+        {
+            "words": "好,看",
+            "input": "26",
+            "filtered": "26",
+            "entities": "26616d703b",
+            "stored": "26616d703b616d703b"
+        },
+        {
+            "words": "好,看",
+            "input": "26616d703b",
+            "filtered": "26616d703b",
+            "entities": "26616d703b616d703b",
+            "stored": "26616d703b616d703b616d703b"
+        },
+        {
+            "words": "好,看",
+            "input": "266c743b",
+            "filtered": "266c743b",
+            "entities": "26616d703b6c743b",
+            "stored": "26616d703b616d703b6c743b"
+        },
+        {
+            "words": "好,看",
+            "input": "262333393b",
+            "filtered": "262333393b",
+            "entities": "26616d703b2333393b",
+            "stored": "26616d703b616d703b2333393b"
+        },
+        {
+            "words": "好,看",
+            "input": "26233033393b",
+            "filtered": "26233033393b",
+            "entities": "26616d703b233033393b",
+            "stored": "26616d703b616d703b233033393b"
+        },
+        {
+            "words": "好,看",
+            "input": "27e58d95e5bc95e58fb727",
+            "filtered": "27e58d95e5bc95e58fb727",
+            "entities": "27e58d95e5bc95e58fb727",
+            "stored": "26233033393be58d95e5bc95e58fb726233033393b"
+        },
+        {
+            "words": "好,看",
+            "input": "22e58f8ce5bc95e58fb722",
+            "filtered": "22e58f8ce5bc95e58fb722",
+            "entities": "2671756f743be58f8ce5bc95e58fb72671756f743b",
+            "stored": "26616d703b71756f743be58f8ce5bc95e58fb726616d703b71756f743b"
+        },
+        {
+            "words": "好,看",
+            "input": "c3a920c3a820c3bc20c3b120c3a720c39f20c3bf",
+            "filtered": "c3a920c3a820c3bc20c3b120c3a720c39f20c3bf",
+            "entities": "266561637574653b20266567726176653b202675756d6c3b20266e74696c64653b202663636564696c3b2026737a6c69673b202679756d6c3b",
+            "stored": "26616d703b6561637574653b2026616d703b6567726176653b2026616d703b75756d6c3b2026616d703b6e74696c64653b2026616d703b63636564696c3b2026616d703b737a6c69673b2026616d703b79756d6c3b"
+        },
+        {
+            "words": "好,看",
+            "input": "e282ac20e284a220c2a920c2ae20c2b020c2b120c2b520c2b620c2b720c2bc20c2bd",
+            "filtered": "e282ac20e284a220c2a920c2ae20c2b020c2b120c2b520c2b620c2b720c2bc20c2bd",
+            "entities": "266575726f3b202674726164653b2026636f70793b20267265673b20266465673b2026706c75736d6e3b20266d6963726f3b2026706172613b20266d6964646f743b20266672616331343b20266672616331323b",
+            "stored": "26616d703b6575726f3b2026616d703b74726164653b2026616d703b636f70793b2026616d703b7265673b2026616d703b6465673b2026616d703b706c75736d6e3b2026616d703b6d6963726f3b2026616d703b706172613b2026616d703b6d6964646f743b2026616d703b6672616331343b2026616d703b6672616331323b"
+        },
+        {
+            "words": "好,看",
+            "input": "e2869020e2869120e2869220e2869320e2879220e2888020e2888220e2888320e2889120e2889a20e2889e20e289a020e289a420e289a5",
+            "filtered": "e2869020e2869120e2869220e2869320e2879220e2888020e2888220e2888320e2889120e2889a20e2889e20e289a020e289a420e289a5",
+            "entities": "266c6172723b2026756172723b2026726172723b2026646172723b2026724172723b2026666f72616c6c3b2026706172743b202665786973743b202673756d3b202672616469633b2026696e66696e3b20266e653b20266c653b202667653b",
+            "stored": "26616d703b6c6172723b2026616d703b756172723b2026616d703b726172723b2026616d703b646172723b2026616d703b724172723b2026616d703b666f72616c6c3b2026616d703b706172743b2026616d703b65786973743b2026616d703b73756d3b2026616d703b72616469633b2026616d703b696e66696e3b2026616d703b6e653b2026616d703b6c653b2026616d703b67653b"
+        },
+        {
+            "words": "好,看",
+            "input": "ceb120ceb220ceb320cea9",
+            "filtered": "ceb120ceb220ceb320cea9",
+            "entities": "26616c7068613b2026626574613b202667616d6d613b20264f6d6567613b",
+            "stored": "26616d703b616c7068613b2026616d703b626574613b2026616d703b67616d6d613b2026616d703b4f6d6567613b"
+        },
+        {
+            "words": "好,看",
+            "input": "e2809ce2809d20e28098e2809920e2809420e2809320e280a620e280a220e280b220e280b3",
+            "filtered": "e2809ce2809d20e28098e2809920e2809420e2809320e280a620e280a220e280b220e280b3",
+            "entities": "266c6471756f3b26726471756f3b20266c7371756f3b26727371756f3b20266d646173683b20266e646173683b202668656c6c69703b202662756c6c3b20267072696d653b20265072696d653b",
+            "stored": "26616d703b6c6471756f3b26616d703b726471756f3b2026616d703b6c7371756f3b26616d703b727371756f3b2026616d703b6d646173683b2026616d703b6e646173683b2026616d703b68656c6c69703b2026616d703b62756c6c3b2026616d703b7072696d653b2026616d703b5072696d653b"
+        },
+        {
+            "words": "好,看",
+            "input": "c2a06e627370",
+            "filtered": "c2a06e627370",
+            "entities": "266e6273703b6e627370",
+            "stored": "26616d703b6e6273703b6e627370"
+        },
+        {
+            "words": "好,看",
+            "input": "c48020c483",
+            "filtered": "c48020c483",
+            "entities": "c48020c483",
+            "stored": "c48020c483"
+        },
+        {
+            "words": "好,看",
+            "input": "f09f9880",
+            "filtered": "f09f9880",
+            "entities": "f09f9880",
+            "stored": "f09f9880"
+        },
+        {
+            "words": "好,看",
+            "input": "e5a5bdc328",
+            "filtered": "2a2a2ac328",
+            "entities": "",
+            "stored": ""
+        },
+        {
+            "words": "好,看",
+            "input": "ff",
+            "filtered": "ff",
+            "entities": "",
+            "stored": ""
+        },
+        {
+            "words": "好,看",
+            "input": "7777772e612e636f6d20e79c8b2068747470",
+            "filtered": "7777772e612e636f6d202a2a2a2068747470",
+            "entities": "7777772e612e636f6d202a2a2a2068747470",
+            "stored": "7777772e612e636f6d202a2a2a2068747470"
+        },
+        {
+            "words": "好,看",
+            "input": "5757572c436f6d",
+            "filtered": "5757572c436f6d",
+            "entities": "5757572c436f6d",
+            "stored": "5757572c436f6d"
+        },
+        {
+            "words": "好,看",
+            "input": "616263266465663b",
+            "filtered": "616263266465663b",
+            "entities": "61626326616d703b6465663b",
+            "stored": "61626326616d703b616d703b6465663b"
+        },
+        {
+            "words": "好,看",
+            "input": "266e6273703b26636f70793b",
+            "filtered": "266e6273703b26636f70793b",
+            "entities": "26616d703b6e6273703b26616d703b636f70793b",
+            "stored": "26616d703b616d703b6e6273703b26616d703b616d703b636f70793b"
+        },
+        {
+            "words": "好,看",
+            "input": "3c7363726970743e616c6572742831293c2f7363726970743e",
+            "filtered": "3c7363726970743e616c6572742831293c2f7363726970743e",
+            "entities": "266c743b7363726970742667743b616c657274283129266c743b2f7363726970742667743b",
+            "stored": "26616d703b6c743b73637269707426616d703b67743b616c65727428312926616d703b6c743b2f73637269707426616d703b67743b"
+        },
+        {
+            "words": "好,看",
+            "input": "6120262062203c2063203e20642022206520272066",
+            "filtered": "6120262062203c2063203e20642022206520272066",
+            "entities": "612026616d703b206220266c743b2063202667743b2064202671756f743b206520272066",
+            "stored": "612026616d703b616d703b20622026616d703b6c743b20632026616d703b67743b20642026616d703b71756f743b20652026233033393b2066"
+        },
+        {
+            "words": "好,看",
+            "input": "e5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bde5a5bd",
+            "filtered": "2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a",
+            "entities": "2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a",
+            "stored": "2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a"
+        }
+    ],
+    "restore": [
+        {
+            "input": "",
+            "output": ""
+        },
+        {
+            "input": "61",
+            "output": "61"
+        },
+        {
+            "input": "26616d703b",
+            "output": "26"
+        },
+        {
+            "input": "26414d503b6c743b",
+            "output": "26414d503b6c743b"
+        },
+        {
+            "input": "26616d703b6c743b6226616d703b67743b",
+            "output": "266c743b622667743b"
+        },
+        {
+            "input": "26616d703b71756f743b7826616d703b233033393b",
+            "output": "2671756f743b7826233033393b"
+        },
+        {
+            "input": "26616d703b616d703b6c743b",
+            "output": "26616d703b6c743b"
+        },
+        {
+            "input": "26233033393b78",
+            "output": "26233033393b78"
+        },
+        {
+            "input": "26616d703b2333393b",
+            "output": "262333393b"
+        },
+        {
+            "input": "26616d703b6561637574653b",
+            "output": "266561637574653b"
+        },
+        {
+            "input": "706c61696e20266c743b622667743b",
+            "output": "706c61696e20266c743b622667743b"
+        },
+        {
+            "input": "26616d703b237832373b",
+            "output": "26237832373b"
+        },
+        {
+            "input": "26616d703b2333343b",
+            "output": "262333343b"
+        }
+    ],
+    "periods": [
+        {
+            "moment": "2026-10-25 00:00:00",
+            "now": 1792857600,
+            "weekStart": 1792857600,
+            "weekEnd": 1793462399,
+            "checks": [
+                {
+                    "offset": 0,
+                    "month": true,
+                    "week": true,
+                    "day": true
+                },
+                {
+                    "offset": 1,
+                    "month": true,
+                    "week": true,
+                    "day": true
+                },
+                {
+                    "offset": -1,
+                    "month": true,
+                    "week": false,
+                    "day": false
+                },
+                {
+                    "offset": 86399,
+                    "month": true,
+                    "week": true,
+                    "day": true
+                },
+                {
+                    "offset": 86400,
+                    "month": true,
+                    "week": true,
+                    "day": false
+                },
+                {
+                    "offset": -86400,
+                    "month": true,
+                    "week": false,
+                    "day": false
+                },
+                {
+                    "offset": -604800,
+                    "month": true,
+                    "week": false,
+                    "day": false
+                },
+                {
+                    "offset": 604800,
+                    "month": false,
+                    "week": false,
+                    "day": false
+                },
+                {
+                    "offset": -3456000,
+                    "month": false,
+                    "week": false,
+                    "day": false
+                },
+                {
+                    "offset": 3456000,
+                    "month": false,
+                    "week": false,
+                    "day": false
+                }
+            ]
+        },
+        {
+            "moment": "2026-10-25 23:59:59",
+            "now": 1792943999,
+            "weekStart": 1792857600,
+            "weekEnd": 1793462399,
+            "checks": [
+                {
+                    "offset": 0,
+                    "month": true,
+                    "week": true,
+                    "day": true
+                },
+                {
+                    "offset": 1,
+                    "month": true,
+                    "week": true,
+                    "day": false
+                },
+                {
+                    "offset": -1,
+                    "month": true,
+                    "week": true,
+                    "day": true
+                },
+                {
+                    "offset": 86399,
+                    "month": true,
+                    "week": true,
+                    "day": false
+                },
+                {
+                    "offset": 86400,
+                    "month": true,
+                    "week": true,
+                    "day": false
+                },
+                {
+                    "offset": -86400,
+                    "month": true,
+                    "week": false,
+                    "day": false
+                },
+                {
+                    "offset": -604800,
+                    "month": true,
+                    "week": false,
+                    "day": false
+                },
+                {
+                    "offset": 604800,
+                    "month": false,
+                    "week": false,
+                    "day": false
+                },
+                {
+                    "offset": -3456000,
+                    "month": false,
+                    "week": false,
+                    "day": false
+                },
+                {
+                    "offset": 3456000,
+                    "month": false,
+                    "week": false,
+                    "day": false
+                }
+            ]
+        },
+        {
+            "moment": "2026-10-24 12:00:00",
+            "now": 1792814400,
+            "weekStart": 1792252800,
+            "weekEnd": 1792857599,
+            "checks": [
+                {
+                    "offset": 0,
+                    "month": true,
+                    "week": true,
+                    "day": true
+                },
+                {
+                    "offset": 1,
+                    "month": true,
+                    "week": true,
+                    "day": true
+                },
+                {
+                    "offset": -1,
+                    "month": true,
+                    "week": true,
+                    "day": true
+                },
+                {
+                    "offset": 86399,
+                    "month": true,
+                    "week": false,
+                    "day": false
+                },
+                {
+                    "offset": 86400,
+                    "month": true,
+                    "week": false,
+                    "day": false
+                },
+                {
+                    "offset": -86400,
+                    "month": true,
+                    "week": true,
+                    "day": false
+                },
+                {
+                    "offset": -604800,
+                    "month": true,
+                    "week": false,
+                    "day": false
+                },
+                {
+                    "offset": 604800,
+                    "month": true,
+                    "week": false,
+                    "day": false
+                },
+                {
+                    "offset": -3456000,
+                    "month": false,
+                    "week": false,
+                    "day": false
+                },
+                {
+                    "offset": 3456000,
+                    "month": false,
+                    "week": false,
+                    "day": false
+                }
+            ]
+        },
+        {
+            "moment": "2026-10-31 23:59:59",
+            "now": 1793462399,
+            "weekStart": 1792857600,
+            "weekEnd": 1793462399,
+            "checks": [
+                {
+                    "offset": 0,
+                    "month": true,
+                    "week": true,
+                    "day": true
+                },
+                {
+                    "offset": 1,
+                    "month": false,
+                    "week": false,
+                    "day": false
+                },
+                {
+                    "offset": -1,
+                    "month": true,
+                    "week": true,
+                    "day": true
+                },
+                {
+                    "offset": 86399,
+                    "month": false,
+                    "week": false,
+                    "day": false
+                },
+                {
+                    "offset": 86400,
+                    "month": false,
+                    "week": false,
+                    "day": false
+                },
+                {
+                    "offset": -86400,
+                    "month": true,
+                    "week": true,
+                    "day": false
+                },
+                {
+                    "offset": -604800,
+                    "month": true,
+                    "week": false,
+                    "day": false
+                },
+                {
+                    "offset": 604800,
+                    "month": false,
+                    "week": false,
+                    "day": false
+                },
+                {
+                    "offset": -3456000,
+                    "month": false,
+                    "week": false,
+                    "day": false
+                },
+                {
+                    "offset": 3456000,
+                    "month": false,
+                    "week": false,
+                    "day": false
+                }
+            ]
+        },
+        {
+            "moment": "2026-11-01 00:00:00",
+            "now": 1793462400,
+            "weekStart": 1793462400,
+            "weekEnd": 1794067199,
+            "checks": [
+                {
+                    "offset": 0,
+                    "month": true,
+                    "week": true,
+                    "day": true
+                },
+                {
+                    "offset": 1,
+                    "month": true,
+                    "week": true,
+                    "day": true
+                },
+                {
+                    "offset": -1,
+                    "month": false,
+                    "week": false,
+                    "day": false
+                },
+                {
+                    "offset": 86399,
+                    "month": true,
+                    "week": true,
+                    "day": true
+                },
+                {
+                    "offset": 86400,
+                    "month": true,
+                    "week": true,
+                    "day": false
+                },
+                {
+                    "offset": -86400,
+                    "month": false,
+                    "week": false,
+                    "day": false
+                },
+                {
+                    "offset": -604800,
+                    "month": false,
+                    "week": false,
+                    "day": false
+                },
+                {
+                    "offset": 604800,
+                    "month": true,
+                    "week": false,
+                    "day": false
+                },
+                {
+                    "offset": -3456000,
+                    "month": false,
+                    "week": false,
+                    "day": false
+                },
+                {
+                    "offset": 3456000,
+                    "month": false,
+                    "week": false,
+                    "day": false
+                }
+            ]
+        },
+        {
+            "moment": "2027-01-01 00:00:00",
+            "now": 1798732800,
+            "weekStart": 1798300800,
+            "weekEnd": 1798905599,
+            "checks": [
+                {
+                    "offset": 0,
+                    "month": true,
+                    "week": true,
+                    "day": true
+                },
+                {
+                    "offset": 1,
+                    "month": true,
+                    "week": true,
+                    "day": true
+                },
+                {
+                    "offset": -1,
+                    "month": false,
+                    "week": true,
+                    "day": false
+                },
+                {
+                    "offset": 86399,
+                    "month": true,
+                    "week": true,
+                    "day": true
+                },
+                {
+                    "offset": 86400,
+                    "month": true,
+                    "week": true,
+                    "day": false
+                },
+                {
+                    "offset": -86400,
+                    "month": false,
+                    "week": true,
+                    "day": false
+                },
+                {
+                    "offset": -604800,
+                    "month": false,
+                    "week": false,
+                    "day": false
+                },
+                {
+                    "offset": 604800,
+                    "month": true,
+                    "week": false,
+                    "day": false
+                },
+                {
+                    "offset": -3456000,
+                    "month": false,
+                    "week": false,
+                    "day": false
+                },
+                {
+                    "offset": 3456000,
+                    "month": false,
+                    "week": false,
+                    "day": false
+                }
+            ]
+        },
+        {
+            "moment": "2026-12-31 23:59:59",
+            "now": 1798732799,
+            "weekStart": 1798300800,
+            "weekEnd": 1798905599,
+            "checks": [
+                {
+                    "offset": 0,
+                    "month": true,
+                    "week": true,
+                    "day": true
+                },
+                {
+                    "offset": 1,
+                    "month": false,
+                    "week": true,
+                    "day": false
+                },
+                {
+                    "offset": -1,
+                    "month": true,
+                    "week": true,
+                    "day": true
+                },
+                {
+                    "offset": 86399,
+                    "month": false,
+                    "week": true,
+                    "day": false
+                },
+                {
+                    "offset": 86400,
+                    "month": false,
+                    "week": true,
+                    "day": false
+                },
+                {
+                    "offset": -86400,
+                    "month": true,
+                    "week": true,
+                    "day": false
+                },
+                {
+                    "offset": -604800,
+                    "month": true,
+                    "week": false,
+                    "day": false
+                },
+                {
+                    "offset": 604800,
+                    "month": false,
+                    "week": false,
+                    "day": false
+                },
+                {
+                    "offset": -3456000,
+                    "month": false,
+                    "week": false,
+                    "day": false
+                },
+                {
+                    "offset": 3456000,
+                    "month": false,
+                    "week": false,
+                    "day": false
+                }
+            ]
+        },
+        {
+            "moment": "2028-02-29 08:00:00",
+            "now": 1835395200,
+            "weekStart": 1835193600,
+            "weekEnd": 1835798399,
+            "checks": [
+                {
+                    "offset": 0,
+                    "month": true,
+                    "week": true,
+                    "day": true
+                },
+                {
+                    "offset": 1,
+                    "month": true,
+                    "week": true,
+                    "day": true
+                },
+                {
+                    "offset": -1,
+                    "month": true,
+                    "week": true,
+                    "day": true
+                },
+                {
+                    "offset": 86399,
+                    "month": false,
+                    "week": true,
+                    "day": false
+                },
+                {
+                    "offset": 86400,
+                    "month": false,
+                    "week": true,
+                    "day": false
+                },
+                {
+                    "offset": -86400,
+                    "month": true,
+                    "week": true,
+                    "day": false
+                },
+                {
+                    "offset": -604800,
+                    "month": true,
+                    "week": false,
+                    "day": false
+                },
+                {
+                    "offset": 604800,
+                    "month": false,
+                    "week": false,
+                    "day": false
+                },
+                {
+                    "offset": -3456000,
+                    "month": false,
+                    "week": false,
+                    "day": false
+                },
+                {
+                    "offset": 3456000,
+                    "month": false,
+                    "week": false,
+                    "day": false
+                }
+            ]
+        },
+        {
+            "moment": "2026-03-01 00:00:01",
+            "now": 1772294401,
+            "weekStart": 1772294400,
+            "weekEnd": 1772899199,
+            "checks": [
+                {
+                    "offset": 0,
+                    "month": true,
+                    "week": true,
+                    "day": true
+                },
+                {
+                    "offset": 1,
+                    "month": true,
+                    "week": true,
+                    "day": true
+                },
+                {
+                    "offset": -1,
+                    "month": true,
+                    "week": true,
+                    "day": true
+                },
+                {
+                    "offset": 86399,
+                    "month": true,
+                    "week": true,
+                    "day": false
+                },
+                {
+                    "offset": 86400,
+                    "month": true,
+                    "week": true,
+                    "day": false
+                },
+                {
+                    "offset": -86400,
+                    "month": false,
+                    "week": false,
+                    "day": false
+                },
+                {
+                    "offset": -604800,
+                    "month": false,
+                    "week": false,
+                    "day": false
+                },
+                {
+                    "offset": 604800,
+                    "month": true,
+                    "week": false,
+                    "day": false
+                },
+                {
+                    "offset": -3456000,
+                    "month": false,
+                    "week": false,
+                    "day": false
+                },
+                {
+                    "offset": 3456000,
+                    "month": false,
+                    "week": false,
+                    "day": false
+                }
+            ]
+        },
+        {
+            "moment": "2026-10-26 00:00:00",
+            "now": 1792944000,
+            "weekStart": 1792857600,
+            "weekEnd": 1793462399,
+            "checks": [
+                {
+                    "offset": 0,
+                    "month": true,
+                    "week": true,
+                    "day": true
+                },
+                {
+                    "offset": 1,
+                    "month": true,
+                    "week": true,
+                    "day": true
+                },
+                {
+                    "offset": -1,
+                    "month": true,
+                    "week": true,
+                    "day": false
+                },
+                {
+                    "offset": 86399,
+                    "month": true,
+                    "week": true,
+                    "day": true
+                },
+                {
+                    "offset": 86400,
+                    "month": true,
+                    "week": true,
+                    "day": false
+                },
+                {
+                    "offset": -86400,
+                    "month": true,
+                    "week": true,
+                    "day": false
+                },
+                {
+                    "offset": -604800,
+                    "month": true,
+                    "week": false,
+                    "day": false
+                },
+                {
+                    "offset": 604800,
+                    "month": false,
+                    "week": false,
+                    "day": false
+                },
+                {
+                    "offset": -3456000,
+                    "month": false,
+                    "week": false,
+                    "day": false
+                },
+                {
+                    "offset": 3456000,
+                    "month": false,
+                    "week": false,
+                    "day": false
+                }
+            ]
+        },
+        {
+            "moment": "2026-10-28 15:30:00",
+            "now": 1793172600,
+            "weekStart": 1792857600,
+            "weekEnd": 1793462399,
+            "checks": [
+                {
+                    "offset": 0,
+                    "month": true,
+                    "week": true,
+                    "day": true
+                },
+                {
+                    "offset": 1,
+                    "month": true,
+                    "week": true,
+                    "day": true
+                },
+                {
+                    "offset": -1,
+                    "month": true,
+                    "week": true,
+                    "day": true
+                },
+                {
+                    "offset": 86399,
+                    "month": true,
+                    "week": true,
+                    "day": false
+                },
+                {
+                    "offset": 86400,
+                    "month": true,
+                    "week": true,
+                    "day": false
+                },
+                {
+                    "offset": -86400,
+                    "month": true,
+                    "week": true,
+                    "day": false
+                },
+                {
+                    "offset": -604800,
+                    "month": true,
+                    "week": false,
+                    "day": false
+                },
+                {
+                    "offset": 604800,
+                    "month": false,
+                    "week": false,
+                    "day": false
+                },
+                {
+                    "offset": -3456000,
+                    "month": false,
+                    "week": false,
+                    "day": false
+                },
+                {
+                    "offset": 3456000,
+                    "month": false,
+                    "week": false,
+                    "day": false
+                }
+            ]
+        },
+        {
+            "moment": "1990-04-15 12:00:00",
+            "now": 640148400,
+            "weekStart": 640108800,
+            "weekEnd": 640709999,
+            "checks": [
+                {
+                    "offset": 0,
+                    "month": true,
+                    "week": true,
+                    "day": true
+                },
+                {
+                    "offset": 1,
+                    "month": true,
+                    "week": true,
+                    "day": true
+                },
+                {
+                    "offset": -1,
+                    "month": true,
+                    "week": true,
+                    "day": true
+                },
+                {
+                    "offset": 86399,
+                    "month": true,
+                    "week": true,
+                    "day": false
+                },
+                {
+                    "offset": 86400,
+                    "month": true,
+                    "week": true,
+                    "day": false
+                },
+                {
+                    "offset": -86400,
+                    "month": true,
+                    "week": false,
+                    "day": false
+                },
+                {
+                    "offset": -604800,
+                    "month": true,
+                    "week": false,
+                    "day": false
+                },
+                {
+                    "offset": 604800,
+                    "month": true,
+                    "week": false,
+                    "day": false
+                },
+                {
+                    "offset": -3456000,
+                    "month": false,
+                    "week": false,
+                    "day": false
+                },
+                {
+                    "offset": 3456000,
+                    "month": false,
+                    "week": false,
+                    "day": false
+                }
+            ]
+        },
+        {
+            "moment": "1991-09-15 01:30:00",
+            "now": 684869400,
+            "weekStart": 684860400,
+            "weekEnd": 685468799,
+            "checks": [
+                {
+                    "offset": 0,
+                    "month": true,
+                    "week": true,
+                    "day": true
+                },
+                {
+                    "offset": 1,
+                    "month": true,
+                    "week": true,
+                    "day": true
+                },
+                {
+                    "offset": -1,
+                    "month": true,
+                    "week": true,
+                    "day": true
+                },
+                {
+                    "offset": 86399,
+                    "month": true,
+                    "week": true,
+                    "day": false
+                },
+                {
+                    "offset": 86400,
+                    "month": true,
+                    "week": true,
+                    "day": false
+                },
+                {
+                    "offset": -86400,
+                    "month": true,
+                    "week": false,
+                    "day": false
+                },
+                {
+                    "offset": -604800,
+                    "month": true,
+                    "week": false,
+                    "day": false
+                },
+                {
+                    "offset": 604800,
+                    "month": true,
+                    "week": false,
+                    "day": false
+                },
+                {
+                    "offset": -3456000,
+                    "month": false,
+                    "week": false,
+                    "day": false
+                },
+                {
+                    "offset": 3456000,
+                    "month": false,
+                    "week": false,
+                    "day": false
+                }
+            ]
+        }
+    ]
+}

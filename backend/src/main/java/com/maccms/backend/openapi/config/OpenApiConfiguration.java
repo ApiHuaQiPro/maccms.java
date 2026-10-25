@@ -1,5 +1,6 @@
 package com.maccms.backend.openapi.config;
 
+import com.maccms.backend.content.application.ContentCounterService;
 import com.maccms.backend.content.application.LegacyRowReadService;
 import com.maccms.backend.legacyconfig.application.LegacyConfigException;
 import com.maccms.backend.legacyconfig.application.LegacyConfigFile;
@@ -45,10 +46,6 @@ public class OpenApiConfiguration {
                 // 只记录项数：旧版对域名项做 DNS 解析（Provide.php:793-795），新版服务端不出站
                 log.warn("provide {}: {} auth entries are not IP literals and never match", m.key(), ms.ignoredAuth());
             }
-            if (ms.open() && ms.detailIncHits()) {
-                log.warn("provide {}: detail_inc_hits is on but hit counting is not implemented in this batch (B11)",
-                        m.key());
-            }
         }
         return settings;
     }
@@ -59,8 +56,18 @@ public class OpenApiConfiguration {
      */
     @Bean
     ProvideService provideService(ProvideSettings settings, LegacyRowReadService rows, ObjectProvider<Clock> clock,
-                                  ObjectProvider<ProvideSettingsSource> source) {
+                                  ObjectProvider<ProvideSettingsSource> source,
+                                  ObjectProvider<ContentCounterService> counters) {
         ProvideSettingsSource s = source.getIfAvailable(() -> () -> settings);
-        return new ProvideService(s, rows, clock.getIfAvailable(Clock::systemUTC));
+        ContentCounterService c = counters.getIfAvailable();
+        boolean incHits = false;
+        for (ProvideModule m : ProvideModule.values()) {
+            incHits |= settings.module(m).open() && settings.module(m).detailIncHits();
+        }
+        if (incHits && (c == null || !c.writable())) {
+            // B11 起 detail_inc_hits 写 vod_hits；可写数据源关闭时不计数
+            log.warn("provide vod: detail_inc_hits is on but the write datasource is disabled; hits are not counted");
+        }
+        return new ProvideService(s, rows, clock.getIfAvailable(Clock::systemUTC), c);
     }
 }

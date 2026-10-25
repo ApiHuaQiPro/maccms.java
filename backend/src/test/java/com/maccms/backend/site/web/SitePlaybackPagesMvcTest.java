@@ -7,6 +7,7 @@ import static com.maccms.backend.site.web.PlaybackFixtures.media;
 import static com.maccms.backend.site.web.PlaybackFixtures.result;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
@@ -83,7 +84,7 @@ class SitePlaybackPagesMvcTest {
     @BeforeEach
     void setUp() {
         when(content.listCategories()).thenReturn(SiteContentFixtures.categories());
-        when(playback.access(eq(1L), any(), any())).thenReturn(allowed());
+        when(playback.access(eq(1L), anyInt(), anyInt(), any(), any())).thenReturn(allowed());
     }
 
     private MvcResult fetch(String path) throws Exception {
@@ -164,7 +165,7 @@ class SitePlaybackPagesMvcTest {
     void deniedOutcomesAreFixed403NoticesWithoutAddresses() throws Exception {
         for (PlaybackOutcome o : List.of(PlaybackOutcome.NO_PERMISSION, PlaybackOutcome.POINTS_REQUIRED,
                 PlaybackOutcome.COPYRIGHT_RESTRICTED)) {
-            when(playback.access(eq(1L), any(), any())).thenReturn(result(o, media(), 0));
+            when(playback.access(eq(1L), anyInt(), anyInt(), any(), any())).thenReturn(result(o, media(), 0));
             for (String path : List.of(PLAY, PLAYER)) {
                 MvcResult r = fetch(path);
                 assertThat(r.getResponse().getStatus()).as(o + " " + path).isEqualTo(403);
@@ -175,7 +176,7 @@ class SitePlaybackPagesMvcTest {
                 assertThat(html(r).select(".access-notice")).hasSize(1);
             }
         }
-        when(playback.access(eq(1L), any(), any())).thenReturn(result(PlaybackOutcome.NO_PERMISSION, media(), 0));
+        when(playback.access(eq(1L), anyInt(), anyInt(), any(), any())).thenReturn(result(PlaybackOutcome.NO_PERMISSION, media(), 0));
         String text = html(fetch(PLAY)).selectFirst(".access-notice__message").text();
         // 不一律声称登录就能解决（D-B05-2）
         assertThat(text).isEqualTo(PlaybackPages.NO_PLAY_PERMISSION).doesNotContain("登录");
@@ -242,7 +243,7 @@ class SitePlaybackPagesMvcTest {
 
     @Test
     void trialFrameCarriesMinutesAndTheSameOriginTrialScript() throws Exception {
-        when(playback.access(eq(1L), any(), any())).thenReturn(result(PlaybackOutcome.TRIAL, media(), 7));
+        when(playback.access(eq(1L), anyInt(), anyInt(), any(), any())).thenReturn(result(PlaybackOutcome.TRIAL, media(), 7));
         MvcResult r = fetch(PLAYER);
         Document doc = html(r);
         String nonce = nonceOf(r);
@@ -275,7 +276,7 @@ class SitePlaybackPagesMvcTest {
                 new String[] {"dplayer", "第1集$https://a.example.invalid/x\"><script>alert(1)</script>"},
                 new String[] {"dplayer", "第1集$https://a.example.invalid/x$x\"onload=\"y"},
                 new String[] {"dplayer", "第1集$https://a.example.invalid/1.mp4$x\"><b"})) {
-            when(playback.access(eq(1L), any(), any())).thenReturn(result(PlaybackOutcome.ALLOWED, media(c[0], c[1]), 0));
+            when(playback.access(eq(1L), anyInt(), anyInt(), any(), any())).thenReturn(result(PlaybackOutcome.ALLOWED, media(c[0], c[1]), 0));
             MvcResult r = fetch("/index.php/vod/player/id/1/nid/1/sid/1.html");
             String body = r.getResponse().getContentAsString(StandardCharsets.UTF_8);
             assertThat(r.getResponse().getStatus()).as(c[1]).isEqualTo(200);
@@ -286,12 +287,12 @@ class SitePlaybackPagesMvcTest {
 
     @Test
     void ivaSourceAddsOnlyItsScriptHostWhenW1IsOpen() throws Exception {
-        when(playback.access(eq(1L), any(), any()))
+        when(playback.access(eq(1L), anyInt(), anyInt(), any(), any()))
                 .thenReturn(result(PlaybackOutcome.ALLOWED, media("iva", "第1集$https://media.example.invalid/1.mp4"), 0));
         String csp = fetch("/index.php/vod/player/id/1/nid/1/sid/1.html").getResponse().getHeader("Content-Security-Policy");
         assertThat(csp).contains("script-src 'self' 'nonce-").contains(" *.videojj.com;");
         // 解析来源：只放行该来源实际使用的解析地址（W1）
-        when(playback.access(eq(1L), any(), any()))
+        when(playback.access(eq(1L), anyInt(), anyInt(), any(), any()))
                 .thenReturn(result(PlaybackOutcome.ALLOWED, media("jxown", "第1集$https://media.example.invalid/1.mp4"), 0));
         csp = fetch("/index.php/vod/player/id/1/nid/1/sid/1.html").getResponse().getHeader("Content-Security-Policy");
         assertThat(csp).contains("frame-src 'self' http://jx2.example.invalid ad.example.invalid https://media.example.invalid")
@@ -305,9 +306,9 @@ class SitePlaybackPagesMvcTest {
     @Test
     void playerPasswordFlowUsesSignedHttpOnlyTicket(CapturedOutput output) throws Exception {
         String pwd = "Ab9-SYNTHETIC-PWD";
-        when(playback.access(eq(1L), eq(PlaybackEntry.PLAYER), isNull()))
+        when(playback.access(eq(1L), anyInt(), anyInt(), eq(PlaybackEntry.PLAYER), isNull()))
                 .thenReturn(result(PlaybackOutcome.PASSWORD_REQUIRED, media(), 0));
-        when(playback.access(eq(1L), eq(PlaybackEntry.PLAYER), any(PasswordProof.class))).thenReturn(allowed());
+        when(playback.access(eq(1L), anyInt(), anyInt(), eq(PlaybackEntry.PLAYER), any(PasswordProof.class))).thenReturn(allowed());
         when(playback.verifyPassword(1L, PasswordTarget.VIDEO_PLAY, pwd)).thenReturn(true);
 
         MvcResult form = fetch(PLAYER);
@@ -338,7 +339,7 @@ class SitePlaybackPagesMvcTest {
         MvcResult player = mvc.perform(get(PLAYER).cookie(new Cookie("maccms_pwd_v4_1", ticket))).andReturn();
         assertThat(player.getResponse().getStatus()).isEqualTo(200);
         ArgumentCaptor<PasswordProof> proof = ArgumentCaptor.forClass(PasswordProof.class);
-        verify(playback, org.mockito.Mockito.atLeastOnce()).access(eq(1L), eq(PlaybackEntry.PLAYER), proof.capture());
+        verify(playback, org.mockito.Mockito.atLeastOnce()).access(eq(1L), anyInt(), anyInt(), eq(PlaybackEntry.PLAYER), proof.capture());
         assertThat(proof.getAllValues()).anySatisfy(pp -> assertThat(pp).isNotNull());
 
         // 伪造、跨用途、跨内容的票据都不被接受（交给 content 的凭据为空）
@@ -352,7 +353,7 @@ class SitePlaybackPagesMvcTest {
 
     @Test
     void passwordAttemptsAreRateLimitedWithoutQueryingTheDatabase() throws Exception {
-        when(playback.access(eq(1L), eq(PlaybackEntry.DOWNER), isNull()))
+        when(playback.access(eq(1L), anyInt(), anyInt(), eq(PlaybackEntry.DOWNER), isNull()))
                 .thenReturn(result(PlaybackOutcome.PASSWORD_REQUIRED, media(), 0));
         int limited = 0;
         for (int i = 0; i < 12; i++) {
@@ -378,10 +379,10 @@ class SitePlaybackPagesMvcTest {
 
     @Test
     void downPageListsEpisodesAndDownerShowsTheAddressOnlyAfterChecks() throws Exception {
-        when(playback.access(eq(1L), eq(PlaybackEntry.DOWN_PAGE), any())).thenReturn(result(PlaybackOutcome.ALLOWED,
+        when(playback.access(eq(1L), anyInt(), anyInt(), eq(PlaybackEntry.DOWN_PAGE), any())).thenReturn(result(PlaybackOutcome.ALLOWED,
                 new com.maccms.backend.content.application.view.VideoMediaDto("http$$$xunlei",
                         "下载1$https://dl.example.invalid/v1/1.zip#下载2$upload/down/v1-2.zip$$$迅雷$thunder://QUFo", "", "", 0), 0));
-        when(playback.access(eq(1L), eq(PlaybackEntry.DOWNER), any())).thenReturn(result(PlaybackOutcome.ALLOWED,
+        when(playback.access(eq(1L), anyInt(), anyInt(), eq(PlaybackEntry.DOWNER), any())).thenReturn(result(PlaybackOutcome.ALLOWED,
                 new com.maccms.backend.content.application.view.VideoMediaDto("http$$$xunlei",
                         "下载1$https://dl.example.invalid/v1/1.zip#下载2$upload/down/v1-2.zip$$$迅雷$thunder://QUFo", "", "", 0), 0));
         MvcResult down = fetch(DOWN);
@@ -417,11 +418,11 @@ class SitePlaybackPagesMvcTest {
 
     @Test
     void playerFromNotInTheLegacyConfigIsNotAPlaySource() throws Exception {
-        when(playback.access(eq(1L), any(), any()))
+        when(playback.access(eq(1L), anyInt(), anyInt(), any(), any()))
                 .thenReturn(result(PlaybackOutcome.ALLOWED, media("nosuchplayer", "第1集$" + MEDIA), 0));
         // mac_play_list 只保留配置中启用的播放器（common.php:1380-1394）：该组不存在 → 404
         assertThat(fetch("/index.php/vod/player/id/1/nid/1/sid/1.html").getResponse().getStatus()).isEqualTo(404);
-        when(playback.access(eq(1L), any(), any()))
+        when(playback.access(eq(1L), anyInt(), anyInt(), any(), any()))
                 .thenReturn(result(PlaybackOutcome.ALLOWED, media("offplayer", "第1集$" + MEDIA), 0));
         assertThat(fetch("/index.php/vod/play/id/1/sid/1/nid/1.html").getResponse().getStatus()).isEqualTo(404);
     }

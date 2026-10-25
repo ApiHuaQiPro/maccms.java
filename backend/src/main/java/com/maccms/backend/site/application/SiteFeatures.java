@@ -8,23 +8,23 @@ import java.util.Locale;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
- * 旧前台的页面开关（B05，docs/architecture/15-b05-readonly-pages.md 第 7 节）：
+ * 旧前台的页面开关（B05，docs/architecture/15-b05-readonly-pages.md 第 7 节；B11 接上验证码）：
  * <ul>
  * <li>{@code ajaxPage}：旧 {@code app.ajax_page}（application/index/controller/Base.php:45-51），关闭时各模块的 ajax_detail、
  * ajax_show、ajax_search 不提供（404）；</li>
  * <li>{@code show}：旧 {@code app.show}（Base.php:29-43），关闭时各模块的 show 筛选页与 ajax_show 不提供；</li>
- * <li>{@code searchVerify}：旧 {@code app.search_verify=1}（Base.php:63-70），搜索页（非 ajax）要求先过验证码。</li>
+ * <li>{@code searchVerify}：旧 {@code app.search_verify=1}（Base.php:63-70），搜索页（非 ajax）要求本会话先过验证码；</li>
+ * <li>{@code showVerify}：旧 {@code app.show_verify=1}（Base.php:35-42），筛选页（非 ajax）要求本会话先过验证码。</li>
  * </ul>
  * 取值：环境变量（{@code maccms.site.features.*}，true/false）非空时用它；否则取旧配置（{@code extra/maccms.php}）；都没有时按仓库值关闭。
+ * 两个验证码开关只取旧配置。
  *
- * <p>验证码放行（{@code show_verify}、{@code search_verify}）新版尚未提供：本地验证码与会话已在 B08 提供（{@code verify/index}），
- * 通过后放行页面的 {@code ajax/verify_check} 在 B11 接线。
- * 在此之前按<b>临时关闭</b>处理，不能被环境变量绕过——旧配置 {@code show_verify=1} 时筛选页与 ajax_show 一律关闭（旧版 ajax_show 不验证，
- * 新版更保守）；{@code search_verify=1} 时视频与各模块的搜索页关闭、ajax_search 照常（旧版 ajax 入口不验证）。接线后按旧行为恢复。
+ * <p>验证码（B11，20 文档第 7 节）：未通过时页面显示验证码页（{@code pages/verify.jte}），提交到 {@code ajax/verify_check}，通过后本会话
+ * 不再要求；ajax 入口不验证（与旧版相同）。B05 的"临时关闭"（B11 之前）由此结束。
  */
-public record SiteFeatures(boolean ajaxPage, boolean show, boolean searchVerify) {
+public record SiteFeatures(boolean ajaxPage, boolean show, boolean searchVerify, boolean showVerify) {
 
-    public static final SiteFeatures CLOSED = new SiteFeatures(false, false, false);
+    public static final SiteFeatures CLOSED = new SiteFeatures(false, false, false, false);
 
     /** {@code maccms.site.features.*}，按原始字符串绑定。 */
     @ConfigurationProperties(prefix = "maccms.site.features")
@@ -47,13 +47,18 @@ public record SiteFeatures(boolean ajaxPage, boolean show, boolean searchVerify)
         boolean legacyShow = maccms != null && one(maccms.path("app", "show"));
         boolean showVerify = maccms != null && one(maccms.path("app", "show_verify"));
         boolean searchVerify = maccms != null && one(maccms.path("app", "search_verify"));
-        return new SiteFeatures(ajax != null ? ajax : legacyAjax, (show != null ? show : legacyShow) && !showVerify,
-                searchVerify);
+        return new SiteFeatures(ajax != null ? ajax : legacyAjax, show != null ? show : legacyShow, searchVerify,
+                showVerify);
     }
 
-    /** 搜索页（非 ajax）是否因旧 search_verify=1 而临时关闭。 */
-    public boolean searchPageClosed(boolean ajax) {
+    /** 本次请求（是否 ajax）的搜索页是否要求验证码。 */
+    public boolean searchNeedsVerify(boolean ajax) {
         return searchVerify && !ajax;
+    }
+
+    /** 本次请求（是否 ajax）的筛选页是否要求验证码。 */
+    public boolean showNeedsVerify(boolean ajax) {
+        return showVerify && !ajax;
     }
 
     private static Boolean flag(String raw, String key, List<String> errors) {

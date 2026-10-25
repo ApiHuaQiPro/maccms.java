@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+  B11 视频搜索缓存（vod_search_optimise 含 frontend 时，application/common/model/Vod.php:404-459、VodSearch.php:18-64）的只读查询。
+  禁止写语句、禁止 ${} 拼接；扫描的列按 field 参数在固定的 choose 分支中选择（field 只能是 VodSearchField 的名称）。
+  旧版未命中时 LIKE 扫描全部 mac_vod（不看审核与分类）取出全部 vod_id；新版语义相同，只是最多取 limit 个（调用方传 1001），并加执行时限。
+  模式由 content.application 把旧版未转义的模式（% 与 _ 是通配符，反斜线转义下一个字符）转写成 ESCAPE '!' 的等价形式。
+-->
+<mapper namespace="com.maccms.backend.content.infrastructure.VodSearchMapper">
+
+    <select id="selectByKey" resultType="com.maccms.backend.content.infrastructure.VodSearchRow">
+        SELECT search_result_ids AS resultIds, search_hit_count AS hitCount
+        FROM mac_vod_search
+        WHERE search_key = #{key}
+        LIMIT 1
+    </select>
+
+    <select id="selectMatchingIds" resultType="long">
+        SELECT /*+ MAX_EXECUTION_TIME(3000) */ vod_id
+        FROM mac_vod
+        WHERE
+        <choose>
+            <when test="field == 'KEYWORD'">vod_name LIKE #{pattern} ESCAPE '!' OR vod_en LIKE #{pattern} ESCAPE '!' OR vod_sub LIKE #{pattern} ESCAPE '!'</when>
+            <when test="field == 'NAME'">vod_name LIKE #{pattern} ESCAPE '!'</when>
+            <when test="field == 'TAG'">vod_tag LIKE #{pattern} ESCAPE '!'</when>
+            <when test="field == 'CLASS'">vod_class LIKE #{pattern} ESCAPE '!'</when>
+            <when test="field == 'ACTOR'">vod_actor LIKE #{pattern} ESCAPE '!'</when>
+            <when test="field == 'DIRECTOR'">vod_director LIKE #{pattern} ESCAPE '!'</when>
+            <otherwise>1 = 0</otherwise>
+        </choose>
+        ORDER BY vod_id ASC
+        LIMIT #{limit}
+    </select>
+</mapper>

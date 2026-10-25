@@ -18,8 +18,22 @@ import java.util.Optional;
  * @param playerTitle iframe 的 title
  * @param detailUrl   视频详情页
  * @param trial       是否为试看（只显示提示，计时由播放器内页的脚本负责）
+ * @param trialOffer  试看时给已登录会员的购买入口（B10，19 文档第 5.3 节）；游客与非试看时为空
  */
 public record PlayPage(PageChrome chrome, List<NavLink> breadcrumb, String title, String current,
                        List<PlaySourceView> sources, Optional<SafeUrl> previous, Optional<SafeUrl> next,
-                       SafeUrl playerUrl, String playerTitle, SafeUrl detailUrl, boolean trial) {
+                       SafeUrl playerUrl, String playerTitle, SafeUrl detailUrl, boolean trial,
+                       Optional<TrialOffer> trialOffer) {
+
+    public PlayPage(PageChrome chrome, List<NavLink> breadcrumb, String title, String current,
+                    List<PlaySourceView> sources, Optional<SafeUrl> previous, Optional<SafeUrl> next,
+                    SafeUrl playerUrl, String playerTitle, SafeUrl detailUrl, boolean trial) {
+        this(chrome, breadcrumb, title, current, sources, previous, next, playerUrl, playerTitle, detailUrl, trial,
+                Optional.empty());
+    }
+
+    public PlayPage withTrialOffer(Optional<TrialOffer> offer) {
+        return new PlayPage(chrome, breadcrumb, title, current, sources, previous, next, playerUrl, playerTitle,
+                detailUrl, trial, offer);
+    }
 }

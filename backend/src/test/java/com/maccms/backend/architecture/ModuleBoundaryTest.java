@@ -58,7 +58,8 @@ class ModuleBoundaryTest {
     private static final Set<String> SITE_LEGACYCONFIG = Set.of(
             "legacyconfig.application.LegacyConfigService", "legacyconfig.application.LegacyConfigFile",
             "legacyconfig.application.LegacyConfigException", "legacyconfig.application.LegacyConfigConfiguration",
-            "legacyconfig.application.view.PhpArray", "legacyconfig.application.view.PhpValue");
+            "legacyconfig.application.view.PhpArray", "legacyconfig.application.view.PhpValue",
+            "legacyconfig.application.view.PhpValues");
 
     /**
      * infrastructure 之外允许出现数据访问类型的包（精确匹配，不含子包）：common.config 的数据源账号检查；common.write 的
@@ -282,6 +283,7 @@ class ModuleBoundaryTest {
                 boolean allowed = "site".equals(refModule)
                         || refPkg.equals("content.application") || refPkg.equals("content.application.view")
                         || refPkg.equals("member.application") || refPkg.equals("member.application.view")
+                        || refPkg.equals("comment.application") || refPkg.equals("comment.application.view")
                         || SITE_COMMON.contains(ref) || SITE_LEGACYCONFIG.contains(ref);
                 if (!allowed) {
                     out.add("site 不得引用 " + ref);
