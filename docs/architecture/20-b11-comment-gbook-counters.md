@@ -281,7 +281,7 @@ WHERE vod_id = ?
 
 - **HTTP 黄金**：`backend/src/test/php/interaction_golden.php` 生成，输出 `resources/interaction/php80-golden.json`、`php73-golden.json`。
   - 每版 291 个 HTTP 用例：经旧 ThinkPHP 路由与 `Comment`、`Gbook`、`Ajax` 控制器，或 api 入口的 `Provide`。
-  - 另有 33 个搜索缓存用例：直接调用 `model('Vod')->listCacheData`，旧搜索页模板里的 `{maccms:vod}` 标签就是这样调用的。仓库缺模板，HTTP 走不到。
+  - 另有 33 个搜索缓存用例（其中 `wd.long` 超过新版 64 字的关键字上限，不复放）：直接调用 `model('Vod')->listCacheData`，旧搜索页模板里的 `{maccms:vod}` 标签就是这样调用的。仓库缺模板，HTTP 走不到。
   - 每个用例记录状态码、Content-Type、Set-Cookie、正文，以及 `mac_comment/gbook/visit/vod_search/user` 的全部行和 6 张内容表的计数列。
   - 旧 PHP 未修改；脚本用一次性库 `maccms_it_*`，跑完删除。
 - **文本黄金**：`interaction_text_golden.php` 生成 `text-php80/73-golden.json`，由 `LegacyHtmlGoldenTest` 复放。
@@ -304,9 +304,40 @@ WHERE vod_id = ?
    - 同一个词 16 个并发首次搜索，只插入一行，命中次数为 16。
 4. **回滚演练**：只用 DML 恢复到导入后的快照，逐行 diff 为空，表结构指纹不变，最后删库。
 
-#### 11.3 结果
+#### 11.3 结果（2026-10-25，代码与测试同 `962c0e6`，之后只改本文）
 
-本轮在最终提交上的运行数字见交付评论：`./mvnw clean verify -Pmysql-it` 的单元数、集成数，以及一次性库清理。
+运行环境：MySQL 5.7.44，本机管理账号只放在 shell 环境变量里；`MACCMS_IT_PHP_CGI` 为 PHP 8.0.30；仓库根的 `vendor/` 从主仓库临时拷入，跑完已删除。
+
+- **`./mvnw clean verify -Pmysql-it`**：BUILD SUCCESS。单元 2419 个、集成 63 个，0 失败、0 错误、0 跳过。
+  - `InteractionGoldenMySqlIT` 5/5：两版 HTTP 各比较 286 例，不一致 0；搜索缓存两版各 32 例；并发；回滚演练 28 条 DML 后逐行一致，表结构指纹不变。
+  - B10 `MemberFinanceGoldenMySqlIT` 两版各 146 例照旧通过。
+  - 14 个一次性库都是 `verified absent`，跑完后的数据库列表与跑之前相同；日志里没有 `maccms_dev`。
+- **`./mvnw verify`**（不设 `MACCMS_IT_*`）：BUILD SUCCESS，2419 个测试，0 失败、0 错误、0 跳过。
+- **Node**：`node --test backend/src/test/js/site/member.test.js backend/src/test/js/site/trial.test.js`，24/24（本批没有改脚本）。
+- **检查**：`git diff --check 6849add HEAD` 通过；改动的 125 个文件都在 `backend/`、`docs/` 下，全部是 UTF-8，无 BOM、无 CR；旧 PHP、`template/`、`static/` 改动数为 0；写 SQL 里没有 DDL。
+
+#### 11.4 打包 jar 实测（本机一次性库，跑完已清理）
+
+- **环境**：`./mvnw package -DskipTests` 打出的 jar 连一次性库 `maccms_it_*`，库里导入 `install.sql` 和 B06 合成内容。可写数据源打开，`MACCMS_SITE_HIT_COUNTER_ENABLED=true`，`W1/W2/W3=false`。旧配置目录是仓库 `application/` 的副本，改了三项：`comment.verify=0`、`search_verify=1`、`vod_search_optimise=frontend`。
+- **用 curl 走的流程**，结果都符合第 3～7 节：
+  - 视频详情页的互动区：计数图片、顶踩与评分表单、评论链接；
+  - 计数图片请求后 `vod_hits` +1，日/周/月从旧值重置为 1；
+  - 非 ajax 顶 → 提示页，`vod_up` +1；再顶 → 1002 您已参与过了！；
+  - 评分 8 → 平均分 8.5（93/11）；
+  - 非 ajax 发表评论 → 提示页"感谢你的留言！"，库里内容按旧版双重转义，评论页按一次转义显示；3 秒内再发 → 1005；
+  - 评论顶、举报 → 计数 +1；
+  - 留言页带验证码，不填验证码提交 → 1002；
+  - `search_verify=1` 时搜索页显示验证码页，表单提交到 `ajax/verify_check`，错码 → 1002。
+- **浏览器**：`backend/src/test/browser/site-pages-check.mjs`（Edge 无头）检查视频详情、文章详情、评论页、留言页、报错页和搜索验证码页。375/768/1280/1440/1920 宽度下都没有横向溢出；键盘顺序与焦点样式正常；禁用 JS 后内容仍在。失败 0 项。
+- **收尾**：应用日志 0 行 ERROR；jar 进程已按 PID 结束，端口已关闭；一次性库已删除，全局 `maccms\_it\_%` 为 0；临时目录已删除。
+- **未做**：新旧 jar 对 B05～B10 游客页逐字节对照（B10 做过）。详情页按设计多了互动区，其他页面靠 MockMvc 测试覆盖。
+
+#### 11.5 实施中修正的测试问题
+
+- **Cookie Max-Age**：旧版的到期时刻按 `REQUEST_TIME` 算，Max-Age 却是发头时现算的，黄金请求慢时会少几秒。复放改为按区间比较（第 11.2 节）。
+- **验证码签发时刻**：原来按黄金的 started 签发，黄金生成超过 30 分钟（验证码有效期）后，验证码用例会全部失败。改为按会话存储的时钟签发。
+- **管理连接**：原来每个用例新建一次性库的管理连接，整套 mysql-it 跑下来 Windows 临时端口会耗尽（实测出现过一次）。改为全程共用一条。
+- **旧测试随 B11 更新**：`ajax/hits|digg|verify_check` 不再是 404；搜索页带 `searchCache`；隐藏字段不要求 label；写入登记表含 B11。
 
 ### 12. 风险与待确认
 
