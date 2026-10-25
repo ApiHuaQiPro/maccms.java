@@ -275,7 +275,7 @@ B02 起每个输出页面的批次（B02、B05、B06、B09～B15、B24～B26）�
 | B09 | 已验收（MACC-33，main `b5f1bbf`；`18-b09-member-account.md`；WebP 头像按 MACC-23 裁定方案 B 实施，第 14 节） | 会员账号：注册、登录、资料、找回（D2 ①②⑥） | C + K | B08 | — | 是 | 否 |
 | B10 | 已验收（MACC-34，main `3f26190`；`19-b10-member-finance.md`） | 会员权益与财务：购买权限、升级、卡密、提现、推广、订单 | C | B09 | — | 是 | 否 |
 | B11 | 已验收（MACC-35，main `4db4c6d`；`20-b11-comment-gbook-counters.md`） | 评论、留言与内容计数写入 | C | B08 | — | 是 | 否 |
-| B12 | 待建 | 后台框架：登录、会话、`admin_auth` 鉴权、管理员管理（D2 ⑤） | C + K | B07、B08 | — | 是 | 否 |
+| B12 | 实施完成，待验收（MACC-36，`21-b12-admin-framework.md`；旧后台结构与静态资产原样复用，未另做视觉设计；站点繁体与手机标志的接线待与前端协调，第 12 节） | 后台框架：登录、会话、`admin_auth` 鉴权、管理员管理（D2 ⑤） | C + K | B07、B08 | — | 是 | 否 |
 | B13 | 待建 | 后台内容管理 | C + K | B11、B12 | — | 是 | 否 |
 | B14 | 待建 | 后台会员与财务管理 | C + K | B10、B12 | — | 是 | 否 |
 | B15 | 待建 | 后台系统配置与运维（配置文件写回、模板在线编辑、本地插件） | C + K | B12、B02、B05 | — | 是（文件 + 库） | 否 |
@@ -421,7 +421,7 @@ graph LR
 | `mac_comment`、`mac_gbook` | B11、B13；采集评论 B19 |
 | `mac_vod` 等内容表的计数字段 | B11（后台表单整行覆盖在 B13） |
 | `mac_vod/art/topic/actor/role/website/link/type` 内容字段 | B13、B19、B20 |
-| `mac_vod_search` | B11、B19 |
+| `mac_vod_search` | B11、B19；后台"清理缓存"删除过期行由 B12 写入（21 文档第 4.6 节） |
 | `mac_admin` | B12 |
 | `mac_annex` | B13 |
 | `mac_collect`、`mac_cj_node` | B17；`mac_cj_content`、`mac_cj_history` 在 B20 |

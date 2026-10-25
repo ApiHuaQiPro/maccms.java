@@ -38,6 +38,13 @@
 - B11 起 `openapi` 的 Provide 通过 `content.application.ContentCounterService` 执行 `detail_inc_hits`，仍不直接访问 Mapper；写入受独立可写数据源和登记表约束。
 - 下节“不读写旧缓存表”在 B11 起仅对 `content` 拥有的 `mac_vod_search` 设例外：站点视频搜索/筛选在旧 `vod_search_optimise` 含 `frontend` 且写池开启时按旧语义使用；公开 API 不触发。查询保留搜索开关、执行时限、并发许可和有界编号列表，写入只经登记的 `mapper-write/content/VodSearchWriteMapper.xml`。其他缓存表仍禁止。
 - 契约、写入方及黄金/并发/DML 回滚依据：`20-b11-comment-gbook-counters.md`。本节取代前文对模块依赖和缓存访问的旧限制中与 B11 范围冲突的部分。
+
+### 2.2 B12 后台模块
+
+- `admin` 模块（`21-b12-admin-framework.md` 第 2 节）：`web`（入口 `AdminController` 与页面）→ `application`（登录、会话核对、`admin_auth` 鉴权、管理员管理、菜单与权限码登记 `AdminPermissions`）→ `infrastructure`（只读 `AdminMapper`，写 `AdminWriteMapper`）；`config` 装配。application/infrastructure 不引用本模块 web/config，web 不直接用 Mapper，不引用 `site`（`ModuleBoundaryTest.adminRulesOnSyntheticSources`）。每个组件带 `@ConditionalOnAdminEnabled`（`maccms.admin.enabled` 默认关闭）。
+- 后续后台批次（B13～B20、B28、B29）在 `AdminController` 的分派里接上自己的动作，**不改** `AdminPermissions` 的菜单与权限码数据（路线图第 5.2 节"同文件冲突"）；权限一律经 `AdminAuthorization`（旧 `check_auth` 的文本语义）。
+- 后台页面模板在 `backend/src/main/jte-admin/`（生成到 `admin.web.jte`，与站点模板分开），按旧后台 HTML 结构原样转写，不做新视觉设计；旧内联脚本外移到 `src/main/resources/static/admin-assets/`，数据经 `data-*` 属性传入；旧 `static/layui`、`admin_style.css`、`admin_common.js` 构建时原样打包。`AdminTemplatePolicyTest` 锁定：无内联脚本与事件属性、`<script>` 只带 `type/src/data-*`、style 无输出、原样 HTML 只能是语言包文字（`AdminText.trusted`）。内容安全策略见 21 文档第 8 节（为复用旧脚本保留 `'unsafe-eval'` 与几段固定代码的 `'unsafe-hashes'`）。
+- 旧语言包只经 `common.lang.LegacyLang`（jar 内由 `lang_export.php` 导出的 JSON）；新页面上旧版也有的文字取语言包键，不写死简体（21 文档第 12.2 节）。
 ### 3. 数据库
 
 - **禁止 DDL**（路线图第 1.2 节"零结构变更"，B07 起取代原"DDL 独立评审"）：不建表、不加/改/删列与索引、不转引擎或字符集，不建触发器、存储过程、视图、事件；不执行表维护语句与账号/权限语句；应用代码与资源中不得有 `schema.sql`/`data.sql`、Flyway/Liquibase 或任何初始化器。数据库账号由数据库管理员在获批部署时创建，代码不建、不改账号。没有结构迁移，旧数据不需要迁移；回滚只用 DML（`12-write-infrastructure.md` 第 6 节）。
