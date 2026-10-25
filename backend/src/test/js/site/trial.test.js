@@ -270,18 +270,3 @@ test('只移除挂载区内的媒体，挂载区外的 video 不受影响', (t) 
   assert.equal(body.children.includes(outside), true, '挂载区外的 video 应保留');
   assert.equal(outside.pauseCount, 0);
 });
-
-test('B10：data-trial-end-message 存在时用后端给出的会员提示，空值时用默认文案', (t) => {
-  const clock = freezeTime(t, 1_000_000);
-  const custom = '试看结束,是否支付[5]积分观看完整数据？';
-  for (const [attr, expected] of [[custom, custom], ['', END_MESSAGE]]) {
-    const { macTrial, doc, win } = load();
-    const { stage, message } = makePlayerPage(doc, 1);
-    stage.setAttribute('data-trial-end-message', attr);
-    macTrial.start(doc, win);
-    clock.advance(60 * 1000 + 1);
-    win.tick();
-    assert.equal(message.textContent, expected);
-    assert.equal(message.hidden, false);
-  }
-});

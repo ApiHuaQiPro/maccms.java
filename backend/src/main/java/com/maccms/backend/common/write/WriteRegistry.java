@@ -21,24 +21,11 @@ public final class WriteRegistry {
      * <ul>
      * <li>B09（MACC-33，18 文档第 6 节）：会员注册（条件插入）；登录、注销轮换、资料与改密、密保重置、头像、推广关系、
      * {@code checkLogin} 到期单行降级。</li>
-     * <li>B10（MACC-34，19 文档第 6.1 节）：记录与购买（mac_ulog）、积分流水（mac_plog）、卡密认领（mac_card）、提现（mac_cash）、
-     * 本地建单（mac_order）、推广访问（mac_visit）；mac_user 的积分、冻结、升级与批量到期降级沿用 B09 已登记的
-     * {@code member/mac_user/UPDATE}。</li>
      * </ul>
      */
     static final List<WritePermission> REGISTERED = List.of(
             new WritePermission("member", "mac_user", WriteOperation.INSERT, "B09"),
-            new WritePermission("member", "mac_user", WriteOperation.UPDATE, "B09"),
-            new WritePermission("member", "mac_ulog", WriteOperation.INSERT, "B10"),
-            new WritePermission("member", "mac_ulog", WriteOperation.UPDATE, "B10"),
-            new WritePermission("member", "mac_ulog", WriteOperation.DELETE, "B10"),
-            new WritePermission("member", "mac_plog", WriteOperation.INSERT, "B10"),
-            new WritePermission("member", "mac_plog", WriteOperation.DELETE, "B10"),
-            new WritePermission("member", "mac_card", WriteOperation.UPDATE, "B10"),
-            new WritePermission("member", "mac_cash", WriteOperation.INSERT, "B10"),
-            new WritePermission("member", "mac_cash", WriteOperation.DELETE, "B10"),
-            new WritePermission("member", "mac_order", WriteOperation.INSERT, "B10"),
-            new WritePermission("member", "mac_visit", WriteOperation.INSERT, "B10"));
+            new WritePermission("member", "mac_user", WriteOperation.UPDATE, "B09"));
 
     /** 写 Mapper 的全限定名：{@code com.maccms.backend.<module>.infrastructure[.子包].<类型>}。 */
     private static final Pattern MAPPER_TYPE = Pattern.compile(

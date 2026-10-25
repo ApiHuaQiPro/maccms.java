@@ -26,10 +26,6 @@ import com.maccms.backend.site.application.SiteRoute;
 import com.maccms.backend.site.application.SiteSettings;
 import com.maccms.backend.site.config.ConditionalOnSiteEnabled;
 import com.maccms.backend.site.web.view.AccessNoticePage;
-import com.maccms.backend.member.application.MemberRecordService;
-import com.maccms.backend.member.application.MemberWalletService;
-import com.maccms.backend.site.web.view.BuyConfirmPage;
-import com.maccms.backend.site.web.view.ContentForm;
 import com.maccms.backend.site.web.view.LibraryDetailPage;
 import com.maccms.backend.site.web.view.LibraryListPage;
 import com.maccms.backend.site.web.view.PasswordPage;
@@ -40,8 +36,6 @@ import java.util.List;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -85,8 +79,6 @@ public class SiteLibraryController {
     private final PasswordTickets tickets;
     private final PasswordAttempts attempts;
     private final SitePages sitePages;
-    private final ObjectProvider<MemberRecordService> records;
-    private final ObjectProvider<MemberWalletService> wallet;
 
     public SiteLibraryController(SiteHtmlRenderer renderer, SitePages sitePages, LegacyUrlBuilder urls,
                                  LegacyUrlParser parser, ImageUrlNormalizer images, RichTextCache richText,
@@ -94,20 +86,6 @@ public class SiteLibraryController {
                                  ActorReadService actors, RoleReadService roles, WebsiteReadService websites,
                                  VideoPlotReadService plots, SiteFeatures features, PasswordTickets tickets,
                                  PasswordAttempts attempts) {
-        this(renderer, sitePages, urls, parser, images, richText, content, articles, topics, actors, roles, websites,
-                plots, features, tickets, attempts, null, null);
-    }
-
-    @Autowired
-    public SiteLibraryController(SiteHtmlRenderer renderer, SitePages sitePages, LegacyUrlBuilder urls,
-                                 LegacyUrlParser parser, ImageUrlNormalizer images, RichTextCache richText,
-                                 ContentReadService content, ArticleReadService articles, TopicReadService topics,
-                                 ActorReadService actors, RoleReadService roles, WebsiteReadService websites,
-                                 VideoPlotReadService plots, SiteFeatures features, PasswordTickets tickets,
-                                 PasswordAttempts attempts, ObjectProvider<MemberRecordService> records,
-                                 ObjectProvider<MemberWalletService> wallet) {
-        this.records = records;
-        this.wallet = wallet;
         this.renderer = renderer;
         this.parser = parser;
         this.urls = urls;
@@ -133,7 +111,7 @@ public class SiteLibraryController {
             "/index.php/vod/rss/**", "/vod/rss/**", "/index.php/vod/ajax_detail/**", "/vod/ajax_detail/**"})
     public ResponseEntity<String> page(HttpServletRequest request) {
         SiteRoute.Legacy route = route(request, request.getQueryString());
-        return render(route, articleProof(request, route), "", ContentMember.of(request, records, wallet));
+        return render(route, articleProof(request, route), "");
     }
 
     /** 文章访问密码（旧 ajax/pwd 的 2-1；只认 POST）。 */
@@ -144,9 +122,8 @@ public class SiteLibraryController {
         if (route.page() != LegacyPage.ART_DETAIL) {
             throw new ApiException(ErrorCode.NOT_FOUND, "页面不存在");
         }
-        ContentMember member = ContentMember.of(request, records, wallet);
         if (!tickets.enabled()) {
-            return render(route, null, "", member);
+            return render(route, null, "");
         }
         if (!attempts.tryAcquire(PasswordTarget.ARTICLE, route.id())) {
             log.warn("site password attempts limited: target={}", PasswordTarget.ARTICLE.code());
@@ -155,7 +132,7 @@ public class SiteLibraryController {
                     "请稍后再试", "尝试次数过多，请稍后再试。", Optional.empty())));
         }
         if (!articles.verifyPassword(route.id(), pwd)) {
-            return render(route, null, INVALID_PASSWORD, member);
+            return render(route, null, INVALID_PASSWORD);
         }
         ResponseCookie cookie = ResponseCookie.from(PasswordTickets.cookieName(PasswordTarget.ARTICLE, route.id()),
                         tickets.issue(PasswordTarget.ARTICLE, route.id(), pwd))
@@ -169,8 +146,7 @@ public class SiteLibraryController {
                 .build();
     }
 
-    private ResponseEntity<String> render(SiteRoute.Legacy route, PasswordProof proof, String error,
-                                          ContentMember member) {
+    private ResponseEntity<String> render(SiteRoute.Legacy route, PasswordProof proof, String error) {
         LegacyPage page = route.page();
         if (page.rss()) {
             return rss(route);
@@ -189,36 +165,18 @@ public class SiteLibraryController {
                  PLOT_INDEX, VOD_ROLE -> library.list(route);
             case ART_DETAIL, TOPIC_DETAIL, ACTOR_DETAIL, ROLE_DETAIL, WEBSITE_DETAIL, PLOT_DETAIL, VOD_PLOT,
                  ART_AJAX_DETAIL, TOPIC_AJAX_DETAIL, ACTOR_AJAX_DETAIL, ROLE_AJAX_DETAIL, WEBSITE_AJAX_DETAIL,
-                 PLOT_AJAX_DETAIL -> library.detail(route, proof, error, member);
+                 PLOT_AJAX_DETAIL -> library.detail(route, proof, error);
             default -> throw new ApiException(ErrorCode.NOT_FOUND, "页面不存在");
         };
         return switch (r.view()) {
             case LibraryListPage v -> renderer.ok(tpl -> tpl.sitePagesLibrary(v), false);
             case LibraryDetailPage v when ajax -> renderer.ok(tpl -> tpl.siteAjaxDetail(v), true);
-            case LibraryDetailPage v -> {
-                LibraryDetailPage withFavorite = v.withFavorite(favorite(page, route.id(), member));
-                yield renderer.ok(tpl -> tpl.sitePagesLibraryDetail(withFavorite), false);
-            }
-            case BuyConfirmPage v when !ajax -> renderer.noStore(r.status(), tpl -> tpl.sitePagesBuyConfirm(v));
+            case LibraryDetailPage v -> renderer.ok(tpl -> tpl.sitePagesLibraryDetail(v), false);
             case PasswordPage v when !ajax -> renderer.noStore(r.status(), tpl -> tpl.sitePagesPassword(v));
             case AccessNoticePage v when !ajax -> renderer.noStore(r.status(), tpl -> tpl.sitePagesAccessNotice(v));
             // 片段中不提供密码表单与提示：受限文章的 ajax_detail 与详情页的受限状态相同，只给状态码
             default -> throw new ApiException(ErrorCode.NOT_FOUND, "页面不存在");
         };
-    }
-
-    /** 已登录会员的"收藏"表单（B10：文章、专题、演员详情，旧 ulog_mid 2/3/8）；其他页与游客为空。 */
-    private Optional<ContentForm> favorite(LegacyPage page, long id, ContentMember member) {
-        if (!member.loggedIn()) {
-            return Optional.empty();
-        }
-        int mid = switch (page) {
-            case ART_DETAIL -> 2;
-            case TOPIC_DETAIL -> 3;
-            case ACTOR_DETAIL -> 8;
-            default -> 0;
-        };
-        return mid == 0 ? Optional.empty() : Optional.of(ContentForms.favorite(site, urls, mid, id));
     }
 
     /** 单条 RSS：与详情页相同的可见性与访问判定；受限内容（密码、积分）不输出（403）。 */

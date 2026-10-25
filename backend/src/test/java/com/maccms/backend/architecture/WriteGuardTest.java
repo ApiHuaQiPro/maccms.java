@@ -128,15 +128,10 @@ class WriteGuardTest {
     @Test
     void registeredPermissionsFollowTheOwnerMatrix() {
         assertThat(registryViolations(WriteRegistry.registered().permissions(), false)).isEmpty();
-        // B07、B08 不登记业务写入；B09（MACC-33）登记会员模块对 mac_user 的插入与更新（18 文档第 6.1 节）；
-        // B10（MACC-34）登记会员模块对 mac_ulog/mac_plog/mac_card/mac_cash/mac_order/mac_visit 的写入（19 文档第 6.1 节）
+        // B07、B08 不登记业务写入；B09（MACC-33）只登记会员模块对 mac_user 的插入与更新（18 文档第 6.1 节）
         assertThat(WriteRegistry.registered().permissions()).extracting(p -> p.module() + " " + p.table() + " "
                 + p.operation() + " " + p.batch())
-                .containsExactly("member mac_user INSERT B09", "member mac_user UPDATE B09",
-                        "member mac_ulog INSERT B10", "member mac_ulog UPDATE B10", "member mac_ulog DELETE B10",
-                        "member mac_plog INSERT B10", "member mac_plog DELETE B10", "member mac_card UPDATE B10",
-                        "member mac_cash INSERT B10", "member mac_cash DELETE B10", "member mac_order INSERT B10",
-                        "member mac_visit INSERT B10");
+                .containsExactly("member mac_user INSERT B09", "member mac_user UPDATE B09");
     }
 
     @Test

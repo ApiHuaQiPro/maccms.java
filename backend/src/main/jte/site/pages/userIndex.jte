@@ -1,5 +1,3 @@
-@import com.maccms.backend.site.web.view.MetadataItem
-@import com.maccms.backend.site.web.view.NavLink
 @import com.maccms.backend.site.web.view.UserIndexPage
 @param UserIndexPage page
 @template.site.layout.page(chrome = page.shell().chrome(), content = @`
@@ -30,22 +28,6 @@
     <li><a href="${page.portraitUrl().href()}" rel="nofollow">修改头像</a></li>
     <li><a href="${page.logoutUrl().href()}" rel="nofollow">退出登录</a></li>
   </ul>
-  @if(!page.finance().isEmpty())
-  <h2 class="member-page__subtitle" id="member-finance-title">会员权益</h2>
-  <ul class="member-nav member-nav--finance" aria-labelledby="member-finance-title">
-    @for(NavLink n : page.finance())
-    <li><a href="${n.url().href()}" rel="nofollow">${n.label()}</a></li>
-    @endfor
-  </ul>
-  @endif
-  @if(!page.promotion().isEmpty())
-  <h2 class="member-page__subtitle" id="member-promotion-title">推广链接</h2>
-  <dl class="member-summary member-summary--promotion" aria-labelledby="member-promotion-title">
-    @for(MetadataItem m : page.promotion())
-    <dt>${m.label()}</dt><dd class="member-summary__url">${m.value()}</dd>
-    @endfor
-  </dl>
-  @endif
 </section>
 @template.site.member.script(page = page.shell())
 `)

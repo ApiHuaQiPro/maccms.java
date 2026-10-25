@@ -22,16 +22,6 @@
   <p class="player-page__current">${page.current()}</p>
   @if(page.trial())
   <p class="player-page__trial notice">当前为试看模式，试看时间到后播放会停止。</p>
-  @endif@if(page.trialOffer().isPresent())
-  <div class="trial-offer notice">
-    <p class="trial-offer__message">${page.trialOffer().get().message()}</p>
-    @if(page.trialOffer().get().form().isPresent())
-    @template.site.member.contentForm(form = page.trialOffer().get().form().get(), kind = "buy")
-    @endif
-    @if(page.trialOffer().get().recharge().isPresent())
-    <p class="trial-offer__recharge"><a href="${page.trialOffer().get().recharge().get().href()}" rel="nofollow">去充值</a></p>
-    @endif
-  </div>
   @endif
   <div class="player-frame">
     <iframe class="player-frame__iframe" src="${page.playerUrl().href()}" title="${page.playerTitle()}" allowfullscreen></iframe>

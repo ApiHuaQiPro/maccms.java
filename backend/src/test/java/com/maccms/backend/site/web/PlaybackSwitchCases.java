@@ -4,7 +4,6 @@ import static com.maccms.backend.site.web.PlaybackFixtures.media;
 import static com.maccms.backend.site.web.PlaybackFixtures.result;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -57,7 +56,7 @@ abstract class PlaybackSwitchCases {
     }
 
     private void serve(String from, String urls) {
-        when(playback.access(eq(1L), anyInt(), anyInt(), any(), any())).thenReturn(result(PlaybackOutcome.ALLOWED,
+        when(playback.access(eq(1L), any(), any())).thenReturn(result(PlaybackOutcome.ALLOWED,
                 new VideoMediaDto(from, urls, "", "", 0), 0));
     }
 
@@ -149,7 +148,7 @@ abstract class PlaybackSwitchCases {
     @Test
     void downloadAddressesFollowW2Only() throws Exception {
         for (String url : List.of("https://dl.example.invalid/1.zip", "thunder://QUFo", "magnet:?xt=urn:btih:abc")) {
-            when(playback.access(eq(1L), anyInt(), anyInt(), any(), any())).thenReturn(result(PlaybackOutcome.ALLOWED,
+            when(playback.access(eq(1L), any(), any())).thenReturn(result(PlaybackOutcome.ALLOWED,
                     new VideoMediaDto("http", "下载$" + url, "", "", 0), 0));
             MvcResult r = fetch("/index.php/vod/downer/id/1/nid/1/sid/1.html");
             if (w2()) {
@@ -159,7 +158,7 @@ abstract class PlaybackSwitchCases {
                 assertThat(body(r)).as(url).doesNotContain(url);
             }
         }
-        when(playback.access(eq(1L), anyInt(), anyInt(), any(), any())).thenReturn(result(PlaybackOutcome.ALLOWED,
+        when(playback.access(eq(1L), any(), any())).thenReturn(result(PlaybackOutcome.ALLOWED,
                 new VideoMediaDto("http", "下载$upload/down/1.zip", "", "", 0), 0));
         assertThat(Jsoup.parse(body(fetch("/index.php/vod/downer/id/1/nid/1/sid/1.html")))
                 .selectFirst("a.download-page__link").attr("href")).isEqualTo("/upload/down/1.zip");
