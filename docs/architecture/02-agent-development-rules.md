@@ -32,6 +32,12 @@
 - 以上依赖规则由 `backend/src/test/java/com/maccms/backend/architecture/ModuleBoundaryTest.java` 扫描源码检查（注释和字符串不计），合成源码自检规则本身；`site` 的模板、构建与装配规则由 `backend/src/test/java/com/maccms/backend/site/SiteGuardrailsTest.java` 与 `SiteTemplatePolicyTest.java` 检查。
 - `common` 只放与业务无关的支持代码（错误处理、分页、配置检查），不得引用业务模块。
 
+### 2.1 B11 评论与计数的已实施例外
+
+- B11 的 `comment` 模块负责评论、留言的业务规则与读写，分层为 `application`（`CommentService`，不可变视图在 `.view`）→ `infrastructure`（读 `CommentMapper`，写 `CommentWriteMapper`）。`site` 可调用其 `application` 公开服务与 `.view` 类型；`comment` 仅经 `content.application.PhpIntval` 复用旧参数语义，不访问其他模块的 Mapper。
+- B11 起 `openapi` 的 Provide 通过 `content.application.ContentCounterService` 执行 `detail_inc_hits`，仍不直接访问 Mapper；写入受独立可写数据源和登记表约束。
+- 下节“不读写旧缓存表”在 B11 起仅对 `content` 拥有的 `mac_vod_search` 设例外：站点视频搜索/筛选在旧 `vod_search_optimise` 含 `frontend` 且写池开启时按旧语义使用；公开 API 不触发。查询保留搜索开关、执行时限、并发许可和有界编号列表，写入只经登记的 `mapper-write/content/VodSearchWriteMapper.xml`。其他缓存表仍禁止。
+- 契约、写入方及黄金/并发/DML 回滚依据：`20-b11-comment-gbook-counters.md`。本节取代前文对模块依赖和缓存访问的旧限制中与 B11 范围冲突的部分。
 ### 3. 数据库
 
 - **禁止 DDL**（路线图第 1.2 节"零结构变更"，B07 起取代原"DDL 独立评审"）：不建表、不加/改/删列与索引、不转引擎或字符集，不建触发器、存储过程、视图、事件；不执行表维护语句与账号/权限语句；应用代码与资源中不得有 `schema.sql`/`data.sql`、Flyway/Liquibase 或任何初始化器。数据库账号由数据库管理员在获批部署时创建，代码不建、不改账号。没有结构迁移，旧数据不需要迁移；回滚只用 DML（`12-write-infrastructure.md` 第 6 节）。
