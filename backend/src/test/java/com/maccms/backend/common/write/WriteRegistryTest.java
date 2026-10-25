@@ -37,11 +37,17 @@ class WriteRegistryTest {
         assertThat(WriteRegistry.registered().allows("content", "mac_vod", WriteOperation.UPDATE)).isTrue();
         assertThat(WriteRegistry.registered().allows("content", "mac_vod", WriteOperation.INSERT)).isFalse();
         assertThat(WriteRegistry.registered().allows("content", "mac_vod", WriteOperation.DELETE)).isFalse();
-        assertThat(WriteRegistry.registered().allows("content", "mac_vod_search", WriteOperation.DELETE)).isFalse();
+        // B12（MACC-36）：后台"清理缓存"删除过期的视频搜索缓存；管理员的增删改
+        assertThat(WriteRegistry.registered().allows("content", "mac_vod_search", WriteOperation.DELETE)).isTrue();
+        assertThat(WriteRegistry.registered().allows("admin", "mac_admin", WriteOperation.INSERT)).isTrue();
+        assertThat(WriteRegistry.registered().allows("admin", "mac_admin", WriteOperation.UPDATE)).isTrue();
+        assertThat(WriteRegistry.registered().allows("admin", "mac_admin", WriteOperation.DELETE)).isTrue();
+        assertThat(WriteRegistry.registered().allows("admin", "mac_user", WriteOperation.UPDATE)).isFalse();
+        assertThat(WriteRegistry.registered().allows("member", "mac_admin", WriteOperation.UPDATE)).isFalse();
         assertThat(WriteRegistry.registered().allows("comment", "mac_comment", WriteOperation.DELETE)).isFalse();
         assertThat(WriteRegistry.registered().allows("comment", "mac_gbook", WriteOperation.UPDATE)).isFalse();
         assertThat(WriteRegistry.registered().allows("comment", "mac_vod", WriteOperation.UPDATE)).isFalse();
-        assertThat(WriteRegistry.registered().permissions()).hasSize(23);
+        assertThat(WriteRegistry.registered().permissions()).hasSize(27);
     }
 
     @Test

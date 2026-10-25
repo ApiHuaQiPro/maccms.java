@@ -107,7 +107,8 @@ final class SiteRequests {
 
     /** 旧版 {@code json($array)}（ThinkPHP Json 响应：{@code application/json; charset=utf-8}），新版另加 no-store。 */
     static ResponseEntity<byte[]> json(Object body, List<String> cookies) {
-        byte[] bytes = LegacyJson.encode(body).getBytes(StandardCharsets.UTF_8);
+        // 旧版的 msg 是 lang(键)：按所选语言包输出（B12 承接 D-B05-8，SiteVariants）
+        byte[] bytes = LegacyJson.encode(SiteVariants.localizeMsg(body)).getBytes(StandardCharsets.UTF_8);
         ResponseEntity.BodyBuilder b = ResponseEntity.ok();
         for (String c : cookies) {
             b.header(HttpHeaders.SET_COOKIE, c);
@@ -125,7 +126,7 @@ final class SiteRequests {
 
     /** 可写数据源关闭时的写入请求：同会员入口（B09），JSON 503。 */
     static ResponseEntity<byte[]> unavailableJson(String msg) {
-        byte[] bytes = LegacyJson.encode(reply(503, msg)).getBytes(StandardCharsets.UTF_8);
+        byte[] bytes = LegacyJson.encode(reply(503, SiteVariants.text(msg))).getBytes(StandardCharsets.UTF_8);
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).contentType(JSON).contentLength(bytes.length)
                 .cacheControl(CacheControl.noStore()).header("X-Content-Type-Options", "nosniff")
                 .header(HttpHeaders.RETRY_AFTER, "5").body(bytes);

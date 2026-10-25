@@ -1,0 +1,1941 @@
+{
+    "generator": "backend/src/test/php/admin_auth_export.php",
+    "source": "application/admin/common/auth.php",
+    "sha256": "e82477879a7ba19bb8efacd0209bd73399f21993ffd7ebf119d1afe390bc1b79",
+    "groups": [
+        {
+            "key": 1,
+            "name": "@menu/index",
+            "icon": "xe625",
+            "entries": [
+                {
+                    "key": 11,
+                    "show": 1,
+                    "name": "@menu/welcome",
+                    "controller": "index",
+                    "action": "welcome",
+                    "param": null
+                },
+                {
+                    "key": 12,
+                    "show": 1,
+                    "name": "@menu/quickmenu",
+                    "controller": "index",
+                    "action": "quickmenu",
+                    "param": null
+                },
+                {
+                    "key": 1001,
+                    "show": 0,
+                    "name": "--切换布局",
+                    "controller": "index",
+                    "action": "iframe",
+                    "param": null
+                },
+                {
+                    "key": 1002,
+                    "show": 0,
+                    "name": "--清理缓存",
+                    "controller": "index",
+                    "action": "clear",
+                    "param": null
+                },
+                {
+                    "key": 1003,
+                    "show": 0,
+                    "name": "--锁屏解锁",
+                    "controller": "index",
+                    "action": "unlocked",
+                    "param": null
+                },
+                {
+                    "key": 1004,
+                    "show": 0,
+                    "name": "--公共下拉选择框",
+                    "controller": "index",
+                    "action": "select",
+                    "param": null
+                },
+                {
+                    "key": 1005,
+                    "show": 0,
+                    "name": "--文件上传",
+                    "controller": "upload",
+                    "action": "upload",
+                    "param": null
+                }
+            ]
+        },
+        {
+            "key": 2,
+            "name": "@menu/system",
+            "icon": "xe62e",
+            "entries": [
+                {
+                    "key": 21,
+                    "show": 1,
+                    "name": "@menu/config",
+                    "controller": "system",
+                    "action": "config",
+                    "param": null
+                },
+                {
+                    "key": 210,
+                    "show": 1,
+                    "name": "@menu/configseo",
+                    "controller": "system",
+                    "action": "configseo",
+                    "param": null
+                },
+                {
+                    "key": 211,
+                    "show": 1,
+                    "name": "@menu/configuser",
+                    "controller": "system",
+                    "action": "configuser",
+                    "param": null
+                },
+                {
+                    "key": 212,
+                    "show": 1,
+                    "name": "@menu/configcomment",
+                    "controller": "system",
+                    "action": "configcomment",
+                    "param": null
+                },
+                {
+                    "key": 213,
+                    "show": 1,
+                    "name": "@menu/configupload",
+                    "controller": "system",
+                    "action": "configupload",
+                    "param": null
+                },
+                {
+                    "key": 22,
+                    "show": 1,
+                    "name": "@menu/configurl",
+                    "controller": "system",
+                    "action": "configurl",
+                    "param": null
+                },
+                {
+                    "key": 23,
+                    "show": 1,
+                    "name": "@menu/configplay",
+                    "controller": "system",
+                    "action": "configplay",
+                    "param": null
+                },
+                {
+                    "key": 24,
+                    "show": 1,
+                    "name": "@menu/configcollect",
+                    "controller": "system",
+                    "action": "configcollect",
+                    "param": null
+                },
+                {
+                    "key": 25,
+                    "show": 1,
+                    "name": "@menu/configinterface",
+                    "controller": "system",
+                    "action": "configinterface",
+                    "param": null
+                },
+                {
+                    "key": 26,
+                    "show": 1,
+                    "name": "@menu/configapi",
+                    "controller": "system",
+                    "action": "configapi",
+                    "param": null
+                },
+                {
+                    "key": 27,
+                    "show": 1,
+                    "name": "@menu/configconnect",
+                    "controller": "system",
+                    "action": "configconnect",
+                    "param": null
+                },
+                {
+                    "key": 28,
+                    "show": 1,
+                    "name": "@menu/configpay",
+                    "controller": "system",
+                    "action": "configpay",
+                    "param": null
+                },
+                {
+                    "key": 29,
+                    "show": 1,
+                    "name": "@menu/configweixin",
+                    "controller": "system",
+                    "action": "configweixin",
+                    "param": null
+                },
+                {
+                    "key": 291,
+                    "show": 1,
+                    "name": "@menu/configemail",
+                    "controller": "system",
+                    "action": "configemail",
+                    "param": null
+                },
+                {
+                    "key": 292,
+                    "show": 1,
+                    "name": "@menu/configsms",
+                    "controller": "system",
+                    "action": "configsms",
+                    "param": null
+                },
+                {
+                    "key": 2910,
+                    "show": 1,
+                    "name": "@menu/timming",
+                    "controller": "timming",
+                    "action": "index",
+                    "param": null
+                },
+                {
+                    "key": 2911,
+                    "show": 0,
+                    "name": "--定时任务信息维护",
+                    "controller": "timming",
+                    "action": "info",
+                    "param": null
+                },
+                {
+                    "key": 2912,
+                    "show": 0,
+                    "name": "--定时任务删除",
+                    "controller": "timming",
+                    "action": "del",
+                    "param": null
+                },
+                {
+                    "key": 2913,
+                    "show": 0,
+                    "name": "--定时任务状态",
+                    "controller": "timming",
+                    "action": "field",
+                    "param": null
+                },
+                {
+                    "key": 2920,
+                    "show": 1,
+                    "name": "@menu/domain",
+                    "controller": "domain",
+                    "action": "index",
+                    "param": null
+                },
+                {
+                    "key": 2922,
+                    "show": 0,
+                    "name": "--站群删除",
+                    "controller": "domain",
+                    "action": "del",
+                    "param": null
+                },
+                {
+                    "key": 2923,
+                    "show": 0,
+                    "name": "--站群导出",
+                    "controller": "domain",
+                    "action": "export",
+                    "param": null
+                },
+                {
+                    "key": 2924,
+                    "show": 0,
+                    "name": "--站群导入",
+                    "controller": "domain",
+                    "action": "import",
+                    "param": null
+                }
+            ]
+        },
+        {
+            "key": 3,
+            "name": "@menu/base",
+            "icon": "xe64b",
+            "entries": [
+                {
+                    "key": 31,
+                    "show": 1,
+                    "name": "@menu/type",
+                    "controller": "type",
+                    "action": "index",
+                    "param": null
+                },
+                {
+                    "key": 3101,
+                    "show": 0,
+                    "name": "--分类信息维护",
+                    "controller": "type",
+                    "action": "info",
+                    "param": null
+                },
+                {
+                    "key": 3102,
+                    "show": 0,
+                    "name": "--分类批量修改",
+                    "controller": "type",
+                    "action": "batch",
+                    "param": null
+                },
+                {
+                    "key": 3103,
+                    "show": 0,
+                    "name": "--分类删除",
+                    "controller": "type",
+                    "action": "del",
+                    "param": null
+                },
+                {
+                    "key": 3104,
+                    "show": 0,
+                    "name": "--分类状态",
+                    "controller": "type",
+                    "action": "field",
+                    "param": null
+                },
+                {
+                    "key": 3105,
+                    "show": 0,
+                    "name": "--分类扩展配置信息",
+                    "controller": "type",
+                    "action": "extend",
+                    "param": null
+                },
+                {
+                    "key": 32,
+                    "show": 1,
+                    "name": "@menu/topic",
+                    "controller": "topic",
+                    "action": "data",
+                    "param": null
+                },
+                {
+                    "key": 3201,
+                    "show": 0,
+                    "name": "--专题信息维护",
+                    "controller": "topic",
+                    "action": "info",
+                    "param": null
+                },
+                {
+                    "key": 3202,
+                    "show": 0,
+                    "name": "--专题批量修改",
+                    "controller": "topic",
+                    "action": "batch",
+                    "param": null
+                },
+                {
+                    "key": 3203,
+                    "show": 0,
+                    "name": "--专题删除",
+                    "controller": "topic",
+                    "action": "del",
+                    "param": null
+                },
+                {
+                    "key": 3204,
+                    "show": 0,
+                    "name": "--专题状态",
+                    "controller": "topic",
+                    "action": "field",
+                    "param": null
+                },
+                {
+                    "key": 33,
+                    "show": 1,
+                    "name": "@menu/link",
+                    "controller": "link",
+                    "action": "index",
+                    "param": null
+                },
+                {
+                    "key": 3301,
+                    "show": 0,
+                    "name": "--友链信息维护",
+                    "controller": "link",
+                    "action": "info",
+                    "param": null
+                },
+                {
+                    "key": 3302,
+                    "show": 0,
+                    "name": "--友链批量修改",
+                    "controller": "link",
+                    "action": "batch",
+                    "param": null
+                },
+                {
+                    "key": 3303,
+                    "show": 0,
+                    "name": "--友链删除",
+                    "controller": "link",
+                    "action": "del",
+                    "param": null
+                },
+                {
+                    "key": 3304,
+                    "show": 0,
+                    "name": "--友链状态",
+                    "controller": "link",
+                    "action": "field",
+                    "param": null
+                },
+                {
+                    "key": 34,
+                    "show": 1,
+                    "name": "@menu/gbook",
+                    "controller": "gbook",
+                    "action": "data",
+                    "param": null
+                },
+                {
+                    "key": 3401,
+                    "show": 0,
+                    "name": "--留言信息维护",
+                    "controller": "gbook",
+                    "action": "info",
+                    "param": null
+                },
+                {
+                    "key": 3402,
+                    "show": 0,
+                    "name": "--留言删除",
+                    "controller": "gbook",
+                    "action": "del",
+                    "param": null
+                },
+                {
+                    "key": 3404,
+                    "show": 0,
+                    "name": "--留言状态",
+                    "controller": "gbook",
+                    "action": "field",
+                    "param": null
+                },
+                {
+                    "key": 35,
+                    "show": 1,
+                    "name": "@menu/comment",
+                    "controller": "comment",
+                    "action": "data",
+                    "param": null
+                },
+                {
+                    "key": 3501,
+                    "show": 0,
+                    "name": "--评论信息维护",
+                    "controller": "comment",
+                    "action": "info",
+                    "param": null
+                },
+                {
+                    "key": 3502,
+                    "show": 0,
+                    "name": "--评论删除",
+                    "controller": "comment",
+                    "action": "del",
+                    "param": null
+                },
+                {
+                    "key": 3504,
+                    "show": 0,
+                    "name": "--评论状态",
+                    "controller": "comment",
+                    "action": "field",
+                    "param": null
+                },
+                {
+                    "key": 36,
+                    "show": 1,
+                    "name": "@menu/images",
+                    "controller": "annex",
+                    "action": "data",
+                    "param": null
+                },
+                {
+                    "key": 3604,
+                    "show": 0,
+                    "name": "--附件文件夹",
+                    "controller": "annex",
+                    "action": "file",
+                    "param": null
+                },
+                {
+                    "key": 3605,
+                    "show": 0,
+                    "name": "--附件检测",
+                    "controller": "annex",
+                    "action": "check",
+                    "param": null
+                },
+                {
+                    "key": 3606,
+                    "show": 0,
+                    "name": "--附件数据初始化",
+                    "controller": "annex",
+                    "action": "init",
+                    "param": null
+                },
+                {
+                    "key": 3601,
+                    "show": 0,
+                    "name": "--附件删除",
+                    "controller": "annex",
+                    "action": "del",
+                    "param": null
+                },
+                {
+                    "key": 3602,
+                    "show": 0,
+                    "name": "--同步图片选项",
+                    "controller": "images",
+                    "action": "opt",
+                    "param": null
+                },
+                {
+                    "key": 3603,
+                    "show": 0,
+                    "name": "--同步图片方法",
+                    "controller": "images",
+                    "action": "sync",
+                    "param": null
+                }
+            ]
+        },
+        {
+            "key": 5,
+            "name": "@menu/art",
+            "icon": "xe616",
+            "entries": [
+                {
+                    "key": 51,
+                    "show": 1,
+                    "name": "@menu/art_data",
+                    "controller": "art",
+                    "action": "data",
+                    "param": null
+                },
+                {
+                    "key": 5101,
+                    "show": 0,
+                    "name": "--文章信息维护",
+                    "controller": "art",
+                    "action": "info",
+                    "param": null
+                },
+                {
+                    "key": 5102,
+                    "show": 0,
+                    "name": "--文章删除",
+                    "controller": "art",
+                    "action": "del",
+                    "param": null
+                },
+                {
+                    "key": 5103,
+                    "show": 0,
+                    "name": "--文章状态",
+                    "controller": "art",
+                    "action": "field",
+                    "param": null
+                },
+                {
+                    "key": 52,
+                    "show": 1,
+                    "name": "@menu/art_add",
+                    "controller": "art",
+                    "action": "info",
+                    "param": null
+                },
+                {
+                    "key": 53,
+                    "show": 1,
+                    "name": "@menu/art_data_lock",
+                    "controller": "art",
+                    "action": "data",
+                    "param": "lock=1"
+                },
+                {
+                    "key": 54,
+                    "show": 1,
+                    "name": "@menu/art_data_audit",
+                    "controller": "art",
+                    "action": "data",
+                    "param": "status=0"
+                },
+                {
+                    "key": 59,
+                    "show": 1,
+                    "name": "@menu/art_batch",
+                    "controller": "art",
+                    "action": "batch",
+                    "param": null
+                },
+                {
+                    "key": 591,
+                    "show": 1,
+                    "name": "@menu/art_repeat",
+                    "controller": "art",
+                    "action": "data",
+                    "param": "repeat=1"
+                }
+            ]
+        },
+        {
+            "key": 4,
+            "name": "@menu/vod",
+            "icon": "xe639",
+            "entries": [
+                {
+                    "key": 41,
+                    "show": 1,
+                    "name": "@menu/server",
+                    "controller": "vodserver",
+                    "action": "index",
+                    "param": null
+                },
+                {
+                    "key": 4101,
+                    "show": 0,
+                    "name": "--服务器组信息维护",
+                    "controller": "vodserver",
+                    "action": "info",
+                    "param": null
+                },
+                {
+                    "key": 4102,
+                    "show": 0,
+                    "name": "--服务器组删除",
+                    "controller": "vodserver",
+                    "action": "del",
+                    "param": null
+                },
+                {
+                    "key": 4103,
+                    "show": 0,
+                    "name": "--服务器组状态",
+                    "controller": "vodserver",
+                    "action": "field",
+                    "param": null
+                },
+                {
+                    "key": 42,
+                    "show": 1,
+                    "name": "@menu/player",
+                    "controller": "vodplayer",
+                    "action": "index",
+                    "param": null
+                },
+                {
+                    "key": 4201,
+                    "show": 0,
+                    "name": "--播放器信息维护",
+                    "controller": "vodplayer",
+                    "action": "info",
+                    "param": null
+                },
+                {
+                    "key": 4202,
+                    "show": 0,
+                    "name": "--播放器删除",
+                    "controller": "vodplayer",
+                    "action": "del",
+                    "param": null
+                },
+                {
+                    "key": 4203,
+                    "show": 0,
+                    "name": "--播放器组状态",
+                    "controller": "vodplayer",
+                    "action": "field",
+                    "param": null
+                },
+                {
+                    "key": 43,
+                    "show": 1,
+                    "name": "@menu/downer",
+                    "controller": "voddowner",
+                    "action": "index",
+                    "param": null
+                },
+                {
+                    "key": 4301,
+                    "show": 0,
+                    "name": "--下载器信息维护",
+                    "controller": "voddowner",
+                    "action": "info",
+                    "param": null
+                },
+                {
+                    "key": 4302,
+                    "show": 0,
+                    "name": "--下载器删除",
+                    "controller": "voddowner",
+                    "action": "del",
+                    "param": null
+                },
+                {
+                    "key": 4303,
+                    "show": 0,
+                    "name": "--下载器组状态",
+                    "controller": "voddowner",
+                    "action": "field",
+                    "param": null
+                },
+                {
+                    "key": 44,
+                    "show": 1,
+                    "name": "@menu/vod_data",
+                    "controller": "vod",
+                    "action": "data",
+                    "param": null
+                },
+                {
+                    "key": 4401,
+                    "show": 0,
+                    "name": "--视频信息维护",
+                    "controller": "vod",
+                    "action": "info",
+                    "param": null
+                },
+                {
+                    "key": 4402,
+                    "show": 0,
+                    "name": "--视频删除",
+                    "controller": "vod",
+                    "action": "del",
+                    "param": null
+                },
+                {
+                    "key": 4403,
+                    "show": 0,
+                    "name": "--视频状态",
+                    "controller": "vod",
+                    "action": "field",
+                    "param": null
+                },
+                {
+                    "key": 45,
+                    "show": 1,
+                    "name": "@menu/vod_add",
+                    "controller": "vod",
+                    "action": "info",
+                    "param": null
+                },
+                {
+                    "key": 46,
+                    "show": 1,
+                    "name": "@menu/vod_data_url_empty",
+                    "controller": "vod",
+                    "action": "data",
+                    "param": "url=1"
+                },
+                {
+                    "key": 47,
+                    "show": 1,
+                    "name": "@menu/vod_data_lock",
+                    "controller": "vod",
+                    "action": "data",
+                    "param": "lock=1"
+                },
+                {
+                    "key": 48,
+                    "show": 1,
+                    "name": "@menu/vod_data_audit",
+                    "controller": "vod",
+                    "action": "data",
+                    "param": "status=0"
+                },
+                {
+                    "key": 481,
+                    "show": 1,
+                    "name": "@menu/vod_data_points",
+                    "controller": "vod",
+                    "action": "data",
+                    "param": "points=1"
+                },
+                {
+                    "key": 482,
+                    "show": 1,
+                    "name": "@menu/vod_data_plot",
+                    "controller": "vod",
+                    "action": "data",
+                    "param": "plot=1"
+                },
+                {
+                    "key": 49,
+                    "show": 1,
+                    "name": "@menu/vod_batch",
+                    "controller": "vod",
+                    "action": "batch",
+                    "param": null
+                },
+                {
+                    "key": 491,
+                    "show": 1,
+                    "name": "@menu/vod_repeat",
+                    "controller": "vod",
+                    "action": "data",
+                    "param": "repeat=1"
+                },
+                {
+                    "key": 495,
+                    "show": 1,
+                    "name": "@menu/actor",
+                    "controller": "actor",
+                    "action": "data",
+                    "param": ""
+                },
+                {
+                    "key": 4951,
+                    "show": 0,
+                    "name": "--演员信息维护",
+                    "controller": "actor",
+                    "action": "info",
+                    "param": null
+                },
+                {
+                    "key": 4952,
+                    "show": 0,
+                    "name": "--演员删除",
+                    "controller": "actor",
+                    "action": "del",
+                    "param": null
+                },
+                {
+                    "key": 4953,
+                    "show": 0,
+                    "name": "--演员状态",
+                    "controller": "actor",
+                    "action": "field",
+                    "param": null
+                },
+                {
+                    "key": 4954,
+                    "show": 0,
+                    "name": "--添加演员",
+                    "controller": "actor",
+                    "action": "info",
+                    "param": null
+                },
+                {
+                    "key": 496,
+                    "show": 1,
+                    "name": "@menu/role",
+                    "controller": "role",
+                    "action": "data",
+                    "param": ""
+                },
+                {
+                    "key": 4961,
+                    "show": 0,
+                    "name": "--角色信息维护",
+                    "controller": "role",
+                    "action": "info",
+                    "param": null
+                },
+                {
+                    "key": 4962,
+                    "show": 0,
+                    "name": "--角色删除",
+                    "controller": "role",
+                    "action": "del",
+                    "param": null
+                },
+                {
+                    "key": 4963,
+                    "show": 0,
+                    "name": "--角色状态",
+                    "controller": "role",
+                    "action": "field",
+                    "param": null
+                },
+                {
+                    "key": 4964,
+                    "show": 0,
+                    "name": "--添加角色",
+                    "controller": "role",
+                    "action": "info",
+                    "param": null
+                }
+            ]
+        },
+        {
+            "key": 12,
+            "name": "@menu/website",
+            "icon": "xe616",
+            "entries": [
+                {
+                    "key": 121,
+                    "show": 1,
+                    "name": "@menu/website_data",
+                    "controller": "website",
+                    "action": "data",
+                    "param": null
+                },
+                {
+                    "key": 12101,
+                    "show": 0,
+                    "name": "--网址信息维护",
+                    "controller": "website",
+                    "action": "info",
+                    "param": null
+                },
+                {
+                    "key": 12102,
+                    "show": 0,
+                    "name": "--网址删除",
+                    "controller": "website",
+                    "action": "del",
+                    "param": null
+                },
+                {
+                    "key": 12103,
+                    "show": 0,
+                    "name": "--网址状态",
+                    "controller": "website",
+                    "action": "field",
+                    "param": null
+                },
+                {
+                    "key": 122,
+                    "show": 1,
+                    "name": "@menu/website_add",
+                    "controller": "website",
+                    "action": "info",
+                    "param": null
+                },
+                {
+                    "key": 123,
+                    "show": 1,
+                    "name": "@menu/website_data_lock",
+                    "controller": "website",
+                    "action": "data",
+                    "param": "lock=1"
+                },
+                {
+                    "key": 124,
+                    "show": 1,
+                    "name": "@menu/website_data_audit",
+                    "controller": "website",
+                    "action": "data",
+                    "param": "status=0"
+                },
+                {
+                    "key": 129,
+                    "show": 1,
+                    "name": "@menu/website_batch",
+                    "controller": "website",
+                    "action": "batch",
+                    "param": null
+                },
+                {
+                    "key": 1291,
+                    "show": 1,
+                    "name": "@menu/website_repeat",
+                    "controller": "website",
+                    "action": "data",
+                    "param": "repeat=1"
+                }
+            ]
+        },
+        {
+            "key": 6,
+            "name": "@menu/users",
+            "icon": "xe62c",
+            "entries": [
+                {
+                    "key": 61,
+                    "show": 1,
+                    "name": "@menu/admin",
+                    "controller": "admin",
+                    "action": "index",
+                    "param": null
+                },
+                {
+                    "key": 6101,
+                    "show": 0,
+                    "name": "--管理员信息维护",
+                    "controller": "admin",
+                    "action": "info",
+                    "param": null
+                },
+                {
+                    "key": 6102,
+                    "show": 0,
+                    "name": "--管理员删除",
+                    "controller": "admin",
+                    "action": "del",
+                    "param": null
+                },
+                {
+                    "key": 6103,
+                    "show": 0,
+                    "name": "--管理员状态",
+                    "controller": "admin",
+                    "action": "field",
+                    "param": null
+                },
+                {
+                    "key": 62,
+                    "show": 1,
+                    "name": "@menu/group",
+                    "controller": "group",
+                    "action": "index",
+                    "param": null
+                },
+                {
+                    "key": 6201,
+                    "show": 0,
+                    "name": "--会员组信息维护",
+                    "controller": "group",
+                    "action": "info",
+                    "param": null
+                },
+                {
+                    "key": 6202,
+                    "show": 0,
+                    "name": "--会员组删除",
+                    "controller": "group",
+                    "action": "del",
+                    "param": null
+                },
+                {
+                    "key": 6203,
+                    "show": 0,
+                    "name": "--会员组状态",
+                    "controller": "group",
+                    "action": "field",
+                    "param": null
+                },
+                {
+                    "key": 63,
+                    "show": 1,
+                    "name": "@menu/user",
+                    "controller": "user",
+                    "action": "data",
+                    "param": null
+                },
+                {
+                    "key": 6301,
+                    "show": 0,
+                    "name": "--会员信息维护",
+                    "controller": "user",
+                    "action": "info",
+                    "param": null
+                },
+                {
+                    "key": 6302,
+                    "show": 0,
+                    "name": "--会员删除",
+                    "controller": "user",
+                    "action": "del",
+                    "param": null
+                },
+                {
+                    "key": 6303,
+                    "show": 0,
+                    "name": "--会员状态",
+                    "controller": "user",
+                    "action": "field",
+                    "param": null
+                },
+                {
+                    "key": 64,
+                    "show": 1,
+                    "name": "@menu/card",
+                    "controller": "card",
+                    "action": "index",
+                    "param": null
+                },
+                {
+                    "key": 6401,
+                    "show": 0,
+                    "name": "--充值卡信息维护",
+                    "controller": "card",
+                    "action": "info",
+                    "param": null
+                },
+                {
+                    "key": 6402,
+                    "show": 0,
+                    "name": "--充值卡删除",
+                    "controller": "card",
+                    "action": "del",
+                    "param": null
+                },
+                {
+                    "key": 65,
+                    "show": 1,
+                    "name": "@menu/order",
+                    "controller": "order",
+                    "action": "index",
+                    "param": null
+                },
+                {
+                    "key": 6501,
+                    "show": 0,
+                    "name": "--订单删除",
+                    "controller": "order",
+                    "action": "del",
+                    "param": null
+                },
+                {
+                    "key": 66,
+                    "show": 1,
+                    "name": "@menu/ulog",
+                    "controller": "ulog",
+                    "action": "index",
+                    "param": null
+                },
+                {
+                    "key": 6601,
+                    "show": 0,
+                    "name": "--访问日志删除",
+                    "controller": "ulog",
+                    "action": "del",
+                    "param": null
+                },
+                {
+                    "key": 67,
+                    "show": 1,
+                    "name": "@menu/plog",
+                    "controller": "plog",
+                    "action": "index",
+                    "param": null
+                },
+                {
+                    "key": 6701,
+                    "show": 0,
+                    "name": "--积分日志删除",
+                    "controller": "plog",
+                    "action": "del",
+                    "param": null
+                },
+                {
+                    "key": 68,
+                    "show": 1,
+                    "name": "@menu/cash",
+                    "controller": "cash",
+                    "action": "index",
+                    "param": null
+                },
+                {
+                    "key": 6801,
+                    "show": 0,
+                    "name": "--提现删除",
+                    "controller": "cash",
+                    "action": "del",
+                    "param": null
+                },
+                {
+                    "key": 6802,
+                    "show": 0,
+                    "name": "--提现审核",
+                    "controller": "cash",
+                    "action": "audit",
+                    "param": null
+                }
+            ]
+        },
+        {
+            "key": 7,
+            "name": "@menu/templates",
+            "icon": "xe72d",
+            "entries": [
+                {
+                    "key": 71,
+                    "show": 1,
+                    "name": "@menu/template",
+                    "controller": "template",
+                    "action": "index",
+                    "param": null
+                },
+                {
+                    "key": 7101,
+                    "show": 0,
+                    "name": "--模板信息维护",
+                    "controller": "template",
+                    "action": "info",
+                    "param": null
+                },
+                {
+                    "key": 7102,
+                    "show": 0,
+                    "name": "--模板删除",
+                    "controller": "template",
+                    "action": "del",
+                    "param": null
+                },
+                {
+                    "key": 72,
+                    "show": 1,
+                    "name": "@menu/ads",
+                    "controller": "template",
+                    "action": "ads",
+                    "param": ""
+                },
+                {
+                    "key": 73,
+                    "show": 1,
+                    "name": "@menu/wizard",
+                    "controller": "template",
+                    "action": "wizard",
+                    "param": null
+                }
+            ]
+        },
+        {
+            "key": 8,
+            "name": "@menu/make",
+            "icon": "xe63e",
+            "entries": [
+                {
+                    "key": 81,
+                    "show": 1,
+                    "name": "@menu/make_opt",
+                    "controller": "make",
+                    "action": "opt",
+                    "param": null
+                },
+                {
+                    "key": 82,
+                    "show": 1,
+                    "name": "@menu/make_index",
+                    "controller": "make",
+                    "action": "index",
+                    "param": null
+                },
+                {
+                    "key": 821,
+                    "show": 1,
+                    "name": "@menu/make_index_wap",
+                    "controller": "make",
+                    "action": "index?ac2=wap",
+                    "param": null
+                },
+                {
+                    "key": 83,
+                    "show": 1,
+                    "name": "@menu/make_map",
+                    "controller": "make",
+                    "action": "map",
+                    "param": null
+                },
+                {
+                    "key": 8101,
+                    "show": 0,
+                    "name": "--生成入口",
+                    "controller": "make",
+                    "action": "make",
+                    "param": null
+                },
+                {
+                    "key": 8102,
+                    "show": 0,
+                    "name": "--生成RSS",
+                    "controller": "make",
+                    "action": "rss",
+                    "param": null
+                },
+                {
+                    "key": 8103,
+                    "show": 0,
+                    "name": "--生成分类",
+                    "controller": "make",
+                    "action": "type",
+                    "param": null
+                },
+                {
+                    "key": 8104,
+                    "show": 0,
+                    "name": "--生成专题首页",
+                    "controller": "make",
+                    "action": "topic_index",
+                    "param": null
+                },
+                {
+                    "key": 8105,
+                    "show": 0,
+                    "name": "--生成专题内容",
+                    "controller": "make",
+                    "action": "topic_info",
+                    "param": null
+                },
+                {
+                    "key": 8106,
+                    "show": 0,
+                    "name": "--生成内容页",
+                    "controller": "make",
+                    "action": "info",
+                    "param": null
+                },
+                {
+                    "key": 8107,
+                    "show": 0,
+                    "name": "--生成自定义页",
+                    "controller": "make",
+                    "action": "label",
+                    "param": null
+                }
+            ]
+        },
+        {
+            "key": 9,
+            "name": "@menu/cjs",
+            "icon": "xe727",
+            "entries": [
+                {
+                    "key": 91,
+                    "show": 0,
+                    "name": "@menu/union",
+                    "controller": "collect",
+                    "action": "union",
+                    "param": null
+                },
+                {
+                    "key": 9101,
+                    "show": 0,
+                    "name": "--采集入口",
+                    "controller": "collect",
+                    "action": "api",
+                    "param": null
+                },
+                {
+                    "key": 9102,
+                    "show": 0,
+                    "name": "--断点采集",
+                    "controller": "collect",
+                    "action": "load",
+                    "param": null
+                },
+                {
+                    "key": 9103,
+                    "show": 0,
+                    "name": "--绑定分类",
+                    "controller": "collect",
+                    "action": "bind",
+                    "param": null
+                },
+                {
+                    "key": 9104,
+                    "show": 0,
+                    "name": "--采集视频",
+                    "controller": "collect",
+                    "action": "vod",
+                    "param": null
+                },
+                {
+                    "key": 9105,
+                    "show": 0,
+                    "name": "--采集文章",
+                    "controller": "collect",
+                    "action": "art",
+                    "param": null
+                },
+                {
+                    "key": 92,
+                    "show": 0,
+                    "name": "@menu/collect_timming",
+                    "controller": "collect",
+                    "action": "timing",
+                    "param": null
+                },
+                {
+                    "key": 93,
+                    "show": 1,
+                    "name": "@menu/collect",
+                    "controller": "collect",
+                    "action": "index",
+                    "param": null
+                },
+                {
+                    "key": 9301,
+                    "show": 0,
+                    "name": "--自定义资源信息维护",
+                    "controller": "collect",
+                    "action": "info",
+                    "param": null
+                },
+                {
+                    "key": 9302,
+                    "show": 0,
+                    "name": "--自定义资源删除",
+                    "controller": "collect",
+                    "action": "del",
+                    "param": null
+                },
+                {
+                    "key": 94,
+                    "show": 1,
+                    "name": "@menu/cj",
+                    "controller": "cj",
+                    "action": "index",
+                    "param": null
+                },
+                {
+                    "key": 9401,
+                    "show": 0,
+                    "name": "--自定义规则信息维护",
+                    "controller": "cj",
+                    "action": "info",
+                    "param": null
+                },
+                {
+                    "key": 9402,
+                    "show": 0,
+                    "name": "--自定义规则删除",
+                    "controller": "cj",
+                    "action": "del",
+                    "param": null
+                },
+                {
+                    "key": 9403,
+                    "show": 0,
+                    "name": "--自定义规则发布方案",
+                    "controller": "cj",
+                    "action": "program",
+                    "param": null
+                },
+                {
+                    "key": 9404,
+                    "show": 0,
+                    "name": "--自定义规则采集网址",
+                    "controller": "cj",
+                    "action": "col_url",
+                    "param": null
+                },
+                {
+                    "key": 9405,
+                    "show": 0,
+                    "name": "--自定义规则采集内容",
+                    "controller": "cj",
+                    "action": "col_content",
+                    "param": null
+                },
+                {
+                    "key": 9406,
+                    "show": 0,
+                    "name": "--自定义规则发布内容",
+                    "controller": "cj",
+                    "action": "publish",
+                    "param": null
+                },
+                {
+                    "key": 9407,
+                    "show": 0,
+                    "name": "--自定义规则导出",
+                    "controller": "cj",
+                    "action": "export",
+                    "param": null
+                },
+                {
+                    "key": 9408,
+                    "show": 0,
+                    "name": "--自定义规则导入",
+                    "controller": "cj",
+                    "action": "import",
+                    "param": null
+                }
+            ]
+        },
+        {
+            "key": 10,
+            "name": "@menu/db",
+            "icon": "xe621",
+            "entries": [
+                {
+                    "key": 101,
+                    "show": 1,
+                    "name": "@menu/database",
+                    "controller": "database",
+                    "action": "index",
+                    "param": null
+                },
+                {
+                    "key": 10001,
+                    "show": 0,
+                    "name": "--数据库备份",
+                    "controller": "database",
+                    "action": "export",
+                    "param": null
+                },
+                {
+                    "key": 10002,
+                    "show": 0,
+                    "name": "--数据库还原",
+                    "controller": "database",
+                    "action": "import",
+                    "param": null
+                },
+                {
+                    "key": 10003,
+                    "show": 0,
+                    "name": "--数据库优化",
+                    "controller": "database",
+                    "action": "optimize",
+                    "param": null
+                },
+                {
+                    "key": 10004,
+                    "show": 0,
+                    "name": "--数据库修复",
+                    "controller": "database",
+                    "action": "repair",
+                    "param": null
+                },
+                {
+                    "key": 10005,
+                    "show": 0,
+                    "name": "--数据库删除备份",
+                    "controller": "database",
+                    "action": "del",
+                    "param": null
+                },
+                {
+                    "key": 10006,
+                    "show": 0,
+                    "name": "--数据库表信息",
+                    "controller": "database",
+                    "action": "columns",
+                    "param": null
+                },
+                {
+                    "key": 102,
+                    "show": 1,
+                    "name": "@menu/database_sql",
+                    "controller": "database",
+                    "action": "sql",
+                    "param": null
+                },
+                {
+                    "key": 103,
+                    "show": 1,
+                    "name": "@menu/database_rep",
+                    "controller": "database",
+                    "action": "rep",
+                    "param": null
+                }
+            ]
+        },
+        {
+            "key": 11,
+            "name": "@menu/apps",
+            "icon": "xe621",
+            "entries": [
+                {
+                    "key": 111,
+                    "show": 1,
+                    "name": "@menu/addon",
+                    "controller": "addon",
+                    "action": "index",
+                    "param": ""
+                },
+                {
+                    "key": 112,
+                    "show": 1,
+                    "name": "@menu/urlsend",
+                    "controller": "urlsend",
+                    "action": "index",
+                    "param": ""
+                },
+                {
+                    "key": 113,
+                    "show": 1,
+                    "name": "@menu/safety_file",
+                    "controller": "safety",
+                    "action": "file",
+                    "param": ""
+                },
+                {
+                    "key": 114,
+                    "show": 1,
+                    "name": "@menu/safety_data",
+                    "controller": "safety",
+                    "action": "data",
+                    "param": ""
+                },
+                {
+                    "key": 11200,
+                    "show": 0,
+                    "name": "--推送入口",
+                    "controller": "urlsend",
+                    "action": "push",
+                    "param": null
+                },
+                {
+                    "key": 11201,
+                    "show": 0,
+                    "name": "--百度主动推送",
+                    "controller": "urlsend",
+                    "action": "baidu_push",
+                    "param": null
+                },
+                {
+                    "key": 11202,
+                    "show": 0,
+                    "name": "--百度熊掌推送",
+                    "controller": "urlsend",
+                    "action": "baidu_bear",
+                    "param": null
+                },
+                {
+                    "key": 11100,
+                    "show": 0,
+                    "name": "--应用插件列表",
+                    "controller": "addon",
+                    "action": "downloaded",
+                    "param": null
+                },
+                {
+                    "key": 11101,
+                    "show": 0,
+                    "name": "--应用插件安装",
+                    "controller": "addon",
+                    "action": "install",
+                    "param": null
+                },
+                {
+                    "key": 11102,
+                    "show": 0,
+                    "name": "--应用插件卸载",
+                    "controller": "addon",
+                    "action": "uninstall",
+                    "param": null
+                },
+                {
+                    "key": 11103,
+                    "show": 0,
+                    "name": "--应用插件配置",
+                    "controller": "addon",
+                    "action": "config",
+                    "param": null
+                },
+                {
+                    "key": 11104,
+                    "show": 0,
+                    "name": "--应用插件状态",
+                    "controller": "addon",
+                    "action": "state",
+                    "param": null
+                },
+                {
+                    "key": 11105,
+                    "show": 0,
+                    "name": "--应用插件上传",
+                    "controller": "addon",
+                    "action": "local",
+                    "param": null
+                },
+                {
+                    "key": 11106,
+                    "show": 0,
+                    "name": "--应用插件升级",
+                    "controller": "addon",
+                    "action": "upgrade",
+                    "param": null
+                },
+                {
+                    "key": 11107,
+                    "show": 0,
+                    "name": "--应用插件添加",
+                    "controller": "addon",
+                    "action": "add",
+                    "param": null
+                }
+            ]
+        }
+    ],
+    "controllers": {
+        "actor": [
+            "data",
+            "info",
+            "del",
+            "field"
+        ],
+        "addon": [
+            "index",
+            "config",
+            "info",
+            "downloaded",
+            "install",
+            "uninstall",
+            "state",
+            "local",
+            "add",
+            "upgrade"
+        ],
+        "admin": [
+            "index",
+            "info",
+            "del",
+            "field"
+        ],
+        "annex": [
+            "data",
+            "file",
+            "info",
+            "del",
+            "check",
+            "init"
+        ],
+        "art": [
+            "data",
+            "batch",
+            "info",
+            "del",
+            "field",
+            "updatetoday"
+        ],
+        "card": [
+            "index",
+            "info",
+            "del"
+        ],
+        "cash": [
+            "index",
+            "del",
+            "audit"
+        ],
+        "cj": [
+            "index",
+            "info",
+            "program",
+            "col_all",
+            "col_url",
+            "col_content",
+            "publish",
+            "show",
+            "content_del",
+            "content_into",
+            "show_url",
+            "del",
+            "export",
+            "import"
+        ],
+        "collect": [
+            "index",
+            "test",
+            "info",
+            "del",
+            "union",
+            "load",
+            "api",
+            "timing",
+            "clearbind",
+            "bind",
+            "vod",
+            "art",
+            "actor",
+            "role",
+            "website"
+        ],
+        "comment": [
+            "data",
+            "info",
+            "del",
+            "field"
+        ],
+        "database": [
+            "index",
+            "export",
+            "import",
+            "optimize",
+            "repair",
+            "del",
+            "sql",
+            "columns",
+            "rep"
+        ],
+        "domain": [
+            "index",
+            "del",
+            "export",
+            "import"
+        ],
+        "gbook": [
+            "data",
+            "info",
+            "del",
+            "field"
+        ],
+        "group": [
+            "index",
+            "info",
+            "del",
+            "field"
+        ],
+        "images": [
+            "data",
+            "opt",
+            "del",
+            "sync"
+        ],
+        "index": [
+            "login",
+            "logout",
+            "index",
+            "welcome",
+            "quickmenu",
+            "checkcache",
+            "clear",
+            "iframe",
+            "unlocked",
+            "check_back_link",
+            "select"
+        ],
+        "link": [
+            "index",
+            "info",
+            "del",
+            "batch"
+        ],
+        "make": [
+            "opt",
+            "make",
+            "index",
+            "map",
+            "rss",
+            "type",
+            "topic_index",
+            "topic_info",
+            "info",
+            "label"
+        ],
+        "order": [
+            "index",
+            "del"
+        ],
+        "plog": [
+            "index",
+            "del"
+        ],
+        "role": [
+            "data",
+            "info",
+            "del",
+            "field"
+        ],
+        "safety": [],
+        "system": [
+            "test_email",
+            "test_cache",
+            "config",
+            "configurl",
+            "configuser",
+            "configupload",
+            "configcomment",
+            "configweixin",
+            "configpay",
+            "configconnect",
+            "configemail",
+            "configsms",
+            "configapi",
+            "configinterface",
+            "configcollect",
+            "configplay",
+            "configseo"
+        ],
+        "template": [
+            "index",
+            "ads",
+            "info",
+            "del",
+            "wizard"
+        ],
+        "timming": [
+            "index",
+            "info",
+            "del",
+            "field"
+        ],
+        "topic": [
+            "data",
+            "info",
+            "del",
+            "field"
+        ],
+        "type": [
+            "index",
+            "info",
+            "del",
+            "field",
+            "batch",
+            "extend",
+            "move"
+        ],
+        "ulog": [
+            "index",
+            "del"
+        ],
+        "update": [],
+        "upload": [
+            "index",
+            "test",
+            "upload"
+        ],
+        "urlsend": [
+            "index",
+            "data",
+            "push"
+        ],
+        "user": [
+            "data",
+            "reward",
+            "info",
+            "del",
+            "field"
+        ],
+        "visit": [
+            "index",
+            "del"
+        ],
+        "vod": [
+            "data",
+            "batch",
+            "info",
+            "iplot",
+            "del",
+            "field",
+            "updatetoday"
+        ],
+        "voddowner": [
+            "index",
+            "info",
+            "del",
+            "field"
+        ],
+        "vodplayer": [
+            "index",
+            "info",
+            "del",
+            "field",
+            "export",
+            "import"
+        ],
+        "vodserver": [
+            "index",
+            "info",
+            "del",
+            "field"
+        ],
+        "website": [
+            "data",
+            "batch",
+            "info",
+            "del",
+            "field",
+            "updatetoday"
+        ]
+    }
+}

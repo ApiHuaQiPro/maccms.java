@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 只读映射：沿用旧表 mac_admin（install.sql:72-86）。B12 后台登录、会话核对与管理员管理。 -->
+<mapper namespace="com.maccms.backend.admin.infrastructure.AdminMapper">
+
+    <sql id="columns">
+        admin_id              AS adminId,
+        admin_name            AS adminName,
+        admin_pwd             AS adminPwd,
+        admin_status          AS adminStatus,
+        admin_auth            AS adminAuth,
+        admin_login_time      AS adminLoginTime,
+        admin_login_ip        AS adminLoginIp,
+        admin_login_num       AS adminLoginNum,
+        admin_last_login_time AS adminLastLoginTime,
+        admin_last_login_ip   AS adminLastLoginIp
+    </sql>
+
+    <select id="selectById" resultType="com.maccms.backend.admin.infrastructure.AdminRow">
+        SELECT <include refid="columns"/>
+        FROM mac_admin
+        WHERE admin_id = #{adminId}
+    </select>
+
+    <select id="selectForLogin" resultType="com.maccms.backend.admin.infrastructure.AdminRow">
+        SELECT <include refid="columns"/>
+        FROM mac_admin
+        WHERE admin_name = #{name}
+          AND admin_pwd = #{pwd}
+          AND admin_status = 1
+        ORDER BY admin_id
+        LIMIT 1
+    </select>
+
+    <!-- 旧版 where admin_name like '%wd%'（admin/controller/Admin.php:19-22）；% 与 _ 照旧是通配符，like 由 AdminAccountService.legacyLike 转写成 ESCAPE '!' 下的同义模式 -->
+    <sql id="listCondition">
+        <if test="like != null">WHERE admin_name LIKE #{like} ESCAPE '!'</if>
+    </sql>
+
+    <select id="count" resultType="long">
+        SELECT COUNT(*)
+        FROM mac_admin
+        <include refid="listCondition"/>
+    </select>
+
+    <select id="list" resultType="com.maccms.backend.admin.infrastructure.AdminRow">
+        SELECT <include refid="columns"/>
+        FROM mac_admin
+        <include refid="listCondition"/>
+        ORDER BY admin_id DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+</mapper>

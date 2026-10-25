@@ -338,7 +338,7 @@ final class SiteCounterActions {
                     SiteMemberInterceptor.member(request).setCookies());
         }
         boolean ok = ((Integer) body.get("code")) == 1;
-        UserJumpPage page = new UserJumpPage(pages.member(ok ? "操作成功" : "操作失败"), ok, (String) body.get("msg"),
+        UserJumpPage page = new UserJumpPage(pages.member(ok ? "操作成功" : "操作失败"), ok, SiteVariants.text((String) body.get("msg")),
                 back.isPresent() ? back : Optional.of(site.homePath()));
         ResponseEntity<String> r = renderer.memberPlain(HttpStatus.OK, t -> t.sitePagesUserJump(page));
         ResponseEntity.BodyBuilder b = ResponseEntity.status(r.getStatusCode()).headers(r.getHeaders());

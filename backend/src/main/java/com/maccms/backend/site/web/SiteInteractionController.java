@@ -397,7 +397,7 @@ public class SiteInteractionController {
 
     private ResponseEntity<?> jump(HttpServletRequest request, boolean ok, String msg, Optional<SafeUrl> back,
                                    List<String> cookies) {
-        UserJumpPage page = new UserJumpPage(pages.member(ok ? "操作成功" : "操作失败"), ok, msg, back);
+        UserJumpPage page = new UserJumpPage(pages.member(ok ? "操作成功" : "操作失败"), ok, SiteVariants.text(msg), back);
         ResponseEntity<String> r = renderer.memberPlain(HttpStatus.OK, t -> t.sitePagesUserJump(page));
         ResponseEntity.BodyBuilder b = ResponseEntity.status(r.getStatusCode()).headers(r.getHeaders());
         for (String c : cookies) {

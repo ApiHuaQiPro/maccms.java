@@ -33,7 +33,7 @@
 | D 内容 SSR 页 | 文章（含分页）、专题、演员、角色、网址、剧情的列表与详情（第 5 节） | 已实现 | C 页面模板与视图模型；K 样式（MACC-54） |
 | E 播放 / 下载 / 密码 / 试看 | `vod/play`、`vod/player`、`vod/down`、`vod/downer`、`playerconfig.js`、`player_aaaa`、W1/W2 四种组合（第 6 节） | 已实现 | C；K 样式与试看脚本（MACC-54） |
 | F 模块筛选/搜索页、`ajax_*` 与 `rss` | 各模块 `show`（含 `role/show`）/`search` 页、`ajax_detail/ajax_show/ajax_search` HTML 片段、单条 `rss`（第 7 节） | 已实现（返工补齐 `role/show` 与旧 URL 条件/排序） | C |
-| G 手机模板与语言包 | `mob_status` 手机模板切换、`zh-cn`/`zh-tw` 输出 | 不在本批：D-B05-8 归 B12（MACC-36），本批登记差异 | — |
+| G 手机模板与语言包 | `mob_status` 手机模板切换、`zh-cn`/`zh-tw` 输出 | 不在本批：D-B05-8 归 B12（MACC-36），本批登记差异；B12 已接线（选择语义、手机 Logo、`Vary: User-Agent`、`lang()` 文字按语言包，`21-b12-admin-framework.md` 第 12 节） | C（B12）；外壳可选的手机样式类由队长与 K 另定 |
 
 共享文件（`backend/src/main/jte/site/components/`、`backend/src/main/resources/static/site/`、`jte/site/layout/` 与组件 `@param` 签名）：后端没有修改；`static/site/` 的变更全部来自 MACC-54 的固定提交（普通 merge）。新页面沿用既有 class（`filter-group`/`filter-chip`、`content-grid`/`content-card`、`pagination`、`search-random-notice`）。
 
@@ -302,7 +302,7 @@ W1 与 W2 **互相独立**，各自只消除自己负责的外部地址：
 | `search_verify=1`（搜索页验证码；旧 ajax 入口不验证） | `Base.php:63-70` | 视频与各模块的搜索页（含兼容模式 `s`）关闭（404，`SiteFeatures.searchPageClosed`）；`ajax_search` 照常 | 同上 |
 | `search_timespan`（同一会话两次搜索的间隔，仓库值 3 秒；只在第 1 页检查） | `Base.php:59-62`、`mac_get_time_span`（`common.php:306-316`，session 计时） | 新版没有会话，不做该限制；由默认关闭的搜索开关、并发许可、执行时限与 503 约束成本（第 11 节差异） | **B08 已接线**（17 文档第 2.5 节）：按旧语义只在第 1 页按会话计时，过快时 429 |
 
-【测试】`SiteFeaturesTest`。手机模板与繁体语言包（D-B05-8）：B05 用响应式单模板与简体固定文案并登记差异，手机模板选择与 zh-cn/zh-tw 输出归 B12（MACC-36），不是永久取消。
+【测试】`SiteFeaturesTest`。手机模板与繁体语言包（D-B05-8）：B05 用响应式单模板与简体固定文案并登记差异，手机模板选择与 zh-cn/zh-tw 输出归 B12（MACC-36），不是永久取消。B12 已完成接线（21 文档第 12.3 节）：每个请求按旧 `Init.php` 选择手机/站群（`SiteVariants`），手机访问显示 `site_waplogo`、`mob_status` 为 1/2 时页面带 `Vary: User-Agent`，旧版 `lang()` 的文字（错误页、提示页、JSON `msg`）按 `app.lang` 输出；页面固定文案、canonical 与站内链接不随手机或语言变化（`SiteVariantPagesTest`）。外壳、组件与 `static/site/` 未改，签名见 21 文档第 12.4 节。
 
 #### 7.5 PHP 黄金样本
 
@@ -323,7 +323,7 @@ K1–K5 由 MACC-54 交付，队长阶段审阅通过后以普通 merge `d4262ea
 | D-B05-5 | **ajax 为 HTML 片段；B05 保留各模块 `ajax_detail/ajax_show/ajax_search` 的完整范围，连同必要的只读 `show/search` 页面**（不批准"仅 ajax_detail"） | 第 7 节（含返工补齐的 `role/show`） |
 | D-B05-6 | 搜索页 `ajax` 按旧 intval 接受并忽略，不进链接/canonical/隐藏字段；重复键、编码、长度限制保持 | 第 3.1 节 |
 | D-B05-7 | 独立 `vod/show` 入口，第 1 槽为分类本身 + 直接子分类，不换成 tid 的 OR；canonical 用 show 入口；不向 `vod/search` 加 `type` | 第 3.6 节 |
-| D-B05-8 | 响应式单模板、简体文案并列差异；手机模板与 zh-cn/zh-tw 归 B12（MACC-36），不是永久取消 | 第 7.4 节、第 11 节 |
+| D-B05-8 | 响应式单模板、简体文案并列差异；手机模板与 zh-cn/zh-tw 归 B12（MACC-36），不是永久取消。B12 已接线（21 文档第 12 节；剩余差异见 D-B12-L3） | 第 7.4 节、第 11 节 |
 
 ### 10. 验证（最终树）
 
@@ -361,7 +361,7 @@ K1–K5 由 MACC-54 交付，队长阶段审阅通过后以普通 merge `d4262ea
 | 验证码（`show_verify`、`search_verify`） | 有 | 接线前临时关闭对应页面（第 7.4 节，B08/B11） |
 | 搜索频率（`search_timespan`） | 会话计时，仓库值 3 秒 | B08 起按会话计时（第 1 页，过快 429，17 文档第 2.5 节） |
 | ajax 片段结构 | 模板 `*/ajax_*` | 与整页相同视图的结果片段（无外壳、无脚本）；仓库无旧模板，DOM 不对齐 |
-| 手机模板、繁体语言包（D-B05-8） | `mob_status` 切换、zh-tw | 响应式单模板、简体固定文案；归 B12（MACC-36） |
+| 手机模板、繁体语言包（D-B05-8） | `mob_status` 切换、zh-tw | 响应式单模板；B12 起手机访问换手机 Logo 并带 `Vary: User-Agent`，`lang()` 的文字按语言包，模板固定文案不切换（21 文档第 12 节，D-B12-L3） |
 | 试看 | 模板脚本计时 | `trial.js` 浏览器计时（不是服务端授权屏障，与旧版相同把地址交给浏览器） |
 | `vod/player` 内页权限 | 不中止的检查，会给出地址 | 与播放页同样判定，不输出受限地址 |
 | 访问密码状态 | session，`!=` 宽松比较，不看审核状态 | 签名票据（2 小时、绑定当前密码），`BINARY` 比较，只认已审核内容；按内容限流（同一内容的大量错误尝试会让其他访客在窗口内也被拒绝） |

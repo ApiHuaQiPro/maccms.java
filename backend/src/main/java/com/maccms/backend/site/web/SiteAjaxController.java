@@ -193,7 +193,7 @@ public class SiteAjaxController {
             status = HttpStatus.SERVICE_UNAVAILABLE;
             cache = CacheControl.noStore();
         }
-        byte[] bytes = LegacyJson.encode(out).getBytes(StandardCharsets.UTF_8);
+        byte[] bytes = LegacyJson.encode(SiteVariants.localizeMsg(out)).getBytes(StandardCharsets.UTF_8);
         ResponseEntity.BodyBuilder b = ResponseEntity.status(status).contentType(JSON).contentLength(bytes.length)
                 .cacheControl(cache).header("X-Content-Type-Options", "nosniff");
         if (status == HttpStatus.SERVICE_UNAVAILABLE) {

@@ -96,6 +96,15 @@ maccms:
   # 全部输出 closed。charge=1 的白名单按 maccms.client-ip 解析客户端 IP。只读：detail_inc_hits 开启时也不写计数（B11）。
   openapi:
     enabled: ${MACCMS_OPENAPI_ENABLED:false}
+  # 后台（B12，docs/architecture/21-b12-admin-framework.md 第 7 节）：默认关闭，关闭时不注册任何后台路由。启用时需要可写数据源
+  # （maccms.write.enabled，登录记录与管理员管理写 mac_admin），entry 与 base-url 必填并校验，缺失或不合法即启动失败（不回显取值）。
+  # entry 是后台入口文件的路径（旧版改名后的 _admin.php，形如 /_admin.php；不能是 /admin.php、/index.php、/api.php、/install.php）；
+  # base-url 是对外地址（同 maccms.site.base-url 的写法），决定页面里的路径前缀、会话 cookie 的 Path/Secure 与表单提交的来源校验。
+  # 登录验证码、每页条数、语言（zh-cn/zh-tw）取旧配置 extra/maccms.php（启动时读一次），没有旧配置目录时用仓库值。
+  admin:
+    enabled: ${MACCMS_ADMIN_ENABLED:false}
+    entry: ${MACCMS_ADMIN_ENTRY:}
+    base-url: ${MACCMS_ADMIN_BASE_URL:}
   # site 服务端页面（MACC-9 骨架）：默认关闭，关闭时不注册任何 site 路由。
   # 启用时 name、base-url 必填并校验，缺失或不合法即启动失败（不回显取值）。规则见 docs/architecture/05-site-skeleton.md。
   # 设置了 maccms.legacy-config.dir 时，name、keywords、description、icp、logo-url、status、closed-message、url.*、image.* 按字段
