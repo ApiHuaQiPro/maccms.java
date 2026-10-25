@@ -64,4 +64,22 @@ class LegacyLangTest {
         }
         assertThatThrownBy(() -> LegacyLang.of("en-us")).isInstanceOf(IllegalArgumentException.class);
     }
+
+    @Test
+    void localizeMapsWholeZhCnValuesToTheSelectedPack() {
+        LegacyLang cn = LegacyLang.of("zh-cn");
+        LegacyLang tw = LegacyLang.of("zh-tw");
+        // 新版照抄的旧 lang(键) 原文：整段等于 zh-cn 包里某个键的值时，取本包同一键的值
+        assertThat(tw.localize("页面不存在")).isEqualTo("頁面不存在");
+        assertThat(tw.localize("登录成功")).isEqualTo("登錄成功");
+        assertThat(tw.localize("您没有权限访问此页面")).isEqualTo(tw.get("permission_denied"));
+        // 简体包原样；不是任何一项完整值的（新版新增、拼接、只含一部分）原样；不做简繁自动转换
+        assertThat(cn.localize("页面不存在")).isEqualTo("页面不存在");
+        assertThat(tw.localize("您访问的页面不存在或已被移除。")).isEqualTo("您访问的页面不存在或已被移除。");
+        assertThat(tw.localize("页面不存在!")).isEqualTo("页面不存在!");
+        assertThat(tw.localize("")).isEqualTo("");
+        assertThat(tw.localize(null)).isNull();
+        // zh-cn 值相同、zh-tw 值不同的键（"采集"）无法确定是哪一个，原样
+        assertThat(tw.localize("采集")).isEqualTo("采集");
+    }
 }

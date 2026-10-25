@@ -338,7 +338,7 @@ public class SiteUserController {
             body.put("wait", 3);
             return jsonBody(body, reply.setCookies());
         }
-        UserJumpPage page = new UserJumpPage(pages.member(reply.ok() ? "操作成功" : "操作失败"), reply.ok(), reply.msg(),
+        UserJumpPage page = new UserJumpPage(pages.member(reply.ok() ? "操作成功" : "操作失败"), reply.ok(), SiteVariants.text(reply.msg()),
                 Optional.of(link("info")));
         ResponseEntity<String> r = renderer.memberPlain(HttpStatus.OK, t -> t.sitePagesUserJump(page));
         return withCookies(ResponseEntity.status(r.getStatusCode()).headers(r.getHeaders()), reply.setCookies())
@@ -433,7 +433,8 @@ public class SiteUserController {
             body.put("wait", 3);
             return jsonBody(body, MemberCookies.logout());
         }
-        UserJumpPage page = new UserJumpPage(pages.member("未登录"), false, "未登录", Optional.of(link("login")));
+        UserJumpPage page = new UserJumpPage(pages.member("未登录"), false, SiteVariants.text("未登录"),
+                Optional.of(link("login")));
         ResponseEntity<String> r = renderer.memberPlain(HttpStatus.OK, t -> t.sitePagesUserJump(page));
         return withCookies(ResponseEntity.status(r.getStatusCode()).headers(r.getHeaders()), MemberCookies.logout())
                 .body(r.getBody());
@@ -443,7 +444,7 @@ public class SiteUserController {
         if (ajax) {
             Map<String, Object> body = new LinkedHashMap<>();
             body.put("code", 503);
-            body.put("msg", "会员功能暂未开放");
+            body.put("msg", SiteVariants.text("会员功能暂未开放"));
             byte[] bytes = LegacyJson.encode(body).getBytes(StandardCharsets.UTF_8);
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).contentType(JSON).contentLength(bytes.length)
                     .cacheControl(CacheControl.noStore()).header("X-Content-Type-Options", "nosniff").body(bytes);
@@ -460,7 +461,7 @@ public class SiteUserController {
 
     /** 旧版 {@code json($res)} 的响应（{@code body} 为有序 Map 或 List）；B10 的 {@link SiteMemberFinance} 共用。 */
     static ResponseEntity<byte[]> jsonBody(Object body, List<String> cookies) {
-        byte[] bytes = LegacyJson.encode(body).getBytes(StandardCharsets.UTF_8);
+        byte[] bytes = LegacyJson.encode(SiteVariants.localizeMsg(body)).getBytes(StandardCharsets.UTF_8);
         return withCookies(ResponseEntity.ok(), cookies).contentType(JSON).contentLength(bytes.length)
                 .cacheControl(CacheControl.noStore()).header("X-Content-Type-Options", "nosniff")
                 .header("X-Robots-Tag", "noindex").body(bytes);

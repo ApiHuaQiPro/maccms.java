@@ -17370,6 +17370,680 @@
                     "rows": null
                 }
             ]
+        },
+        {
+            "label": "stored-case-upper",
+            "config": {},
+            "quickmenu": null,
+            "rows0": [
+                {
+                    "admin_id": 1,
+                    "admin_name": "61646d696e",
+                    "admin_pwd": "3746454636313731343639453830443332433035353946383842333737323435",
+                    "admin_random": "",
+                    "admin_status": 1,
+                    "admin_auth": "",
+                    "admin_login_time": 1700000000,
+                    "admin_login_ip": 167772161,
+                    "admin_login_num": 5,
+                    "admin_last_login_time": 0,
+                    "admin_last_login_ip": 0
+                },
+                {
+                    "admin_id": 2,
+                    "admin_name": "656469746f72",
+                    "admin_pwd": "3631433931433841364436314334364235434239413943313542393237343736",
+                    "admin_random": "",
+                    "admin_status": 1,
+                    "admin_auth": "2c61646d696e2f696e6465782c696e6465782f756e6c6f636b65642c",
+                    "admin_login_time": 0,
+                    "admin_login_ip": 0,
+                    "admin_login_num": 0,
+                    "admin_last_login_time": 0,
+                    "admin_last_login_ip": 0
+                }
+            ],
+            "steps": [
+                {
+                    "label": "login",
+                    "request": {
+                        "method": "POST",
+                        "path": "/admin/index/login",
+                        "query": "",
+                        "post": "admin_name=admin&admin_pwd=admin888",
+                        "ajax": true,
+                        "headers": {}
+                    },
+                    "started": 1792956473,
+                    "after": 1792956474,
+                    "status": 200,
+                    "contentType": "application/json; charset=utf-8",
+                    "location": null,
+                    "setCookies": [
+                        "PHPSESSID=2cvb37gijl28s4v0en1q9cke56; path=/"
+                    ],
+                    "body": "eyJjb2RlIjoxLCJtc2ciOiLnmbvlvZXmiJDlip8iLCJkYXRhIjoiIiwidXJsIjoiXC9fYWRtaW4ucGhwXC9hZG1pblwvaW5kZXhcL2xvZ2luLmh0bWwiLCJ3YWl0IjozfQ==",
+                    "rows": [
+                        {
+                            "admin_id": 1,
+                            "admin_name": "61646d696e",
+                            "admin_pwd": "3746454636313731343639453830443332433035353946383842333737323435",
+                            "admin_random": "3765356666616665656436353231626133316562623565346339313263383961",
+                            "admin_status": 1,
+                            "admin_auth": "",
+                            "admin_login_time": 1792956474,
+                            "admin_login_ip": 2130706433,
+                            "admin_login_num": 6,
+                            "admin_last_login_time": 1700000000,
+                            "admin_last_login_ip": 167772161
+                        },
+                        {
+                            "admin_id": 2,
+                            "admin_name": "656469746f72",
+                            "admin_pwd": "3631433931433841364436314334364235434239413943313542393237343736",
+                            "admin_random": "",
+                            "admin_status": 1,
+                            "admin_auth": "2c61646d696e2f696e6465782c696e6465782f756e6c6f636b65642c",
+                            "admin_login_time": 0,
+                            "admin_login_ip": 0,
+                            "admin_login_num": 0,
+                            "admin_last_login_time": 0,
+                            "admin_last_login_ip": 0
+                        }
+                    ]
+                },
+                {
+                    "label": "next-page",
+                    "request": {
+                        "method": "GET",
+                        "path": "/admin/index/welcome",
+                        "query": "",
+                        "post": "",
+                        "ajax": false,
+                        "headers": {}
+                    },
+                    "started": 1792956474,
+                    "after": 1792956474,
+                    "status": 200,
+                    "contentType": "text/html; charset=utf-8",
+                    "location": null,
+                    "setCookies": [],
+                    "body": "PCFET0NUWVBFIGh0bWw+DQo8aHRtbCBsYW5nPSJlbiI+DQo8aGVhZD4NCiAgICA8bWV0YSBjaGFyc2V0PSJVVEYtOCI+DQogICAgPG1ldGEgbmFtZT0idmlld3BvcnQiIGNvbnRlbnQ9IndpZHRoPWRldmljZS13aWR0aCwgaW5pdGlhbC1zY2FsZT0xLCBtYXhpbXVtLXNjYWxlPTEiPg0KICAgIDx0aXRsZT7mrKLov47pobXpnaIgLSDlronlhajnrKzkuIDor7fli7/ms4TpnLLlkI7lj7DlnLDlnYAgLSBDb3B5cmlnaHQgYnkg6Iu55p6cQ01T5YaF5a65566h55CG57O757ufPC90aXRsZT4NCiAgICA8bGluayByZWw9InN0eWxlc2hlZXQiIGhyZWY9Ii9zdGF0aWMvbGF5dWkvY3NzL2xheXVpLmNzcyI+DQogICAgPGxpbmsgcmVsPSJzdHlsZXNoZWV0IiBocmVmPSIvc3RhdGljL2Nzcy9hZG1pbl9zdHlsZS5jc3M/MjAyMy4xMDAwLjMwNTEiPg0KICAgIDxzY3JpcHQgdHlwZT0idGV4dC9qYXZhc2NyaXB0IiBzcmM9Ii9zdGF0aWMvanMvanF1ZXJ5LmpzIj48L3NjcmlwdD4NCiAgICA8c2NyaXB0IHR5cGU9InRleHQvamF2YXNjcmlwdCIgc3JjPSIvc3RhdGljL2xheXVpL2xheXVpLmpzIj48L3NjcmlwdD4NCiAgICA8c2NyaXB0Pg0KICAgICAgICB2YXIgUk9PVF9QQVRIPSIiLEFETUlOX1BBVEg9Ii9fYWRtaW4ucGhwIiwgTUFDX1ZFUlNJT049InYxMCI7DQogICAgPC9zY3JpcHQ+DQo8L2hlYWQ+DQo8Ym9keT4NCjxzY3JpcHQ+DQogICAgdmFyIE1BQ19WRVJTSU9OPScyMDIzLjEwMDAuMzA1MScsUEhQX1ZFUlNJT049JzcuMy4zMycsVEhJTktfVkVSU0lPTj0nNS4wLjI0JztNQUNfTEFORz0nemgtY24nOw0KPC9zY3JpcHQ+DQo8ZGl2IGNsYXNzPSJwYWdlLWNvbnRhaW5lciI+DQogICAgDQogICAgPGJsb2NrcXVvdGUgY2xhc3M9ImxheXVpLWVsZW0tcXVvdGUgbGF5dWktcXVvdGUtbm0gbXQxMCI+DQogICAgICAgIDxwIGNsYXNzPSJmLTIwIHRleHQtc3VjY2VzcyI+6K+35LiN6KaB5L+u5pS557O757uf5paH5Lu277yM5Lul5YWN5Y2H57qn5Ye6546w5pWF6Zqc77yB5pys56iL5bqP5LiN5YaF572u5Lu75L2V5pWw5o2u77yM5re75Yqg5Lu75L2V5pWw5o2u5Z2H5piv5Liq5Lq66KGM5Li677yB6K+35Zyo6YG15a6I5rOV5b6L55qE5YmN5o+Q5LiL5L2/55So56iL5bqP77yM5ZCm5YiZ5ZCO5p6c6Ieq6LSf77yBPC9wPg0KICAgICAgICA8cD7nmbvlvZXmrKHmlbDvvJo1ICDkuIrmrKHnmbvlvZVJUO+8mjAuMC4wLjAgIOS4iuasoeeZu+W9leaXtumXtO+8mjwvcD4NCiAgICA8L2Jsb2NrcXVvdGU+DQoNCiAgICA8dGFibGUgY2xhc3M9ImxheXVpLXRhYmxlIiA+DQogICAgICAgIDx0Ym9keT4NCiAgICAgICAgPHRyPg0KICAgICAgICAgICAgPHRkIHdpZHRoPSIxMTAiPui/kOihjOeOr+WigzwvdGQ+DQogICAgICAgICAgICA8dGQ+V0lOTlQgKGdvbGRlbik8L3RkPg0KICAgICAgICA8L3RyPg0KICAgICAgICA8dHI+DQogICAgICAgICAgICA8dGQ+5pyN5Yqh5ZmoSVAv56uv5Y+jPC90ZD4NCiAgICAgICAgICAgIDx0ZD53d3cuZXhhbXBsZS50ZXN0PC90ZD4NCiAgICAgICAgPC90cj4NCiAgICAgICAgPHRyPg0KICAgICAgICAgICAgPHRkPuacgOWkp+S4iuS8oOmZkOWItjwvdGQ+DQogICAgICAgICAgICA8dGQ+Mk08L3RkPg0KICAgICAgICA8L3RyPg0KICAgICAgICA8dHI+DQogICAgICAgICAgICA8dGQ+5pyN5Yqh5Zmo5pel5pyfPC90ZD4NCiAgICAgICAgICAgIDx0ZD4yMDI2LTEwLTI2PC90ZD4NCiAgICAgICAgPC90cj4NCiAgICAgICAgIDx0cj4NCiAgICAgICAgICAgIDx0ZD5QSFDniYjmnKw8L3RkPg0KICAgICAgICAgICAgPHRkPjcuMy4zMzwvdGQ+DQogICAgICAgIDwvdHI+DQogICAgICAgIDx0cj4NCiAgICAgICAgICAgIDx0ZD5UaGlua1BIUOeJiOacrDwvdGQ+DQogICAgICAgICAgICA8dGQ+NS4wLjI0PC90ZD4NCiAgICAgICAgPC90cj4NCiAgICAgICAgPCEtLSA8dHI+DQogICAgICAgICAgICA8dGQ+56iL5bqP54mI5pysPC90ZD4NCiAgICAgICAgICAgIDx0ZD48c3BhbiBjbGFzcz0ibGF5dWktYmFkZ2UiPjIwMjMuMTAwMC4zMDUxPC9zcGFuPjwvdGQ+DQogICAgICAgIDwvdHI+IC0tPg0KICAgICAgICA8L3Rib2R5Pg0KICAgIDwvdGFibGU+DQogICAgPC9kaXY+DQo8c2NyaXB0IHR5cGU9InRleHQvamF2YXNjcmlwdCIgc3JjPSIvc3RhdGljL2pzL2FkbWluX2NvbW1vbi5qcz8yMDIzLjEwMDAuMzA1MSI+PC9zY3JpcHQ+DQo8L2JvZHk+DQo8L2h0bWw+",
+                    "rows": null
+                },
+                {
+                    "label": "list",
+                    "request": {
+                        "method": "GET",
+                        "path": "/admin/admin/index",
+                        "query": "",
+                        "post": "",
+                        "ajax": false,
+                        "headers": {}
+                    },
+                    "started": 1792956474,
+                    "after": 1792956475,
+                    "status": 200,
+                    "contentType": "text/html; charset=utf-8",
+                    "location": null,
+                    "setCookies": [],
+                    "body": "PCFET0NUWVBFIGh0bWw+DQo8aHRtbCBsYW5nPSJlbiI+DQo8aGVhZD4NCiAgICA8bWV0YSBjaGFyc2V0PSJVVEYtOCI+DQogICAgPG1ldGEgbmFtZT0idmlld3BvcnQiIGNvbnRlbnQ9IndpZHRoPWRldmljZS13aWR0aCwgaW5pdGlhbC1zY2FsZT0xLCBtYXhpbXVtLXNjYWxlPTEiPg0KICAgIDx0aXRsZT7nrqHnkIblkZjnrqHnkIYgLSDlronlhajnrKzkuIDor7fli7/ms4TpnLLlkI7lj7DlnLDlnYAgLSBDb3B5cmlnaHQgYnkg6Iu55p6cQ01T5YaF5a65566h55CG57O757ufPC90aXRsZT4NCiAgICA8bGluayByZWw9InN0eWxlc2hlZXQiIGhyZWY9Ii9zdGF0aWMvbGF5dWkvY3NzL2xheXVpLmNzcyI+DQogICAgPGxpbmsgcmVsPSJzdHlsZXNoZWV0IiBocmVmPSIvc3RhdGljL2Nzcy9hZG1pbl9zdHlsZS5jc3M/MjAyMy4xMDAwLjMwNTEiPg0KICAgIDxzY3JpcHQgdHlwZT0idGV4dC9qYXZhc2NyaXB0IiBzcmM9Ii9zdGF0aWMvanMvanF1ZXJ5LmpzIj48L3NjcmlwdD4NCiAgICA8c2NyaXB0IHR5cGU9InRleHQvamF2YXNjcmlwdCIgc3JjPSIvc3RhdGljL2xheXVpL2xheXVpLmpzIj48L3NjcmlwdD4NCiAgICA8c2NyaXB0Pg0KICAgICAgICB2YXIgUk9PVF9QQVRIPSIiLEFETUlOX1BBVEg9Ii9fYWRtaW4ucGhwIiwgTUFDX1ZFUlNJT049InYxMCI7DQogICAgPC9zY3JpcHQ+DQo8L2hlYWQ+DQo8Ym9keT4NCjxkaXYgY2xhc3M9InBhZ2UtY29udGFpbmVyIHAxMCI+DQoNCiAgICA8ZGl2IGNsYXNzPSJteS10b29sYmFyLWJveCI+DQoNCiAgICAgICAgPGRpdiBjbGFzcz0ibGF5dWktYnRuLWdyb3VwIj4NCiAgICAgICAgICAgIDxhIGRhdGEtaHJlZj0iL19hZG1pbi5waHAvYWRtaW4vYWRtaW4vaW5mby5odG1sIiBjbGFzcz0ibGF5dWktYnRuIGxheXVpLWJ0bi1wcmltYXJ5IGotaWZyYW1lIj48aSBjbGFzcz0ibGF5dWktaWNvbiI+JiN4ZTY1NDs8L2k+5re75YqgPC9hPg0KICAgICAgICAgICAgPGEgZGF0YS1ocmVmPSIvX2FkbWluLnBocC9hZG1pbi9hZG1pbi9kZWwuaHRtbCIgY2xhc3M9ImxheXVpLWJ0biBsYXl1aS1idG4tcHJpbWFyeSBqLXBhZ2UtYnRucyBjb25maXJtIj48aSBjbGFzcz0ibGF5dWktaWNvbiI+JiN4ZTY0MDs8L2k+5Yig6ZmkPC9hPg0KICAgICAgICA8L2Rpdj4NCg0KICAgIDwvZGl2Pg0KDQogICAgPGZvcm0gY2xhc3M9ImxheXVpLWZvcm0gIiBtZXRob2Q9InBvc3QiIGlkPSJwYWdlTGlzdEZvcm0iPg0KICAgICAgICA8dGFibGUgY2xhc3M9ImxheXVpLXRhYmxlIiBsYXktc2l6ZT0ic20iPg0KICAgICAgICAgICAgPHRoZWFkPg0KICAgICAgICAgICAgPHRyPg0KICAgICAgICAgICAgICAgIDx0aCB3aWR0aD0iMjUiPjxpbnB1dCB0eXBlPSJjaGVja2JveCIgbGF5LXNraW49InByaW1hcnkiIGxheS1maWx0ZXI9ImFsbENob29zZSI+PC90aD4NCiAgICAgICAgICAgICAgICA8dGggd2lkdGg9IjEwMCI+57yW5Y+3PC90aD4NCiAgICAgICAgICAgICAgICA8dGggPuWQjeensDwvdGg+DQogICAgICAgICAgICAgICAgPHRoIHdpZHRoPSIxMDAiPueKtuaAgTwvdGg+DQogICAgICAgICAgICAgICAgPHRoIHdpZHRoPSIxNDAiPuS4iuasoeeZu+W9leaXtumXtDwvdGg+DQogICAgICAgICAgICAgICAgPHRoIHdpZHRoPSIxNDAiPuS4iuasoeeZu+W9lUlQPC90aD4NCiAgICAgICAgICAgICAgICA8dGggd2lkdGg9IjEzMCI+55m75b2V5qyh5pWwPC90aD4NCiAgICAgICAgICAgICAgICA8dGggd2lkdGg9IjEwMCI+5pON5L2cPC90aD4NCiAgICAgICAgICAgIDwvdHI+DQogICAgICAgICAgICA8L3RoZWFkPg0KDQogICAgICAgICAgICAgICAgICAgICAgICA8dHI+DQogICAgICAgICAgICAgICAgPHRkPg0KICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIDxpbnB1dCB0eXBlPSJjaGVja2JveCIgbmFtZT0iaWRzW10iIHZhbHVlPSIyIiBjbGFzcz0ibGF5dWktY2hlY2tib3ggY2hlY2tib3gtaWRzIiBsYXktc2tpbj0icHJpbWFyeSI+DQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA8L3RkPg0KICAgICAgICAgICAgICAgIDx0ZD4yPC90ZD4NCiAgICAgICAgICAgICAgICA8dGQ+ZWRpdG9yPC90ZD4NCiAgICAgICAgICAgICAgICA8dGQ+DQogICAgICAgICAgICAgICAgICAgIDxpbnB1dCB0eXBlPSJjaGVja2JveCIgbmFtZT0ic3RhdHVzIiBjaGVja2VkIHZhbHVlPSIxIiBsYXktc2tpbj0ic3dpdGNoIiBsYXktZmlsdGVyPSJzd2l0Y2hTdGF0dXMiIGxheS10ZXh0PSLlkK/nlKh856aB55SoIiBkYXRhLWhyZWY9Ii9fYWRtaW4ucGhwL2FkbWluL2FkbWluL2ZpZWxkL2NvbC9hZG1pbl9zdGF0dXMvaWRzLzIuaHRtbCI+DQogICAgICAgICAgICAgICAgPC90ZD4NCiAgICAgICAgICAgICAgICA8dGQ+PC90ZD4NCiAgICAgICAgICAgICAgICA8dGQ+MC4wLjAuMDwvdGQ+DQogICAgICAgICAgICAgICAgPHRkPjA8L3RkPg0KICAgICAgICAgICAgICAgIDx0ZD4NCiAgICAgICAgICAgICAgICAgICAgPGEgY2xhc3M9ImxheXVpLWJhZGdlLXJpbSBqLWlmcmFtZSIgZGF0YS1ocmVmPSIvX2FkbWluLnBocC9hZG1pbi9hZG1pbi9pbmZvL2lkLzIuaHRtbCIgaHJlZj0iamF2YXNjcmlwdDo7IiB0aXRsZT0i57yW6L6RIj7nvJbovpE8L2E+DQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgPGEgY2xhc3M9ImxheXVpLWJhZGdlLXJpbSBqLXRyLWRlbCIgZGF0YS1ocmVmPSIvX2FkbWluLnBocC9hZG1pbi9hZG1pbi9kZWwvaWRzLzIuaHRtbCIgaHJlZj0iamF2YXNjcmlwdDo7IiB0aXRsZT0i5Yig6ZmkIj7liKDpmaQ8L2E+DQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA8L3RkPg0KICAgICAgICAgICAgPC90cj4NCiAgICAgICAgICAgICAgICAgICAgICAgIDx0cj4NCiAgICAgICAgICAgICAgICA8dGQ+DQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA8L3RkPg0KICAgICAgICAgICAgICAgIDx0ZD4xPC90ZD4NCiAgICAgICAgICAgICAgICA8dGQ+YWRtaW48L3RkPg0KICAgICAgICAgICAgICAgIDx0ZD4NCiAgICAgICAgICAgICAgICAgICAgPGlucHV0IHR5cGU9ImNoZWNrYm94IiBuYW1lPSJzdGF0dXMiIGNoZWNrZWQgdmFsdWU9IjEiIGxheS1za2luPSJzd2l0Y2giIGxheS1maWx0ZXI9InN3aXRjaFN0YXR1cyIgbGF5LXRleHQ9IuWQr+eUqHznpoHnlKgiIGRhdGEtaHJlZj0iL19hZG1pbi5waHAvYWRtaW4vYWRtaW4vZmllbGQvY29sL2FkbWluX3N0YXR1cy9pZHMvMS5odG1sIj4NCiAgICAgICAgICAgICAgICA8L3RkPg0KICAgICAgICAgICAgICAgIDx0ZD4yMDIzLTExLTE1IDA2OjEzOjIwPC90ZD4NCiAgICAgICAgICAgICAgICA8dGQ+MTAuMC4wLjE8L3RkPg0KICAgICAgICAgICAgICAgIDx0ZD42PC90ZD4NCiAgICAgICAgICAgICAgICA8dGQ+DQogICAgICAgICAgICAgICAgICAgIDxhIGNsYXNzPSJsYXl1aS1iYWRnZS1yaW0gai1pZnJhbWUiIGRhdGEtaHJlZj0iL19hZG1pbi5waHAvYWRtaW4vYWRtaW4vaW5mby9pZC8xLmh0bWwiIGhyZWY9ImphdmFzY3JpcHQ6OyIgdGl0bGU9Iue8lui+kSI+57yW6L6RPC9hPg0KICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgPC90ZD4NCiAgICAgICAgICAgIDwvdHI+DQogICAgICAgICAgICAgICAgICAgICAgICA8L3Rib2R5Pg0KICAgICAgICA8L3RhYmxlPg0KICAgICAgICA8ZGl2IGlkPSJwYWdlcyIgY2xhc3M9ImNlbnRlciI+PC9kaXY+DQogICAgPC9mb3JtPg0KPC9kaXY+DQoNCjxzY3JpcHQgdHlwZT0idGV4dC9qYXZhc2NyaXB0IiBzcmM9Ii9zdGF0aWMvanMvYWRtaW5fY29tbW9uLmpzPzIwMjMuMTAwMC4zMDUxIj48L3NjcmlwdD4NCg0KPHNjcmlwdCB0eXBlPSJ0ZXh0L2phdmFzY3JpcHQiPg0KICAgIHZhciBjdXJVcmw9Ii9fYWRtaW4ucGhwL2FkbWluL2FkbWluL2luZGV4L3BhZ2UvJTdCcGFnZSU3RC9saW1pdC8lN0JsaW1pdCU3RC5odG1sIjsNCiAgICBsYXl1aS51c2UoWydsYXlwYWdlJywgJ2xheWVyJ10sIGZ1bmN0aW9uKCkgew0KICAgICAgICB2YXIgbGF5cGFnZSA9IGxheXVpLmxheXBhZ2UNCiAgICAgICAgICAgICAgICAsIGxheWVyID0gbGF5dWkubGF5ZXI7DQoNCiAgICAgICAgbGF5cGFnZS5yZW5kZXIoew0KICAgICAgICAgICAgZWxlbTogJ3BhZ2VzJw0KICAgICAgICAgICAgLGNvdW50OiAyICAgICAgICAgICAgLGxpbWl0OiAyMCAgICAgICAgICAgICxjdXJyOiAxICAgICAgICAgICAgLGxheW91dDogWydjb3VudCcsICdwcmV2JywgJ3BhZ2UnLCAnbmV4dCcsICdsaW1pdCcsICdza2lwJ10NCiAgICAgICAgICAgICxqdW1wOiBmdW5jdGlvbihvYmosZmlyc3Qpew0KICAgICAgICAgICAgICAgIGlmKCFmaXJzdCl7DQogICAgICAgICAgICAgICAgICAgIGxvY2F0aW9uLmhyZWYgPSBjdXJVcmwucmVwbGFjZSgnJTdCcGFnZSU3RCcsb2JqLmN1cnIpLnJlcGxhY2UoJyU3QmxpbWl0JTdEJyxvYmoubGltaXQpOw0KICAgICAgICAgICAgICAgIH0NCiAgICAgICAgICAgIH0NCiAgICAgICAgfSk7DQogICAgfSk7DQo8L3NjcmlwdD4NCjwvYm9keT4NCjwvaHRtbD4=",
+                    "rows": null
+                },
+                {
+                    "label": "unlock-right",
+                    "request": {
+                        "method": "POST",
+                        "path": "/admin/index/unlocked",
+                        "query": "",
+                        "post": "password=admin888",
+                        "ajax": true,
+                        "headers": {}
+                    },
+                    "started": 1792956475,
+                    "after": 1792956475,
+                    "status": 200,
+                    "contentType": "application/json; charset=utf-8",
+                    "location": null,
+                    "setCookies": [],
+                    "body": "eyJjb2RlIjowLCJtc2ciOiLlr4bnoIHplJnor68iLCJkYXRhIjoiIiwidXJsIjoiIiwid2FpdCI6M30=",
+                    "rows": null
+                },
+                {
+                    "label": "unlock-wrong",
+                    "request": {
+                        "method": "POST",
+                        "path": "/admin/index/unlocked",
+                        "query": "",
+                        "post": "password=admin889",
+                        "ajax": true,
+                        "headers": {}
+                    },
+                    "started": 1792956475,
+                    "after": 1792956476,
+                    "status": 200,
+                    "contentType": "application/json; charset=utf-8",
+                    "location": null,
+                    "setCookies": [],
+                    "body": "eyJjb2RlIjowLCJtc2ciOiLlr4bnoIHplJnor68iLCJkYXRhIjoiIiwidXJsIjoiIiwid2FpdCI6M30=",
+                    "rows": null
+                },
+                {
+                    "label": "unlock-stored-hash",
+                    "request": {
+                        "method": "POST",
+                        "path": "/admin/index/unlocked",
+                        "query": "",
+                        "post": "password=7FEF6171469E80D32C0559F88B377245",
+                        "ajax": true,
+                        "headers": {}
+                    },
+                    "started": 1792956476,
+                    "after": 1792956476,
+                    "status": 200,
+                    "contentType": "application/json; charset=utf-8",
+                    "location": null,
+                    "setCookies": [],
+                    "body": "eyJjb2RlIjowLCJtc2ciOiLlr4bnoIHplJnor68iLCJkYXRhIjoiIiwidXJsIjoiIiwid2FpdCI6M30=",
+                    "rows": null
+                },
+                {
+                    "label": "still-in",
+                    "request": {
+                        "method": "GET",
+                        "path": "/admin/index/welcome",
+                        "query": "",
+                        "post": "",
+                        "ajax": false,
+                        "headers": {}
+                    },
+                    "started": 1792956476,
+                    "after": 1792956476,
+                    "status": 200,
+                    "contentType": "text/html; charset=utf-8",
+                    "location": null,
+                    "setCookies": [],
+                    "body": null,
+                    "rows": null
+                },
+                {
+                    "label": "db-password",
+                    "sql": "UPDATE mac_admin SET admin_pwd = '8977dfac2f8e04cb96e66882235f5aba' WHERE admin_id = 1",
+                    "rows": [
+                        {
+                            "admin_id": 1,
+                            "admin_name": "61646d696e",
+                            "admin_pwd": "3839373764666163326638653034636239366536363838323233356635616261",
+                            "admin_random": "3765356666616665656436353231626133316562623565346339313263383961",
+                            "admin_status": 1,
+                            "admin_auth": "",
+                            "admin_login_time": 1792956474,
+                            "admin_login_ip": 2130706433,
+                            "admin_login_num": 6,
+                            "admin_last_login_time": 1700000000,
+                            "admin_last_login_ip": 167772161
+                        },
+                        {
+                            "admin_id": 2,
+                            "admin_name": "656469746f72",
+                            "admin_pwd": "3631433931433841364436314334364235434239413943313542393237343736",
+                            "admin_random": "",
+                            "admin_status": 1,
+                            "admin_auth": "2c61646d696e2f696e6465782c696e6465782f756e6c6f636b65642c",
+                            "admin_login_time": 0,
+                            "admin_login_ip": 0,
+                            "admin_login_num": 0,
+                            "admin_last_login_time": 0,
+                            "admin_last_login_ip": 0
+                        }
+                    ]
+                },
+                {
+                    "label": "after-password",
+                    "request": {
+                        "method": "GET",
+                        "path": "/admin/index/welcome",
+                        "query": "",
+                        "post": "",
+                        "ajax": false,
+                        "headers": {}
+                    },
+                    "started": 1792956476,
+                    "after": 1792956477,
+                    "status": 200,
+                    "contentType": "text/html; charset=utf-8",
+                    "location": null,
+                    "setCookies": [],
+                    "body": "PCFET0NUWVBFIGh0bWw+DQo8aHRtbCBsYW5nPSJlbiI+DQo8aGVhZD4NCiAgICA8bWV0YSBjaGFyc2V0PSJVVEYtOCI+DQogICAgPG1ldGEgbmFtZT0idmlld3BvcnQiIGNvbnRlbnQ9IndpZHRoPWRldmljZS13aWR0aCwgaW5pdGlhbC1zY2FsZT0xLCBtYXhpbXVtLXNjYWxlPTEiPg0KICAgIDx0aXRsZT7mrKLov47pobXpnaIgLSDlronlhajnrKzkuIDor7fli7/ms4TpnLLlkI7lj7DlnLDlnYAgLSBDb3B5cmlnaHQgYnkg6Iu55p6cQ01T5YaF5a65566h55CG57O757ufPC90aXRsZT4NCiAgICA8bGluayByZWw9InN0eWxlc2hlZXQiIGhyZWY9Ii9zdGF0aWMvbGF5dWkvY3NzL2xheXVpLmNzcyI+DQogICAgPGxpbmsgcmVsPSJzdHlsZXNoZWV0IiBocmVmPSIvc3RhdGljL2Nzcy9hZG1pbl9zdHlsZS5jc3M/MjAyMy4xMDAwLjMwNTEiPg0KICAgIDxzY3JpcHQgdHlwZT0idGV4dC9qYXZhc2NyaXB0IiBzcmM9Ii9zdGF0aWMvanMvanF1ZXJ5LmpzIj48L3NjcmlwdD4NCiAgICA8c2NyaXB0IHR5cGU9InRleHQvamF2YXNjcmlwdCIgc3JjPSIvc3RhdGljL2xheXVpL2xheXVpLmpzIj48L3NjcmlwdD4NCiAgICA8c2NyaXB0Pg0KICAgICAgICB2YXIgUk9PVF9QQVRIPSIiLEFETUlOX1BBVEg9Ii9fYWRtaW4ucGhwIiwgTUFDX1ZFUlNJT049InYxMCI7DQogICAgPC9zY3JpcHQ+DQo8L2hlYWQ+DQo8Ym9keT4NCjxzY3JpcHQ+DQogICAgdmFyIE1BQ19WRVJTSU9OPScyMDIzLjEwMDAuMzA1MScsUEhQX1ZFUlNJT049JzcuMy4zMycsVEhJTktfVkVSU0lPTj0nNS4wLjI0JztNQUNfTEFORz0nemgtY24nOw0KPC9zY3JpcHQ+DQo8ZGl2IGNsYXNzPSJwYWdlLWNvbnRhaW5lciI+DQogICAgDQogICAgPGJsb2NrcXVvdGUgY2xhc3M9ImxheXVpLWVsZW0tcXVvdGUgbGF5dWktcXVvdGUtbm0gbXQxMCI+DQogICAgICAgIDxwIGNsYXNzPSJmLTIwIHRleHQtc3VjY2VzcyI+6K+35LiN6KaB5L+u5pS557O757uf5paH5Lu277yM5Lul5YWN5Y2H57qn5Ye6546w5pWF6Zqc77yB5pys56iL5bqP5LiN5YaF572u5Lu75L2V5pWw5o2u77yM5re75Yqg5Lu75L2V5pWw5o2u5Z2H5piv5Liq5Lq66KGM5Li677yB6K+35Zyo6YG15a6I5rOV5b6L55qE5YmN5o+Q5LiL5L2/55So56iL5bqP77yM5ZCm5YiZ5ZCO5p6c6Ieq6LSf77yBPC9wPg0KICAgICAgICA8cD7nmbvlvZXmrKHmlbDvvJo1ICDkuIrmrKHnmbvlvZVJUO+8mjAuMC4wLjAgIOS4iuasoeeZu+W9leaXtumXtO+8mjwvcD4NCiAgICA8L2Jsb2NrcXVvdGU+DQoNCiAgICA8dGFibGUgY2xhc3M9ImxheXVpLXRhYmxlIiA+DQogICAgICAgIDx0Ym9keT4NCiAgICAgICAgPHRyPg0KICAgICAgICAgICAgPHRkIHdpZHRoPSIxMTAiPui/kOihjOeOr+WigzwvdGQ+DQogICAgICAgICAgICA8dGQ+V0lOTlQgKGdvbGRlbik8L3RkPg0KICAgICAgICA8L3RyPg0KICAgICAgICA8dHI+DQogICAgICAgICAgICA8dGQ+5pyN5Yqh5ZmoSVAv56uv5Y+jPC90ZD4NCiAgICAgICAgICAgIDx0ZD53d3cuZXhhbXBsZS50ZXN0PC90ZD4NCiAgICAgICAgPC90cj4NCiAgICAgICAgPHRyPg0KICAgICAgICAgICAgPHRkPuacgOWkp+S4iuS8oOmZkOWItjwvdGQ+DQogICAgICAgICAgICA8dGQ+Mk08L3RkPg0KICAgICAgICA8L3RyPg0KICAgICAgICA8dHI+DQogICAgICAgICAgICA8dGQ+5pyN5Yqh5Zmo5pel5pyfPC90ZD4NCiAgICAgICAgICAgIDx0ZD4yMDI2LTEwLTI2PC90ZD4NCiAgICAgICAgPC90cj4NCiAgICAgICAgIDx0cj4NCiAgICAgICAgICAgIDx0ZD5QSFDniYjmnKw8L3RkPg0KICAgICAgICAgICAgPHRkPjcuMy4zMzwvdGQ+DQogICAgICAgIDwvdHI+DQogICAgICAgIDx0cj4NCiAgICAgICAgICAgIDx0ZD5UaGlua1BIUOeJiOacrDwvdGQ+DQogICAgICAgICAgICA8dGQ+NS4wLjI0PC90ZD4NCiAgICAgICAgPC90cj4NCiAgICAgICAgPCEtLSA8dHI+DQogICAgICAgICAgICA8dGQ+56iL5bqP54mI5pysPC90ZD4NCiAgICAgICAgICAgIDx0ZD48c3BhbiBjbGFzcz0ibGF5dWktYmFkZ2UiPjIwMjMuMTAwMC4zMDUxPC9zcGFuPjwvdGQ+DQogICAgICAgIDwvdHI+IC0tPg0KICAgICAgICA8L3Rib2R5Pg0KICAgIDwvdGFibGU+DQogICAgPC9kaXY+DQo8c2NyaXB0IHR5cGU9InRleHQvamF2YXNjcmlwdCIgc3JjPSIvc3RhdGljL2pzL2FkbWluX2NvbW1vbi5qcz8yMDIzLjEwMDAuMzA1MSI+PC9zY3JpcHQ+DQo8L2JvZHk+DQo8L2h0bWw+",
+                    "rows": null
+                },
+                {
+                    "label": "unlock-new",
+                    "request": {
+                        "method": "POST",
+                        "path": "/admin/index/unlocked",
+                        "query": "",
+                        "post": "password=changed",
+                        "ajax": true,
+                        "headers": {}
+                    },
+                    "started": 1792956477,
+                    "after": 1792956477,
+                    "status": 200,
+                    "contentType": "application/json; charset=utf-8",
+                    "location": null,
+                    "setCookies": [],
+                    "body": "eyJjb2RlIjowLCJtc2ciOiLlr4bnoIHplJnor68iLCJkYXRhIjoiIiwidXJsIjoiIiwid2FpdCI6M30=",
+                    "rows": null
+                }
+            ]
+        },
+        {
+            "label": "stored-case-mixed",
+            "config": {},
+            "quickmenu": null,
+            "rows0": [
+                {
+                    "admin_id": 1,
+                    "admin_name": "61646d696e",
+                    "admin_pwd": "3766456636313731343639653830443332633035353946383862333737323435",
+                    "admin_random": "",
+                    "admin_status": 1,
+                    "admin_auth": "",
+                    "admin_login_time": 1700000000,
+                    "admin_login_ip": 167772161,
+                    "admin_login_num": 5,
+                    "admin_last_login_time": 0,
+                    "admin_last_login_ip": 0
+                },
+                {
+                    "admin_id": 2,
+                    "admin_name": "656469746f72",
+                    "admin_pwd": "3631433931433841364436314334364235434239413943313542393237343736",
+                    "admin_random": "",
+                    "admin_status": 1,
+                    "admin_auth": "2c61646d696e2f696e6465782c696e6465782f756e6c6f636b65642c",
+                    "admin_login_time": 0,
+                    "admin_login_ip": 0,
+                    "admin_login_num": 0,
+                    "admin_last_login_time": 0,
+                    "admin_last_login_ip": 0
+                }
+            ],
+            "steps": [
+                {
+                    "label": "login",
+                    "request": {
+                        "method": "POST",
+                        "path": "/admin/index/login",
+                        "query": "",
+                        "post": "admin_name=admin&admin_pwd=admin888",
+                        "ajax": true,
+                        "headers": {}
+                    },
+                    "started": 1792956477,
+                    "after": 1792956478,
+                    "status": 200,
+                    "contentType": "application/json; charset=utf-8",
+                    "location": null,
+                    "setCookies": [
+                        "PHPSESSID=8dh66rjfsaa6au0uvrf8cbmaco; path=/"
+                    ],
+                    "body": "eyJjb2RlIjoxLCJtc2ciOiLnmbvlvZXmiJDlip8iLCJkYXRhIjoiIiwidXJsIjoiXC9fYWRtaW4ucGhwXC9hZG1pblwvaW5kZXhcL2xvZ2luLmh0bWwiLCJ3YWl0IjozfQ==",
+                    "rows": [
+                        {
+                            "admin_id": 1,
+                            "admin_name": "61646d696e",
+                            "admin_pwd": "3766456636313731343639653830443332633035353946383862333737323435",
+                            "admin_random": "3438656365656336326535626230306435383231363935643433363965303962",
+                            "admin_status": 1,
+                            "admin_auth": "",
+                            "admin_login_time": 1792956478,
+                            "admin_login_ip": 2130706433,
+                            "admin_login_num": 6,
+                            "admin_last_login_time": 1700000000,
+                            "admin_last_login_ip": 167772161
+                        },
+                        {
+                            "admin_id": 2,
+                            "admin_name": "656469746f72",
+                            "admin_pwd": "3631433931433841364436314334364235434239413943313542393237343736",
+                            "admin_random": "",
+                            "admin_status": 1,
+                            "admin_auth": "2c61646d696e2f696e6465782c696e6465782f756e6c6f636b65642c",
+                            "admin_login_time": 0,
+                            "admin_login_ip": 0,
+                            "admin_login_num": 0,
+                            "admin_last_login_time": 0,
+                            "admin_last_login_ip": 0
+                        }
+                    ]
+                },
+                {
+                    "label": "next-page",
+                    "request": {
+                        "method": "GET",
+                        "path": "/admin/index/welcome",
+                        "query": "",
+                        "post": "",
+                        "ajax": false,
+                        "headers": {}
+                    },
+                    "started": 1792956478,
+                    "after": 1792956478,
+                    "status": 200,
+                    "contentType": "text/html; charset=utf-8",
+                    "location": null,
+                    "setCookies": [],
+                    "body": "PCFET0NUWVBFIGh0bWw+DQo8aHRtbCBsYW5nPSJlbiI+DQo8aGVhZD4NCiAgICA8bWV0YSBjaGFyc2V0PSJVVEYtOCI+DQogICAgPG1ldGEgbmFtZT0idmlld3BvcnQiIGNvbnRlbnQ9IndpZHRoPWRldmljZS13aWR0aCwgaW5pdGlhbC1zY2FsZT0xLCBtYXhpbXVtLXNjYWxlPTEiPg0KICAgIDx0aXRsZT7mrKLov47pobXpnaIgLSDlronlhajnrKzkuIDor7fli7/ms4TpnLLlkI7lj7DlnLDlnYAgLSBDb3B5cmlnaHQgYnkg6Iu55p6cQ01T5YaF5a65566h55CG57O757ufPC90aXRsZT4NCiAgICA8bGluayByZWw9InN0eWxlc2hlZXQiIGhyZWY9Ii9zdGF0aWMvbGF5dWkvY3NzL2xheXVpLmNzcyI+DQogICAgPGxpbmsgcmVsPSJzdHlsZXNoZWV0IiBocmVmPSIvc3RhdGljL2Nzcy9hZG1pbl9zdHlsZS5jc3M/MjAyMy4xMDAwLjMwNTEiPg0KICAgIDxzY3JpcHQgdHlwZT0idGV4dC9qYXZhc2NyaXB0IiBzcmM9Ii9zdGF0aWMvanMvanF1ZXJ5LmpzIj48L3NjcmlwdD4NCiAgICA8c2NyaXB0IHR5cGU9InRleHQvamF2YXNjcmlwdCIgc3JjPSIvc3RhdGljL2xheXVpL2xheXVpLmpzIj48L3NjcmlwdD4NCiAgICA8c2NyaXB0Pg0KICAgICAgICB2YXIgUk9PVF9QQVRIPSIiLEFETUlOX1BBVEg9Ii9fYWRtaW4ucGhwIiwgTUFDX1ZFUlNJT049InYxMCI7DQogICAgPC9zY3JpcHQ+DQo8L2hlYWQ+DQo8Ym9keT4NCjxzY3JpcHQ+DQogICAgdmFyIE1BQ19WRVJTSU9OPScyMDIzLjEwMDAuMzA1MScsUEhQX1ZFUlNJT049JzcuMy4zMycsVEhJTktfVkVSU0lPTj0nNS4wLjI0JztNQUNfTEFORz0nemgtY24nOw0KPC9zY3JpcHQ+DQo8ZGl2IGNsYXNzPSJwYWdlLWNvbnRhaW5lciI+DQogICAgDQogICAgPGJsb2NrcXVvdGUgY2xhc3M9ImxheXVpLWVsZW0tcXVvdGUgbGF5dWktcXVvdGUtbm0gbXQxMCI+DQogICAgICAgIDxwIGNsYXNzPSJmLTIwIHRleHQtc3VjY2VzcyI+6K+35LiN6KaB5L+u5pS557O757uf5paH5Lu277yM5Lul5YWN5Y2H57qn5Ye6546w5pWF6Zqc77yB5pys56iL5bqP5LiN5YaF572u5Lu75L2V5pWw5o2u77yM5re75Yqg5Lu75L2V5pWw5o2u5Z2H5piv5Liq5Lq66KGM5Li677yB6K+35Zyo6YG15a6I5rOV5b6L55qE5YmN5o+Q5LiL5L2/55So56iL5bqP77yM5ZCm5YiZ5ZCO5p6c6Ieq6LSf77yBPC9wPg0KICAgICAgICA8cD7nmbvlvZXmrKHmlbDvvJo1ICDkuIrmrKHnmbvlvZVJUO+8mjAuMC4wLjAgIOS4iuasoeeZu+W9leaXtumXtO+8mjwvcD4NCiAgICA8L2Jsb2NrcXVvdGU+DQoNCiAgICA8dGFibGUgY2xhc3M9ImxheXVpLXRhYmxlIiA+DQogICAgICAgIDx0Ym9keT4NCiAgICAgICAgPHRyPg0KICAgICAgICAgICAgPHRkIHdpZHRoPSIxMTAiPui/kOihjOeOr+WigzwvdGQ+DQogICAgICAgICAgICA8dGQ+V0lOTlQgKGdvbGRlbik8L3RkPg0KICAgICAgICA8L3RyPg0KICAgICAgICA8dHI+DQogICAgICAgICAgICA8dGQ+5pyN5Yqh5ZmoSVAv56uv5Y+jPC90ZD4NCiAgICAgICAgICAgIDx0ZD53d3cuZXhhbXBsZS50ZXN0PC90ZD4NCiAgICAgICAgPC90cj4NCiAgICAgICAgPHRyPg0KICAgICAgICAgICAgPHRkPuacgOWkp+S4iuS8oOmZkOWItjwvdGQ+DQogICAgICAgICAgICA8dGQ+Mk08L3RkPg0KICAgICAgICA8L3RyPg0KICAgICAgICA8dHI+DQogICAgICAgICAgICA8dGQ+5pyN5Yqh5Zmo5pel5pyfPC90ZD4NCiAgICAgICAgICAgIDx0ZD4yMDI2LTEwLTI2PC90ZD4NCiAgICAgICAgPC90cj4NCiAgICAgICAgIDx0cj4NCiAgICAgICAgICAgIDx0ZD5QSFDniYjmnKw8L3RkPg0KICAgICAgICAgICAgPHRkPjcuMy4zMzwvdGQ+DQogICAgICAgIDwvdHI+DQogICAgICAgIDx0cj4NCiAgICAgICAgICAgIDx0ZD5UaGlua1BIUOeJiOacrDwvdGQ+DQogICAgICAgICAgICA8dGQ+NS4wLjI0PC90ZD4NCiAgICAgICAgPC90cj4NCiAgICAgICAgPCEtLSA8dHI+DQogICAgICAgICAgICA8dGQ+56iL5bqP54mI5pysPC90ZD4NCiAgICAgICAgICAgIDx0ZD48c3BhbiBjbGFzcz0ibGF5dWktYmFkZ2UiPjIwMjMuMTAwMC4zMDUxPC9zcGFuPjwvdGQ+DQogICAgICAgIDwvdHI+IC0tPg0KICAgICAgICA8L3Rib2R5Pg0KICAgIDwvdGFibGU+DQogICAgPC9kaXY+DQo8c2NyaXB0IHR5cGU9InRleHQvamF2YXNjcmlwdCIgc3JjPSIvc3RhdGljL2pzL2FkbWluX2NvbW1vbi5qcz8yMDIzLjEwMDAuMzA1MSI+PC9zY3JpcHQ+DQo8L2JvZHk+DQo8L2h0bWw+",
+                    "rows": null
+                },
+                {
+                    "label": "list",
+                    "request": {
+                        "method": "GET",
+                        "path": "/admin/admin/index",
+                        "query": "",
+                        "post": "",
+                        "ajax": false,
+                        "headers": {}
+                    },
+                    "started": 1792956478,
+                    "after": 1792956478,
+                    "status": 200,
+                    "contentType": "text/html; charset=utf-8",
+                    "location": null,
+                    "setCookies": [],
+                    "body": "PCFET0NUWVBFIGh0bWw+DQo8aHRtbCBsYW5nPSJlbiI+DQo8aGVhZD4NCiAgICA8bWV0YSBjaGFyc2V0PSJVVEYtOCI+DQogICAgPG1ldGEgbmFtZT0idmlld3BvcnQiIGNvbnRlbnQ9IndpZHRoPWRldmljZS13aWR0aCwgaW5pdGlhbC1zY2FsZT0xLCBtYXhpbXVtLXNjYWxlPTEiPg0KICAgIDx0aXRsZT7nrqHnkIblkZjnrqHnkIYgLSDlronlhajnrKzkuIDor7fli7/ms4TpnLLlkI7lj7DlnLDlnYAgLSBDb3B5cmlnaHQgYnkg6Iu55p6cQ01T5YaF5a65566h55CG57O757ufPC90aXRsZT4NCiAgICA8bGluayByZWw9InN0eWxlc2hlZXQiIGhyZWY9Ii9zdGF0aWMvbGF5dWkvY3NzL2xheXVpLmNzcyI+DQogICAgPGxpbmsgcmVsPSJzdHlsZXNoZWV0IiBocmVmPSIvc3RhdGljL2Nzcy9hZG1pbl9zdHlsZS5jc3M/MjAyMy4xMDAwLjMwNTEiPg0KICAgIDxzY3JpcHQgdHlwZT0idGV4dC9qYXZhc2NyaXB0IiBzcmM9Ii9zdGF0aWMvanMvanF1ZXJ5LmpzIj48L3NjcmlwdD4NCiAgICA8c2NyaXB0IHR5cGU9InRleHQvamF2YXNjcmlwdCIgc3JjPSIvc3RhdGljL2xheXVpL2xheXVpLmpzIj48L3NjcmlwdD4NCiAgICA8c2NyaXB0Pg0KICAgICAgICB2YXIgUk9PVF9QQVRIPSIiLEFETUlOX1BBVEg9Ii9fYWRtaW4ucGhwIiwgTUFDX1ZFUlNJT049InYxMCI7DQogICAgPC9zY3JpcHQ+DQo8L2hlYWQ+DQo8Ym9keT4NCjxkaXYgY2xhc3M9InBhZ2UtY29udGFpbmVyIHAxMCI+DQoNCiAgICA8ZGl2IGNsYXNzPSJteS10b29sYmFyLWJveCI+DQoNCiAgICAgICAgPGRpdiBjbGFzcz0ibGF5dWktYnRuLWdyb3VwIj4NCiAgICAgICAgICAgIDxhIGRhdGEtaHJlZj0iL19hZG1pbi5waHAvYWRtaW4vYWRtaW4vaW5mby5odG1sIiBjbGFzcz0ibGF5dWktYnRuIGxheXVpLWJ0bi1wcmltYXJ5IGotaWZyYW1lIj48aSBjbGFzcz0ibGF5dWktaWNvbiI+JiN4ZTY1NDs8L2k+5re75YqgPC9hPg0KICAgICAgICAgICAgPGEgZGF0YS1ocmVmPSIvX2FkbWluLnBocC9hZG1pbi9hZG1pbi9kZWwuaHRtbCIgY2xhc3M9ImxheXVpLWJ0biBsYXl1aS1idG4tcHJpbWFyeSBqLXBhZ2UtYnRucyBjb25maXJtIj48aSBjbGFzcz0ibGF5dWktaWNvbiI+JiN4ZTY0MDs8L2k+5Yig6ZmkPC9hPg0KICAgICAgICA8L2Rpdj4NCg0KICAgIDwvZGl2Pg0KDQogICAgPGZvcm0gY2xhc3M9ImxheXVpLWZvcm0gIiBtZXRob2Q9InBvc3QiIGlkPSJwYWdlTGlzdEZvcm0iPg0KICAgICAgICA8dGFibGUgY2xhc3M9ImxheXVpLXRhYmxlIiBsYXktc2l6ZT0ic20iPg0KICAgICAgICAgICAgPHRoZWFkPg0KICAgICAgICAgICAgPHRyPg0KICAgICAgICAgICAgICAgIDx0aCB3aWR0aD0iMjUiPjxpbnB1dCB0eXBlPSJjaGVja2JveCIgbGF5LXNraW49InByaW1hcnkiIGxheS1maWx0ZXI9ImFsbENob29zZSI+PC90aD4NCiAgICAgICAgICAgICAgICA8dGggd2lkdGg9IjEwMCI+57yW5Y+3PC90aD4NCiAgICAgICAgICAgICAgICA8dGggPuWQjeensDwvdGg+DQogICAgICAgICAgICAgICAgPHRoIHdpZHRoPSIxMDAiPueKtuaAgTwvdGg+DQogICAgICAgICAgICAgICAgPHRoIHdpZHRoPSIxNDAiPuS4iuasoeeZu+W9leaXtumXtDwvdGg+DQogICAgICAgICAgICAgICAgPHRoIHdpZHRoPSIxNDAiPuS4iuasoeeZu+W9lUlQPC90aD4NCiAgICAgICAgICAgICAgICA8dGggd2lkdGg9IjEzMCI+55m75b2V5qyh5pWwPC90aD4NCiAgICAgICAgICAgICAgICA8dGggd2lkdGg9IjEwMCI+5pON5L2cPC90aD4NCiAgICAgICAgICAgIDwvdHI+DQogICAgICAgICAgICA8L3RoZWFkPg0KDQogICAgICAgICAgICAgICAgICAgICAgICA8dHI+DQogICAgICAgICAgICAgICAgPHRkPg0KICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIDxpbnB1dCB0eXBlPSJjaGVja2JveCIgbmFtZT0iaWRzW10iIHZhbHVlPSIyIiBjbGFzcz0ibGF5dWktY2hlY2tib3ggY2hlY2tib3gtaWRzIiBsYXktc2tpbj0icHJpbWFyeSI+DQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA8L3RkPg0KICAgICAgICAgICAgICAgIDx0ZD4yPC90ZD4NCiAgICAgICAgICAgICAgICA8dGQ+ZWRpdG9yPC90ZD4NCiAgICAgICAgICAgICAgICA8dGQ+DQogICAgICAgICAgICAgICAgICAgIDxpbnB1dCB0eXBlPSJjaGVja2JveCIgbmFtZT0ic3RhdHVzIiBjaGVja2VkIHZhbHVlPSIxIiBsYXktc2tpbj0ic3dpdGNoIiBsYXktZmlsdGVyPSJzd2l0Y2hTdGF0dXMiIGxheS10ZXh0PSLlkK/nlKh856aB55SoIiBkYXRhLWhyZWY9Ii9fYWRtaW4ucGhwL2FkbWluL2FkbWluL2ZpZWxkL2NvbC9hZG1pbl9zdGF0dXMvaWRzLzIuaHRtbCI+DQogICAgICAgICAgICAgICAgPC90ZD4NCiAgICAgICAgICAgICAgICA8dGQ+PC90ZD4NCiAgICAgICAgICAgICAgICA8dGQ+MC4wLjAuMDwvdGQ+DQogICAgICAgICAgICAgICAgPHRkPjA8L3RkPg0KICAgICAgICAgICAgICAgIDx0ZD4NCiAgICAgICAgICAgICAgICAgICAgPGEgY2xhc3M9ImxheXVpLWJhZGdlLXJpbSBqLWlmcmFtZSIgZGF0YS1ocmVmPSIvX2FkbWluLnBocC9hZG1pbi9hZG1pbi9pbmZvL2lkLzIuaHRtbCIgaHJlZj0iamF2YXNjcmlwdDo7IiB0aXRsZT0i57yW6L6RIj7nvJbovpE8L2E+DQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgPGEgY2xhc3M9ImxheXVpLWJhZGdlLXJpbSBqLXRyLWRlbCIgZGF0YS1ocmVmPSIvX2FkbWluLnBocC9hZG1pbi9hZG1pbi9kZWwvaWRzLzIuaHRtbCIgaHJlZj0iamF2YXNjcmlwdDo7IiB0aXRsZT0i5Yig6ZmkIj7liKDpmaQ8L2E+DQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA8L3RkPg0KICAgICAgICAgICAgPC90cj4NCiAgICAgICAgICAgICAgICAgICAgICAgIDx0cj4NCiAgICAgICAgICAgICAgICA8dGQ+DQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA8L3RkPg0KICAgICAgICAgICAgICAgIDx0ZD4xPC90ZD4NCiAgICAgICAgICAgICAgICA8dGQ+YWRtaW48L3RkPg0KICAgICAgICAgICAgICAgIDx0ZD4NCiAgICAgICAgICAgICAgICAgICAgPGlucHV0IHR5cGU9ImNoZWNrYm94IiBuYW1lPSJzdGF0dXMiIGNoZWNrZWQgdmFsdWU9IjEiIGxheS1za2luPSJzd2l0Y2giIGxheS1maWx0ZXI9InN3aXRjaFN0YXR1cyIgbGF5LXRleHQ9IuWQr+eUqHznpoHnlKgiIGRhdGEtaHJlZj0iL19hZG1pbi5waHAvYWRtaW4vYWRtaW4vZmllbGQvY29sL2FkbWluX3N0YXR1cy9pZHMvMS5odG1sIj4NCiAgICAgICAgICAgICAgICA8L3RkPg0KICAgICAgICAgICAgICAgIDx0ZD4yMDIzLTExLTE1IDA2OjEzOjIwPC90ZD4NCiAgICAgICAgICAgICAgICA8dGQ+MTAuMC4wLjE8L3RkPg0KICAgICAgICAgICAgICAgIDx0ZD42PC90ZD4NCiAgICAgICAgICAgICAgICA8dGQ+DQogICAgICAgICAgICAgICAgICAgIDxhIGNsYXNzPSJsYXl1aS1iYWRnZS1yaW0gai1pZnJhbWUiIGRhdGEtaHJlZj0iL19hZG1pbi5waHAvYWRtaW4vYWRtaW4vaW5mby9pZC8xLmh0bWwiIGhyZWY9ImphdmFzY3JpcHQ6OyIgdGl0bGU9Iue8lui+kSI+57yW6L6RPC9hPg0KICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgPC90ZD4NCiAgICAgICAgICAgIDwvdHI+DQogICAgICAgICAgICAgICAgICAgICAgICA8L3Rib2R5Pg0KICAgICAgICA8L3RhYmxlPg0KICAgICAgICA8ZGl2IGlkPSJwYWdlcyIgY2xhc3M9ImNlbnRlciI+PC9kaXY+DQogICAgPC9mb3JtPg0KPC9kaXY+DQoNCjxzY3JpcHQgdHlwZT0idGV4dC9qYXZhc2NyaXB0IiBzcmM9Ii9zdGF0aWMvanMvYWRtaW5fY29tbW9uLmpzPzIwMjMuMTAwMC4zMDUxIj48L3NjcmlwdD4NCg0KPHNjcmlwdCB0eXBlPSJ0ZXh0L2phdmFzY3JpcHQiPg0KICAgIHZhciBjdXJVcmw9Ii9fYWRtaW4ucGhwL2FkbWluL2FkbWluL2luZGV4L3BhZ2UvJTdCcGFnZSU3RC9saW1pdC8lN0JsaW1pdCU3RC5odG1sIjsNCiAgICBsYXl1aS51c2UoWydsYXlwYWdlJywgJ2xheWVyJ10sIGZ1bmN0aW9uKCkgew0KICAgICAgICB2YXIgbGF5cGFnZSA9IGxheXVpLmxheXBhZ2UNCiAgICAgICAgICAgICAgICAsIGxheWVyID0gbGF5dWkubGF5ZXI7DQoNCiAgICAgICAgbGF5cGFnZS5yZW5kZXIoew0KICAgICAgICAgICAgZWxlbTogJ3BhZ2VzJw0KICAgICAgICAgICAgLGNvdW50OiAyICAgICAgICAgICAgLGxpbWl0OiAyMCAgICAgICAgICAgICxjdXJyOiAxICAgICAgICAgICAgLGxheW91dDogWydjb3VudCcsICdwcmV2JywgJ3BhZ2UnLCAnbmV4dCcsICdsaW1pdCcsICdza2lwJ10NCiAgICAgICAgICAgICxqdW1wOiBmdW5jdGlvbihvYmosZmlyc3Qpew0KICAgICAgICAgICAgICAgIGlmKCFmaXJzdCl7DQogICAgICAgICAgICAgICAgICAgIGxvY2F0aW9uLmhyZWYgPSBjdXJVcmwucmVwbGFjZSgnJTdCcGFnZSU3RCcsb2JqLmN1cnIpLnJlcGxhY2UoJyU3QmxpbWl0JTdEJyxvYmoubGltaXQpOw0KICAgICAgICAgICAgICAgIH0NCiAgICAgICAgICAgIH0NCiAgICAgICAgfSk7DQogICAgfSk7DQo8L3NjcmlwdD4NCjwvYm9keT4NCjwvaHRtbD4=",
+                    "rows": null
+                },
+                {
+                    "label": "unlock-right",
+                    "request": {
+                        "method": "POST",
+                        "path": "/admin/index/unlocked",
+                        "query": "",
+                        "post": "password=admin888",
+                        "ajax": true,
+                        "headers": {}
+                    },
+                    "started": 1792956478,
+                    "after": 1792956479,
+                    "status": 200,
+                    "contentType": "application/json; charset=utf-8",
+                    "location": null,
+                    "setCookies": [],
+                    "body": "eyJjb2RlIjowLCJtc2ciOiLlr4bnoIHplJnor68iLCJkYXRhIjoiIiwidXJsIjoiIiwid2FpdCI6M30=",
+                    "rows": null
+                },
+                {
+                    "label": "unlock-wrong",
+                    "request": {
+                        "method": "POST",
+                        "path": "/admin/index/unlocked",
+                        "query": "",
+                        "post": "password=admin889",
+                        "ajax": true,
+                        "headers": {}
+                    },
+                    "started": 1792956479,
+                    "after": 1792956479,
+                    "status": 200,
+                    "contentType": "application/json; charset=utf-8",
+                    "location": null,
+                    "setCookies": [],
+                    "body": "eyJjb2RlIjowLCJtc2ciOiLlr4bnoIHplJnor68iLCJkYXRhIjoiIiwidXJsIjoiIiwid2FpdCI6M30=",
+                    "rows": null
+                },
+                {
+                    "label": "unlock-stored-hash",
+                    "request": {
+                        "method": "POST",
+                        "path": "/admin/index/unlocked",
+                        "query": "",
+                        "post": "password=7fEf6171469e80D32c0559F88b377245",
+                        "ajax": true,
+                        "headers": {}
+                    },
+                    "started": 1792956479,
+                    "after": 1792956479,
+                    "status": 200,
+                    "contentType": "application/json; charset=utf-8",
+                    "location": null,
+                    "setCookies": [],
+                    "body": "eyJjb2RlIjowLCJtc2ciOiLlr4bnoIHplJnor68iLCJkYXRhIjoiIiwidXJsIjoiIiwid2FpdCI6M30=",
+                    "rows": null
+                },
+                {
+                    "label": "still-in",
+                    "request": {
+                        "method": "GET",
+                        "path": "/admin/index/welcome",
+                        "query": "",
+                        "post": "",
+                        "ajax": false,
+                        "headers": {}
+                    },
+                    "started": 1792956479,
+                    "after": 1792956480,
+                    "status": 200,
+                    "contentType": "text/html; charset=utf-8",
+                    "location": null,
+                    "setCookies": [],
+                    "body": null,
+                    "rows": null
+                },
+                {
+                    "label": "db-password",
+                    "sql": "UPDATE mac_admin SET admin_pwd = '8977dfac2f8e04cb96e66882235f5aba' WHERE admin_id = 1",
+                    "rows": [
+                        {
+                            "admin_id": 1,
+                            "admin_name": "61646d696e",
+                            "admin_pwd": "3839373764666163326638653034636239366536363838323233356635616261",
+                            "admin_random": "3438656365656336326535626230306435383231363935643433363965303962",
+                            "admin_status": 1,
+                            "admin_auth": "",
+                            "admin_login_time": 1792956478,
+                            "admin_login_ip": 2130706433,
+                            "admin_login_num": 6,
+                            "admin_last_login_time": 1700000000,
+                            "admin_last_login_ip": 167772161
+                        },
+                        {
+                            "admin_id": 2,
+                            "admin_name": "656469746f72",
+                            "admin_pwd": "3631433931433841364436314334364235434239413943313542393237343736",
+                            "admin_random": "",
+                            "admin_status": 1,
+                            "admin_auth": "2c61646d696e2f696e6465782c696e6465782f756e6c6f636b65642c",
+                            "admin_login_time": 0,
+                            "admin_login_ip": 0,
+                            "admin_login_num": 0,
+                            "admin_last_login_time": 0,
+                            "admin_last_login_ip": 0
+                        }
+                    ]
+                },
+                {
+                    "label": "after-password",
+                    "request": {
+                        "method": "GET",
+                        "path": "/admin/index/welcome",
+                        "query": "",
+                        "post": "",
+                        "ajax": false,
+                        "headers": {}
+                    },
+                    "started": 1792956480,
+                    "after": 1792956480,
+                    "status": 200,
+                    "contentType": "text/html; charset=utf-8",
+                    "location": null,
+                    "setCookies": [],
+                    "body": "PCFET0NUWVBFIGh0bWw+DQo8aHRtbCBsYW5nPSJlbiI+DQo8aGVhZD4NCiAgICA8bWV0YSBjaGFyc2V0PSJVVEYtOCI+DQogICAgPG1ldGEgbmFtZT0idmlld3BvcnQiIGNvbnRlbnQ9IndpZHRoPWRldmljZS13aWR0aCwgaW5pdGlhbC1zY2FsZT0xLCBtYXhpbXVtLXNjYWxlPTEiPg0KICAgIDx0aXRsZT7mrKLov47pobXpnaIgLSDlronlhajnrKzkuIDor7fli7/ms4TpnLLlkI7lj7DlnLDlnYAgLSBDb3B5cmlnaHQgYnkg6Iu55p6cQ01T5YaF5a65566h55CG57O757ufPC90aXRsZT4NCiAgICA8bGluayByZWw9InN0eWxlc2hlZXQiIGhyZWY9Ii9zdGF0aWMvbGF5dWkvY3NzL2xheXVpLmNzcyI+DQogICAgPGxpbmsgcmVsPSJzdHlsZXNoZWV0IiBocmVmPSIvc3RhdGljL2Nzcy9hZG1pbl9zdHlsZS5jc3M/MjAyMy4xMDAwLjMwNTEiPg0KICAgIDxzY3JpcHQgdHlwZT0idGV4dC9qYXZhc2NyaXB0IiBzcmM9Ii9zdGF0aWMvanMvanF1ZXJ5LmpzIj48L3NjcmlwdD4NCiAgICA8c2NyaXB0IHR5cGU9InRleHQvamF2YXNjcmlwdCIgc3JjPSIvc3RhdGljL2xheXVpL2xheXVpLmpzIj48L3NjcmlwdD4NCiAgICA8c2NyaXB0Pg0KICAgICAgICB2YXIgUk9PVF9QQVRIPSIiLEFETUlOX1BBVEg9Ii9fYWRtaW4ucGhwIiwgTUFDX1ZFUlNJT049InYxMCI7DQogICAgPC9zY3JpcHQ+DQo8L2hlYWQ+DQo8Ym9keT4NCjxzY3JpcHQ+DQogICAgdmFyIE1BQ19WRVJTSU9OPScyMDIzLjEwMDAuMzA1MScsUEhQX1ZFUlNJT049JzcuMy4zMycsVEhJTktfVkVSU0lPTj0nNS4wLjI0JztNQUNfTEFORz0nemgtY24nOw0KPC9zY3JpcHQ+DQo8ZGl2IGNsYXNzPSJwYWdlLWNvbnRhaW5lciI+DQogICAgDQogICAgPGJsb2NrcXVvdGUgY2xhc3M9ImxheXVpLWVsZW0tcXVvdGUgbGF5dWktcXVvdGUtbm0gbXQxMCI+DQogICAgICAgIDxwIGNsYXNzPSJmLTIwIHRleHQtc3VjY2VzcyI+6K+35LiN6KaB5L+u5pS557O757uf5paH5Lu277yM5Lul5YWN5Y2H57qn5Ye6546w5pWF6Zqc77yB5pys56iL5bqP5LiN5YaF572u5Lu75L2V5pWw5o2u77yM5re75Yqg5Lu75L2V5pWw5o2u5Z2H5piv5Liq5Lq66KGM5Li677yB6K+35Zyo6YG15a6I5rOV5b6L55qE5YmN5o+Q5LiL5L2/55So56iL5bqP77yM5ZCm5YiZ5ZCO5p6c6Ieq6LSf77yBPC9wPg0KICAgICAgICA8cD7nmbvlvZXmrKHmlbDvvJo1ICDkuIrmrKHnmbvlvZVJUO+8mjAuMC4wLjAgIOS4iuasoeeZu+W9leaXtumXtO+8mjwvcD4NCiAgICA8L2Jsb2NrcXVvdGU+DQoNCiAgICA8dGFibGUgY2xhc3M9ImxheXVpLXRhYmxlIiA+DQogICAgICAgIDx0Ym9keT4NCiAgICAgICAgPHRyPg0KICAgICAgICAgICAgPHRkIHdpZHRoPSIxMTAiPui/kOihjOeOr+WigzwvdGQ+DQogICAgICAgICAgICA8dGQ+V0lOTlQgKGdvbGRlbik8L3RkPg0KICAgICAgICA8L3RyPg0KICAgICAgICA8dHI+DQogICAgICAgICAgICA8dGQ+5pyN5Yqh5ZmoSVAv56uv5Y+jPC90ZD4NCiAgICAgICAgICAgIDx0ZD53d3cuZXhhbXBsZS50ZXN0PC90ZD4NCiAgICAgICAgPC90cj4NCiAgICAgICAgPHRyPg0KICAgICAgICAgICAgPHRkPuacgOWkp+S4iuS8oOmZkOWItjwvdGQ+DQogICAgICAgICAgICA8dGQ+Mk08L3RkPg0KICAgICAgICA8L3RyPg0KICAgICAgICA8dHI+DQogICAgICAgICAgICA8dGQ+5pyN5Yqh5Zmo5pel5pyfPC90ZD4NCiAgICAgICAgICAgIDx0ZD4yMDI2LTEwLTI2PC90ZD4NCiAgICAgICAgPC90cj4NCiAgICAgICAgIDx0cj4NCiAgICAgICAgICAgIDx0ZD5QSFDniYjmnKw8L3RkPg0KICAgICAgICAgICAgPHRkPjcuMy4zMzwvdGQ+DQogICAgICAgIDwvdHI+DQogICAgICAgIDx0cj4NCiAgICAgICAgICAgIDx0ZD5UaGlua1BIUOeJiOacrDwvdGQ+DQogICAgICAgICAgICA8dGQ+NS4wLjI0PC90ZD4NCiAgICAgICAgPC90cj4NCiAgICAgICAgPCEtLSA8dHI+DQogICAgICAgICAgICA8dGQ+56iL5bqP54mI5pysPC90ZD4NCiAgICAgICAgICAgIDx0ZD48c3BhbiBjbGFzcz0ibGF5dWktYmFkZ2UiPjIwMjMuMTAwMC4zMDUxPC9zcGFuPjwvdGQ+DQogICAgICAgIDwvdHI+IC0tPg0KICAgICAgICA8L3Rib2R5Pg0KICAgIDwvdGFibGU+DQogICAgPC9kaXY+DQo8c2NyaXB0IHR5cGU9InRleHQvamF2YXNjcmlwdCIgc3JjPSIvc3RhdGljL2pzL2FkbWluX2NvbW1vbi5qcz8yMDIzLjEwMDAuMzA1MSI+PC9zY3JpcHQ+DQo8L2JvZHk+DQo8L2h0bWw+",
+                    "rows": null
+                },
+                {
+                    "label": "unlock-new",
+                    "request": {
+                        "method": "POST",
+                        "path": "/admin/index/unlocked",
+                        "query": "",
+                        "post": "password=changed",
+                        "ajax": true,
+                        "headers": {}
+                    },
+                    "started": 1792956480,
+                    "after": 1792956480,
+                    "status": 200,
+                    "contentType": "application/json; charset=utf-8",
+                    "location": null,
+                    "setCookies": [],
+                    "body": "eyJjb2RlIjowLCJtc2ciOiLlr4bnoIHplJnor68iLCJkYXRhIjoiIiwidXJsIjoiIiwid2FpdCI6M30=",
+                    "rows": null
+                }
+            ]
+        },
+        {
+            "label": "stored-case-editor",
+            "config": {},
+            "quickmenu": null,
+            "rows0": [
+                {
+                    "admin_id": 1,
+                    "admin_name": "61646d696e",
+                    "admin_pwd": "3766656636313731343639653830643332633035353966383862333737323435",
+                    "admin_random": "",
+                    "admin_status": 1,
+                    "admin_auth": "",
+                    "admin_login_time": 0,
+                    "admin_login_ip": 0,
+                    "admin_login_num": 0,
+                    "admin_last_login_time": 0,
+                    "admin_last_login_ip": 0
+                },
+                {
+                    "admin_id": 2,
+                    "admin_name": "656469746f72",
+                    "admin_pwd": "3631433931433841364436314334364235434239413943313542393237343736",
+                    "admin_random": "",
+                    "admin_status": 1,
+                    "admin_auth": "2c61646d696e2f696e6465782c696e6465782f756e6c6f636b65642c",
+                    "admin_login_time": 0,
+                    "admin_login_ip": 0,
+                    "admin_login_num": 0,
+                    "admin_last_login_time": 0,
+                    "admin_last_login_ip": 0
+                }
+            ],
+            "steps": [
+                {
+                    "label": "login",
+                    "request": {
+                        "method": "POST",
+                        "path": "/admin/index/login",
+                        "query": "",
+                        "post": "admin_name=editor&admin_pwd=ed+pass",
+                        "ajax": true,
+                        "headers": {}
+                    },
+                    "started": 1792956480,
+                    "after": 1792956481,
+                    "status": 200,
+                    "contentType": "application/json; charset=utf-8",
+                    "location": null,
+                    "setCookies": [
+                        "PHPSESSID=4l0l7l5osotvtnsck0aqanu0j7; path=/"
+                    ],
+                    "body": "eyJjb2RlIjoxLCJtc2ciOiLnmbvlvZXmiJDlip8iLCJkYXRhIjoiIiwidXJsIjoiXC9fYWRtaW4ucGhwXC9hZG1pblwvaW5kZXhcL2xvZ2luLmh0bWwiLCJ3YWl0IjozfQ==",
+                    "rows": [
+                        {
+                            "admin_id": 1,
+                            "admin_name": "61646d696e",
+                            "admin_pwd": "3766656636313731343639653830643332633035353966383862333737323435",
+                            "admin_random": "",
+                            "admin_status": 1,
+                            "admin_auth": "",
+                            "admin_login_time": 0,
+                            "admin_login_ip": 0,
+                            "admin_login_num": 0,
+                            "admin_last_login_time": 0,
+                            "admin_last_login_ip": 0
+                        },
+                        {
+                            "admin_id": 2,
+                            "admin_name": "656469746f72",
+                            "admin_pwd": "3631433931433841364436314334364235434239413943313542393237343736",
+                            "admin_random": "6664666564376237306439353766386131306361663461663337653930346465",
+                            "admin_status": 1,
+                            "admin_auth": "2c61646d696e2f696e6465782c696e6465782f756e6c6f636b65642c",
+                            "admin_login_time": 1792956481,
+                            "admin_login_ip": 2130706433,
+                            "admin_login_num": 1,
+                            "admin_last_login_time": 0,
+                            "admin_last_login_ip": 0
+                        }
+                    ]
+                },
+                {
+                    "label": "next-page",
+                    "request": {
+                        "method": "GET",
+                        "path": "/admin/admin/index",
+                        "query": "",
+                        "post": "",
+                        "ajax": false,
+                        "headers": {}
+                    },
+                    "started": 1792956481,
+                    "after": 1792956481,
+                    "status": 200,
+                    "contentType": "text/html; charset=utf-8",
+                    "location": null,
+                    "setCookies": [],
+                    "body": "PCFET0NUWVBFIGh0bWw+DQo8aHRtbCBsYW5nPSJlbiI+DQo8aGVhZD4NCiAgICA8bWV0YSBjaGFyc2V0PSJVVEYtOCI+DQogICAgPG1ldGEgbmFtZT0idmlld3BvcnQiIGNvbnRlbnQ9IndpZHRoPWRldmljZS13aWR0aCwgaW5pdGlhbC1zY2FsZT0xLCBtYXhpbXVtLXNjYWxlPTEiPg0KICAgIDx0aXRsZT7nrqHnkIblkZjnrqHnkIYgLSDlronlhajnrKzkuIDor7fli7/ms4TpnLLlkI7lj7DlnLDlnYAgLSBDb3B5cmlnaHQgYnkg6Iu55p6cQ01T5YaF5a65566h55CG57O757ufPC90aXRsZT4NCiAgICA8bGluayByZWw9InN0eWxlc2hlZXQiIGhyZWY9Ii9zdGF0aWMvbGF5dWkvY3NzL2xheXVpLmNzcyI+DQogICAgPGxpbmsgcmVsPSJzdHlsZXNoZWV0IiBocmVmPSIvc3RhdGljL2Nzcy9hZG1pbl9zdHlsZS5jc3M/MjAyMy4xMDAwLjMwNTEiPg0KICAgIDxzY3JpcHQgdHlwZT0idGV4dC9qYXZhc2NyaXB0IiBzcmM9Ii9zdGF0aWMvanMvanF1ZXJ5LmpzIj48L3NjcmlwdD4NCiAgICA8c2NyaXB0IHR5cGU9InRleHQvamF2YXNjcmlwdCIgc3JjPSIvc3RhdGljL2xheXVpL2xheXVpLmpzIj48L3NjcmlwdD4NCiAgICA8c2NyaXB0Pg0KICAgICAgICB2YXIgUk9PVF9QQVRIPSIiLEFETUlOX1BBVEg9Ii9fYWRtaW4ucGhwIiwgTUFDX1ZFUlNJT049InYxMCI7DQogICAgPC9zY3JpcHQ+DQo8L2hlYWQ+DQo8Ym9keT4NCjxkaXYgY2xhc3M9InBhZ2UtY29udGFpbmVyIHAxMCI+DQoNCiAgICA8ZGl2IGNsYXNzPSJteS10b29sYmFyLWJveCI+DQoNCiAgICAgICAgPGRpdiBjbGFzcz0ibGF5dWktYnRuLWdyb3VwIj4NCiAgICAgICAgICAgIDxhIGRhdGEtaHJlZj0iL19hZG1pbi5waHAvYWRtaW4vYWRtaW4vaW5mby5odG1sIiBjbGFzcz0ibGF5dWktYnRuIGxheXVpLWJ0bi1wcmltYXJ5IGotaWZyYW1lIj48aSBjbGFzcz0ibGF5dWktaWNvbiI+JiN4ZTY1NDs8L2k+5re75YqgPC9hPg0KICAgICAgICAgICAgPGEgZGF0YS1ocmVmPSIvX2FkbWluLnBocC9hZG1pbi9hZG1pbi9kZWwuaHRtbCIgY2xhc3M9ImxheXVpLWJ0biBsYXl1aS1idG4tcHJpbWFyeSBqLXBhZ2UtYnRucyBjb25maXJtIj48aSBjbGFzcz0ibGF5dWktaWNvbiI+JiN4ZTY0MDs8L2k+5Yig6ZmkPC9hPg0KICAgICAgICA8L2Rpdj4NCg0KICAgIDwvZGl2Pg0KDQogICAgPGZvcm0gY2xhc3M9ImxheXVpLWZvcm0gIiBtZXRob2Q9InBvc3QiIGlkPSJwYWdlTGlzdEZvcm0iPg0KICAgICAgICA8dGFibGUgY2xhc3M9ImxheXVpLXRhYmxlIiBsYXktc2l6ZT0ic20iPg0KICAgICAgICAgICAgPHRoZWFkPg0KICAgICAgICAgICAgPHRyPg0KICAgICAgICAgICAgICAgIDx0aCB3aWR0aD0iMjUiPjxpbnB1dCB0eXBlPSJjaGVja2JveCIgbGF5LXNraW49InByaW1hcnkiIGxheS1maWx0ZXI9ImFsbENob29zZSI+PC90aD4NCiAgICAgICAgICAgICAgICA8dGggd2lkdGg9IjEwMCI+57yW5Y+3PC90aD4NCiAgICAgICAgICAgICAgICA8dGggPuWQjeensDwvdGg+DQogICAgICAgICAgICAgICAgPHRoIHdpZHRoPSIxMDAiPueKtuaAgTwvdGg+DQogICAgICAgICAgICAgICAgPHRoIHdpZHRoPSIxNDAiPuS4iuasoeeZu+W9leaXtumXtDwvdGg+DQogICAgICAgICAgICAgICAgPHRoIHdpZHRoPSIxNDAiPuS4iuasoeeZu+W9lUlQPC90aD4NCiAgICAgICAgICAgICAgICA8dGggd2lkdGg9IjEzMCI+55m75b2V5qyh5pWwPC90aD4NCiAgICAgICAgICAgICAgICA8dGggd2lkdGg9IjEwMCI+5pON5L2cPC90aD4NCiAgICAgICAgICAgIDwvdHI+DQogICAgICAgICAgICA8L3RoZWFkPg0KDQogICAgICAgICAgICAgICAgICAgICAgICA8dHI+DQogICAgICAgICAgICAgICAgPHRkPg0KICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgPC90ZD4NCiAgICAgICAgICAgICAgICA8dGQ+MjwvdGQ+DQogICAgICAgICAgICAgICAgPHRkPmVkaXRvcjwvdGQ+DQogICAgICAgICAgICAgICAgPHRkPg0KICAgICAgICAgICAgICAgICAgICA8aW5wdXQgdHlwZT0iY2hlY2tib3giIG5hbWU9InN0YXR1cyIgY2hlY2tlZCB2YWx1ZT0iMSIgbGF5LXNraW49InN3aXRjaCIgbGF5LWZpbHRlcj0ic3dpdGNoU3RhdHVzIiBsYXktdGV4dD0i5ZCv55SofOemgeeUqCIgZGF0YS1ocmVmPSIvX2FkbWluLnBocC9hZG1pbi9hZG1pbi9maWVsZC9jb2wvYWRtaW5fc3RhdHVzL2lkcy8yLmh0bWwiPg0KICAgICAgICAgICAgICAgIDwvdGQ+DQogICAgICAgICAgICAgICAgPHRkPjwvdGQ+DQogICAgICAgICAgICAgICAgPHRkPjAuMC4wLjA8L3RkPg0KICAgICAgICAgICAgICAgIDx0ZD4xPC90ZD4NCiAgICAgICAgICAgICAgICA8dGQ+DQogICAgICAgICAgICAgICAgICAgIDxhIGNsYXNzPSJsYXl1aS1iYWRnZS1yaW0gai1pZnJhbWUiIGRhdGEtaHJlZj0iL19hZG1pbi5waHAvYWRtaW4vYWRtaW4vaW5mby9pZC8yLmh0bWwiIGhyZWY9ImphdmFzY3JpcHQ6OyIgdGl0bGU9Iue8lui+kSI+57yW6L6RPC9hPg0KICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgPC90ZD4NCiAgICAgICAgICAgIDwvdHI+DQogICAgICAgICAgICAgICAgICAgICAgICA8dHI+DQogICAgICAgICAgICAgICAgPHRkPg0KICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIDxpbnB1dCB0eXBlPSJjaGVja2JveCIgbmFtZT0iaWRzW10iIHZhbHVlPSIxIiBjbGFzcz0ibGF5dWktY2hlY2tib3ggY2hlY2tib3gtaWRzIiBsYXktc2tpbj0icHJpbWFyeSI+DQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA8L3RkPg0KICAgICAgICAgICAgICAgIDx0ZD4xPC90ZD4NCiAgICAgICAgICAgICAgICA8dGQ+YWRtaW48L3RkPg0KICAgICAgICAgICAgICAgIDx0ZD4NCiAgICAgICAgICAgICAgICAgICAgPGlucHV0IHR5cGU9ImNoZWNrYm94IiBuYW1lPSJzdGF0dXMiIGNoZWNrZWQgdmFsdWU9IjEiIGxheS1za2luPSJzd2l0Y2giIGxheS1maWx0ZXI9InN3aXRjaFN0YXR1cyIgbGF5LXRleHQ9IuWQr+eUqHznpoHnlKgiIGRhdGEtaHJlZj0iL19hZG1pbi5waHAvYWRtaW4vYWRtaW4vZmllbGQvY29sL2FkbWluX3N0YXR1cy9pZHMvMS5odG1sIj4NCiAgICAgICAgICAgICAgICA8L3RkPg0KICAgICAgICAgICAgICAgIDx0ZD48L3RkPg0KICAgICAgICAgICAgICAgIDx0ZD4wLjAuMC4wPC90ZD4NCiAgICAgICAgICAgICAgICA8dGQ+MDwvdGQ+DQogICAgICAgICAgICAgICAgPHRkPg0KICAgICAgICAgICAgICAgICAgICA8YSBjbGFzcz0ibGF5dWktYmFkZ2UtcmltIGotaWZyYW1lIiBkYXRhLWhyZWY9Ii9fYWRtaW4ucGhwL2FkbWluL2FkbWluL2luZm8vaWQvMS5odG1sIiBocmVmPSJqYXZhc2NyaXB0OjsiIHRpdGxlPSLnvJbovpEiPue8lui+kTwvYT4NCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA8YSBjbGFzcz0ibGF5dWktYmFkZ2UtcmltIGotdHItZGVsIiBkYXRhLWhyZWY9Ii9fYWRtaW4ucGhwL2FkbWluL2FkbWluL2RlbC9pZHMvMS5odG1sIiBocmVmPSJqYXZhc2NyaXB0OjsiIHRpdGxlPSLliKDpmaQiPuWIoOmZpDwvYT4NCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIDwvdGQ+DQogICAgICAgICAgICA8L3RyPg0KICAgICAgICAgICAgICAgICAgICAgICAgPC90Ym9keT4NCiAgICAgICAgPC90YWJsZT4NCiAgICAgICAgPGRpdiBpZD0icGFnZXMiIGNsYXNzPSJjZW50ZXIiPjwvZGl2Pg0KICAgIDwvZm9ybT4NCjwvZGl2Pg0KDQo8c2NyaXB0IHR5cGU9InRleHQvamF2YXNjcmlwdCIgc3JjPSIvc3RhdGljL2pzL2FkbWluX2NvbW1vbi5qcz8yMDIzLjEwMDAuMzA1MSI+PC9zY3JpcHQ+DQoNCjxzY3JpcHQgdHlwZT0idGV4dC9qYXZhc2NyaXB0Ij4NCiAgICB2YXIgY3VyVXJsPSIvX2FkbWluLnBocC9hZG1pbi9hZG1pbi9pbmRleC9wYWdlLyU3QnBhZ2UlN0QvbGltaXQvJTdCbGltaXQlN0QuaHRtbCI7DQogICAgbGF5dWkudXNlKFsnbGF5cGFnZScsICdsYXllciddLCBmdW5jdGlvbigpIHsNCiAgICAgICAgdmFyIGxheXBhZ2UgPSBsYXl1aS5sYXlwYWdlDQogICAgICAgICAgICAgICAgLCBsYXllciA9IGxheXVpLmxheWVyOw0KDQogICAgICAgIGxheXBhZ2UucmVuZGVyKHsNCiAgICAgICAgICAgIGVsZW06ICdwYWdlcycNCiAgICAgICAgICAgICxjb3VudDogMiAgICAgICAgICAgICxsaW1pdDogMjAgICAgICAgICAgICAsY3VycjogMSAgICAgICAgICAgICxsYXlvdXQ6IFsnY291bnQnLCAncHJldicsICdwYWdlJywgJ25leHQnLCAnbGltaXQnLCAnc2tpcCddDQogICAgICAgICAgICAsanVtcDogZnVuY3Rpb24ob2JqLGZpcnN0KXsNCiAgICAgICAgICAgICAgICBpZighZmlyc3Qpew0KICAgICAgICAgICAgICAgICAgICBsb2NhdGlvbi5ocmVmID0gY3VyVXJsLnJlcGxhY2UoJyU3QnBhZ2UlN0QnLG9iai5jdXJyKS5yZXBsYWNlKCclN0JsaW1pdCU3RCcsb2JqLmxpbWl0KTsNCiAgICAgICAgICAgICAgICB9DQogICAgICAgICAgICB9DQogICAgICAgIH0pOw0KICAgIH0pOw0KPC9zY3JpcHQ+DQo8L2JvZHk+DQo8L2h0bWw+",
+                    "rows": null
+                },
+                {
+                    "label": "unlock-right",
+                    "request": {
+                        "method": "POST",
+                        "path": "/admin/index/unlocked",
+                        "query": "",
+                        "post": "password=ed+pass",
+                        "ajax": true,
+                        "headers": {}
+                    },
+                    "started": 1792956481,
+                    "after": 1792956481,
+                    "status": 200,
+                    "contentType": "application/json; charset=utf-8",
+                    "location": null,
+                    "setCookies": [],
+                    "body": "eyJjb2RlIjowLCJtc2ciOiLlr4bnoIHplJnor68iLCJkYXRhIjoiIiwidXJsIjoiIiwid2FpdCI6M30=",
+                    "rows": null
+                },
+                {
+                    "label": "unlock-wrong",
+                    "request": {
+                        "method": "POST",
+                        "path": "/admin/index/unlocked",
+                        "query": "",
+                        "post": "password=ed+pas",
+                        "ajax": true,
+                        "headers": {}
+                    },
+                    "started": 1792956481,
+                    "after": 1792956482,
+                    "status": 200,
+                    "contentType": "application/json; charset=utf-8",
+                    "location": null,
+                    "setCookies": [],
+                    "body": "eyJjb2RlIjowLCJtc2ciOiLlr4bnoIHplJnor68iLCJkYXRhIjoiIiwidXJsIjoiIiwid2FpdCI6M30=",
+                    "rows": null
+                }
+            ]
         }
     ]
 }

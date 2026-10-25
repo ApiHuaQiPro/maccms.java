@@ -38,6 +38,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
+import tools.jackson.databind.json.JsonMapper;
 
 /**
  * 后台入口的 HTTP 契约（21 文档第 4、8 节）：路由与旧地址写法、登录（验证码、会话轮换、cookie 属性）、D2 ⑤（停用/改密/删除/改权限
@@ -53,6 +54,7 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 class AdminMvcTest {
 
     static final String E = "/_admin.php";
+    private static final JsonMapper JSON = JsonMapper.builder().build();
 
     @TestConfiguration
     static class Fakes {
@@ -346,7 +348,11 @@ class AdminMvcTest {
         // Ajax 取页面：整页 HTML 的 JSON 字符串（旧版行为，B13 的 j-select 弹窗依赖）
         MvcResult page = as(sid, ajax(get(E + "/admin/index/welcome")));
         assertThat(page.getResponse().getContentType()).isEqualTo("application/json;charset=UTF-8");
-        assertThat(body(page)).startsWith("\"<!DOCTYPE html>\\n<html lang=\\\"en\\\">");
+        // 整个正文是一个 JSON 字符串；模板行尾随检出方式可能是 LF 或 CRLF（.gitattributes 固定为 LF），断言只看结构不看行尾
+        String json = body(page);
+        assertThat(json).startsWith("\"").endsWith("\"");
+        String html = JSON.readValue(json, String.class);
+        assertThat(html.replace("\r\n", "\n")).startsWith("<!DOCTYPE html>\n<html lang=\"en\">").contains("</html>");
         MvcResult frame = as(sid, get(E + "/admin/index/index.html"));
         assertThat(frame.getResponse().getHeader("X-Frame-Options")).isEqualTo("SAMEORIGIN");
         assertThat(AdminHtml.menus(body(frame))).contains("GROUP 首页 icon=xe625 hidden=false",
@@ -428,6 +434,34 @@ class AdminMvcTest {
     }
 
     @Test
+    void logoutNeedsNoPermissionButStillChecksTheSourceAndDestroysTheSession() throws Exception {
+        // D-B12-6（队长 2026-10-25 接受）：非超级管理员（有部分权限、完全没有权限）都能退出；退出照样做来源校验（D-B12-3），
+        // 生效时作废服务端会话并删除 cookie，之后的请求回登录页
+        String toLogin = E + "/admin/index/login.html";
+        for (String[] who : List.of(new String[] {"editor", "ed+pass"}, new String[] {"viewer", "viewer1"})) {
+            String sid = login(who[0], who[1]);
+            // 锁屏中（旧前端脚本把锁屏状态放在 sessionStorage，服务端只有解锁）：解锁失败不影响退出
+            as(sid, ajax(form("/admin/index/unlocked", "password=wrong")));
+            MvcResult forged = as(sid, get(E + "/admin/index/logout").header("Origin", "http://evil.local.test"));
+            assertThat(forged.getResponse().getStatus()).isEqualTo(403);
+            assertThat(sessions.find(sid)).as(who[0] + "：别的来源发起的退出不生效").isPresent();
+            MvcResult out = as(sid, get(E + "/admin/index/logout.html").header("Sec-Fetch-Site", "same-origin"));
+            assertThat(out.getResponse().getStatus()).isEqualTo(302);
+            assertThat(out.getResponse().getHeader("Location")).isEqualTo(toLogin);
+            assertThat(out.getResponse().getHeaders("Set-Cookie")).anySatisfy(c ->
+                    assertThat(c).startsWith(AdminSessions.COOKIE + "=;").containsIgnoringCase("Max-Age=0"));
+            assertThat(sessions.find(sid)).as(who[0] + "：会话已销毁").isEmpty();
+            assertThat(as(sid, get(E + "/admin/index/welcome")).getResponse().getHeader("Location")).isEqualTo(toLogin);
+        }
+        // 未登录（没有 cookie、只有登录页验证码的会话）时退出：与旧版相同，回登录页
+        assertThat(mvc.perform(get(E + "/admin/index/logout")).andReturn().getResponse().getHeader("Location"))
+                .isEqualTo(toLogin);
+        String anon = sid(mvc.perform(get(E + "/admin/index/verify.html")).andReturn());
+        assertThat(as(anon, get(E + "/admin/index/logout")).getResponse().getHeader("Location")).isEqualTo(toLogin);
+        assertThat(table.writes).allMatch(w -> w.startsWith("login "));
+    }
+
+    @Test
     void anonymousCaptchaFloodDoesNotEvictLoggedInSessions() throws Exception {
         String sid = login("admin", "admin888");
         for (int i = 0; i <= AdminSessions.MAX_SESSIONS; i++) {
@@ -444,6 +478,15 @@ class AdminMvcTest {
         String sid = login("editor", "ed+pass");
         assertThat(as(sid, get(E + "/admin/admin/index")).getResponse().getStatus()).isEqualTo(200);
         assertThat(as(sid, get(E + "/admin/index/welcome")).getResponse().getStatus()).isEqualTo(200);
+        // D-B12-18：能登录的密码也能解锁（旧版区分大小写，总是"密码错误"）；库里的哈希原文不是密码
+        assertThat(body(as(sid, ajax(form("/admin/index/unlocked", "password=ed+pass"))))).contains("\"msg\":\"解锁成功\"");
+        assertThat(body(as(sid, ajax(form("/admin/index/unlocked", "password=ed+pas"))))).contains("\"msg\":\"密码错误\"");
+        assertThat(body(as(sid, ajax(form("/admin/index/unlocked",
+                "password=" + md5("ed pass").toUpperCase(java.util.Locale.ROOT)))))).contains("\"msg\":\"密码错误\"");
+        // 改密（写成小写的新哈希）后下一个请求即回登录页
+        table.put(2, "editor", md5("other"), 1, ",admin/index,index/unlocked,");
+        assertThat(as(sid, get(E + "/admin/index/welcome")).getResponse().getHeader("Location"))
+                .isEqualTo(E + "/admin/index/login.html");
     }
 
     // ------------------------------------------------------------------ 管理员

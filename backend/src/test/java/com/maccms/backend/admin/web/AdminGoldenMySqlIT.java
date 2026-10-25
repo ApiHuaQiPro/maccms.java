@@ -128,6 +128,16 @@ class AdminGoldenMySqlIT {
         JAVA.put("legacy-snapshot/after-disable", toLogin);
         JAVA.put("legacy-snapshot/after-delete", toLogin);
         JAVA.put("admin-field/after-self-off", toLogin);
+        // 库里存量的大写/混合大小写 md5（MACC-36 返工）：登录、下一页、列表与旧版相同；D-B12-18 解锁按 ASCII 不分大小写比较哈希，
+        // 正确密码能解锁（旧版总是"密码错误"）；D-B12-1 改密后旧会话的下一个请求即回登录页
+        String unlocked = "status=200 json={\"code\":1,\"msg\":\"解锁成功\",\"data\":\"\",\"url\":\"\\/_admin.php\\/admin\\/index\\/unlocked.html\",\"wait\":3}";
+        for (String sc : List.of("stored-case-upper", "stored-case-mixed", "stored-case-editor")) {
+            JAVA.put(sc + "/unlock-right", unlocked);
+        }
+        for (String sc : List.of("stored-case-upper", "stored-case-mixed")) {
+            JAVA.put(sc + "/after-password", toLogin);
+            JAVA.put(sc + "/unlock-new", toLogin);
+        }
         // D-B12-6：退出不需要权限
         JAVA.put("auth-viewer/html index/logout", toLogin);
         JAVA.put("auth-editor/index/logout", toLogin);
@@ -645,8 +655,12 @@ class AdminGoldenMySqlIT {
         Variant v = variant(Map.of());
         AdminLoginService logins = v.app().getBean(AdminLoginService.class);
         AdminWriteMapper writer = v.app().getBean(AdminWriteMapper.class);
-        for (int round = 0; round < 10; round++) {
-            resetAdmins(List.of(new AdminGolden.Row(1, "admin", md5("admin888"), "", 1, "", 0, 0, 0, 0, 0)));
+        // 库里的旧密码哈希依次是小写、大写、混合大小写（存量数据），条件更新按列排序规则比较，护栏对三种写法都成立
+        List<String> stored = List.of(md5("admin888"), md5("admin888").toUpperCase(java.util.Locale.ROOT),
+                mixedCase(md5("admin888")));
+        for (int round = 0; round < 12; round++) {
+            String oldHash = stored.get(round % stored.size());
+            resetAdmins(List.of(new AdminGolden.Row(1, "admin", oldHash, "", 1, "", 0, 0, 0, 0, 0)));
             var outcome = ConcurrentWrites.run(12, i -> {
                 if (i == 5) {
                     writer.update(1, "admin", md5("newpass"), null, "");
@@ -665,14 +679,103 @@ class AdminGoldenMySqlIT {
             // 改密之后旧密码一定登录不了
             assertThat(logins.login("admin".getBytes(StandardCharsets.UTF_8), "admin888".getBytes(StandardCharsets.UTF_8),
                     false, () -> true, 1L).failure()).isEqualTo(AdminLoginService.Failure.ACCESS);
-            assertThat(logins.current(1, md5("admin888"))).as("用旧密码登录的会话被踢出（D2 ⑤）").isEmpty();
+            assertThat(logins.current(1, oldHash)).as("用旧密码登录的会话被踢出（D2 ⑤）").isEmpty();
         }
+    }
+
+    /**
+     * 库里存量的大写、混合大小写 md5（MACC-36 返工，21 文档第 4.3、4.5 节）：真实 MySQL 上经完整的 HTTP 入口——登录成功，紧接着的
+     * 下一页与列表不被踢回登录页（会话里存的是库里的原值，D2 ⑤ 按原值比较）；锁屏用正确密码能解锁、错误密码与库里的哈希原文不能
+     * （D-B12-18）；另一个会话经管理员表单改密后，两个旧会话的下一个请求都回登录页、旧密码不能再解锁或登录、新密码能登录。
+     */
+    @Test
+    @Order(4)
+    void storedUpperAndMixedCaseHashesSurviveTheNextPageUnlockAndDieOnPasswordChange() throws Exception {
+        Variant v = variant(Map.of());
+        String toLogin = E + "/admin/index/login.html";
+        for (String stored : List.of(md5("admin888").toUpperCase(java.util.Locale.ROOT), mixedCase(md5("admin888")))) {
+            resetAdmins(List.of(new AdminGolden.Row(1, "admin", stored, "", 1, "", 0, 0, 0, 0, 0),
+                    new AdminGolden.Row(2, "editor", md5("ed pass").toUpperCase(java.util.Locale.ROOT), "", 1,
+                            ",admin/index,index/unlocked,", 0, 0, 0, 0, 0)));
+            String a = httpLogin(v, "admin", "admin888");
+            String b = httpLogin(v, "admin", "admin888");
+            String editor = httpLogin(v, "editor", "ed pass");
+            assertThat(a).as(stored).isNotNull();
+            assertThat(javaRows().get(0).pwd()).as("登录不改写库里的哈希").isEqualTo(stored);
+
+            MockHttpServletResponse next = send(v, a, MockMvcRequestBuilders.get(E + "/admin/index/welcome"));
+            assertThat(next.getStatus()).as("下一页").isEqualTo(200);
+            assertThat(next.getContentAsString(StandardCharsets.UTF_8)).contains("layui-quote-nm mt10");
+            assertThat(send(v, a, MockMvcRequestBuilders.get(E + "/admin/admin/index")).getStatus()).isEqualTo(200);
+            assertThat(send(v, editor, MockMvcRequestBuilders.get(E + "/admin/admin/index")).getStatus()).isEqualTo(200);
+
+            assertThat(unlock(v, a, "admin888")).contains("\"msg\":\"解锁成功\"");
+            assertThat(unlock(v, editor, "ed pass")).contains("\"msg\":\"解锁成功\"");
+            assertThat(unlock(v, a, "admin889")).contains("\"msg\":\"密码错误\"");
+            assertThat(unlock(v, a, stored)).as("库里的哈希原文不是密码").contains("\"msg\":\"密码错误\"");
+            assertThat(unlock(v, a, md5("admin888"))).contains("\"msg\":\"密码错误\"");
+
+            // 会话 b 经管理员表单把 1 号的密码改掉（真实写路径：令牌 → 保存）
+            String form = send(v, b, MockMvcRequestBuilders.get(E + "/admin/admin/info").param("id", "1"))
+                    .getContentAsString(StandardCharsets.UTF_8);
+            Matcher tm = TOKEN.matcher(form);
+            assertThat(tm.find()).isTrue();
+            String saved = send(v, b, MockMvcRequestBuilders.post(E + "/admin/admin/info")
+                    .header("X-Requested-With", "XMLHttpRequest").contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                    .content("admin_id=1&__token__=" + tm.group(1) + "&admin_name=admin&admin_pwd=n3w&admin_status=1"
+                            + "&admin_auth%5B%5D=index%2Fwelcome")).getContentAsString(StandardCharsets.UTF_8);
+            assertThat(saved).contains("\"code\":1");
+            assertThat(javaRows().get(0).pwd()).isEqualTo(md5("n3w"));
+
+            assertThat(send(v, a, MockMvcRequestBuilders.get(E + "/admin/index/welcome")).getRedirectedUrl())
+                    .as("改密后旧会话立即失效").isEqualTo(toLogin);
+            assertThat(send(v, b, MockMvcRequestBuilders.get(E + "/admin/index/welcome")).getRedirectedUrl())
+                    .as("改密的那个会话也用的是旧密码").isEqualTo(toLogin);
+            assertThat(send(v, a, MockMvcRequestBuilders.post(E + "/admin/index/unlocked")
+                    .contentType(MediaType.APPLICATION_FORM_URLENCODED).content("password=admin888")).getRedirectedUrl())
+                    .isEqualTo(toLogin);
+            assertThat(send(v, editor, MockMvcRequestBuilders.get(E + "/admin/admin/index")).getStatus())
+                    .as("别人的会话不受影响").isEqualTo(200);
+            assertThat(httpLogin(v, "admin", "admin888")).as("旧密码").isNull();
+            String fresh = httpLogin(v, "admin", "n3w");
+            assertThat(fresh).isNotNull();
+            assertThat(unlock(v, fresh, "n3w")).contains("\"msg\":\"解锁成功\"");
+        }
+    }
+
+    /** 经 HTTP 登录（Ajax），成功时返回新的会话 cookie 值，失败为 null。 */
+    private static String httpLogin(Variant v, String name, String pwd) throws Exception {
+        MockHttpServletResponse r = v.mvc().perform(MockMvcRequestBuilders.post(E + "/admin/index/login")
+                .header("X-Requested-With", "XMLHttpRequest").contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                .content("admin_name=" + java.net.URLEncoder.encode(name, StandardCharsets.UTF_8) + "&admin_pwd="
+                        + java.net.URLEncoder.encode(pwd, StandardCharsets.UTF_8))).andReturn().getResponse();
+        return r.getContentAsString(StandardCharsets.UTF_8).contains("\"code\":1") ? cookie(r, null) : null;
+    }
+
+    private static MockHttpServletResponse send(Variant v, String sid, MockHttpServletRequestBuilder b) throws Exception {
+        return v.mvc().perform(b.cookie(new jakarta.servlet.http.Cookie(AdminSessions.COOKIE, sid))).andReturn().getResponse();
+    }
+
+    private static String unlock(Variant v, String sid, String password) throws Exception {
+        return send(v, sid, MockMvcRequestBuilders.post(E + "/admin/index/unlocked")
+                .header("X-Requested-With", "XMLHttpRequest").contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                .content("password=" + java.net.URLEncoder.encode(password, StandardCharsets.UTF_8)))
+                .getContentAsString(StandardCharsets.UTF_8);
+    }
+
+    /** 偶数位的十六进制字母大写（同 admin_golden.php 的 mixed_case）。 */
+    private static String mixedCase(String hex) {
+        StringBuilder sb = new StringBuilder(hex);
+        for (int i = 0; i < sb.length(); i += 2) {
+            sb.setCharAt(i, Character.toUpperCase(sb.charAt(i)));
+        }
+        return sb.toString();
     }
 
     // ------------------------------------------------------------------ ③ 回滚演练
 
     @Test
-    @Order(4)
+    @Order(5)
     void rollbackDrillRestoresEveryB12WriteWithDmlOnly() throws Exception {
         Variant v = variant(Map.of());
         resetAdmins(List.of(new AdminGolden.Row(1, "admin", md5("admin888"), "", 1, "", 0, 0, 0, 0, 0),

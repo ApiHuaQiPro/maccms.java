@@ -6,6 +6,7 @@ import java.io.UncheckedIOException;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -28,10 +29,27 @@ public final class LegacyLang {
     private static final JsonMapper JSON = JsonMapper.builder().build();
     private static final Map<String, LegacyLang> PACKS = new LinkedHashMap<>();
 
+    /** zh-cn 的值 → 键（{@link #localize}）；同一个值对应的几个键在其他包里取值不同时不收录。 */
+    private static final Map<String, String> REVERSE;
+
     static {
         for (String code : new String[] {"zh-cn", "zh-tw"}) {
             PACKS.put(code, load(code));
         }
+        Map<String, String> reverse = new LinkedHashMap<>();
+        Map<String, Boolean> ambiguous = new LinkedHashMap<>();
+        for (Map.Entry<String, String> e : PACKS.get(DEFAULT_CODE).messages.entrySet()) {
+            String first = reverse.putIfAbsent(e.getValue(), e.getKey());
+            if (first != null) {
+                for (LegacyLang pack : PACKS.values()) {
+                    if (!Objects.equals(pack.messages.get(first), pack.messages.get(e.getKey()))) {
+                        ambiguous.put(e.getValue(), true);
+                    }
+                }
+            }
+        }
+        ambiguous.keySet().forEach(reverse::remove);
+        REVERSE = Map.copyOf(reverse);
     }
 
     private final String code;
@@ -94,6 +112,24 @@ public final class LegacyLang {
     /** 是否有这个键。 */
     public boolean has(String key) {
         return messages.containsKey(asciiLower(key));
+    }
+
+    /**
+     * 把新版代码里照抄的简体原文换成本语言包的对应文字（B12 承接 D-B05-8，21 文档第 12.2 节）：前台各批次的提示（B05～B11 的跳转页、
+     * 错误页、JSON 的 {@code msg}）照抄了旧 {@code lang(键)} 在 zh-cn 包里的值；这里按"zh-cn 包里<b>整段</b>等于该值的键"反查，取本包同一键
+     * 的值。规则：
+     * <ul>
+     * <li>本包就是 zh-cn，或文本不是 zh-cn 包里任何一项的完整值（新版新增的文字、拼接出来的文字）→ 原样返回；</li>
+     * <li>zh-cn 值相同的几个键在本包里的值不同（只有"采集"一处）→ 无法确定是哪个键，原样返回；</li>
+     * <li>不做简繁自动转换。</li>
+     * </ul>
+     */
+    public String localize(String zhCnText) {
+        if (zhCnText == null || code.equals(DEFAULT_CODE)) {
+            return zhCnText;
+        }
+        String key = REVERSE.get(zhCnText);
+        return key == null ? zhCnText : messages.getOrDefault(key, zhCnText);
     }
 
     /** PHP {@code strtolower}（C 区域设置）：只改 ASCII 字母。 */

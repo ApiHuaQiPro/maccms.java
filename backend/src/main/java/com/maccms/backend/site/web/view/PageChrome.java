@@ -20,8 +20,10 @@ import java.util.Optional;
  * @param nav          页眉的顶级分类导航；错误页与维护页为空（它们不查库）
  * @param searchAction 搜索表单提交地址（旧 vod/search 基址，GET；搜索页开启时由 Java 处理，否则归 PHP）
  * @param loginUrl     登录 / 会员中心链接（旧 PHP user/login）
+ * @param variant      本次请求的手机模板与语言选择（B12 承接 D-B05-8，21 文档第 12 节）：{@code logo} 已按它选好（手机访问且配置了
+ *                     {@code site_waplogo} 时为手机 Logo）；外壳要按手机访问区分样式时用 {@code variant.wap()}
  */
 public record PageChrome(String title, String siteName, SafeUrl home, SafeUrl stylesheet, Optional<SafeUrl> logo,
                          String icp, String description, String keywords, Optional<SafeUrl> canonical, boolean noindex,
-                         List<NavLink> nav, SafeUrl searchAction, SafeUrl loginUrl) {
+                         List<NavLink> nav, SafeUrl searchAction, SafeUrl loginUrl, SiteVariant variant) {
 }

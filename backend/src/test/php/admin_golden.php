@@ -91,6 +91,16 @@ function a($id, $name, $pwdHash, array $extra = [])
         'admin_last_login_time' => 0, 'admin_last_login_ip' => 0], $extra);
 }
 
+/** 把 md5 的十六进制字母按位置交替大小写（偶数位大写），用作库里存量的混合大小写哈希。 */
+function mixed_case($hex)
+{
+    $out = '';
+    for ($i = 0; $i < strlen($hex); $i++) {
+        $out .= $i % 2 === 0 ? strtoupper($hex[$i]) : $hex[$i];
+    }
+    return $out;
+}
+
 /** 公共的几位管理员：1 超级管理员、2 编辑（有部分权限）、3 无权限、4 已停用。 */
 function base_admins()
 {
@@ -460,6 +470,35 @@ function scenarios($repo)
         req('query', 'GET', '/admin/index/unlocked', 'password=admin888'),
         req('html', 'POST', '/admin/index/unlocked', '', ['password' => 'admin889'], ['ajax' => false]),
         req('like', 'POST', '/admin/index/unlocked', '', ['password' => 'like']),
+    ]];
+    // ---------------- 库里存量的大写/混合大小写 md5（MACC-36 返工）：登录查询与登录记录按 admin_pwd 列的排序规则（utf8_general_ci，
+    // 不分大小写）比较，会话里存的是查到的那一行（原值）；解锁是 PHP 的 md5(输入) != 会话里的 admin_pwd（区分大小写）
+    $upper = strtoupper(md5('admin888'));
+    $mixed = mixed_case(md5('admin888'));
+    foreach (['upper' => $upper, 'mixed' => $mixed] as $tag => $stored) {
+        $s[] = ['label' => 'stored-case-' . $tag, 'admins' => [a(1, 'admin', $stored, ['admin_login_num' => 5,
+            'admin_login_time' => 1700000000, 'admin_login_ip' => 167772161]),
+            a(2, 'editor', strtoupper(md5('ed pass')), ['admin_auth' => ',admin/index,index/unlocked,'])],
+            'steps' => [
+                login_step('admin', 'admin888'),
+                req('next-page', 'GET', '/admin/index/welcome', '', '', ['ajax' => false]),
+                req('list', 'GET', '/admin/admin/index', '', '', ['ajax' => false]),
+                req('unlock-right', 'POST', '/admin/index/unlocked', '', ['password' => 'admin888']),
+                req('unlock-wrong', 'POST', '/admin/index/unlocked', '', ['password' => 'admin889']),
+                req('unlock-stored-hash', 'POST', '/admin/index/unlocked', '', ['password' => $stored]),
+                req('still-in', 'GET', '/admin/index/welcome', '', '', ['ajax' => false, 'body' => false]),
+                ['label' => 'db-password', 'sql' => "UPDATE mac_admin SET admin_pwd = '" . md5('changed') . "' WHERE admin_id = 1"],
+                req('after-password', 'GET', '/admin/index/welcome', '', '', ['ajax' => false]),
+                req('unlock-new', 'POST', '/admin/index/unlocked', '', ['password' => 'changed']),
+            ]];
+    }
+    // 非超级管理员（有 index/unlocked 权限）、库里是大写哈希：登录、下一页、解锁
+    $s[] = ['label' => 'stored-case-editor', 'admins' => [a(1, 'admin', md5('admin888')),
+        a(2, 'editor', strtoupper(md5('ed pass')), ['admin_auth' => ',admin/index,index/unlocked,'])], 'steps' => [
+        login_step('editor', 'ed pass'),
+        req('next-page', 'GET', '/admin/admin/index', '', '', ['ajax' => false]),
+        req('unlock-right', 'POST', '/admin/index/unlocked', '', ['password' => 'ed pass']),
+        req('unlock-wrong', 'POST', '/admin/index/unlocked', '', ['password' => 'ed pas']),
     ]];
     $s[] = ['label' => 'iframe', 'admins' => base_admins(), 'steps' => [
         login_step('admin', 'admin888'),

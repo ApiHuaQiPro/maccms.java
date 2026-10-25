@@ -101,6 +101,15 @@ public final class SiteTemplateSelection {
                 pathTemplate + adsDir + "/", Map.copyOf(s));
     }
 
+    /**
+     * 同一个地址的输出会不会随 {@code User-Agent} 不同：主站配置的 {@code mob_status} 宽松等于 1 或 2 时会（站群项里的 {@code mob_status}
+     * 不起作用——命中站群就不切手机模板）。页面响应据此加 {@code Vary: User-Agent}（旧版的页面缓存键带 {@code MAC_MOB}，All.php:27,52）。
+     */
+    public static boolean dependsOnUserAgent(PhpArray site) {
+        PhpValue status = site.get("mob_status");
+        return looseEquals(status, 1) || looseEquals(status, 2);
+    }
+
     /** PHP 8 的 {@code $v == n}（n 为整数）：数字字符串按数值，非数字字符串不等；整数、浮点按数值；布尔按真假；null 等于 0。 */
     static boolean looseEquals(PhpValue v, int n) {
         return switch (v) {

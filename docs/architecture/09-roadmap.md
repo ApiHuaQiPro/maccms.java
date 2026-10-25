@@ -146,7 +146,7 @@
 | 视频播放、下载页，`player_aaaa`，观看密码，试看（`Vod::play/player/down/downer`、`Ajax::pwd`） | B05（游客）+ B10（会员权限与扣积分） | 前端播放器资源原样复用（含 `iva` 播放器）；播放器解析接口与外部脚本（W1）、外部播放/下载地址（W2）按旧版放行，见第 4.2 节 |
 | 文章、专题、演员、角色、网址、剧情各页及 `ajax_*`、`rss`（`Art/Topic/Actor/Role/Website/Plot`） | B03 + B05 | |
 | 地图、RSS（baidu/google/so/sogou/bing/sm）、自定义标签页、帮助、公告、版权页、二维码、桌面快捷方式、联想词、`ajax/data` | B06 | 二维码在本地生成 |
-| 手机模板（`mob_status`）、语言包（`application/lang/zh-cn.php`、`zh-tw.php`） | B05、B12 | |
+| 手机模板（`mob_status`）、语言包（`application/lang/zh-cn.php`、`zh-tw.php`） | B05、B12 | B12 实现选择语义与前台接线（21 文档第 12 节）；缺失的旧手机模板内容与模板内 `{:lang()}` 对齐在 B21 |
 | 资源站对外接口 Provide（`api/controller/Provide.php`） | B06（只读）+ B11（`detail_inc_hits` 计数） | |
 | 会员注册、登录、退出、资料、头像、密保找回（`index/controller/User.php`） | B08 + B09 + B25 + B26 | 短信/邮件验证码、绑定、找回（E06/E07）在 B25；第三方登录与绑定（E10）在 B26 |
 | 会员中心：收藏、播放/下载记录、积分日志、购买观看权限、升级会员组、卡密充值、提现、推广、订单 | B10 + B24 | 本地创建订单在 B10；在线支付下单、回调与网关跳转（E04/E05/W3）在 B24 |
@@ -275,7 +275,7 @@ B02 起每个输出页面的批次（B02、B05、B06、B09～B15、B24～B26）�
 | B09 | 已验收（MACC-33，main `b5f1bbf`；`18-b09-member-account.md`；WebP 头像按 MACC-23 裁定方案 B 实施，第 14 节） | 会员账号：注册、登录、资料、找回（D2 ①②⑥） | C + K | B08 | — | 是 | 否 |
 | B10 | 已验收（MACC-34，main `3f26190`；`19-b10-member-finance.md`） | 会员权益与财务：购买权限、升级、卡密、提现、推广、订单 | C | B09 | — | 是 | 否 |
 | B11 | 已验收（MACC-35，main `4db4c6d`；`20-b11-comment-gbook-counters.md`） | 评论、留言与内容计数写入 | C | B08 | — | 是 | 否 |
-| B12 | 实施完成，待验收（MACC-36，`21-b12-admin-framework.md`；旧后台结构与静态资产原样复用，未另做视觉设计；站点繁体与手机标志的接线待与前端协调，第 12 节） | 后台框架：登录、会话、`admin_auth` 鉴权、管理员管理（D2 ⑤） | C + K | B07、B08 | — | 是 | 否 |
+| B12 | 第二轮返工完成，待验收（MACC-36，`21-b12-admin-framework.md`；旧后台结构与静态资产原样复用，未另做视觉设计，`static/admin-assets/` 由后端维护；D-B12-6 队长已接受；D-B05-8 前台接线已完成非共享部分——手机 Logo、`Vary`、`lang()` 文字，外壳/组件/`static/site/` 未改，可选的手机样式类待队长与前端另定，第 12 节） | 后台框架：登录、会话、`admin_auth` 鉴权、管理员管理（D2 ⑤） | C + K | B07、B08 | — | 是 | 否 |
 | B13 | 待建 | 后台内容管理 | C + K | B11、B12 | — | 是 | 否 |
 | B14 | 待建 | 后台会员与财务管理 | C + K | B10、B12 | — | 是 | 否 |
 | B15 | 待建 | 后台系统配置与运维（配置文件写回、模板在线编辑、本地插件） | C + K | B12、B02、B05 | — | 是（文件 + 库） | 否 |

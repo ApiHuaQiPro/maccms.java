@@ -115,13 +115,35 @@ public class AdminLoginService {
     }
 
     /**
-     * 旧 {@code Index::unlocked}（admin/controller/Index.php:180-190）：{@code md5(password) == 会话里的 admin_pwd}。新版会话里的密码哈希
-     * 在每个请求都已与库里的当前值核对过（{@link #current}），两者相同。
+     * 旧 {@code Index::unlocked}（admin/controller/Index.php:180-190）：{@code md5(password) != 会话里的 admin_pwd} 时"密码错误"。新版会话里
+     * 的密码哈希在每个请求都已与库里的当前值核对过（{@link #current}），两者相同。
+     *
+     * <p>字节语义（21 文档第 4.5 节、D-B12-18）：{@code md5(输入)} 的小写十六进制与库里的原值按 <b>ASCII 不分大小写</b>比较，与登录时
+     * MySQL 按 {@code admin_pwd} 列排序规则的比较一致——库里存量的大写或混合大小写哈希，能登录的密码也能解锁。旧版区分大小写（PHP
+     * 黄金 {@code stored-case-*}：能登录，但正确密码解锁总是"密码错误"），两个都是数字串时还按数值比较（{@code "0e…"} 魔术哈希）；新版
+     * 只认 32 位十六进制的逐字符相等（不分大小写），不做数值比较，库里的哈希原文本身也不能当密码。
      *
      * @param password 已经 filterExp 的原始字节；缺失为 null（旧版 {@code md5(null)} 即 {@code md5('')}）
      */
     public boolean unlock(String pwdAtLogin, byte[] password) {
-        return LegacyInput.md5Hex(password == null ? new byte[0] : password).equals(pwdAtLogin);
+        return sameHash(LegacyInput.md5Hex(password == null ? new byte[0] : password), pwdAtLogin);
+    }
+
+    /** {@code md5}（小写十六进制）与库里的原值是否为同一个哈希：长度 32，逐字符相等，只把 {@code A-F} 当作 {@code a-f}。 */
+    static boolean sameHash(String md5Lower, String stored) {
+        if (stored == null || stored.length() != md5Lower.length()) {
+            return false;
+        }
+        for (int i = 0; i < stored.length(); i++) {
+            char c = stored.charAt(i);
+            if (c >= 'A' && c <= 'F') {
+                c = (char) (c + 32);
+            }
+            if (c != md5Lower.charAt(i)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**

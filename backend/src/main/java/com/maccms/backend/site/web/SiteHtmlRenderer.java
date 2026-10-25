@@ -41,9 +41,19 @@ public class SiteHtmlRenderer {
     private static final Logger log = LoggerFactory.getLogger(SiteHtmlRenderer.class);
 
     private final Templates templates;
+    private final boolean varyUserAgent;
 
     public SiteHtmlRenderer(Templates templates) {
+        this(templates, false);
+    }
+
+    /**
+     * @param varyUserAgent 页面输出随 {@code User-Agent} 不同（旧配置 {@code mob_status} 为 1 或 2，{@link SiteVariants#dependsOnUserAgent}）：
+     *                      每个页面响应带 {@code Vary: User-Agent}，共享缓存不会把手机版给桌面（旧版页面缓存键带 {@code MAC_MOB}）
+     */
+    public SiteHtmlRenderer(Templates templates, boolean varyUserAgent) {
         this.templates = templates;
+        this.varyUserAgent = varyUserAgent;
     }
 
     /** 整页渲染到字符串。模板或视图模型抛出的任何运行时异常都包装为 {@link PageRenderException}。 */
@@ -115,14 +125,17 @@ public class SiteHtmlRenderer {
         return respond(status, body, CacheControl.noStore(), true, retryAfter, CONTENT_SECURITY_POLICY);
     }
 
-    private static ResponseEntity<String> respond(HttpStatus status, String body, CacheControl cache, boolean noindex,
-                                                  Duration retryAfter, String policy) {
+    private ResponseEntity<String> respond(HttpStatus status, String body, CacheControl cache, boolean noindex,
+                                           Duration retryAfter, String policy) {
         ResponseEntity.BodyBuilder b = ResponseEntity.status(status)
                 .contentType(HTML_UTF8)
                 .contentLength(body.getBytes(StandardCharsets.UTF_8).length)
                 .cacheControl(cache)
                 .header("X-Content-Type-Options", "nosniff")
                 .header("Content-Security-Policy", policy);
+        if (varyUserAgent) {
+            b.header(HttpHeaders.VARY, HttpHeaders.USER_AGENT);
+        }
         if (noindex) {
             b.header("X-Robots-Tag", "noindex");
         }

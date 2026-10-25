@@ -165,7 +165,7 @@ final class SiteMemberFinance {
         if (ajax) {
             return json(reply);
         }
-        UserJumpPage page = new UserJumpPage(pages.member(reply.ok() ? "操作成功" : "操作失败"), reply.ok(), reply.msg(),
+        UserJumpPage page = new UserJumpPage(pages.member(reply.ok() ? "操作成功" : "操作失败"), reply.ok(), SiteVariants.text(reply.msg()),
                 back);
         ResponseEntity<String> r = renderer.memberPlain(HttpStatus.OK, t -> t.sitePagesUserJump(page));
         return withCookies(ResponseEntity.status(r.getStatusCode()).headers(r.getHeaders()), reply.setCookies())
@@ -629,7 +629,7 @@ final class SiteMemberFinance {
             body.put("wait", 3);
             return SiteUserController.jsonBody(body, List.of());
         }
-        UserJumpPage page = new UserJumpPage(pages.member("操作失败"), false, msg, Optional.of(back));
+        UserJumpPage page = new UserJumpPage(pages.member("操作失败"), false, SiteVariants.text(msg), Optional.of(back));
         return renderer.memberPlain(HttpStatus.OK, t -> t.sitePagesUserJump(page));
     }
 

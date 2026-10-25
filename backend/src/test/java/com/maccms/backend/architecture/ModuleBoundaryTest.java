@@ -42,6 +42,8 @@ class ModuleBoundaryTest {
      * 与 PHP 兼容的 cookie 读写 {@code PhpCookies}（均为纯内存计算，不读文件、不发网络请求）。
      * B09（MACC-33）加入按字节解析查询串与表单的 {@code PhpInput}（纯计算）与客户端 IP 的唯一来源 {@code ClientIpResolver}
      * （登录 IP、注册 IP 限额，D2 ④；只读请求对端与已登记的转发头）。
+     * B12（MACC-36，承接 D-B05-8）加入旧语言包 {@code LegacyLang}（jar 内资源，纯内存查找）：前台按 {@code app.lang} 输出旧版
+     * {@code lang()} 的文字。
      */
     private static final Set<String> SITE_COMMON = Set.of(
             "common.web.PageResponse", "common.web.ApiException", "common.web.ErrorCode", "common.web.SafeExceptionLog",
@@ -49,7 +51,7 @@ class ModuleBoundaryTest {
             "common.web.LegacyJson", "common.clientip.IpAddress",
             "common.session.SessionStore", "common.session.SessionState", "common.captcha.Captchas",
             "common.captcha.CaptchaSettings", "common.web.PhpCookies", "common.web.PhpInput",
-            "common.clientip.ClientIpResolver");
+            "common.clientip.ClientIpResolver", "common.lang.LegacyLang");
 
     /**
      * site 可用的 legacyconfig 类型（B02，MACC-26）：经 {@code LegacyConfigService} 读取 {@code extra/maccms.php} 并按字段并入站点设置。

@@ -3,6 +3,7 @@ package com.maccms.backend.site.config;
 import com.maccms.backend.common.browser.BrowserExternalAccess;
 import com.maccms.backend.common.browser.BrowserExternalConfiguration;
 import com.maccms.backend.common.captcha.CaptchaSettings;
+import com.maccms.backend.common.lang.LegacyLang;
 import com.maccms.backend.common.session.SessionStore;
 import com.maccms.backend.legacyconfig.application.LegacyConfigConfiguration;
 import com.maccms.backend.legacyconfig.application.LegacyConfigException;
@@ -10,6 +11,7 @@ import com.maccms.backend.legacyconfig.application.LegacyConfigFile;
 import com.maccms.backend.legacyconfig.application.LegacyConfigService;
 import com.maccms.backend.legacyconfig.application.view.PhpArray;
 import com.maccms.backend.legacyconfig.application.view.PhpValue;
+import com.maccms.backend.legacyconfig.application.view.PhpValues;
 import com.maccms.backend.member.application.MemberRecordService;
 import com.maccms.backend.member.application.MemberSessionService;
 import com.maccms.backend.site.application.BrowserAddress;
@@ -37,6 +39,7 @@ import com.maccms.backend.site.web.SiteSessions;
 import com.maccms.backend.site.web.SiteMemberCacheFilter;
 import com.maccms.backend.site.web.SiteMemberInterceptor;
 import com.maccms.backend.site.web.SiteStatusInterceptor;
+import com.maccms.backend.site.web.SiteVariants;
 import com.maccms.backend.site.web.jte.StaticTemplates;
 import java.security.SecureRandom;
 import java.time.Clock;
@@ -53,6 +56,8 @@ import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.core.Ordered;
+import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -129,8 +134,49 @@ public class SiteConfiguration {
     }
 
     @Bean
-    SitePages sitePages(SiteSettings settings, LegacyUrlBuilder urls, BrowserExternalAccess external) {
-        return new SitePages(settings, urls, external.w2());
+    SitePages sitePages(SiteSettings settings, LegacyUrlBuilder urls, BrowserExternalAccess external,
+                        SiteVariants variants) {
+        return new SitePages(settings, urls, external.w2(), variants);
+    }
+
+    /**
+     * 手机模板与语言选择（B12 承接 B05 D-B05-8，21 文档第 12 节）：配置了旧配置目录时启动时读一次 {@code extra/maccms.php} 与
+     * {@code extra/domain.php}（没有这个文件时按没有站群）；读取失败或取值不受支持时启动失败，信息不含文件内容。未配置时一律桌面、简体。
+     */
+    @Bean
+    SiteVariants siteVariants(LegacyConfigService legacy) {
+        if (!legacy.isConfigured()) {
+            return SiteVariants.none();
+        }
+        PhpArray maccms;
+        PhpArray domains = null;
+        try {
+            maccms = legacy.read(LegacyConfigFile.MACCMS);
+        } catch (LegacyConfigException e) {
+            throw new IllegalStateException("site 已启用但旧配置 extra/maccms.php 读取失败：" + e.getMessage(), null);
+        }
+        try {
+            domains = legacy.read(LegacyConfigFile.DOMAIN);
+        } catch (LegacyConfigException e) {
+            if (e.reason() != LegacyConfigException.Reason.NOT_FOUND) {
+                throw new IllegalStateException("site 已启用但旧配置 extra/domain.php 读取失败：" + e.getMessage(), null);
+            }
+        }
+        SiteVariants variants = SiteVariants.from(maccms, domains);
+        if (LegacyLang.select(PhpValues.text(maccms.path("app", "lang"))).fallback()) {
+            // D-B12-L1：旧版此时页面显示键名本身；新版回退简体（不记录取值）
+            log.warn("legacy app.lang is not a bundled language pack (zh-cn, zh-tw); falling back to zh-cn");
+        }
+        return variants;
+    }
+
+    /** 每个请求开始时算出手机模板与语言选择（{@link SiteVariants#filter()}），先于其他过滤器与全部处理器。 */
+    @Bean
+    FilterRegistrationBean<OncePerRequestFilter> siteVariantFilter(SiteVariants variants) {
+        FilterRegistrationBean<OncePerRequestFilter> bean = new FilterRegistrationBean<>(variants.filter());
+        bean.addUrlPatterns("/*");
+        bean.setOrder(Ordered.HIGHEST_PRECEDENCE + 10);
+        return bean;
     }
 
     /**
@@ -283,8 +329,8 @@ public class SiteConfiguration {
     }
 
     @Bean
-    SiteHtmlRenderer siteHtmlRenderer() {
-        return new SiteHtmlRenderer(new StaticTemplates());
+    SiteHtmlRenderer siteHtmlRenderer(SiteVariants variants) {
+        return new SiteHtmlRenderer(new StaticTemplates(), variants.dependsOnUserAgent());
     }
 
     /**
