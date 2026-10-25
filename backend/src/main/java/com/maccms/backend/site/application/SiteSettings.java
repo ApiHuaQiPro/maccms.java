@@ -11,7 +11,8 @@ import java.util.Optional;
  * 不合法时抛 {@link IllegalStateException}，信息只列出配置项名称与规则，不回显取值。
  */
 public record SiteSettings(String name, SafeUrl baseUrl, SafeUrl homePath, String keywords, String description,
-                           String icp, Optional<SafeUrl> logo, boolean closed, String closedMessage) {
+                           String icp, Optional<SafeUrl> logo, boolean closed, String closedMessage,
+                           boolean hitCounter) {
 
     public static final String DEFAULT_CLOSED_MESSAGE = "站点维护中，请稍后访问。";
 
@@ -59,15 +60,18 @@ public record SiteSettings(String name, SafeUrl baseUrl, SafeUrl homePath, Strin
         if (!isFalseOrUnset(p.canonicalRedirect())) {
             errors.add("maccms.site.canonical-redirect（canonical 301 尚未批准，只能为 false）");
         }
-        if (!isFalseOrUnset(p.hitCounterEnabled())) {
-            errors.add("maccms.site.hit-counter-enabled（点击计数尚未决定，只能为 false）");
+        // 点击计数（03 方案第 6.3 节：受开关控制，本地与测试默认关闭）：B11 起由新版自己写入（20 文档第 8 节），可以打开
+        boolean hitCounter = trim(p.hitCounterEnabled()).equalsIgnoreCase("true");
+        if (!hitCounter && !isFalseOrUnset(p.hitCounterEnabled())) {
+            errors.add("maccms.site.hit-counter-enabled（true 或 false）");
         }
 
         if (!errors.isEmpty()) {
             throw new IllegalStateException("site 已启用但站点配置缺失或不合法：" + String.join("；", errors));
         }
         SafeUrl home = new SafeUrl(URI.create(baseUrl.href()).getRawPath());
-        return new SiteSettings(name, baseUrl, home, keywords, description, icp, logo, closed, closedMessage);
+        return new SiteSettings(name, baseUrl, home, keywords, description, icp, logo, closed, closedMessage,
+                hitCounter);
     }
 
     /**

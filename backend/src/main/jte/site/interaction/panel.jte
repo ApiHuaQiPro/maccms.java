@@ -2,7 +2,9 @@
 @import com.maccms.backend.site.web.view.InteractionPanel
 @param InteractionPanel panel
 <section class="interaction-panel" aria-label="互动">
-  <img class="interaction-panel__beacon" src="${panel.hitsBeacon().href()}" alt="计数" width="1" height="1" hidden>
+  @if(panel.hitsBeacon().isPresent())
+  <img class="interaction-panel__beacon" src="${panel.hitsBeacon().get().href()}" alt="计数" width="1" height="1" hidden>
+  @endif
   <div class="interaction-panel__digg">
     @template.site.interaction.inlineForm(form = panel.upForm(), extraClass = "interaction-form--up")
     @template.site.interaction.inlineForm(form = panel.downForm(), extraClass = "interaction-form--down")

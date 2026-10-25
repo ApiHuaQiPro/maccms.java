@@ -21,7 +21,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @param status            open / closed，留空按 open（旧 site_status，:40）
  * @param closedMessage     维护页文案，按文本转义输出（旧 site_close_tip，:41）
  * @param canonicalRedirect canonical 301，D4 未批准，只接受 false
- * @param hitCounterEnabled 点击计数，D5 未决定，只接受 false
+ * @param hitCounterEnabled 点击计数（ajax/hits 隐藏图片请求，B11 起可打开）：true 或 false，默认关闭（03 方案第 6.3 节）
  */
 @ConfigurationProperties(prefix = "maccms.site")
 public record SiteProperties(String enabled, String name, String baseUrl, String keywords, String description,

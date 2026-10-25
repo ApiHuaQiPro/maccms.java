@@ -218,7 +218,9 @@ WHERE vod_id = ?
 | 列表片段 `comment/ajax`、`gbook/ajax` | `ajax/comment.jte`、`ajax/gbook.jte` | 无外壳的列表 |
 | 验证码页 | `pages/verify.jte` | 验证码图、输入框、提交到 `ajax/verify_check` |
 | 会员中心 `user/comment`、`user/gbook` | `pages/userList.jte`（B10 的列表页） | 本人的评论、留言；会员中心导航加"我的评论""我的留言" |
-| 内容详情页（视频与文章、专题、演员、角色、网址） | `interaction/panel.jte`，经 `ContentForms.interaction` 放进 `pages/detail.jte`、`pages/libraryDetail.jte` | 互动区：点击计数（1×1 隐藏图片请求 `ajax/hits?type=update`）、顶、踩、1～10 分评分表单、"查看与发表评论"链接 |
+| 内容详情页（视频与文章、专题、演员、角色、网址） | `interaction/panel.jte`，经 `ContentForms.interaction` 放进 `pages/detail.jte`、`pages/libraryDetail.jte` | 互动区：点击计数（1×1 隐藏图片请求 `ajax/hits?type=update`，只在 `maccms.site.hit-counter-enabled=true` 时输出）、顶、踩、1～10 分评分表单、"查看与发表评论"链接 |
+
+**点击计数开关**：`maccms.site.hit-counter-enabled`（环境变量 `MACCMS_SITE_HIT_COUNTER_ENABLED`）。03 方案第 6.3 节要求点击计数受开关控制，本地与测试默认关闭；此前它只接受 `false`，B11 起可以设为 `true`，取值只认 true/false。关闭时详情页不输出计数图片，`ajax/hits` 接口本身照常可用。**上线切换时需要设为 `true`**，否则新版详情页不计点击（旧版一律计数）。
 
 **共享文件**：只改了 `pages/detail.jte` 与 `pages/libraryDetail.jte`，各加一行引用互动区；会员中心导航（`SiteUserController`）加两个链接。没有改 `site.css`、tokens、布局和组件。新模板的类名（`interaction-*`）没有对应的样式规则，按浏览器默认样式显示。需要样式时另行安排，见第 12 节。
 
@@ -309,7 +311,7 @@ WHERE vod_id = ?
 ### 12. 风险与待确认
 
 1. **前台归属**：B11 也按"只有 C、沿用极简样式"执行，需要队长确认。互动区和评论、留言页的新类名目前没有样式规则；需要的话，在 `site.css` 里只加最少的规则，可以放在本批，也可以另开任务。
-2. **点击计数用隐藏图片请求**：没有脚本时只能这样。预取、爬虫、不加载图片的客户端会多计或少计；旧版靠模板里的 JS ajax，同样可以被绕过。
+2. **点击计数用隐藏图片请求**：页面不带脚本时只能这样。预取、抓取图片的爬虫、不加载图片的客户端会多计或少计；旧版靠模板里的 JS ajax，同样可以被绕过。计数默认关闭，上线时要打开开关（第 8 节）。
 3. **深页码**：评论列表允许页码到 100000，在 MyISAM 上是大偏移扫描。旧版不限页码，新版已收紧，但没有改成游标分页。
 4. **MyISAM 表锁**：计数 UPDATE 与长查询互相阻塞（MACC-19 已测到），本批没有解决，属于部署与容量的事项。
 5. **黄金体积**：两份 HTTP 黄金各约 5 MB，主要是每个用例记录的 6 张内容表计数列。可读性与完整性优先，没有裁剪。

@@ -382,6 +382,15 @@ class SiteContentPagesMvcTest {
                 .containsExactly("/index.php/vod/detail/id/10.html");
         assertThat(html).doesNotContain("#ff0000").doesNotContain("播放");
         verify(content).listVideos(new VideoListQuery(6, VideoSort.TIME, true, 1, 7));
+        // B11 互动区（20 文档第 8 节）：顶、踩、评分是 POST 表单，评论是链接；点击计数开关默认关闭，不输出计数图片
+        Element panel = doc.selectFirst("section.interaction-panel");
+        assertThat(panel.select("form[method=post][action=/index.php/ajax/digg.html]")).hasSize(2);
+        assertThat(panel.select("form[method=post][action=/index.php/ajax/score.html] select[name=score] option"))
+                .hasSize(10);
+        assertThat(panel.select("input[type=hidden][name=id]").eachAttr("value")).containsOnly("9");
+        assertThat(panel.select("a").eachAttr("href")).containsExactly("/index.php/comment/index/mid/1/rid/9.html");
+        assertThat(panel.select("img")).isEmpty();
+        assertThat(html).doesNotContain("ajax/hits");
     }
 
     @Test

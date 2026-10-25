@@ -26,13 +26,16 @@ final class ContentForms {
     }
 
     /**
-     * 内容详情页的互动区（B11，20 文档第 8 节）：点击计数（{@code ajax/hits?type=update}，页内不显示的图片请求）、顶与踩（{@code ajax/digg}）、
+     * 内容详情页的互动区（B11，20 文档第 8 节）：点击计数（{@code ajax/hits?type=update}，页内不显示的图片请求；只在
+     * {@code maccms.site.hit-counter-enabled=true} 时输出）、顶与踩（{@code ajax/digg}）、
      * 评分（{@code ajax/score}，1～10 分）与评论页链接（{@code comment/index}）。
      */
     static InteractionPanel interaction(SiteSettings site, LegacyUrlBuilder urls, int mid, long id) {
         String m = Integer.toString(mid);
         String i = Long.toString(id);
-        SafeUrl hits = site.publicPath(urls.action("ajax/hits", Map.of("mid", m, "id", i, "type", "update")));
+        Optional<SafeUrl> hits = site.hitCounter()
+                ? Optional.of(site.publicPath(urls.action("ajax/hits", Map.of("mid", m, "id", i, "type", "update"))))
+                : Optional.empty();
         SafeUrl digg = site.publicPath(urls.action("ajax/digg", Map.of()));
         InlineForm up = new InlineForm(digg, List.of(new HiddenField("mid", m), new HiddenField("id", i),
                 new HiddenField("type", "up")), "顶");
