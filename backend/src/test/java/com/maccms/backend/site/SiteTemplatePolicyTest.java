@@ -101,15 +101,7 @@ class SiteTemplatePolicyTest {
             Map.entry("site/pages/userInfo.jte", Set.of("script")),
             Map.entry("site/pages/userPortrait.jte", Set.of("script")),
             Map.entry("site/pages/userFindpass.jte", Set.of("script")),
-            Map.entry("site/pages/userFindpassMsg.jte", Set.of("script")),
-            // B10（MACC-34，19 文档第 8 节）：会员权益与财务页面同样只在末尾引用 member/script.jte
-            Map.entry("site/pages/userList.jte", Set.of("script")),
-            Map.entry("site/pages/userBuy.jte", Set.of("script")),
-            Map.entry("site/pages/userPay.jte", Set.of("script")),
-            Map.entry("site/pages/userUpgrade.jte", Set.of("script")),
-            Map.entry("site/pages/userPopedom.jte", Set.of("script")),
-            Map.entry("site/pages/userCash.jte", Set.of("script")),
-            Map.entry("site/pages/userOrder.jte", Set.of("script")));
+            Map.entry("site/pages/userFindpassMsg.jte", Set.of("script")));
 
     private static TemplateEngine engine(Path sourceDir, String classDir) {
         return engine(sourceDir, classDir, Set.of());

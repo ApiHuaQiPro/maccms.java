@@ -138,32 +138,6 @@ class ReadOnlyGuardrailsTest {
     }
 
     /**
-     * B10（19 文档第 6 节）：财务读取与内容查价只读需要的列——不读会员密码与登录随机串、播放/下载地址、访问密码与内容正文；卡密只作
-     * {@code WHERE card_pwd = #{cardPwd}} 的比较，从不作查询列（卡密列表也只给卡号）。
-     */
-    @Test
-    void financeAndLookupMappersNeverSelectSecrets() throws IOException {
-        Pattern secret = Pattern.compile("\\b(user_pwd|user_random|user_openid_\\w+|user_question|user_answer|"
-                + "vod_play_\\w+|vod_down_\\w+|vod_pwd\\w*|art_pwd\\w*|vod_content|art_content|vod_plot\\w*)\\b");
-        for (String file : List.of("member/MemberFinanceMapper.xml", "content/ContentLookupMapper.xml")) {
-            String sql = sqlOnly(MAPPERS.resolve(file));
-            assertThat(sql).as(file).doesNotContain("SELECT *", ".*");
-            Matcher m = secret.matcher(sql);
-            assertThat(m.find()).as(file + " 不应读取" + (m.hitEnd() ? "" : "：" + m.group())).isFalse();
-        }
-        String finance = sqlOnly(MAPPERS.resolve("member/MemberFinanceMapper.xml"));
-        Matcher pwd = Pattern.compile("\\bcard_pwd\\b").matcher(finance);
-        int uses = 0;
-        while (pwd.find()) {
-            uses++;
-            assertThat(finance.substring(pwd.start())).as("卡密只作比较条件").startsWith("card_pwd = #{cardPwd}");
-            String before = finance.substring(0, pwd.start());
-            assertThat(before.lastIndexOf("WHERE")).as("卡密只出现在 WHERE 之后").isGreaterThan(before.lastIndexOf("SELECT"));
-        }
-        assertThat(uses).isEqualTo(1);
-    }
-
-    /**
      * B06 旧协议整行读取（LegacyRowMapper.xml，16 文档第 3.5、3.6 节）：访问密码列只能以 {@code CHAR_LENGTH(...) > 0} 的布尔结果出现
      * （不读出密码值）；其余整行列是旧协议输出的一部分，按 install.sql 列出。
      */

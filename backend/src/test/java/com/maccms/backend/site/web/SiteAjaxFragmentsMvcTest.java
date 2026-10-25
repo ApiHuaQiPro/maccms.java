@@ -2,7 +2,6 @@ package com.maccms.backend.site.web;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -63,7 +62,7 @@ class SiteAjaxFragmentsMvcTest {
         when(content.listCategories()).thenReturn(SiteContentFixtures.categories());
         when(articles.listCategories()).thenReturn(LibraryPageFixtures.artTypes());
         when(content.getVideo(9)).thenReturn(SiteContentFixtures.normalDetail());
-        when(articles.getArticle(eq(55L), anyInt(), any())).thenReturn(LibraryPageFixtures.article(55, 3));
+        when(articles.getArticle(eq(55L), any())).thenReturn(LibraryPageFixtures.article(55, 3));
         when(topics.getTopic(7)).thenReturn(LibraryPageFixtures.topic(7));
         when(content.listVideos(any())).thenReturn(SiteContentFixtures.page(java.util.List.of(), 1, 20, 0));
     }
@@ -94,7 +93,7 @@ class SiteAjaxFragmentsMvcTest {
 
     @Test
     void restrictedContentHasTheSameStatusAsTheDetailPageWithoutAForm() throws Exception {
-        when(articles.getArticle(eq(60L), anyInt(), any())).thenThrow(new ApiException(ErrorCode.ARTICLE_PASSWORD_REQUIRED, "x"));
+        when(articles.getArticle(eq(60L), any())).thenThrow(new ApiException(ErrorCode.ARTICLE_PASSWORD_REQUIRED, "x"));
         assertThat(fetch("/index.php/art/ajax_detail/id/60.html").getResponse().getStatus()).isEqualTo(404);
         when(content.getVideo(10)).thenThrow(new ApiException(ErrorCode.VIDEO_NOT_FOUND, "x"));
         assertThat(fetch("/index.php/vod/ajax_detail/id/10.html").getResponse().getStatus()).isEqualTo(404);

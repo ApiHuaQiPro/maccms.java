@@ -3,7 +3,6 @@ package com.maccms.backend.site.web;
 import com.maccms.backend.common.web.ApiException;
 import com.maccms.backend.common.web.ErrorCode;
 import com.maccms.backend.content.application.ContentReadService;
-import com.maccms.backend.content.application.ContentViewer;
 import com.maccms.backend.content.application.LegacyMultiValue;
 import com.maccms.backend.content.application.PasswordProof;
 import com.maccms.backend.content.application.PlaybackEntry;
@@ -24,8 +23,6 @@ import com.maccms.backend.site.application.SafeUrl;
 import com.maccms.backend.site.application.SiteRoute;
 import com.maccms.backend.site.application.SiteSettings;
 import com.maccms.backend.site.web.view.AccessNoticePage;
-import com.maccms.backend.site.web.view.BuyConfirmPage;
-import com.maccms.backend.site.web.view.ContentForm;
 import com.maccms.backend.site.web.view.DownPage;
 import com.maccms.backend.site.web.view.DownerPage;
 import com.maccms.backend.site.web.view.EpisodeLink;
@@ -37,7 +34,6 @@ import com.maccms.backend.site.web.view.PlayPage;
 import com.maccms.backend.site.web.view.PlaySourceView;
 import com.maccms.backend.site.web.view.PlayerFrame;
 import com.maccms.backend.site.web.view.PlayerFramePage;
-import com.maccms.backend.site.web.view.TrialOffer;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -68,8 +64,6 @@ public class PlaybackPages {
     static final String COPYRIGHT = "该视频由于版权限制，暂不提供播放。";
     static final String PASSWORD_ONLINE = "请输入访问密码。";
     static final String PASSWORD_OFFLINE = "该内容需要访问密码，本站暂不支持在线验证。";
-    /** 旧 lang('controller/charge_data')（Base.php:174-176，下载、组 1、积分 &gt; 0）。 */
-    static final String CHARGE_DATA = "此页面为收费数据，请先登录后访问！";
 
     /** 旧 player.js 会以 document.write 写出 static/player/&lt;来源&gt;.js，来源编码须是安全的文件名。 */
     private static final Pattern PLAYER_CODE = Pattern.compile("[A-Za-z0-9_-]{1,32}");
@@ -115,19 +109,12 @@ public class PlaybackPages {
     // ------------------------------------------------------------------ vod/play
 
     public Result play(SiteRoute.Legacy route) {
-        return play(route, ContentMember.GUEST);
-    }
-
-    /**
-     * @param member 本请求的会员（B10）：需要积分时给已登录会员购买确认表单，试看时给购买入口，放行或试看时记一笔播放记录
-     */
-    Result play(SiteRoute.Legacy route, ContentMember member) {
         requireAvailable();
-        VideoPlaybackResult r = playback.access(route.id(), route.sid(), route.nid(), PlaybackEntry.PLAY_PAGE, null);
+        VideoPlaybackResult r = playback.access(route.id(), PlaybackEntry.PLAY_PAGE, null);
         List<CategoryDto> roots = content.listCategories().items();
         return switch (r.outcome()) {
             case NO_PERMISSION -> notice(r, roots, "无法观看", NO_PLAY_PERMISSION);
-            case POINTS_REQUIRED -> confirm(r, roots, route, false, member);
+            case POINTS_REQUIRED -> notice(r, roots, "需要积分", PLAY_POINTS);
             case COPYRIGHT_RESTRICTED -> notice(r, roots, "版权限制", COPYRIGHT);
             case PASSWORD_REQUIRED -> throw new IllegalStateException("播放页不检查密码");
             case ALLOWED, TRIAL -> {
@@ -145,9 +132,6 @@ public class PlaybackPages {
                         r.id(), source.sid(), source.episodes().get(index + 1).nid())) : Optional.empty();
                 String current = sourceLabel(source) + " · " + text(episode.name());
                 String title = name + " " + text(episode.name());
-                member.recordView(4, r.id(), route.sid(), route.nid());
-                Optional<TrialOffer> offer = r.outcome() == PlaybackOutcome.TRIAL && member.loggedIn()
-                        ? Optional.of(trialOffer(r, route, member.points())) : Optional.empty();
                 yield new Page(HttpStatus.OK, new PlayPage(
                         pages.content(title + " - " + site.name(), "", "",
                                 site.canonical(urls.legacy(SiteRoute.Legacy.episode(LegacyPage.VOD_PLAY, r.id(),
@@ -155,7 +139,7 @@ public class PlaybackPages {
                         crumbs, name, current, sourceViews(sources, LegacyPage.VOD_PLAY, r.id(), route.sid(),
                         route.nid(), false), previous, next,
                         link(LegacyPage.VOD_PLAYER, r.id(), route.sid(), route.nid()), name + " 播放器",
-                        site.publicPath(urls.vodDetail(r.id())), r.outcome() == PlaybackOutcome.TRIAL, offer));
+                        site.publicPath(urls.vodDetail(r.id())), r.outcome() == PlaybackOutcome.TRIAL));
             }
         };
     }
@@ -167,13 +151,8 @@ public class PlaybackPages {
      * @param error 密码页的错误提示（POST 失败时），可为空串
      */
     public Result player(SiteRoute.Legacy route, PasswordProof proof, String error) {
-        return player(route, proof, error, ContentMember.GUEST);
-    }
-
-    /** @param member 本请求的会员（B10）：试看结束时给已登录会员旧版 5001/5002 的提示 */
-    Result player(SiteRoute.Legacy route, PasswordProof proof, String error, ContentMember member) {
         requireAvailable();
-        VideoPlaybackResult r = playback.access(route.id(), route.sid(), route.nid(), PlaybackEntry.PLAYER, proof);
+        VideoPlaybackResult r = playback.access(route.id(), PlaybackEntry.PLAYER, proof);
         PlayerFrame frame = new PlayerFrame(text(r.name()) + " - " + site.name(), stylesheet());
         return switch (r.outcome()) {
             case NO_PERMISSION -> frameNotice(frame, HttpStatus.FORBIDDEN, "无法观看",
@@ -186,13 +165,11 @@ public class PlaybackPages {
                     new FramePasswordPage(frame, "需要播放密码", passwordsOnline ? PASSWORD_ONLINE : PASSWORD_OFFLINE,
                             passwordsOnline ? Optional.of(link(LegacyPage.VOD_PLAYER, r.id(), route.sid(), route.nid()))
                                     : Optional.empty(), error), strictFramePolicy());
-            case ALLOWED, TRIAL -> playerFrame(route, r, frame, r.outcome() == PlaybackOutcome.TRIAL && member.loggedIn()
-                    ? trialOffer(r, route, member.points()).message() : "");
+            case ALLOWED, TRIAL -> playerFrame(route, r, frame);
         };
     }
 
-    private Result playerFrame(SiteRoute.Legacy route, VideoPlaybackResult r, PlayerFrame frame,
-                               String trialEndMessage) {
+    private Result playerFrame(SiteRoute.Legacy route, VideoPlaybackResult r, PlayerFrame frame) {
         List<LegacyMultiValue.PlaySource> sources = sources(r, false);
         LegacyMultiValue.PlaySource source = source(sources, route.sid());
         LegacyMultiValue.PlayEpisode episode = episode(source, route.nid());
@@ -268,23 +245,18 @@ public class PlaybackPages {
         Optional<SafeUrl> trialScript = trial > 0 ? Optional.of(site.publicPath(SitePages.TRIAL_SCRIPT_PATH))
                 : Optional.empty();
         return new Frame(ok, new PlayerFramePage(frame, policy.nonce(), PhpJson.encode(data), trial, scripts,
-                trialScript, trial > 0 ? trialEndMessage : ""), policy.header());
+                trialScript), policy.header());
     }
 
     // ------------------------------------------------------------------ vod/down、vod/downer
 
     public Result down(SiteRoute.Legacy route) {
-        return down(route, ContentMember.GUEST);
-    }
-
-    /** @param member 本请求的会员（B10）：需要积分时给购买确认，放行时记一笔下载记录 */
-    Result down(SiteRoute.Legacy route, ContentMember member) {
         requireAvailable();
-        VideoPlaybackResult r = playback.access(route.id(), route.sid(), route.nid(), PlaybackEntry.DOWN_PAGE, null);
+        VideoPlaybackResult r = playback.access(route.id(), PlaybackEntry.DOWN_PAGE, null);
         List<CategoryDto> roots = content.listCategories().items();
         return switch (r.outcome()) {
             case NO_PERMISSION -> notice(r, roots, "无法下载", NO_DOWN_PERMISSION);
-            case POINTS_REQUIRED -> confirm(r, roots, route, true, member);
+            case POINTS_REQUIRED -> notice(r, roots, "需要积分", DOWN_POINTS);
             case COPYRIGHT_RESTRICTED, PASSWORD_REQUIRED, TRIAL -> throw new IllegalStateException("下载页的判定只有权限与积分");
             case ALLOWED -> {
                 List<LegacyMultiValue.PlaySource> sources = sources(r, true);
@@ -292,7 +264,6 @@ public class PlaybackPages {
                 String name = text(r.name());
                 List<NavLink> crumbs = breadcrumb(r, roots);
                 crumbs.add(new NavLink("下载", link(LegacyPage.VOD_DOWN, r.id(), route.sid(), route.nid()), true));
-                member.recordView(5, r.id(), route.sid(), route.nid());
                 yield new Page(HttpStatus.OK, new DownPage(
                         pages.content(name + " 下载 - " + site.name(), "", "",
                                 site.canonical(urls.legacy(SiteRoute.Legacy.episode(LegacyPage.VOD_DOWN, r.id(),
@@ -304,17 +275,12 @@ public class PlaybackPages {
     }
 
     public Result downer(SiteRoute.Legacy route, PasswordProof proof, String error) {
-        return downer(route, proof, error, ContentMember.GUEST);
-    }
-
-    /** @param member 本请求的会员（B10）：需要积分时给购买确认 */
-    Result downer(SiteRoute.Legacy route, PasswordProof proof, String error, ContentMember member) {
         requireAvailable();
-        VideoPlaybackResult r = playback.access(route.id(), route.sid(), route.nid(), PlaybackEntry.DOWNER, proof);
+        VideoPlaybackResult r = playback.access(route.id(), PlaybackEntry.DOWNER, proof);
         List<CategoryDto> roots = content.listCategories().items();
         return switch (r.outcome()) {
             case NO_PERMISSION -> notice(r, roots, "无法下载", NO_DOWN_PERMISSION);
-            case POINTS_REQUIRED -> confirm(r, roots, route, true, member);
+            case POINTS_REQUIRED -> notice(r, roots, "需要积分", DOWN_POINTS);
             case COPYRIGHT_RESTRICTED, TRIAL -> throw new IllegalStateException("下载地址页没有版权与试看判定");
             case PASSWORD_REQUIRED -> new Page(HttpStatus.FORBIDDEN, new PasswordPage(
                     pages.content("需要下载密码 - " + site.name(), "", "",
@@ -447,46 +413,6 @@ public class PlaybackPages {
                 pages.content(heading + " - " + site.name(), "", "", site.canonical(urls.vodDetail(r.id())),
                         contentPages.nav(roots, rootOf(roots, r))),
                 heading, message, Optional.of(site.publicPath(urls.vodDetail(r.id())))));
-    }
-
-    /**
-     * 收费数据的购买确认（B10，旧 vod/confirm 与 3003/4003/4001，19 文档第 5.2 节）：403、严格策略。下载且组 1 时旧版直接要求登录
-     * （4001，不能购买）；其余为"需要支付【N】积分，确认支付吗？"，已登录会员带购买表单，游客带登录链接。
-     */
-    private Result confirm(VideoPlaybackResult r, List<CategoryDto> roots, SiteRoute.Legacy route, boolean down,
-                           ContentMember member) {
-        Optional<ContentForm> form = Optional.empty();
-        String message;
-        if (down && ContentViewer.groupId() == 1) {
-            message = CHARGE_DATA;
-        } else {
-            message = (down ? "下载此数据，需要支付【" : "观看此数据，需要支付【") + r.points() + "】积分，确认支付吗？";
-            if (member.loggedIn()) {
-                form = Optional.of(buyForm(r.id(), route.sid(), route.nid(), down ? 5 : 4));
-            }
-        }
-        Optional<SafeUrl> login = member.loggedIn() ? Optional.empty() : Optional.of(site.publicPath(urls.user("login")));
-        return new Page(HttpStatus.FORBIDDEN, new BuyConfirmPage(
-                pages.content("需要积分 - " + site.name(), "", "", site.canonical(urls.vodDetail(r.id())),
-                        contentPages.nav(roots, rootOf(roots, r))),
-                "需要积分", message, form, login, Optional.of(site.publicPath(urls.vodDetail(r.id())))));
-    }
-
-    /**
-     * 试看页给已登录会员的购买入口（旧 Base.php:206-217 的 5001/5002，19 文档第 5.3 节）：积分足够时是购买表单，不够时是充值页链接。
-     */
-    private TrialOffer trialOffer(VideoPlaybackResult r, SiteRoute.Legacy route, long have) {
-        if (r.points() <= have) {
-            return new TrialOffer("试看结束,是否支付[" + r.points() + "]积分观看完整数据？您还剩下[" + have + "]积分，请先充值！",
-                    Optional.of(buyForm(r.id(), route.sid(), route.nid(), 4)), Optional.empty());
-        }
-        return new TrialOffer("对不起,观看此页面数据需要[" + r.points() + "]积分，您还剩下[" + have + "]积分，请先充值！",
-                Optional.empty(), Optional.of(site.publicPath(urls.user("buy"))));
-    }
-
-    /** 提交到 {@code user/ajax_buy_popedom} 的普通表单（非 ajax，结果是提示页）。 */
-    private ContentForm buyForm(long id, int sid, int nid, int type) {
-        return ContentForms.buy(site, urls, 1, id, sid, nid, type);
     }
 
     private static Result frameNotice(PlayerFrame frame, HttpStatus status, String heading,

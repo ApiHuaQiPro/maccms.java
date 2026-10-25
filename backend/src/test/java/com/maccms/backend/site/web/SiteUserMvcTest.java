@@ -158,13 +158,11 @@ class SiteUserMvcTest {
         assertThat(mvc.perform(get("/index.php/user/regcheck.html?t=user_name&str=x")
                 .header("X-Requested-With", "XMLHttpRequest")).andReturn().getResponse()
                 .getContentAsString(StandardCharsets.UTF_8)).contains("\"msg\":\"未登录\"");
-        // B11 等后续批次的操作：未登录先给未登录，已登录为 404
-        assertThat(mvc.perform(get("/index.php/user/comment.html")).andReturn().getResponse()
+        // B10 等后续批次的操作：未登录先给未登录，已登录为 404
+        assertThat(mvc.perform(get("/index.php/user/buy.html")).andReturn().getResponse()
                 .getContentAsString(StandardCharsets.UTF_8)).contains("未登录");
-        // B10 的操作在本测试中没有会员财务服务：与 B09 入口在可写数据源关闭时相同，按 503（SiteFinanceMvcTest 覆盖有服务时）
-        assertThat(mvc.perform(get("/index.php/user/buy.html")).andReturn().getResponse().getStatus()).isEqualTo(503);
         loggedIn();
-        assertThat(mvc.perform(get("/index.php/user/comment.html")).andReturn().getResponse().getStatus()).isEqualTo(404);
+        assertThat(mvc.perform(get("/index.php/user/buy.html")).andReturn().getResponse().getStatus()).isEqualTo(404);
         assertThat(mvc.perform(get("/index.php/user/oauth.html")).andReturn().getResponse().getStatus()).isEqualTo(404);
     }
 

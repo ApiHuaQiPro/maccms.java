@@ -44,32 +44,17 @@ public final class GroupPermission {
         if (row == null) {
             return NONE;
         }
-        return of(row.id() == null ? 0 : row.id(), row.typeIds(), row.popedomJson());
-    }
-
-    /**
-     * 由组行的原文构造（B10：会员中心"我的权限"页按会员自己的组判定，旧 {@code User::popedom}，common/model/User.php:528-537）。
-     *
-     * @param typeIds     {@code group_type} 原文，可为 null
-     * @param popedomJson {@code group_popedom} 原文，可为 null
-     */
-    public static GroupPermission of(int groupId, String typeIds, String popedomJson) {
-        Set<String> ids = typeIds == null ? Set.of()
-                : Arrays.stream(typeIds.split(",")).filter(s -> !s.isEmpty()).collect(Collectors.toUnmodifiableSet());
+        Set<String> ids = row.typeIds() == null ? Set.of()
+                : Arrays.stream(row.typeIds().split(",")).filter(s -> !s.isEmpty()).collect(Collectors.toUnmodifiableSet());
         JsonNode node = null;
-        if (popedomJson != null && !popedomJson.isBlank()) {
+        if (row.popedomJson() != null && !row.popedomJson().isBlank()) {
             try {
-                node = JSON.readTree(popedomJson);
+                node = JSON.readTree(row.popedomJson());
             } catch (JacksonException e) {
                 node = null;
             }
         }
-        return new GroupPermission(groupId, ids, node);
-    }
-
-    /** 没有任何权限（组不存在）。 */
-    public static GroupPermission none() {
-        return NONE;
+        return new GroupPermission(row.id() == null ? 0 : row.id(), ids, node);
     }
 
     /** 组行的 group_id；组不存在时为 0。 */

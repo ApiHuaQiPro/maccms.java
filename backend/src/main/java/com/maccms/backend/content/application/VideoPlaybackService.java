@@ -26,11 +26,10 @@ import org.springframework.stereotype.Service;
  * <li>视频不存在、未审核、分类不可见 → VIDEO_NOT_FOUND（404）。旧播放入口不检查详情位 2，这里也不检查；</li>
  * <li>权限（user.status=1，即 {@code maccms.content.enforce-guest-popedom=true} 时；否则一律放行、没有试看）：
  *   播放——无位 3 且（无位 5 或试看时长为 0）→ {@link PlaybackOutcome#NO_PERMISSION}；组 &lt; 3、无位 3、有位 5、时长 &gt; 0 →
- *   {@link PlaybackOutcome#TRIAL}（积分 &gt; 0 且已购买时放行：旧内页 {@code check_user_popedom(…, 5)} 的已购买分支）；组 &lt; 3 且积分列
- *   &gt; 0 → 已购买（B10，{@link ContentViewer#purchases()}，D-B09-11）放行，否则 {@link PlaybackOutcome#POINTS_REQUIRED}
- *   （Base.php:143-168）；其余放行（组 ≥ 3 有位 5 而无位 3 时旧版直接放行，照搬）。
- *   下载——无位 4 → NO_PERMISSION；组 1 且积分列 &gt; 0 → POINTS_REQUIRED（:174-176，提示先登录，不查购买记录）；组 2 且积分列 &gt; 0 →
- *   已购买放行，否则 POINTS_REQUIRED（:177-195）；组 ≥ 3 放行。组不存在时组号按 0（旧 {@code $group} 为空）；</li>
+ *   {@link PlaybackOutcome#TRIAL}；组 &lt; 3 且积分列 &gt; 0 → {@link PlaybackOutcome#POINTS_REQUIRED}（Base.php:143-168；
+ *   是否已购买的 {@code mac_ulog} 查询归 B10）；其余放行（组 ≥ 3 有位 5 而无位 3 时旧版直接放行，照搬）。
+ *   下载——无位 4 → NO_PERMISSION；组为 1 或 2 且积分列 &gt; 0 → POINTS_REQUIRED（:170-195，组 1 提示先登录、组 2 提示扣积分，
+ *   页面文案相同）；组 ≥ 3 放行。组不存在时组号按 0（旧 {@code $group} 为空）；</li>
  * <li>版权（只在实际命中的入口）：vod_copyright=1 且 copyright_status=3 时的 PLAY_PAGE、=4 时的 PLAYER →
  *   {@link PlaybackOutcome#COPYRIGHT_RESTRICTED}。下载入口旧版不检查版权；</li>
  * <li>密码（PLAYER 的 vod_pwd_play、DOWNER 的 vod_pwd_down）非空且没有与当前密码一致的凭据 → {@link PlaybackOutcome#PASSWORD_REQUIRED}。</li>
@@ -68,15 +67,6 @@ public class VideoPlaybackService {
      * @param proof 访问密码凭据；没有时为 {@code null}（只对 PLAYER、DOWNER 有意义）
      */
     public VideoPlaybackResult access(long vodId, PlaybackEntry entry, PasswordProof proof) {
-        return access(vodId, 0, 0, entry, proof);
-    }
-
-    /**
-     * @param sid   分组号（旧 {@code $param['sid']}），参与已购买判定（B10）
-     * @param nid   集号（旧 {@code $param['nid']}）
-     * @param proof 访问密码凭据；没有时为 {@code null}（只对 PLAYER、DOWNER 有意义）
-     */
-    public VideoPlaybackResult access(long vodId, int sid, int nid, PlaybackEntry entry, PasswordProof proof) {
         if (vodId < 1 || vodId > VideoId.MAX || entry == null) {
             throw new ApiException(ErrorCode.VIDEO_NOT_FOUND, "视频不存在");
         }
@@ -95,9 +85,7 @@ public class VideoPlaybackService {
                 throw new ApiException(ErrorCode.VIDEO_NOT_FOUND, "视频不存在");
             }
             int trySee = entry.down() ? 0 : trySeeMinutes(row);
-            int points = catalogs.enforceGuestPopedom() ? points(row) : 0;
-            PlaybackOutcome outcome = permission(entry, viewer, typeId, trySee, points,
-                    purchaseKey(row, entry, sid, nid, points));
+            PlaybackOutcome outcome = permission(entry, viewer, typeId, trySee, row);
             if (outcome == PlaybackOutcome.ALLOWED || outcome == PlaybackOutcome.TRIAL) {
                 if (copyrightRestricted(entry, row)) {
                     outcome = PlaybackOutcome.COPYRIGHT_RESTRICTED;
@@ -110,8 +98,7 @@ public class VideoPlaybackService {
                             str(row.sourceNote()), nz(row.pointsKind())))
                     : Optional.empty();
             return new VideoPlaybackResult(outcome, nz(row.id()), str(row.name()), str(row.actor()),
-                    str(row.director()), str(row.classes()), ref(catalog, typeId), nz(row.updatedAt()), trySee, points,
-                    media);
+                    str(row.director()), str(row.classes()), ref(catalog, typeId), nz(row.updatedAt()), trySee, media);
         });
     }
 
@@ -143,35 +130,20 @@ public class VideoPlaybackService {
         return own > 0 ? own : settings.trySeeMinutes();
     }
 
-    private int points(VodPlaybackRow row) {
-        return settings.pointsWholeVideo() ? nz(row.pointsWhole()) : nz(row.pointsKind());
-    }
-
-    /** 旧 Base.php:152-163、:180-191 的购买记录条件：vod_points_type='1' 时 sid、nid 为 0。 */
-    private PurchaseKey purchaseKey(VodPlaybackRow row, PlaybackEntry entry, int sid, int nid, int points) {
-        boolean whole = settings.pointsWholeVideo();
-        return new PurchaseKey(1, entry.down() ? 5 : 4, nz(row.id()), whole ? 0 : sid, whole ? 0 : nid, points);
-    }
-
     private PlaybackOutcome permission(PlaybackEntry entry, GroupPermission viewer, int typeId, int trySee,
-                                       int points, PurchaseKey key) {
+                                       VodPlaybackRow row) {
         if (!catalogs.enforceGuestPopedom()) {
             // user.status=0：check_user_popedom 直接返回 code=1（Base.php:115-117），没有试看
             return PlaybackOutcome.ALLOWED;
         }
+        int points = settings.pointsWholeVideo() ? nz(row.pointsWhole()) : nz(row.pointsKind());
         int group = viewer.groupId();
         if (entry.down()) {
             if (!viewer.allows(typeId, GroupPermission.DOWN)) {
                 return PlaybackOutcome.NO_PERMISSION;
             }
-            // Base.php:174-195：只有组 1（4001 先登录，不查购买记录）与组 2（已购买放行，否则 4003 扣积分确认）检查积分
-            if (points > 0 && group == 1) {
-                return PlaybackOutcome.POINTS_REQUIRED;
-            }
-            if (points > 0 && group == 2) {
-                return purchased(key) ? PlaybackOutcome.ALLOWED : PlaybackOutcome.POINTS_REQUIRED;
-            }
-            return PlaybackOutcome.ALLOWED;
+            // Base.php:174-195：只有组 1（4001 先登录）与组 2（4003 扣积分确认）检查积分
+            return points > 0 && (group == 1 || group == 2) ? PlaybackOutcome.POINTS_REQUIRED : PlaybackOutcome.ALLOWED;
         }
         boolean play = viewer.allows(typeId, GroupPermission.PLAY);
         boolean trial = viewer.allows(typeId, GroupPermission.TRY_SEE);
@@ -183,17 +155,9 @@ public class VideoPlaybackService {
             return PlaybackOutcome.ALLOWED;
         }
         if (!play) {
-            // 内页 check_user_popedom(…, 5)（Base.php:197-220）：积分 > 0 且已购买时完整播放
-            return points > 0 && purchased(key) ? PlaybackOutcome.ALLOWED : PlaybackOutcome.TRIAL;
+            return PlaybackOutcome.TRIAL;
         }
-        if (points <= 0) {
-            return PlaybackOutcome.ALLOWED;
-        }
-        return purchased(key) ? PlaybackOutcome.ALLOWED : PlaybackOutcome.POINTS_REQUIRED;
-    }
-
-    private static boolean purchased(PurchaseKey key) {
-        return ContentViewer.purchases().purchased(key);
+        return points > 0 ? PlaybackOutcome.POINTS_REQUIRED : PlaybackOutcome.ALLOWED;
     }
 
     private boolean copyrightRestricted(PlaybackEntry entry, VodPlaybackRow row) {

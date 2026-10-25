@@ -44,8 +44,6 @@ import com.maccms.backend.site.application.SafeUrl;
 import com.maccms.backend.site.application.SiteRoute;
 import com.maccms.backend.site.application.SiteSettings;
 import com.maccms.backend.site.web.view.AccessNoticePage;
-import com.maccms.backend.site.web.view.BuyConfirmPage;
-import com.maccms.backend.site.web.view.ContentForm;
 import com.maccms.backend.site.web.view.ContentCard;
 import com.maccms.backend.site.web.view.LibraryDetailPage;
 import com.maccms.backend.site.web.view.LibraryListPage;
@@ -239,13 +237,8 @@ public class LibraryPages {
      * @param error 密码页的错误提示，可为空串
      */
     public Result detail(SiteRoute.Legacy route, PasswordProof proof, String error) {
-        return detail(route, proof, error, ContentMember.GUEST);
-    }
-
-    /** @param member 本请求的会员（B10）：收费文章给已登录会员购买确认表单（19 文档第 5.2 节） */
-    Result detail(SiteRoute.Legacy route, PasswordProof proof, String error, ContentMember member) {
         return switch (route.page()) {
-            case ART_DETAIL, ART_AJAX_DETAIL -> article(route, proof, error, member);
+            case ART_DETAIL, ART_AJAX_DETAIL -> article(route, proof, error);
             case TOPIC_DETAIL, TOPIC_AJAX_DETAIL -> topic(route);
             case ACTOR_DETAIL, ACTOR_AJAX_DETAIL -> actor(route);
             case ROLE_DETAIL, ROLE_AJAX_DETAIL -> role(route);
@@ -255,15 +248,14 @@ public class LibraryPages {
         };
     }
 
-    private Result article(SiteRoute.Legacy route, PasswordProof proof, String error, ContentMember member) {
+    private Result article(SiteRoute.Legacy route, PasswordProof proof, String error) {
         ArticleDetailDto a;
-        // 旧 $param['page']（mac_param_url：intval(page) < 1 时为 1）参与按页收费的购买记录匹配
-        int requested = route.page() == LegacyPage.ART_AJAX_DETAIL ? 1 : route.pageNo();
         try {
-            a = articles.getArticle(route.id(), requested, proof);
+            a = articles.getArticle(route.id(), proof);
         } catch (ApiException e) {
             if (e.code() == ErrorCode.ARTICLE_POINTS_REQUIRED) {
-                return articleConfirm(route, requested, member);
+                return new Result(HttpStatus.FORBIDDEN, new AccessNoticePage(chrome("需要积分 - " + site.name(),
+                        SiteRoute.Legacy.of(LegacyPage.ART_DETAIL, route.id())), "需要积分", ART_POINTS, Optional.empty()));
             }
             if (e.code() == ErrorCode.ARTICLE_PASSWORD_REQUIRED) {
                 SafeUrl self = link(LegacyPage.ART_DETAIL, route.id(), 1);
@@ -299,20 +291,6 @@ public class LibraryPages {
                 List.copyOf(meta), Optional.empty(), text(current.title()), text(current.note()),
                 body("art", a.id(), page, a.updatedAt(), current.content()), text(a.blurb()).strip(), pager, List.of(),
                 screenshots(a.screenshots()), List.of(), List.of(), ""));
-    }
-
-    /**
-     * 收费文章的购买确认（B10，旧 3003：Base.php:131-140，19 文档第 5.2 节）：已登录会员带 {@code mid=2, type=1, sid=页码} 的购买表单，
-     * 游客带登录链接。
-     */
-    private Result articleConfirm(SiteRoute.Legacy route, int page, ContentMember member) {
-        int points = articles.requiredPoints(route.id()).orElse(0);
-        Optional<ContentForm> form = member.loggedIn()
-                ? Optional.of(ContentForms.buy(site, urls, 2, route.id(), page, 0, 1)) : Optional.empty();
-        Optional<SafeUrl> login = member.loggedIn() ? Optional.empty() : Optional.of(site.publicPath(urls.user("login")));
-        return new Result(HttpStatus.FORBIDDEN, new BuyConfirmPage(chrome("需要积分 - " + site.name(),
-                SiteRoute.Legacy.of(LegacyPage.ART_DETAIL, route.id())), "需要积分",
-                "观看此数据，需要支付【" + points + "】积分，确认支付吗？", form, login, Optional.empty()));
     }
 
     private Result topic(SiteRoute.Legacy route) {

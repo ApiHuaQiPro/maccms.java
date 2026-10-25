@@ -11,12 +11,7 @@ import com.maccms.backend.site.application.SiteRoute;
 import com.maccms.backend.site.config.ConditionalOnSiteEnabled;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import com.maccms.backend.member.application.MemberRecordService;
-import com.maccms.backend.member.application.MemberWalletService;
-import com.maccms.backend.site.application.SiteSettings;
-import java.util.Optional;
 import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -44,10 +39,6 @@ public class SiteContentController {
     private final ObjectProvider<SitePlaybackController> playback;
     private final ObjectProvider<SiteLibraryController> library;
     private final ObjectProvider<SiteMiscController> misc;
-    private final SiteSettings site;
-    private final LegacyUrlBuilder urls;
-    private final ObjectProvider<MemberRecordService> records;
-    private final ObjectProvider<MemberWalletService> wallet;
 
     public SiteContentController(SiteHtmlRenderer renderer, SitePages sitePages, LegacyUrlBuilder urls,
                                  LegacyUrlParser parser, ImageUrlNormalizer images, RichTextCache richText,
@@ -55,21 +46,6 @@ public class SiteContentController {
                                  ObjectProvider<SitePlaybackController> playback,
                                  ObjectProvider<SiteLibraryController> library,
                                  ObjectProvider<SiteMiscController> misc) {
-        this(renderer, sitePages, urls, parser, images, richText, content, search, playback, library, misc, null, null);
-    }
-
-    @Autowired
-    public SiteContentController(SiteHtmlRenderer renderer, SitePages sitePages, LegacyUrlBuilder urls,
-                                 LegacyUrlParser parser, ImageUrlNormalizer images, RichTextCache richText,
-                                 ContentReadService content, ObjectProvider<SiteSearchController> search,
-                                 ObjectProvider<SitePlaybackController> playback,
-                                 ObjectProvider<SiteLibraryController> library,
-                                 ObjectProvider<SiteMiscController> misc, ObjectProvider<MemberRecordService> records,
-                                 ObjectProvider<MemberWalletService> wallet) {
-        this.site = sitePages.site();
-        this.urls = urls;
-        this.records = records;
-        this.wallet = wallet;
         this.renderer = renderer;
         this.parser = parser;
         this.pages = new ContentPages(content, sitePages, urls, images, richText);
@@ -106,9 +82,7 @@ public class SiteContentController {
                 yield renderer.ok(tpl -> tpl.sitePagesCategory(page), false);
             }
             case SiteRoute.VodDetail d -> {
-                // B10：已登录会员多一个"收藏"表单（游客页面不变，19 文档第 5.4 节）
-                var page = pages.detail(d).withFavorite(ContentMember.of(request, records, wallet).loggedIn()
-                        ? Optional.of(ContentForms.favorite(site, urls, 1, d.vodId())) : Optional.empty());
+                var page = pages.detail(d);
                 yield renderer.ok(tpl -> tpl.sitePagesDetail(page), false);
             }
             // parse() 不认识 vod/search；搜索页只由 SiteSearchController 经 parseSearch 承接
