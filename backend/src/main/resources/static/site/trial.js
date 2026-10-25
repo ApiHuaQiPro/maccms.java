@@ -3,7 +3,8 @@
  *
  * 挂点契约（docs/architecture/15-b05-readonly-pages.md 第 6 节）：
  *   div#player-stage.player-stage[data-trial-minutes="<非负整数>"] —— 播放器挂载区；
- *   p#trial-message.trial-message[role="status"] —— 本地结束提示。
+ *   p#trial-message.trial-message[role="status"] —— 本地结束提示；
+ *   div#player-stage[data-trial-end-message]（B10，可选）—— 结束提示的文字，缺失时用默认文字。
  * data-trial-minutes 为 0 或缺失/非法时不计时，脚本完全不动页面。
  * 到期后：暂停挂载区内可访问的 video/audio，移除挂载区中的
  * iframe/object/embed/video/audio，并在 #trial-message 显示固定文案。
@@ -58,7 +59,9 @@
       }
       removeAll(stage.querySelectorAll('iframe, object, embed, video, audio'));
       if (message) {
-        message.textContent = END_MESSAGE;
+        // B10：已登录会员由后端给出旧版 5001/5002 的提示（data-trial-end-message），没有时用默认文字
+        var custom = stage.getAttribute('data-trial-end-message');
+        message.textContent = custom ? custom : END_MESSAGE;
         if (message.hidden) {
           message.hidden = false;
         }

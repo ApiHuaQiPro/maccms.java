@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+  B10 会员权益与财务的写入（docs/architecture/19-b10-member-finance.md 第 6 节；登记 WriteRegistry：member / mac_ulog INSERT、UPDATE、
+  DELETE，mac_plog INSERT、DELETE，mac_card UPDATE，mac_cash INSERT、DELETE，mac_order INSERT，mac_visit INSERT，mac_user UPDATE（B09 已登记））。
+  全部是单表语句；数值变化用原子表达式，前置条件写进 WHERE，调用方检查匹配行数（可写数据源 useAffectedRows=false）。
+  旧表 MyISAM，没有事务：多表一致性由 application 层的 WriteSequence 负责（认领 → 转移 → 记录，失败时按相反顺序条件补偿）。
+-->
+<mapper namespace="com.maccms.backend.member.infrastructure.MemberFinanceWriteMapper">
+
+    <!--
+      记录认领（旧 ajax_buy_popedom 的"是否已购买"与 ajax_ulog 的"是否已有记录"，index/controller/User.php:71-78,145-170）：
+      七项相同的记录不存在才插入。MyISAM 对 INSERT ... SELECT 加表级写锁，同一记录并发只会插入一行。
+    -->
+    <insert id="claimUlog">
+        INSERT INTO mac_ulog (user_id, ulog_mid, ulog_type, ulog_rid, ulog_sid, ulog_nid, ulog_points, ulog_time)
+        SELECT #{userId}, #{mid}, #{type}, #{rid}, #{sid}, #{nid}, #{points}, #{now}
+        FROM DUAL
+        WHERE NOT EXISTS (SELECT 1 FROM mac_ulog AS u
+                          WHERE u.user_id = #{userId} AND u.ulog_mid = #{mid} AND u.ulog_type = #{type}
+                            AND u.ulog_rid = #{rid} AND u.ulog_sid = #{sid} AND u.ulog_nid = #{nid}
+                            AND u.ulog_points = #{points})
+    </insert>
+
+    <!-- 已有记录时刷新时间（User.php:72-73：更新全部七项相同的记录） -->
+    <update id="touchUlog">
+        UPDATE mac_ulog
+        SET ulog_time = #{now}
+        WHERE user_id = #{userId} AND ulog_mid = #{mid} AND ulog_type = #{type} AND ulog_rid = #{rid}
+          AND ulog_sid = #{sid} AND ulog_nid = #{nid} AND ulog_points = #{points}
+    </update>
+
+    <!-- 购买的认领补偿：删除本次插入的那一行（七项 + 本次写入的时间；认领保证没有第二行相同） -->
+    <delete id="releaseUlog">
+        DELETE FROM mac_ulog
+        WHERE user_id = #{userId} AND ulog_mid = #{mid} AND ulog_type = #{type} AND ulog_rid = #{rid}
+          AND ulog_sid = #{sid} AND ulog_nid = #{nid} AND ulog_points = #{points} AND ulog_time = #{now}
+    </delete>
+
+    <!-- ulog_del（User.php:683-713）：条件总是带会员与类型 -->
+    <delete id="deleteUlogs">
+        DELETE FROM mac_ulog
+        WHERE user_id = #{userId} AND ulog_type = #{type}
+        <if test="ids != null">
+            AND ulog_id IN
+            <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
+        </if>
+    </delete>
+
+    <!-- 积分流水（旧 Plog::saveData，common/model/Plog.php:66-90） -->
+    <insert id="insertPlog">
+        INSERT INTO mac_plog (user_id, plog_type, plog_points, plog_time, plog_remarks)
+        VALUES (#{userId}, #{type}, #{points}, #{now}, #{remarks})
+    </insert>
+
+    <!-- plog_del（User.php:733-758）：条件总是带会员 -->
+    <delete id="deletePlogs">
+        DELETE FROM mac_plog
+        WHERE user_id = #{userId}
+        <if test="ids != null">
+            AND plog_id IN
+            <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
+        </if>
+    </delete>
+
+    <!-- 扣积分（购买 User.php:155 的 setDec；补偿"加积分"）：积分足够才命中 -->
+    <update id="deductPoints">
+        UPDATE mac_user
+        SET user_points = user_points - #{points}
+        WHERE user_id = #{userId} AND user_points &gt;= #{points}
+    </update>
+
+    <!-- 加积分（卡密 Card.php:142、推广 User.php:254,879、分销 :903 的 setInc；补偿"扣积分"） -->
+    <update id="addPoints">
+        UPDATE mac_user
+        SET user_points = user_points + #{points}
+        WHERE user_id = #{userId}
+    </update>
+
+    <!-- 提现冻结（Cash.php:101-108 的整体覆盖改为增量条件更新） -->
+    <update id="freezePoints">
+        UPDATE mac_user
+        SET user_points = user_points - #{points}, user_points_froze = user_points_froze + #{points}
+        WHERE user_id = #{userId} AND user_points &gt;= #{points}
+    </update>
+
+    <!-- 撤销未审核提现时退回冻结（Cash.php:131-140 的整体覆盖改为增量条件更新；补偿"冻结"） -->
+    <update id="unfreezePoints">
+        UPDATE mac_user
+        SET user_points = user_points + #{points}, user_points_froze = user_points_froze - #{points}
+        WHERE user_id = #{userId} AND user_points_froze &gt;= #{points}
+    </update>
+
+    <!--
+      升级会员组（common/model/User.php:577-587 的整体覆盖改为条件更新）：积分足够，且到期时间与组仍是计算新到期时间时读到的值
+      （被并发改过则匹配 0 行，调用方重读重算）。
+    -->
+    <update id="upgradeGroup">
+        UPDATE mac_user
+        SET user_points = user_points - #{points}, user_end_time = #{endTime}, group_id = #{groupId}
+        WHERE user_id = #{userId} AND user_points &gt;= #{points} AND user_end_time = #{oldEndTime}
+          AND group_id = #{oldGroupId}
+    </update>
+
+    <!-- 撤销升级（补偿）：条件为本次写入的到期时间与组 -->
+    <update id="revertUpgrade">
+        UPDATE mac_user
+        SET user_points = user_points + #{points}, user_end_time = #{oldEndTime}, group_id = #{oldGroupId}
+        WHERE user_id = #{userId} AND user_end_time = #{endTime} AND group_id = #{groupId}
+    </update>
+
+    <!-- 到期批量降级（旧 User::expire，common/model/User.php:395-409；B08 测试侧演练语句）：等于现在也降级 -->
+    <update id="expireMembers">
+        UPDATE mac_user
+        SET group_id = 2
+        WHERE group_id &gt; 2 AND user_end_time &lt;= #{now}
+    </update>
+
+    <!-- 卡密认领（Card.php:148-153）：按 card_id，未使用才命中 -->
+    <update id="claimCard">
+        UPDATE mac_card
+        SET card_sale_status = 1, card_use_status = 1, card_use_time = #{now}, user_id = #{userId}
+        WHERE card_id = #{cardId} AND card_use_status = 0
+    </update>
+
+    <!-- 释放卡（补偿）：仍是本次写入的值才命中，恢复认领前的售出状态、会员与使用时间 -->
+    <update id="releaseCard">
+        UPDATE mac_card
+        SET card_use_status = 0, card_sale_status = #{oldSaleStatus}, user_id = #{oldUserId},
+            card_use_time = #{oldUseTime}
+        WHERE card_id = #{cardId} AND card_use_status = 1 AND user_id = #{userId} AND card_use_time = #{now}
+    </update>
+
+    <!-- 提现申请（Cash.php:96-99）：cash_money 按旧版浮点转字符串的形式写入 -->
+    <insert id="insertCash">
+        INSERT INTO mac_cash (user_id, cash_points, cash_money, cash_bank_name, cash_bank_no, cash_payee_name, cash_time)
+        VALUES (#{userId}, #{points}, #{money}, #{bankName}, #{bankNo}, #{payeeName}, #{now})
+    </insert>
+
+    <!-- 撤销提现（Cash.php:123-129）的认领：状态仍是读到的值才命中 -->
+    <delete id="deleteCash">
+        DELETE FROM mac_cash
+        WHERE cash_id = #{cashId} AND user_id = #{userId} AND cash_status = #{status}
+    </delete>
+
+    <!-- 撤销提现的补偿：退回冻结失败时把该行原样插回（带原 cash_id） -->
+    <insert id="restoreCash">
+        INSERT INTO mac_cash (cash_id, user_id, cash_status, cash_points, cash_money, cash_bank_name, cash_bank_no,
+                              cash_payee_name, cash_time, cash_time_audit)
+        VALUES (#{row.cashId}, #{row.userId}, #{row.status}, #{row.points}, #{row.money}, #{row.bankName},
+                #{row.bankNo}, #{row.payeeName}, #{row.time}, #{row.timeAudit})
+    </insert>
+
+    <!-- 本地建单（User.php:453-459 → Order::saveData）：单号不与已有订单重复才插入；price 为通过数字串检查的原文 -->
+    <insert id="insertOrder">
+        INSERT INTO mac_order (user_id, order_code, order_price, order_time, order_points)
+        SELECT #{userId}, #{code}, #{price}, #{now}, #{points}
+        FROM DUAL
+        WHERE NOT EXISTS (SELECT 1 FROM mac_order AS o WHERE o.order_code = #{code})
+    </insert>
+
+    <!--
+      推广访问（common/model/User.php:856-876）：今日同一推广人、同一 IP 的访问数未达上限才插入（旧版先数后插，并发可超额）。
+    -->
+    <insert id="insertVisit">
+        INSERT INTO mac_visit (user_id, visit_ip, visit_ly, visit_time)
+        SELECT #{userId}, #{ip}, #{referer}, #{now}
+        FROM DUAL
+        WHERE (SELECT COUNT(*) FROM mac_visit AS v
+               WHERE v.user_id = #{userId} AND v.visit_ip = #{ip} AND v.visit_time &gt; #{since}) &lt; #{max}
+    </insert>
+</mapper>

@@ -21,6 +21,13 @@ public class MemberInfrastructureConfiguration {
         return db.mapper(MemberWriteMapper.class);
     }
 
+    /** 会员权益与财务的写 Mapper（B10，19 文档第 6 节），条件同上。 */
+    @Bean
+    @ConditionalOnWriteEnabled
+    MemberFinanceWriteMapper memberFinanceWriteMapper(WriteDatabase db) {
+        return db.mapper(MemberFinanceWriteMapper.class);
+    }
+
     /** 头像目录（部署参数 {@code maccms.member.upload-dir}，默认空 = 头像上传不可用）。 */
     @Bean
     PortraitStore portraitStore(@Value("${maccms.member.upload-dir:}") String uploadDir) {

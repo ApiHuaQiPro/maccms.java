@@ -14,11 +14,16 @@ import com.maccms.backend.content.application.view.ArticleSummaryDto;
 import com.maccms.backend.content.application.view.CategoryListResponse;
 import com.maccms.backend.content.infrastructure.ArtDetailRow;
 import com.maccms.backend.content.infrastructure.ArtMapper;
+import com.maccms.backend.content.infrastructure.ArtPointsRow;
+import com.maccms.backend.content.infrastructure.ContentLookupMapper;
 import com.maccms.backend.content.infrastructure.ArtSummaryRow;
 import com.maccms.backend.content.infrastructure.ContentCriteria;
 import com.maccms.backend.content.infrastructure.SortColumn;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /**
@@ -33,10 +38,18 @@ public class ArticleReadService {
 
     private final ArtMapper artMapper;
     private final ContentCatalogs catalogs;
+    private final ObjectProvider<ContentLookupMapper> lookup;
 
-    public ArticleReadService(ArtMapper artMapper, ContentCatalogs catalogs) {
+    /** @param lookup 积分值查找（B10）；没有这个 Mapper（只装配了部分 Bean 的测试）时收费文章一律按未购买 */
+    @Autowired
+    public ArticleReadService(ArtMapper artMapper, ContentCatalogs catalogs, ObjectProvider<ContentLookupMapper> lookup) {
         this.artMapper = artMapper;
         this.catalogs = catalogs;
+        this.lookup = lookup;
+    }
+
+    ArticleReadService(ArtMapper artMapper, ContentCatalogs catalogs) {
+        this(artMapper, catalogs, null);
     }
 
     public CategoryListResponse listCategories() {
@@ -88,6 +101,14 @@ public class ArticleReadService {
      * @param proof 访问密码凭据（site 的签名票据校验通过后），可为 null
      */
     public ArticleDetailDto getArticle(long id, PasswordProof proof) {
+        return getArticle(id, 1, proof);
+    }
+
+    /**
+     * 同 {@link #getArticle(long, PasswordProof)}，带当前页码（旧 {@code $param['page']}）：按页收费（{@code user.art_points_type != '1'}）
+     * 时购买记录按页匹配（B10，19 文档第 5.1 节）。
+     */
+    public ArticleDetailDto getArticle(long id, int page, PasswordProof proof) {
         return read(() -> {
             ArtDetailRow row = artMapper.selectPublishedDetail(id);
             if (row == null) {
@@ -101,9 +122,9 @@ public class ArticleReadService {
             }
             // 旧版会员组 group_id<3（游客与默认会员）访问需积分的文章时改为显示扣积分确认页（index/controller/Base.php:105-112、
             // :118-142）：积分列由 user.art_points_type 决定，'1' 时为 art_points（整篇），否则为 art_points_detail（按页，:108-111）；
-            // user.status=0 时不检查（:115-117）。B05 起按配置取列；B09 起按观看者的会员组（组 ≥ 3 不检查；是否已购买归 B10）
-            int points = catalogs.artPointsWholeArticle() ? nz(row.pointsRequired()) : nz(row.pointsDetailRequired());
-            if (catalogs.enforceGuestPopedom() && points != 0 && viewer.groupId() < 3) {
+            // user.status=0 时不检查（:115-117）。B05 起按配置取列；B09 起按观看者的会员组（组 ≥ 3 不检查）；B10 起已购买时放行
+            // （mac_ulog：mid=2、type=1、rid、sid=页码（整篇收费时 0）、nid=0、points，Base.php:121-136）
+            if (catalogs.enforceGuestPopedom() && charged(row) && viewer.groupId() < 3 && !purchased(id, page)) {
                 throw new ApiException(ErrorCode.ARTICLE_POINTS_REQUIRED, "该文章需要积分才能查看");
             }
             // 旧版 art_pwd 非空且本会话未验证时显示密码页（index/controller/Art.php:56-61）
@@ -113,6 +134,40 @@ public class ArticleReadService {
             }
             return toDetail(row, catalog);
         });
+    }
+
+    /**
+     * 已审核文章按 {@code user.art_points_type} 取的价格（B10：购买确认页显示价格、生成购买表单）；不存在或未审核时为空。
+     */
+    public Optional<Integer> requiredPoints(long id) {
+        return read(() -> artMapper.selectPublishedDetail(id) == null ? Optional.<Integer>empty()
+                : Optional.of(pointsValue(id)));
+    }
+
+    /** 旧 ajax_buy_popedom 与 check_user_popedom 的购买记录条件（整篇收费时 sid 为 0）。 */
+    public PurchaseKey purchaseKey(long id, int page, int points) {
+        return new PurchaseKey(2, 1, id, catalogs.artPointsWholeArticle() ? 0 : page, 0, points);
+    }
+
+    /** 游客与没有设置查询时不读积分值。 */
+    private boolean purchased(long id, int page) {
+        ContentPurchases purchases = ContentViewer.purchases();
+        return purchases != ContentPurchases.NONE && purchases.purchased(purchaseKey(id, page, pointsValue(id)));
+    }
+
+    /** 按 user.art_points_type 取的积分列 &gt; 0（ArtMapper 只给出布尔值）。 */
+    private boolean charged(ArtDetailRow row) {
+        return (catalogs.artPointsWholeArticle() ? nz(row.pointsRequired()) : nz(row.pointsDetailRequired())) != 0;
+    }
+
+    /** 积分值（B10）：只在收费时经 ContentLookupMapper 读出，用于购买记录匹配与确认页的价格。 */
+    private int pointsValue(long id) {
+        ContentLookupMapper m = lookup == null ? null : lookup.getIfAvailable();
+        ArtPointsRow r = m == null ? null : m.selectArtPoints(id);
+        if (r == null) {
+            return -1;
+        }
+        return catalogs.artPointsWholeArticle() ? nz(r.whole()) : nz(r.detail());
     }
 
     /**

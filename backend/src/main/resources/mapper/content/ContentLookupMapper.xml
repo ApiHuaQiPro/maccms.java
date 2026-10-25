@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+  会员权益（B10，docs/architecture/19-b10-member-finance.md 第 4.1、4.2 节）用的按编号查找。与旧 Vod/Art::infoData
+  （application/common/model/Vod.php:569-588、Art.php:398-416）相同只按编号、不看审核状态。只读出积分、名称、图片与分类名：
+  密码、播放/下载地址、试看等列不在这里出现（ReadOnlyGuardrailsTest.contentLookupMapperReadsOnlyPointsAndTitles）。
+  IN 列表由调用方限制在 ContentLookupMapper.MAX_IDS（100）个以内，LIMIT 与之相同。
+-->
+<mapper namespace="com.maccms.backend.content.infrastructure.ContentLookupMapper">
+
+    <!-- ajax_buy_popedom（index/controller/User.php:131-143）、ajax_ulog（:59-68）的视频积分 -->
+    <select id="selectVodPoints" resultType="com.maccms.backend.content.infrastructure.VodPointsRow">
+        SELECT vod_id          AS id,
+               vod_points      AS whole,
+               vod_points_play AS play,
+               vod_points_down AS down
+        FROM mac_vod
+        WHERE vod_id = #{id}
+    </select>
+
+    <!-- ajax_buy_popedom（User.php:117-129）的文章积分 -->
+    <select id="selectArtPoints" resultType="com.maccms.backend.content.infrastructure.ArtPointsRow">
+        SELECT art_id            AS id,
+               art_points        AS whole,
+               art_points_detail AS detail
+        FROM mac_art
+        WHERE art_id = #{id}
+    </select>
+
+    <!-- 会员记录列表的 data（common/model/Ulog.php:36-100）：名称、图片、分类（旧 Type::getCacheInfo，不看分类状态） -->
+    <select id="selectVodTitles" resultType="com.maccms.backend.content.infrastructure.ContentTitleRow">
+        SELECT v.vod_id                AS id,
+               v.vod_name              AS name,
+               v.vod_pic               AS pic,
+               v.type_id               AS typeId,
+               t.type_name             AS typeName,
+               (t.type_id IS NOT NULL) AS typeFound
+        FROM mac_vod AS v
+                 LEFT JOIN mac_type AS t ON t.type_id = v.type_id
+        WHERE v.vod_id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
+        LIMIT 100
+    </select>
+
+    <select id="selectArtTitles" resultType="com.maccms.backend.content.infrastructure.ContentTitleRow">
+        SELECT a.art_id                AS id,
+               a.art_name              AS name,
+               a.art_pic               AS pic,
+               a.type_id               AS typeId,
+               t.type_name             AS typeName,
+               (t.type_id IS NOT NULL) AS typeFound
+        FROM mac_art AS a
+                 LEFT JOIN mac_type AS t ON t.type_id = a.type_id
+        WHERE a.art_id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
+        LIMIT 100
+    </select>
+
+    <select id="selectTopicTitles" resultType="com.maccms.backend.content.infrastructure.ContentTitleRow">
+        SELECT topic_id   AS id,
+               topic_name AS name,
+               topic_pic  AS pic,
+               0          AS typeId,
+               ''         AS typeName,
+               0          AS typeFound
+        FROM mac_topic
+        WHERE topic_id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
+        LIMIT 100
+    </select>
+
+    <select id="selectActorTitles" resultType="com.maccms.backend.content.infrastructure.ContentTitleRow">
+        SELECT actor_id   AS id,
+               actor_name AS name,
+               actor_pic  AS pic,
+               0          AS typeId,
+               ''         AS typeName,
+               0          AS typeFound
+        FROM mac_actor
+        WHERE actor_id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
+        LIMIT 100
+    </select>
+
+    <!-- 会员中心"我的权限"页（index/controller/User.php:563-594）：旧 type_tree 取全部分类（Type::setCache 的 listData([])，不看状态） -->
+    <select id="selectAllTypes" resultType="com.maccms.backend.content.infrastructure.TypeNodeRow">
+        SELECT type_id   AS id,
+               type_name AS name,
+               type_mid  AS mid,
+               type_pid  AS parentId
+        FROM mac_type
+        ORDER BY type_id
+        LIMIT 2000
+    </select>
+</mapper>
