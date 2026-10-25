@@ -66,9 +66,9 @@ public class LegacyRowReadService {
     public List<LegacyTypeDto> types() {
         return ContentReadService.read(() -> {
             Set<Integer> visible = new HashSet<>();
-            GuestPermission guest = catalogs.guest();
+            GroupPermission viewer = catalogs.viewer();
             for (int mid : TYPED_MIDS) {
-                visible.addAll(visibleTypeIds(mid, guest));
+                visible.addAll(visibleTypeIds(mid, viewer));
             }
             List<LegacyTypeDto> out = new ArrayList<>();
             for (Map<String, Object> raw : mapper.selectTypes()) {
@@ -104,7 +104,7 @@ public class LegacyRowReadService {
     private LegacyRowPageDto doRead(LegacyRowQuery q) {
         List<Integer> typeIds = null;
         if (q.table().typed()) {
-            typeIds = List.copyOf(visibleTypeIds(q.table().mid(), catalogs.guest()));
+            typeIds = List.copyOf(visibleTypeIds(q.table().mid(), catalogs.viewer()));
             if (typeIds.isEmpty()) {
                 return new LegacyRowPageDto(0, List.of());
             }
@@ -178,8 +178,8 @@ public class LegacyRowReadService {
         return new LegacyRowDto(m);
     }
 
-    private Set<Integer> visibleTypeIds(int mid, GuestPermission guest) {
-        CategoryCatalog catalog = mid == 1 ? catalogs.vodCatalog(guest) : catalogs.catalog(mid, guest);
+    private Set<Integer> visibleTypeIds(int mid, GroupPermission viewer) {
+        CategoryCatalog catalog = mid == 1 ? catalogs.vodCatalog(viewer) : catalogs.catalog(mid, viewer);
         return catalog.allIds();
     }
 

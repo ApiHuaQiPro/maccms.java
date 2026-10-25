@@ -81,6 +81,28 @@ public class SiteHtmlRenderer {
         return respond(status, body, CacheControl.noStore(), true, null, policy);
     }
 
+    /**
+     * 会员页面（B09，18 文档第 8.1 节）：noindex、no-store；内容安全策略在默认策略上把 {@code script-src 'none'} 换成本响应的 nonce，
+     * 只放行页面末尾带该 nonce 的同源 {@code member.js}。
+     */
+    public ResponseEntity<String> member(HttpStatus status, Function<Templates, JteModel> page, String nonce) {
+        String body = render(page);
+        return respond(status, body, CacheControl.noStore(), true, null, memberPolicy(nonce));
+    }
+
+    /** 会员片段与提示页（无脚本）：noindex、no-store，默认策略。 */
+    public ResponseEntity<String> memberPlain(HttpStatus status, Function<Templates, JteModel> page) {
+        String body = render(page);
+        return respond(status, body, CacheControl.noStore(), true, null, CONTENT_SECURITY_POLICY);
+    }
+
+    static String memberPolicy(String nonce) {
+        if (nonce == null || !nonce.matches("[A-Za-z0-9+/]{22}==")) {
+            throw new IllegalArgumentException("nonce 不合法");
+        }
+        return CONTENT_SECURITY_POLICY.replace("script-src 'none'", "script-src 'nonce-" + nonce + "'");
+    }
+
     /** 错误页与维护页：noindex、no-store；503 带 Retry-After。 */
     public ResponseEntity<String> error(HttpStatus status, ErrorPage page, Duration retryAfter) {
         String body;

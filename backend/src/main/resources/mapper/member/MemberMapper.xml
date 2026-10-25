@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<!-- 只读映射：沿用旧表 mac_user（install.sql:629）、mac_group（install.sql:361）。B08 会员登录态校验。 -->
+<!-- 只读映射：沿用旧表 mac_user（install.sql:629）、mac_group（install.sql:361）。B08 会员登录态校验，B09 账号功能。 -->
 <mapper namespace="com.maccms.backend.member.infrastructure.MemberMapper">
 
     <select id="selectActiveUser" resultType="com.maccms.backend.member.infrastructure.MemberLoginRow">
@@ -24,5 +24,74 @@
                group_popedom AS popedomJson
         FROM mac_group
         WHERE group_id = #{groupId}
+    </select>
+
+    <select id="selectLoginCandidate" resultType="com.maccms.backend.member.infrastructure.MemberLoginCandidate">
+        SELECT user_id       AS userId,
+               group_id      AS groupId,
+               user_name     AS userName,
+               user_end_time AS userEndTime
+        FROM mac_user
+        WHERE
+        <choose>
+            <when test="byEmail">user_email = #{account}</when>
+            <otherwise>user_name = #{account}</otherwise>
+        </choose>
+          AND user_pwd = #{pwd}
+          AND user_status = 1
+        ORDER BY user_id
+        LIMIT 1
+    </select>
+
+    <select id="selectAccount" resultType="com.maccms.backend.member.infrastructure.MemberAccountRow">
+        SELECT user_id         AS userId,
+               group_id        AS groupId,
+               user_name       AS userName,
+               user_pwd        AS userPwd,
+               user_random     AS userRandom,
+               user_status     AS userStatus,
+               user_end_time   AS userEndTime,
+               user_nick_name  AS nickName,
+               user_qq         AS qq,
+               user_email      AS email,
+               user_phone      AS phone,
+               user_question   AS question,
+               user_answer     AS answer,
+               user_points     AS points,
+               user_reg_time   AS regTime,
+               user_login_time AS loginTime,
+               user_portrait   AS portrait
+        FROM mac_user
+        WHERE user_id = #{userId}
+    </select>
+
+    <select id="selectIdByName" resultType="java.lang.Long">
+        SELECT user_id FROM mac_user WHERE user_name = #{name} ORDER BY user_id LIMIT 1
+    </select>
+
+    <select id="selectIdByEmail" resultType="java.lang.Long">
+        SELECT user_id FROM mac_user WHERE user_email = #{email} ORDER BY user_id LIMIT 1
+    </select>
+
+    <select id="countRegisteredSince" resultType="long">
+        SELECT COUNT(*) FROM mac_user WHERE user_reg_ip = #{ip} AND user_reg_time &gt; #{since}
+    </select>
+
+    <select id="selectInviter" resultType="com.maccms.backend.member.infrastructure.MemberInviterRow">
+        SELECT user_id    AS userId,
+               user_pid   AS pid,
+               user_pid_2 AS pid2
+        FROM mac_user
+        WHERE user_id = #{userId}
+    </select>
+
+    <select id="selectIdByQuestion" resultType="java.lang.Long">
+        SELECT user_id
+        FROM mac_user
+        WHERE user_name = #{name}
+          AND user_question = #{question}
+          AND user_answer = #{answer}
+        ORDER BY user_id
+        LIMIT 1
     </select>
 </mapper>

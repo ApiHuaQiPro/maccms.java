@@ -1,0 +1,132 @@
+TwelveMonkeys ImageIO 3.12.0（WebP 头像解码，B09 / MACC-33）
+================================================================
+
+本程序的可执行 jar（BOOT-INF/lib/）原样包含下列 6 个未修改的二进制构件，均取自 Maven Central
+（https://repo.maven.apache.org/maven2/），由 com.twelvemonkeys.imageio:imageio-webp:3.12.0 及其传递依赖引入：
+
+  com.twelvemonkeys.imageio:imageio-webp:3.12.0      SHA-256 43dc447ccfe34c5c5c6f5d31190270e1f9bf65f60375d697ae2a8ff433468526
+  com.twelvemonkeys.imageio:imageio-core:3.12.0      SHA-256 34c6f91bf3b217ed0115bce8283238fbd0264562aa682b4226a3960d0ede9815
+  com.twelvemonkeys.imageio:imageio-metadata:3.12.0  SHA-256 797d026b67d07e6d5eb00a1ab53a55acaab6f80a71c5ee325572093eb90c0caa
+  com.twelvemonkeys.common:common-lang:3.12.0        SHA-256 5c65e504b5b64d80683e0fa70a1dd154dd83d4de7da37f21e950f5a9c03bc66d
+  com.twelvemonkeys.common:common-io:3.12.0          SHA-256 bfacfeb02acac47dbfd1fab0002eaeca65547d04249498b654320c9e0fdf6647
+  com.twelvemonkeys.common:common-image:3.12.0       SHA-256 62a3821c724fadfda346c1e2d83b0c506a0c4074be269a52bf4e3192c7dd92bc
+
+上游项目：https://github.com/haraldk/TwelveMonkeys（标签 twelvemonkeys-3.12.0）。父 POM
+com.twelvemonkeys:twelvemonkeys:3.12.0 声明许可为 "The BSD License"。这些 jar 本身不含许可文件，下面的声明分别照录自
+上游标签下的 LICENSE.txt 与上述构件同版本的 -sources.jar 中的源文件头。
+
+一、BSD 3-Clause License（全部 6 个构件；逐字照录上游 twelvemonkeys-3.12.0/LICENSE.txt，
+    SHA-256 10e1e2688c74b337e0ca9e3a6a02e16319c3ee4cec79b768bca28ab8823ffde2）
+--------------------------------------------------------------------------------------------
+
+BSD 3-Clause License
+
+Copyright (c) 2008-2020, Harald Kuhr
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+* Redistributions of source code must retain the above copyright notice, this
+  list of conditions and the following disclaimer.
+
+* Redistributions in binary form must reproduce the above copyright notice,
+  this list of conditions and the following disclaimer in the documentation
+  and/or other materials provided with the distribution.
+
+* Neither the name of the copyright holder nor the names of its
+  contributors may be used to endorse or promote products derived from
+  this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+各源文件头写明的版权年份为 2008～2022（"Copyright (c) <年份>, Harald Kuhr"），许可条款与上文相同。
+imageio-webp 的 com/twelvemonkeys/imageio/plugins/webp/vp8/ 下 11 个文件（VP8 有损解码）的源文件头为
+"Copyright (c) 2017, Brooss, Harald Kuhr"，许可条款与上文相同。
+
+二、Apache Software License 1.1（common-image 中的 com/twelvemonkeys/image/IndexImage.java；
+    先给出该许可第 3 条要求的致谢语，再逐字照录该源文件头中的许可全文）
+--------------------------------------------------------------------------------------------
+
+This product includes software developed by the Apache Software Foundation (http://www.apache.org/).
+
+============================================================================
+                  The Apache Software License, Version 1.1
+============================================================================
+
+Copyright (C) 2000 The Apache Software Foundation. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modifica-
+tion, are permitted provided that the following conditions are met:
+
+1. Redistributions of  source code must  retain the above copyright  notice,
+   this list of conditions and the following disclaimer.
+
+2. Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
+
+3. The end-user documentation included with the redistribution, if any, must
+   include  the following  acknowledgment:  "This product includes  software
+   developed  by the  Apache Software Foundation  (http://www.apache.org/)."
+   Alternately, this  acknowledgment may  appear in the software itself,  if
+   and wherever such third-party acknowledgments normally appear.
+
+4. The names "Batik" and  "Apache Software Foundation"  must not be  used to
+   endorse  or promote  products derived  from this  software without  prior
+   written permission. For written permission, please contact
+   apache@apache.org.
+
+5. Products  derived from this software may not  be called "Apache", nor may
+   "Apache" appear  in their name,  without prior written permission  of the
+   Apache Software Foundation.
+
+THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESSED OR IMPLIED WARRANTIES,
+INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS  FOR A PARTICULAR  PURPOSE ARE  DISCLAIMED.  IN NO  EVENT SHALL  THE
+APACHE SOFTWARE  FOUNDATION  OR ITS CONTRIBUTORS  BE LIABLE FOR  ANY DIRECT,
+INDIRECT, INCIDENTAL, SPECIAL,  EXEMPLARY, OR CONSEQUENTIAL  DAMAGES (INCLU-
+DING, BUT NOT LIMITED TO, PROCUREMENT  OF SUBSTITUTE GOODS OR SERVICES; LOSS
+OF USE, DATA, OR  PROFITS; OR BUSINESS  INTERRUPTION)  HOWEVER CAUSED AND ON
+ANY  THEORY OF LIABILITY,  WHETHER  IN CONTRACT,  STRICT LIABILITY,  OR TORT
+(INCLUDING  NEGLIGENCE OR  OTHERWISE) ARISING IN  ANY WAY OUT OF THE  USE OF
+THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+This software  consists of voluntary contributions made  by many individuals
+on  behalf  of the Apache Software  Foundation. For more  information on the
+Apache Software Foundation, please see <http://www.apache.org/>.
+
+三、公有领域说明（逐字照录源文件头）
+--------------------------------------------------------------------------------------------
+
+common-image 的 com/twelvemonkeys/image/ResampleOp.java：
+
+  Based on example code found in Graphics Gems III, Filtered Image Rescaling
+  (filter_rcg.c), available from http://www.acm.org/tog/GraphicsGems/.
+
+  Public Domain 1991 by Dale Schumacher. Mods by Ray Gardener
+
+  Original by Dale Schumacher (fzoom)
+
+  Additional changes by Ray Gardener, Daylon Graphics Ltd.
+  December 4, 1999
+
+common-io 的 com/twelvemonkeys/io/LittleEndianDataInputStream.java 与 LittleEndianDataOutputStream.java：
+
+  From http://www.cafeaulait.org/books/javaio/ioexamples/index.html:
+
+  Please feel free to use any fragment of this code you need in your own work.
+  As far as I am concerned, it's in the public domain. No permission is necessary
+  or required.  Credit is always appreciated if you use a large chunk or base a
+  significant product on one of my examples, but that's not required either.
+
+  Elliotte Rusty Harold

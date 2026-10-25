@@ -17,17 +17,19 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /**
- * 游客访问播放/下载入口的判定（B05，docs/architecture/15-b05-readonly-pages.md 第 6 节；队长裁定 D-B05-2～4）。只调用 Mapper 的
- * select。旧代码：入口 application/index/controller/Vod.php:86-120，数据与试看 common/controller/All.php:442-563，权限
- * index/controller/Base.php:92-231（游客 group_id=1、积分 0）。
+ * 播放/下载入口的判定（B05，docs/architecture/15-b05-readonly-pages.md 第 6 节；队长裁定 D-B05-2～4；B09 起按当前请求的有效
+ * 会员组，18 文档第 5.3 节）。只调用 Mapper 的 select。旧代码：入口 application/index/controller/Vod.php:86-120，数据与试看
+ * common/controller/All.php:442-563，权限 index/controller/Base.php:92-231。
  *
  * <p>判定顺序（每个入口按旧调用链，见 {@link PlaybackEntry}）：
  * <ol>
  * <li>视频不存在、未审核、分类不可见 → VIDEO_NOT_FOUND（404）。旧播放入口不检查详情位 2，这里也不检查；</li>
  * <li>权限（user.status=1，即 {@code maccms.content.enforce-guest-popedom=true} 时；否则一律放行、没有试看）：
- *   播放——无位 3 且（无位 5 或试看时长为 0）→ {@link PlaybackOutcome#NO_PERMISSION}；无位 3、有位 5、时长 &gt; 0 →
- *   {@link PlaybackOutcome#TRIAL}；积分列 &gt; 0 → {@link PlaybackOutcome#POINTS_REQUIRED}（Base.php:143-168）。
- *   下载——无位 4 → NO_PERMISSION；积分列 &gt; 0 → POINTS_REQUIRED（:170-177）；</li>
+ *   播放——无位 3 且（无位 5 或试看时长为 0）→ {@link PlaybackOutcome#NO_PERMISSION}；组 &lt; 3、无位 3、有位 5、时长 &gt; 0 →
+ *   {@link PlaybackOutcome#TRIAL}；组 &lt; 3 且积分列 &gt; 0 → {@link PlaybackOutcome#POINTS_REQUIRED}（Base.php:143-168；
+ *   是否已购买的 {@code mac_ulog} 查询归 B10）；其余放行（组 ≥ 3 有位 5 而无位 3 时旧版直接放行，照搬）。
+ *   下载——无位 4 → NO_PERMISSION；组为 1 或 2 且积分列 &gt; 0 → POINTS_REQUIRED（:170-195，组 1 提示先登录、组 2 提示扣积分，
+ *   页面文案相同）；组 ≥ 3 放行。组不存在时组号按 0（旧 {@code $group} 为空）；</li>
  * <li>版权（只在实际命中的入口）：vod_copyright=1 且 copyright_status=3 时的 PLAY_PAGE、=4 时的 PLAYER →
  *   {@link PlaybackOutcome#COPYRIGHT_RESTRICTED}。下载入口旧版不检查版权；</li>
  * <li>密码（PLAYER 的 vod_pwd_play、DOWNER 的 vod_pwd_down）非空且没有与当前密码一致的凭据 → {@link PlaybackOutcome#PASSWORD_REQUIRED}。</li>
@@ -76,14 +78,14 @@ public class VideoPlaybackService {
             if (row == null) {
                 throw new ApiException(ErrorCode.VIDEO_NOT_FOUND, "视频不存在");
             }
-            GuestPermission guest = catalogs.guest();
-            CategoryCatalog catalog = catalogs.vodCatalog(guest);
+            GroupPermission viewer = catalogs.viewer();
+            CategoryCatalog catalog = catalogs.vodCatalog(viewer);
             int typeId = nz(row.categoryId());
             if (!catalog.isVisible(typeId)) {
                 throw new ApiException(ErrorCode.VIDEO_NOT_FOUND, "视频不存在");
             }
             int trySee = entry.down() ? 0 : trySeeMinutes(row);
-            PlaybackOutcome outcome = permission(entry, guest, typeId, trySee, row);
+            PlaybackOutcome outcome = permission(entry, viewer, typeId, trySee, row);
             if (outcome == PlaybackOutcome.ALLOWED || outcome == PlaybackOutcome.TRIAL) {
                 if (copyrightRestricted(entry, row)) {
                     outcome = PlaybackOutcome.COPYRIGHT_RESTRICTED;
@@ -115,7 +117,7 @@ public class VideoPlaybackService {
         boolean down = target == PasswordTarget.VIDEO_DOWN;
         return read(() -> {
             VodPlaybackRow row = vodMapper.selectPlayback(vodId, down, null, null);
-            if (row == null || !catalogs.vodCatalog(catalogs.guest()).isVisible(nz(row.categoryId()))) {
+            if (row == null || !catalogs.vodCatalog(catalogs.viewer()).isVisible(nz(row.categoryId()))) {
                 return false;
             }
             return vodMapper.countPasswordMatch(vodId, down, candidate) > 0;
@@ -128,23 +130,29 @@ public class VideoPlaybackService {
         return own > 0 ? own : settings.trySeeMinutes();
     }
 
-    private PlaybackOutcome permission(PlaybackEntry entry, GuestPermission guest, int typeId, int trySee,
+    private PlaybackOutcome permission(PlaybackEntry entry, GroupPermission viewer, int typeId, int trySee,
                                        VodPlaybackRow row) {
         if (!catalogs.enforceGuestPopedom()) {
             // user.status=0：check_user_popedom 直接返回 code=1（Base.php:115-117），没有试看
             return PlaybackOutcome.ALLOWED;
         }
         int points = settings.pointsWholeVideo() ? nz(row.pointsWhole()) : nz(row.pointsKind());
+        int group = viewer.groupId();
         if (entry.down()) {
-            if (!guest.allows(typeId, GuestPermission.DOWN)) {
+            if (!viewer.allows(typeId, GroupPermission.DOWN)) {
                 return PlaybackOutcome.NO_PERMISSION;
             }
-            return points > 0 ? PlaybackOutcome.POINTS_REQUIRED : PlaybackOutcome.ALLOWED;
+            // Base.php:174-195：只有组 1（4001 先登录）与组 2（4003 扣积分确认）检查积分
+            return points > 0 && (group == 1 || group == 2) ? PlaybackOutcome.POINTS_REQUIRED : PlaybackOutcome.ALLOWED;
         }
-        boolean play = guest.allows(typeId, GuestPermission.PLAY);
-        boolean trial = guest.allows(typeId, GuestPermission.TRY_SEE);
+        boolean play = viewer.allows(typeId, GroupPermission.PLAY);
+        boolean trial = viewer.allows(typeId, GroupPermission.TRY_SEE);
         if (!play && (!trial || trySee == 0)) {
             return PlaybackOutcome.NO_PERMISSION;
+        }
+        if (group >= 3) {
+            // Base.php:146-168 的试看与积分分支都要求 group_id<3：组 ≥ 3 走到这里一律放行
+            return PlaybackOutcome.ALLOWED;
         }
         if (!play) {
             return PlaybackOutcome.TRIAL;

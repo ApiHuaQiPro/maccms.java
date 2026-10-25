@@ -143,13 +143,17 @@ class WriteInfrastructureMySqlIT {
         assertThat(SnapshotDiff.between(s0, snapshot()).isEmpty()).isTrue();
     }
 
-    /** ② 打开可写数据源：Bean 存在，但正式登记表为空，任何写入都在执行前被拒；只读池不受影响。 */
+    /**
+     * ② 打开可写数据源：Bean 存在，使用正式登记表（B07/B08 为空，B09 起只有 member 对 mac_user 的插入与更新），演练写入
+     * （drill 模块、mac_vod）在执行前被拒；只读池不受影响。
+     */
     @Test
     @Order(2)
     void enabledWriteDataSourceEnforcesTheProductionRegistry() throws Exception {
         try (ConfigurableApplicationContext app = start(true)) {
             WriteDatabase db = app.getBean(WriteDatabase.class);
-            assertThat(db.registry().permissions()).isEmpty();
+            assertThat(db.registry().permissions()).allMatch(p -> p.module().equals("member")
+                    && p.table().equals("mac_user") && p.batch().equals("B09"));
             assertThatThrownBy(() -> db.mapper(DrillWriteMapper.class).hit(1)).isInstanceOf(WriteRejectedException.class)
                     .hasMessageContaining("未登记的写入").hasMessageContaining("mac_vod");
             assertReadPoolRejectsWrites(app);

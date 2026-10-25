@@ -97,6 +97,19 @@
             <version>3.5.3</version>
         </dependency>
 
+        <!--
+          WebP 头像解码（B09，MACC-23 队长裁定方案 B，docs/architecture/18-b09-member-account.md 第 14 节）：TwelveMonkeys
+          imageio-webp 固定 3.12.0，BSD-3-Clause，纯 Java、无本地库。图片格式只多一个 WebP 读取器（没有写入器）；imageio-core 另经
+          SPI 注册 ImageInputStreamSpi，PortraitImages 显式使用 MemoryCacheImageInputStream，不受其影响。传递依赖 imageio-core /
+          imageio-metadata / common-lang / common-io / common-image 同为 3.12.0；许可、版权与 common-image 中 ASF 1.1 代码的致谢语
+          随包放在 classpath:licenses/twelvemonkeys-imageio-3.12.0.txt。只有 member.application.PortraitImages 引用其类型（ModuleBoundaryTest）。
+        -->
+        <dependency>
+            <groupId>com.twelvemonkeys.imageio</groupId>
+            <artifactId>imageio-webp</artifactId>
+            <version>3.12.0</version>
+        </dependency>
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>

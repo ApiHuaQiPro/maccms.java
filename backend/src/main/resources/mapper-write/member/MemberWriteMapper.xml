@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+  B09 会员账号的写入（docs/architecture/18-b09-member-account.md 第 6 节；登记 WriteRegistry：member / mac_user / INSERT、UPDATE）。
+  全部是单表单行语句，前置条件写进 WHERE，调用方检查匹配行数（可写数据源 useAffectedRows=false）。旧表 MyISAM，没有事务。
+-->
+<mapper namespace="com.maccms.backend.member.infrastructure.MemberWriteMapper">
+
+    <!--
+      注册（旧 common/model/User.php:145-148 判重、:168-176 IP 限额、:178-231 插入）：判重、限额与插入合成一条条件插入。
+      MyISAM 对 INSERT ... SELECT 加表级写锁，同名并发注册只会插入一行（18 文档第 6.3 节）。regNum <= 0 时不限额。
+    -->
+    <insert id="register">
+        INSERT INTO mac_user (user_name, user_pwd, group_id, user_points, user_status, user_reg_time, user_reg_ip,
+                              user_openid_qq, user_openid_weixin)
+        SELECT #{name}, #{pwd}, 2, #{points}, #{status}, #{now}, #{ip}, '', ''
+        FROM DUAL
+        WHERE NOT EXISTS (SELECT 1 FROM mac_user AS u WHERE u.user_name = #{name})
+          AND (#{regNum} &lt;= 0
+               OR (SELECT COUNT(*) FROM mac_user AS r WHERE r.user_reg_ip = #{ip} AND r.user_reg_time &gt; #{since})
+                  &lt; #{regNum})
+    </insert>
+
+    <!-- 推广关系（旧 User.php:236-248）：只写一次。邀请人加积分与 mac_plog 流水归 B10。 -->
+    <update id="setInviter">
+        UPDATE mac_user
+        SET user_pid = #{pid}, user_pid_2 = #{pid2}, user_pid_3 = #{pid3}
+        WHERE user_id = #{userId} AND user_pid = 0
+    </update>
+
+    <!--
+      登录（旧 User.php:363-376）：上次登录时间/IP 先取旧值（MySQL 单表 UPDATE 按从左到右赋值），登录次数原子加一，到期降级在同一条
+      语句内判定；条件为查到的 user_id、本次比较的 user_pwd 与 user_status=1。
+    -->
+    <update id="recordLogin">
+        UPDATE mac_user
+        SET user_last_login_time = user_login_time,
+            user_last_login_ip = user_login_ip,
+            user_login_time = #{now},
+            user_login_ip = #{ip},
+            user_login_num = user_login_num + 1,
+            user_random = #{random},
+            group_id = IF(group_id &gt; 2 AND user_end_time &lt; #{now}, 2, group_id)
+        WHERE user_id = #{userId} AND user_pwd = #{pwd} AND user_status = 1
+    </update>
+
+    <!-- 注销轮换（D2 ⑥）：条件为校验通过时库里的 user_random。 -->
+    <update id="rotateRandom">
+        UPDATE mac_user
+        SET user_random = #{random}
+        WHERE user_id = #{userId} AND user_random = #{oldRandom}
+    </update>
+
+    <!--
+      资料与改密（旧 User.php:306-318 → saveData :69-81）：qq、问题、答案总是写；昵称原值非空时写；新密码原值非空时写 user_pwd，
+      同时轮换 user_random（D2 ⑥）。条件为校验旧密码时读到的 user_pwd。
+    -->
+    <update id="updateProfile">
+        UPDATE mac_user
+        SET user_qq = #{qq}, user_question = #{question}, user_answer = #{answer}
+        <if test="nickName != null">, user_nick_name = #{nickName}</if>
+        <if test="pwd != null">, user_pwd = #{pwd}, user_random = #{random}</if>
+        WHERE user_id = #{userId} AND user_pwd = #{oldPwd}
+    </update>
+
+    <!-- 密保找回重置（旧 User.php:514-519）：同时轮换 user_random（D2 ⑥）；条件带上用于查找的三项。 -->
+    <update id="resetPassword">
+        UPDATE mac_user
+        SET user_pwd = #{pwd}, user_random = #{random}
+        WHERE user_id = #{userId} AND user_name = #{name} AND user_question = #{question} AND user_answer = #{answer}
+    </update>
+
+    <!-- 头像（旧 common/model/Upload.php:229-236）。 -->
+    <update id="updatePortrait">
+        UPDATE mac_user
+        SET user_portrait = #{portrait}
+        WHERE user_id = #{userId}
+    </update>
+
+    <!--
+      checkLogin 到期单行降级（旧 User.php:455-466；B08 测试侧已演练的语句）：条件带到期判断，与续费并发时不会误降，并发只命中一行。
+    -->
+    <update id="expireMember">
+        UPDATE mac_user
+        SET group_id = 2
+        WHERE user_id = #{userId} AND user_status = 1 AND group_id &gt; 2 AND user_end_time &lt; #{now}
+    </update>
+</mapper>

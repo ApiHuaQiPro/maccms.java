@@ -325,12 +325,14 @@ class MemberGoldenMySqlIT {
 
     /**
      * ⑤ 测试侧降级演练（17 文档第 7 节）。语句只在测试类路径的 {@link DrillWriteMapper}，经演练登记表打开写连接；正式登记表
-     * {@link WriteRegistry#registered()} 仍为空。正式写入：checkLogin 单行降级归 B09，批量到期任务归 B10，后台会员列表第 1 页归 B14。
+     * {@link WriteRegistry#registered()} 不含演练模块（B09 起只登记 member 的 mac_user 写入）。正式写入：checkLogin 单行降级归
+     * B09（MemberAccountGoldenMySqlIT ④），批量到期任务归 B10，后台会员列表第 1 页归 B14。
      */
     @Test
     @Order(5)
     void downgradeDrillBoundaryConcurrencyRaceAndDmlRestore() throws Exception {
-        assertThat(WriteRegistry.registered().permissions()).as("B08 不登记正式业务写入").isEmpty();
+        assertThat(WriteRegistry.registered().permissions()).as("正式登记表没有演练模块")
+                .noneMatch(p -> p.module().startsWith("drill"));
         String url = jdbcUrlFor(dbName);
         try (WriteDatabase drill = WriteDatabase.open(WriteDataSourceSettings.from(
                 new WriteDataSourceProperties(true, url, adminUser, adminPassword, true, 8), url),

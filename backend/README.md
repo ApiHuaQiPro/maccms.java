@@ -35,7 +35,7 @@ B02（MACC-26）加了四样东西，见 `docs/architecture/11-guards-and-legacy
 B07（MACC-31）建了写入基础设施，见 `docs/architecture/12-write-infrastructure.md`：与只读池分开的可写数据源（`MACCMS_WRITE_ENABLED`，
 **默认关闭**，打开时 `MACCMS_WRITE_DB_URL/USERNAME/PASSWORD` 必须单独提供，地址须与 `MACCMS_DB_URL` 同库）、"模块 + 表 + 操作"写入登记表
 与静态/运行期护栏、写 SQL 规范（条件更新、匹配行数、固定顺序与补偿），以及测试侧的并发写测试支撑与回滚演练工具（快照、逐行 diff、
-只用 DML 恢复）。本批没有任何业务写入，正式登记表为空。整体切换（D3）方案见 `docs/architecture/13-cutover-plan.md`。
+只用 DML 恢复）。B09 起正式登记会员模块对 `mac_user` 的插入与更新（`docs/architecture/18-b09-member-account.md` 第 6 节），关闭可写数据源时会员入口 `user/*` 返回 503。整体切换（D3）方案见 `docs/architecture/13-cutover-plan.md`。
 
 B06（MACC-30）见 `docs/architecture/16-b06-misc-pages-provide.md`：客户端 IP 组件（`MACCMS_TRUSTED_PROXIES`、`MACCMS_CLIENT_IP_HEADER`，
 默认只信连接对端）；Provide 资源站接口（`/api.php/provide/**`，`MACCMS_OPENAPI_ENABLED` **默认关闭**，各模块再按旧配置 `api.*.status`

@@ -79,6 +79,11 @@ public class SitePages {
         return error("服务暂时不可用", "请稍后再试。");
     }
 
+    /** 可写数据源关闭时的会员入口（B09，18 文档第 2 节）。 */
+    public ErrorPage memberUnavailable() {
+        return error("会员功能暂未开放", "会员功能暂未开放，请稍后再试。");
+    }
+
     public ErrorPage closed() {
         return error("站点维护中", site.closedMessage());
     }
@@ -110,6 +115,14 @@ public class SitePages {
      */
     PageChrome search(String fullTitle, Optional<SafeUrl> canonical, List<NavLink> nav) {
         return chrome(fullTitle, site.description(), site.keywords(), canonical, true, nav);
+    }
+
+    /**
+     * 会员页面外壳（B09）：noindex，没有 canonical；不查库（导航为空），与错误页相同。
+     */
+    PageChrome member(String heading) {
+        return chrome(heading + " - " + site.name(), site.description(), site.keywords(), Optional.empty(), true,
+                List.of());
     }
 
     private ErrorPage error(String heading, String message) {

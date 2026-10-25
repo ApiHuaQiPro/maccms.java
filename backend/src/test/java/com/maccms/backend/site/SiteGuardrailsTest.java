@@ -174,6 +174,8 @@ class SiteGuardrailsTest {
     void iframeOnlyOnThePlayPageAndScriptsOnlyAsNoncedExternalScriptsInThePlayerFrame() throws IOException {
         Path play = SITE_TEMPLATES.resolve(Path.of("pages", "play.jte"));
         Path player = SITE_TEMPLATES.resolve(Path.of("player", "player.jte"));
+        // B09：会员页面共用的 member.js 只在这一个模板里输出
+        Path member = SITE_TEMPLATES.resolve(Path.of("member", "script.jte"));
         int iframes = 0;
         int scripts = 0;
         for (Path f : files(JTE_ROOT, ".jte")) {
@@ -186,15 +188,15 @@ class SiteGuardrailsTest {
             }
             Matcher sc = SCRIPT.matcher(src);
             while (sc.find()) {
-                assertThat(f).as("只有播放器内页可以有 script").isEqualTo(player);
+                assertThat(f).as("只有播放器内页与会员页面的脚本模板可以有 script").isIn(player, member);
                 assertThat(sc.group()).as("script 只能是带本响应 nonce 的同源外部脚本，没有内联内容").matches(SCRIPT_ALLOWED);
                 scripts++;
             }
             assertThat(src.toLowerCase(java.util.Locale.ROOT).split("<script", -1).length - 1)
-                    .as(f + " 中每个 <script 都已按完整写法检查").isEqualTo(f.equals(player) ? 2 : 0);
+                    .as(f + " 中每个 <script 都已按完整写法检查").isEqualTo(f.equals(player) ? 2 : f.equals(member) ? 1 : 0);
         }
         assertThat(iframes).isEqualTo(1);
-        assertThat(scripts).isEqualTo(2);
+        assertThat(scripts).isEqualTo(3);
         for (String bad : List.of("<script>alert(1)</script>",
                 "<script nonce=\"${page.nonce()}\">${page.data()}</script>",
                 "<script nonce=\"x\" src=\"${s.href()}\"></script>",

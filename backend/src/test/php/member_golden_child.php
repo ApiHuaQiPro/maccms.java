@@ -130,14 +130,25 @@ try {
             break;
 
         case 'label_user':
+            // 每轮尝试前清掉已写出的 Set-Cookie，只保留最后一轮（即一次 label_user）写出的头：同一进程里重试时 setcookie 会累加，
+            // B08 的 7.3 黄金 expiry-5-g3--1 曾因首轮跨秒重试记下两遍 group_id/group_name（B09 复现，18 文档第 9 节）。
+            // legacy_harness=true 时按 B08 原样累加，只用于复现；straddle=true 时首轮写库后等到下一秒再调用 label_user，必定重试一次。
             $attempts = 0;
             do {
                 $attempts++;
+                if (empty($args['legacy_harness'])) {
+                    header_remove('Set-Cookie');
+                }
                 $t = time();
                 if (isset($args['end_offset'])) {
                     \think\Db::name('user')->where('user_id', $args['end_offset']['user_id'])->update([
                         'user_end_time' => $t + $args['end_offset']['offset'],
                         'group_id' => $args['end_offset']['group_id']]);
+                }
+                if (!empty($args['straddle']) && $attempts === 1) {
+                    while (time() === $t) {
+                        usleep(10000);
+                    }
                 }
                 $GLOBALS['user'] = null;
                 $controller = (new ReflectionClass('app\index\controller\Base'))->newInstanceWithoutConstructor();
@@ -150,6 +161,8 @@ try {
             } while (isset($args['end_offset']) && time() !== $t && $attempts < 5);
             $u = $GLOBALS['user'];
             $result['now'] = $t;
+            $result['attempts'] = $attempts;
+            $result['request_time'] = $_SERVER['REQUEST_TIME'];
             $result['same_second'] = time() === $t;
             $result['member'] = (int)$u['user_id'] > 0;
             $result['user_id'] = (int)$u['user_id'];

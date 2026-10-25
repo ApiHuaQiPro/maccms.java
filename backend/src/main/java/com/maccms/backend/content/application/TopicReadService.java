@@ -90,9 +90,9 @@ public class TopicReadService {
             if (row == null) {
                 throw new ApiException(ErrorCode.TOPIC_NOT_FOUND, "专题不存在");
             }
-            GuestPermission guest = catalogs.guest();
-            CategoryCatalog vodCatalog = catalogs.vodCatalog(guest);
-            CategoryCatalog artCatalog = catalogs.catalog(ArticleReadService.TYPE_MID, guest);
+            GroupPermission viewer = catalogs.viewer();
+            CategoryCatalog vodCatalog = catalogs.vodCatalog(viewer);
+            CategoryCatalog artCatalog = catalogs.catalog(ArticleReadService.TYPE_MID, viewer);
             List<VideoSummaryDto> relatedVideos = new ArrayList<>();
             List<ArticleSummaryDto> relatedArticles = new ArrayList<>();
 

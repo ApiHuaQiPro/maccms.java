@@ -162,6 +162,7 @@ try {
         'captcha_image' => captcha_image_cases($ctx),
         'timespan' => timespan_cases($ctx),
         'expire' => expire_cases($ctx),
+        'expiry_repro' => expiry_repro_cases($ctx),
     ];
     echo json_encode($out, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE), "\n";
 } catch (\Throwable $e) {
@@ -174,8 +175,21 @@ try {
 }
 exit($exit);
 
-/** 以 php-cgi 执行子进程的一个操作，返回其 JSON 正文（解码后）。 */
+/**
+ * 以 php-cgi 执行子进程的一个操作，返回其 JSON 正文（解码后）。验证码与计时用例要求"构造记录与校验在同一秒"，子进程报告
+ * same_second=false 时换一个新进程重跑（最多 5 次；B09 重新生成时机器较慢，曾有用例跨秒）。
+ */
 function run_child($ctx, $op, $args, $cookieHeader = null)
+{
+    for ($i = 1; ; $i++) {
+        $r = run_child_once($ctx, $op, $args, $cookieHeader);
+        if (!in_array($op, ['captcha_check', 'verify_check', 'timespan'], true) || !empty($r['same_second']) || $i >= 5) {
+            return $r;
+        }
+    }
+}
+
+function run_child_once($ctx, $op, $args, $cookieHeader)
 {
     list($host, $port, $db, $user, $password) = $ctx['db'];
     $child = __DIR__ . DIRECTORY_SEPARATOR . 'member_golden_child.php';
@@ -532,6 +546,30 @@ function timespan_cases($ctx)
     foreach ([null, 0, 1, 2, 3, 4, 100, -5] as $offset) {
         $r = run_child($ctx, 'timespan', ['key' => 'last_searchtime', 'offset' => $offset]);
         $out[] = $r;
+    }
+    return $out;
+}
+
+/**
+ * B09 复现 B08 的 7.3 黄金 expiry-5-g3--1 记下 4 个 Set-Cookie 的原因（18 文档第 9 节）：label_user 用例为保证"写库与判定在同一秒"
+ * 会在跨秒时于同一进程内重试，旧 harness 不清除上一轮的头，跨秒一次就多出一组 group_id/group_name。
+ * straddle 强制首轮跨秒；legacy_harness 按 B08 原样累加。每种组合跑两次，确认可复现。
+ */
+function expiry_repro_cases($ctx)
+{
+    $u = find_user(5);
+    $header = login_cookie_header($u[0], $u[2], $u[4]);
+    $out = [];
+    foreach (['legacy-straddle' => ['legacy_harness' => true, 'straddle' => true],
+                 'fixed-straddle' => ['straddle' => true], 'fixed-plain' => []] as $label => $flags) {
+        for ($i = 1; $i <= 2; $i++) {
+            $r = run_child($ctx, 'label_user', ['row' => 5, 'end_offset' => ['user_id' => 5, 'offset' => -1,
+                    'group_id' => 3]] + $flags, $header);
+            $out[] = ['label' => $label . '-' . $i, 'flags' => $flags, 'attempts' => $r['attempts'],
+                'request_time' => $r['request_time'], 'now' => $r['now'], 'same_second' => $r['same_second'],
+                'group_group_id' => $r['group_group_id'], 'set_cookies' => $r['set_cookies'],
+                'row_after' => $r['row_after'], 'error' => $r['error'] ?? null];
+        }
     }
     return $out;
 }

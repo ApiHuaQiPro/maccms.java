@@ -39,6 +39,7 @@
 
 - `WriteRegistry.REGISTERED`：`WritePermission(模块, 表, 操作, 批次)` 的列表。模块是写 Mapper 所在的 `com.maccms.backend.<模块>.infrastructure`；表是 `mac_*`；操作是 `INSERT`/`UPDATE`/`DELETE`；批次形如 `B09`。同一"模块 + 表 + 操作"不能重复登记。
 - **B07 交付时为空**（`WriteGuardTest.registeredPermissionsFollowTheOwnerMatrix` 同时锁定"为空"，B08 起登记时一并修改这条断言）。**B08 交付时仍为空**：B08 没有业务写入，会员组到期降级的语句（批量 `<=`、单行 `<`）与续费只加在测试侧演练 Mapper（`drill/DrillWriteMapper.xml`，经演练登记表 `DrillRegistry` 的 `drill`/`mac_user`/`UPDATE`），在一次性库上演练批量边界、单行 16 线程并发、续费与降级竞态、DML 恢复与结构指纹（`MemberGoldenMySqlIT` ⑤，17 文档第 7 节）。正式实现并登记：`checkLogin` 单行降级归 B09，批量到期任务归 B10，后台会员列表第 1 页的 `expire()` 归 B14。
+- **B09 起的正式登记**（MACC-33，18 文档第 6 节）：`member`/`mac_user`/`INSERT`、`member`/`mac_user`/`UPDATE`（注册的条件插入；登录、注销轮换、资料与改密、密保重置、头像、推广关系、`checkLogin` 到期单行降级）。写 Mapper 的装配条件用 `common.write.ConditionalOnWriteEnabled`（与 `WriteDatabase` 同条件，`maccms.write` 配置名只出现在 `common.write`）。
 - 每个写库批次在自己的合并提交里只登记本批条目；表与批次必须符合路线图第 5.3 节写入方矩阵，矩阵逐表写在 `WriteGuardTest.OWNER_MATRIX`（26 张表，与 `install.sql` 核对）。矩阵要改须先改路线图。正式登记表不能出现演练模块（`drill*`）。
 - 同一张表可以由多个模块登记（例如 `mac_user`：会员 B09、积分 B10、后台 B14），这是路线图矩阵本身的设计；D3 已决整体切换，不再有"PHP 与 Java 同时写同一张表"的阶段，所以不需要"单一写入方"的时段约束。
 
