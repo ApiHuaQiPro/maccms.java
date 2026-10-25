@@ -250,6 +250,9 @@ class InteractionGoldenMySqlIT {
                     schemaNow = SchemaFingerprint.of(c, dbName);
                 }
             }
+            if (shared != null) {
+                shared.close();
+            }
             try (Connection c = admin(null); Statement st = c.createStatement()) {
                 st.execute("DROP DATABASE `" + dbName + "`");
                 try (ResultSet rs = st.executeQuery("SELECT COUNT(*) FROM information_schema.schemata "
@@ -941,9 +944,29 @@ class InteractionGoldenMySqlIT {
         return v;
     }
 
+    /** 一次性库的管理连接：全程共用一条（每个用例都要建连时，整套 mysql-it 里 Windows 的临时端口会被 TIME_WAIT 耗尽）。 */
+    private static Connection shared;
+
     private static Connection admin(String db) throws SQLException {
-        String url = db == null ? adminUrl : jdbcUrlFor(db);
-        return DriverManager.getConnection(url, adminUser, adminPassword);
+        if (db == null || !db.equals(dbName)) {
+            return DriverManager.getConnection(db == null ? adminUrl : jdbcUrlFor(db), adminUser, adminPassword);
+        }
+        if (shared == null || shared.isClosed()) {
+            shared = DriverManager.getConnection(jdbcUrlFor(db), adminUser, adminPassword);
+        }
+        Connection target = shared;
+        // 调用方照常 try-with-resources；close 不关闭共用连接
+        return (Connection) java.lang.reflect.Proxy.newProxyInstance(Connection.class.getClassLoader(),
+                new Class<?>[] {Connection.class}, (proxy, m, args) -> {
+                    if (m.getName().equals("close") && m.getParameterCount() == 0) {
+                        return null;
+                    }
+                    try {
+                        return m.invoke(target, args);
+                    } catch (java.lang.reflect.InvocationTargetException e) {
+                        throw e.getCause();
+                    }
+                });
     }
 
     private static String jdbcUrlFor(String db) {
