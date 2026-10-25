@@ -10,6 +10,7 @@ import com.maccms.backend.legacyconfig.application.LegacyConfigFile;
 import com.maccms.backend.legacyconfig.application.LegacyConfigService;
 import com.maccms.backend.legacyconfig.application.view.PhpArray;
 import com.maccms.backend.legacyconfig.application.view.PhpValue;
+import com.maccms.backend.member.application.MemberRecordService;
 import com.maccms.backend.member.application.MemberSessionService;
 import com.maccms.backend.site.application.BrowserAddress;
 import com.maccms.backend.site.application.ImageUrlNormalizer;
@@ -291,9 +292,10 @@ public class SiteConfiguration {
      * 会员服务在只装配部分 Bean 的测试里可能没有，此时一律按游客。
      */
     @Bean
-    WebMvcConfigurer siteStatusWebMvcConfigurer(SiteSettings settings, ObjectProvider<MemberSessionService> members) {
+    WebMvcConfigurer siteStatusWebMvcConfigurer(SiteSettings settings, ObjectProvider<MemberSessionService> members,
+                                                ObjectProvider<MemberRecordService> records) {
         SiteStatusInterceptor interceptor = new SiteStatusInterceptor(settings);
-        SiteMemberInterceptor member = new SiteMemberInterceptor(members);
+        SiteMemberInterceptor member = new SiteMemberInterceptor(members, records);
         return new WebMvcConfigurer() {
             @Override
             public void addInterceptors(InterceptorRegistry registry) {

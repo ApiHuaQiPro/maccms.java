@@ -54,15 +54,37 @@ public final class QrcodeImages {
      * （它在写出流时可能使用磁盘缓存）。
      */
     static byte[] encodePng(ByteMatrix m) {
-        int size = (m.getWidth() + 2 * MARGIN) * SCALE;
+        return encodePng(m, MARGIN);
+    }
+
+    /**
+     * 会员中心微信支付二维码（B10，旧 {@code user/qrcode}：{@code QRcode::png($data, false, QR_ECLEVEL_L, 10)}，静区为 phpqrcode 默认的
+     * 4 模块，index/controller/User.php:535-547）：{@code data} 须以 {@code weixin} 开头、不超过 {@value #MAX_BYTES} 字节，否则为空。
+     * B24 前没有入口会生成这种地址；本地生成，不调用外部服务。
+     */
+    public static Optional<byte[]> weixinPng(String data) {
+        if (data == null || !data.startsWith("weixin") || data.getBytes(StandardCharsets.UTF_8).length > MAX_BYTES) {
+            return Optional.empty();
+        }
+        QRCode code;
+        try {
+            code = Encoder.encode(data, ErrorCorrectionLevel.L, Map.of(EncodeHintType.CHARACTER_SET, "ISO-8859-1"));
+        } catch (WriterException e) {
+            return Optional.empty();
+        }
+        return Optional.of(encodePng(code.getMatrix(), 4));
+    }
+
+    static byte[] encodePng(ByteMatrix m, int margin) {
+        int size = (m.getWidth() + 2 * margin) * SCALE;
         int rowBytes = (size + 7) / 8;
         byte[] raw = new byte[(rowBytes + 1) * size];
         for (int y = 0; y < size; y++) {
             int base = y * (rowBytes + 1);
             raw[base] = 0;
-            int my = y / SCALE - MARGIN;
+            int my = y / SCALE - margin;
             for (int x = 0; x < size; x++) {
-                int mx = x / SCALE - MARGIN;
+                int mx = x / SCALE - margin;
                 boolean dark = mx >= 0 && my >= 0 && mx < m.getWidth() && my < m.getHeight() && m.get(mx, my) == 1;
                 if (!dark) {
                     raw[base + 1 + x / 8] |= (byte) (0x80 >>> (x % 8));

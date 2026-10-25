@@ -18,7 +18,10 @@ import com.maccms.backend.site.application.RichTextCache;
 import com.maccms.backend.site.application.SiteRoute;
 import com.maccms.backend.site.application.SiteSettings;
 import com.maccms.backend.site.config.ConditionalOnSiteEnabled;
+import com.maccms.backend.member.application.MemberRecordService;
+import com.maccms.backend.member.application.MemberWalletService;
 import com.maccms.backend.site.web.view.AccessNoticePage;
+import com.maccms.backend.site.web.view.BuyConfirmPage;
 import com.maccms.backend.site.web.view.DownPage;
 import com.maccms.backend.site.web.view.DownerPage;
 import com.maccms.backend.site.web.view.FrameNoticePage;
@@ -32,6 +35,8 @@ import java.util.Optional;
 import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -68,11 +73,26 @@ public class SitePlaybackController {
     private final VideoPlaybackService playback;
     private final PasswordTickets tickets;
     private final PasswordAttempts attempts;
+    private final ObjectProvider<MemberRecordService> records;
+    private final ObjectProvider<MemberWalletService> wallet;
 
     public SitePlaybackController(SiteHtmlRenderer renderer, SitePages sitePages, LegacyUrlBuilder urls,
                                   LegacyUrlParser parser, ImageUrlNormalizer images, RichTextCache richText,
                                   ContentReadService content, VideoPlaybackService playback, PlayerSettings player,
                                   BrowserExternalAccess external, PasswordTickets tickets, PasswordAttempts attempts) {
+        this(renderer, sitePages, urls, parser, images, richText, content, playback, player, external, tickets, attempts,
+                null, null);
+    }
+
+    @Autowired
+    public SitePlaybackController(SiteHtmlRenderer renderer, SitePages sitePages, LegacyUrlBuilder urls,
+                                  LegacyUrlParser parser, ImageUrlNormalizer images, RichTextCache richText,
+                                  ContentReadService content, VideoPlaybackService playback, PlayerSettings player,
+                                  BrowserExternalAccess external, PasswordTickets tickets, PasswordAttempts attempts,
+                                  ObjectProvider<MemberRecordService> records,
+                                  ObjectProvider<MemberWalletService> wallet) {
+        this.records = records;
+        this.wallet = wallet;
         this.renderer = renderer;
         this.parser = parser;
         this.urls = urls;
@@ -88,11 +108,12 @@ public class SitePlaybackController {
             "/index.php/vod/down/**", "/vod/down/**", "/index.php/vod/downer/**", "/vod/downer/**"})
     public ResponseEntity<String> page(HttpServletRequest request) {
         SiteRoute.Legacy route = route(request);
+        ContentMember member = ContentMember.of(request, records, wallet);
         PlaybackPages.Result result = switch (route.page()) {
-            case VOD_PLAY -> pages.play(route);
-            case VOD_PLAYER -> pages.player(route, proof(request, PasswordTarget.VIDEO_PLAY, route.id()), "");
-            case VOD_DOWN -> pages.down(route);
-            case VOD_DOWNER -> pages.downer(route, proof(request, PasswordTarget.VIDEO_DOWN, route.id()), "");
+            case VOD_PLAY -> pages.play(route, member);
+            case VOD_PLAYER -> pages.player(route, proof(request, PasswordTarget.VIDEO_PLAY, route.id()), "", member);
+            case VOD_DOWN -> pages.down(route, member);
+            case VOD_DOWNER -> pages.downer(route, proof(request, PasswordTarget.VIDEO_DOWN, route.id()), "", member);
             default -> throw new ApiException(ErrorCode.NOT_FOUND, "页面不存在");
         };
         return render(result);
@@ -110,14 +131,14 @@ public class SitePlaybackController {
         };
         if (!tickets.enabled()) {
             // 没有部署密钥：不提供在线验证，与 GET 相同（密码页 403，没有表单）
-            return render(show(route, null, ""));
+            return render(show(route, null, "", ContentMember.of(request, records, wallet)));
         }
         if (!attempts.tryAcquire(target, route.id())) {
             log.warn("site password attempts limited: target={}", target.code());
             return render(pages.tooManyAttempts(route));
         }
         if (!playback.verifyPassword(route.id(), target, pwd)) {
-            return render(show(route, null, INVALID_PASSWORD));
+            return render(show(route, null, INVALID_PASSWORD, ContentMember.of(request, records, wallet)));
         }
         ResponseCookie cookie = ResponseCookie.from(PasswordTickets.cookieName(target, route.id()),
                         tickets.issue(target, route.id(), pwd))
@@ -135,9 +156,10 @@ public class SitePlaybackController {
                 .build();
     }
 
-    private PlaybackPages.Result show(SiteRoute.Legacy route, PasswordProof proof, String error) {
-        return route.page() == LegacyPage.VOD_PLAYER ? pages.player(route, proof, error)
-                : pages.downer(route, proof, error);
+    private PlaybackPages.Result show(SiteRoute.Legacy route, PasswordProof proof, String error,
+                                      ContentMember member) {
+        return route.page() == LegacyPage.VOD_PLAYER ? pages.player(route, proof, error, member)
+                : pages.downer(route, proof, error, member);
     }
 
     private SiteRoute.Legacy route(HttpServletRequest request) {
@@ -178,6 +200,7 @@ public class SitePlaybackController {
                 case DownPage v -> tpl.sitePagesDown(v);
                 case DownerPage v -> tpl.sitePagesDowner(v);
                 case AccessNoticePage v -> tpl.sitePagesAccessNotice(v);
+                case BuyConfirmPage v -> tpl.sitePagesBuyConfirm(v);
                 case PasswordPage v -> tpl.sitePagesPassword(v);
                 default -> throw new IllegalStateException("未知页面");
             });

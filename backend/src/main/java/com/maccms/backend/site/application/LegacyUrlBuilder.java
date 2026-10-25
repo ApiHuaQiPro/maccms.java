@@ -259,6 +259,38 @@ public final class LegacyUrlBuilder {
         return macUrl("user/" + action, all);
     }
 
+    /**
+     * 会员中心列表页的链接（B10，19 文档第 2 节），等价 ThinkPHP {@code url('user/<action>', ['page'=>$n] + 筛选)}：第 1 页不带页码；
+     * 筛选（{@code mid}、{@code type}、{@code level} 等）的值是数字或小写字母，随分页保留（旧版不保留，D-B10-7）。
+     */
+    public String userPage(String action, Map<String, String> filters, int page) {
+        if (action == null || !USER_ACTION.matcher(action).matches()) {
+            throw new IllegalArgumentException("会员页操作名不合法");
+        }
+        if (page < 1 || page > 1_000_000) {
+            throw new IllegalArgumentException("页码越界");
+        }
+        Map<String, String> sorted = new TreeMap<>();
+        for (Map.Entry<String, String> e : filters.entrySet()) {
+            if (!USER_ACTION.matcher(e.getKey()).matches() || !e.getValue().matches("[a-z0-9]{1,16}")) {
+                throw new IllegalArgumentException("会员页参数不合法");
+            }
+            sorted.put(e.getKey(), e.getValue());
+        }
+        Map<String, String> all = new LinkedHashMap<>();
+        all.put("page", pageValue(page));
+        all.putAll(sorted);
+        return macUrl("user/" + action, all);
+    }
+
+    /** 旧 {@code mac_url_*($info)} 在 {@code $info} 为空时的地址（B10：会员记录里已删除的内容，只有模块/操作、没有编号）。 */
+    public String bare(String model) {
+        if (!List.of("vod/detail", "vod/type", "art/detail", "topic/detail", "actor/detail").contains(model)) {
+            throw new IllegalArgumentException("不支持的地址");
+        }
+        return macUrl(model, new LinkedHashMap<>());
+    }
+
     // ---- mac_url 的参数预处理（common.php:1734-1746）：去掉 empty() 的值，page=1 置空，按键排序 ----
 
     private static Map<String, String> filterVars(Map<String, String> filters, List<String> allowed, int page) {

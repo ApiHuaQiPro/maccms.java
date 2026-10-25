@@ -4,6 +4,7 @@ import static com.maccms.backend.site.web.LibraryPageFixtures.RICH;
 import static com.maccms.backend.site.web.LibraryPageFixtures.page;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
@@ -84,7 +85,7 @@ class SiteLibraryPagesMvcTest {
         when(articles.listCategories()).thenReturn(LibraryPageFixtures.artTypes());
         when(actors.listCategories()).thenReturn(LibraryPageFixtures.actorTypes());
         when(websites.listCategories()).thenReturn(LibraryPageFixtures.websiteTypes());
-        when(articles.getArticle(eq(55L), any())).thenReturn(LibraryPageFixtures.article(55, 3));
+        when(articles.getArticle(eq(55L), anyInt(), any())).thenReturn(LibraryPageFixtures.article(55, 3));
         when(articles.getArticle(55L)).thenReturn(LibraryPageFixtures.article(55, 3));
     }
 
@@ -168,9 +169,9 @@ class SiteLibraryPagesMvcTest {
 
     @Test
     void singlePageArticleHasNoPagerAndLongArticlesCapThePager() throws Exception {
-        when(articles.getArticle(eq(56L), any())).thenReturn(LibraryPageFixtures.article(56, 1));
+        when(articles.getArticle(eq(56L), anyInt(), any())).thenReturn(LibraryPageFixtures.article(56, 1));
         assertThat(html(fetch("/index.php/art/detail/id/56.html")).select(".article-pager")).isEmpty();
-        when(articles.getArticle(eq(57L), any())).thenReturn(LibraryPageFixtures.article(57, 1200));
+        when(articles.getArticle(eq(57L), anyInt(), any())).thenReturn(LibraryPageFixtures.article(57, 1200));
         Document doc = html(fetch("/index.php/art/detail/id/57/page/1000.html"));
         assertThat(doc.selectFirst(".pagination__status").text()).isEqualTo("第 1000 / 1000 页");
         assertThat(doc.text()).contains("PAGE-1000-BODY");
@@ -178,15 +179,20 @@ class SiteLibraryPagesMvcTest {
 
     @Test
     void articlePointsAndPasswordAreFixed403Pages() throws Exception {
-        when(articles.getArticle(eq(60L), any())).thenThrow(new ApiException(ErrorCode.ARTICLE_POINTS_REQUIRED, "x"));
+        when(articles.getArticle(eq(60L), anyInt(), any())).thenThrow(new ApiException(ErrorCode.ARTICLE_POINTS_REQUIRED, "x"));
+        when(articles.requiredPoints(60L)).thenReturn(java.util.Optional.of(6));
         MvcResult points = fetch("/index.php/art/detail/id/60.html");
         assertThat(points.getResponse().getStatus()).isEqualTo(403);
         assertThat(points.getResponse().getHeader("Cache-Control")).isEqualTo("no-store");
-        assertThat(html(points).selectFirst(".access-notice__message").text()).isEqualTo(LibraryPages.ART_POINTS);
+        // B10：旧版 3003 的确认文字；游客只有登录链接、没有购买表单（19 文档第 5.2 节）
+        assertThat(html(points).selectFirst(".access-notice__message").text())
+                .isEqualTo("观看此数据，需要支付【6】积分，确认支付吗？");
+        assertThat(html(points).select("form.content-action")).isEmpty();
+        assertThat(html(points).selectFirst(".buy-confirm__login a").attr("href")).isEqualTo("/index.php/user/login.html");
 
         String pwd = "artpwd-SYNTH";
-        when(articles.getArticle(eq(61L), isNull())).thenThrow(new ApiException(ErrorCode.ARTICLE_PASSWORD_REQUIRED, "x"));
-        when(articles.getArticle(eq(61L), any(PasswordProof.class))).thenReturn(LibraryPageFixtures.article(61, 1));
+        when(articles.getArticle(eq(61L), anyInt(), isNull())).thenThrow(new ApiException(ErrorCode.ARTICLE_PASSWORD_REQUIRED, "x"));
+        when(articles.getArticle(eq(61L), anyInt(), any(PasswordProof.class))).thenReturn(LibraryPageFixtures.article(61, 1));
         when(articles.verifyPassword(61L, pwd)).thenReturn(true);
         String path = "/index.php/art/detail/id/61.html";
         MvcResult form = fetch(path);
@@ -205,7 +211,7 @@ class SiteLibraryPagesMvcTest {
         MvcResult read = mvc.perform(get(path).cookie(new Cookie("maccms_pwd_a1_61", ticket))).andReturn();
         assertThat(read.getResponse().getStatus()).isEqualTo(200);
         ArgumentCaptor<PasswordProof> proof = ArgumentCaptor.forClass(PasswordProof.class);
-        verify(articles, org.mockito.Mockito.atLeastOnce()).getArticle(eq(61L), proof.capture());
+        verify(articles, org.mockito.Mockito.atLeastOnce()).getArticle(eq(61L), anyInt(), proof.capture());
         assertThat(proof.getAllValues()).anySatisfy(p -> assertThat(p).isNotNull());
         // 视频播放的票据不能用于文章
         assertThat(mvc.perform(get(path).cookie(new Cookie("maccms_pwd_v4_61", ticket))).andReturn().getResponse()

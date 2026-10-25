@@ -27,11 +27,27 @@ import java.util.Optional;
  * @param videos       相关视频（专题关联视频）
  * @param cards        相关内容（专题关联文章、视频的角色等）
  * @param cardsTitle   相关内容的标题
+ * @param favorite     已登录会员的"收藏"表单（B10：文章、专题、演员，19 文档第 5.4 节）；游客与其他模型为空
  */
 public record LibraryDetailPage(PageChrome chrome, String pageClass, String siteKind, String title, String subTitle,
                                 List<NavLink> breadcrumb, Optional<SafeUrl> image, List<MetadataItem> metadata,
                                 Optional<SafeUrl> external, String sectionTitle, String sectionNote, RichTextBody body,
                                 String blurb, Optional<PaginationView> pager, List<NavLink> parts,
                                 List<ContentCard> screenshots, List<VideoCardView> videos, List<ContentCard> cards,
-                                String cardsTitle) {
+                                String cardsTitle, Optional<ContentForm> favorite) {
+
+    public LibraryDetailPage(PageChrome chrome, String pageClass, String siteKind, String title, String subTitle,
+                             List<NavLink> breadcrumb, Optional<SafeUrl> image, List<MetadataItem> metadata,
+                             Optional<SafeUrl> external, String sectionTitle, String sectionNote, RichTextBody body,
+                             String blurb, Optional<PaginationView> pager, List<NavLink> parts,
+                             List<ContentCard> screenshots, List<VideoCardView> videos, List<ContentCard> cards,
+                             String cardsTitle) {
+        this(chrome, pageClass, siteKind, title, subTitle, breadcrumb, image, metadata, external, sectionTitle,
+                sectionNote, body, blurb, pager, parts, screenshots, videos, cards, cardsTitle, Optional.empty());
+    }
+
+    public LibraryDetailPage withFavorite(Optional<ContentForm> form) {
+        return new LibraryDetailPage(chrome, pageClass, siteKind, title, subTitle, breadcrumb, image, metadata, external,
+                sectionTitle, sectionNote, body, blurb, pager, parts, screenshots, videos, cards, cardsTitle, form);
+    }
 }

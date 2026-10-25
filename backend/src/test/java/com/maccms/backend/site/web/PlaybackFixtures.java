@@ -29,7 +29,7 @@ final class PlaybackFixtures {
     static VideoPlaybackResult result(PlaybackOutcome outcome, VideoMediaDto media, int trySee) {
         boolean withMedia = outcome == PlaybackOutcome.ALLOWED || outcome == PlaybackOutcome.TRIAL;
         return new VideoPlaybackResult(outcome, 1, "播放样本 <b>&amp;", "演员甲", "导演丙", "动作", new CategoryRefDto(6,
-                "动作片", "dongzuo", 1), 1_700_000_001L, trySee, withMedia ? Optional.of(media) : Optional.empty());
+                "动作片", "dongzuo", 1), 1_700_000_001L, trySee, 0, withMedia ? Optional.of(media) : Optional.empty());
     }
 
     static VideoPlaybackResult allowed() {
