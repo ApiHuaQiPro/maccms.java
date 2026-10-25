@@ -41,7 +41,7 @@ public class AdminLoginService {
      * 登录结果。
      *
      * @param failure 成功时为 null
-     * @param pwd     成功时为本次比较并写入登录记录时的 {@code admin_pwd}（存进会话，D2 ⑤ 据此判断"登录后被改密"）
+     * @param pwd     成功时为查到的那一行的 {@code admin_pwd} 原值（存进会话，D2 ⑤ 据此判断"登录后被改密"）
      */
     public record LoginResult(Failure failure, long adminId, String pwd) {
 
@@ -97,7 +97,8 @@ public class AdminLoginService {
         if (writer.recordLogin(row.adminId(), hash, now, ip, LegacyInput.md5Hex(seed)) != 1) {
             return new LoginResult(Failure.UPDATE, 0, null);
         }
-        return new LoginResult(null, row.adminId(), hash);
+        // 会话里存库里的原值（同旧版 session 存整行）：库里是大写哈希时 MySQL 比较不分大小写能登录，D2 ⑤ 与解锁按原值比较
+        return new LoginResult(null, row.adminId(), row.adminPwd());
     }
 
     /**

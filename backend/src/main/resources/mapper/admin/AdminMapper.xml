@@ -32,7 +32,7 @@
         LIMIT 1
     </select>
 
-    <!-- 旧版 where admin_name like '%wd%'（admin/controller/Admin.php:19-22）；新版的 % 与 _ 按字面匹配（差异见 21 文档） -->
+    <!-- 旧版 where admin_name like '%wd%'（admin/controller/Admin.php:19-22）；% 与 _ 照旧是通配符，like 由 AdminAccountService.legacyLike 转写成 ESCAPE '!' 下的同义模式 -->
     <sql id="listCondition">
         <if test="like != null">WHERE admin_name LIKE #{like} ESCAPE '!'</if>
     </sql>

@@ -13,7 +13,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * 内存里的 mac_admin 替身（只用于不连库的 MVC 测试；真实 MySQL 的比较规则由 AdminGoldenMySqlIT 覆盖）：账号按不分大小写、忽略尾部空格比较，
- * 其余与写 Mapper 的 SQL 语义相同（条件更新、匹配行数）。
+ * 密码哈希按不分大小写比较（admin_pwd 是 utf8_general_ci 的 char(32)），其余与写 Mapper 的 SQL 语义相同（条件更新、匹配行数）。
  */
 final class FakeAdminTable implements AdminMapper, AdminWriteMapper {
 
@@ -40,7 +40,7 @@ final class FakeAdminTable implements AdminMapper, AdminWriteMapper {
 
     @Override
     public synchronized AdminRow selectForLogin(String name, String pwd) {
-        return rows.values().stream().filter(r -> norm(r.adminName()).equals(norm(name)) && r.adminPwd().equals(pwd)
+        return rows.values().stream().filter(r -> norm(r.adminName()).equals(norm(name)) && r.adminPwd().equalsIgnoreCase(pwd)
                 && r.adminStatus() == 1).min(Comparator.comparingLong(AdminRow::adminId)).orElse(null);
     }
 
@@ -59,7 +59,7 @@ final class FakeAdminTable implements AdminMapper, AdminWriteMapper {
     @Override
     public synchronized int recordLogin(long adminId, String pwd, long now, long ip, String random) {
         AdminRow r = rows.get(adminId);
-        if (r == null || !r.adminPwd().equals(pwd) || r.adminStatus() != 1) {
+        if (r == null || !r.adminPwd().equalsIgnoreCase(pwd) || r.adminStatus() != 1) {
             return 0;
         }
         writes.add("login " + adminId + " " + ip + " " + random.length());

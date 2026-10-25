@@ -72,8 +72,8 @@
 
 - **登录**（`common/model/Admin.php:114-152`）：① `admin_name` 或 `admin_pwd` 为 PHP `empty()`（缺失、空串、`"0"`；数组形式按缺失）→ "参数错误"，不碰验证码；② `app.admin_login_verify != '0'`（宽松比较：`'0'`、`0`、`'00'`、`false` 不要验证码，空串、缺失要）时验证码不通过 → "验证码错误"；③ 按 `admin_name`（MySQL 比较规则：不分大小写、忽略尾部空格）、`admin_pwd = md5(原值)`（不 trim、不 urldecode、不 htmlspecialchars，按字节；03 草稿 4.3 (7)）、`admin_status = 1` 查一行（按 `admin_id` 取第一行），没有 → "账号或密码错误"；库里的 md5 值本身不能当密码；④ 写登录记录（第 5 节），没写进（读与写之间被停用或改密）→ "更新登录信息失败"；⑤ 成功："登录成功"。
 - **验证码**：登录页的图片是后台自己的 `<entry>/admin/index/verify.html`（新地址，D-B12-4），参数取旧 `extra/captcha.php`，生成与校验同 B08（`common.captcha`；猜错即作废，D-B08-4）。
-- **会话**（`AdminSessions`，D-B12-2）：进程内，独立于站点会话；cookie `mac_admin_sid`（随机 128 位），`Path` 为对外的后台入口路径，`HttpOnly`、`SameSite=Strict`，对外地址为 https 时 `Secure`；空闲 24 分钟失效（旧 PHP 会话默认 `gc_maxlifetime=1440`；框架页每 30 秒请求 `checkcache`，打开时不会过期）；最多 1 万个；**登录成功时换新标识**，登录前的会话（含验证码）作废；退出时作废并删除 cookie。会话里只存 `admin_id`、登录时比较过的密码哈希、表单令牌、验证码。重启即全部失效。
-- **来源校验**（D-B12-3）：POST 请求带 `Origin`（没有时看 `Referer`）且与 `maccms.admin.base-url` 不同源 → 403，不执行任何操作；两者都没有时放行（非浏览器客户端）。
+- **会话**（`AdminSessions`，D-B12-2）：进程内，独立于站点会话；cookie `mac_admin_sid`（随机 128 位），`Path` 为对外的后台入口路径，`HttpOnly`、`SameSite=Strict`，对外地址为 https 时 `Secure`；空闲 24 分钟失效（旧 PHP 会话默认 `gc_maxlifetime=1440`；框架页每 30 秒请求 `checkcache`，打开时不会过期）；未登录的会话（登录页验证码）与已登录的会话分放两个存储、各最多 1 万个，满时淘汰最久未访问的——已登录的会话只在登录成功时建立，所以不带 cookie 反复请求验证码只会挤掉别的未登录会话，不会把已登录的管理员挤下线；**登录成功时换新标识**，登录前的会话（含验证码）作废；退出时作废并删除 cookie。会话里只存 `admin_id`、登录时比较过的密码哈希、表单令牌、验证码。重启即全部失效。
+- **来源校验**（D-B12-3）：除 GET/HEAD 的登录页 `index/login` 与框架页 `index/index`（可以从书签或别的网站直接打开）外，**所有请求**（含 GET 的删除、改状态、清缓存、退出）都校验来源：浏览器给了 `Sec-Fetch-Site` 时只认 `same-origin` 与 `none`（地址栏、书签）；再看 `Origin`（没有时看 `Referer` 的源），与 `maccms.admin.base-url` 不同源 → 403，不执行任何操作；都没有时放行（非浏览器客户端）。`SameSite=Strict` 只挡别的站点，同站点的其他子域名或端口（如 `evil.example.com` 对 `admin.example.com`）仍会带上会话 cookie，所以 GET 操作也要这一条。base-url 里的默认端口（`:80`、`:443`）按浏览器的写法去掉后再比较。
 
 #### 4.3 D2 ⑤：每个请求重读当前行
 
@@ -151,7 +151,7 @@
 
 - **结构原样**：`admin/view/public/head.html`、`foot.html`、`index/login.html`、`index/index.html`、`index/welcome.html`、`index/quickmenu.html`、`admin/index.html`、`admin/info.html` 与 ThinkPHP `dispatch_jump.tpl`、`public/msg.html` 逐个转成 `jte-admin/admin/` 下的模板，DOM、类名、`lay-*`、`data-*` 与表单字段不变；`static/layui/**`、`static/css/admin_style.css`、`static/js/admin_common.js`、`static/js/jquery.js` 原样复用（构建时从仓库 `static/` 打进 jar，按旧路径 `/static/…` 提供，不复制、不修改）。没有新的视觉设计。
 - **为安全所做的最小改动**（D-B12-5）：
-  - 旧模板里的内联脚本（head 的全局变量、登录页、框架页、列表分页、权限树、跳转倒计时）逐行移到 `backend/src/main/resources/static/admin-assets/*.js`，服务端写入的地址与语言包文字改由 script 标签的 `data-*` 属性提供；登录页验证码图片的 `onclick` 改成脚本绑定；框架页 `setInterval("checkCache()")` 改为函数引用。
+  - 旧模板里的内联脚本（head 的全局变量、登录页、框架页、列表分页、权限树、跳转倒计时）逐行移到 `backend/src/main/resources/static/admin-assets/*.js`，服务端写入的地址与语言包文字改由 script 标签的 `data-*` 属性提供；登录页验证码图片的 `onclick` 改成脚本绑定；框架页 `setInterval("checkCache()")` 改为函数引用；框架页打开标签时，菜单名与地址在拼进 layui `tabAdd` 的 HTML 前转义（旧版原样拼接，快捷菜单名称含标签时会注入页面；显示与地址不变）。
   - 内容安全策略（`AdminResponses.CONTENT_SECURITY_POLICY`）：脚本只来自本站文件；旧 `admin_common.js` 与 layui 用到 `new Function`（锁屏、laytpl），保留 `'unsafe-eval'`；旧模板大量 `href="javascript:;"`、`javascript:void(0);` 空链接和 layer 弹层 iframe 的 `onload="this.className='';"` 用 `'unsafe-hashes'` 只放行这几段固定代码的哈希，其他任何内联事件与 `javascript:` 地址仍被拦截；样式保留 `'unsafe-inline'`（layer 与旧模板的内联样式）；frame 放行 `'self' http: https:`（快捷菜单可以配置外部地址并在标签页中打开，只在用户点击时加载）。另有 `X-Frame-Options: SAMEORIGIN`、`Referrer-Policy: same-origin`、`nosniff`、`no-store`、`noindex`。
   - 模板一律转义输出（旧模板多处原样输出：管理员名称写进 `value="…"` 遇到双引号会截断属性，黄金 `admin-info-view/quote`）。jte 不输出 `a@href` 里以 `javascript:` 开头的动态值，所以旧版固定的 `javascript:void(0);return false;`、`javascript:history.back(-1);` 写成模板里的固定文字；跳转页对 `history.back` 由 `jump.js` 处理。
   - 语言包里自带 `<br>` 的两段文字经 `AdminText.trusted` 原样输出（只能是 `page.lang().get("键")`）。
@@ -189,7 +189,7 @@
 |---|---|---|---|
 | D-B12-1 | 登录时把整行存进会话，之后只看快照（`Admin.php:145-146,166-176`） | **D2 ⑤**：每个请求重读当前行，停用、改密、删除 → 立即要求重新登录；权限按当前值。欢迎页的"登录次数""上次登录 IP/时间"随之取当前行（含本次登录；"上次"是上一次登录），旧版取登录前的快照 | 安全修复（已决） |
 | D-B12-2 | 与前台共用 PHP 会话 `PHPSESSID`（`Path=/`、无 HttpOnly），登录不换标识 | 独立的进程内会话 `mac_admin_sid`（Path 为后台入口、HttpOnly、SameSite=Strict、https 时 Secure），登录换新标识，空闲 24 分钟，重启失效 | 加固 + 实现差异 |
-| D-B12-3 | 没有来源校验；删除、改状态、退出等 GET 操作可被其他网站触发 | POST 校验来源；会话 cookie 为 SameSite=Strict，跨站请求不带会话 | 加固 |
+| D-B12-3 | 没有来源校验；删除、改状态、退出等 GET 操作可被其他网站触发 | 除登录页与框架页外所有请求校验来源（`Sec-Fetch-Site`、`Origin`、`Referer`），同站点的其他子域名或端口发起的 GET 删除也被拒；会话 cookie 为 SameSite=Strict，跨站请求不带会话 | 加固 |
 | D-B12-4 | 登录页验证码用前台 `/index.php/verify/index.html`（共用 PHP 会话）；猜错不作废 | 后台自己的 `<entry>/admin/index/verify.html`；猜错即作废（D-B08-4） | 实现差异 + 加固 |
 | D-B12-5 | 模板内联脚本、`onclick`、`setInterval("…")` | 脚本移到 `static/admin-assets/`，内容安全策略；功能与 DOM 不变 | 加固 |
 | D-B12-6 | 非超级管理员没有 `index/logout` 权限（权限树里没有这一项），点"退出登陆"只得到"您没有权限访问此页面" | 退出不需要权限 | 缺陷修复（请队长确认） |

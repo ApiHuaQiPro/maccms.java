@@ -117,7 +117,12 @@ public class VodSearchCache {
         if (writer == null) {
             return false;
         }
-        writer.deleteUpdatedBefore(clock.instant().getEpochSecond() - cacheMinutes * 60);
+        long now = clock.instant().getEpochSecond();
+        if (cacheMinutes > now / 60) {
+            // 界限早于 1970 年：更新时间是无符号整数，旧版（超大值按浮点计算）什么都不删；这里同时避免 long 溢出成"现在之后"而删光
+            return true;
+        }
+        writer.deleteUpdatedBefore(now - cacheMinutes * 60);
         return true;
     }
 

@@ -20,11 +20,15 @@
     layui.use(['element', 'layer'], function() {
         var $ = layui.jquery, element = layui.element, layer = layui.layer;
         $('.layui-tab-content').height($(window).height() - 145);
+        // 安全适配（B12）：菜单名与地址可来自快捷菜单配置，tabAdd 按 HTML 拼接，写入前转义（显示与地址不变）
+        function esc(s) {
+            return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
         var tab = {
             add: function(title, url, id) {
                 element.tabAdd('macTab', {
-                        title: title,
-                        content: '<iframe width="100%" height="100%" lay-id="'+id+'" frameborder="0" src="'+url+'" scrolling="yes" class="x-iframe"></iframe>',
+                        title: esc(title),
+                        content: '<iframe width="100%" height="100%" lay-id="'+esc(id)+'" frameborder="0" src="'+esc(url)+'" scrolling="yes" class="x-iframe"></iframe>',
                         id: id
             });
             }, change: function(id) {

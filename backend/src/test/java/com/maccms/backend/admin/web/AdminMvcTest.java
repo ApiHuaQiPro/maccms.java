@@ -1,8 +1,10 @@
 package com.maccms.backend.admin.web;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.head;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
 import com.maccms.backend.admin.AdminHtml;
@@ -99,7 +101,7 @@ class AdminMvcTest {
 
     /** 给会话写入已知的验证码（码表是仓库 captcha.php 的数字）。 */
     private void captcha(String sid, String code) {
-        SessionState s = sessions.store().find(sid).orElseThrow();
+        SessionState s = sessions.find(sid).orElseThrow();
         Deque<Integer> idx = new ArrayDeque<>();
         for (char c : code.toCharArray()) {
             idx.add(settings.captcha().codeSet().indexOf(c));
@@ -219,7 +221,7 @@ class AdminMvcTest {
                 + "\"url\":\"\\/_admin.php\\/admin\\/index\\/login.html\",\"wait\":3}");
         String sid = sid(ok);
         assertThat(sid).matches("[0-9a-f]{32}").isNotEqualTo(pre);
-        assertThat(sessions.store().find(pre)).as("登录前的会话已作废").isEmpty();
+        assertThat(sessions.find(pre)).as("登录前的会话已作废").isEmpty();
         assertThat(table.writes).containsExactly("login 1 2130706433 32");
         assertThat(as(sid, get(E + "/admin/index/welcome.html")).getResponse().getStatus()).isEqualTo(200);
         // 没有会话时验证码一定不通过
@@ -258,7 +260,7 @@ class AdminMvcTest {
             assertThat(r.getResponse().getHeader("Location")).isEqualTo(E + "/admin/index/login.html");
             assertThat(String.join("\n", r.getResponse().getHeaders("Set-Cookie")))
                     .contains(AdminSessions.COOKIE + "=; Path=/_admin.php; Max-Age=0");
-            assertThat(sessions.store().find(sid)).as("会话已作废").isEmpty();
+            assertThat(sessions.find(sid)).as("会话已作废").isEmpty();
             // 恢复原状也回不去：要重新登录
             if (!change.equals("delete")) {
                 table.put(2, "editor", md5("ed pass"), 1, ",vod/data,admin/index,index/unlocked,");
@@ -307,7 +309,7 @@ class AdminMvcTest {
         // D-B12-6：退出不需要权限
         MvcResult out = as(sid, get(E + "/admin/index/logout.html"));
         assertThat(out.getResponse().getStatus()).isEqualTo(302);
-        assertThat(sessions.store().find(sid)).isEmpty();
+        assertThat(sessions.find(sid)).isEmpty();
     }
 
     @Test
@@ -390,6 +392,58 @@ class AdminMvcTest {
         MvcResult same = mvc.perform(ajax(form("/admin/index/login", "admin_name=admin&admin_pwd=0"))
                 .header("Origin", "http://admin.local.test")).andReturn();
         assertThat(body(same)).contains("\"msg\":\"参数错误\"");
+    }
+
+    @Test
+    void writeGetsFromAnotherOriginOfTheSameSiteAreRejected() throws Exception {
+        // D-B12-3：SameSite=Strict 挡不住同站点的其他子域名或端口，旧后台的删除、改状态、清缓存又都是 GET
+        String sid = login("admin", "admin888");
+        List<MockHttpServletRequestBuilder> forged = List.of(
+                get(E + "/admin/admin/del?ids=3").header("Sec-Fetch-Site", "same-site"),
+                get(E + "/admin/admin/del?ids=3").header("Sec-Fetch-Site", "cross-site"),
+                head(E + "/admin/admin/del?ids=3").header("Referer", "http://evil.local.test/x"),
+                get(E + "/admin/admin/field?col=admin_status&ids=3&val=0").header("Origin", "http://admin.local.test:8080"),
+                get(E + "/admin/index/clear").header("Sec-Fetch-Site", "same-site"),
+                get(E + "/admin/index/logout").header("Sec-Fetch-Site", "same-site"),
+                form("/admin/index/unlocked", "password=admin888").header("Sec-Fetch-Site", "same-site"));
+        for (MockHttpServletRequestBuilder b : forged) {
+            assertThat(as(sid, b).getResponse().getStatus()).isEqualTo(403);
+        }
+        assertThat(table.writes).containsExactly("login 1 2130706433 32");
+        verify(contentCache, never()).clearVodSearchCache();
+        assertThat(sessions.find(sid)).as("退出没有生效").isPresent();
+        // 本站页面发出的（浏览器标为 same-origin，或带本站 Referer）与地址栏直接打开的照常执行
+        assertThat(body(as(sid, ajax(get(E + "/admin/admin/field?col=admin_status&ids=3&val=0"))
+                .header("Sec-Fetch-Site", "same-origin").header("Referer", "http://admin.local.test/_admin.php/admin/admin/index"))))
+                .contains("设置成功");
+        assertThat(body(as(sid, ajax(get(E + "/admin/admin/del?ids=3")).header("Sec-Fetch-Site", "none")))).contains("删除成功");
+        // 登录页与框架页可以从别的网站或书签直接打开
+        assertThat(mvc.perform(get(E + "/admin/index/login").header("Sec-Fetch-Site", "cross-site")).andReturn()
+                .getResponse().getStatus()).isEqualTo(200);
+        assertThat(as(sid, get(E + "/admin/index/index").header("Sec-Fetch-Site", "same-site")).getResponse().getStatus())
+                .isEqualTo(200);
+        // 其余页面同样要求同源
+        assertThat(as(sid, get(E + "/admin/index/welcome").header("Sec-Fetch-Site", "same-site")).getResponse().getStatus())
+                .isEqualTo(403);
+    }
+
+    @Test
+    void anonymousCaptchaFloodDoesNotEvictLoggedInSessions() throws Exception {
+        String sid = login("admin", "admin888");
+        for (int i = 0; i <= AdminSessions.MAX_SESSIONS; i++) {
+            mvc.perform(get(E + "/admin/index/verify.html"));
+        }
+        assertThat(sessions.find(sid)).isPresent();
+        assertThat(as(sid, get(E + "/admin/index/welcome")).getResponse().getStatus()).isEqualTo(200);
+    }
+
+    @Test
+    void anUppercaseStoredHashLogsInAndStaysLoggedInLikeLegacy() throws Exception {
+        // admin_pwd 按 utf8_general_ci 比较：库里是大写的 md5 时旧版也能登录
+        table.put(2, "editor", md5("ed pass").toUpperCase(java.util.Locale.ROOT), 1, ",admin/index,index/unlocked,");
+        String sid = login("editor", "ed+pass");
+        assertThat(as(sid, get(E + "/admin/admin/index")).getResponse().getStatus()).isEqualTo(200);
+        assertThat(as(sid, get(E + "/admin/index/welcome")).getResponse().getStatus()).isEqualTo(200);
     }
 
     // ------------------------------------------------------------------ 管理员

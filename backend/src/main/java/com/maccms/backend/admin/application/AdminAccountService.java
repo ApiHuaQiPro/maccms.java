@@ -210,13 +210,16 @@ public class AdminAccountService {
 
     /**
      * 旧版 {@code LIKE '%词%'}（未转义：{@code %}、{@code _} 是通配符，反斜线让下一个字符按字面量匹配）转写成 {@code ESCAPE '!'} 下
-     * 匹配同样字符串的模式（与 B11 的视频搜索缓存相同，content.application.VodSearchCache）。
+     * 匹配同样字符串的模式（与 B11 的视频搜索缓存相同，content.application.VodSearchCache）。词以反斜线结尾时，旧版补在末尾的 {@code %}
+     * 也变成字面量（{@code '%abc\%'} 只匹配以 {@code abc%} 结尾的名字）。
      */
     static String legacyLike(String word) {
         StringBuilder sb = new StringBuilder(word.length() + 4).append('%');
         for (int i = 0; i < word.length(); i++) {
             char c = word.charAt(i);
-            if (c == '\\' && i + 1 < word.length()) {
+            if (c == '\\' && i + 1 == word.length()) {
+                return sb.append("!%").toString();
+            } else if (c == '\\') {
                 char next = word.charAt(++i);
                 sb.append('!').append(next);
                 if (Character.isHighSurrogate(next) && i + 1 < word.length()) {

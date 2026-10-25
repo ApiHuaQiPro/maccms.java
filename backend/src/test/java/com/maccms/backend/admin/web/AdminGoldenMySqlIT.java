@@ -601,7 +601,7 @@ class AdminGoldenMySqlIT {
     }
 
     private static void captcha(Variant v, String sid, String code) {
-        SessionState s = v.sessions().store().find(sid).orElseThrow();
+        SessionState s = v.sessions().find(sid).orElseThrow();
         Deque<Integer> idx = new ArrayDeque<>();
         for (char ch : code.toCharArray()) {
             idx.add(v.settings().captcha().codeSet().indexOf(ch));

@@ -140,7 +140,7 @@ class AdminRealHttpTest {
             idx.add(settings.captcha().codeSet().indexOf(c));
         }
         SplittableRandom rest = new SplittableRandom(3);
-        Captchas.issue(sessions.store().find(pre).orElseThrow(), Captchas.DEFAULT_SLOT, settings.captcha(),
+        Captchas.issue(sessions.find(pre).orElseThrow(), Captchas.DEFAULT_SLOT, settings.captcha(),
                 sessions.nowEpochSeconds(), new RandomGenerator() {
                     @Override
                     public long nextLong() {

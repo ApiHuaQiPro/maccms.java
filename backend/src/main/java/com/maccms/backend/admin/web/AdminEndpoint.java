@@ -16,7 +16,7 @@ import java.util.regex.Pattern;
  * 反向代理把前缀映射到本应用根路径。</li>
  * <li>页面里的站内路径：{@link #root()}（{@code base 路径 + entry}，旧 {@code $_SERVER['SCRIPT_NAME']}、{@code url()} 的前缀）、
  * {@link #sitePath()}（旧 {@code __ROOT__}，部署前缀，根目录部署时为空串）。</li>
- * <li>会话 cookie：Path 为 {@link #root()}，base-url 为 https 时加 Secure。表单提交（POST）只接受来源为 {@link #origin()} 的请求。</li>
+ * <li>会话 cookie：Path 为 {@link #root()}，base-url 为 https 时加 Secure。除登录页与框架页外，只接受来源为 {@link #origin()} 的请求。</li>
  * </ul>
  *
  * @param entry    本应用内的入口路径（{@code /名称.php}）
@@ -51,7 +51,10 @@ public record AdminEndpoint(String entry, String sitePath, String origin, boolea
         String path = uri.getRawPath();
         String sitePath = path.substring(0, path.length() - 1);
         String scheme = uri.getScheme().toLowerCase(Locale.ROOT);
-        String origin = scheme + "://" + uri.getHost().toLowerCase(Locale.ROOT) + (uri.getPort() < 0 ? "" : ":" + uri.getPort());
+        // 浏览器的 Origin 不写默认端口（https://h:443 → https://h）
+        int port = uri.getPort();
+        boolean defaultPort = port < 0 || (scheme.equals("http") && port == 80) || (scheme.equals("https") && port == 443);
+        String origin = scheme + "://" + uri.getHost().toLowerCase(Locale.ROOT) + (defaultPort ? "" : ":" + port);
         return new AdminEndpoint(e, sitePath, origin, scheme.equals("https"));
     }
 

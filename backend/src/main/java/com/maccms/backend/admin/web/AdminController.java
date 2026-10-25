@@ -110,8 +110,9 @@ public class AdminController {
         if (!AdminPermissions.knownController(route.controller())) {
             return notFound(ajax);
         }
-        if (isPost && !sameOrigin(request)) {
-            // 不同源的表单提交（跨站请求伪造）：会话 cookie 本身是 SameSite=Strict，登录表单另外靠这一条
+        if (!sourceExempt(isPost, route.code()) && !sameOrigin(request)) {
+            // 不同源的请求（跨站请求伪造，D-B12-3）：SameSite=Strict 只挡别的站点，同站点的其他子域名或端口仍会带上会话 cookie，
+            // 旧后台的删除、改状态、清缓存又都是 GET，所以除登录页与框架页外一律要求同源
             return responses.notice(ajax, HttpStatus.FORBIDDEN, PENDING_TITLE, "非法请求");
         }
         Ctx ctx = new Ctx(request, response, route, get, post, params, isPost, ajax,
@@ -360,7 +361,20 @@ public class AdminController {
         return !(v.length == 0 || (v.length == 1 && v[0] == '0'));
     }
 
+    /** 不校验来源的只读入口：GET/HEAD 的登录页与框架页，可以从书签或别的网站直接打开。 */
+    static boolean sourceExempt(boolean isPost, String code) {
+        return !isPost && (code.equals("index/login") || code.equals("index/index"));
+    }
+
+    /**
+     * 请求是否来自后台自己的页面：浏览器给了 {@code Sec-Fetch-Site} 时只认 {@code same-origin} 与 {@code none}（地址栏、书签）；
+     * 再看 {@code Origin}，没有时看 {@code Referer} 的源；都没有（非浏览器客户端）时放行。
+     */
     private boolean sameOrigin(HttpServletRequest request) {
+        String site = request.getHeader("Sec-Fetch-Site");
+        if (site != null && !site.equalsIgnoreCase("same-origin") && !site.equalsIgnoreCase("none")) {
+            return false;
+        }
         String origin = request.getHeader(HttpHeaders.ORIGIN);
         if (origin == null) {
             String ref = request.getHeader(HttpHeaders.REFERER);

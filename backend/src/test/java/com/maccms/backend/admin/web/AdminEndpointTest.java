@@ -22,6 +22,13 @@ class AdminEndpointTest {
     }
 
     @ParameterizedTest
+    @CsvSource({"https://a.test:443/, https://a.test", "http://a.test:80/, http://a.test", "http://a.test:443/, http://a.test:443",
+            "https://a.test:80/, https://a.test:80"})
+    void defaultPortsAreDroppedFromTheOriginLikeBrowsersDo(String baseUrl, String origin) {
+        assertThat(AdminEndpoint.from("/_admin.php", baseUrl).origin()).isEqualTo(origin);
+    }
+
+    @ParameterizedTest
     @ValueSource(strings = {"", "_admin.php", "/admin.php", "/ADMIN.php", "/index.php", "/api.php", "/install.php",
             "/a/b.php", "/x.php5", "/x y.php", "/../x.php", "/x.PHP"})
     void rejectsBadEntries(String entry) {
