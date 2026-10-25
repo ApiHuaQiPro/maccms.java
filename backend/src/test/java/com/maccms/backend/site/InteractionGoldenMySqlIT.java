@@ -334,7 +334,8 @@ class InteractionGoldenMySqlIT {
         if (!req.get("captcha").isNull() || req.get("session").size() > 0) {
             session = app.getBean(SiteSessions.class).store().create();
             if (!req.get("captcha").isNull()) {
-                issueCaptcha(session, req.get("captcha").asString(), started);
+                // 按会话存储自己的时钟签发（校验也用它）；按黄金的 started 签发时，黄金生成超过验证码有效期后这些用例会失效
+                issueCaptcha(session, req.get("captcha").asString(), app.getBean(SiteSessions.class).nowEpochSeconds());
             }
             for (Map.Entry<String, JsonNode> e : req.get("session").properties()) {
                 session.put(e.getKey(), e.getValue().asString());
