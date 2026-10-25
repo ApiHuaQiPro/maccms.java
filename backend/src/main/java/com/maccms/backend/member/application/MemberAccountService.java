@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BooleanSupplier;
+import java.util.function.LongConsumer;
 import java.util.function.Predicate;
 import java.util.random.RandomGenerator;
 import java.util.regex.Pattern;
@@ -67,6 +68,7 @@ public class MemberAccountService {
     private final Clock clock;
     private final RandomGenerator random;
     private final String sitePath;
+    private final LongConsumer invited;
 
     /**
      * @param writer   可写数据源关闭时为 null
@@ -76,6 +78,16 @@ public class MemberAccountService {
     public MemberAccountService(MemberMapper mapper, MemberWriteMapper writer, MemberSessionService sessions,
                                 PortraitStore portraits, MemberSettings settings, Clock clock, RandomGenerator random,
                                 String sitePath) {
+        this(mapper, writer, sessions, portraits, settings, clock, random, sitePath, inviterId -> { });
+    }
+
+    /**
+     * @param invited 推广关系写入成功后调用（参数为邀请人编号）：B10 给邀请人加 {@code invite_reg_points} 并记 {@code mac_plog}
+     *                （D-B09-7，{@link MemberReferralService#invitedRegistration}）
+     */
+    public MemberAccountService(MemberMapper mapper, MemberWriteMapper writer, MemberSessionService sessions,
+                                PortraitStore portraits, MemberSettings settings, Clock clock, RandomGenerator random,
+                                String sitePath, LongConsumer invited) {
         if (sitePath == null || !sitePath.startsWith("/") || !sitePath.endsWith("/")) {
             throw new IllegalArgumentException("站点根路径须以 / 开头和结尾");
         }
@@ -88,6 +100,7 @@ public class MemberAccountService {
         this.clock = clock;
         this.random = random;
         this.sitePath = sitePath;
+        this.invited = invited;
     }
 
     /** 可写数据源已打开。 */
@@ -241,9 +254,9 @@ public class MemberAccountService {
         long uid = inviter(params, cookies);
         if (newId != null && uid > 0) {
             MemberInviterRow inv = mapper.selectInviter(uid);
-            if (inv != null) {
-                // 邀请人加积分与 mac_plog 流水归 B10（18 文档第 1 节）
-                writer.setInviter(newId, inv.userId(), inv.pid(), inv.pid2());
+            if (inv != null && writer.setInviter(newId, inv.userId(), inv.pid(), inv.pid2()) == 1) {
+                // 邀请人加积分与 mac_plog 流水（B10，D-B09-7；19 文档第 4.13 节）：推广关系只生效一次，加分随之只有一次
+                invited.accept(inv.userId());
             }
         }
         return AccountReply.of(1, "注册成功,请登录去会员中心完善个人信息");

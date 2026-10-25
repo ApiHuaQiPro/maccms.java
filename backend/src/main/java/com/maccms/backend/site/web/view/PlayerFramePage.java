@@ -15,7 +15,13 @@ import java.util.Optional;
  * @param trialMinutes 试看计时（分钟，旧 application/lang/zh-cn.php:1229）；0 表示不计时
  * @param scripts      依次加载的同源脚本：player-boot.js、jquery.js、playerconfig.js、player.js
  * @param trialScript  试看脚本 site/trial.js（只在 trialMinutes &gt; 0 时）
+ * @param trialEndMessage 试看结束时的文字（B10：已登录会员为旧版 5001/5002 的提示，19 文档第 5.3 节）；空串时 trial.js 用默认文字
  */
 public record PlayerFramePage(PlayerFrame frame, String nonce, String playerData, int trialMinutes,
-                              List<SafeUrl> scripts, Optional<SafeUrl> trialScript) {
+                              List<SafeUrl> scripts, Optional<SafeUrl> trialScript, String trialEndMessage) {
+
+    public PlayerFramePage(PlayerFrame frame, String nonce, String playerData, int trialMinutes,
+                           List<SafeUrl> scripts, Optional<SafeUrl> trialScript) {
+        this(frame, nonce, playerData, trialMinutes, scripts, trialScript, "");
+    }
 }

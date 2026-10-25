@@ -39,10 +39,12 @@ public class MemberAccountConfiguration {
     @Bean
     MemberAccountService memberAccountService(MemberMapper mapper, ObjectProvider<MemberWriteMapper> writer,
                                               MemberSessionService sessions, PortraitStore portraits,
-                                              MemberSettings settings,
+                                              MemberSettings settings, ObjectProvider<MemberReferralService> referral,
                                               @Value("${maccms.site.base-url:}") String baseUrl) {
+        MemberReferralService r = referral.getIfAvailable();
         return new MemberAccountService(mapper, writer.getIfAvailable(), sessions, portraits, settings,
-                Clock.systemUTC(), new SecureRandom(), sitePath(baseUrl));
+                Clock.systemUTC(), new SecureRandom(), sitePath(baseUrl),
+                r == null ? inviterId -> { } : r::invitedRegistration);
     }
 
     /** base-url 的路径部分，以 {@code /} 结尾；解析不了时为 {@code /}（site 自己的校验会让启动失败）。 */
