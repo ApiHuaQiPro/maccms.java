@@ -47,9 +47,11 @@ final class PortraitImages {
     static final String FAILED = "文件上传失败！";
     static final String UNSAFE = "文件包含危险内容！";
 
+    /** 旧 {@code Upload.php:53-55} 的三类扩展名：{@code $upload_image_ext}、{@code $upload_file_ext}、{@code $upload_media_ext}。 */
     private static final Set<String> IMAGE_EXT = Set.of("jpg", "jpeg", "png", "gif", "webp");
-    private static final Set<String> OTHER_EXT = Set.of("doc", "docx", "xls", "xlsx", "ppt", "pptx", "pdf", "wps", "txt",
-            "rar", "zip", "torrent", "rm", "rmvb", "avi", "mkv", "mp4", "mp3");
+    private static final Set<String> FILE_EXT = Set.of("doc", "docx", "xls", "xlsx", "ppt", "pptx", "pdf", "wps", "txt",
+            "rar", "zip", "torrent");
+    private static final Set<String> MEDIA_EXT = Set.of("rm", "rmvb", "avi", "mkv", "mp4", "mp3");
     /** 旧 {@code Upload.php:116}。 */
     private static final Pattern DATA_URL = Pattern.compile("^(data:\\s*image/(\\w+);base64,)");
     /** 旧 {@code Upload.php:180}：对首尾各 512 字节的十六进制文本匹配（不分大小写）。 */
@@ -112,7 +114,7 @@ final class PortraitImages {
                 return Outcome.fail(FORBIDDEN_EXT);
             }
             String ext = extension(fileName);
-            if (!IMAGE_EXT.contains(ext) && !OTHER_EXT.contains(ext)) {
+            if (!IMAGE_EXT.contains(ext) && !FILE_EXT.contains(ext) && !MEDIA_EXT.contains(ext)) {
                 return Outcome.fail(FORBIDDEN_EXT);
             }
             content = file;
@@ -130,6 +132,20 @@ final class PortraitImages {
         } catch (IOException e) {
             return Outcome.fail(FAILED);
         }
+    }
+
+    /**
+     * 头像登记附件的 {@code annex_type}（D-B09-9）：{@code imgdata} 时为 data URL 里的图片类型（{@code Upload.php:118-119}），否则按扩展名的
+     * 分类 {@code image}/{@code file}/{@code media}（{@code Upload.php:144-152}；扩展名属于"文件"或"媒体"类而内容是图片时，旧版照样生成头像，
+     * 登记的类型是 {@code file}/{@code media}）。只在 {@link #convert} 成功后调用。
+     */
+    static String annexType(String fileName, String imgdata) {
+        if (imgdata != null && !imgdata.isEmpty()) {
+            Matcher m = DATA_URL.matcher(imgdata);
+            return m.find() ? m.group(2) : "image";
+        }
+        String ext = extension(fileName);
+        return FILE_EXT.contains(ext) ? "file" : MEDIA_EXT.contains(ext) ? "media" : "image";
     }
 
     /** {@code strtolower(pathinfo($name, PATHINFO_EXTENSION))}。 */
