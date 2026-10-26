@@ -15,6 +15,11 @@ public final class MutableClock extends Clock {
         this.millis = new AtomicLong(epochSeconds * 1000);
     }
 
+    /** 拨到指定的秒（B13 黄金复放：每个请求前拨到 PHP 请求开始的秒）。 */
+    public void set(long epochSeconds) {
+        millis.set(epochSeconds * 1000);
+    }
+
     public void advanceSeconds(long s) {
         millis.addAndGet(s * 1000);
     }

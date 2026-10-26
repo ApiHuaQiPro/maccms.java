@@ -22,4 +22,10 @@ public interface VodSearchMapper {
      */
     List<Long> selectMatchingIds(@Param("field") String field, @Param("pattern") String pattern,
                                  @Param("limit") int limit);
+
+    /**
+     * 旧 {@code checkAndUpdateTopResults} 的候选行（VodSearch.php:107）：命中次数最多的前 {@code limit} 行（键、词、字段），命中次数相同时
+     * 最近命中的在前，再按键使顺序确定。
+     */
+    List<java.util.Map<String, String>> selectTopRows(@Param("limit") int limit);
 }

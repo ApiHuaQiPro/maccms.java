@@ -1,0 +1,748 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- B13 后台内容管理的只读查询（22 文档第 5 节）。 -->
+<mapper namespace="com.maccms.backend.content.infrastructure.ContentAdminMapper">
+
+    <!-- mac_vod 的全部列一律按文字取回（getString：整数为十进制、decimal 保留小数位，与旧版模板输出的文字相同；不受 TINYINT(1) 映射影响） -->
+    <resultMap id="vodRow" type="map">
+        <result column="vod_id" property="vod_id" javaType="string"/>
+        <result column="type_id" property="type_id" javaType="string"/>
+        <result column="type_id_1" property="type_id_1" javaType="string"/>
+        <result column="group_id" property="group_id" javaType="string"/>
+        <result column="vod_name" property="vod_name" javaType="string"/>
+        <result column="vod_sub" property="vod_sub" javaType="string"/>
+        <result column="vod_en" property="vod_en" javaType="string"/>
+        <result column="vod_status" property="vod_status" javaType="string"/>
+        <result column="vod_letter" property="vod_letter" javaType="string"/>
+        <result column="vod_color" property="vod_color" javaType="string"/>
+        <result column="vod_tag" property="vod_tag" javaType="string"/>
+        <result column="vod_class" property="vod_class" javaType="string"/>
+        <result column="vod_pic" property="vod_pic" javaType="string"/>
+        <result column="vod_pic_thumb" property="vod_pic_thumb" javaType="string"/>
+        <result column="vod_pic_slide" property="vod_pic_slide" javaType="string"/>
+        <result column="vod_pic_screenshot" property="vod_pic_screenshot" javaType="string"/>
+        <result column="vod_actor" property="vod_actor" javaType="string"/>
+        <result column="vod_director" property="vod_director" javaType="string"/>
+        <result column="vod_writer" property="vod_writer" javaType="string"/>
+        <result column="vod_behind" property="vod_behind" javaType="string"/>
+        <result column="vod_blurb" property="vod_blurb" javaType="string"/>
+        <result column="vod_remarks" property="vod_remarks" javaType="string"/>
+        <result column="vod_pubdate" property="vod_pubdate" javaType="string"/>
+        <result column="vod_total" property="vod_total" javaType="string"/>
+        <result column="vod_serial" property="vod_serial" javaType="string"/>
+        <result column="vod_tv" property="vod_tv" javaType="string"/>
+        <result column="vod_weekday" property="vod_weekday" javaType="string"/>
+        <result column="vod_area" property="vod_area" javaType="string"/>
+        <result column="vod_lang" property="vod_lang" javaType="string"/>
+        <result column="vod_year" property="vod_year" javaType="string"/>
+        <result column="vod_version" property="vod_version" javaType="string"/>
+        <result column="vod_state" property="vod_state" javaType="string"/>
+        <result column="vod_author" property="vod_author" javaType="string"/>
+        <result column="vod_jumpurl" property="vod_jumpurl" javaType="string"/>
+        <result column="vod_tpl" property="vod_tpl" javaType="string"/>
+        <result column="vod_tpl_play" property="vod_tpl_play" javaType="string"/>
+        <result column="vod_tpl_down" property="vod_tpl_down" javaType="string"/>
+        <result column="vod_isend" property="vod_isend" javaType="string"/>
+        <result column="vod_lock" property="vod_lock" javaType="string"/>
+        <result column="vod_level" property="vod_level" javaType="string"/>
+        <result column="vod_copyright" property="vod_copyright" javaType="string"/>
+        <result column="vod_points" property="vod_points" javaType="string"/>
+        <result column="vod_points_play" property="vod_points_play" javaType="string"/>
+        <result column="vod_points_down" property="vod_points_down" javaType="string"/>
+        <result column="vod_hits" property="vod_hits" javaType="string"/>
+        <result column="vod_hits_day" property="vod_hits_day" javaType="string"/>
+        <result column="vod_hits_week" property="vod_hits_week" javaType="string"/>
+        <result column="vod_hits_month" property="vod_hits_month" javaType="string"/>
+        <result column="vod_duration" property="vod_duration" javaType="string"/>
+        <result column="vod_up" property="vod_up" javaType="string"/>
+        <result column="vod_down" property="vod_down" javaType="string"/>
+        <result column="vod_score" property="vod_score" javaType="string"/>
+        <result column="vod_score_all" property="vod_score_all" javaType="string"/>
+        <result column="vod_score_num" property="vod_score_num" javaType="string"/>
+        <result column="vod_time" property="vod_time" javaType="string"/>
+        <result column="vod_time_add" property="vod_time_add" javaType="string"/>
+        <result column="vod_time_hits" property="vod_time_hits" javaType="string"/>
+        <result column="vod_time_make" property="vod_time_make" javaType="string"/>
+        <result column="vod_trysee" property="vod_trysee" javaType="string"/>
+        <result column="vod_douban_id" property="vod_douban_id" javaType="string"/>
+        <result column="vod_douban_score" property="vod_douban_score" javaType="string"/>
+        <result column="vod_reurl" property="vod_reurl" javaType="string"/>
+        <result column="vod_rel_vod" property="vod_rel_vod" javaType="string"/>
+        <result column="vod_rel_art" property="vod_rel_art" javaType="string"/>
+        <result column="vod_pwd" property="vod_pwd" javaType="string"/>
+        <result column="vod_pwd_url" property="vod_pwd_url" javaType="string"/>
+        <result column="vod_pwd_play" property="vod_pwd_play" javaType="string"/>
+        <result column="vod_pwd_play_url" property="vod_pwd_play_url" javaType="string"/>
+        <result column="vod_pwd_down" property="vod_pwd_down" javaType="string"/>
+        <result column="vod_pwd_down_url" property="vod_pwd_down_url" javaType="string"/>
+        <result column="vod_content" property="vod_content" javaType="string"/>
+        <result column="vod_play_from" property="vod_play_from" javaType="string"/>
+        <result column="vod_play_server" property="vod_play_server" javaType="string"/>
+        <result column="vod_play_note" property="vod_play_note" javaType="string"/>
+        <result column="vod_play_url" property="vod_play_url" javaType="string"/>
+        <result column="vod_down_from" property="vod_down_from" javaType="string"/>
+        <result column="vod_down_server" property="vod_down_server" javaType="string"/>
+        <result column="vod_down_note" property="vod_down_note" javaType="string"/>
+        <result column="vod_down_url" property="vod_down_url" javaType="string"/>
+        <result column="vod_plot" property="vod_plot" javaType="string"/>
+        <result column="vod_plot_name" property="vod_plot_name" javaType="string"/>
+        <result column="vod_plot_detail" property="vod_plot_detail" javaType="string"/>
+    </resultMap>
+    <sql id="vodColumns">vod_id, type_id, type_id_1, group_id, vod_name, vod_sub, vod_en, vod_status, vod_letter, vod_color, vod_tag, vod_class, vod_pic, vod_pic_thumb, vod_pic_slide, vod_pic_screenshot, vod_actor, vod_director, vod_writer, vod_behind, vod_blurb, vod_remarks, vod_pubdate, vod_total, vod_serial, vod_tv, vod_weekday, vod_area, vod_lang, vod_year, vod_version, vod_state, vod_author, vod_jumpurl, vod_tpl, vod_tpl_play, vod_tpl_down, vod_isend, vod_lock, vod_level, vod_copyright, vod_points, vod_points_play, vod_points_down, vod_hits, vod_hits_day, vod_hits_week, vod_hits_month, vod_duration, vod_up, vod_down, vod_score, vod_score_all, vod_score_num, vod_time, vod_time_add, vod_time_hits, vod_time_make, vod_trysee, vod_douban_id, vod_douban_score, vod_reurl, vod_rel_vod, vod_rel_art, vod_pwd, vod_pwd_url, vod_pwd_play, vod_pwd_play_url, vod_pwd_down, vod_pwd_down_url, vod_content, vod_play_from, vod_play_server, vod_play_note, vod_play_url, vod_down_from, vod_down_server, vod_down_note, vod_down_url, vod_plot, vod_plot_name, vod_plot_detail</sql>
+    <select id="selectVod" resultMap="vodRow">
+        SELECT <include refid="vodColumns"/> FROM mac_vod WHERE vod_id = #{id}
+    </select>
+
+    <!-- mac_art 的全部列一律按文字取回（getString：整数为十进制、decimal 保留小数位，与旧版模板输出的文字相同；不受 TINYINT(1) 映射影响） -->
+    <resultMap id="artRow" type="map">
+        <result column="art_id" property="art_id" javaType="string"/>
+        <result column="type_id" property="type_id" javaType="string"/>
+        <result column="type_id_1" property="type_id_1" javaType="string"/>
+        <result column="group_id" property="group_id" javaType="string"/>
+        <result column="art_name" property="art_name" javaType="string"/>
+        <result column="art_sub" property="art_sub" javaType="string"/>
+        <result column="art_en" property="art_en" javaType="string"/>
+        <result column="art_status" property="art_status" javaType="string"/>
+        <result column="art_letter" property="art_letter" javaType="string"/>
+        <result column="art_color" property="art_color" javaType="string"/>
+        <result column="art_from" property="art_from" javaType="string"/>
+        <result column="art_author" property="art_author" javaType="string"/>
+        <result column="art_tag" property="art_tag" javaType="string"/>
+        <result column="art_class" property="art_class" javaType="string"/>
+        <result column="art_pic" property="art_pic" javaType="string"/>
+        <result column="art_pic_thumb" property="art_pic_thumb" javaType="string"/>
+        <result column="art_pic_slide" property="art_pic_slide" javaType="string"/>
+        <result column="art_pic_screenshot" property="art_pic_screenshot" javaType="string"/>
+        <result column="art_blurb" property="art_blurb" javaType="string"/>
+        <result column="art_remarks" property="art_remarks" javaType="string"/>
+        <result column="art_jumpurl" property="art_jumpurl" javaType="string"/>
+        <result column="art_tpl" property="art_tpl" javaType="string"/>
+        <result column="art_level" property="art_level" javaType="string"/>
+        <result column="art_lock" property="art_lock" javaType="string"/>
+        <result column="art_points" property="art_points" javaType="string"/>
+        <result column="art_points_detail" property="art_points_detail" javaType="string"/>
+        <result column="art_up" property="art_up" javaType="string"/>
+        <result column="art_down" property="art_down" javaType="string"/>
+        <result column="art_hits" property="art_hits" javaType="string"/>
+        <result column="art_hits_day" property="art_hits_day" javaType="string"/>
+        <result column="art_hits_week" property="art_hits_week" javaType="string"/>
+        <result column="art_hits_month" property="art_hits_month" javaType="string"/>
+        <result column="art_time" property="art_time" javaType="string"/>
+        <result column="art_time_add" property="art_time_add" javaType="string"/>
+        <result column="art_time_hits" property="art_time_hits" javaType="string"/>
+        <result column="art_time_make" property="art_time_make" javaType="string"/>
+        <result column="art_score" property="art_score" javaType="string"/>
+        <result column="art_score_all" property="art_score_all" javaType="string"/>
+        <result column="art_score_num" property="art_score_num" javaType="string"/>
+        <result column="art_rel_art" property="art_rel_art" javaType="string"/>
+        <result column="art_rel_vod" property="art_rel_vod" javaType="string"/>
+        <result column="art_pwd" property="art_pwd" javaType="string"/>
+        <result column="art_pwd_url" property="art_pwd_url" javaType="string"/>
+        <result column="art_title" property="art_title" javaType="string"/>
+        <result column="art_note" property="art_note" javaType="string"/>
+        <result column="art_content" property="art_content" javaType="string"/>
+    </resultMap>
+    <sql id="artColumns">art_id, type_id, type_id_1, group_id, art_name, art_sub, art_en, art_status, art_letter, art_color, art_from, art_author, art_tag, art_class, art_pic, art_pic_thumb, art_pic_slide, art_pic_screenshot, art_blurb, art_remarks, art_jumpurl, art_tpl, art_level, art_lock, art_points, art_points_detail, art_up, art_down, art_hits, art_hits_day, art_hits_week, art_hits_month, art_time, art_time_add, art_time_hits, art_time_make, art_score, art_score_all, art_score_num, art_rel_art, art_rel_vod, art_pwd, art_pwd_url, art_title, art_note, art_content</sql>
+    <select id="selectArt" resultMap="artRow">
+        SELECT <include refid="artColumns"/> FROM mac_art WHERE art_id = #{id}
+    </select>
+
+    <!-- mac_topic 的全部列一律按文字取回（getString：整数为十进制、decimal 保留小数位，与旧版模板输出的文字相同；不受 TINYINT(1) 映射影响） -->
+    <resultMap id="topicRow" type="map">
+        <result column="topic_id" property="topic_id" javaType="string"/>
+        <result column="topic_name" property="topic_name" javaType="string"/>
+        <result column="topic_en" property="topic_en" javaType="string"/>
+        <result column="topic_sub" property="topic_sub" javaType="string"/>
+        <result column="topic_status" property="topic_status" javaType="string"/>
+        <result column="topic_sort" property="topic_sort" javaType="string"/>
+        <result column="topic_letter" property="topic_letter" javaType="string"/>
+        <result column="topic_color" property="topic_color" javaType="string"/>
+        <result column="topic_tpl" property="topic_tpl" javaType="string"/>
+        <result column="topic_type" property="topic_type" javaType="string"/>
+        <result column="topic_pic" property="topic_pic" javaType="string"/>
+        <result column="topic_pic_thumb" property="topic_pic_thumb" javaType="string"/>
+        <result column="topic_pic_slide" property="topic_pic_slide" javaType="string"/>
+        <result column="topic_key" property="topic_key" javaType="string"/>
+        <result column="topic_des" property="topic_des" javaType="string"/>
+        <result column="topic_title" property="topic_title" javaType="string"/>
+        <result column="topic_blurb" property="topic_blurb" javaType="string"/>
+        <result column="topic_remarks" property="topic_remarks" javaType="string"/>
+        <result column="topic_level" property="topic_level" javaType="string"/>
+        <result column="topic_up" property="topic_up" javaType="string"/>
+        <result column="topic_down" property="topic_down" javaType="string"/>
+        <result column="topic_score" property="topic_score" javaType="string"/>
+        <result column="topic_score_all" property="topic_score_all" javaType="string"/>
+        <result column="topic_score_num" property="topic_score_num" javaType="string"/>
+        <result column="topic_hits" property="topic_hits" javaType="string"/>
+        <result column="topic_hits_day" property="topic_hits_day" javaType="string"/>
+        <result column="topic_hits_week" property="topic_hits_week" javaType="string"/>
+        <result column="topic_hits_month" property="topic_hits_month" javaType="string"/>
+        <result column="topic_time" property="topic_time" javaType="string"/>
+        <result column="topic_time_add" property="topic_time_add" javaType="string"/>
+        <result column="topic_time_hits" property="topic_time_hits" javaType="string"/>
+        <result column="topic_time_make" property="topic_time_make" javaType="string"/>
+        <result column="topic_tag" property="topic_tag" javaType="string"/>
+        <result column="topic_rel_vod" property="topic_rel_vod" javaType="string"/>
+        <result column="topic_rel_art" property="topic_rel_art" javaType="string"/>
+        <result column="topic_content" property="topic_content" javaType="string"/>
+        <result column="topic_extend" property="topic_extend" javaType="string"/>
+    </resultMap>
+    <sql id="topicColumns">topic_id, topic_name, topic_en, topic_sub, topic_status, topic_sort, topic_letter, topic_color, topic_tpl, topic_type, topic_pic, topic_pic_thumb, topic_pic_slide, topic_key, topic_des, topic_title, topic_blurb, topic_remarks, topic_level, topic_up, topic_down, topic_score, topic_score_all, topic_score_num, topic_hits, topic_hits_day, topic_hits_week, topic_hits_month, topic_time, topic_time_add, topic_time_hits, topic_time_make, topic_tag, topic_rel_vod, topic_rel_art, topic_content, topic_extend</sql>
+    <select id="selectTopic" resultMap="topicRow">
+        SELECT <include refid="topicColumns"/> FROM mac_topic WHERE topic_id = #{id}
+    </select>
+
+    <!-- mac_actor 的全部列一律按文字取回（getString：整数为十进制、decimal 保留小数位，与旧版模板输出的文字相同；不受 TINYINT(1) 映射影响） -->
+    <resultMap id="actorRow" type="map">
+        <result column="actor_id" property="actor_id" javaType="string"/>
+        <result column="type_id" property="type_id" javaType="string"/>
+        <result column="type_id_1" property="type_id_1" javaType="string"/>
+        <result column="actor_name" property="actor_name" javaType="string"/>
+        <result column="actor_en" property="actor_en" javaType="string"/>
+        <result column="actor_alias" property="actor_alias" javaType="string"/>
+        <result column="actor_status" property="actor_status" javaType="string"/>
+        <result column="actor_lock" property="actor_lock" javaType="string"/>
+        <result column="actor_letter" property="actor_letter" javaType="string"/>
+        <result column="actor_sex" property="actor_sex" javaType="string"/>
+        <result column="actor_color" property="actor_color" javaType="string"/>
+        <result column="actor_pic" property="actor_pic" javaType="string"/>
+        <result column="actor_blurb" property="actor_blurb" javaType="string"/>
+        <result column="actor_remarks" property="actor_remarks" javaType="string"/>
+        <result column="actor_area" property="actor_area" javaType="string"/>
+        <result column="actor_height" property="actor_height" javaType="string"/>
+        <result column="actor_weight" property="actor_weight" javaType="string"/>
+        <result column="actor_birthday" property="actor_birthday" javaType="string"/>
+        <result column="actor_birtharea" property="actor_birtharea" javaType="string"/>
+        <result column="actor_blood" property="actor_blood" javaType="string"/>
+        <result column="actor_starsign" property="actor_starsign" javaType="string"/>
+        <result column="actor_school" property="actor_school" javaType="string"/>
+        <result column="actor_works" property="actor_works" javaType="string"/>
+        <result column="actor_tag" property="actor_tag" javaType="string"/>
+        <result column="actor_class" property="actor_class" javaType="string"/>
+        <result column="actor_level" property="actor_level" javaType="string"/>
+        <result column="actor_time" property="actor_time" javaType="string"/>
+        <result column="actor_time_add" property="actor_time_add" javaType="string"/>
+        <result column="actor_time_hits" property="actor_time_hits" javaType="string"/>
+        <result column="actor_time_make" property="actor_time_make" javaType="string"/>
+        <result column="actor_hits" property="actor_hits" javaType="string"/>
+        <result column="actor_hits_day" property="actor_hits_day" javaType="string"/>
+        <result column="actor_hits_week" property="actor_hits_week" javaType="string"/>
+        <result column="actor_hits_month" property="actor_hits_month" javaType="string"/>
+        <result column="actor_score" property="actor_score" javaType="string"/>
+        <result column="actor_score_all" property="actor_score_all" javaType="string"/>
+        <result column="actor_score_num" property="actor_score_num" javaType="string"/>
+        <result column="actor_up" property="actor_up" javaType="string"/>
+        <result column="actor_down" property="actor_down" javaType="string"/>
+        <result column="actor_tpl" property="actor_tpl" javaType="string"/>
+        <result column="actor_jumpurl" property="actor_jumpurl" javaType="string"/>
+        <result column="actor_content" property="actor_content" javaType="string"/>
+    </resultMap>
+    <sql id="actorColumns">actor_id, type_id, type_id_1, actor_name, actor_en, actor_alias, actor_status, actor_lock, actor_letter, actor_sex, actor_color, actor_pic, actor_blurb, actor_remarks, actor_area, actor_height, actor_weight, actor_birthday, actor_birtharea, actor_blood, actor_starsign, actor_school, actor_works, actor_tag, actor_class, actor_level, actor_time, actor_time_add, actor_time_hits, actor_time_make, actor_hits, actor_hits_day, actor_hits_week, actor_hits_month, actor_score, actor_score_all, actor_score_num, actor_up, actor_down, actor_tpl, actor_jumpurl, actor_content</sql>
+    <select id="selectActor" resultMap="actorRow">
+        SELECT <include refid="actorColumns"/> FROM mac_actor WHERE actor_id = #{id}
+    </select>
+
+    <!-- mac_role 的全部列一律按文字取回（getString：整数为十进制、decimal 保留小数位，与旧版模板输出的文字相同；不受 TINYINT(1) 映射影响） -->
+    <resultMap id="roleRow" type="map">
+        <result column="role_id" property="role_id" javaType="string"/>
+        <result column="role_rid" property="role_rid" javaType="string"/>
+        <result column="role_name" property="role_name" javaType="string"/>
+        <result column="role_en" property="role_en" javaType="string"/>
+        <result column="role_status" property="role_status" javaType="string"/>
+        <result column="role_lock" property="role_lock" javaType="string"/>
+        <result column="role_letter" property="role_letter" javaType="string"/>
+        <result column="role_color" property="role_color" javaType="string"/>
+        <result column="role_actor" property="role_actor" javaType="string"/>
+        <result column="role_remarks" property="role_remarks" javaType="string"/>
+        <result column="role_pic" property="role_pic" javaType="string"/>
+        <result column="role_sort" property="role_sort" javaType="string"/>
+        <result column="role_level" property="role_level" javaType="string"/>
+        <result column="role_time" property="role_time" javaType="string"/>
+        <result column="role_time_add" property="role_time_add" javaType="string"/>
+        <result column="role_time_hits" property="role_time_hits" javaType="string"/>
+        <result column="role_time_make" property="role_time_make" javaType="string"/>
+        <result column="role_hits" property="role_hits" javaType="string"/>
+        <result column="role_hits_day" property="role_hits_day" javaType="string"/>
+        <result column="role_hits_week" property="role_hits_week" javaType="string"/>
+        <result column="role_hits_month" property="role_hits_month" javaType="string"/>
+        <result column="role_score" property="role_score" javaType="string"/>
+        <result column="role_score_all" property="role_score_all" javaType="string"/>
+        <result column="role_score_num" property="role_score_num" javaType="string"/>
+        <result column="role_up" property="role_up" javaType="string"/>
+        <result column="role_down" property="role_down" javaType="string"/>
+        <result column="role_tpl" property="role_tpl" javaType="string"/>
+        <result column="role_jumpurl" property="role_jumpurl" javaType="string"/>
+        <result column="role_content" property="role_content" javaType="string"/>
+    </resultMap>
+    <sql id="roleColumns">role_id, role_rid, role_name, role_en, role_status, role_lock, role_letter, role_color, role_actor, role_remarks, role_pic, role_sort, role_level, role_time, role_time_add, role_time_hits, role_time_make, role_hits, role_hits_day, role_hits_week, role_hits_month, role_score, role_score_all, role_score_num, role_up, role_down, role_tpl, role_jumpurl, role_content</sql>
+    <select id="selectRole" resultMap="roleRow">
+        SELECT <include refid="roleColumns"/> FROM mac_role WHERE role_id = #{id}
+    </select>
+
+    <!-- mac_website 的全部列一律按文字取回（getString：整数为十进制、decimal 保留小数位，与旧版模板输出的文字相同；不受 TINYINT(1) 映射影响） -->
+    <resultMap id="websiteRow" type="map">
+        <result column="website_id" property="website_id" javaType="string"/>
+        <result column="type_id" property="type_id" javaType="string"/>
+        <result column="type_id_1" property="type_id_1" javaType="string"/>
+        <result column="website_name" property="website_name" javaType="string"/>
+        <result column="website_sub" property="website_sub" javaType="string"/>
+        <result column="website_en" property="website_en" javaType="string"/>
+        <result column="website_status" property="website_status" javaType="string"/>
+        <result column="website_letter" property="website_letter" javaType="string"/>
+        <result column="website_color" property="website_color" javaType="string"/>
+        <result column="website_lock" property="website_lock" javaType="string"/>
+        <result column="website_sort" property="website_sort" javaType="string"/>
+        <result column="website_jumpurl" property="website_jumpurl" javaType="string"/>
+        <result column="website_pic" property="website_pic" javaType="string"/>
+        <result column="website_pic_screenshot" property="website_pic_screenshot" javaType="string"/>
+        <result column="website_logo" property="website_logo" javaType="string"/>
+        <result column="website_area" property="website_area" javaType="string"/>
+        <result column="website_lang" property="website_lang" javaType="string"/>
+        <result column="website_level" property="website_level" javaType="string"/>
+        <result column="website_time" property="website_time" javaType="string"/>
+        <result column="website_time_add" property="website_time_add" javaType="string"/>
+        <result column="website_time_hits" property="website_time_hits" javaType="string"/>
+        <result column="website_time_make" property="website_time_make" javaType="string"/>
+        <result column="website_time_referer" property="website_time_referer" javaType="string"/>
+        <result column="website_hits" property="website_hits" javaType="string"/>
+        <result column="website_hits_day" property="website_hits_day" javaType="string"/>
+        <result column="website_hits_week" property="website_hits_week" javaType="string"/>
+        <result column="website_hits_month" property="website_hits_month" javaType="string"/>
+        <result column="website_score" property="website_score" javaType="string"/>
+        <result column="website_score_all" property="website_score_all" javaType="string"/>
+        <result column="website_score_num" property="website_score_num" javaType="string"/>
+        <result column="website_up" property="website_up" javaType="string"/>
+        <result column="website_down" property="website_down" javaType="string"/>
+        <result column="website_referer" property="website_referer" javaType="string"/>
+        <result column="website_referer_day" property="website_referer_day" javaType="string"/>
+        <result column="website_referer_week" property="website_referer_week" javaType="string"/>
+        <result column="website_referer_month" property="website_referer_month" javaType="string"/>
+        <result column="website_tag" property="website_tag" javaType="string"/>
+        <result column="website_class" property="website_class" javaType="string"/>
+        <result column="website_remarks" property="website_remarks" javaType="string"/>
+        <result column="website_tpl" property="website_tpl" javaType="string"/>
+        <result column="website_blurb" property="website_blurb" javaType="string"/>
+        <result column="website_content" property="website_content" javaType="string"/>
+    </resultMap>
+    <sql id="websiteColumns">website_id, type_id, type_id_1, website_name, website_sub, website_en, website_status, website_letter, website_color, website_lock, website_sort, website_jumpurl, website_pic, website_pic_screenshot, website_logo, website_area, website_lang, website_level, website_time, website_time_add, website_time_hits, website_time_make, website_time_referer, website_hits, website_hits_day, website_hits_week, website_hits_month, website_score, website_score_all, website_score_num, website_up, website_down, website_referer, website_referer_day, website_referer_week, website_referer_month, website_tag, website_class, website_remarks, website_tpl, website_blurb, website_content</sql>
+    <select id="selectWebsite" resultMap="websiteRow">
+        SELECT <include refid="websiteColumns"/> FROM mac_website WHERE website_id = #{id}
+    </select>
+
+    <!-- mac_link 的全部列一律按文字取回（getString：整数为十进制、decimal 保留小数位，与旧版模板输出的文字相同；不受 TINYINT(1) 映射影响） -->
+    <resultMap id="linkRow" type="map">
+        <result column="link_id" property="link_id" javaType="string"/>
+        <result column="link_type" property="link_type" javaType="string"/>
+        <result column="link_name" property="link_name" javaType="string"/>
+        <result column="link_sort" property="link_sort" javaType="string"/>
+        <result column="link_add_time" property="link_add_time" javaType="string"/>
+        <result column="link_time" property="link_time" javaType="string"/>
+        <result column="link_url" property="link_url" javaType="string"/>
+        <result column="link_logo" property="link_logo" javaType="string"/>
+    </resultMap>
+    <sql id="linkColumns">link_id, link_type, link_name, link_sort, link_add_time, link_time, link_url, link_logo</sql>
+    <select id="selectLink" resultMap="linkRow">
+        SELECT <include refid="linkColumns"/> FROM mac_link WHERE link_id = #{id}
+    </select>
+
+    <!-- mac_type 的全部列一律按文字取回（getString：整数为十进制、decimal 保留小数位，与旧版模板输出的文字相同；不受 TINYINT(1) 映射影响） -->
+    <resultMap id="typeRow" type="map">
+        <result column="type_id" property="type_id" javaType="string"/>
+        <result column="type_name" property="type_name" javaType="string"/>
+        <result column="type_en" property="type_en" javaType="string"/>
+        <result column="type_sort" property="type_sort" javaType="string"/>
+        <result column="type_mid" property="type_mid" javaType="string"/>
+        <result column="type_pid" property="type_pid" javaType="string"/>
+        <result column="type_status" property="type_status" javaType="string"/>
+        <result column="type_tpl" property="type_tpl" javaType="string"/>
+        <result column="type_tpl_list" property="type_tpl_list" javaType="string"/>
+        <result column="type_tpl_detail" property="type_tpl_detail" javaType="string"/>
+        <result column="type_tpl_play" property="type_tpl_play" javaType="string"/>
+        <result column="type_tpl_down" property="type_tpl_down" javaType="string"/>
+        <result column="type_key" property="type_key" javaType="string"/>
+        <result column="type_des" property="type_des" javaType="string"/>
+        <result column="type_title" property="type_title" javaType="string"/>
+        <result column="type_union" property="type_union" javaType="string"/>
+        <result column="type_extend" property="type_extend" javaType="string"/>
+        <result column="type_logo" property="type_logo" javaType="string"/>
+        <result column="type_pic" property="type_pic" javaType="string"/>
+        <result column="type_jumpurl" property="type_jumpurl" javaType="string"/>
+    </resultMap>
+    <sql id="typeColumns">type_id, type_name, type_en, type_sort, type_mid, type_pid, type_status, type_tpl, type_tpl_list, type_tpl_detail, type_tpl_play, type_tpl_down, type_key, type_des, type_title, type_union, type_extend, type_logo, type_pic, type_jumpurl</sql>
+    <select id="selectType" resultMap="typeRow">
+        SELECT <include refid="typeColumns"/> FROM mac_type WHERE type_id = #{id}
+    </select>
+
+    <!-- mac_annex 的全部列一律按文字取回（getString：整数为十进制、decimal 保留小数位，与旧版模板输出的文字相同；不受 TINYINT(1) 映射影响） -->
+    <resultMap id="annexRow" type="map">
+        <result column="annex_id" property="annex_id" javaType="string"/>
+        <result column="annex_time" property="annex_time" javaType="string"/>
+        <result column="annex_file" property="annex_file" javaType="string"/>
+        <result column="annex_size" property="annex_size" javaType="string"/>
+        <result column="annex_type" property="annex_type" javaType="string"/>
+    </resultMap>
+    <sql id="annexColumns">annex_id, annex_time, annex_file, annex_size, annex_type</sql>
+    <select id="selectAnnex" resultMap="annexRow">
+        SELECT <include refid="annexColumns"/> FROM mac_annex WHERE annex_id = #{id}
+    </select>
+
+    <!-- ================================================================== 友情链接（旧 admin/controller/Link.php:12-36） -->
+    <!-- 旧版 where link_name like '%wd%'：% 与 _ 照旧是通配符，like 由 PhpText.legacyLike 转写成 ESCAPE '!' 下的同义模式 -->
+    <sql id="linkCondition">
+        <if test="like != null">WHERE link_name LIKE #{like} ESCAPE '!'</if>
+    </sql>
+
+    <select id="countLinks" resultType="long">
+        SELECT COUNT(*) FROM mac_link <include refid="linkCondition"/>
+    </select>
+
+    <select id="listLinks" resultMap="linkRow">
+        SELECT <include refid="linkColumns"/> FROM mac_link <include refid="linkCondition"/>
+        ORDER BY link_id DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- ================================================================== 分类（旧 admin/controller/Type.php、common/model/Type.php） -->
+    <!-- 旧 listData：order type_sort asc；同序时 MySQL 按存储顺序返回，新版补上 type_id 使顺序确定 -->
+    <select id="listTypes" resultMap="typeRow">
+        SELECT <include refid="typeColumns"/> FROM mac_type
+        <if test="topOnly">WHERE type_pid = 0</if>
+        ORDER BY type_sort ASC, type_id ASC
+    </select>
+
+    <!-- 旧 setCache：listData([], 'type_id asc') -->
+    <select id="listTypesById" resultMap="typeRow">
+        SELECT <include refid="typeColumns"/> FROM mac_type ORDER BY type_id ASC
+    </select>
+
+    <select id="selectTypesByIds" resultMap="typeRow">
+        SELECT <include refid="typeColumns"/> FROM mac_type
+        WHERE type_id IN <foreach collection="ids" item="i" open="(" separator="," close=")">#{i}</foreach>
+        ORDER BY type_id ASC
+    </select>
+
+    <!-- 分类列表的数量（Type.php:21-44）：按 type_id_1、type_id 分组，旧版 GROUP BY 的隐式排序 -->
+    <select id="countVodByType" resultType="map">
+        SELECT type_id_1 AS p, type_id AS t, COUNT(vod_id) AS cc FROM mac_vod GROUP BY type_id_1, type_id ORDER BY type_id_1, type_id
+    </select>
+    <select id="countArtByType" resultType="map">
+        SELECT type_id_1 AS p, type_id AS t, COUNT(art_id) AS cc FROM mac_art GROUP BY type_id_1, type_id ORDER BY type_id_1, type_id
+    </select>
+    <select id="countActorByType" resultType="map">
+        SELECT type_id_1 AS p, type_id AS t, COUNT(actor_id) AS cc FROM mac_actor GROUP BY type_id_1, type_id ORDER BY type_id_1, type_id
+    </select>
+    <select id="countWebsiteByType" resultType="map">
+        SELECT type_id_1 AS p, type_id AS t, COUNT(website_id) AS cc FROM mac_website GROUP BY type_id_1, type_id ORDER BY type_id_1, type_id
+    </select>
+
+    <!-- 删除分类前的检查（common/model/Type.php:287-306）：type_id|type_id_1 = 分类 -->
+    <select id="countVodInType" resultType="long">
+        SELECT COUNT(*) FROM mac_vod WHERE type_id = #{id} OR type_id_1 = #{id}
+    </select>
+    <select id="countArtInType" resultType="long">
+        SELECT COUNT(*) FROM mac_art WHERE type_id = #{id} OR type_id_1 = #{id}
+    </select>
+
+    <!-- ================================================================== 专题（旧 admin/controller/Topic.php:12-45） -->
+    <sql id="topicCondition">
+        <where>
+            <if test="status != null">AND topic_status = #{status}</if>
+            <if test="like != null">AND topic_name LIKE #{like} ESCAPE '!'</if>
+        </where>
+    </sql>
+
+    <select id="countTopics" resultType="long">
+        SELECT COUNT(*) FROM mac_topic <include refid="topicCondition"/>
+    </select>
+
+    <!-- 旧 order topic_time desc；同一时间按 topic_id 倒序（新版补上，使顺序确定） -->
+    <select id="listTopics" resultMap="topicRow">
+        SELECT <include refid="topicColumns"/> FROM mac_topic <include refid="topicCondition"/>
+        ORDER BY topic_time DESC, topic_id ASC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- 删除前取图片地址（旧 delData：listData($where, '', 1, 9999)） -->
+    <select id="selectTopicsByIds" resultMap="topicRow">
+        SELECT <include refid="topicColumns"/> FROM mac_topic
+        WHERE topic_id IN <foreach collection="ids" item="i" open="(" separator="," close=")">#{i}</foreach>
+        ORDER BY topic_id ASC
+    </select>
+
+    <!-- ================================================================== 网址（旧 admin/controller/Website.php、common/model/Website.php） -->
+    <!-- 列表与批量处理的条件：type 在列表页是 type_id|type_id_1，在批量页是 type_id；图片 1 为空、2 远程、3 同步失败；查重为同名超过一条 -->
+    <sql id="websiteCondition">
+        <where>
+            <if test="c.typeEither != null">AND (type_id = #{c.typeEither} OR type_id_1 = #{c.typeEither})</if>
+            <if test="c.typeExact != null">AND type_id = #{c.typeExact}</if>
+            <if test="c.level != null">AND website_level = #{c.level}</if>
+            <if test="c.status != null">AND website_status = #{c.status}</if>
+            <!-- 列名与 = 之间不留空格：读 Mapper 护栏按 "LOCK " 关键字拒绝锁语句（ReadOnlyGuardrailsTest） -->
+            <if test="c.locked != null">AND website_lock=#{c.locked}</if>
+            <if test="c.pic == 1">AND website_pic = ''</if>
+            <if test="c.pic == 2">AND website_pic LIKE 'http%'</if>
+            <if test="c.pic == 3">AND website_pic LIKE '%#err%'</if>
+            <if test="c.wdLike != null">AND website_name LIKE #{c.wdLike} ESCAPE '!'</if>
+            <if test="c.repeat">AND website_name IN (SELECT n.website_name FROM (SELECT website_name FROM mac_website GROUP BY website_name HAVING COUNT(website_name) &gt; 1) n)</if>
+        </where>
+    </sql>
+
+    <select id="countWebsites" resultType="long">
+        SELECT COUNT(*) FROM mac_website <include refid="websiteCondition"/>
+    </select>
+
+    <!-- 旧 order：列表 website_time desc、查重 website_name asc、批量 website_id desc；同序时按 website_id 升序（旧版由 MySQL 决定，MyISAM 上通常是写入顺序） -->
+    <select id="listWebsites" resultMap="websiteRow">
+        SELECT <include refid="websiteColumns"/> FROM mac_website <include refid="websiteCondition"/>
+        <choose>
+            <when test="c.repeat">ORDER BY website_name ASC, website_id ASC</when>
+            <when test="c.order == 'id_desc'">ORDER BY website_id DESC</when>
+            <otherwise>ORDER BY website_time DESC, website_id ASC</otherwise>
+        </choose>
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- 查重删除：每个同名组的最小编号（旧版临时表 tmpwebsite 的 min(website_id)、name1），按编号分页取完 -->
+    <select id="websiteRepeatGroups" resultType="map">
+        SELECT MIN(website_id) AS id, website_name AS name FROM mac_website GROUP BY website_name HAVING COUNT(website_name) &gt; 1
+        ORDER BY id LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- updateToday：website_time 晚于今天零点的编号或分类（旧版 column() 不排序，新版按主键） -->
+    <select id="websiteToday" resultType="long">
+        SELECT <choose><when test="type">type_id</when><otherwise>website_id</otherwise></choose>
+        FROM mac_website WHERE website_time &gt; #{since} ORDER BY website_id
+    </select>
+
+    <!-- ================================================================== 文章（旧 admin/controller/Art.php、common/model/Art.php） -->
+    <sql id="artCondition">
+        <where>
+            <if test="c.typeEither != null">AND (type_id = #{c.typeEither} OR type_id_1 = #{c.typeEither})</if>
+            <if test="c.typeExact != null">AND type_id = #{c.typeExact}</if>
+            <if test="c.level != null">AND art_level = #{c.level}</if>
+            <if test="c.status != null">AND art_status = #{c.status}</if>
+            <!-- 列名与 = 之间不留空格：读 Mapper 护栏按 "LOCK " 关键字拒绝锁语句（ReadOnlyGuardrailsTest） -->
+            <if test="c.locked != null">AND art_lock=#{c.locked}</if>
+            <if test="c.pic == 1">AND art_pic = ''</if>
+            <if test="c.pic == 2">AND art_pic LIKE 'http%'</if>
+            <if test="c.pic == 3">AND art_pic LIKE '%#err%'</if>
+            <if test="c.wdLike != null">AND art_name LIKE #{c.wdLike} ESCAPE '!'</if>
+            <if test="c.repeat">AND art_name IN (SELECT n.art_name FROM (SELECT art_name FROM mac_art GROUP BY art_name HAVING COUNT(art_name) &gt; 1) n)</if>
+        </where>
+    </sql>
+
+    <select id="countArts" resultType="long">
+        SELECT COUNT(*) FROM mac_art <include refid="artCondition"/>
+    </select>
+
+    <select id="listArts" resultMap="artRow">
+        SELECT <include refid="artColumns"/> FROM mac_art <include refid="artCondition"/>
+        <choose>
+            <when test="c.repeat">ORDER BY art_name ASC, art_id ASC</when>
+            <when test="c.order == 'id_desc'">ORDER BY art_id DESC</when>
+            <otherwise>ORDER BY art_time DESC, art_id ASC</otherwise>
+        </choose>
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <select id="artRepeatGroups" resultType="map">
+        SELECT MIN(art_id) AS id, art_name AS name FROM mac_art GROUP BY art_name HAVING COUNT(art_name) &gt; 1
+        ORDER BY id LIMIT #{offset}, #{limit}
+    </select>
+
+    <select id="artToday" resultType="long">
+        SELECT <choose><when test="type">type_id</when><otherwise>art_id</otherwise></choose>
+        FROM mac_art WHERE art_time &gt; #{since} ORDER BY art_id
+    </select>
+
+    <!-- ================================================================== 演员（旧 admin/controller/Actor.php） -->
+    <sql id="actorCondition">
+        <where>
+            <if test="c.typeEither != null">AND (type_id = #{c.typeEither} OR type_id_1 = #{c.typeEither})</if>
+            <if test="c.level != null">AND actor_level = #{c.level}</if>
+            <if test="c.status != null">AND actor_status = #{c.status}</if>
+            <if test="c.pic == 1">AND actor_pic = ''</if>
+            <if test="c.pic == 2">AND actor_pic LIKE 'http%'</if>
+            <if test="c.pic == 3">AND actor_pic LIKE '%#err%'</if>
+            <if test="c.wdLike != null">AND actor_name LIKE #{c.wdLike} ESCAPE '!'</if>
+        </where>
+    </sql>
+
+    <select id="countActors" resultType="long">
+        SELECT COUNT(*) FROM mac_actor <include refid="actorCondition"/>
+    </select>
+
+    <select id="listActors" resultMap="actorRow">
+        SELECT <include refid="actorColumns"/> FROM mac_actor <include refid="actorCondition"/>
+        ORDER BY actor_time DESC, actor_id ASC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- ================================================================== 角色（旧 admin/controller/Role.php） -->
+    <sql id="roleCondition">
+        <where>
+            <if test="c.level != null">AND role_level = #{c.level}</if>
+            <if test="c.status != null">AND role_status = #{c.status}</if>
+            <if test="c.rid != null">AND role_rid = #{c.rid}</if>
+            <if test="c.pic == 1">AND role_pic = ''</if>
+            <if test="c.pic == 2">AND role_pic LIKE 'http%'</if>
+            <if test="c.pic == 3">AND role_pic LIKE '%#err%'</if>
+            <if test="c.wdLike != null">AND role_name LIKE #{c.wdLike} ESCAPE '!'</if>
+        </where>
+    </sql>
+
+    <select id="countRoles" resultType="long">
+        SELECT COUNT(*) FROM mac_role <include refid="roleCondition"/>
+    </select>
+
+    <select id="listRoles" resultMap="roleRow">
+        SELECT <include refid="roleColumns"/> FROM mac_role <include refid="roleCondition"/>
+        ORDER BY role_time DESC, role_id ASC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- 删除前取图片地址（旧 delData） -->
+    <select id="selectArtsByIds" resultMap="artRow">
+        SELECT <include refid="artColumns"/> FROM mac_art WHERE art_id IN <foreach collection="ids" item="i" open="(" separator="," close=")">#{i}</foreach> ORDER BY art_id
+    </select>
+    <select id="selectActorsByIds" resultMap="actorRow">
+        SELECT <include refid="actorColumns"/> FROM mac_actor WHERE actor_id IN <foreach collection="ids" item="i" open="(" separator="," close=")">#{i}</foreach> ORDER BY actor_id
+    </select>
+    <select id="selectWebsitesByIds" resultMap="websiteRow">
+        SELECT <include refid="websiteColumns"/> FROM mac_website WHERE website_id IN <foreach collection="ids" item="i" open="(" separator="," close=")">#{i}</foreach> ORDER BY website_id
+    </select>
+
+    <!-- 角色列表的所属视频（旧 Role::listData：按 role_rid 取视频，最多 999 条） -->
+    <select id="vodNamesByIds" resultType="map">
+        SELECT CAST(vod_id AS CHAR) AS vod_id, vod_name FROM mac_vod
+        WHERE vod_id IN <foreach collection="ids" item="i" open="(" separator="," close=")">#{i}</foreach>
+        ORDER BY vod_id DESC LIMIT 999
+    </select>
+
+
+    <!-- ================================================================== 视频（旧 admin/controller/Vod.php、common/model/Vod.php） -->
+    <!--
+      列表与批量处理的条件：type 在列表页是 type_id|type_id_1，在批量页是 type_id；url=1 为播放地址为空；points 为播放或下载积分大于 0；
+      关键字在列表页匹配名称、主演、副标题，在批量页只匹配名称（wdNameOnly）；播放器/下载器 no 为空或 no；服务器组匹配播放或下载服务器
+    -->
+    <sql id="vodCondition">
+        <where>
+            <if test="c.typeEither != null">AND (type_id = #{c.typeEither} OR type_id_1 = #{c.typeEither})</if>
+            <if test="c.typeExact != null">AND type_id = #{c.typeExact}</if>
+            <if test="c.level != null">AND vod_level = #{c.level}</if>
+            <if test="c.status != null">AND vod_status = #{c.status}</if>
+            <if test="c.copyright != null">AND vod_copyright = #{c.copyright}</if>
+            <if test="c.isend != null">AND vod_isend = #{c.isend}</if>
+            <!-- 列名与 = 之间不留空格：读 Mapper 护栏按 "LOCK " 关键字拒绝锁语句（ReadOnlyGuardrailsTest） -->
+            <if test="c.locked != null">AND vod_lock=#{c.locked}</if>
+            <if test="c.state != null">AND vod_state = #{c.state}</if>
+            <if test="c.area != null">AND vod_area = #{c.area}</if>
+            <if test="c.lang != null">AND vod_lang = #{c.lang}</if>
+            <if test="c.plot != null">AND vod_plot = #{c.plot}</if>
+            <if test="c.urlEmpty">AND vod_play_url = ''</if>
+            <if test="c.points">AND (vod_points_play &gt; 0 OR vod_points_down &gt; 0)</if>
+            <if test="c.pic == 1">AND vod_pic = ''</if>
+            <if test="c.pic == 2">AND vod_pic LIKE 'http%'</if>
+            <if test="c.pic == 3">AND vod_pic LIKE '%#err%'</if>
+            <if test="c.weekdayLike != null">AND vod_weekday LIKE #{c.weekdayLike} ESCAPE '!'</if>
+            <if test="c.wdLike != null and c.wdNameOnly">AND vod_name LIKE #{c.wdLike} ESCAPE '!'</if>
+            <if test="c.wdLike != null and !c.wdNameOnly">AND (vod_name LIKE #{c.wdLike} ESCAPE '!' OR vod_actor LIKE #{c.wdLike} ESCAPE '!' OR vod_sub LIKE #{c.wdLike} ESCAPE '!')</if>
+            <if test="c.playerNo">AND (vod_play_from = '' OR vod_play_from = 'no')</if>
+            <if test="c.playerLike != null">AND vod_play_from LIKE #{c.playerLike} ESCAPE '!'</if>
+            <if test="c.downerNo">AND (vod_down_from = '' OR vod_down_from = 'no')</if>
+            <if test="c.downerLike != null">AND vod_down_from LIKE #{c.downerLike} ESCAPE '!'</if>
+            <if test="c.serverLike != null">AND (vod_play_server LIKE #{c.serverLike} ESCAPE '!' OR vod_down_server LIKE #{c.serverLike} ESCAPE '!')</if>
+            <if test="c.repeat">AND vod_name IN (SELECT n.vod_name FROM (SELECT vod_name FROM mac_vod GROUP BY vod_name HAVING COUNT(vod_name) &gt; 1) n)</if>
+        </where>
+    </sql>
+
+    <select id="countVods" resultType="long">
+        SELECT COUNT(*) FROM mac_vod <include refid="vodCondition"/>
+    </select>
+
+    <!-- 旧 order：列表 vod_time desc 或白名单里的列 desc、查重 vod_name asc、批量 vod_id desc；同序时按 vod_id 升序（旧版由 MySQL 决定，MyISAM 上通常是写入顺序） -->
+    <select id="listVods" resultMap="vodRow">
+        SELECT <include refid="vodColumns"/> FROM mac_vod <include refid="vodCondition"/>
+        <choose>
+            <when test="c.repeat">ORDER BY vod_name ASC, vod_id ASC</when>
+            <when test="c.order == 'id_desc'">ORDER BY vod_id DESC</when>
+            <when test="c.order == 'vod_id'">ORDER BY vod_id DESC</when>
+            <when test="c.order == 'vod_hits'">ORDER BY vod_hits DESC, vod_id ASC</when>
+            <when test="c.order == 'vod_hits_month'">ORDER BY vod_hits_month DESC, vod_id ASC</when>
+            <when test="c.order == 'vod_hits_week'">ORDER BY vod_hits_week DESC, vod_id ASC</when>
+            <when test="c.order == 'vod_hits_day'">ORDER BY vod_hits_day DESC, vod_id ASC</when>
+            <otherwise>ORDER BY vod_time DESC, vod_id ASC</otherwise>
+        </choose>
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <select id="vodRepeatGroups" resultType="map">
+        SELECT MIN(vod_id) AS id, vod_name AS name FROM mac_vod GROUP BY vod_name HAVING COUNT(vod_name) &gt; 1
+        ORDER BY id LIMIT #{offset}, #{limit}
+    </select>
+
+    <select id="vodToday" resultType="long">
+        SELECT <choose><when test="type">type_id</when><otherwise>vod_id</otherwise></choose>
+        FROM mac_vod WHERE vod_time &gt; #{since} ORDER BY vod_id
+    </select>
+
+    <select id="selectVodsByIds" resultMap="vodRow">
+        SELECT <include refid="vodColumns"/> FROM mac_vod WHERE vod_id IN <foreach collection="ids" item="i" open="(" separator="," close=")">#{i}</foreach> ORDER BY vod_id
+    </select>
+
+    <!-- ================================================================== 附件（旧 admin/controller/Annex.php、common/model/Annex.php） -->
+    <!-- 列表：类型（annex_type）、关键字（annex_file 包含）；旧 order annex_time desc，同序时按 annex_id 升序 -->
+    <sql id="annexCondition">
+        <where>
+            <if test="c.typeExact != null">AND annex_type = #{c.typeExact}</if>
+            <if test="c.wdLike != null">AND annex_file LIKE #{c.wdLike} ESCAPE '!'</if>
+        </where>
+    </sql>
+
+    <select id="countAnnexes" resultType="long">
+        SELECT COUNT(*) FROM mac_annex <include refid="annexCondition"/>
+    </select>
+
+    <select id="listAnnexes" resultMap="annexRow">
+        SELECT <include refid="annexColumns"/> FROM mac_annex <include refid="annexCondition"/>
+        ORDER BY annex_time DESC, annex_id ASC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- 删除（旧 annex_id|annex_file IN ids）：编号或文件名在列表里的行 -->
+    <select id="selectAnnexesByIdsOrFiles" resultMap="annexRow">
+        SELECT <include refid="annexColumns"/> FROM mac_annex
+        WHERE annex_file IN <foreach collection="files" item="f" open="(" separator="," close=")">#{f}</foreach>
+        <if test="ids != null and !ids.isEmpty()">
+            OR annex_id IN <foreach collection="ids" item="i" open="(" separator="," close=")">#{i}</foreach>
+        </if>
+        ORDER BY annex_id
+    </select>
+
+    <!-- 附件初始化（旧 Annex::init）：各表按主键顺序分页取编号、名称、图片列与正文（表里没有的图片列取空串） -->
+    <select id="countAnnexScan" resultType="long">
+        SELECT COUNT(*) FROM
+        <choose>
+            <when test="t == 'actor'">mac_actor</when>
+            <when test="t == 'art'">mac_art</when>
+            <when test="t == 'topic'">mac_topic</when>
+            <when test="t == 'type'">mac_type</when>
+            <when test="t == 'vod'">mac_vod</when>
+            <when test="t == 'website'">mac_website</when>
+            <otherwise>mac_role</otherwise>
+        </choose>
+    </select>
+
+    <select id="listAnnexScan" resultType="map">
+        <choose>
+            <when test="t == 'actor'">SELECT CAST(actor_id AS CHAR) AS id, actor_name AS name, actor_pic AS pic, '' AS thumb, '' AS slide, actor_content AS content FROM mac_actor ORDER BY actor_id</when>
+            <when test="t == 'art'">SELECT CAST(art_id AS CHAR) AS id, art_name AS name, art_pic AS pic, art_pic_thumb AS thumb, art_pic_slide AS slide, art_content AS content FROM mac_art ORDER BY art_id</when>
+            <when test="t == 'topic'">SELECT CAST(topic_id AS CHAR) AS id, topic_name AS name, topic_pic AS pic, topic_pic_thumb AS thumb, topic_pic_slide AS slide, topic_content AS content FROM mac_topic ORDER BY topic_id</when>
+            <when test="t == 'type'">SELECT CAST(type_id AS CHAR) AS id, type_name AS name, type_pic AS pic, '' AS thumb, '' AS slide, '' AS content FROM mac_type ORDER BY type_id</when>
+            <when test="t == 'vod'">SELECT CAST(vod_id AS CHAR) AS id, vod_name AS name, vod_pic AS pic, vod_pic_thumb AS thumb, vod_pic_slide AS slide, vod_content AS content FROM mac_vod ORDER BY vod_id</when>
+            <when test="t == 'website'">SELECT CAST(website_id AS CHAR) AS id, website_name AS name, website_pic AS pic, '' AS thumb, '' AS slide, website_content AS content FROM mac_website ORDER BY website_id</when>
+            <otherwise>SELECT CAST(role_id AS CHAR) AS id, role_name AS name, role_pic AS pic, '' AS thumb, '' AS slide, role_content AS content FROM mac_role ORDER BY role_id</otherwise>
+        </choose>
+        LIMIT #{offset}, #{limit}
+    </select>
+</mapper>

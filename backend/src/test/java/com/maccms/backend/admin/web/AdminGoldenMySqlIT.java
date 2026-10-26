@@ -146,8 +146,7 @@ class AdminGoldenMySqlIT {
         JAVA.put("captcha/right-after-wrong", "status=200 json={\"code\":0,\"msg\":\"验证码错误\",\"data\":\"\",\"url\":\"\",\"wait\":3}");
         JAVA.put("captcha/welcome", toLogin);
         JAVA_ROWS.put("captcha/right-after-wrong", "previous");
-        // 后续批次的动作：B12 只给出提示（旧版此处是视频列表页，B13 实现）
-        JAVA.put("auth-editor/vod/data", "status=501");
+        // 后续批次的动作（视频列表页）已由 B13 实现，与 PHP 黄金比较
         // 旧模板把账号原样写进 value="…"（不转义），含双引号时属性被截断；新版转义
         JAVA.put("admin-info-view/quote", "REPLACE:name=q pwd= => name=q\"uote pwd=");
         // D-B12-8：数组形式的账号/密码按缺失处理（旧版 PHP 8 TypeError 500；7.3 账号数组 500、密码数组按"账号或密码错误"）

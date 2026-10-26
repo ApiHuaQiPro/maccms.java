@@ -107,6 +107,55 @@ public class VodSearchCache {
         return ids;
     }
 
+    /** 旧 {@code VodSearch::$updateTopCount}：新增视频时检查的搜索结果行数。 */
+    static final int UPDATE_TOP_COUNT = 50000;
+
+    /**
+     * 旧 {@code VodSearch::checkAndUpdateTopResults(['vod_id' => $id] + $data)}（VodSearch.php:97-128，后台新增视频且开启前台优化时调用，
+     * common/model/Vod.php:724-726）：命中次数最多的前 50000 行里，每行的每个字段（{@code search_field} 按 {@code |} 拆分）在新视频里非空且
+     * 不区分大小写地包含该词时，把编号追加到这一行（同一行多个字段都包含时追加多次，同旧版）。旧版把候选行缓存 1 小时或 1 天、缓存失效时顺带
+     * 做一次非强制的过期清理；新版每次新增时读取候选行，不做附带清理（22 文档第 10 节）。
+     *
+     * @param vod 写库前的视频数据（列名 → 值；没有的列视为未设置）
+     */
+    public void appendNewVod(long vodId, Map<String, byte[]> vod) {
+        if (writer == null || vodId <= 0) {
+            return;
+        }
+        long now = clock.instant().getEpochSecond();
+        for (Map<String, String> row : reader.selectTopRows(UPDATE_TOP_COUNT)) {
+            String word = row.get("search_word");
+            byte[] needle = (word == null ? "" : word).getBytes(StandardCharsets.UTF_8);
+            String fields = row.get("search_field");
+            for (String field : (fields == null ? "" : fields).split("\\|", -1)) {
+                byte[] value = vod.get(field);
+                if (value == null || value.length == 0 || !containsIgnoreAsciiCase(value, needle)) {
+                    continue;
+                }
+                writer.appendResult(row.get("search_key"), vodId, now);
+            }
+        }
+    }
+
+    /** PHP {@code stripos($haystack, $needle) !== false}：按字节、只对 ASCII 字母不区分大小写；空词总是包含（PHP 8）。 */
+    static boolean containsIgnoreAsciiCase(byte[] haystack, byte[] needle) {
+        outer:
+        for (int i = 0; i + needle.length <= haystack.length; i++) {
+            for (int j = 0; j < needle.length; j++) {
+                if (lowerAscii(haystack[i + j]) != lowerAscii(needle[j])) {
+                    continue outer;
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+
+    private static int lowerAscii(byte b) {
+        int c = b & 0xFF;
+        return c >= 'A' && c <= 'Z' ? c + 32 : c;
+    }
+
     /**
      * 旧 {@code VodSearch::clearOldResult(true)}（后台"清理缓存"，admin/controller/Index.php:164；VodSearch.php:146-167）：删除结果更新时间早于
      * "现在 − {@code cacheMinutes} × 60"的全部行（强制清理不排除 vod_actor）。旧版"每天最多清理一次"的间隔记录只约束非强制清理，这里不需要。

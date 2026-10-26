@@ -498,7 +498,12 @@ class MemberAccountGoldenMySqlIT {
     @Test
     @Order(6)
     void portraitIsReencodedAndRecorded() throws Exception {
-        MemberAccountService service = service(MemberSettings.from(null));
+        // D-B09-9（B13）：上传成功后按旧 common/model/Upload.php:259-284 登记附件——站点根之下的文件（去掉开头的 /）、类型 image、
+        // 大小为新版 JPEG 的 KB（两位小数）；失败的上传不登记。mac_annex 的写入（同名不重复、整数列取整）见 AdminContentGoldenMySqlIT ②
+        List<String> annexes = new ArrayList<>();
+        MemberAccountService service = new MemberAccountService(mapper, writer, sessions,
+                new PortraitStore(uploadDir.toString()), MemberSettings.from(null), Clock.systemUTC(), new SecureRandom(), "/",
+                inviter -> { }, (f, t, z) -> annexes.add(f + " " + t + " " + z));
         seedUser(801, "portrait01", md5("x"), 2, "r801", "");
         MemberState member = sessions.resolve(cookiesFor(801));
         BufferedImage img = new BufferedImage(300, 200, BufferedImage.TYPE_INT_RGB);
@@ -513,6 +518,7 @@ class MemberAccountGoldenMySqlIT {
         assertThat(saved.getHeight()).isEqualTo(100);
         assertThat(new String(row("portrait01").get("user_portrait"), StandardCharsets.UTF_8))
                 .isEqualTo("upload/user/1/801.jpg");
+        assertThat(annexes).containsExactly("upload/user/1/801.jpg image " + kb(uploadDir.resolve("user/1/801.jpg")));
         PortraitReply bad = service.portrait(member, "<?php echo 1;".getBytes(StandardCharsets.UTF_8), "a.jpg", null);
         assertThat(bad.code()).isZero();
         assertThat(bad.msg()).isEqualTo("非系统允许的上传格式！");
@@ -539,6 +545,8 @@ class MemberAccountGoldenMySqlIT {
         assertThat(truncated.code()).isZero();
         assertThat(truncated.msg()).isEqualTo("文件上传失败！");
         assertThat(Files.readAllBytes(uploadDir.resolve("user/1/801.jpg"))).isEqualTo(onDisk);
+        assertThat(annexes).as("失败的上传不登记；同一文件再次上传照旧调用登记（已登记时由附件模块跳过）").hasSize(2)
+                .last().isEqualTo("upload/user/1/801.jpg image " + kb(uploadDir.resolve("user/1/801.jpg")));
         assertThat(new String(row("portrait01").get("user_portrait"), StandardCharsets.UTF_8))
                 .isEqualTo("upload/user/1/801.jpg");
     }
@@ -566,6 +574,12 @@ class MemberAccountGoldenMySqlIT {
     }
 
     // ------------------------------------------------------------------ 辅助
+
+    /** 文件大小的 KB（两位小数，去掉末尾的 0，同旧版 round(size/1024, 2) 的字符串）。 */
+    private static String kb(Path f) throws IOException {
+        return java.math.BigDecimal.valueOf(Files.size(f) / 1024.0).setScale(2, java.math.RoundingMode.HALF_UP)
+                .stripTrailingZeros().toPlainString();
+    }
 
     private static MemberAccountService service(MemberSettings settings) {
         return new MemberAccountService(mapper, writer, sessions, new PortraitStore(uploadDir.toString()), settings,

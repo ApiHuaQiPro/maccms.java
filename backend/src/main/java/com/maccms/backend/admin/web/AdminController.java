@@ -70,10 +70,12 @@ public class AdminController {
     private final ClientIpResolver clientIp;
     private final ContentCacheMaintenance contentCache;
     private final RandomGenerator random;
+    private final AdminContentActions content;
 
     public AdminController(AdminEndpoint endpoint, AdminSessions sessions, AdminSettings settings, AdminLoginService logins,
                            AdminAccountService accounts, AdminPages pages, AdminResponses responses,
-                           ClientIpResolver clientIp, ContentCacheMaintenance contentCache, AdminRandom random) {
+                           ClientIpResolver clientIp, ContentCacheMaintenance contentCache, AdminRandom random,
+                           AdminContentActions content) {
         this.endpoint = endpoint;
         this.sessions = sessions;
         this.settings = settings;
@@ -84,6 +86,7 @@ public class AdminController {
         this.clientIp = clientIp;
         this.contentCache = contentCache;
         this.random = random.generator();
+        this.content = content;
     }
 
     /** 一次请求的上下文。 */
@@ -158,6 +161,10 @@ public class AdminController {
             case "admin/field" -> reply(ctx, accounts.setStatus(ids(ctx.params()), ctx.params().scalar("col"),
                     ctx.params().scalar("val")));
             default -> {
+                ResponseEntity<String> b13 = content.handle(ctx, admin, session);
+                if (b13 != null) {
+                    yield b13;
+                }
                 String batch = AdminPermissions.batchOf(route.controller(), route.action());
                 yield batch == null ? notFound(ajax) : pending(ctx, batch);
             }
@@ -337,7 +344,7 @@ public class AdminController {
      * 旧 {@code success()} 的跳转地址：有 Referer 时用它（只接受 http/https 绝对地址或以 / 开头的站内路径），否则为当前动作的
      * {@code url()}（Jump.php:32-36）。
      */
-    private String successUrl(Ctx ctx) {
+    static String successUrl(Ctx ctx) {
         String ref = ctx.request().getHeader(HttpHeaders.REFERER);
         if (ref != null) {
             String lower = ref.toLowerCase(Locale.ROOT);
@@ -412,6 +419,9 @@ public class AdminController {
 
     private static byte[] body(HttpServletRequest request) {
         String type = request.getContentType() == null ? "" : request.getContentType().toLowerCase(Locale.ROOT);
+        if (type.startsWith("multipart/form-data")) {
+            return multipartFields(request);
+        }
         if (!type.startsWith("application/x-www-form-urlencoded")) {
             return new byte[0];
         }
@@ -423,6 +433,46 @@ public class AdminController {
             return bytes;
         } catch (IOException e) {
             return new byte[0];
+        }
+    }
+
+    /**
+     * multipart 正文里的普通字段（B13 上传：layui 把 {@code thumb}、{@code thumb_class} 等放在文件旁边），按字节转成 urlencoded 后同样解析
+     * （文件部分由上传动作自己读取）。超出大小等解析失败时没有字段（同旧版上传的数据被丢弃）。
+     */
+    private static byte[] multipartFields(HttpServletRequest request) {
+        java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
+        try {
+            for (jakarta.servlet.http.Part part : request.getParts()) {
+                if (part.getSubmittedFileName() != null) {
+                    continue;
+                }
+                byte[] value;
+                try (InputStream in = part.getInputStream()) {
+                    value = in.readNBytes(MAX_FORM_BYTES + 1);
+                }
+                if (out.size() > 0) {
+                    out.write('&');
+                }
+                percent(out, part.getName().getBytes(StandardCharsets.UTF_8));
+                out.write('=');
+                percent(out, value);
+                if (out.size() > MAX_FORM_BYTES) {
+                    throw new ApiException(ErrorCode.INVALID_PARAMETER, "请求正文过大");
+                }
+            }
+        } catch (IOException | jakarta.servlet.ServletException | IllegalStateException
+                 | org.springframework.web.multipart.MultipartException e) {
+            return new byte[0];
+        }
+        return out.toByteArray();
+    }
+
+    private static void percent(java.io.ByteArrayOutputStream out, byte[] raw) {
+        for (byte b : raw) {
+            out.write('%');
+            out.write(Character.toUpperCase(Character.forDigit((b >> 4) & 15, 16)));
+            out.write(Character.toUpperCase(Character.forDigit(b & 15, 16)));
         }
     }
 }

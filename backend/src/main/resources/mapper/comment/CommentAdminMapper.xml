@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- B13 后台评论与留言管理的只读查询（22 文档第 5 节）。 -->
+<mapper namespace="com.maccms.backend.comment.infrastructure.CommentAdminMapper">
+
+    <!-- mac_comment 的全部列一律按文字取回（getString：整数为十进制、decimal 保留小数位，与旧版模板输出的文字相同；不受 TINYINT(1) 映射影响） -->
+    <resultMap id="commentRow" type="map">
+        <result column="comment_id" property="comment_id" javaType="string"/>
+        <result column="comment_mid" property="comment_mid" javaType="string"/>
+        <result column="comment_rid" property="comment_rid" javaType="string"/>
+        <result column="comment_pid" property="comment_pid" javaType="string"/>
+        <result column="user_id" property="user_id" javaType="string"/>
+        <result column="comment_status" property="comment_status" javaType="string"/>
+        <result column="comment_name" property="comment_name" javaType="string"/>
+        <result column="comment_ip" property="comment_ip" javaType="string"/>
+        <result column="comment_time" property="comment_time" javaType="string"/>
+        <result column="comment_content" property="comment_content" javaType="string"/>
+        <result column="comment_up" property="comment_up" javaType="string"/>
+        <result column="comment_down" property="comment_down" javaType="string"/>
+        <result column="comment_reply" property="comment_reply" javaType="string"/>
+        <result column="comment_report" property="comment_report" javaType="string"/>
+    </resultMap>
+    <sql id="commentColumns">comment_id, comment_mid, comment_rid, comment_pid, user_id, comment_status, comment_name, comment_ip, comment_time, comment_content, comment_up, comment_down, comment_reply, comment_report</sql>
+    <select id="selectComment" resultMap="commentRow">
+        SELECT <include refid="commentColumns"/> FROM mac_comment WHERE comment_id = #{id}
+    </select>
+
+    <!-- mac_gbook 的全部列一律按文字取回（getString：整数为十进制、decimal 保留小数位，与旧版模板输出的文字相同；不受 TINYINT(1) 映射影响） -->
+    <resultMap id="gbookRow" type="map">
+        <result column="gbook_id" property="gbook_id" javaType="string"/>
+        <result column="gbook_rid" property="gbook_rid" javaType="string"/>
+        <result column="user_id" property="user_id" javaType="string"/>
+        <result column="gbook_status" property="gbook_status" javaType="string"/>
+        <result column="gbook_name" property="gbook_name" javaType="string"/>
+        <result column="gbook_ip" property="gbook_ip" javaType="string"/>
+        <result column="gbook_time" property="gbook_time" javaType="string"/>
+        <result column="gbook_reply_time" property="gbook_reply_time" javaType="string"/>
+        <result column="gbook_content" property="gbook_content" javaType="string"/>
+        <result column="gbook_reply" property="gbook_reply" javaType="string"/>
+    </resultMap>
+    <sql id="gbookColumns">gbook_id, gbook_rid, user_id, gbook_status, gbook_name, gbook_ip, gbook_time, gbook_reply_time, gbook_content, gbook_reply</sql>
+    <select id="selectGbook" resultMap="gbookRow">
+        SELECT <include refid="gbookColumns"/> FROM mac_gbook WHERE gbook_id = #{id}
+    </select>
+
+    <!-- ================================================================== 评论（旧 admin/controller/Comment.php） -->
+    <sql id="commentCondition">
+        <where>
+            <if test="c.status != null">AND comment_status = #{c.status}</if>
+            <if test="c.mid != null">AND comment_mid = #{c.mid}</if>
+            <if test="c.uid != null">AND user_id = #{c.uid}</if>
+            <if test="c.reportZero">AND comment_report = 0</if>
+            <if test="c.reportPositive">AND comment_report &gt; 0</if>
+            <if test="c.wdLike != null">AND (comment_name LIKE #{c.wdLike} ESCAPE '!' OR comment_content LIKE #{c.wdLike} ESCAPE '!')</if>
+        </where>
+    </sql>
+
+    <select id="countComments" resultType="long">
+        SELECT COUNT(*) FROM mac_comment <include refid="commentCondition"/>
+    </select>
+
+    <select id="listComments" resultMap="commentRow">
+        SELECT <include refid="commentColumns"/> FROM mac_comment <include refid="commentCondition"/>
+        ORDER BY comment_id DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- ================================================================== 留言（旧 admin/controller/Gbook.php） -->
+    <sql id="gbookCondition">
+        <where>
+            <if test="c.status != null">AND gbook_status = #{c.status}</if>
+            <if test="c.ridZero">AND gbook_rid = 0</if>
+            <if test="c.ridPositive">AND gbook_rid &gt; 0</if>
+            <if test="c.replied">AND gbook_reply_time &gt; 0</if>
+            <if test="c.uid != null">AND user_id = #{c.uid}</if>
+            <if test="c.wdLike != null">AND (gbook_name LIKE #{c.wdLike} ESCAPE '!' OR gbook_content LIKE #{c.wdLike} ESCAPE '!')</if>
+        </where>
+    </sql>
+
+    <select id="countGbooks" resultType="long">
+        SELECT COUNT(*) FROM mac_gbook <include refid="gbookCondition"/>
+    </select>
+
+    <select id="listGbooks" resultMap="gbookRow">
+        SELECT <include refid="gbookColumns"/> FROM mac_gbook <include refid="gbookCondition"/>
+        ORDER BY gbook_id DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+</mapper>

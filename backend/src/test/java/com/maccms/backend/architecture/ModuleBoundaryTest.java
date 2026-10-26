@@ -64,6 +64,14 @@ class ModuleBoundaryTest {
             "legacyconfig.application.view.PhpValues");
 
     /**
+     * admin 可用的 site 类型（B13，MACC-37，docs/architecture/22-b13-admin-content.md 第 8.3 节）：后台内容列表里指向前台详情页的链接
+     * （旧 {@code mac_url_vod_detail} 等，与前台共用同一套地址规则）。只有纯计算的地址生成类，不含页面、控制器与数据访问。扩充须同步 02 规范。
+     */
+    private static final Set<String> ADMIN_SITE = Set.of(
+            "site.application.LegacyUrlBuilder", "site.application.LegacyUrlStyle", "site.application.LegacyPage",
+            "site.application.SiteRoute");
+
+    /**
      * infrastructure 之外允许出现数据访问类型的包（精确匹配，不含子包）：common.config 的数据源账号检查；common.write 的
      * 可写数据源、写入护栏与写入序列（B07，MACC-31，docs/architecture/12-write-infrastructure.md 第 2 节）。扩充须同步 02 规范。
      */
@@ -294,7 +302,7 @@ class ModuleBoundaryTest {
             }
             if ("admin".equals(module)) {
                 // 后台：不引用站点模块；application/infrastructure 不引用本模块的 web 与 config；web 不直接用 Mapper（经 application）
-                if ("site".equals(refModule)) {
+                if ("site".equals(refModule) && !ADMIN_SITE.contains(ref)) {
                     out.add("admin 不得引用 site：" + ref);
                     continue;
                 }

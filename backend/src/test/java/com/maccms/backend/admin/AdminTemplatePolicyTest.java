@@ -152,6 +152,12 @@ class AdminTemplatePolicyTest {
     /** 唯一允许的动态 style：框架页侧栏除第一组外隐藏（旧模板的两个分支合成一个固定的三元表达式）。 */
     private static final String SIDEBAR_STYLE = "style=\"${v.index() == 1 ? null : \"display:none;\"}\"";
     private static final Pattern STYLE_ATTR = Pattern.compile("\\sstyle=\"");
+    /**
+     * B13：按条件二选一的固定样式（旧模板 {@code {if …}style="display:none"{/if}} 一类写法）：{@code style="${条件 ? "字面量" : null}"}，
+     * 两个分支都是不含输出的字面量或 null，条件只是方法调用与成员访问。
+     */
+    private static final Pattern STYLE_CHOICE = Pattern.compile(
+            "style=\"\\$\\{[\\w.()!]+ \\? (?:null|\"[^\"$@{}]*\") : (?:null|\"[^\"$@{}]*\")}\"");
     private static final Pattern TRUSTED = Pattern.compile(
             "AdminText\\.trusted\\(page\\.lang\\(\\)\\.get\\(\"[a-z_/]+\"\\)\\)");
 
@@ -176,7 +182,8 @@ class AdminTemplatePolicyTest {
             while (sa.find()) {
                 // style 属性的值要么不含任何输出，要么正好是侧栏那一个固定表达式
                 int start = sa.end();
-                boolean sidebar = src.startsWith(SIDEBAR_STYLE, sa.start() + 1);
+                boolean sidebar = src.startsWith(SIDEBAR_STYLE, sa.start() + 1)
+                        || STYLE_CHOICE.matcher(src).region(sa.start() + 1, src.length()).lookingAt();
                 boolean literal = src.indexOf('"', start) > start - 1 && !src.substring(start, src.indexOf('"', start)).contains("$");
                 if (!sidebar && !literal) {
                     problems.add(name + ": style 属性里有输出");

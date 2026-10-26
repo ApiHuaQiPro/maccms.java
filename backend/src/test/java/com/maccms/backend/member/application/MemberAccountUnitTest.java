@@ -109,6 +109,20 @@ class MemberAccountUnitTest {
     }
 
     @Test
+    void portraitAnnexTypeFollowsTheLegacyExtensionClass() {
+        // 旧 Upload.php:144-152：按扩展名分 image / file / media，头像登记的 annex_type 取这个分类（PHP 实跑黄金：n.txt 里是图片时登记 file）
+        assertThat(PortraitImages.annexType("a.JPG", null)).isEqualTo("image");
+        assertThat(PortraitImages.annexType("w.webp", null)).isEqualTo("image");
+        assertThat(PortraitImages.annexType("n.txt", null)).isEqualTo("file");
+        assertThat(PortraitImages.annexType("d.DOCX", null)).isEqualTo("file");
+        assertThat(PortraitImages.annexType("v.Mp4", null)).isEqualTo("media");
+        assertThat(PortraitImages.annexType("s.rmvb", null)).isEqualTo("media");
+        // imgdata：data URL 里的类型（Upload.php:118-119 的 $type = $result[2]）
+        assertThat(PortraitImages.annexType(null, "data:image/png;base64,AAAA")).isEqualTo("png");
+        assertThat(PortraitImages.annexType("a.txt", "data: image/jpeg;base64,AAAA")).as("imgdata 优先").isEqualTo("jpeg");
+    }
+
+    @Test
     void cookiesForAMissingOrNamelessGroupFollowThinkPhpCookieHelper() {
         List<String> missing = MemberCookies.login(5, "u", (MemberGroup) null, "r", "/p", 2_000_000_000L);
         assertThat(missing.get(2)).startsWith("group_id=deleted;");

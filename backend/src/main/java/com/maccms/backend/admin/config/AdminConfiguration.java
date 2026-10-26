@@ -6,6 +6,7 @@ import com.maccms.backend.admin.application.AdminSettings;
 import com.maccms.backend.admin.application.LegacyInput;
 import com.maccms.backend.admin.infrastructure.AdminMapper;
 import com.maccms.backend.admin.infrastructure.AdminWriteMapper;
+import com.maccms.backend.admin.web.AdminContentActions;
 import com.maccms.backend.admin.web.AdminEndpoint;
 import com.maccms.backend.admin.web.AdminHtmlRenderer;
 import com.maccms.backend.admin.web.AdminPages;
@@ -14,6 +15,8 @@ import com.maccms.backend.admin.web.AdminResponses;
 import com.maccms.backend.admin.web.AdminSessions;
 import com.maccms.backend.admin.web.jte.StaticTemplates;
 import com.maccms.backend.common.captcha.CaptchaSettings;
+import com.maccms.backend.content.application.ContentAdminServices;
+import com.maccms.backend.comment.application.CommentAdminService;
 import com.maccms.backend.common.lang.LegacyLang;
 import com.maccms.backend.legacyconfig.application.LegacyConfigConfiguration;
 import com.maccms.backend.legacyconfig.application.LegacyConfigException;
@@ -162,6 +165,18 @@ public class AdminConfiguration {
                           LegacyConfigService legacy, ObjectProvider<Clock> clock,
                           @Value("${spring.servlet.multipart.max-file-size:1MB}") String maxUpload) {
         return new AdminPages(endpoint, settings, responses, legacy, clock.getIfAvailable(Clock::systemUTC), maxUpload);
+    }
+
+    /**
+     * B13 后台内容管理的动作（22 文档）。内容服务只在可写数据源打开时注册；单元测试的替身上下文里没有时，B13 的动作按"由后续批次实现"处理。
+     */
+    @Bean
+    AdminContentActions adminContentActions(AdminEndpoint endpoint, AdminSettings settings, AdminResponses responses,
+                                            AdminRandom random, ObjectProvider<Clock> clock,
+                                            ObjectProvider<ContentAdminServices> content,
+                                            ObjectProvider<CommentAdminService> comments) {
+        return new AdminContentActions(endpoint, settings, responses, content.getIfAvailable(), comments.getIfAvailable(), random,
+                clock.getIfAvailable(Clock::systemUTC));
     }
 
     /** 后台控制器的随机源（验证码、表单令牌）：不注册为 RandomGenerator 类型的 Bean。 */

@@ -23,4 +23,11 @@ public class ContentInfrastructureConfiguration {
     VodSearchWriteMapper vodSearchWriteMapper(WriteDatabase db) {
         return db.mapper(VodSearchWriteMapper.class);
     }
+
+    /** B13 后台内容管理的写入（22 文档第 6 节）。 */
+    @Bean
+    @ConditionalOnWriteEnabled
+    ContentAdminWrites contentAdminWrites(WriteDatabase db) {
+        return new ContentAdminWrites(db.mapper(ContentAdminWriteMapper.class));
+    }
 }
