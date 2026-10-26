@@ -77,6 +77,7 @@ public class AdminController {
     private final AdminMemberActions member;
     private final AdminSystemActions system;
     private final AdminPlayerActions players;
+    private final AdminAddonActions addons;
     private final com.maccms.backend.admin.application.PlayerAdminService playerCache;
 
     public AdminController(AdminEndpoint endpoint, AdminSessions sessions, AdminSettings settings, AdminLoginService logins,
@@ -84,7 +85,8 @@ public class AdminController {
                            ClientIpResolver clientIp, ContentCacheMaintenance contentCache, AdminRandom random,
                            AdminContentActions content, ObjectProvider<AdminMemberActions> member,
                            ObjectProvider<AdminSystemActions> system, ObjectProvider<AdminPlayerActions> players,
-                           ObjectProvider<com.maccms.backend.admin.application.PlayerAdminService> playerCache) {
+                           ObjectProvider<com.maccms.backend.admin.application.PlayerAdminService> playerCache,
+                           ObjectProvider<AdminAddonActions> addons) {
         this.endpoint = endpoint;
         this.sessions = sessions;
         this.settings = settings;
@@ -100,6 +102,7 @@ public class AdminController {
         this.system = system.getIfAvailable();
         this.players = players.getIfAvailable();
         this.playerCache = playerCache.getIfAvailable();
+        this.addons = addons.getIfAvailable();
     }
 
     /** 一次请求的上下文。 */
@@ -191,6 +194,9 @@ public class AdminController {
                 ResponseEntity<String> b15 = system == null ? null : system.handle(ctx, session);
                 if (b15 == null && players != null) {
                     b15 = players.handle(ctx, session);
+                }
+                if (b15 == null && addons != null) {
+                    b15 = addons.handle(ctx, session);
                 }
                 if (b15 != null) {
                     yield b15;

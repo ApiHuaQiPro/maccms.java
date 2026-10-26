@@ -77,6 +77,39 @@ public final class PhpArrays {
         return key instanceof String s ? arr.get(s) : arr.get((Long) key);
     }
 
+    /**
+     * 转成 {@code common.web.LegacyJson} 能编码的值（PHP {@code json_encode} 的规则）：键为 0..n-1 连续整数的数组是 JSON 数组，其他数组是对象；
+     * 字符串、整数、浮点、布尔、NULL 原样。
+     */
+    public static Object jsonable(PhpValue v) {
+        return switch (v) {
+            case null -> null;
+            case PhpValue.PhpString s -> s.value();
+            case PhpValue.PhpInt i -> i.value();
+            case PhpValue.PhpFloat f -> f.value();
+            case PhpValue.PhpBool b -> b.value();
+            case PhpValue.PhpNull n -> null;
+            case PhpArray a -> {
+                long expected = 0;
+                boolean list = true;
+                for (Object k : a.entries().keySet()) {
+                    if (!(k instanceof Long l) || l != expected++) {
+                        list = false;
+                        break;
+                    }
+                }
+                if (list) {
+                    java.util.List<Object> out = new java.util.ArrayList<>();
+                    a.entries().values().forEach(x -> out.add(jsonable(x)));
+                    yield out;
+                }
+                LinkedHashMap<String, Object> out = new LinkedHashMap<>();
+                a.entries().forEach((k, x) -> out.put(String.valueOf(k), jsonable(x)));
+                yield out;
+            }
+        };
+    }
+
     /** 0..n-1 的列表。 */
     public static PhpArray list(java.util.List<String> items) {
         LinkedHashMap<Object, PhpValue> m = new LinkedHashMap<>();

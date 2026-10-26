@@ -168,8 +168,17 @@ public class AdminConfiguration {
     @Bean
     AdminPages adminPages(AdminEndpoint endpoint, AdminSettings settings, AdminResponses responses,
                           LegacyConfigService legacy, ObjectProvider<Clock> clock,
-                          @Value("${spring.servlet.multipart.max-file-size:1MB}") String maxUpload) {
-        return new AdminPages(endpoint, settings, responses, legacy, clock.getIfAvailable(Clock::systemUTC), maxUpload);
+                          @Value("${spring.servlet.multipart.max-file-size:1MB}") String maxUpload,
+                          ObjectProvider<com.maccms.backend.admin.application.AddonService> addons,
+                          ObjectProvider<com.maccms.backend.common.browser.BrowserExternalAccess> external) {
+        AdminPages pages = new AdminPages(endpoint, settings, responses, legacy, clock.getIfAvailable(Clock::systemUTC), maxUpload);
+        com.maccms.backend.admin.application.AddonService a = addons.getIfAvailable();
+        if (a != null) {
+            // B15：adminloginbg 插件的 admin_login_init 钩子（登录页背景）；外部主机的背景图受 W2 放行开关约束
+            pages.loginBackground(a::loginBackground,
+                    external.getIfAvailable(() -> com.maccms.backend.common.browser.BrowserExternalAccess.DEFAULT).w2());
+        }
+        return pages;
     }
 
     /**
@@ -217,6 +226,21 @@ public class AdminConfiguration {
             AdminResponses responses, com.maccms.backend.admin.application.PlayerAdminService players,
             com.maccms.backend.admin.application.ListConfigService lists, SystemConfigService system, AdminRandom random) {
         return new com.maccms.backend.admin.web.AdminPlayerActions(endpoint, settings, responses, players, lists, system, random);
+    }
+
+    @Bean
+    com.maccms.backend.admin.application.AddonService adminAddonService(LegacySiteFiles files, LegacyConfigService legacy,
+                                                                        AdminEndpoint endpoint, ObjectProvider<Clock> clock) {
+        return new com.maccms.backend.admin.application.AddonService(files, legacy, endpoint.sitePath(),
+                clock.getIfAvailable(Clock::systemUTC), RANDOM);
+    }
+
+    @Bean
+    com.maccms.backend.admin.web.AdminAddonActions adminAddonActions(AdminEndpoint endpoint, AdminSettings settings,
+            AdminResponses responses, com.maccms.backend.admin.application.AddonService addons, AdminRandom random,
+            ObjectProvider<Clock> clock) {
+        return new com.maccms.backend.admin.web.AdminAddonActions(endpoint, settings, responses, addons, random,
+                clock.getIfAvailable(Clock::systemUTC));
     }
 
     @Bean

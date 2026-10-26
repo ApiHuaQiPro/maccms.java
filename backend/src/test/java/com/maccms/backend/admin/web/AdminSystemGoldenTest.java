@@ -81,6 +81,11 @@ class AdminSystemGoldenTest {
 
     static {
         SITE = createSite();
+        String ok = "status=200\nbody={\"code\":1,\"msg\":\"操作成功\",\"data\":\"\",\"url\":\"\\/_admin.php\\/admin\\/addon\\/state.html\",\"wait\":3}\n";
+        // D-B15-11：没有 Java 实现的插件不能启用（旧版执行插件的 PHP 代码、复制资源与全局文件、登记钩子）；之后的禁用对一个本来就是禁用的插件
+        // 只重写同样内容的 info.ini 与 addons.php，文件不变
+        JAVA.put("addon/enable-demo", "status=200\nbody={\"code\":0,\"msg\":\"该插件没有新系统实现，无法启用\",\"data\":\"\",\"url\":\"\",\"wait\":3}\n");
+        JAVA.put("addon/disable-demo", ok);
     }
 
     @TestConfiguration
@@ -386,9 +391,18 @@ class AdminSystemGoldenTest {
         String trimmed = body.stripLeading();
         if (trimmed.startsWith("<!DOCTYPE") || trimmed.startsWith("<html") || trimmed.startsWith("<!doctype")) {
             org.jsoup.nodes.Document d = org.jsoup.Jsoup.parse(body);
-            return "page title=" + d.title() + "\n" + AdminForm.describe(AdminForm.fields(body, 0));
+            // 登录页背景（adminloginbg）：旧版写在 <style> 里，新版放在 login.js 的 data-background；随机背景的序号两边各自随机
+            Matcher bg = Pattern.compile("background:url\\('([^']*)'\\)|data-background=\"([^\"]*)\"").matcher(body);
+            String background = "";
+            if (bg.find()) {
+                background = (bg.group(1) != null ? bg.group(1) : org.jsoup.parser.Parser.unescapeEntities(bg.group(2), true))
+                        .replaceAll("wallpaper/[0-9]+\\.jpg", "wallpaper/<n>.jpg");
+            }
+            return "page title=" + d.title() + (background.isEmpty() ? "" : "\nbackground=" + background) + "\n"
+                    + AdminForm.describe(AdminForm.fields(body, 0));
         }
-        return "body=" + body + "\n";
+        // 插件列表的 createtime 是插件目录的修改时间
+        return "body=" + body.replaceAll("\"createtime\":[0-9]+", "\"createtime\":<t>") + "\n";
     }
 
     /** 文件内容的归一：定时任务保存时旧版把表单令牌也写进了 timming.php（新旧令牌各自随机）；随机的 cache_flag。 */

@@ -12,6 +12,12 @@
     var MSG_VERIFY = self.getAttribute('data-msg-verify');
     var MSG_WAIT = self.getAttribute('data-msg-wait');
 
+    // B15：旧模板的 <style>body{background:url('{$background}')}（admin_login_init 钩子，adminloginbg 插件）；样式块里不能放数据，改由脚本设置
+    var BG = self.getAttribute('data-background');
+    if (BG) {
+        document.body.style.backgroundImage = "url('" + BG.replace(/\\/g, '\\\\').replace(/'/g, "\\'") + "')";
+    }
+
     // 旧版写在 <img onclick="this.src = this.src+'?'">
     var img = document.getElementById('verify_img');
     if (img) {

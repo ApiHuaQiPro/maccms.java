@@ -103,6 +103,41 @@ public interface LegacyView extends BrowserText {
         return urls().build(route);
     }
 
+    /**
+     * ThinkPHP 模板的 {@code {in name="k" value="$v"}}：{@code in_array($k, is_array($v) ? $v : explode(',', $v))}（宽松比较）。
+     */
+    default boolean in(Object key, Object value) {
+        if (value instanceof PhpArray a) {
+            for (PhpValue x : a.entries().values()) {
+                if (eq(key, x)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        for (String part : s(value).split(",", -1)) {
+            if (eq(key, part)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 旧 {@code mac_filter_xss($s)}（application/common.php:1222-1225）：{@code trim(htmlspecialchars(strip_tags($s), ENT_QUOTES))}，结果再原样
+     * 输出（{@link #v} 按浏览器解码一次）。{@code strip_tags} 按"去掉 {@code <…>}"近似（本批只有插件页的搜索框用到，旧版那里的取值总是空串）。
+     */
+    default String filterXss(Object v) {
+        String text = s(v).replaceAll("<[^>]*>?", "");
+        return text.replace("&", "&amp;").replace("\"", "&quot;").replace("'", "&#039;").replace("<", "&lt;").replace(">", "&gt;")
+                .strip();
+    }
+
+    /** PHP 的真值（{@code $v ? … : …}）。 */
+    default boolean truthy(Object v) {
+        return PhpLoose.bool(v);
+    }
+
     /** {@code count($v)}：数组的元素个数，其他为 0（旧版对 null 是告警或 TypeError）。 */
     default int count(Object v) {
         return v instanceof PhpArray a ? a.size() : 0;
