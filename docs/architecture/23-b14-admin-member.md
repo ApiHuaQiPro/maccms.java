@@ -218,7 +218,7 @@ HAVING u.user_points_froze <> COALESCE(SUM(c.cash_points), 0);
 | 旧语义单元测试 | `MemberAdminUnitTest`（`strtotime` 子集对照 PHP 实测值、卡号字符集与首位、`group_popedom` 的 `json_encode` 对照 PHP、勾选判断、`reg_group` 宽松比较、推广访问前缀、第 1 页判断、`md5` 字节语义）；`AdminParamsNestedTest`（对照 PHP `parse_str`） |
 | 护栏 | `WriteGuardTest`（登记表 60 项与写入方矩阵）、`WriteRegistryTest`、`ReadOnlyGuardrailsTest`（新的读 Mapper 只有 SELECT、不读会员密码）、`AdminTableSchemaTest`（`USER`、`GROUP`）、`AdminTemplatePolicyTest`（全部后台模板与 `admin-assets`；卡密列表的 iframe 例外）、`ModuleBoundaryTest`、`SchemaGuardTest`、`SqlEntryGuardTest`、`OutboundNetworkGuardTest` |
 | 浏览器走查 | `backend/src/test/browser/b14_admin_member_check.py`（Playwright 本机 Chromium 无头）+ 合成数据 `b14_seed.sql`：一次性库 `maccms_it_*`、临时旧配置、本机 jar（不经 nginx）。**41 项全部通过**：登录；会员列表（layui 表格、分页、第 1 页到期降级、状态开关写库）；添加会员弹层（layui 下拉、laydate、选 VIP 组后显示到期时间、保存后库里是 `md5(原值)`、组、到期时间与积分）；编辑会员（密码框为空、留空不改密码、积分写库）；行内删除；推广会员页的三级人数与奖励；会员组添加（全选后的分类串与权限 JSON）、编辑（按 JSON 勾选、价格写库）、状态开关、删除有会员的组得到提示且不删；生成 5 张卡（16 位数字卡号、8 位卡密）、"导出"经隐藏 iframe 下载 CSV（文件名、表头、行数）、清空；订单行内删除；提现行内审核（冻结扣减）、勾选删除未审核提现（冻结退回）、对账语句为空；积分日志、访问日志（所属内容名称、行内删除）、推广访问（清空）；全程内容安全策略违规、页面脚本错误、控制台错误、对外部主机的请求、4xx/5xx 响应均为 0 |
-| 测试总数 | 见交付评论（`./mvnw verify -Pmysql-it` 的结果） |
+| 测试总数 | 提交 `79fa074` 上 `./mvnw verify -Pmysql-it`：单元 2659 个、0 失败；MySQL 集成 85 个、0 失败、跳过 1 个（B12 起已有的跳过项，与本批无关）；其中 `AdminMemberGoldenMySqlIT` 9 个（黄金 460 步、回滚演练 27 条 DML） |
 
 ### 10. 与旧版的差异
 
