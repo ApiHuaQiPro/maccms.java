@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.random.RandomGenerator;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -49,7 +50,8 @@ import org.springframework.web.bind.annotation.RequestMethod;
  * <li>除 {@code index/login}（与新版的登录页验证码 {@code index/verify}）外都要登录：会话里没有管理员，或 D2 ⑤ 重读当前行发现已停用、
  * 已改密、已删除 → 作废会话、302 到登录页；</li>
  * <li>除 {@code update} 控制器外按 {@code admin_auth} 判定权限（{@link AdminAuthorization}），不通过 → "您没有权限访问此页面"；</li>
- * <li>B12 的动作在这里实现；auth.php 中其余动作返回"由后续批次实现"的提示（{@link AdminPermissions#batchOf}）；不存在的动作 404。</li>
+ * <li>B12 的动作在这里实现，B13、B14 的动作分别交给 {@link AdminContentActions}、{@link AdminMemberActions}；auth.php 中其余动作返回
+ * "由后续批次实现"的提示（{@link AdminPermissions#batchOf}）；不存在的动作 404。</li>
  * </ol>
  * POST 请求带 {@code Origin}（没有时看 {@code Referer}）且与 {@code maccms.admin.base-url} 不同源时 403。
  */
@@ -71,11 +73,12 @@ public class AdminController {
     private final ContentCacheMaintenance contentCache;
     private final RandomGenerator random;
     private final AdminContentActions content;
+    private final AdminMemberActions member;
 
     public AdminController(AdminEndpoint endpoint, AdminSessions sessions, AdminSettings settings, AdminLoginService logins,
                            AdminAccountService accounts, AdminPages pages, AdminResponses responses,
                            ClientIpResolver clientIp, ContentCacheMaintenance contentCache, AdminRandom random,
-                           AdminContentActions content) {
+                           AdminContentActions content, ObjectProvider<AdminMemberActions> member) {
         this.endpoint = endpoint;
         this.sessions = sessions;
         this.settings = settings;
@@ -87,6 +90,7 @@ public class AdminController {
         this.contentCache = contentCache;
         this.random = random.generator();
         this.content = content;
+        this.member = member.getIfAvailable();
     }
 
     /** 一次请求的上下文。 */
@@ -164,6 +168,10 @@ public class AdminController {
                 ResponseEntity<String> b13 = content.handle(ctx, admin, session);
                 if (b13 != null) {
                     yield b13;
+                }
+                ResponseEntity<String> b14 = member == null ? null : member.handle(ctx);
+                if (b14 != null) {
+                    yield b14;
                 }
                 String batch = AdminPermissions.batchOf(route.controller(), route.action());
                 yield batch == null ? notFound(ajax) : pending(ctx, batch);

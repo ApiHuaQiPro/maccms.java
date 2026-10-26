@@ -7,6 +7,7 @@ import java.util.Map;
 /**
  * 后台内容管理（B13，docs/architecture/22-b13-admin-content.md 第 3 节）写入的旧表与各列的类型，逐列照抄
  * {@code application/install/sql/install.sql}（{@code AdminTableSchemaTest} 与该文件逐列比对：列名、顺序、类型、长度、有无符号）。
+ * B14（23 文档第 3 节）另加后台会员编辑写的 {@code mac_user}、{@code mac_group}，取值规则相同，由 member 模块使用。
  *
  * <p>旧版保存时用 ThinkPHP {@code allowField(true)}：提交的字段里凡是表中有的列都写进去（整行覆盖，含计数列），其余忽略。新版按这里的
  * 列清单做同样的过滤，并在写库前按列类型检查取值（{@link AdminRowValues}）。
@@ -357,7 +358,51 @@ public enum AdminTable {
             c("annex_time", Kind.INT, 0, 0L, 4294967295L),
             c("annex_file", Kind.CHAR, 255, 0, 0),
             c("annex_size", Kind.INT, 0, 0L, 4294967295L),
-            c("annex_type", Kind.CHAR, 8, 0, 0)));
+            c("annex_type", Kind.CHAR, 8, 0, 0))),
+    /** B14 后台会员编辑（旧 {@code User::saveData} 把整个 POST 交给 {@code update/insert}，表里有的列都写）。 */
+    USER("mac_user", "user_id", List.of(
+            c("user_id", Kind.INT, 0, 0L, 4294967295L),
+            c("group_id", Kind.INT, 0, 0L, 65535L),
+            c("user_name", Kind.CHAR, 30, 0, 0),
+            c("user_pwd", Kind.CHAR, 32, 0, 0),
+            c("user_nick_name", Kind.CHAR, 30, 0, 0),
+            c("user_qq", Kind.CHAR, 16, 0, 0),
+            c("user_email", Kind.CHAR, 30, 0, 0),
+            c("user_phone", Kind.CHAR, 16, 0, 0),
+            c("user_status", Kind.INT, 0, 0L, 255L),
+            c("user_portrait", Kind.CHAR, 100, 0, 0),
+            c("user_portrait_thumb", Kind.CHAR, 100, 0, 0),
+            c("user_openid_qq", Kind.CHAR, 40, 0, 0),
+            c("user_openid_weixin", Kind.CHAR, 40, 0, 0),
+            c("user_question", Kind.CHAR, 255, 0, 0),
+            c("user_answer", Kind.CHAR, 255, 0, 0),
+            c("user_points", Kind.INT, 0, 0L, 4294967295L),
+            c("user_points_froze", Kind.INT, 0, 0L, 4294967295L),
+            c("user_reg_time", Kind.INT, 0, 0L, 4294967295L),
+            c("user_reg_ip", Kind.INT, 0, 0L, 4294967295L),
+            c("user_login_time", Kind.INT, 0, 0L, 4294967295L),
+            c("user_login_ip", Kind.INT, 0, 0L, 4294967295L),
+            c("user_last_login_time", Kind.INT, 0, 0L, 4294967295L),
+            c("user_last_login_ip", Kind.INT, 0, 0L, 4294967295L),
+            c("user_login_num", Kind.INT, 0, 0L, 65535L),
+            c("user_extend", Kind.INT, 0, 0L, 65535L),
+            c("user_random", Kind.CHAR, 32, 0, 0),
+            c("user_end_time", Kind.INT, 0, 0L, 4294967295L),
+            c("user_pid", Kind.INT, 0, 0L, 4294967295L),
+            c("user_pid_2", Kind.INT, 0, 0L, 4294967295L),
+            c("user_pid_3", Kind.INT, 0, 0L, 4294967295L))),
+    /** B14 后台会员组编辑（旧 {@code Group::saveData}，{@code allowField(true)}）。 */
+    GROUP("mac_group", "group_id", List.of(
+            c("group_id", Kind.INT, 0, -32768L, 32767L),
+            c("group_name", Kind.CHAR, 30, 0, 0),
+            c("group_status", Kind.INT, 0, 0L, 255L),
+            c("group_type", Kind.TEXT, 65535, 0, 0),
+            c("group_popedom", Kind.TEXT, 65535, 0, 0),
+            c("group_points_day", Kind.INT, 0, 0L, 65535L),
+            c("group_points_week", Kind.INT, 0, -32768L, 32767L),
+            c("group_points_month", Kind.INT, 0, 0L, 65535L),
+            c("group_points_year", Kind.INT, 0, 0L, 65535L),
+            c("group_points_free", Kind.INT, 0, 0L, 255L)));
 
     private final String table;
     private final String pk;

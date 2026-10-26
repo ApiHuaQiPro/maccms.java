@@ -1,0 +1,369 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+  B14 后台会员与财务管理的只读查询（23 文档第 5 节）。列表行的全部列一律按文字取回（getString：整数为十进制、decimal 保留小数位，与旧模板
+  输出的文字相同；不受 TINYINT(1) 映射影响）。会员行不读 user_pwd、user_random、user_openid_*（旧 User::infoData 把密码置空，页面不用其余两类）。
+  每个列表的 count 与分页 include 同一个条件片段；排序为旧版的主键倒序（会员组为主键正序）。
+-->
+<mapper namespace="com.maccms.backend.member.infrastructure.MemberAdminMapper">
+
+    <!-- ================================================================== mac_user（旧 admin/controller/User.php） -->
+    <resultMap id="userRow" type="map">
+        <result column="user_id" property="user_id" javaType="string"/>
+        <result column="group_id" property="group_id" javaType="string"/>
+        <result column="user_name" property="user_name" javaType="string"/>
+        <result column="user_nick_name" property="user_nick_name" javaType="string"/>
+        <result column="user_qq" property="user_qq" javaType="string"/>
+        <result column="user_email" property="user_email" javaType="string"/>
+        <result column="user_phone" property="user_phone" javaType="string"/>
+        <result column="user_status" property="user_status" javaType="string"/>
+        <result column="user_portrait" property="user_portrait" javaType="string"/>
+        <result column="user_portrait_thumb" property="user_portrait_thumb" javaType="string"/>
+        <result column="user_question" property="user_question" javaType="string"/>
+        <result column="user_answer" property="user_answer" javaType="string"/>
+        <result column="user_points" property="user_points" javaType="string"/>
+        <result column="user_points_froze" property="user_points_froze" javaType="string"/>
+        <result column="user_reg_time" property="user_reg_time" javaType="string"/>
+        <result column="user_reg_ip" property="user_reg_ip" javaType="string"/>
+        <result column="user_login_time" property="user_login_time" javaType="string"/>
+        <result column="user_login_ip" property="user_login_ip" javaType="string"/>
+        <result column="user_last_login_time" property="user_last_login_time" javaType="string"/>
+        <result column="user_last_login_ip" property="user_last_login_ip" javaType="string"/>
+        <result column="user_login_num" property="user_login_num" javaType="string"/>
+        <result column="user_extend" property="user_extend" javaType="string"/>
+        <result column="user_end_time" property="user_end_time" javaType="string"/>
+        <result column="user_pid" property="user_pid" javaType="string"/>
+        <result column="user_pid_2" property="user_pid_2" javaType="string"/>
+        <result column="user_pid_3" property="user_pid_3" javaType="string"/>
+    </resultMap>
+    <sql id="userColumns">user_id, group_id, user_name, user_nick_name, user_qq, user_email, user_phone, user_status, user_portrait, user_portrait_thumb, user_question, user_answer, user_points, user_points_froze, user_reg_time, user_reg_ip, user_login_time, user_login_ip, user_last_login_time, user_last_login_ip, user_login_num, user_extend, user_end_time, user_pid, user_pid_2, user_pid_3</sql>
+
+    <select id="selectUser" resultMap="userRow">
+        SELECT <include refid="userColumns"/> FROM mac_user WHERE user_id = #{id}
+    </select>
+
+    <!-- 会员列表 User::data（状态严格 '0'/'1'、会员组、会员名关键字）与推广会员 User::reward（推广人：指定等级的一列，或三列任一） -->
+    <sql id="userCondition">
+        <where>
+            <if test="c.status != null">AND user_status = #{c.status}</if>
+            <if test="c.group != null">AND group_id = #{c.group}</if>
+            <if test="c.pid != null">
+                <choose>
+                    <when test="c.pidLevel == 1">AND user_pid = #{c.pid}</when>
+                    <when test="c.pidLevel == 2">AND user_pid_2 = #{c.pid}</when>
+                    <when test="c.pidLevel == 3">AND user_pid_3 = #{c.pid}</when>
+                    <otherwise>AND (user_pid = #{c.pid} OR user_pid_2 = #{c.pid} OR user_pid_3 = #{c.pid})</otherwise>
+                </choose>
+            </if>
+            <if test="c.like != null">AND user_name LIKE #{c.like} ESCAPE '!'</if>
+        </where>
+    </sql>
+
+    <select id="countUsers" resultType="long">
+        SELECT COUNT(*) FROM mac_user <include refid="userCondition"/>
+    </select>
+
+    <select id="listUsers" resultMap="userRow">
+        SELECT <include refid="userColumns"/> FROM mac_user <include refid="userCondition"/>
+        ORDER BY user_id DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- User::reward 的 1/2/3 级人数（User.php:91-113） -->
+    <select id="countInvitees" resultType="long">
+        SELECT COUNT(*) FROM mac_user
+        <choose>
+            <when test="level == 1">WHERE user_pid = #{uid}</when>
+            <when test="level == 2">WHERE user_pid_2 = #{uid}</when>
+            <otherwise>WHERE user_pid_3 = #{uid}</otherwise>
+        </choose>
+    </select>
+
+    <select id="countUser" resultType="long">
+        SELECT COUNT(*) FROM mac_user WHERE user_id = #{id}
+    </select>
+
+    <!-- Group::delData 前的 model('User')->countData(['group_id' => ['in', $ids]]) -->
+    <select id="countUsersInGroups" resultType="long">
+        SELECT COUNT(*) FROM mac_user WHERE group_id IN
+        <foreach collection="ids" item="i" open="(" separator="," close=")">#{i}</foreach>
+    </select>
+
+    <!-- ================================================================== mac_group（旧 admin/controller/Group.php） -->
+    <resultMap id="groupRow" type="map">
+        <result column="group_id" property="group_id" javaType="string"/>
+        <result column="group_name" property="group_name" javaType="string"/>
+        <result column="group_status" property="group_status" javaType="string"/>
+        <result column="group_type" property="group_type" javaType="string"/>
+        <result column="group_popedom" property="group_popedom" javaType="string"/>
+        <result column="group_points_day" property="group_points_day" javaType="string"/>
+        <result column="group_points_week" property="group_points_week" javaType="string"/>
+        <result column="group_points_month" property="group_points_month" javaType="string"/>
+        <result column="group_points_year" property="group_points_year" javaType="string"/>
+        <result column="group_points_free" property="group_points_free" javaType="string"/>
+    </resultMap>
+    <sql id="groupColumns">group_id, group_name, group_status, group_type, group_popedom, group_points_day, group_points_week, group_points_month, group_points_year, group_points_free</sql>
+
+    <!-- Group::listData（旧版不分页；会员组表很小，新版最多 1000 行） -->
+    <select id="listGroups" resultMap="groupRow">
+        SELECT <include refid="groupColumns"/> FROM mac_group
+        <where>
+            <if test="c.status != null">AND group_status = #{c.status}</if>
+            <if test="c.like != null">AND group_name LIKE #{c.like} ESCAPE '!'</if>
+        </where>
+        ORDER BY group_id ASC
+        LIMIT 1000
+    </select>
+
+    <select id="selectGroup" resultMap="groupRow">
+        SELECT <include refid="groupColumns"/> FROM mac_group WHERE group_id = #{id}
+    </select>
+
+    <select id="countGroups" resultType="long">
+        SELECT COUNT(*) FROM mac_group WHERE group_id IN
+        <foreach collection="ids" item="i" open="(" separator="," close=")">#{i}</foreach>
+    </select>
+
+    <!-- ================================================================== mac_card（旧 admin/controller/Card.php） -->
+    <resultMap id="cardRow" type="map">
+        <result column="card_id" property="card_id" javaType="string"/>
+        <result column="card_no" property="card_no" javaType="string"/>
+        <result column="card_pwd" property="card_pwd" javaType="string"/>
+        <result column="card_money" property="card_money" javaType="string"/>
+        <result column="card_points" property="card_points" javaType="string"/>
+        <result column="card_use_status" property="card_use_status" javaType="string"/>
+        <result column="card_sale_status" property="card_sale_status" javaType="string"/>
+        <result column="user_id" property="user_id" javaType="string"/>
+        <result column="card_add_time" property="card_add_time" javaType="string"/>
+        <result column="card_use_time" property="card_use_time" javaType="string"/>
+        <result column="user_name" property="user_name" javaType="string"/>
+    </resultMap>
+
+    <!-- Card::index：售出、使用状态（严格 '0'/'1'）、卡号关键字、添加时间下限 -->
+    <sql id="cardCondition">
+        <where>
+            <if test="c.saleStatus != null">AND k.card_sale_status = #{c.saleStatus}</if>
+            <if test="c.useStatus != null">AND k.card_use_status = #{c.useStatus}</if>
+            <if test="c.like != null">AND k.card_no LIKE #{c.like} ESCAPE '!'</if>
+            <if test="c.timeFrom != null">AND k.card_add_time &gt;= #{c.timeFrom}</if>
+        </where>
+    </sql>
+
+    <select id="countCards" resultType="long">
+        SELECT COUNT(*) FROM mac_card AS k <include refid="cardCondition"/>
+    </select>
+
+    <!-- 使用者名称（旧 Card::listData 对 user_id > 0 的行另取会员信息）：LEFT JOIN，会员不存在时为 NULL（页面输出空串） -->
+    <select id="listCards" resultMap="cardRow">
+        SELECT k.card_id, k.card_no, k.card_pwd, k.card_money, k.card_points, k.card_use_status, k.card_sale_status, k.user_id,
+               k.card_add_time, k.card_use_time, u.user_name
+        FROM mac_card AS k LEFT JOIN mac_user AS u ON u.user_id = k.user_id AND k.user_id &gt; 0
+        <include refid="cardCondition"/>
+        ORDER BY k.card_id DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <select id="maxCardAddTime" resultType="long">
+        SELECT MAX(card_add_time) FROM mac_card
+    </select>
+
+    <!-- ================================================================== mac_order（旧 admin/controller/Order.php → Order::listData） -->
+    <resultMap id="orderRow" type="map">
+        <result column="order_id" property="order_id" javaType="string"/>
+        <result column="user_id" property="user_id" javaType="string"/>
+        <result column="order_status" property="order_status" javaType="string"/>
+        <result column="order_code" property="order_code" javaType="string"/>
+        <result column="order_price" property="order_price" javaType="string"/>
+        <result column="order_time" property="order_time" javaType="string"/>
+        <result column="order_points" property="order_points" javaType="string"/>
+        <result column="order_pay_type" property="order_pay_type" javaType="string"/>
+        <result column="order_pay_time" property="order_pay_time" javaType="string"/>
+        <result column="order_remarks" property="order_remarks" javaType="string"/>
+        <result column="user_name" property="user_name" javaType="string"/>
+    </resultMap>
+
+    <!-- 状态（原值；旧版 $param['status'] != '' 时）、会员、单号关键字 -->
+    <sql id="orderCondition">
+        <where>
+            <if test="c.status != null">AND o.order_status = #{c.status}</if>
+            <if test="c.uid != null">AND o.user_id = #{c.uid}</if>
+            <if test="c.like != null">AND o.order_code LIKE #{c.like} ESCAPE '!'</if>
+        </where>
+    </sql>
+
+    <select id="countOrders" resultType="long">
+        SELECT COUNT(*) FROM mac_order AS o <include refid="orderCondition"/>
+    </select>
+
+    <!-- 旧版 field('o.*,u.user_name')->join('__USER__ u','o.user_id = u.user_id','left') -->
+    <select id="listOrders" resultMap="orderRow">
+        SELECT o.order_id, o.user_id, o.order_status, o.order_code, o.order_price, o.order_time, o.order_points, o.order_pay_type,
+               o.order_pay_time, o.order_remarks, u.user_name
+        FROM mac_order AS o LEFT JOIN mac_user AS u ON o.user_id = u.user_id
+        <include refid="orderCondition"/>
+        ORDER BY o.order_id DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- ================================================================== mac_cash（旧 admin/controller/Cash.php → Cash::listData） -->
+    <resultMap id="cashRow" type="map">
+        <result column="cash_id" property="cash_id" javaType="string"/>
+        <result column="user_id" property="user_id" javaType="string"/>
+        <result column="cash_status" property="cash_status" javaType="string"/>
+        <result column="cash_points" property="cash_points" javaType="string"/>
+        <result column="cash_money" property="cash_money" javaType="string"/>
+        <result column="cash_bank_name" property="cash_bank_name" javaType="string"/>
+        <result column="cash_bank_no" property="cash_bank_no" javaType="string"/>
+        <result column="cash_payee_name" property="cash_payee_name" javaType="string"/>
+        <result column="cash_time" property="cash_time" javaType="string"/>
+        <result column="cash_time_audit" property="cash_time_audit" javaType="string"/>
+        <result column="user_name" property="user_name" javaType="string"/>
+    </resultMap>
+
+    <sql id="cashCondition">
+        <where>
+            <if test="c.status != null">AND k.cash_status = #{c.status}</if>
+            <if test="c.uid != null">AND k.user_id = #{c.uid}</if>
+            <if test="c.like != null">AND k.cash_bank_no LIKE #{c.like} ESCAPE '!'</if>
+        </where>
+    </sql>
+
+    <select id="countCashes" resultType="long">
+        SELECT COUNT(*) FROM mac_cash AS k <include refid="cashCondition"/>
+    </select>
+
+    <!-- 会员名：旧版取"最新 999 个会员"里的名字（Cash.php:28-35，条件写错了变量），新版按本页各行的会员编号关联（23 文档 D-B14-6） -->
+    <select id="listCashes" resultMap="cashRow">
+        SELECT k.cash_id, k.user_id, k.cash_status, k.cash_points, k.cash_money, k.cash_bank_name, k.cash_bank_no, k.cash_payee_name,
+               k.cash_time, k.cash_time_audit, u.user_name
+        FROM mac_cash AS k LEFT JOIN mac_user AS u ON u.user_id = k.user_id AND k.user_id &gt; 0
+        <include refid="cashCondition"/>
+        ORDER BY k.cash_id DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <sql id="cashOpColumns">
+        cash_id         AS cashId,
+        user_id         AS userId,
+        cash_status     AS status,
+        cash_points     AS points,
+        cash_money      AS money,
+        cash_bank_name  AS bankName,
+        cash_bank_no    AS bankNo,
+        cash_payee_name AS payeeName,
+        cash_time       AS time,
+        cash_time_audit AS timeAudit
+    </sql>
+
+    <!-- 审核、删除逐行处理的行（Cash::auditData / delData 的 select，新版按编号升序） -->
+    <select id="selectCashes" resultType="com.maccms.backend.member.infrastructure.CashRow">
+        SELECT <include refid="cashOpColumns"/>
+        FROM mac_cash
+        <choose>
+            <when test="ids != null">
+                WHERE cash_id IN
+                <foreach collection="ids" item="i" open="(" separator="," close=")">#{i}</foreach>
+            </when>
+            <otherwise>WHERE cash_id &gt; #{after}</otherwise>
+        </choose>
+        ORDER BY cash_id
+        LIMIT #{limit}
+    </select>
+
+    <!-- ================================================================== mac_plog（旧 admin/controller/Plog.php） -->
+    <resultMap id="plogRow" type="map">
+        <result column="plog_id" property="plog_id" javaType="string"/>
+        <result column="user_id" property="user_id" javaType="string"/>
+        <result column="user_id_1" property="user_id_1" javaType="string"/>
+        <result column="plog_type" property="plog_type" javaType="string"/>
+        <result column="plog_points" property="plog_points" javaType="string"/>
+        <result column="plog_time" property="plog_time" javaType="string"/>
+        <result column="plog_remarks" property="plog_remarks" javaType="string"/>
+        <result column="user_name" property="user_name" javaType="string"/>
+    </resultMap>
+
+    <sql id="plogCondition">
+        <where>
+            <if test="c.type != null">AND k.plog_type = #{c.type}</if>
+            <if test="c.uid != null">AND k.user_id = #{c.uid}</if>
+        </where>
+    </sql>
+
+    <select id="countPlogs" resultType="long">
+        SELECT COUNT(*) FROM mac_plog AS k <include refid="plogCondition"/>
+    </select>
+
+    <select id="listPlogs" resultMap="plogRow">
+        SELECT k.plog_id, k.user_id, k.user_id_1, k.plog_type, k.plog_points, k.plog_time, k.plog_remarks, u.user_name
+        FROM mac_plog AS k LEFT JOIN mac_user AS u ON u.user_id = k.user_id AND k.user_id &gt; 0
+        <include refid="plogCondition"/>
+        ORDER BY k.plog_id DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- User::reward 的分销奖励合计（plog_type 4/5/6） -->
+    <select id="sumPlogPoints" resultType="long">
+        SELECT COALESCE(SUM(plog_points), 0) FROM mac_plog WHERE user_id = #{uid} AND plog_type = #{type}
+    </select>
+
+    <!-- ================================================================== mac_ulog（旧 admin/controller/Ulog.php） -->
+    <resultMap id="ulogRow" type="map">
+        <result column="ulog_id" property="ulog_id" javaType="string"/>
+        <result column="user_id" property="user_id" javaType="string"/>
+        <result column="ulog_mid" property="ulog_mid" javaType="string"/>
+        <result column="ulog_type" property="ulog_type" javaType="string"/>
+        <result column="ulog_rid" property="ulog_rid" javaType="string"/>
+        <result column="ulog_sid" property="ulog_sid" javaType="string"/>
+        <result column="ulog_nid" property="ulog_nid" javaType="string"/>
+        <result column="ulog_points" property="ulog_points" javaType="string"/>
+        <result column="ulog_time" property="ulog_time" javaType="string"/>
+        <result column="user_name" property="user_name" javaType="string"/>
+    </resultMap>
+
+    <sql id="ulogCondition">
+        <where>
+            <if test="c.mid != null">AND k.ulog_mid = #{c.mid}</if>
+            <if test="c.type != null">AND k.ulog_type = #{c.type}</if>
+            <if test="c.uid != null">AND k.user_id = #{c.uid}</if>
+        </where>
+    </sql>
+
+    <select id="countUlogs" resultType="long">
+        SELECT COUNT(*) FROM mac_ulog AS k <include refid="ulogCondition"/>
+    </select>
+
+    <select id="listUlogs" resultMap="ulogRow">
+        SELECT k.ulog_id, k.user_id, k.ulog_mid, k.ulog_type, k.ulog_rid, k.ulog_sid, k.ulog_nid, k.ulog_points, k.ulog_time, u.user_name
+        FROM mac_ulog AS k LEFT JOIN mac_user AS u ON u.user_id = k.user_id AND k.user_id &gt; 0
+        <include refid="ulogCondition"/>
+        ORDER BY k.ulog_id DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- ================================================================== mac_visit（旧 admin/controller/Visit.php；旧版列表不取会员名） -->
+    <resultMap id="visitRow" type="map">
+        <result column="visit_id" property="visit_id" javaType="string"/>
+        <result column="user_id" property="user_id" javaType="string"/>
+        <result column="visit_ip" property="visit_ip" javaType="string"/>
+        <result column="visit_ly" property="visit_ly" javaType="string"/>
+        <result column="visit_time" property="visit_time" javaType="string"/>
+    </resultMap>
+
+    <sql id="visitCondition">
+        <where>
+            <if test="c.uid != null">AND user_id = #{c.uid}</if>
+            <if test="c.timeFrom != null">AND visit_time &gt;= #{c.timeFrom}</if>
+            <if test="c.lyLikeA != null">AND (visit_ly LIKE #{c.lyLikeA} ESCAPE '!' OR visit_ly LIKE #{c.lyLikeB} ESCAPE '!')</if>
+        </where>
+    </sql>
+
+    <select id="countVisits" resultType="long">
+        SELECT COUNT(*) FROM mac_visit <include refid="visitCondition"/>
+    </select>
+
+    <select id="listVisits" resultMap="visitRow">
+        SELECT visit_id, user_id, visit_ip, visit_ly, visit_time FROM mac_visit <include refid="visitCondition"/>
+        ORDER BY visit_id DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+</mapper>
