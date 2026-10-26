@@ -37,6 +37,12 @@ B07（MACC-31）建了写入基础设施，见 `docs/architecture/12-write-infra
 与静态/运行期护栏、写 SQL 规范（条件更新、匹配行数、固定顺序与补偿），以及测试侧的并发写测试支撑与回滚演练工具（快照、逐行 diff、
 只用 DML 恢复）。B09 起正式登记会员模块对 `mac_user` 的插入与更新（`docs/architecture/18-b09-member-account.md` 第 6 节），关闭可写数据源时会员入口 `user/*` 返回 503。整体切换（D3）方案见 `docs/architecture/13-cutover-plan.md`。
 
+B12（MACC-36）后台框架见 `docs/architecture/21-b12-admin-framework.md`：`MACCMS_ADMIN_ENABLED` **默认关闭**；启用时需要可写数据源，
+`MACCMS_ADMIN_ENTRY`（后台入口，如 `/_admin.php`）与 `MACCMS_ADMIN_BASE_URL` 必填。登录（`md5(原值)`、验证码）、进程内会话（每个请求重读
+`mac_admin`，停用/改密/删除立即踢出，D2 ⑤）、`admin_auth` 鉴权（auth.php 全部权限码登记，后续批次的页面给出"由 Bxx 批次提供"）、
+管理员管理；页面复用旧后台 HTML 结构与 `static/` 下的 layui/admin 资产。PHP 黄金样本 `src/test/php/admin_golden.php`，对照测试
+`AdminGoldenMySqlIT`；浏览器检查 `src/test/browser/b12_admin_check.py`。
+
 B06（MACC-30）见 `docs/architecture/16-b06-misc-pages-provide.md`：客户端 IP 组件（`MACCMS_TRUSTED_PROXIES`、`MACCMS_CLIENT_IP_HEADER`，
 默认只信连接对端）；Provide 资源站接口（`/api.php/provide/**`，`MACCMS_OPENAPI_ENABLED` **默认关闭**，各模块再按旧配置 `api.*.status`
 判定，JSON/XML、白名单、`cachetime` 转为 HTTP 缓存头，只读）；site 新增地图、帮助、版权提示、站点级 RSS 与 6 种搜索引擎地图、
@@ -127,6 +133,8 @@ backend/
     content/application/       查询服务、可见性规则、参数校验
     content/infrastructure/    MyBatis Mapper 接口与行记录
     legacyconfig/              旧配置只读层（var_export 解析、配置目录访问）
+    admin/                     后台（B12）：入口与页面（web）、登录与鉴权（application）、mac_admin 读写（infrastructure）
+  src/main/jte-admin/          后台页面模板（B12，按旧后台 HTML 结构转写）
   src/main/resources/
     application.yml            默认配置（无凭证）
     mapper/content/*.xml       只读 SQL

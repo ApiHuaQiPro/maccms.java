@@ -146,7 +146,7 @@
 | 视频播放、下载页，`player_aaaa`，观看密码，试看（`Vod::play/player/down/downer`、`Ajax::pwd`） | B05（游客）+ B10（会员权限与扣积分） | 前端播放器资源原样复用（含 `iva` 播放器）；播放器解析接口与外部脚本（W1）、外部播放/下载地址（W2）按旧版放行，见第 4.2 节 |
 | 文章、专题、演员、角色、网址、剧情各页及 `ajax_*`、`rss`（`Art/Topic/Actor/Role/Website/Plot`） | B03 + B05 | |
 | 地图、RSS（baidu/google/so/sogou/bing/sm）、自定义标签页、帮助、公告、版权页、二维码、桌面快捷方式、联想词、`ajax/data` | B06 | 二维码在本地生成 |
-| 手机模板（`mob_status`）、语言包（`application/lang/zh-cn.php`、`zh-tw.php`） | B05、B12 | |
+| 手机模板（`mob_status`）、语言包（`application/lang/zh-cn.php`、`zh-tw.php`） | B05、B12 | B12 实现选择语义与前台接线（21 文档第 12 节）；缺失的旧手机模板内容与模板内 `{:lang()}` 对齐在 B21 |
 | 资源站对外接口 Provide（`api/controller/Provide.php`） | B06（只读）+ B11（`detail_inc_hits` 计数） | |
 | 会员注册、登录、退出、资料、头像、密保找回（`index/controller/User.php`） | B08 + B09 + B25 + B26 | 短信/邮件验证码、绑定、找回（E06/E07）在 B25；第三方登录与绑定（E10）在 B26 |
 | 会员中心：收藏、播放/下载记录、积分日志、购买观看权限、升级会员组、卡密充值、提现、推广、订单 | B10 + B24 | 本地创建订单在 B10；在线支付下单、回调与网关跳转（E04/E05/W3）在 B24 |
@@ -272,10 +272,10 @@ B02 起每个输出页面的批次（B02、B05、B06、B09～B15、B24～B26）�
 | B06 | 待建 | 杂项只读页与 Provide 只读接口（含客户端 IP 解析，D2 ④） | C + K | B02、B03 | — | 否 | 否 |
 | B07 | 待建 | 写入基础设施与整体切换方案（含回滚演练工具） | C | B02 | — | 仅一次性库 | 否 |
 | B08 | 已验收（MACC-32，main `363d7bf`；`17-b08-member-session-captcha.md`） | 会员登录态、验证码（含中文 useZh）与频率限制；到期降级只做测试侧演练，正式写库归 B09/B10/B14 | C | B07 | — | 仅一次性库 | 否 |
-| B09 | 前后端已整合，待验收（MACC-33，`18-b09-member-account.md`；WebP 头像按 MACC-23 裁定方案 B 实施，第 14 节） | 会员账号：注册、登录、资料、找回（D2 ①②⑥） | C + K | B08 | — | 是 | 否 |
-| B10 | 待建 | 会员权益与财务：购买权限、升级、卡密、提现、推广、订单 | C + K | B09 | — | 是 | 否 |
-| B11 | 待建 | 评论、留言与内容计数写入 | C + K | B08 | — | 是 | 否 |
-| B12 | 待建 | 后台框架：登录、会话、`admin_auth` 鉴权、管理员管理（D2 ⑤） | C + K | B07、B08 | — | 是 | 否 |
+| B09 | 已验收（MACC-33，main `b5f1bbf`；`18-b09-member-account.md`；WebP 头像按 MACC-23 裁定方案 B 实施，第 14 节） | 会员账号：注册、登录、资料、找回（D2 ①②⑥） | C + K | B08 | — | 是 | 否 |
+| B10 | 已验收（MACC-34，main `3f26190`；`19-b10-member-finance.md`） | 会员权益与财务：购买权限、升级、卡密、提现、推广、订单 | C | B09 | — | 是 | 否 |
+| B11 | 已验收（MACC-35，main `4db4c6d`；`20-b11-comment-gbook-counters.md`） | 评论、留言与内容计数写入 | C | B08 | — | 是 | 否 |
+| B12 | 已验收（MACC-36，main `6a9054d`；`21-b12-admin-framework.md`；旧后台结构与静态资产原样复用，未另做视觉设计，`static/admin-assets/` 由后端维护；D-B12-6 队长已接受；D-B05-8 前台接线已完成非共享部分——手机 Logo、`Vary`、`lang()` 文字，外壳/组件/`static/site/` 未改，可选的手机样式类待队长与前端另定，第 12 节） | 后台框架：登录、会话、`admin_auth` 鉴权、管理员管理（D2 ⑤） | C + K | B07、B08 | — | 是 | 否 |
 | B13 | 待建 | 后台内容管理 | C + K | B11、B12 | — | 是 | 否 |
 | B14 | 待建 | 后台会员与财务管理 | C + K | B10、B12 | — | 是 | 否 |
 | B15 | 待建 | 后台系统配置与运维（配置文件写回、模板在线编辑、本地插件） | C + K | B12、B02、B05 | — | 是（文件 + 库） | 否 |
@@ -390,7 +390,7 @@ graph LR
 | B08 | 会员 cookie 校验与签发辅助（`user_check = md5(user_random-用户名-ID-)`，同名、同 path、不设 domain，03 第 4.3 (4) 节；`user_check` 加 HttpOnly，其余 5 个按旧契约不加；实际登录响应由 B09 接入）；会员组到期的内存判定；到期降级语句（批量 `<=`、单行 `<`）**只在测试侧演练**，正式业务写入登记仍为空——单行降级写库归 B09，批量任务归 B10，后台会员列表第 1 页归 B14；验证码（本地生成，参数取 `application/extra/captcha.php`，含 `useZh` 中文验证码；`verify/check` 忽略 `id`、只校验默认槽）；频率限制（`mac_get_time_span` 的语义，会话在进程内存） | cookie 编码黄金向量（含中文、`&` 等用户名）；到期边界 `user_end_time == now`；PHP 签发的 cookie 能被 Java 认，反之亦然；HttpOnly 的 `user_check` 与 PHP 自己 `httponly` 写出的字节相同；中文验证码的生成、校验、过期与重放；经控制器的 `verify/check` 分槽回归 | 字节语义不一致导致会员被登出 | 一次性库回滚演练（测试侧降级语句：批量边界、单行 16 线程并发、续费与降级竞态、DML 恢复、结构指纹不变） |
 | B09 | 注册（含 `regcheck`）、登录、退出、`ajax_login/ajax_info`、资料修改与改密、头像（本地上传）、密保问题找回与重置；依赖短信/邮件的步骤在 B25 接入前按旧版未配置短信/邮件时的表现处理；**B08 留下的会员登录态接线**：登录/注销响应签发 B08 的 `MemberCookies`（`user_check` 带 HttpOnly）、`checkLogin` 到期的**单行降级写库**（`group_id=2`，条件带 `group_id > 2 AND user_end_time < now`，B08 测试侧语句）与 `group_id`/`group_name` cookie 重发、`label_user` 失败时的游客 cookie 回写（`user_id=0`、`user_name=游客`）、页面会员权限接线（分类、播放、下载、试看按有效会员组判定，替换现在一律按游客的 `GuestPermission`） | 03 第 4.3 (1) 节逐入口的密码字节语义黄金向量全部通过；B08 接线逐条验收：到期会员访问时库内降级、并发只命中 1 行、续费后不误降级，重发的组 cookie 与游客回写与 PHP 黄金字节一致（接线前先在一次性库上复现 PHP 7.3 的 `label_user/expiry-5-g3--1`：`333b73e` 的 7.3 黄金记录了 4 个 `Set-Cookie`，`group_id`/`group_name` 各发两遍，`0417c14` 重新生成后为 2 个，PHP 8.0 两轮都是 2 个；查明能否复现及原因，再定组 cookie 重发的对照基准，结论写进本批文档），页面权限按会员组与 PHP 黄金一致（含到期会员按 2 组）；**D2 ①②⑥** 按第 5.5 节实施并逐条验收：提交库内 md5 值作为密码登录失败、普通登录入口带 `openid`/`col` 参数不能登录、注销与改密后旧 `user_check` cookie 失效，三条差异写进本批文档；并发：同名注册不产生两条记录（MyISAM 无唯一约束时用条件插入或串行化，方案写进本批文档）；回滚演练 | 无唯一约束下的并发重复注册；密码语义偏差 | 回滚演练 |
 | B10 | `ajax_ulog`、收藏/播放/下载记录与删除、积分日志与删除、`ajax_buy_popedom` 与 `popedom`（积分购买观看）、`upgrade`（积分升级会员组）、卡密充值、提现申请与撤销、推广奖励与访问记录、订单列表与详情、`buy` 本地创建订单；会员组到期降级批量任务（`user_end_time <= now`，边界按 B08 黄金 `expire` 段，语句即 B08 测试侧演练语句） | 批量降级命中行数与 `<=` 逐行判定一致、与续费并发不误降级、DML 回滚演练；扣积分用 `WHERE user_points >= ?` 的条件更新，只在匹配 1 行时写 `mac_ulog`/`mac_plog`；卡密用 `WHERE card_use_status=0` 条件更新；并发重复购买、重复用卡、重复提现的测试；对账脚本（积分、订单、卡密、提现总额）在一次性库上前后一致；B24 接入前（及部署未配置支付时）"去支付"不生成任何网关地址、不跳转、服务端不发请求，提示与旧版未配置支付时一致；回滚演练；**B09 延后（D-B09-7）**：注册带有效邀请人（`uid`，B09 已写 `user_pid` 链）时给邀请人加 `invite_reg_points` 积分并写 `mac_plog`，积分与流水逐列对照 PHP 黄金样本，同一邀请人并发注册时加分总额与流水条数与注册数一致；**B09 延后（D-B09-11）**：会员组 ≤2 访问收费数据时按 `mac_ulog` 判断是否已购买（B09 统一按"需要积分"），已购、未购两态对照 PHP 黄金样本（D-B09-7/11 见 `18-b09-member-account.md` 第 10 节） | MyISAM 多表写入中途失败造成不一致 | 回滚演练 + 对账 |
-| B11 | 评论与留言（列表、`ajax`、发表、举报、顶踩；审核开关、过滤词、验证码、频率限制）；`ajax/hits/digg/score/referer/pwd/verify_check/suggest`；`updateToday`（日/周/月点击重置）；Provide `detail_inc_hits`；`vod_search_optimise` 打开时写 `mac_vod_search` | 与 PHP 黄金样本的写库效果一致（逐列比对）；计数用原子自增，文档写明"并发时旧版会丢计数、新版不会"这一实现差异；并发计数测试；回滚演练 | 计数写与长查询在 MyISAM 上互相阻塞（MACC-19 已测到） | 回滚演练 |
+| B11 | 评论与留言（列表、`ajax`、发表、举报、顶踩；审核开关、过滤词、验证码、频率限制）；`ajax/hits/digg/score/referer/pwd/verify_check/suggest`；`updateToday`（日/周/月点击重置；注：旧 `updateToday` 是只读的后台查询，日/周/月重置在 `ajax/hits`、`ajax/referer` 内，已在 B11 实现，`updateToday` 本身归 B13/B16，见 20 文档第 10.3 节）；Provide `detail_inc_hits`；`vod_search_optimise` 打开时写 `mac_vod_search` | 与 PHP 黄金样本的写库效果一致（逐列比对）；计数用原子自增，文档写明"并发时旧版会丢计数、新版不会"这一实现差异；并发计数测试；回滚演练 | 计数写与长查询在 MyISAM 上互相阻塞（MACC-19 已测到） | 回滚演练 |
 | B12 | 后台框架：登录（`md5(原值)`，不 trim，03 第 4.3 (7) 节）、验证码、锁屏解锁、退出、首页、快捷菜单、清缓存；会话在进程内存；`admin_auth` 文本鉴权（`admin_id=1` 为超级管理员，`admin/controller/Base.php:42-58`），菜单与权限码完整照搬 `application/admin/common/auth.php`；管理员增删改与状态；后台入口路径可配置；后台页面复用仓库 `static/` 中的 layui 资源（本地） | 管理员密码黄金向量（含首尾空格、只含空格的密码）；**D2 ⑤** 按第 5.5 节实施并验收：管理员被停用、被改密、被改权限后，其已登录会话的下一个请求按新状态处理（停用/改密 → 退出登录；改权限 → 按新权限判定），差异写进本批文档；`auth.php` 每个权限码都有对应路由或明确标注"由后续批次实现"；非超级管理员越权访问被拒绝；页面无外部域名资源；回滚演练 | 权限码映射遗漏导致越权 | 回滚演练 |
 | B13 | 视频（列表、新增编辑、批量修改、删除、字段修改、分集剧情、查重、`updateToday`）；分类（扩展字典、转移）；文章、专题、演员、角色、网址、友链；评论、留言审核编辑；附件、图片（本地）、上传（本地存储） | 各表的增删改效果与 PHP 黄金样本逐列一致；后台视频表单带计数字段时的整行覆盖行为与旧版一致（03 第 3.1 节）；查重不使用临时表（旧版用 MyISAM 临时表，`admin/controller/Vod.php:103-105`；临时表虽不改已有表，但仍算 DDL，改为纯查询实现，文档写明）；并发编辑测试；回滚演练；**B09 延后（D-B09-9）**：前台头像上传（`user/portrait`）成功后登记 `mac_annex`（旧版 `common/model/Upload.php:268-289`），登记的是新版重新编码后的 JPEG，登记行除 `annex_size`（按新版 JPEG 实际大小）外逐列对照 PHP 黄金样本（`18-b09-member-account.md` 第 10 节） | 表单字段多，遗漏字段导致数据被清空 | 回滚演练 |
 | B14 | 会员（列表第 1 页的到期降级、编辑、删除、字段修改）、会员组（`group_type`、`group_popedom` JSON）、卡密（生成、导出、删除）、订单（含手工改状态）、提现审核、积分日志、行为日志、推广访问 | 同 B13；会员列表第 1 页的 `expire()`（旧 `admin/controller/User.php:19`）与 B10 共用 `<=` 降级语句，打开列表第 1 页后到期会员降为 2 组、第 2 页不触发；资金类对账；后台改会员密码按 `md5(原值)`、不 trim（与旧后台一致，03 第 4.3 (1) 节） | 后台手工改订单与会员中心并发 | 回滚演练 + 对账 |
@@ -416,12 +416,12 @@ graph LR
 |---|---|
 | `mac_user`（显式写入、到期降级） | B09、B10、B14；支付到账加积分 B24；绑定手机/邮箱 `user_phone`/`user_email` B25；`user_openid_qq`/`user_openid_weixin` 与第三方自动注册 B26 |
 | `mac_group` | B14 |
-| `mac_order`、`mac_card`、`mac_cash`、`mac_plog`、`mac_ulog`、`mac_visit` | B10、B14；`mac_order` 到账与 `mac_plog` 也由 B24 写入 |
+| `mac_order`、`mac_card`、`mac_cash`、`mac_plog`、`mac_ulog`、`mac_visit` | B10、B14；`mac_order` 到账与 `mac_plog` 也由 B24 写入；`mac_visit` 另由 B11 写入（`ajax/referer` 的游客来路记录，复用 B10 的条件插入） |
 | `mac_msg`（短信/邮件验证码；旧版只有 `common/model/User.php:705` 一处写入，后台没有管理页） | B25 |
 | `mac_comment`、`mac_gbook` | B11、B13；采集评论 B19 |
 | `mac_vod` 等内容表的计数字段 | B11（后台表单整行覆盖在 B13） |
 | `mac_vod/art/topic/actor/role/website/link/type` 内容字段 | B13、B19、B20 |
-| `mac_vod_search` | B11、B19 |
+| `mac_vod_search` | B11、B19；后台"清理缓存"删除过期行由 B12 写入（21 文档第 4.6 节） |
 | `mac_admin` | B12 |
 | `mac_annex` | B13 |
 | `mac_collect`、`mac_cj_node` | B17；`mac_cj_content`、`mac_cj_history` 在 B20 |

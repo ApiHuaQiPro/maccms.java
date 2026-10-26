@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+  B11 计数接口的只读查询（docs/architecture/20-b11-comment-gbook-counters.md 第 5 节）。禁止写语句、禁止 ${} 拼接；表名按 table 参数在
+  固定的 choose 分支中选择（table 只能是 CounterTarget 的名称）。旧版 infoData 只按主键查（application/index/controller/Ajax.php:166、
+  331、363），不看审核状态与分类，这里照旧；只读计数列，不读其他列。
+-->
+<mapper namespace="com.maccms.backend.content.infrastructure.ContentCounterMapper">
+
+    <select id="selectCounters" resultType="com.maccms.backend.content.infrastructure.CounterRow">
+        <choose>
+            <when test="table == 'VOD'">
+                SELECT vod_hits AS hits, vod_hits_day AS hitsDay, vod_hits_week AS hitsWeek, vod_hits_month AS hitsMonth,
+                       vod_up AS up, vod_down AS down, vod_score AS score, vod_score_all AS scoreAll,
+                       vod_score_num AS scoreNum, 0 AS referer, 0 AS refererDay, 0 AS refererWeek, 0 AS refererMonth
+                FROM mac_vod WHERE vod_id = #{id} LIMIT 1
+            </when>
+            <when test="table == 'ART'">
+                SELECT art_hits AS hits, art_hits_day AS hitsDay, art_hits_week AS hitsWeek, art_hits_month AS hitsMonth,
+                       art_up AS up, art_down AS down, art_score AS score, art_score_all AS scoreAll,
+                       art_score_num AS scoreNum, 0 AS referer, 0 AS refererDay, 0 AS refererWeek, 0 AS refererMonth
+                FROM mac_art WHERE art_id = #{id} LIMIT 1
+            </when>
+            <when test="table == 'TOPIC'">
+                SELECT topic_hits AS hits, topic_hits_day AS hitsDay, topic_hits_week AS hitsWeek, topic_hits_month AS hitsMonth,
+                       topic_up AS up, topic_down AS down, topic_score AS score, topic_score_all AS scoreAll,
+                       topic_score_num AS scoreNum, 0 AS referer, 0 AS refererDay, 0 AS refererWeek, 0 AS refererMonth
+                FROM mac_topic WHERE topic_id = #{id} LIMIT 1
+            </when>
+            <when test="table == 'ACTOR'">
+                SELECT actor_hits AS hits, actor_hits_day AS hitsDay, actor_hits_week AS hitsWeek, actor_hits_month AS hitsMonth,
+                       actor_up AS up, actor_down AS down, actor_score AS score, actor_score_all AS scoreAll,
+                       actor_score_num AS scoreNum, 0 AS referer, 0 AS refererDay, 0 AS refererWeek, 0 AS refererMonth
+                FROM mac_actor WHERE actor_id = #{id} LIMIT 1
+            </when>
+            <when test="table == 'ROLE'">
+                SELECT role_hits AS hits, role_hits_day AS hitsDay, role_hits_week AS hitsWeek, role_hits_month AS hitsMonth,
+                       role_up AS up, role_down AS down, role_score AS score, role_score_all AS scoreAll,
+                       role_score_num AS scoreNum, 0 AS referer, 0 AS refererDay, 0 AS refererWeek, 0 AS refererMonth
+                FROM mac_role WHERE role_id = #{id} LIMIT 1
+            </when>
+            <when test="table == 'WEBSITE'">
+                SELECT website_hits AS hits, website_hits_day AS hitsDay, website_hits_week AS hitsWeek, website_hits_month AS hitsMonth,
+                       website_up AS up, website_down AS down, website_score AS score, website_score_all AS scoreAll,
+                       website_score_num AS scoreNum, website_referer AS referer, website_referer_day AS refererDay, website_referer_week AS refererWeek, website_referer_month AS refererMonth
+                FROM mac_website WHERE website_id = #{id} LIMIT 1
+            </when>
+            <otherwise>SELECT NULL AS hits FROM DUAL WHERE 1 = 0</otherwise>
+        </choose>
+    </select>
+
+    <!--
+      来路网址（Ajax.php:238-242：website_jumpurl LIKE 'http://域名%' OR 'https://域名%'）。旧版把域名直接拼进 LIKE 模式（% 与 _ 是通配符）；
+      新版由 content.application 按 ESCAPE '!' 转义成字面量（20 文档 D-B11-6）。旧版 find() 不带排序，MyISAM 按存储顺序取第一行；这里按主键。
+    -->
+    <select id="selectRefererSite" resultType="com.maccms.backend.content.infrastructure.CounterRow">
+        SELECT website_hits AS hits, website_hits_day AS hitsDay, website_hits_week AS hitsWeek, website_hits_month AS hitsMonth,
+               website_up AS up, website_down AS down, website_score AS score, website_score_all AS scoreAll,
+               website_score_num AS scoreNum, website_referer AS referer, website_referer_day AS refererDay,
+               website_referer_week AS refererWeek, website_referer_month AS refererMonth
+        FROM mac_website
+        WHERE website_jumpurl LIKE #{httpPattern} ESCAPE '!' OR website_jumpurl LIKE #{httpsPattern} ESCAPE '!'
+        ORDER BY website_id
+        LIMIT 1
+    </select>
+</mapper>

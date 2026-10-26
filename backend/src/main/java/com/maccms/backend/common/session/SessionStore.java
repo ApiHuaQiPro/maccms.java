@@ -98,6 +98,16 @@ public final class SessionStore {
         return s;
     }
 
+    /**
+     * 立即作废一个会话（B12 后台：登录时轮换标识、退出登录、D2 ⑤ 停用/改密后踢出）。之后用这个标识 {@link #find} 不到任何会话，
+     * 已经拿到手的 {@link SessionState} 对象也不再属于任何会话。未知标识什么都不做。
+     */
+    public synchronized void invalidate(String id) {
+        if (id != null) {
+            sessions.remove(id);
+        }
+    }
+
     /** 当前会话数（含尚未清理的过期会话）。 */
     public synchronized int size() {
         return sessions.size();

@@ -44,10 +44,13 @@ public class SiteSearchController {
     private final SearchPages pages;
     private final SiteFeatures features;
     private final SearchThrottle throttle;
+    private final org.springframework.beans.factory.ObjectProvider<SiteVerifyGate> gate;
 
     public SiteSearchController(SiteHtmlRenderer renderer, SitePages sitePages, LegacyUrlBuilder urls,
                                 LegacyUrlParser parser, ImageUrlNormalizer images, RichTextCache richText,
-                                ContentReadService content, SiteFeatures features, SearchThrottle throttle) {
+                                ContentReadService content, SiteFeatures features, SearchThrottle throttle,
+                                org.springframework.beans.factory.ObjectProvider<SiteVerifyGate> gate) {
+        this.gate = gate;
         this.renderer = renderer;
         this.parser = parser;
         this.features = features;
@@ -64,9 +67,8 @@ public class SiteSearchController {
         // getRequestURI / getQueryString 都是未解码的原始值；应用挂在根路径（base-url 子目录由反向代理映射）
         String rawPath = request.getRequestURI().substring(request.getContextPath().length());
         boolean ajax = rawPath.contains("/ajax_search");
-        if ((ajax && !features.ajaxPage()) || features.searchPageClosed(ajax)) {
-            // 旧版 app.ajax_page=0 时报"ajax页功能关闭中"（Base.php:45-51）；旧 search_verify=1 要求验证码，验证码接线（B08/B11）
-            // 之前搜索页临时关闭（SiteFeatures）。新版不提供该入口
+        if (ajax && !features.ajaxPage()) {
+            // 旧版 app.ajax_page=0 时报"ajax页功能关闭中"（Base.php:45-51）；新版不提供该入口
             throw new ApiException(ErrorCode.NOT_FOUND, "页面不存在");
         }
         SearchPage page;
@@ -80,6 +82,17 @@ public class SiteSearchController {
             ResponseEntity<String> limited = throttle.check(((SiteRoute.VodSearch) route).page(), request, response);
             if (limited != null) {
                 return limited;
+            }
+            // 旧 check_search：频率限制之后检查 search_verify（Base.php:63-70，B11）；ajax 入口不验证
+            if (features.searchNeedsVerify(ajax)) {
+                SiteVerifyGate g = gate.getIfAvailable();
+                if (g == null) {
+                    throw new ApiException(ErrorCode.NOT_FOUND, "页面不存在");
+                }
+                java.util.Optional<ResponseEntity<String>> verify = g.check(request, "search");
+                if (verify.isPresent()) {
+                    return verify.get();
+                }
             }
             // 先组装视图模型（读取数据）再渲染：读取失败的业务异常（404/503）不能被渲染器包装成 500
             page = pages.search((SiteRoute.VodSearch) route);

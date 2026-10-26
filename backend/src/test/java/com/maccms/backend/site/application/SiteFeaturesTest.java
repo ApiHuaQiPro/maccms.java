@@ -31,18 +31,22 @@ class SiteFeaturesTest {
                 app("ajax_page", "0", "show", "0", "show_verify", "0", "search_verify", "0"));
         assertThat(repo).isEqualTo(SiteFeatures.CLOSED);
         assertThat(SiteFeatures.from(new SiteFeatures.Properties("true", "true"), app("show", "0")))
-                .isEqualTo(new SiteFeatures(true, true, false));
+                .isEqualTo(new SiteFeatures(true, true, false, false));
         assertThat(SiteFeatures.from(null, app("ajax_page", "1", "show", "1")))
-                .isEqualTo(new SiteFeatures(true, true, false));
-        // show_verify=1：筛选页与 ajax_show 一律关闭，环境变量打开也不行
-        assertThat(SiteFeatures.from(new SiteFeatures.Properties("true", "true"), app("show", "1", "show_verify", "1"))
-                .show()).isFalse();
-        // search_verify=1：搜索页（非 ajax）关闭，ajax_search 照常（旧版 ajax 入口不验证）
+                .isEqualTo(new SiteFeatures(true, true, false, false));
+        // B11：show_verify=1 不再关闭筛选页，而是要求验证码（非 ajax）；ajax_show 不验证
+        SiteFeatures shown = SiteFeatures.from(new SiteFeatures.Properties("true", "true"),
+                app("show", "1", "show_verify", "1"));
+        assertThat(shown.show()).isTrue();
+        assertThat(shown.showNeedsVerify(false)).isTrue();
+        assertThat(shown.showNeedsVerify(true)).isFalse();
+        // search_verify=1：搜索页（非 ajax）要求验证码，ajax_search 照常（旧版 ajax 入口不验证）
         SiteFeatures sv = SiteFeatures.from(null, app("search_verify", "1"));
-        assertThat(sv.searchPageClosed(false)).isTrue();
-        assertThat(sv.searchPageClosed(true)).isFalse();
+        assertThat(sv.searchNeedsVerify(false)).isTrue();
+        assertThat(sv.searchNeedsVerify(true)).isFalse();
         assertThat(SiteFeatures.from(null, null)).isEqualTo(SiteFeatures.CLOSED);
-        assertThat(SiteFeatures.CLOSED.searchPageClosed(false)).isFalse();
+        assertThat(SiteFeatures.CLOSED.searchNeedsVerify(false)).isFalse();
+        assertThat(SiteFeatures.CLOSED.showNeedsVerify(false)).isFalse();
         assertThatThrownBy(() -> SiteFeatures.from(new SiteFeatures.Properties("yes", null), null))
                 .isInstanceOf(IllegalStateException.class).hasMessageNotContaining("yes");
     }

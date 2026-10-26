@@ -197,7 +197,7 @@ public class ModuleListPages {
                 throw ApiException.invalidParameter(sf.firstContainsMatchParameter(), "当前未开放关键字搜索");
             }
             // 旧 plot/search 模板的列表：有分集剧情的视频（plot=1，与 plot/index 相同），条件、tid 与随机排序与视频搜索页相同
-            VideoLegacyConditions.Builder legacy = VideoLegacyConditions.builder().plot(1);
+            VideoLegacyConditions.Builder legacy = VideoLegacyConditions.builder().plot(1).searchCache(true);
             if (sf.tid() != null) {
                 legacy.tid(sf.tid());
             }

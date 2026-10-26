@@ -3,3 +3,5 @@ mvnw text eol=lf
 *.sh text eol=lf
 # var_export 原样输出的测试夹具（行尾空格、字符串内的 CRLF 都是被测内容）：不做换行转换、不做空白检查
 src/test/resources/legacyconfig/cases/*.php -text -whitespace
+# 后台模板原样转写旧后台 HTML，输出字节与 PHP 黄金逐项比对：工作区里也必须是 LF（Windows 的 autocrlf 会改成 CRLF，页面多出 \r）
+src/main/jte-admin/** text eol=lf

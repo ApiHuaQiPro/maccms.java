@@ -24,9 +24,11 @@ import com.maccms.backend.content.infrastructure.VodSummaryRow;
 import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.EnumMap;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Semaphore;
 import java.util.function.Supplier;
@@ -44,7 +46,9 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
- * content 模块的只读查询。只调用 Mapper 的 select，不写任何表，不写缓存。
+ * content 模块的只读查询。只调用 Mapper 的 select，不写任何表，不写缓存；唯一的例外是 B11 的视频搜索缓存：SSR 的前台列表
+ * （{@link VideoLegacyConditions#searchCache()}）在旧配置 {@code vod_search_optimise} 含 {@code frontend} 时经 {@link VodSearchCache}
+ * 读写 mac_vod_search（旧 Vod.php:404-459，docs/architecture/20-b11-comment-gbook-counters.md 第 6 节），公开 API 从不触发。
  * 可见性规则见 CategoryCatalog 与 docs/architecture/01-batch1-content-read-plan.md 第 4 节。
  *
  * <p>数据库连接类故障（异常本身或 cause 链中有 {@link DataAccessResourceFailureException}、
@@ -79,6 +83,9 @@ public class ContentReadService {
     private final SearchSettings search;
     private final Semaphore searchPermits;
     private final VideoRandom random;
+    /** B11 视频搜索缓存（可写数据源关闭、或只装配了部分 Bean 的测试中为 null）。 */
+    private VodSearchCache searchCache;
+    private VodSearchOptimise searchOptimise;
 
     /** 旧版随机排序在两种算法之间切换的行数（Vod.php:505 {@code $algo2_threshold}）：超过它才取随机 ID 段。 */
     static final int RANDOM_THRESHOLD = 2000;
@@ -115,6 +122,13 @@ public class ContentReadService {
     public ContentReadService(TypeMapper typeMapper, GroupMapper groupMapper, VodMapper vodMapper,
                               ContentProperties properties) {
         this(typeMapper, groupMapper, vodMapper, properties, 10);
+    }
+
+    /** B11：装配视频搜索缓存（{@link ContentCounterConfiguration}）。 */
+    @Autowired(required = false)
+    void useSearchCache(VodSearchCache cache, VodSearchOptimise optimise) {
+        this.searchCache = cache;
+        this.searchOptimise = optimise;
     }
 
     /** 是否接受包含匹配参数 keyword、classes、actor、director、tag、name（{@code maccms.content.search.enabled}）。 */
@@ -236,6 +250,10 @@ public class ContentReadService {
             return PageResponse.of(List.of(), query.page(), query.pageSize(), 0);
         }
         VodFilterCriteria criteria = criteria(query.filter(), query.legacy());
+        if (criteria != null && query.legacy().searchCache() && searchCache != null && searchCache.writable()
+                && searchOptimise != null && searchOptimise.frontendEnabled()) {
+            criteria = withSearchCache(criteria, query.filter());
+        }
         if (query.random()) {
             return randomPage(catalog, typeIds, criteria, query);
         }
@@ -364,6 +382,54 @@ public class ContentReadService {
                 f.keywordPatterns(), multiple(years), f.letters(), f.states(), f.versions(), f.actorPatterns(),
                 f.directorPatterns(), f.tagPatterns(), f.namePatterns(), ids, null, multiple(areas),
                 multiple(langs), multiple(classes), legacy);
+    }
+
+    /**
+     * 旧 Vod.php:404-459：wd、name、tag、class、actor、director 先查搜索缓存，结果不超过 1000 个的字段去掉 LIKE 条件、改为
+     * {@code vod_id IN (按键合并后的结果)}。旧版的取值都经过 {@code mac_param_url} 的 {@code htmlspecialchars}（ENT_COMPAT），缓存的键与
+     * 扫描用的也是这个形式。
+     */
+    private VodFilterCriteria withSearchCache(VodFilterCriteria criteria, VideoFilter f) {
+        Map<VodSearchField, String> words = new EnumMap<>(VodSearchField.class);
+        putWord(words, VodSearchField.KEYWORD, f.keyword());
+        putWord(words, VodSearchField.NAME, f.name());
+        putWord(words, VodSearchField.TAG, f.tag());
+        putWord(words, VodSearchField.CLASS, f.classes());
+        putWord(words, VodSearchField.ACTOR, f.actor());
+        putWord(words, VodSearchField.DIRECTOR, f.director());
+        if (words.isEmpty()) {
+            return criteria;
+        }
+        VodSearchCache.Resolution r = searchCache.resolve(words);
+        if (r.replaced().isEmpty()) {
+            return criteria;
+        }
+        return criteria.withSearchCache(r.replaced().contains(VodSearchField.KEYWORD),
+                r.replaced().contains(VodSearchField.NAME), r.replaced().contains(VodSearchField.TAG),
+                r.replaced().contains(VodSearchField.CLASS), r.replaced().contains(VodSearchField.ACTOR),
+                r.replaced().contains(VodSearchField.DIRECTOR), r.ids());
+    }
+
+    private static void putWord(Map<VodSearchField, String> words, VodSearchField field, String value) {
+        if (value != null) {
+            words.put(field, htmlspecialchars(value));
+        }
+    }
+
+    /** PHP 7.3/8.0 {@code htmlspecialchars($s)}（ENT_COMPAT：{@code & < > "}，不转单引号）。 */
+    static String htmlspecialchars(String s) {
+        StringBuilder sb = new StringBuilder(s.length() + 8);
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            switch (c) {
+                case '&' -> sb.append("&amp;");
+                case '<' -> sb.append("&lt;");
+                case '>' -> sb.append("&gt;");
+                case '"' -> sb.append("&quot;");
+                default -> sb.append(c);
+            }
+        }
+        return sb.toString();
     }
 
     private static VodLegacyCriteria legacyCriteria(VideoLegacyConditions l) {

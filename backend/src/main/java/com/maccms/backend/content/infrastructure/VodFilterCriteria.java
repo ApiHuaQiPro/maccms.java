@@ -26,13 +26,14 @@ import java.util.List;
  * @param langs            vod_lang IN（lang 逗号多值的各项；单值用 {@code lang}）
  * @param classesPatterns  vod_class 的 LIKE 模式（classes 逗号多值的各项，项之间 OR；单值用 {@code classesPattern}）
  * @param legacy           旧模板标签专属条件与 SSR 的 tid（B05，{@link VodLegacyCriteria}），追加在以上条件之后；{@code null} 时 SQL 文本不变
+ * @param searchIds        vod_id IN（B11 视频搜索缓存的结果 ID，替换掉对应字段的 LIKE 条件，旧 Vod.php:458-459）；{@code null} 时 SQL 文本不变
  */
 public record VodFilterCriteria(Integer level, String year, String area, String lang, String classesPattern,
                                 List<String> keywordPatterns, List<String> years, List<String> letters,
                                 List<String> states, List<String> versions, List<String> actorPatterns,
                                 List<String> directorPatterns, List<String> tagPatterns, List<String> namePatterns,
                                 List<Long> ids, List<Long> candidateIds, List<String> areas, List<String> langs,
-                                List<String> classesPatterns, VodLegacyCriteria legacy) {
+                                List<String> classesPatterns, VodLegacyCriteria legacy, List<Long> searchIds) {
 
     public VodFilterCriteria {
         if (keywordPatterns != null) {
@@ -54,6 +55,7 @@ public record VodFilterCriteria(Integer level, String year, String area, String 
         areas = nonEmpty("areas", areas);
         langs = nonEmpty("langs", langs);
         classesPatterns = nonEmpty("classesPatterns", classesPatterns);
+        searchIds = nonEmpty("searchIds", searchIds);
         if (year != null && years != null) {
             throw new IllegalArgumentException("year 与 years 只能设置一个");
         }
@@ -65,9 +67,21 @@ public record VodFilterCriteria(Integer level, String year, String area, String 
                 && keywordPatterns == null && years == null && letters == null && states == null && versions == null
                 && actorPatterns == null && directorPatterns == null && tagPatterns == null && namePatterns == null
                 && ids == null && candidateIds == null && areas == null && langs == null && classesPatterns == null
-                && legacy == null) {
+                && legacy == null && searchIds == null) {
             throw new IllegalArgumentException("没有任何条件时应使用不带条件的查询");
         }
+    }
+
+    /** 不含 B11 搜索缓存结果（{@code searchIds} 为 {@code null}）。 */
+    public VodFilterCriteria(Integer level, String year, String area, String lang, String classesPattern,
+                             List<String> keywordPatterns, List<String> years, List<String> letters,
+                             List<String> states, List<String> versions, List<String> actorPatterns,
+                             List<String> directorPatterns, List<String> tagPatterns, List<String> namePatterns,
+                             List<Long> ids, List<Long> candidateIds, List<String> areas, List<String> langs,
+                             List<String> classesPatterns, VodLegacyCriteria legacy) {
+        this(level, year, area, lang, classesPattern, keywordPatterns, years, letters, states, versions, actorPatterns,
+                directorPatterns, tagPatterns, namePatterns, ids, candidateIds, areas, langs, classesPatterns, legacy,
+                null);
     }
 
     /** 不含 B05 旧标签条件（{@code legacy} 为 {@code null}）。 */
@@ -108,7 +122,31 @@ public record VodFilterCriteria(Integer level, String year, String area, String 
     public VodFilterCriteria withCandidates(List<Long> newCandidateIds) {
         return new VodFilterCriteria(level, year, area, lang, classesPattern, keywordPatterns, years, letters, states,
                 versions, actorPatterns, directorPatterns, tagPatterns, namePatterns, ids, newCandidateIds, areas,
-                langs, classesPatterns, legacy);
+                langs, classesPatterns, legacy, searchIds);
+    }
+
+    /**
+     * B11 视频搜索缓存：去掉已改用缓存结果的包含匹配条件，另加 {@code vod_id IN (ids)}（ids 为空时不加）。没有剩下任何条件时返回
+     * {@code null}（按不带条件的查询）。
+     */
+    public VodFilterCriteria withSearchCache(boolean dropKeyword, boolean dropName, boolean dropTag, boolean dropClass,
+                                             boolean dropActor, boolean dropDirector, List<Long> cacheIds) {
+        List<Long> newSearchIds = cacheIds == null || cacheIds.isEmpty() ? searchIds : cacheIds;
+        String cp = dropClass ? null : classesPattern;
+        List<String> kp = dropKeyword ? null : keywordPatterns;
+        List<String> ap = dropActor ? null : actorPatterns;
+        List<String> dp = dropDirector ? null : directorPatterns;
+        List<String> tp = dropTag ? null : tagPatterns;
+        List<String> np = dropName ? null : namePatterns;
+        List<String> cps = dropClass ? null : classesPatterns;
+        if (level == null && year == null && area == null && lang == null && cp == null && kp == null && years == null
+                && letters == null && states == null && versions == null && ap == null && dp == null && tp == null
+                && np == null && ids == null && candidateIds == null && areas == null && langs == null && cps == null
+                && legacy == null && newSearchIds == null) {
+            return null;
+        }
+        return new VodFilterCriteria(level, year, area, lang, cp, kp, years, letters, states, versions, ap, dp, tp, np,
+                ids, candidateIds, areas, langs, cps, legacy, newSearchIds);
     }
 
     private static <T> List<T> nonEmpty(String field, List<T> v) {

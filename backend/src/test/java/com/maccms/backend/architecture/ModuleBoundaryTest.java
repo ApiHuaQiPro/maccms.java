@@ -42,6 +42,8 @@ class ModuleBoundaryTest {
      * 与 PHP 兼容的 cookie 读写 {@code PhpCookies}（均为纯内存计算，不读文件、不发网络请求）。
      * B09（MACC-33）加入按字节解析查询串与表单的 {@code PhpInput}（纯计算）与客户端 IP 的唯一来源 {@code ClientIpResolver}
      * （登录 IP、注册 IP 限额，D2 ④；只读请求对端与已登记的转发头）。
+     * B12（MACC-36，承接 D-B05-8）加入旧语言包 {@code LegacyLang}（jar 内资源，纯内存查找）：前台按 {@code app.lang} 输出旧版
+     * {@code lang()} 的文字。
      */
     private static final Set<String> SITE_COMMON = Set.of(
             "common.web.PageResponse", "common.web.ApiException", "common.web.ErrorCode", "common.web.SafeExceptionLog",
@@ -49,7 +51,7 @@ class ModuleBoundaryTest {
             "common.web.LegacyJson", "common.clientip.IpAddress",
             "common.session.SessionStore", "common.session.SessionState", "common.captcha.Captchas",
             "common.captcha.CaptchaSettings", "common.web.PhpCookies", "common.web.PhpInput",
-            "common.clientip.ClientIpResolver");
+            "common.clientip.ClientIpResolver", "common.lang.LegacyLang");
 
     /**
      * site 可用的 legacyconfig 类型（B02，MACC-26）：经 {@code LegacyConfigService} 读取 {@code extra/maccms.php} 并按字段并入站点设置。
@@ -58,7 +60,16 @@ class ModuleBoundaryTest {
     private static final Set<String> SITE_LEGACYCONFIG = Set.of(
             "legacyconfig.application.LegacyConfigService", "legacyconfig.application.LegacyConfigFile",
             "legacyconfig.application.LegacyConfigException", "legacyconfig.application.LegacyConfigConfiguration",
-            "legacyconfig.application.view.PhpArray", "legacyconfig.application.view.PhpValue");
+            "legacyconfig.application.view.PhpArray", "legacyconfig.application.view.PhpValue",
+            "legacyconfig.application.view.PhpValues");
+
+    /**
+     * admin 可用的 site 类型（B13，MACC-37，docs/architecture/22-b13-admin-content.md 第 8.3 节）：后台内容列表里指向前台详情页的链接
+     * （旧 {@code mac_url_vod_detail} 等，与前台共用同一套地址规则）。只有纯计算的地址生成类，不含页面、控制器与数据访问。扩充须同步 02 规范。
+     */
+    private static final Set<String> ADMIN_SITE = Set.of(
+            "site.application.LegacyUrlBuilder", "site.application.LegacyUrlStyle", "site.application.LegacyPage",
+            "site.application.SiteRoute");
 
     /**
      * infrastructure 之外允许出现数据访问类型的包（精确匹配，不含子包）：common.config 的数据源账号检查；common.write 的
@@ -282,11 +293,28 @@ class ModuleBoundaryTest {
                 boolean allowed = "site".equals(refModule)
                         || refPkg.equals("content.application") || refPkg.equals("content.application.view")
                         || refPkg.equals("member.application") || refPkg.equals("member.application.view")
+                        || refPkg.equals("comment.application") || refPkg.equals("comment.application.view")
                         || SITE_COMMON.contains(ref) || SITE_LEGACYCONFIG.contains(ref);
                 if (!allowed) {
                     out.add("site 不得引用 " + ref);
                 }
                 continue;
+            }
+            if ("admin".equals(module)) {
+                // 后台：不引用站点模块；application/infrastructure 不引用本模块的 web 与 config；web 不直接用 Mapper（经 application）
+                if ("site".equals(refModule) && !ADMIN_SITE.contains(ref)) {
+                    out.add("admin 不得引用 site：" + ref);
+                    continue;
+                }
+                if (refModule.equals("admin") && ("application".equals(layer) || "infrastructure".equals(layer))
+                        && ("web".equals(refLayer) || "config".equals(refLayer))) {
+                    out.add(layer + " 不得引用本模块 " + refLayer + "：" + ref);
+                    continue;
+                }
+                if (refModule.equals("admin") && "web".equals(layer) && "infrastructure".equals(refLayer)) {
+                    out.add("admin.web 不得直接引用 Mapper：" + ref);
+                    continue;
+                }
             }
             if ("common".equals(module)) {
                 if (!"common".equals(refModule)) {

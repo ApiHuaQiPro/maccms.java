@@ -8,6 +8,7 @@ import com.maccms.backend.site.web.view.ErrorPage;
 import com.maccms.backend.site.web.view.NavLink;
 import com.maccms.backend.site.web.view.PageChrome;
 import com.maccms.backend.site.web.view.PlaceholderPage;
+import com.maccms.backend.site.web.view.SiteVariant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -33,19 +34,27 @@ public class SitePages {
     private final SafeUrl searchAction;
     private final SafeUrl loginUrl;
     private final Optional<SafeUrl> logo;
+    private final Optional<SafeUrl> wapLogo;
 
     public SitePages(SiteSettings site, LegacyUrlBuilder urls) {
         this(site, urls, true);
     }
 
+    public SitePages(SiteSettings site, LegacyUrlBuilder urls, boolean externalLogo) {
+        this(site, urls, externalLogo, SiteVariants.none());
+    }
+
     /**
      * @param externalLogo 浏览器侧外部地址放行 W2（B05，K5）：关闭时 Logo 是外部主机（不是 base-url 的主机）的绝对地址就不输出，
-     *                     页眉只显示站名
+     *                     页眉只显示站名（手机 Logo 同样）
+     * @param variants     手机模板与语言选择（B12 承接 D-B05-8）：手机 Logo 取自它，每个请求的选择经 {@link SiteVariants#current()}
      */
-    public SitePages(SiteSettings site, LegacyUrlBuilder urls, boolean externalLogo) {
+    public SitePages(SiteSettings site, LegacyUrlBuilder urls, boolean externalLogo, SiteVariants variants) {
         this.site = site;
         String siteHost = BrowserAddress.hostOf(site.baseUrl());
         this.logo = site.logo().filter(l -> externalLogo
+                || BrowserAddress.classify(l.href(), siteHost).kind() == BrowserAddress.Kind.LOCAL);
+        this.wapLogo = variants.wapLogo().filter(l -> externalLogo
                 || BrowserAddress.classify(l.href(), siteHost).kind() == BrowserAddress.Kind.LOCAL);
         // 登录仍归旧 PHP（03 方案第 3.1、6.1 节）：只是页面级链接，不调用 ajax/suggest 等接口。搜索表单地址不变
         // （旧 vod/search 基址）：maccms.site.search.enabled=true 时由 Java 搜索页处理，否则仍归 PHP（09 方案第 7.1 节）
@@ -121,18 +130,23 @@ public class SitePages {
      * 会员页面外壳（B09）：noindex，没有 canonical；不查库（导航为空），与错误页相同。
      */
     PageChrome member(String heading) {
-        return chrome(heading + " - " + site.name(), site.description(), site.keywords(), Optional.empty(), true,
+        return chrome(SiteVariants.text(heading) + " - " + site.name(), site.description(), site.keywords(), Optional.empty(), true,
                 List.of());
     }
 
+    /** 错误页与提示页：旧版是 {@code lang(键)} 的标题与提示按所选语言包输出（{@link SiteVariants#text}；新版新增的文字原样）。 */
     private ErrorPage error(String heading, String message) {
-        return new ErrorPage(chrome(heading + " - " + site.name(), "", "", Optional.empty(), true, List.of()),
-                heading, message);
+        String h = SiteVariants.text(heading);
+        return new ErrorPage(chrome(h + " - " + site.name(), "", "", Optional.empty(), true, List.of()),
+                h, SiteVariants.text(message));
     }
 
     private PageChrome chrome(String fullTitle, String description, String keywords, Optional<SafeUrl> canonical,
                               boolean noindex, List<NavLink> nav) {
-        return new PageChrome(fullTitle, site.name(), site.homePath(), site.publicPath(STYLESHEET_PATH), logo,
-                site.icp(), description, keywords, canonical, noindex, List.copyOf(nav), searchAction, loginUrl);
+        SiteVariant variant = SiteVariants.current();
+        // 旧手机模板显示 site_waplogo；没配手机 Logo 时用主 Logo
+        Optional<SafeUrl> shown = variant.wap() && wapLogo.isPresent() ? wapLogo : logo;
+        return new PageChrome(fullTitle, site.name(), site.homePath(), site.publicPath(STYLESHEET_PATH), shown,
+                site.icp(), description, keywords, canonical, noindex, List.copyOf(nav), searchAction, loginUrl, variant);
     }
 }

@@ -21,14 +21,39 @@ class WriteRegistryTest {
     private static final String MEMBER = "com.maccms.backend.member.infrastructure.UserWriteMapper";
 
     @Test
-    void productionRegistryHasOnlyTheB09MemberWrites() {
-        // B07、B08 为空；B09（MACC-33）只登记会员模块对 mac_user 的插入与更新
+    void productionRegistryHasOnlyTheMemberWrites() {
+        // B07、B08 为空；B09（MACC-33）登记会员模块对 mac_user 的插入与更新；B10（MACC-34）登记会员权益与财务的写入；
+        // B11（MACC-35）登记内容计数、视频搜索缓存、评论与留言
         assertThat(WriteRegistry.registered().allows("member", "mac_user", WriteOperation.UPDATE)).isTrue();
         assertThat(WriteRegistry.registered().allows("member", "mac_user", WriteOperation.INSERT)).isTrue();
         assertThat(WriteRegistry.registered().allows("member", "mac_user", WriteOperation.DELETE)).isFalse();
-        assertThat(WriteRegistry.registered().allows("member", "mac_plog", WriteOperation.INSERT)).isFalse();
+        assertThat(WriteRegistry.registered().allows("member", "mac_plog", WriteOperation.INSERT)).isTrue();
+        assertThat(WriteRegistry.registered().allows("member", "mac_plog", WriteOperation.UPDATE)).isFalse();
+        assertThat(WriteRegistry.registered().allows("member", "mac_card", WriteOperation.INSERT)).isFalse();
+        assertThat(WriteRegistry.registered().allows("member", "mac_card", WriteOperation.DELETE)).isFalse();
+        assertThat(WriteRegistry.registered().allows("member", "mac_order", WriteOperation.UPDATE)).isFalse();
+        assertThat(WriteRegistry.registered().allows("member", "mac_group", WriteOperation.UPDATE)).isFalse();
         assertThat(WriteRegistry.registered().allows("content", "mac_user", WriteOperation.UPDATE)).isFalse();
-        assertThat(WriteRegistry.registered().permissions()).hasSize(2);
+        assertThat(WriteRegistry.registered().allows("content", "mac_vod", WriteOperation.UPDATE)).isTrue();
+        // B13（MACC-37）：后台内容管理的新增与删除
+        assertThat(WriteRegistry.registered().allows("content", "mac_vod", WriteOperation.INSERT)).isTrue();
+        assertThat(WriteRegistry.registered().allows("content", "mac_vod", WriteOperation.DELETE)).isTrue();
+        assertThat(WriteRegistry.registered().allows("content", "mac_link", WriteOperation.UPDATE)).isTrue();
+        assertThat(WriteRegistry.registered().allows("content", "mac_annex", WriteOperation.INSERT)).isTrue();
+        assertThat(WriteRegistry.registered().allows("content", "mac_comment", WriteOperation.DELETE)).isFalse();
+        assertThat(WriteRegistry.registered().allows("member", "mac_annex", WriteOperation.INSERT)).isFalse();
+        // B12（MACC-36）：后台"清理缓存"删除过期的视频搜索缓存；管理员的增删改
+        assertThat(WriteRegistry.registered().allows("content", "mac_vod_search", WriteOperation.DELETE)).isTrue();
+        assertThat(WriteRegistry.registered().allows("admin", "mac_admin", WriteOperation.INSERT)).isTrue();
+        assertThat(WriteRegistry.registered().allows("admin", "mac_admin", WriteOperation.UPDATE)).isTrue();
+        assertThat(WriteRegistry.registered().allows("admin", "mac_admin", WriteOperation.DELETE)).isTrue();
+        assertThat(WriteRegistry.registered().allows("admin", "mac_user", WriteOperation.UPDATE)).isFalse();
+        assertThat(WriteRegistry.registered().allows("member", "mac_admin", WriteOperation.UPDATE)).isFalse();
+        assertThat(WriteRegistry.registered().allows("comment", "mac_comment", WriteOperation.DELETE)).isTrue();
+        assertThat(WriteRegistry.registered().allows("comment", "mac_gbook", WriteOperation.UPDATE)).isTrue();
+        assertThat(WriteRegistry.registered().allows("comment", "mac_gbook", WriteOperation.DELETE)).isTrue();
+        assertThat(WriteRegistry.registered().allows("comment", "mac_vod", WriteOperation.UPDATE)).isFalse();
+        assertThat(WriteRegistry.registered().permissions()).hasSize(51);
     }
 
     @Test

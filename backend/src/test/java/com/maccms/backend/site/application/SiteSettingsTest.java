@@ -252,17 +252,24 @@ class SiteSettingsTest {
     @Test
     void unapprovedFeaturesMustStayOff() {
         assertThat(SiteSettings.from(with("canonicalRedirect", "false"))).isNotNull();
-        assertThat(SiteSettings.from(with("hitCounterEnabled", "FALSE"))).isNotNull();
         assertThatThrownBy(() -> SiteSettings.from(with("canonicalRedirect", "true")))
                 .hasMessageContaining("maccms.site.canonical-redirect");
-        assertThatThrownBy(() -> SiteSettings.from(with("hitCounterEnabled", "true")))
+    }
+
+    /** 点击计数（B11 起由新版写入）：默认关闭，true/false 不分大小写，其他取值启动失败。 */
+    @Test
+    void hitCounterIsOffUnlessExplicitlyTrue() {
+        assertThat(SiteSettings.from(with("hitCounterEnabled", null)).hitCounter()).isFalse();
+        assertThat(SiteSettings.from(with("hitCounterEnabled", "FALSE")).hitCounter()).isFalse();
+        assertThat(SiteSettings.from(with("hitCounterEnabled", " True ")).hitCounter()).isTrue();
+        assertThatThrownBy(() -> SiteSettings.from(with("hitCounterEnabled", "yes")))
                 .hasMessageContaining("maccms.site.hit-counter-enabled");
     }
 
     @Test
     void allErrorsAreReportedTogether() {
         SiteProperties p = new SiteProperties("true", "", "ftp://x/", null, null, null, "javascript:x", "maybe", null,
-                "true", "true");
+                "true", "maybe");
         assertThatThrownBy(() -> SiteSettings.from(p)).hasMessageContainingAll("maccms.site.name",
                 "maccms.site.base-url", "maccms.site.logo-url", "maccms.site.status", "maccms.site.canonical-redirect",
                 "maccms.site.hit-counter-enabled");

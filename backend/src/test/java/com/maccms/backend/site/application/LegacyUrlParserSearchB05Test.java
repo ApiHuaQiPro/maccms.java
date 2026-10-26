@@ -80,7 +80,8 @@ class LegacyUrlParserSearchB05Test {
             assertThat(f.ids()).isEqualTo("1,,2");
             assertThat(f.tid()).isEqualTo(6L);
             assertThat(f.toVideoFilter().letters()).hasSize(10);
-            assertThat(f.toLegacyConditions()).isEqualTo(VideoLegacyConditions.builder().tid(6L).build());
+            assertThat(f.toLegacyConditions())
+                    .isEqualTo(VideoLegacyConditions.builder().tid(6L).searchCache(true).build());
             assertThat(f.usesContainsMatch()).isTrue();
             assertThat(f.firstContainsMatchParameter()).isEqualTo("actor");
             assertThat(filters(style, "letter=A").usesContainsMatch()).as("精确匹配不受开关").isFalse();

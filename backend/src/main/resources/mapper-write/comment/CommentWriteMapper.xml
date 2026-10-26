@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+  B11 评论与留言的写入（docs/architecture/20-b11-comment-gbook-counters.md 第 4 节；登记 WriteRegistry：comment / mac_comment INSERT、UPDATE，
+  mac_gbook INSERT）。全部是单表语句；计数用原子表达式（旧版 setInc 本身也是 x = x + 1）。列越界（mediumint unsigned）、超长（varchar）
+  或 4 字节字符（utf8 列）时严格模式拒绝整条语句，调用方按"保存失败"处理。
+-->
+<mapper namespace="com.maccms.backend.comment.infrastructure.CommentWriteMapper">
+
+    <!--
+      发表评论（旧 Comment::saveData 的 insert，application/common/model/Comment.php:236-239；字段取值见 index/controller/Comment.php:65-101）。
+      comment_reply、comment_report 旧版会取客户端提交的值（批量赋值），新版固定为 0（20 文档 D-B11-3）。
+    -->
+    <insert id="insertComment">
+        INSERT INTO mac_comment (comment_mid, comment_rid, comment_pid, user_id, comment_status, comment_name, comment_ip,
+                                 comment_time, comment_content, comment_up, comment_down, comment_reply, comment_report)
+        VALUES (#{mid}, #{rid}, #{pid}, #{userId}, #{status}, #{name}, #{ip}, #{now}, #{content}, 0, 0, 0, 0)
+    </insert>
+
+    <update id="reportComment">
+        UPDATE mac_comment SET comment_report = comment_report + 1 WHERE comment_id = #{id}
+    </update>
+
+    <update id="diggComment">
+        UPDATE mac_comment
+        SET comment_up = comment_up + IF(#{up}, 1, 0), comment_down = comment_down + IF(#{up}, 0, 1)
+        WHERE comment_id = #{id}
+    </update>
+
+    <!--
+      发表留言（旧 Gbook::saveData 的 insert，application/common/model/Gbook.php:432-435；字段取值见 index/controller/Gbook.php:56-85）。
+      gbook_reply 旧版固定为空串；gbook_reply_time 旧版会取客户端提交的值（批量赋值），新版固定为 0（D-B11-3）。
+    -->
+    <insert id="insertGbook">
+        INSERT INTO mac_gbook (gbook_rid, user_id, gbook_status, gbook_name, gbook_ip, gbook_time, gbook_reply_time,
+                               gbook_content, gbook_reply)
+        VALUES (#{rid}, #{userId}, #{status}, #{name}, #{ip}, #{now}, 0, #{content}, '')
+    </insert>
+</mapper>

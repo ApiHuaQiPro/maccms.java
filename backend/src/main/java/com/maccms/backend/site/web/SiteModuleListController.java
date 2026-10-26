@@ -49,13 +49,16 @@ public class SiteModuleListController {
     private final SiteFeatures features;
     private final boolean searchEnabled;
     private final SearchThrottle throttle;
+    private final org.springframework.beans.factory.ObjectProvider<SiteVerifyGate> gate;
 
     public SiteModuleListController(SiteHtmlRenderer renderer, SitePages sitePages, LegacyUrlBuilder urls,
                                     LegacyUrlParser parser, ImageUrlNormalizer images, RichTextCache richText,
                                     ContentReadService content, ArticleReadService articles, TopicReadService topics,
                                     ActorReadService actors, RoleReadService roles, WebsiteReadService websites,
                                     VideoPlotReadService plots, LibrarySearchService search, SiteFeatures features,
-                                    Environment environment, SearchThrottle throttle) {
+                                    Environment environment, SearchThrottle throttle,
+                                    org.springframework.beans.factory.ObjectProvider<SiteVerifyGate> gate) {
+        this.gate = gate;
         this.renderer = renderer;
         this.throttle = throttle;
         this.parser = parser;
@@ -101,10 +104,9 @@ public class SiteModuleListController {
         String rawPath = request.getRequestURI().substring(request.getContextPath().length());
         ModuleListPage requested = requested(rawPath);
         if (requested == null
-                || (requested.show() ? !features.show() : !searchEnabled || features.searchPageClosed(requested.ajax()))
+                || (requested.show() ? !features.show() : !searchEnabled)
                 || (requested.ajax() && !features.ajaxPage())) {
-            // 旧版 app.show/app.search/app.ajax_page 关闭时报"…功能关闭中"（Base.php:27-79）；旧 show_verify/search_verify=1
-            // 要求验证码，验证码接线（B08/B11）之前临时关闭（SiteFeatures）。新版不提供该入口
+            // 旧版 app.show/app.search/app.ajax_page 关闭时报"…功能关闭中"（Base.php:27-79）。新版不提供该入口
             throw new ApiException(ErrorCode.NOT_FOUND, "页面不存在");
         }
         ModuleListView view;
@@ -118,6 +120,19 @@ public class SiteModuleListController {
                 ResponseEntity<String> limited = throttle.check(m.route().pageNo(), request, response);
                 if (limited != null) {
                     return limited;
+                }
+            }
+            // 旧 check_search / check_show 的验证码（Base.php:35-42、63-70，B11）：ajax 入口不验证
+            boolean needsVerify = requested.show() ? features.showNeedsVerify(requested.ajax())
+                    : features.searchNeedsVerify(requested.ajax());
+            if (needsVerify) {
+                SiteVerifyGate g = gate.getIfAvailable();
+                if (g == null) {
+                    throw new ApiException(ErrorCode.NOT_FOUND, "页面不存在");
+                }
+                java.util.Optional<ResponseEntity<String>> verify = g.check(request, requested.show() ? "show" : "search");
+                if (verify.isPresent()) {
+                    return verify.get();
                 }
             }
             // 先组装视图模型（读取数据）再渲染：读取失败的业务异常（404/503）不能被渲染器包装成 500

@@ -234,10 +234,11 @@ class SiteAjaxMvcTest {
                 .getContentAsByteArray()).isEmpty();
     }
 
+    /** {@code ajax/hits|digg|score|referer|verify_check} 自 B11 起实现（InteractionGoldenMySqlIT 对照黄金），不再列入。 */
     @Test
     void otherAjaxActionsAndRewriteFormsAre404() throws Exception {
-        for (String p : List.of("/index.php/ajax/hits?mid=1&id=1", "/index.php/ajax/digg", "/index.php/ajax/pwd",
-                "/index.php/ajax/verify_check", "/ajax/data?mid=1", "/qrcode/index?url=x", "/index.php/other/data")) {
+        for (String p : List.of("/index.php/ajax/pwd", "/ajax/data?mid=1", "/qrcode/index?url=x",
+                "/index.php/other/data")) {
             assertThat(fetch(p).getResponse().getStatus()).as(p).isEqualTo(404);
         }
     }

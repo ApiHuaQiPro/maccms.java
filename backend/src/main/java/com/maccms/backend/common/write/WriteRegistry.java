@@ -21,11 +21,73 @@ public final class WriteRegistry {
      * <ul>
      * <li>B09（MACC-33，18 文档第 6 节）：会员注册（条件插入）；登录、注销轮换、资料与改密、密保重置、头像、推广关系、
      * {@code checkLogin} 到期单行降级。</li>
+     * <li>B10（MACC-34，19 文档第 6.1 节）：记录与购买（mac_ulog）、积分流水（mac_plog）、卡密认领（mac_card）、提现（mac_cash）、
+     * 本地建单（mac_order）、推广访问（mac_visit）；mac_user 的积分、冻结、升级与批量到期降级沿用 B09 已登记的
+     * {@code member/mac_user/UPDATE}。</li>
+     * <li>B11（MACC-35，20 文档第 10 节）：内容计数（点击、顶踩、评分、网址来路、Provide 的 detail_inc_hits）只改六张内容表的计数列
+     * （content / UPDATE）；视频搜索缓存（content / mac_vod_search INSERT、UPDATE）；评论发表、举报与顶踩（comment / mac_comment
+     * INSERT、UPDATE）；留言发表（comment / mac_gbook INSERT）。ajax/referer 的来路访问记录沿用 B10 已登记的
+     * {@code member/mac_visit/INSERT}（同一条条件插入，{@code user_id = 0}）。</li>
+     * <li>B12（MACC-36，21 文档第 5 节）：管理员登录记录、新增、编辑、删除与状态（admin / mac_admin INSERT、UPDATE、DELETE）；后台"清理缓存"
+     * 删除过期的视频搜索缓存（content / mac_vod_search DELETE）。</li>
+     * <li>B13（MACC-37，22 文档第 6 节）：后台内容管理——六张内容表的新增与删除（content / INSERT、DELETE；整行覆盖与字段修改沿用 B11
+     * 已登记的 content / UPDATE）；友情链接、分类、附件的增删改（content / mac_link、mac_type、mac_annex）；评论的删除与留言的修改、删除
+     * （comment / mac_comment DELETE、mac_gbook UPDATE、DELETE；评论的修改沿用 B11 已登记的 comment / mac_comment UPDATE）。
+     * 新增视频时更新视频搜索缓存沿用 B11 已登记的 content / mac_vod_search INSERT、UPDATE。</li>
      * </ul>
      */
     static final List<WritePermission> REGISTERED = List.of(
             new WritePermission("member", "mac_user", WriteOperation.INSERT, "B09"),
-            new WritePermission("member", "mac_user", WriteOperation.UPDATE, "B09"));
+            new WritePermission("member", "mac_user", WriteOperation.UPDATE, "B09"),
+            new WritePermission("member", "mac_ulog", WriteOperation.INSERT, "B10"),
+            new WritePermission("member", "mac_ulog", WriteOperation.UPDATE, "B10"),
+            new WritePermission("member", "mac_ulog", WriteOperation.DELETE, "B10"),
+            new WritePermission("member", "mac_plog", WriteOperation.INSERT, "B10"),
+            new WritePermission("member", "mac_plog", WriteOperation.DELETE, "B10"),
+            new WritePermission("member", "mac_card", WriteOperation.UPDATE, "B10"),
+            new WritePermission("member", "mac_cash", WriteOperation.INSERT, "B10"),
+            new WritePermission("member", "mac_cash", WriteOperation.DELETE, "B10"),
+            new WritePermission("member", "mac_order", WriteOperation.INSERT, "B10"),
+            new WritePermission("member", "mac_visit", WriteOperation.INSERT, "B10"),
+            new WritePermission("content", "mac_vod", WriteOperation.UPDATE, "B11"),
+            new WritePermission("content", "mac_art", WriteOperation.UPDATE, "B11"),
+            new WritePermission("content", "mac_topic", WriteOperation.UPDATE, "B11"),
+            new WritePermission("content", "mac_actor", WriteOperation.UPDATE, "B11"),
+            new WritePermission("content", "mac_role", WriteOperation.UPDATE, "B11"),
+            new WritePermission("content", "mac_website", WriteOperation.UPDATE, "B11"),
+            new WritePermission("content", "mac_vod_search", WriteOperation.INSERT, "B11"),
+            new WritePermission("content", "mac_vod_search", WriteOperation.UPDATE, "B11"),
+            new WritePermission("comment", "mac_comment", WriteOperation.INSERT, "B11"),
+            new WritePermission("comment", "mac_comment", WriteOperation.UPDATE, "B11"),
+            new WritePermission("comment", "mac_gbook", WriteOperation.INSERT, "B11"),
+            new WritePermission("admin", "mac_admin", WriteOperation.INSERT, "B12"),
+            new WritePermission("admin", "mac_admin", WriteOperation.UPDATE, "B12"),
+            new WritePermission("admin", "mac_admin", WriteOperation.DELETE, "B12"),
+            new WritePermission("content", "mac_vod_search", WriteOperation.DELETE, "B12"),
+            new WritePermission("content", "mac_vod", WriteOperation.INSERT, "B13"),
+            new WritePermission("content", "mac_vod", WriteOperation.DELETE, "B13"),
+            new WritePermission("content", "mac_art", WriteOperation.INSERT, "B13"),
+            new WritePermission("content", "mac_art", WriteOperation.DELETE, "B13"),
+            new WritePermission("content", "mac_topic", WriteOperation.INSERT, "B13"),
+            new WritePermission("content", "mac_topic", WriteOperation.DELETE, "B13"),
+            new WritePermission("content", "mac_actor", WriteOperation.INSERT, "B13"),
+            new WritePermission("content", "mac_actor", WriteOperation.DELETE, "B13"),
+            new WritePermission("content", "mac_role", WriteOperation.INSERT, "B13"),
+            new WritePermission("content", "mac_role", WriteOperation.DELETE, "B13"),
+            new WritePermission("content", "mac_website", WriteOperation.INSERT, "B13"),
+            new WritePermission("content", "mac_website", WriteOperation.DELETE, "B13"),
+            new WritePermission("content", "mac_link", WriteOperation.INSERT, "B13"),
+            new WritePermission("content", "mac_link", WriteOperation.UPDATE, "B13"),
+            new WritePermission("content", "mac_link", WriteOperation.DELETE, "B13"),
+            new WritePermission("content", "mac_type", WriteOperation.INSERT, "B13"),
+            new WritePermission("content", "mac_type", WriteOperation.UPDATE, "B13"),
+            new WritePermission("content", "mac_type", WriteOperation.DELETE, "B13"),
+            new WritePermission("content", "mac_annex", WriteOperation.INSERT, "B13"),
+            new WritePermission("content", "mac_annex", WriteOperation.UPDATE, "B13"),
+            new WritePermission("content", "mac_annex", WriteOperation.DELETE, "B13"),
+            new WritePermission("comment", "mac_comment", WriteOperation.DELETE, "B13"),
+            new WritePermission("comment", "mac_gbook", WriteOperation.UPDATE, "B13"),
+            new WritePermission("comment", "mac_gbook", WriteOperation.DELETE, "B13"));
 
     /** 写 Mapper 的全限定名：{@code com.maccms.backend.<module>.infrastructure[.子包].<类型>}。 */
     private static final Pattern MAPPER_TYPE = Pattern.compile(

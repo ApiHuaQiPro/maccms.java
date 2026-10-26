@@ -259,6 +259,69 @@ public final class LegacyUrlBuilder {
         return macUrl("user/" + action, all);
     }
 
+    /**
+     * 会员中心列表页的链接（B10，19 文档第 2 节），等价 ThinkPHP {@code url('user/<action>', ['page'=>$n] + 筛选)}：第 1 页不带页码；
+     * 筛选（{@code mid}、{@code type}、{@code level} 等）的值是数字或小写字母，随分页保留（旧版不保留，D-B10-7）。
+     */
+    public String userPage(String action, Map<String, String> filters, int page) {
+        if (action == null || !USER_ACTION.matcher(action).matches()) {
+            throw new IllegalArgumentException("会员页操作名不合法");
+        }
+        if (page < 1 || page > 1_000_000) {
+            throw new IllegalArgumentException("页码越界");
+        }
+        Map<String, String> sorted = new TreeMap<>();
+        for (Map.Entry<String, String> e : filters.entrySet()) {
+            if (!USER_ACTION.matcher(e.getKey()).matches() || !e.getValue().matches("[a-z0-9]{1,16}")) {
+                throw new IllegalArgumentException("会员页参数不合法");
+            }
+            sorted.put(e.getKey(), e.getValue());
+        }
+        Map<String, String> all = new LinkedHashMap<>();
+        all.put("page", pageValue(page));
+        all.putAll(sorted);
+        return macUrl("user/" + action, all);
+    }
+
+    /** B11 由 Java 承接的评论、留言与 ajax 接口（{@link #action} 只生成这些地址）。 */
+    public static final List<String> ACTION_MODELS = List.of("comment/index", "comment/ajax", "comment/savedata",
+            "comment/report", "comment/digg", "gbook/index", "gbook/ajax", "gbook/savedata", "gbook/report",
+            "ajax/hits", "ajax/digg", "ajax/score", "ajax/verify_check");
+    private static final Pattern ACTION_VALUE = Pattern.compile("[A-Za-z0-9_]{1,32}");
+
+    /**
+     * 评论、留言与 ajax 接口的地址（B11），等价 {@code mac_url('<模块>/<操作>', $vars)}：参数按键排序、空值与 {@code page=1} 去掉，按
+     * ThinkPHP {@code /键/值} 追加在路径后。值只能是字母、数字与下划线（编号、类型）。
+     */
+    public String action(String model, Map<String, String> vars) {
+        if (!ACTION_MODELS.contains(model)) {
+            throw new IllegalArgumentException("不支持的地址");
+        }
+        Map<String, String> sorted = new TreeMap<>();
+        for (Map.Entry<String, String> e : vars.entrySet()) {
+            if (!USER_ACTION.matcher(e.getKey()).matches()) {
+                throw new IllegalArgumentException("参数名不合法");
+            }
+            String v = e.getValue();
+            if (v == null || v.isEmpty() || v.equals("0") || (e.getKey().equals("page") && v.equals("1"))) {
+                continue;
+            }
+            if (!ACTION_VALUE.matcher(v).matches()) {
+                throw new IllegalArgumentException("参数值不合法");
+            }
+            sorted.put(e.getKey(), v);
+        }
+        return macUrl(model, new LinkedHashMap<>(sorted));
+    }
+
+    /** 旧 {@code mac_url_*($info)} 在 {@code $info} 为空时的地址（B10：会员记录里已删除的内容，只有模块/操作、没有编号）。 */
+    public String bare(String model) {
+        if (!List.of("vod/detail", "vod/type", "art/detail", "topic/detail", "actor/detail").contains(model)) {
+            throw new IllegalArgumentException("不支持的地址");
+        }
+        return macUrl(model, new LinkedHashMap<>());
+    }
+
     // ---- mac_url 的参数预处理（common.php:1734-1746）：去掉 empty() 的值，page=1 置空，按键排序 ----
 
     private static Map<String, String> filterVars(Map<String, String> filters, List<String> allowed, int page) {

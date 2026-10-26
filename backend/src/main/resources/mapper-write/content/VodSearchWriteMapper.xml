@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+  B11 视频搜索缓存的写入（docs/architecture/20-b11-comment-gbook-counters.md 第 6 节；登记 WriteRegistry：content / mac_vod_search INSERT、
+  UPDATE）。旧 VodSearch::getResultIdList（application/common/model/VodSearch.php:43-59）：未命中时插入一行（命中 1 次），命中时命中次数
+  +1 并刷新最近命中时间。旧版的命中次数是先读后写（并发时丢计数），新版是原子 +1。
+-->
+<mapper namespace="com.maccms.backend.content.infrastructure.VodSearchWriteMapper">
+
+    <insert id="insertResult">
+        INSERT INTO mac_vod_search (search_key, search_word, search_field, search_hit_count, search_last_hit_time,
+                                    search_update_time, search_result_count, search_result_ids)
+        VALUES (#{key}, #{word}, #{field}, 1, #{now}, #{now}, #{count}, #{ids})
+    </insert>
+
+    <update id="touchResult">
+        UPDATE mac_vod_search
+        SET search_hit_count = search_hit_count + 1, search_last_hit_time = #{now}
+        WHERE search_key = #{key}
+    </update>
+
+    <!--
+      B12 后台"清理缓存"（admin/controller/Index.php:158-167 → VodSearch::clearOldResult(true)，VodSearch.php:146-167）：强制清理时不排除
+      vod_actor，删除 search_update_time 早于"现在 − 缓存分钟数 × 60"的全部行（登记 content / mac_vod_search DELETE，B12）。
+    -->
+    <delete id="deleteUpdatedBefore">
+        DELETE FROM mac_vod_search
+        WHERE search_update_time &lt; #{before}
+    </delete>
+
+    <!-- B13 后台新增视频：追加到包含它的已有结果（旧 VodSearch.php:121-125 拼接 SQL，新版绑定参数） -->
+    <update id="appendResult">
+        UPDATE mac_vod_search
+        SET search_update_time = #{now}, search_result_count = search_result_count + 1,
+            search_result_ids = CONCAT(search_result_ids, ',', #{id})
+        WHERE search_key = #{key}
+    </update>
+</mapper>
