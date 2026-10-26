@@ -69,6 +69,7 @@ public class MemberAccountService {
     private final RandomGenerator random;
     private final String sitePath;
     private final LongConsumer invited;
+    private final PortraitAnnex annex;
 
     /**
      * @param writer   可写数据源关闭时为 null
@@ -88,6 +89,13 @@ public class MemberAccountService {
     public MemberAccountService(MemberMapper mapper, MemberWriteMapper writer, MemberSessionService sessions,
                                 PortraitStore portraits, MemberSettings settings, Clock clock, RandomGenerator random,
                                 String sitePath, LongConsumer invited) {
+        this(mapper, writer, sessions, portraits, settings, clock, random, sitePath, invited, (f, t, z) -> { });
+    }
+
+    /** @param annex 头像写入成功后登记附件（D-B09-9） */
+    public MemberAccountService(MemberMapper mapper, MemberWriteMapper writer, MemberSessionService sessions,
+                                PortraitStore portraits, MemberSettings settings, Clock clock, RandomGenerator random,
+                                String sitePath, LongConsumer invited, PortraitAnnex annex) {
         if (sitePath == null || !sitePath.startsWith("/") || !sitePath.endsWith("/")) {
             throw new IllegalArgumentException("站点根路径须以 / 开头和结尾");
         }
@@ -101,6 +109,7 @@ public class MemberAccountService {
         this.random = random;
         this.sitePath = sitePath;
         this.invited = invited;
+        this.annex = annex;
     }
 
     /** 可写数据源已打开。 */
@@ -516,7 +525,29 @@ public class MemberAccountService {
         if (writer.updatePortrait(member.userId(), path) != 1) {
             return failed("更新会员头像信息失败！");
         }
+        registerAnnex(path, imgdata, out.jpeg().length);
         return new PortraitReply(1, "文件上传成功！", sitePath + path + "?" + random.nextInt(1000, 10_000), false);
+    }
+
+    /**
+     * D-B09-9：登记附件（同一文件已登记时不重复）。类型同旧版：文件上传为 {@code image}，{@code imgdata} 为 data URL 里的图片类型；大小按新版
+     * 重新编码后的 JPEG（KB，保留两位小数，写库时按整数列取整）。登记失败不影响上传结果（旧版不检查 saveData 的返回值）。
+     */
+    private void registerAnnex(String path, String imgdata, int bytes) {
+        String type = "image";
+        if (imgdata != null && !imgdata.isEmpty()) {
+            java.util.regex.Matcher m = java.util.regex.Pattern.compile("^data:\\s*image/(\\w+);base64,").matcher(imgdata);
+            if (m.find()) {
+                type = m.group(1);
+            }
+        }
+        String size = java.math.BigDecimal.valueOf(bytes / 1024.0).setScale(2, java.math.RoundingMode.HALF_UP)
+                .stripTrailingZeros().toPlainString();
+        try {
+            annex.register(path, type, size);
+        } catch (RuntimeException e) {
+            log.warn("member portrait annex registration failed: {}", e.getClass().getSimpleName());
+        }
     }
 
     private PortraitReply failed(String msg) {

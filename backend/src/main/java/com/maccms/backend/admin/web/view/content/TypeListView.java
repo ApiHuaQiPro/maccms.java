@@ -11,6 +11,11 @@ public record TypeListView(AdminHead head, LegacyLang lang, LegacyAdminUrl url, 
 
     /** 旧 {@code mac_get_mid_text($mid)}（application/common.php:1072-1087）；不在表中的取值为空串。 */
     public String midText(long mid) {
+        return midText(lang, mid);
+    }
+
+    /** 同上（评论列表、评论表单也用）。 */
+    public static String midText(LegacyLang lang, long mid) {
         String key = switch ((int) mid) {
             case 1 -> "vod";
             case 2 -> "art";

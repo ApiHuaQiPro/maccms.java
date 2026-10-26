@@ -26,7 +26,7 @@ import java.util.Map;
  */
 public record ContentListView(AdminHead head, LegacyLang lang, LegacyAdminUrl url, AdminRowPage list, Map<String, String> param,
                               String wd, String curUrl, FrontLinks links, List<AdminTypeNode> types, long detail, String today,
-                              Map<String, Object> extra) {
+                              Map<String, Object> extra) implements BrowserText {
 
     private static final ZoneId PRC = ZoneId.of("Asia/Shanghai");
     private static final DateTimeFormatter DATE_TIME = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
@@ -110,6 +110,29 @@ public record ContentListView(AdminHead head, LegacyLang lang, LegacyAdminUrl ur
         String filtered = new String(com.maccms.backend.content.application.PhpText.filterXss(
                 s.getBytes(java.nio.charset.StandardCharsets.UTF_8)), java.nio.charset.StandardCharsets.UTF_8);
         return com.maccms.backend.comment.application.LegacyHtml.displayText(filtered);
+    }
+
+    /** 旧 {@code mac_get_mid_text($mid)}。 */
+    public String midText(long mid) {
+        return TypeListView.midText(lang, mid);
+    }
+
+    /** 旧 {@code long2ip($ip)}（评论、留言的 IP 列；按无符号 32 位）。 */
+    public static String ip(long ip) {
+        long v = ip & 0xFFFFFFFFL;
+        return (v >> 24) + "." + ((v >> 16) & 255) + "." + ((v >> 8) & 255) + "." + (v & 255);
+    }
+
+    /** 评论所属内容（旧 {@code $vo.data}；取不到时为 null）。 */
+    public AdminRow related(AdminRow comment) {
+        Object m = extra.get("related");
+        return m instanceof Map<?, ?> map && map.get(comment.s("comment_id")) instanceof AdminRow r ? r : null;
+    }
+
+    /** 评论、留言内容在浏览器里显示的文字（旧 {@code mac_restore_htmlfilter} 后再 {@code htmlspecialchars} 输出）。 */
+    public String restored(String s) {
+        return new String(com.maccms.backend.content.application.PhpText.restoreHtmlFilter(
+                s.getBytes(java.nio.charset.StandardCharsets.UTF_8)), java.nio.charset.StandardCharsets.UTF_8);
     }
 
     /** 视频列表"播放器"列（旧 {@code vod_play_from}、{@code vod_down_from} 的 {@code $$$} 换成逗号，以 {@code -} 连接）。 */

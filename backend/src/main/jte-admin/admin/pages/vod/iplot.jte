@@ -8,12 +8,12 @@
 `, content = @`
 <div class="page-container p10">
     <div class="showpic" style="display:none;"><img class="showpic_img" width="120" height="160" referrerPolicy="no-referrer"></div>
-    
+
     <form class="layui-form layui-form-pane" method="post" action="">
-        <input type="hidden" name="vod_id" value="${page.info().s("vod_id")}">
-        <input type="hidden" name="vod_name" value="${page.info().s("vod_name")}">
-        <input type="hidden" name="vod_en" value="${page.info().s("vod_en")}">
-        <input type="hidden" name="type_id" value="${page.info().s("type_id")}">
+        <input type="hidden" name="vod_id" value="${page.v("vod_id")}">
+        <input type="hidden" name="vod_name" value="${page.v("vod_name")}">
+        <input type="hidden" name="vod_en" value="${page.v("vod_en")}">
+        <input type="hidden" name="type_id" value="${page.v("type_id")}">
 
         <div class="layui-tab">
             <ul class="layui-tab-title ">
@@ -26,10 +26,10 @@
                         @for(PlotDto vo : page.<java.util.List<com.maccms.backend.content.application.view.PlotDto>>x("plotList"))
                         <div class="layui-form-item" data-i="${vo.index()}">
                             <label class="layui-form-label">${page.lang().get("admin/vod/plot")}${vo.index()}：</label>
-                            <div class="layui-input-inline w500"><input type="text" name="vod_plot_name[]" class="layui-input" value="${vo.name()}" placeholder="${page.lang().get("admin/vod/plot_name")}"></div>
+                            <div class="layui-input-inline w500"><input type="text" name="vod_plot_name[]" class="layui-input" value="${page.attr(vo.name())}" placeholder="${page.lang().get("admin/vod/plot_name")}"></div>
                             <div class="layui-input-inline w400 p10"><a href="javascript:void(0)" class="j-editor-clear">${page.lang().get("clear")}</a>&nbsp;<a href="javascript:void(0)" class="j-editor-remove">${page.lang().get("del")}</a>&nbsp;<a href="javascript:void(0)" class="j-editor-up">${page.lang().get("admin/vod/move_up")}</a>&nbsp;<a href="javascript:void(0)" class="j-editor-down">${page.lang().get("admin/vod/move_down")}</a><br></div>
                             <div class="p10 m20"> </div>
-                            <div class="layui-input-block "><textarea id="vod_plot_detail${vo.index()}" name="vod_plot_detail[]" type="text/plain" style="width:100%;height:150px">${page.strCorrect(vo.detail())}</textarea></div>
+                            <div class="layui-input-block "><textarea id="vod_plot_detail${vo.index()}" name="vod_plot_detail[]" type="text/plain" style="width:100%;height:150px">${page.text(page.strCorrect(vo.detail()))}</textarea></div>
                             </div>
                         @endfor
                     </div>

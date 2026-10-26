@@ -434,6 +434,22 @@ class AdminContentGoldenMySqlIT {
             if (mp != null && !mp.isNull()) {
                 Multipart m = multipart(mp);
                 b.contentType(m.contentType()).content(m.body());
+                // MockMvc 不解析原始 multipart 正文：同样的各部分另外放进请求（容器里由 Tomcat 解析）
+                b.with(r -> {
+                    for (JsonNode p : mp) {
+                        org.springframework.mock.web.MockPart part = p.has("value")
+                                ? new org.springframework.mock.web.MockPart(p.get("name").asString(),
+                                        p.get("value").asString().getBytes(StandardCharsets.UTF_8))
+                                : new org.springframework.mock.web.MockPart(p.get("name").asString(),
+                                        p.get("filename").asString(), Base64.getDecoder().decode(p.get("content").asString()));
+                        if (!p.has("value")) {
+                            part.getHeaders().setContentType(org.springframework.http.MediaType.parseMediaType(
+                                    p.get("type").asString()));
+                        }
+                        r.addPart(part);
+                    }
+                    return r;
+                });
             } else {
                 String post = req.get("post").asString();
                 if (phpToken != null && javaToken != null) {
@@ -645,6 +661,8 @@ class AdminContentGoldenMySqlIT {
                 Path f = site.resolve(e.getKey());
                 Files.createDirectories(f.getParent());
                 Files.write(f, Base64.getDecoder().decode(e.getValue().asString()));
+                // 与黄金脚本相同的固定修改时间（附件目录浏览显示修改时间）
+                Files.setLastModifiedTime(f, java.nio.file.attribute.FileTime.fromMillis(1_700_000_000_000L));
             }
         }
     }

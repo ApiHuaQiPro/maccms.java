@@ -6,9 +6,9 @@
 `, content = @`
 <div class="page-container p10">
     <div class="showpic" style="display:none;"><img class="showpic_img" width="120" height="160" referrerPolicy="no-referrer"></div>
-    
+
     <form class="layui-form layui-form-pane" method="post" action="">
-        <input type="hidden" name="role_id" value="${page.info().s("role_id")}">
+        <input type="hidden" name="role_id" value="${page.v("role_id")}">
 
         <div class="layui-tab">
             <ul class="layui-tab-title ">
@@ -18,7 +18,7 @@
             <div class="layui-tab-content">
 
                 <div class="layui-tab-item layui-show">
-                    
+
                 <div class="layui-form-item">
                     <label class="layui-form-label">${page.lang().get("param")}：</label>
                     <div class="layui-input-inline w150">
@@ -57,15 +57,15 @@
                     <div class="layui-form-item">
                         <label class="layui-form-label">${page.lang().get("vod_name")}：</label>
                         <div class="layui-input-inline w400">
-                            <input type="text" class="layui-input" value="${page.xs("vodName")}" readonly="readonly" placeholder="" name="">
+                            <input type="text" class="layui-input" value="${page.attr(page.xs("vodName"))}" readonly="readonly" placeholder="" name="">
                         </div>
                         <label class="layui-form-label">${page.lang().get("vod_id")}：</label>
                         <div class="layui-input-inline w70">
-                            <input type="text" class="layui-input" value="${page.info().s("role_rid")}" readonly="readonly" placeholder="" name="role_rid">
+                            <input type="text" class="layui-input" value="${page.v("role_rid")}" readonly="readonly" placeholder="" name="role_rid">
                         </div>
                         <label class="layui-form-label">${page.lang().get("vod")}${page.lang().get("type")}：</label>
                         <div class="layui-input-inline w70">
-                            <input type="text" class="layui-input" value="${page.xs("vodTypeName")}" readonly="readonly" placeholder="" name="">
+                            <input type="text" class="layui-input" value="${page.attr(page.xs("vodTypeName"))}" readonly="readonly" placeholder="" name="">
                         </div>
                     </div>
 
@@ -73,44 +73,44 @@
                 <div class="layui-form-item">
                     <label class="layui-form-label">${page.lang().get("role_name")}：</label>
                     <div class="layui-input-inline w200">
-                        <input type="text" class="layui-input" value="${page.info().s("role_name")}" placeholder="" name="role_name">
+                        <input type="text" class="layui-input" value="${page.v("role_name")}" placeholder="" name="role_name">
                     </div>
                     <label class="layui-form-label">${page.lang().get("actor_name")}：</label>
                     <div class="layui-input-inline w200">
-                        <input type="text" class="layui-input" value="${page.info().s("role_actor")}" placeholder="" name="role_actor">
+                        <input type="text" class="layui-input" value="${page.v("role_actor")}" placeholder="" name="role_actor">
                     </div>
                     <label class="layui-form-label">${page.lang().get("sort")}：</label>
                     <div class="layui-input-inline w200">
-                        <input type="text" class="layui-input" value="${page.info().s("role_sort")}" placeholder="" name="role_sort">
+                        <input type="text" class="layui-input" value="${page.v("role_sort")}" placeholder="" name="role_sort">
                     </div>
                 </div>
 
                 <div class="layui-form-item">
                     <label class="layui-form-label">${page.lang().get("en")}：</label>
                     <div class="layui-input-inline w200">
-                        <input type="text" class="layui-input" value="${page.info().s("role_en")}" placeholder="" name="role_en">
+                        <input type="text" class="layui-input" value="${page.v("role_en")}" placeholder="" name="role_en">
                     </div>
                     <label class="layui-form-label">${page.lang().get("letter")}：</label>
                     <div class="layui-input-inline w200">
-                        <input type="text" class="layui-input" value="${page.info().s("role_letter")}" placeholder="" name="role_letter">
+                        <input type="text" class="layui-input" value="${page.v("role_letter")}" placeholder="" name="role_letter">
                     </div>
                     <label class="layui-form-label">${page.lang().get("color")}：</label>
                     <div class="layui-input-inline w200">
-                        <input type="text" class="layui-input color" value="${page.info().s("role_color")}" placeholder="" name="role_color">
+                        <input type="text" class="layui-input color" value="${page.v("role_color")}" placeholder="" name="role_color">
                     </div>
                 </div>
 
                     <div class="layui-form-item">
                         <label class="layui-form-label">${page.lang().get("remarks")}：</label>
                         <div class="layui-input-inline w400">
-                            <input type="text" class="layui-input" value="${page.info().s("role_remarks")}" placeholder="" name="role_remarks">
+                            <input type="text" class="layui-input" value="${page.v("role_remarks")}" placeholder="" name="role_remarks">
                         </div>
                     </div>
 
                 <div class="layui-form-item">
                     <label class="layui-form-label">${page.lang().get("pic")}：</label>
                     <div class="layui-input-inline w400 upload">
-                        <input type="text" class="layui-input upload-input" style="max-width:100%;" value="${page.info().s("role_pic")}" placeholder="" id="role_pic" name="role_pic">
+                        <input type="text" class="layui-input upload-input" style="max-width:100%;" value="${page.v("role_pic")}" placeholder="" id="role_pic" name="role_pic">
                     </div>
                     <div class="layui-input-inline ">
                         <button type="button" class="layui-btn layui-upload" lay-data="" id="upload1">${page.lang().get("upload_pic")}</button>
@@ -121,10 +121,10 @@
                     <div class="layui-form-item">
                         <label class="layui-form-label">${page.lang().get("content")}：</label>
                         <div class="layui-input-block">
-                            <textarea id="role_content" name="role_content" type="text/plain" style="width:99%;height:300px">${page.contentImg(page.info().s("role_content"))}</textarea>
+                            <textarea id="role_content" name="role_content" type="text/plain" style="width:99%;height:300px">${page.text(page.contentImg(page.info().s("role_content")))}</textarea>
                         </div>
                     </div>
-                    
+
         </div>
 
 
@@ -132,11 +132,11 @@
                         <div class="layui-form-item">
                             <label class="layui-form-label">${page.lang().get("up")}：</label>
                             <div class="layui-input-inline ">
-                                <input type="text" class="layui-input" value="${page.info().s("role_up")}" placeholder="" id="role_up" name="role_up">
+                                <input type="text" class="layui-input" value="${page.v("role_up")}" placeholder="" id="role_up" name="role_up">
                             </div>
                             <label class="layui-form-label">${page.lang().get("hate")}：</label>
                             <div class="layui-input-inline ">
-                                <input type="text" class="layui-input" value="${page.info().s("role_down")}" placeholder="" id="role_down" name="role_down">
+                                <input type="text" class="layui-input" value="${page.v("role_down")}" placeholder="" id="role_down" name="role_down">
                             </div>
                             <button class="layui-btn" type="button" id="btn_rnd">${page.lang().get("rnd_make")}</button>
                         </div>
@@ -144,48 +144,48 @@
                         <div class="layui-form-item">
                             <label class="layui-form-label">${page.lang().get("hits")}：</label>
                             <div class="layui-input-inline ">
-                                <input type="text" class="layui-input" value="${page.info().s("role_hits")}" placeholder="" id="role_hits" name="role_hits">
+                                <input type="text" class="layui-input" value="${page.v("role_hits")}" placeholder="" id="role_hits" name="role_hits">
                             </div>
                             <label class="layui-form-label">${page.lang().get("hits_month")}：</label>
                             <div class="layui-input-inline ">
-                                <input type="text" class="layui-input" value="${page.info().s("role_hits_month")}" placeholder="" id="role_hits_month" name="role_hits_month" >
+                                <input type="text" class="layui-input" value="${page.v("role_hits_month")}" placeholder="" id="role_hits_month" name="role_hits_month" >
                             </div>
                         </div>
 
                         <div class="layui-form-item">
                             <label class="layui-form-label">${page.lang().get("hits_week")}：</label>
                             <div class="layui-input-inline ">
-                                <input type="text" class="layui-input" value="${page.info().s("role_hits_week")}" placeholder="" id="role_hits_week" name="role_hits_week">
+                                <input type="text" class="layui-input" value="${page.v("role_hits_week")}" placeholder="" id="role_hits_week" name="role_hits_week">
                             </div>
                             <label class="layui-form-label">${page.lang().get("hits_day")}：</label>
                             <div class="layui-input-inline ">
-                                <input type="text" class="layui-input " value="${page.info().s("role_hits_day")}" placeholder="" id="role_hits_day" name="role_hits_day">
+                                <input type="text" class="layui-input " value="${page.v("role_hits_day")}" placeholder="" id="role_hits_day" name="role_hits_day">
                             </div>
                         </div>
 
                         <div class="layui-form-item">
                             <label class="layui-form-label">${page.lang().get("score")}：</label>
                             <div class="layui-input-inline ">
-                                <input type="text" class="layui-input" value="${page.info().s("role_score")}" placeholder="" id="role_score" name="role_score">
+                                <input type="text" class="layui-input" value="${page.v("role_score")}" placeholder="" id="role_score" name="role_score">
                             </div>
                             <label class="layui-form-label">${page.lang().get("score_all")}：</label>
                             <div class="layui-input-inline ">
-                                <input type="text" class="layui-input" value="${page.info().s("role_score_all")}" placeholder="" id="role_score_all" name="role_score_all">
+                                <input type="text" class="layui-input" value="${page.v("role_score_all")}" placeholder="" id="role_score_all" name="role_score_all">
                             </div>
                             <label class="layui-form-label">${page.lang().get("score_num")}：</label>
                             <div class="layui-input-inline ">
-                                <input type="text" class="layui-input" value="${page.info().s("role_score_num")}" placeholder="" id="role_score_num" name="role_score_num">
+                                <input type="text" class="layui-input" value="${page.v("role_score_num")}" placeholder="" id="role_score_num" name="role_score_num">
                             </div>
                         </div>
 
                         <div class="layui-form-item">
                             <label class="layui-form-label">${page.lang().get("tpl")}：</label>
                             <div class="layui-input-inline ">
-                                <input type="text" class="layui-input" value="${page.info().s("role_tpl")}" placeholder="" name="role_tpl">
+                                <input type="text" class="layui-input" value="${page.v("role_tpl")}" placeholder="" name="role_tpl">
                             </div>
                             <label class="layui-form-label">${page.lang().get("jumpurl")}：</label>
                             <div class="layui-input-inline ">
-                                <input type="text" class="layui-input" value="${page.info().s("role_jumpurl")}" placeholder="" name="role_jumpurl">
+                                <input type="text" class="layui-input" value="${page.v("role_jumpurl")}" placeholder="" name="role_jumpurl">
                             </div>
                         </div>
                     </div>

@@ -110,9 +110,9 @@
                 <td><input type="checkbox" name="ids[]" value="${vo.s("website_id")}" class="layui-checkbox checkbox-ids" lay-skin="primary"></td>
                 <td>${vo.s("website_id")}</td>
                 <td>[${page.typeName(vo.n("type_id"))}] <a target="_blank" class="layui-badge-rim " href="${page.links().website(vo)}">${vo.s("website_name")}</a> @if(vo.n("website_status") == 0) <span class="layui-badge">${page.lang().get("reviewed_not")}</span>@endif @if(vo.n("website_lock") == 1) <span class="layui-badge">${page.lang().get("lock")}</span>@endif</td>
-                <td><a class="layui-badge-rim " href="${page.outLink(vo.s("website_jumpurl"))}" target="_blank">${vo.s("website_jumpurl")}</a></td>
+                <td><a class="layui-badge-rim " href="${page.attr(page.outLink(vo.s("website_jumpurl")))}" target="_blank">${page.text(vo.s("website_jumpurl"))}</a></td>
                 <td>${vo.s("website_hits")}</td>
-                <td>${vo.s("website_referer")}</td>
+                <td>${page.text(vo.s("website_referer"))}</td>
                 <td><a data-href="${page.url().build("index/select") + "?tab=website&col=website_level&tpl=select_level&url=website/field&ids=" + vo.s("website_id")}" data-width="270" data-height="100" class=" j-select"><span class="layui-badge layui-bg-orange">${vo.s("website_level")}</span></a></td>
                 <td>@if(page.made(vo, "website_time", "website_time_make"))<a target="_blank" class="layui-badge layui-bg-green " href="${page.links().website(vo)}">Y</a>@else<a class="layui-badge" href="${page.url().build("make/make?ac=info&tab=website") + "?ids=" + vo.s("website_id") + "&ref=1"}">N</a>@endif</td>
                 <td>@if(page.isToday(vo.n("website_time")))<font color="#FF0000">${page.day(vo.n("website_time"))}</font>@else${page.day(vo.n("website_time"))}@endif</td>

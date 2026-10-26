@@ -16,6 +16,7 @@ import com.maccms.backend.admin.web.AdminSessions;
 import com.maccms.backend.admin.web.jte.StaticTemplates;
 import com.maccms.backend.common.captcha.CaptchaSettings;
 import com.maccms.backend.content.application.ContentAdminServices;
+import com.maccms.backend.comment.application.CommentAdminService;
 import com.maccms.backend.common.lang.LegacyLang;
 import com.maccms.backend.legacyconfig.application.LegacyConfigConfiguration;
 import com.maccms.backend.legacyconfig.application.LegacyConfigException;
@@ -172,8 +173,9 @@ public class AdminConfiguration {
     @Bean
     AdminContentActions adminContentActions(AdminEndpoint endpoint, AdminSettings settings, AdminResponses responses,
                                             AdminRandom random, ObjectProvider<Clock> clock,
-                                            ObjectProvider<ContentAdminServices> content) {
-        return new AdminContentActions(endpoint, settings, responses, content.getIfAvailable(), random,
+                                            ObjectProvider<ContentAdminServices> content,
+                                            ObjectProvider<CommentAdminService> comments) {
+        return new AdminContentActions(endpoint, settings, responses, content.getIfAvailable(), comments.getIfAvailable(), random,
                 clock.getIfAvailable(Clock::systemUTC));
     }
 

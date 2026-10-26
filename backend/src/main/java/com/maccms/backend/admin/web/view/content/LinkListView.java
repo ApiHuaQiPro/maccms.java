@@ -12,5 +12,5 @@ import com.maccms.backend.content.application.view.AdminRowPage;
  * @param curUrl 分页地址（旧 {@code url('link/index', $param)}，页码与条数为占位）
  */
 public record LinkListView(AdminHead head, LegacyLang lang, LegacyAdminUrl url, AdminRowPage list, String wd,
-                           String curUrl) {
+                           String curUrl) implements BrowserText {
 }

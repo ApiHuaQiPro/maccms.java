@@ -16,4 +16,11 @@ public class CommentInfrastructureConfiguration {
     CommentWriteMapper commentWriteMapper(WriteDatabase db) {
         return db.mapper(CommentWriteMapper.class);
     }
+
+    /** B13 后台评论与留言管理的写入。 */
+    @Bean
+    @ConditionalOnWriteEnabled
+    CommentAdminWrites commentAdminWrites(WriteDatabase db) {
+        return new CommentAdminWrites(db.mapper(CommentAdminWriteMapper.class));
+    }
 }

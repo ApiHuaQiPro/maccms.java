@@ -8,7 +8,7 @@
     <div class="showpic" style="display:none;"><img class="showpic_img" width="120" height="160" referrerPolicy="no-referrer"></div>
 
     <form class="layui-form layui-form-pane" method="post" action="">
-        <input type="hidden" name="type_id" value="${page.info().s("type_id")}">
+        <input type="hidden" name="type_id" value="${page.v("type_id")}">
         <input type="hidden" name="__token__" value="${page.token()}" />
         <blockquote class="layui-elem-quote layui-quote-nm">
             ${AdminText.trusted(page.lang().get("admin/type/tip"))}
@@ -32,7 +32,7 @@
                     <select name="type_pid">
                         <option value="0">${page.lang().get("admin/type/top_type")}</option>
                         @for(AdminRow vo : page.parents())
-                        <option value="${vo.s("type_id")}" selected="${page.parentSelected(vo)}">${vo.s("type_name")}</option>
+                        <option value="${vo.s("type_id")}" selected="${page.parentSelected(vo)}">${page.text(vo.s("type_name"))}</option>
                         @endfor
                     </select>
             </div>
@@ -47,77 +47,77 @@
         <div class="layui-form-item">
             <label class="layui-form-label">${page.lang().get("sort")}：</label>
             <div class="layui-input-inline w100">
-                <input type="text" class="layui-input" value="${page.info().s("type_sort")}" placeholder="" id="type_sort" name="type_sort">
+                <input type="text" class="layui-input" value="${page.v("type_sort")}" placeholder="" id="type_sort" name="type_sort">
             </div>
         </div>
         <div class="layui-form-item">
             <label class="layui-form-label">${page.lang().get("name")}：</label>
             <div class="layui-input-block">
-                <input type="text" class="layui-input" lay-verify="type_name" value="${page.info().s("type_name")}" placeholder="" id="type_name" name="type_name">
+                <input type="text" class="layui-input" lay-verify="type_name" value="${page.v("type_name")}" placeholder="" id="type_name" name="type_name">
             </div>
         </div>
         <div class="layui-form-item">
             <label class="layui-form-label">${page.lang().get("en")}：</label>
             <div class="layui-input-block">
-                <input type="text" class="layui-input" value="${page.info().s("type_en")}" placeholder="" id="type_en" name="type_en">
+                <input type="text" class="layui-input" value="${page.v("type_en")}" placeholder="" id="type_en" name="type_en">
             </div>
         </div>
         <div class="layui-form-item">
             <label class="layui-form-label">${page.lang().get("admin/type/type_tpl")}：</label>
             <div class="layui-input-block">
-                <input type="text" class="layui-input" lay-verify="type_tpl" value="${page.info().s("type_tpl")}" placeholder="" id="type_tpl" name="type_tpl">
+                <input type="text" class="layui-input" lay-verify="type_tpl" value="${page.v("type_tpl")}" placeholder="" id="type_tpl" name="type_tpl">
             </div>
         </div>
         <div class="layui-form-item">
             <label class="layui-form-label">${page.lang().get("admin/type/show_tpl")}：</label>
             <div class="layui-input-block">
-                <input type="text" class="layui-input" lay-verify="type_tpl_list" value="${page.info().s("type_tpl_list")}" placeholder="" id="type_tpl_list" name="type_tpl_list">
+                <input type="text" class="layui-input" lay-verify="type_tpl_list" value="${page.v("type_tpl_list")}" placeholder="" id="type_tpl_list" name="type_tpl_list">
             </div>
         </div>
         <div class="layui-form-item">
             <label class="layui-form-label">${page.lang().get("admin/type/detail_tpl")}：</label>
             <div class="layui-input-block">
-                <input type="text" class="layui-input" value="${page.info().s("type_tpl_detail")}" placeholder="" id="type_tpl_detail" name="type_tpl_detail">
+                <input type="text" class="layui-input" value="${page.v("type_tpl_detail")}" placeholder="" id="type_tpl_detail" name="type_tpl_detail">
             </div>
         </div>
 
         <div class="layui-form-item vod-list">
             <label class="layui-form-label">${page.lang().get("admin/type/play_tpl")}：</label>
             <div class="layui-input-block">
-                <input type="text" class="layui-input" value="${page.info().s("type_tpl_play")}" placeholder="" id="type_tpl_play" name="type_tpl_play">
+                <input type="text" class="layui-input" value="${page.v("type_tpl_play")}" placeholder="" id="type_tpl_play" name="type_tpl_play">
             </div>
         </div>
         <div class="layui-form-item vod-list">
             <label class="layui-form-label">${page.lang().get("admin/type/down_tpl")}：</label>
             <div class="layui-input-block">
-                <input type="text" class="layui-input" value="${page.info().s("type_tpl_down")}" placeholder="" id="type_tpl_down" name="type_tpl_down">
+                <input type="text" class="layui-input" value="${page.v("type_tpl_down")}" placeholder="" id="type_tpl_down" name="type_tpl_down">
             </div>
         </div>
 
         <div class="layui-form-item">
             <label class="layui-form-label">${page.lang().get("seo_title")}：</label>
             <div class="layui-input-block">
-                <input type="text" class="layui-input" value="${page.info().s("type_title")}" placeholder="" id="type_title" name="type_title">
+                <input type="text" class="layui-input" value="${page.v("type_title")}" placeholder="" id="type_title" name="type_title">
             </div>
         </div>
 
         <div class="layui-form-item">
             <label class="layui-form-label">${page.lang().get("seo_key")}：</label>
             <div class="layui-input-block">
-                <input type="text" class="layui-input" value="${page.info().s("type_key")}" placeholder="" id="type_key" name="type_key">
+                <input type="text" class="layui-input" value="${page.v("type_key")}" placeholder="" id="type_key" name="type_key">
             </div>
         </div>
         <div class="layui-form-item">
             <label class="layui-form-label">${page.lang().get("seo_des")}：</label>
             <div class="layui-input-block">
-                <input type="text" class="layui-input" value="${page.info().s("type_des")}" placeholder="" id="type_des" name="type_des">
+                <input type="text" class="layui-input" value="${page.v("type_des")}" placeholder="" id="type_des" name="type_des">
             </div>
         </div>
 
         <div class="layui-form-item">
             <label class="layui-form-label">${page.lang().get("admin/type/logo")}：</label>
             <div class="layui-input-inline w600">
-                <input type="text" name="type_logo" placeholder="" value="${page.info().s("type_logo")}" class="layui-input upload-input">
+                <input type="text" name="type_logo" placeholder="" value="${page.v("type_logo")}" class="layui-input upload-input">
             </div>
             <div class="layui-input-inline ">
                 <button type="button" class="layui-btn layui-upload" lay-data="{data:{thumb:0,thumb_class:'type_logo'}}" id="upload1">${page.lang().get("upload_pic")}</button>
@@ -126,7 +126,7 @@
         <div class="layui-form-item">
             <label class="layui-form-label">${page.lang().get("admin/type/pic")}</label>
             <div class="layui-input-inline w600">
-                <input type="text" name="type_pic" placeholder="" value="${page.info().s("type_pic")}" class="layui-input upload-input">
+                <input type="text" name="type_pic" placeholder="" value="${page.v("type_pic")}" class="layui-input upload-input">
             </div>
             <div class="layui-input-inline ">
                 <button type="button" class="layui-btn layui-upload" lay-data="{data:{thumb:0,thumb_class:'type_pic'}}" id="upload1">${page.lang().get("upload_pic")}</button>
@@ -135,7 +135,7 @@
         <div class="layui-form-item">
             <label class="layui-form-label">${page.lang().get("jumpurl")}：</label>
             <div class="layui-input-block">
-                <input type="text" class="layui-input" value="${page.info().s("type_jumpurl")}" placeholder="" id="type_jumpurl" name="type_jumpurl">
+                <input type="text" class="layui-input" value="${page.v("type_jumpurl")}" placeholder="" id="type_jumpurl" name="type_jumpurl">
             </div>
         </div>
 

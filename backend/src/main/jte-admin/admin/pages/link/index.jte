@@ -41,16 +41,16 @@
             <tr>
                 <td><input type="checkbox" name="ids[]" value="${vo.s("link_id")}" class="layui-checkbox checkbox-ids" lay-skin="primary"></td>
                 <td>${vo.s("link_id")}</td>
-                <td><input type="input" name="link_sort[]" value="${vo.s("link_sort")}" class="layui-input"></td>
+                <td><input type="input" name="link_sort[]" value="${page.attr(vo.s("link_sort"))}" class="layui-input"></td>
                 <td>
                     <select name="link_type[]">
                         <option value="0" selected="${vo.n("link_type") == 0}">${page.lang().get("admin/link/text_link")}</option>
                         <option value="1" selected="${vo.n("link_type") == 1}">${page.lang().get("admin/link/pic_link")}</option>
                     </select>
                 </td>
-                <td><input type="input" name="link_name[]" value="${vo.s("link_name")}" class="layui-input"></td>
-                <td><input type="input" name="link_url[]" value="${vo.s("link_url")}" class="layui-input"></td>
-                <td><input type="input" name="link_logo[]" value="${vo.s("link_logo")}" class="layui-input"></td>
+                <td><input type="input" name="link_name[]" value="${page.attr(vo.s("link_name"))}" class="layui-input"></td>
+                <td><input type="input" name="link_url[]" value="${page.attr(vo.s("link_url"))}" class="layui-input"></td>
+                <td><input type="input" name="link_logo[]" value="${page.attr(vo.s("link_logo"))}" class="layui-input"></td>
                 <td>
                     <a class="layui-badge-rim j-ajax" data-href="${page.url().build("index/check_back_link") + "?url=" + vo.s("link_url")}" refresh="no" href="javascript:;" title="${page.lang().get("detect")}">${page.lang().get("detect")}</a>
                     <a class="layui-badge-rim j-iframe" data-href="${page.url().build("info?id=" + vo.s("link_id"))}" href="javascript:;" title="${page.lang().get("edit")}">${page.lang().get("edit")}</a>

@@ -1474,4 +1474,9 @@
         DELETE FROM mac_vod WHERE vod_name = #{name} AND vod_id &lt;&gt; #{keep}
     </delete>
 
+
+    <!-- 附件检查（旧 Annex::check）：文件已不存在的登记行按文件名删除 -->
+    <delete id="deleteAnnexByFile">
+        DELETE FROM mac_annex WHERE annex_file = #{file}
+    </delete>
 </mapper>

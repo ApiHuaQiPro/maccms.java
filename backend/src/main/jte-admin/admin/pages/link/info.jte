@@ -3,29 +3,29 @@
 @template.admin.layout.page(head = page.head(), lang = page.lang(), content = @`
 <div class="page-container p10">
     <form class="layui-form layui-form-pane" method="post" action="">
-        <input id="link_id" name="link_id" type="hidden" value="${page.info().s("link_id")}">
+        <input id="link_id" name="link_id" type="hidden" value="${page.v("link_id")}">
         <div class="layui-form-item">
             <label class="layui-form-label">${page.lang().get("name")}：</label>
             <div class="layui-input-block">
-                <input type="text" class="layui-input" value="${page.info().s("link_name")}" lay-verify="link_name" placeholder="" id="link_name" name="link_name">
+                <input type="text" class="layui-input" value="${page.v("link_name")}" lay-verify="link_name" placeholder="" id="link_name" name="link_name">
             </div>
         </div>
         <div class="layui-form-item">
             <label class="layui-form-label">${page.lang().get("url")}：</label>
             <div class="layui-input-block">
-                <input type="text" class="layui-input" value="${page.info().s("link_url")}" lay-verify="link_url" placeholder="" id="link_url" name="link_url">
+                <input type="text" class="layui-input" value="${page.v("link_url")}" lay-verify="link_url" placeholder="" id="link_url" name="link_url">
             </div>
         </div>
         <div class="layui-form-item">
             <label class="layui-form-label">${page.lang().get("logo")}：</label>
             <div class="layui-input-block">
-                <input type="text" class="layui-input" value="${page.info().s("link_logo")}" placeholder="" id="link_logo" name="link_logo">
+                <input type="text" class="layui-input" value="${page.v("link_logo")}" placeholder="" id="link_logo" name="link_logo">
             </div>
         </div>
         <div class="layui-form-item">
             <label class="layui-form-label">${page.lang().get("sort")}：</label>
             <div class="layui-input-inline w100">
-                <input type="text" class="layui-input" value="${page.info().s("link_sort")}" placeholder="" id="link_sort" name="link_sort">
+                <input type="text" class="layui-input" value="${page.v("link_sort")}" placeholder="" id="link_sort" name="link_sort">
             </div>
         </div>
         <div class="layui-form-item">

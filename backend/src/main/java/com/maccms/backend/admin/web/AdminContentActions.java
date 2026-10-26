@@ -18,7 +18,12 @@ import com.maccms.backend.content.application.AdminPaging;
 import com.maccms.backend.admin.application.LegacyAdminUrl;
 import com.maccms.backend.admin.web.view.JumpPage;
 import com.maccms.backend.admin.web.view.content.ImgConfig;
+import com.maccms.backend.comment.application.CommentAdminService;
 import com.maccms.backend.content.application.AdminPlayers;
+import com.maccms.backend.content.application.AdminUploadService;
+import com.maccms.backend.content.application.view.AnnexDirectory;
+import com.maccms.backend.content.application.view.UploadReply;
+import com.maccms.backend.admin.web.view.content.AnnexFileView;
 import com.maccms.backend.content.application.ContentAdminServices;
 import com.maccms.backend.content.application.LegacyMultiValue;
 import com.maccms.backend.content.application.view.AdminProgress;
@@ -35,6 +40,7 @@ import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.random.RandomGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,15 +63,17 @@ public class AdminContentActions {
     private final AdminSettings settings;
     private final AdminResponses responses;
     private final ContentAdminServices s;
+    private final CommentAdminService comments;
     private final RandomGenerator random;
     private final Clock clock;
 
     public AdminContentActions(AdminEndpoint endpoint, AdminSettings settings, AdminResponses responses, ContentAdminServices services,
-                               AdminRandom random, Clock clock) {
+                               CommentAdminService comments, AdminRandom random, Clock clock) {
         this.endpoint = endpoint;
         this.settings = settings;
         this.responses = responses;
         this.s = services;
+        this.comments = comments;
         this.random = random.generator();
         this.clock = clock;
     }
@@ -134,6 +142,30 @@ public class AdminContentActions {
             case "vod/batch" -> ctx.params().values().isEmpty() ? vodBatchPage(ctx)
                     : progress(ctx, s.vods().batch(param, settings.lang()::get), "vod/batch");
             case "vod/updatetoday" -> today(s.vods().today(param));
+            // 评论、留言（旧 admin/controller/Comment.php、Gbook.php；info 的 POST 用 input()）
+            case "comment/data" -> commentList(ctx, param);
+            case "comment/info" -> ctx.post_() ? result(ctx, comments.saveComment(param)) : commentInfo(ctx);
+            case "comment/del" -> result(ctx, comments.deleteComments(param));
+            case "comment/field" -> result(ctx, comments.commentField(param));
+            case "gbook/data" -> gbookList(ctx, param);
+            case "gbook/info" -> ctx.post_() ? result(ctx, comments.saveGbook(param)) : gbookInfo(ctx);
+            case "gbook/del" -> result(ctx, comments.deleteGbooks(param));
+            case "gbook/field" -> result(ctx, comments.gbookField(param));
+            // 附件、图片、上传（旧 admin/controller/Annex.php、Images.php、Upload.php）
+            case "annex/data" -> annexList(ctx, param);
+            case "annex/file" -> annexFiles(ctx);
+            case "annex/info" -> ctx.post_() ? result(ctx, s.annexes().save(form(ctx.post()))) : annexInfo(ctx);
+            case "annex/del" -> result(ctx, s.annexes().delete(param));
+            case "annex/check" -> progress(ctx, s.annexes().check(param, settings.lang()::get), "annex/check");
+            case "annex/init" -> {
+                AdminProgress pr = s.annexes().init(param, settings.lang()::get);
+                yield pr == null ? simplePage(ctx, null, Map.of(), "init") : progress(ctx, pr, "annex/init");
+            }
+            case "images/data" -> responses.text("");
+            case "images/opt" -> simplePage(ctx, null, imagesOpt(ctx), "opt");
+            case "images/del" -> imagesDel(ctx, param);
+            case "images/sync" -> imagesSync(ctx, param);
+            case "upload/upload" -> upload(ctx);
             default -> null;
         };
     }
@@ -356,6 +388,155 @@ public class AdminContentActions {
         return m;
     }
 
+    // ------------------------------------------------------------------ 评论、留言
+
+    /**
+     * 旧 Comment::data：每条评论另取所属内容（旧 {@code Comment::listData} 按模块取视频、文章、专题、演员、角色、网址的整行，取不到时为空，
+     * 页面显示"删除数据"）；旧版另取的回复与头像页面不用，不再读取。
+     */
+    private ResponseEntity<String> commentList(Ctx ctx, PhpForm p) {
+        AdminRowPage list = comments.comments(p, paging(ctx));
+        Map<String, AdminRow> related = new LinkedHashMap<>();
+        for (AdminRow r : list.rows()) {
+            byte[] rid = r.s("comment_rid").getBytes(StandardCharsets.UTF_8);
+            Optional<AdminRow> data = switch (r.s("comment_mid")) {
+                case "1" -> s.vods().info(rid);
+                case "2" -> s.arts().info(rid);
+                case "3" -> s.topics().info(rid);
+                case "8" -> s.actors().info(rid);
+                case "9" -> s.roles().info(rid);
+                case "11" -> s.websites().info(rid);
+                default -> Optional.empty();
+            };
+            data.ifPresent(d -> related.put(r.s("comment_id"), d));
+        }
+        ContentListView page = listView(ctx, "admin/comment/title", list, "comment/data", List.of(), "",
+                Map.of("related", related));
+        return responses.page(ctx.ajax(), HttpStatus.OK, t -> t.adminPagesCommentIndex(page));
+    }
+
+    private ResponseEntity<String> commentInfo(Ctx ctx) {
+        AdminRow info = comments.comment(ctx.params().scalar("id")).orElse(EMPTY);
+        ContentFormView page = formView(ctx, "admin/comment/title", info, "", List.of(), Map.of());
+        return responses.page(ctx.ajax(), HttpStatus.OK, t -> t.adminPagesCommentInfo(page));
+    }
+
+    private ResponseEntity<String> gbookList(Ctx ctx, PhpForm p) {
+        AdminRowPage list = comments.gbooks(p, paging(ctx));
+        ContentListView page = listView(ctx, "admin/gbook/title", list, "gbook/data", List.of(), "", Map.of());
+        return responses.page(ctx.ajax(), HttpStatus.OK, t -> t.adminPagesGbookIndex(page));
+    }
+
+    private ResponseEntity<String> gbookInfo(Ctx ctx) {
+        AdminRow info = comments.gbook(ctx.params().scalar("id")).orElse(EMPTY);
+        ContentFormView page = formView(ctx, "admin/gbook/title", info, "", List.of(), Map.of());
+        return responses.page(ctx.ajax(), HttpStatus.OK, t -> t.adminPagesGbookInfo(page));
+    }
+
+    // ------------------------------------------------------------------ 附件、图片、上传
+
+    private ResponseEntity<String> annexList(Ctx ctx, PhpForm p) {
+        AdminRowPage list = s.annexes().list(p, paging(ctx));
+        ContentListView page = listView(ctx, "admin/annex/title", list, "annex/data", List.of(), "",
+                Map.of("macPath", s.config().text("site", "install_dir")));
+        return responses.page(ctx.ajax(), HttpStatus.OK, t -> t.adminPagesAnnexIndex(page));
+    }
+
+    /** 旧 Annex::file：路径含 {@code ..@} 时"非法请求"。 */
+    private ResponseEntity<String> annexFiles(Ctx ctx) {
+        byte[] raw = ctx.params().scalar("path");
+        AnnexDirectory dir = s.annexes().files(raw == null ? null : new String(raw, StandardCharsets.UTF_8));
+        if (dir == null) {
+            return responses.error(ctx.ajax(), settings.lang().get("illegal_request"));
+        }
+        AnnexFileView page = new AnnexFileView(head("admin/annex/title"), settings.lang(), ctx.url(), dir,
+                ContentListView.todayOf(clock));
+        return responses.page(ctx.ajax(), HttpStatus.OK, t -> t.adminPagesAnnexFile(page));
+    }
+
+    private ResponseEntity<String> annexInfo(Ctx ctx) {
+        AdminRow info = s.annexes().info(ctx.params().scalar("id")).orElse(EMPTY);
+        ContentFormView page = formView(ctx, "admin/annex/title", info, "actor_editor", List.of(), Map.of());
+        return responses.page(ctx.ajax(), HttpStatus.OK, t -> t.adminPagesAnnexInfo(page));
+    }
+
+    /** 只有页面本身的表单页（附件初始化、图片同步选项）。 */
+    private ResponseEntity<String> simplePage(Ctx ctx, String titleKey, Map<String, Object> extra, String which) {
+        ContentFormView page = formView(ctx, titleKey, EMPTY, "", List.of(), extra);
+        return which.equals("init") ? responses.page(ctx.ajax(), HttpStatus.OK, t -> t.adminPagesAnnexInit(page))
+                : responses.page(ctx.ajax(), HttpStatus.OK, t -> t.adminPagesImagesOpt(page));
+    }
+
+    /** 旧 Images::opt：{@code tab} 原样写进隐藏字段，日期为今天。 */
+    private Map<String, Object> imagesOpt(Ctx ctx) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        byte[] tab = ctx.params().scalar("tab");
+        m.put("tab", tab == null ? "" : new String(tab, StandardCharsets.UTF_8));
+        m.put("today", ContentListView.todayOf(clock));
+        return m;
+    }
+
+    /**
+     * 旧 Images::del：{@code ids[]} 每项（反斜杠换成斜杠）以 {@code ./upload} 开头且只有一个 {@code ./} 时删除这个文件，总是"删除成功"。
+     * {@code ids} 不是数组时旧版 foreach 报错（500），新版"参数错误"。
+     */
+    private ResponseEntity<String> imagesDel(Ctx ctx, PhpForm p) {
+        if (!p.empty("ids")) {
+            if (!p.isArray("ids")) {
+                return responses.error(ctx.ajax(), settings.lang().get("param_err"));
+            }
+            for (byte[] v : p.array("ids").entries().values()) {
+                String a = new String(v, StandardCharsets.UTF_8).replace('\\', '/');
+                if (a.startsWith("./upload") && a.split("\\./", -1).length <= 2) {
+                    s.uploads().deleteFile(a.substring(2));
+                }
+            }
+        }
+        return responses.success(ctx.ajax(), settings.lang().get("del_ok"), AdminController.successUrl(ctx));
+    }
+
+    /**
+     * 旧 Images::sync：把远程图片下载到本地（E02）。按路线图只做本地版本、不发起外部下载，库内的图片地址保持不变（相当于关闭同步）；
+     * {@code tab} 不在旧版的六类里时"参数错误"，否则输出固定提示（22 文档第 10 节）。
+     */
+    private ResponseEntity<String> imagesSync(Ctx ctx, PhpForm p) {
+        String tab = p.isArray("tab") ? null : p.text("tab");
+        if (tab == null || !List.of("vod", "art", "topic", "actor", "role", "website").contains(tab)) {
+            return responses.error(ctx.ajax(), settings.lang().get("param_err"));
+        }
+        AdminProgress pr = new AdminProgress(List.of(AdminProgress.Line.of(AdminProgress.Part.markup(
+                "<style type=\"text/css\">body{font-size:12px;color: #333333;line-height:21px;}span{font-weight:bold;color:#FF0000}</style>")),
+                AdminProgress.Line.of(AdminProgress.Part.text(SYNC_DISABLED))), null, null);
+        return progress(ctx, pr, "images/sync");
+    }
+
+    private static final String SYNC_DISABLED = "远程图片同步未开放：新系统只存本地、不下载外部图片，库内的图片地址保持不变。";
+
+    /** 旧 Upload::upload：文件取表单里名为 {@code input}（默认 file）的文件；后台请求返回 JSON，编辑器请求按编辑器格式。 */
+    private ResponseEntity<String> upload(Ctx ctx) {
+        Map<String, String> params = scalars(ctx.params());
+        String input = AdminUploadService.inputName(params);
+        byte[] file = null;
+        String name = null;
+        try {
+            if (ctx.request().getContentType() != null
+                    && ctx.request().getContentType().toLowerCase(java.util.Locale.ROOT).startsWith("multipart/")) {
+                jakarta.servlet.http.Part part = ctx.request().getPart(input);
+                if (part != null && part.getSubmittedFileName() != null) {
+                    try (java.io.InputStream in = part.getInputStream()) {
+                        file = in.readAllBytes();
+                    }
+                    name = part.getSubmittedFileName();
+                }
+            }
+        } catch (java.io.IOException | jakarta.servlet.ServletException | RuntimeException e) {
+            // 超出大小等解析失败：同旧版上传的文件被丢弃（"未找到上传的文件"）
+            file = null;
+        }
+        UploadReply r = s.uploads().upload(new AdminUploadService.Upload(params, file, name), settings.lang()::get);
+        return r.json() ? responses.jsonBody(r.body()) : responses.echoed(r.body());
+    }
+
     /** 批量处理页（没有任何参数时，旧 batch() 显示筛选表单）。 */
     private ResponseEntity<String> batchPage(Ctx ctx, String titleKey, boolean website) {
         AdminRowPage none = new AdminRowPage(List.of(), 0, 1, 0, null);
@@ -460,7 +641,9 @@ public class AdminContentActions {
     }
 
     private AdminHead head(String titleKey) {
-        return new AdminHead(settings.lang().get(titleKey), endpoint.sitePath(), endpoint.root(), settings.versionCode());
+        // 旧版没有给页面标题的动作（附件初始化页、图片同步选项页）标题为空
+        return new AdminHead(titleKey == null ? "" : settings.lang().get(titleKey), endpoint.sitePath(), endpoint.root(),
+                settings.versionCode());
     }
 
     private AdminPaging paging(Ctx ctx) {

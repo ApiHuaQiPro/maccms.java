@@ -99,4 +99,6 @@ public interface ContentAdminWriteMapper {
     int deleteArtRepeat(@Param("name") String name, @Param("keep") long keep);
 
     int deleteVodRepeat(@Param("name") String name, @Param("keep") long keep);
+
+    int deleteAnnexByFile(@Param("file") String file);
 }

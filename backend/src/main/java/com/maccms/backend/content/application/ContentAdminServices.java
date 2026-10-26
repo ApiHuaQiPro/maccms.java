@@ -6,5 +6,5 @@ package com.maccms.backend.content.application;
 public record ContentAdminServices(AdminConfig config, AdminPlayers players, LinkAdminService links,
                                    TypeAdminService types, TopicAdminService topics, ActorAdminService actors,
                                    RoleAdminService roles, WebsiteAdminService websites, ArtAdminService arts,
-                                   VodAdminService vods) {
+                                   VodAdminService vods, AnnexAdminService annexes, AdminUploadService uploads) {
 }

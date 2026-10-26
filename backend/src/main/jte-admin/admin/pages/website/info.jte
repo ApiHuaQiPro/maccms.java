@@ -6,9 +6,9 @@
 `, content = @`
 <div class="page-container p10">
     <div class="showpic" style="display:none;"><img class="showpic_img" width="120" height="160" referrerPolicy="no-referrer"></div>
-    
+
     <form class="layui-form layui-form-pane" method="post" action="">
-        <input type="hidden" name="website_id" value="${page.info().s("website_id")}">
+        <input type="hidden" name="website_id" value="${page.v("website_id")}">
 
         <div class="layui-tab">
             <ul class="layui-tab-title ">
@@ -18,7 +18,7 @@
             <div class="layui-tab-content">
 
                 <div class="layui-tab-item layui-show">
-                    
+
                 <div class="layui-form-item">
                     <label class="layui-form-label">${page.lang().get("param")}：</label>
                     <div class="layui-input-inline w150">
@@ -63,11 +63,11 @@
                 <div class="layui-form-item">
                     <label class="layui-form-label">${page.lang().get("name")}：</label>
                     <div class="layui-input-inline w500">
-                        <input type="text" class="layui-input" value="${page.info().s("website_name")}" placeholder="" name="website_name">
+                        <input type="text" class="layui-input" value="${page.v("website_name")}" placeholder="" name="website_name">
                     </div>
                     <label class="layui-form-label">${page.lang().get("sub")}：</label>
                     <div class="layui-input-inline ">
-                        <input type="text" class="layui-input" value="${page.info().s("website_sub")}" placeholder="" name="website_sub">
+                        <input type="text" class="layui-input" value="${page.v("website_sub")}" placeholder="" name="website_sub">
                     </div>
 
                 </div>
@@ -75,40 +75,40 @@
                 <div class="layui-form-item">
                     <label class="layui-form-label">${page.lang().get("en")}：</label>
                     <div class="layui-input-inline w500">
-                        <input type="text" class="layui-input" value="${page.info().s("website_en")}" placeholder="" name="website_en">
+                        <input type="text" class="layui-input" value="${page.v("website_en")}" placeholder="" name="website_en">
                     </div>
                     <label class="layui-form-label">${page.lang().get("letter")}：</label>
                     <div class="layui-input-inline w70">
-                        <input type="text" class="layui-input" value="${page.info().s("website_letter")}" placeholder="" name="website_letter">
+                        <input type="text" class="layui-input" value="${page.v("website_letter")}" placeholder="" name="website_letter">
                     </div>
                     <label class="layui-form-label">${page.lang().get("color")}：</label>
                     <div class="layui-input-inline w70">
-                        <input type="text" class="layui-input color" value="${page.info().s("website_color")}" placeholder="" name="website_color">
+                        <input type="text" class="layui-input color" value="${page.v("website_color")}" placeholder="" name="website_color">
                     </div>
                 </div>
 
                     <div class="layui-form-item">
                         <label class="layui-form-label">${page.lang().get("jumpurl")}：</label>
                         <div class="layui-input-inline w500">
-                            <input type="text" class="layui-input" value="${page.info().s("website_jumpurl")}" placeholder="" name="website_jumpurl">
+                            <input type="text" class="layui-input" value="${page.v("website_jumpurl")}" placeholder="" name="website_jumpurl">
                         </div>
                     </div>
                     <div class="layui-form-item">
                         <label class="layui-form-label">${page.lang().get("area")}：</label>
                         <div class="layui-input-inline w500">
-                            <input type="text" class="layui-input" value="${page.info().s("website_area")}" placeholder="" name="website_area">
+                            <input type="text" class="layui-input" value="${page.v("website_area")}" placeholder="" name="website_area">
                         </div>
                     </div>
                     <div class="layui-form-item">
                         <label class="layui-form-label">${page.lang().get("lang")}：</label>
                         <div class="layui-input-inline w500">
-                            <input type="text" class="layui-input" value="${page.info().s("website_lang")}" placeholder="" name="website_lang">
+                            <input type="text" class="layui-input" value="${page.v("website_lang")}" placeholder="" name="website_lang">
                         </div>
                     </div>
                 <div class="layui-form-item">
                     <label class="layui-form-label">TAG：</label>
                     <div class="layui-input-inline w500">
-                        <input type="text" class="layui-input" value="${page.info().s("website_tag")}" placeholder="" name="website_tag">
+                        <input type="text" class="layui-input" value="${page.v("website_tag")}" placeholder="" name="website_tag">
                     </div>
                     <div class="layui-input-inline w120">
                         <input type="checkbox" name="uptag" title="${page.lang().get("auto_make")}" value="1" class="layui-checkbox checkbox-ids" lay-skin="primary">
@@ -117,7 +117,7 @@
                     <div class="layui-form-item">
                         <label class="layui-form-label">${page.lang().get("class")}：</label>
                         <div class="layui-input-inline w500">
-                            <input type="text" class="layui-input" value="${page.info().s("website_class")}" placeholder="" id="website_class" name="website_class">
+                            <input type="text" class="layui-input" value="${page.v("website_class")}" placeholder="" id="website_class" name="website_class">
                         </div>
                         <div class="layui-input-inline w500 website_class_label">
 
@@ -126,7 +126,7 @@
                     <div class="layui-form-item">
                         <label class="layui-form-label">${page.lang().get("remarks")}：</label>
                         <div class="layui-input-inline w500">
-                            <input type="text" class="layui-input" value="${page.info().s("website_remarks")}" placeholder="" name="website_remarks">
+                            <input type="text" class="layui-input" value="${page.v("website_remarks")}" placeholder="" name="website_remarks">
                         </div>
                     </div>
 
@@ -134,7 +134,7 @@
                     <div class="layui-form-item">
                         <label class="layui-form-label">LOGO：</label>
                         <div class="layui-input-inline w500 upload">
-                            <input type="text" class="layui-input upload-input" style="max-width:100%;" value="${page.info().s("website_logo")}" placeholder="" id="website_logo" name="website_logo">
+                            <input type="text" class="layui-input upload-input" style="max-width:100%;" value="${page.v("website_logo")}" placeholder="" id="website_logo" name="website_logo">
                         </div>
                         <div class="layui-input-inline ">
                             <button type="button" class="layui-btn layui-upload" lay-data="{data:{thumb:0,thumb_class:'upload-thumb'}}" id="upload3">${page.lang().get("upload_pic")}</button>
@@ -144,7 +144,7 @@
                     <div class="layui-form-item">
                         <label class="layui-form-label">${page.lang().get("pic")}：</label>
                         <div class="layui-input-inline w500 upload">
-                            <input type="text" class="layui-input upload-input" style="max-width:100%;" value="${page.info().s("website_pic")}" placeholder="" id="website_pic" name="website_pic">
+                            <input type="text" class="layui-input upload-input" style="max-width:100%;" value="${page.v("website_pic")}" placeholder="" id="website_pic" name="website_pic">
                         </div>
                         <div class="layui-input-inline ">
                             <button type="button" class="layui-btn layui-upload" lay-data="{data:{thumb:1,thumb_class:'upload-thumb'}}" id="upload1">${page.lang().get("upload_pic")}</button>
@@ -160,14 +160,14 @@
                     </div>
                     <div class="layui-form-item">
                         <div class="layui-input-block">
-                            <textarea id="website_pic_screenshot" name="website_pic_screenshot" placeholder="${page.lang().get("screenshot_tip")}" type="text/plain" style="width:100%;height:150px;">${page.strCorrect(page.info().s("website_pic_screenshot"))}</textarea>
+                            <textarea id="website_pic_screenshot" name="website_pic_screenshot" placeholder="${page.lang().get("screenshot_tip")}" type="text/plain" style="width:100%;height:150px;">${page.text(page.strCorrect(page.info().s("website_pic_screenshot")))}</textarea>
                             <fieldset class="layui-elem-field layui-field-title" style="margin-top: 30px;">
                                 <legend>${page.lang().get("screenshot_preview")}</legend>
                             </fieldset>
                             <div class="screenshot_list">
                                 @for(com.maccms.backend.admin.web.view.content.ContentFormView.Shot vo : page.shots(page.info().s("website_pic_screenshot")))
-                                <div data-src="${vo.url()}"><a href="javascript:;" class="del_screenshot">${page.lang().get("del")}</a>
-                                    <img src="${page.imgUrl(vo.url())}" alt="" class="layui-upload-img screenshot-img">
+                                <div data-src="${page.attr(vo.url())}"><a href="javascript:;" class="del_screenshot">${page.lang().get("del")}</a>
+                                    <img src="${page.attr(page.imgUrl(vo.url()))}" alt="" class="layui-upload-img screenshot-img">
                                 </div>
                                 @endfor
                             </div>
@@ -177,16 +177,16 @@
                     <div class="layui-form-item">
                         <label class="layui-form-label">${page.lang().get("blurb")}：</label>
                         <div class="layui-input-block">
-                            <textarea name="website_blurb" cols="" rows="3" class="layui-textarea"  placeholder="${page.lang().get("blurb_auto_tip")}" style="height:40px;">${page.info().s("website_blurb")}</textarea>
+                            <textarea name="website_blurb" cols="" rows="3" class="layui-textarea"  placeholder="${page.lang().get("blurb_auto_tip")}" style="height:40px;">${page.t("website_blurb")}</textarea>
                         </div>
                     </div>
                     <div class="layui-form-item">
                         <label class="layui-form-label">${page.lang().get("content")}：</label>
                         <div class="layui-input-block">
-                            <textarea id="website_content" name="website_content" type="text/plain" style="width:99%;height:300px">${page.contentImg(page.info().s("website_content"))}</textarea>
+                            <textarea id="website_content" name="website_content" type="text/plain" style="width:99%;height:300px">${page.text(page.contentImg(page.info().s("website_content")))}</textarea>
                         </div>
                     </div>
-                    
+
         </div>
 
 
@@ -194,11 +194,11 @@
                         <div class="layui-form-item">
                             <label class="layui-form-label">${page.lang().get("up")}：</label>
                             <div class="layui-input-inline ">
-                                <input type="text" class="layui-input" value="${page.info().s("website_up")}" placeholder="" id="website_up" name="website_up">
+                                <input type="text" class="layui-input" value="${page.v("website_up")}" placeholder="" id="website_up" name="website_up">
                             </div>
                             <label class="layui-form-label">${page.lang().get("hate")}：</label>
                             <div class="layui-input-inline ">
-                                <input type="text" class="layui-input" value="${page.info().s("website_down")}" placeholder="" id="website_down" name="website_down">
+                                <input type="text" class="layui-input" value="${page.v("website_down")}" placeholder="" id="website_down" name="website_down">
                             </div>
                             <button class="layui-btn" type="button" id="btn_rnd">${page.lang().get("rnd_make")}</button>
                         </div>
@@ -206,22 +206,22 @@
                         <div class="layui-form-item">
                             <label class="layui-form-label">${page.lang().get("hits")}：</label>
                             <div class="layui-input-inline ">
-                                <input type="text" class="layui-input" value="${page.info().s("website_hits")}" placeholder="" id="website_hits" name="website_hits">
+                                <input type="text" class="layui-input" value="${page.v("website_hits")}" placeholder="" id="website_hits" name="website_hits">
                             </div>
                             <label class="layui-form-label">${page.lang().get("hits_month")}：</label>
                             <div class="layui-input-inline ">
-                                <input type="text" class="layui-input" value="${page.info().s("website_hits_month")}" placeholder="" id="website_hits_month" name="website_hits_month" >
+                                <input type="text" class="layui-input" value="${page.v("website_hits_month")}" placeholder="" id="website_hits_month" name="website_hits_month" >
                             </div>
                         </div>
 
                         <div class="layui-form-item">
                             <label class="layui-form-label">${page.lang().get("hits_week")}：</label>
                             <div class="layui-input-inline ">
-                                <input type="text" class="layui-input" value="${page.info().s("website_hits_week")}" placeholder="" id="website_hits_week" name="website_hits_week">
+                                <input type="text" class="layui-input" value="${page.v("website_hits_week")}" placeholder="" id="website_hits_week" name="website_hits_week">
                             </div>
                             <label class="layui-form-label">${page.lang().get("hits_day")}：</label>
                             <div class="layui-input-inline ">
-                                <input type="text" class="layui-input " value="${page.info().s("website_hits_day")}" placeholder="" id="website_hits_day" name="website_hits_day">
+                                <input type="text" class="layui-input " value="${page.v("website_hits_day")}" placeholder="" id="website_hits_day" name="website_hits_day">
                             </div>
                         </div>
 
@@ -229,15 +229,15 @@
                         <div class="layui-form-item">
                             <label class="layui-form-label">${page.lang().get("score")}：</label>
                             <div class="layui-input-inline ">
-                                <input type="text" class="layui-input" value="${page.info().s("website_score")}" placeholder="" id="website_score" name="website_score">
+                                <input type="text" class="layui-input" value="${page.v("website_score")}" placeholder="" id="website_score" name="website_score">
                             </div>
                             <label class="layui-form-label">${page.lang().get("score_all")}：</label>
                             <div class="layui-input-inline ">
-                                <input type="text" class="layui-input" value="${page.info().s("website_score_all")}" placeholder="" id="website_score_all" name="website_score_all">
+                                <input type="text" class="layui-input" value="${page.v("website_score_all")}" placeholder="" id="website_score_all" name="website_score_all">
                             </div>
                             <label class="layui-form-label">${page.lang().get("score_num")}：</label>
                             <div class="layui-input-inline ">
-                                <input type="text" class="layui-input" value="${page.info().s("website_score_num")}" placeholder="" id="website_score_num" name="website_score_num">
+                                <input type="text" class="layui-input" value="${page.v("website_score_num")}" placeholder="" id="website_score_num" name="website_score_num">
                             </div>
                         </div>
 
@@ -245,21 +245,21 @@
                         <div class="layui-form-item">
                             <label class="layui-form-label">${page.lang().get("admin/website/referer")}：</label>
                             <div class="layui-input-inline ">
-                                <input type="text" class="layui-input" value="${page.info().s("website_referer")}" placeholder="" id="website_referer" name="website_referer">
+                                <input type="text" class="layui-input" value="${page.v("website_referer")}" placeholder="" id="website_referer" name="website_referer">
                             </div>
                             <label class="layui-form-label">${page.lang().get("admin/website/referer_month")}：</label>
                             <div class="layui-input-inline ">
-                                <input type="text" class="layui-input" value="${page.info().s("website_referer_month")}" placeholder="" id="website_referer_month" name="website_referer_month">
+                                <input type="text" class="layui-input" value="${page.v("website_referer_month")}" placeholder="" id="website_referer_month" name="website_referer_month">
                             </div>
                         </div>
                         <div class="layui-form-item">
                             <label class="layui-form-label">${page.lang().get("admin/website/referer_week")}：</label>
                             <div class="layui-input-inline ">
-                                <input type="text" class="layui-input" value="${page.info().s("website_referer_week")}" placeholder="" id="website_referer_week" name="website_referer_week">
+                                <input type="text" class="layui-input" value="${page.v("website_referer_week")}" placeholder="" id="website_referer_week" name="website_referer_week">
                             </div>
                             <label class="layui-form-label">${page.lang().get("admin/website/referer_day")}：</label>
                             <div class="layui-input-inline ">
-                                <input type="text" class="layui-input" value="${page.info().s("website_referer_day")}" placeholder="" id="website_referer_day" name="website_referer_day">
+                                <input type="text" class="layui-input" value="${page.v("website_referer_day")}" placeholder="" id="website_referer_day" name="website_referer_day">
                             </div>
                         </div>
 
@@ -268,7 +268,7 @@
 
                             <label class="layui-form-label">${page.lang().get("tpl")}：</label>
                             <div class="layui-input-inline ">
-                                <input type="text" class="layui-input" value="${page.info().s("website_tpl")}" placeholder="" name="website_tpl">
+                                <input type="text" class="layui-input" value="${page.v("website_tpl")}" placeholder="" name="website_tpl">
                             </div>
                         </div>
 

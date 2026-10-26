@@ -84,10 +84,24 @@ public class ContentAdminConfiguration {
     }
 
     @Bean
+    AnnexAdminService annexAdminService(ContentAdminMapper reader, ContentAdminWrites writer, UploadStore uploads,
+                                        ObjectProvider<Clock> clock) {
+        return new AnnexAdminService(reader, writer, uploads, clock.getIfAvailable(Clock::systemUTC));
+    }
+
+    @Bean
+    AdminUploadService adminUploadService(UploadStore uploads, AdminConfig config, AnnexAdminService annexes,
+                                          ObjectProvider<Clock> clock) {
+        return new AdminUploadService(uploads, config, annexes, clock.getIfAvailable(Clock::systemUTC),
+                new java.security.SecureRandom());
+    }
+
+    @Bean
     ContentAdminServices contentAdminServices(AdminConfig config, AdminPlayers players, LinkAdminService links,
                                               TypeAdminService types, TopicAdminService topics, ActorAdminService actors,
                                               RoleAdminService roles, WebsiteAdminService websites, ArtAdminService arts,
-                                              VodAdminService vods) {
-        return new ContentAdminServices(config, players, links, types, topics, actors, roles, websites, arts, vods);
+                                              VodAdminService vods, AnnexAdminService annexes, AdminUploadService uploads) {
+        return new ContentAdminServices(config, players, links, types, topics, actors, roles, websites, arts, vods, annexes,
+                uploads);
     }
 }

@@ -17,7 +17,7 @@ import java.util.Map;
  * @param token   表单令牌
  */
 public record TypeInfoView(AdminHead head, LegacyLang lang, LegacyAdminUrl url, AdminRow info, AdminRow infop, String pid,
-                           List<AdminRow> parents, Map<String, String> extend, String token) {
+                           List<AdminRow> parents, Map<String, String> extend, String token) implements RawOutput {
 
     /** 类型下拉框的选中项（旧 {@code $info['type_mid'] == 'n' || ($info.type_id eq 0 && $infop['type_mid'] == 'n')}）。 */
     public boolean midSelected(int mid) {

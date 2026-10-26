@@ -108,4 +108,17 @@ public interface ContentAdminMapper {
     List<Long> vodToday(@Param("since") long since, @Param("type") boolean type);
 
     List<Map<String, String>> selectVodsByIds(@Param("ids") List<Long> ids);
+
+    long countAnnexes(@Param("c") AdminCriteria c);
+
+    List<Map<String, String>> listAnnexes(@Param("c") AdminCriteria c, @Param("offset") long offset, @Param("limit") long limit);
+
+    Map<String, String> selectAnnexByFile(@Param("file") String file);
+
+    /** {@code files} 不能为空（{@code ids} 可以为空）。 */
+    List<Map<String, String>> selectAnnexesByIdsOrFiles(@Param("ids") List<Long> ids, @Param("files") List<String> files);
+
+    long countAnnexScan(@Param("t") String table);
+
+    List<Map<String, String>> listAnnexScan(@Param("t") String table, @Param("offset") long offset, @Param("limit") long limit);
 }

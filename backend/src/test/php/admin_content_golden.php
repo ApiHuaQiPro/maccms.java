@@ -137,7 +137,7 @@ function vods()
             'vod_play_note' => '$$$$$$备注',
             'vod_play_url' => '第1集$http://a.test/1.m3u8#第2集$http://a.test/2.m3u8$$$x$http://m.test/1$$$正片$http://b.test/1',
             'vod_down_from' => 'xunlei', 'vod_down_server' => 'no', 'vod_down_note' => '', 'vod_down_url' => '下载$http://c.test/1.zip',
-            'vod_actor' => '马修', 'vod_remarks' => 'HD', 'vod_pic' => 'upload/vod/20260101-1/a.jpg', 'vod_time' => 1700000300,
+            'vod_actor' => '马修', 'vod_remarks' => 'HD&amp;蓝光', 'vod_sub' => '续&lt;集&gt;&#39;', 'vod_pic' => 'upload/vod/20260101-1/a.jpg', 'vod_time' => 1700000300,
             'vod_plot' => 1, 'vod_plot_name' => '第一集$$$第二集', 'vod_plot_detail' => '剧情一$$$剧情二']),
         v(2, '星际穿越', 3, ['vod_status' => 0, 'vod_time' => 1700000200, 'vod_pic' => 'http://img.test/b.jpg']),
         v(3, '盗梦空间', 2, ['vod_lock' => 1, 'vod_copyright' => 1, 'vod_isend' => 0, 'vod_serial' => '12',
@@ -313,7 +313,8 @@ function sc($label, array $steps, array $opt = [])
 function scenarios($repo)
 {
     return array_merge(scenarios_link(), scenarios_type(), scenarios_topic(), scenarios_select(), scenarios_actor(),
-        scenarios_role(), scenarios_website(), scenarios_art(), scenarios_vod());
+        scenarios_role(), scenarios_website(), scenarios_art(), scenarios_vod(), scenarios_comment(),
+        scenarios_annex());
 }
 
 function scenarios_link()
@@ -790,6 +791,131 @@ function scenarios_vod()
     return $s;
 }
 
+function more_comments()
+{
+    $c = function ($id, $mid, $rid, array $over = []) {
+        return array_merge(['comment_id' => $id, 'comment_mid' => $mid, 'comment_rid' => $rid, 'comment_pid' => 0, 'user_id' => 0,
+            'comment_status' => 1, 'comment_name' => '名' . $id, 'comment_ip' => 3232235777, 'comment_time' => 1700000400 + $id,
+            'comment_content' => '内容<b>' . $id . '</b>&lt;i&gt;', 'comment_report' => 0], $over);
+    };
+    return array_merge(comments(), [$c(4, 3, 1), $c(5, 8, 1), $c(6, 9, 1), $c(7, 11, 1), $c(8, 4, 1), $c(9, 1, 99),
+        $c(10, 2, 99, ['comment_report' => 1, 'user_id' => 5])]);
+}
+
+function scenarios_comment()
+{
+    $s = [];
+    $seed = array_merge(base_seed(), ['mac_comment' => more_comments()]);
+    $s[] = sc('comment-list', [
+        get('data', '/admin/comment/data'),
+        get('status-0', '/admin/comment/data', 'status=0'),
+        get('status-loose', '/admin/comment/data', 'status=00'),
+        get('mid', '/admin/comment/data', 'mid=1.0&report=1'),
+        get('report', '/admin/comment/data', 'report=2&uid=5'),
+        get('wd', '/admin/comment/data', 'wd=' . rawurlencode('<b>')),
+        get('page', '/admin/comment/data', 'page=2&limit=3'),
+    ], ['seed' => $seed]);
+    $s[] = sc('comment-edit', [
+        get('info', '/admin/comment/info', 'id=1'),
+        post('save', '/admin/comment/info', ['comment_id' => '1', 'comment_mid' => '1', 'comment_rid' => '1',
+            'comment_name' => '游客<script>', 'comment_up' => '9', 'comment_down' => '', 'comment_content' => '改<img src=x onerror=1>']),
+        post('save-noname', '/admin/comment/info', ['comment_id' => '1', 'comment_mid' => '1', 'comment_rid' => '1',
+            'comment_name' => '', 'comment_content' => 'x']),
+        post('save-norid', '/admin/comment/info', ['comment_id' => '1', 'comment_mid' => '1', 'comment_name' => 'n',
+            'comment_content' => 'x']),
+        post('save-new', '/admin/comment/info', ['comment_id' => '', 'comment_mid' => '2', 'comment_rid' => '1',
+            'comment_name' => '新', 'comment_content' => '新评论']),
+        get('field', '/admin/comment/field', 'ids=1,2&col=comment_status&val=0', ['ajax' => true]),
+        get('field-noval', '/admin/comment/field', 'ids=1&col=comment_status', ['ajax' => true]),
+        get('field-badcol', '/admin/comment/field', 'ids=1&col=comment_up&val=3', ['ajax' => true]),
+        get('del', '/admin/comment/del', 'ids=2', ['ajax' => true]),
+        get('del-none', '/admin/comment/del', '', ['ajax' => true]),
+        get('del-all-2', '/admin/comment/del', 'all=2', ['ajax' => true]),
+        get('del-all', '/admin/comment/del', 'all=1', ['ajax' => true]),
+    ]);
+    $s[] = sc('gbook', [
+        get('data', '/admin/gbook/data'),
+        get('type-1', '/admin/gbook/data', 'type=1'),
+        get('type-2', '/admin/gbook/data', 'type=2&status=0'),
+        get('reply', '/admin/gbook/data', 'reply=1&uid=7'),
+        get('wd', '/admin/gbook/data', 'wd=' . rawurlencode('播放')),
+        get('info', '/admin/gbook/info', 'id=2'),
+        post('reply-save', '/admin/gbook/info', ['gbook_id' => '1', 'gbook_rid' => '0', 'gbook_name' => '访客',
+            'gbook_content' => '求片&谢谢', 'gbook_reply' => '<b>好的</b>']),
+        post('save-empty-reply', '/admin/gbook/info', ['gbook_id' => '2', 'gbook_rid' => '3', 'gbook_name' => '报错',
+            'gbook_content' => '播放不了', 'gbook_reply' => '']),
+        post('save-nocontent', '/admin/gbook/info', ['gbook_id' => '2', 'gbook_name' => '报错', 'gbook_content' => '']),
+        get('field', '/admin/gbook/field', 'ids=2&col=gbook_status&val=1', ['ajax' => true]),
+        get('del', '/admin/gbook/del', 'ids=1', ['ajax' => true]),
+        get('del-all', '/admin/gbook/del', 'all=1', ['ajax' => true]),
+    ]);
+    return $s;
+}
+
+function scenarios_annex()
+{
+    $s = [];
+    $s[] = sc('annex-list', [
+        get('data', '/admin/annex/data'),
+        get('type', '/admin/annex/data', 'type=file'),
+        get('wd', '/admin/annex/data', 'wd=vod'),
+        get('select', '/admin/annex/data', 'select=1&input=x'),
+        get('info', '/admin/annex/info', 'id=1'),
+        post('save', '/admin/annex/info', ['annex_id' => '3', 'annex_file' => 'upload/file/doc2.txt', 'annex_size' => '9']),
+        post('save-nofile', '/admin/annex/info', ['annex_id' => '3', 'annex_file' => '']),
+        post('save-new', '/admin/annex/info', ['annex_file' => 'upload/new.txt', 'annex_type' => 'file']),
+    ]);
+    $s[] = sc('annex-file', [
+        get('root', '/admin/annex/file'),
+        get('vod', '/admin/annex/file', 'path=' . rawurlencode('@upload@vod')),
+        get('day', '/admin/annex/file', 'path=' . rawurlencode('@upload@vod@20260101-1')),
+        get('slashes', '/admin/annex/file', 'path=' . rawurlencode('/@upload/@vod')),
+        get('other', '/admin/annex/file', 'path=static'),
+        get('dotdot', '/admin/annex/file', 'path=' . rawurlencode('@upload@..@x'), ['ajax' => true]),
+    ]);
+    $s[] = sc('annex-del', [
+        get('del-id', '/admin/annex/del', 'ids=1', ['ajax' => true]),
+        raw('del-array', '/admin/annex/del', 'ids%5B%5D=.%2Fupload%2Ffile%2Fdoc.txt', ['ajax' => true]),
+        get('del-string', '/admin/annex/del', 'ids=' . rawurlencode('upload/art/20260101-1/missing.jpg,9x'), ['ajax' => true]),
+        get('del-none', '/admin/annex/del', '', ['ajax' => true]),
+    ]);
+    $s[] = sc('annex-check', [
+        get('check', '/admin/annex/check'),
+        get('check-done', '/admin/annex/check', 'start=2&data_count=3&page_count=1&page_size=500'),
+    ]);
+    $arts = arts();
+    $arts[0]['art_pic'] = 'http://img.test/x.jpg';
+    $arts[2]['art_pic'] = 'upload/art/20260101-1/a.jpg';
+    $arts[2]['art_content'] = '<p><img src="/upload/topic/20260101-1/t.jpg" alt=""><img src="/upload/none.jpg"></p>';
+    $s[] = sc('annex-init', [
+        get('page', '/admin/annex/init'),
+        get('actor-empty', '/admin/annex/init', 'ck=1'),
+        get('art', '/admin/annex/init', 'ck=1&tbi=1&start=1'),
+        get('art-done', '/admin/annex/init', 'ck=1&tbi=1&start=2'),
+        get('topic', '/admin/annex/init', 'ck=1&tbi=2&start=1'),
+        get('end', '/admin/annex/init', 'ck=1&tbi=8&start=1'),
+    ], ['seed' => array_merge(base_seed(), ['mac_actor' => [], 'mac_art' => $arts, 'mac_annex' => []])]);
+    $s[] = sc('images', [
+        get('opt', '/admin/images/opt', 'tab=vod'),
+        raw('del', '/admin/images/del', 'ids%5B%5D=.%2Fupload%2Fvod%2F20260101-1%2Fb.jpg&ids%5B%5D=.%2Fupload%2F..%2Fx'
+            . '&ids%5B%5D=..%2Fupload%2Ffile%2Fdoc.txt', ['ajax' => true]),
+        get('del-empty', '/admin/images/del', '', ['ajax' => true]),
+        get('sync-bad', '/admin/images/sync', 'tab=xx', ['ajax' => true]),
+        get('data', '/admin/images/data'),
+    ]);
+    $s[] = sc('upload', [
+        req('no-file', 'POST', '/admin/upload/upload', 'flag=vod', null, ['ajax' => true,
+            'multipart' => [['thumb', '0']]]),
+        req('forbidden', 'POST', '/admin/upload/upload', 'flag=vod', null, ['ajax' => true,
+            'multipart' => [['file', 'x.exe', 'MZ', 'application/octet-stream']]]),
+        get('editor-config', '/admin/upload/upload', 'from=ueditor&action=config'),
+        get('editor-unknown', '/admin/upload/upload', 'from=nope', ['ajax' => true]),
+        req('editor-no-file', 'POST', '/admin/upload/upload', 'from=ueditor&flag=vod_editor&input=upfile', null,
+            ['multipart' => [['x', '1']]]),
+    ]);
+    return $s;
+}
+
 // ====================================================================== 引擎
 
 function generate($repo, $pdo, $phpCgi, $work, $host, $port, $db, $user, $password)
@@ -824,6 +950,7 @@ function generate($repo, $pdo, $phpCgi, $work, $host, $port, $db, $user, $passwo
         foreach ($sc['files'] as $rel => $content) {
             @mkdir(dirname($site . '/' . $rel), 0777, true);
             file_put_contents($site . '/' . $rel, $content);
+            touch($site . '/' . $rel, 1700000000);
         }
         $over = $sc['config'];
         $maccms = deep_merge($base, $over);

@@ -121,6 +121,11 @@ public class AdminResponses {
         return json(HttpStatus.OK, LegacyJson.encode(value));
     }
 
+    /** 已编码好的 JSON 正文（上传的 {@code json()} 响应）。 */
+    public ResponseEntity<String> jsonBody(String body) {
+        return json(HttpStatus.OK, body);
+    }
+
     /** 旧版 {@code echo} 出来的整段 HTML（B13 批量处理等逐页推进的输出）：带与页面相同的安全头。 */
     public ResponseEntity<String> echoed(String body) {
         return html(HttpStatus.OK, body);

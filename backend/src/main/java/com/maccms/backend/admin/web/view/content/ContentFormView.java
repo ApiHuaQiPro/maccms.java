@@ -19,7 +19,7 @@ import java.util.Map;
  * @param extra  各页面另用的数据
  */
 public record ContentFormView(AdminHead head, LegacyLang lang, LegacyAdminUrl url, AdminRow info, ImgConfig img,
-                              String editor, List<AdminTypeNode> types, Map<String, Object> extra) {
+                              String editor, List<AdminTypeNode> types, Map<String, Object> extra) implements RawOutput {
 
     /** 截图的一项（旧 {@code mac_screenshot_list}）。 */
     public record Shot(String name, String url) {
@@ -135,6 +135,27 @@ public record ContentFormView(AdminHead head, LegacyLang lang, LegacyAdminUrl ur
             m.put(k, lang.get(k));
         }
         return com.maccms.backend.common.web.LegacyJson.encode(m);
+    }
+
+    /** 旧 {@code mac_get_mid_text($mid)}。 */
+    public String midText(long mid) {
+        return TypeListView.midText(lang, mid);
+    }
+
+    /**
+     * 旧 {@code {$x|date='Y-m-d H:i:s',###}}（Asia/Shanghai）：行里没有这一列时（新增）为当前时间（PHP 8 的 {@code date($f, null)}）。
+     */
+    public String date(String col) {
+        long t = info.has(col) ? info.n(col) : java.time.Instant.now().getEpochSecond();
+        return java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+                .format(java.time.Instant.ofEpochSecond(t).atZone(java.time.ZoneId.of("Asia/Shanghai")));
+    }
+
+    /** 旧 {@code {$info.x|mac_day}}：为空（0）时空串，否则 {@code Y-m-d H:i:s}（Asia/Shanghai）。 */
+    public String day(String col) {
+        long t = info.has(col) ? info.n(col) : 0;
+        return t == 0 ? "" : java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+                .format(java.time.Instant.ofEpochSecond(t).atZone(java.time.ZoneId.of("Asia/Shanghai")));
     }
 
     /** 另用的列表数据的条数（没有时为 0）。 */

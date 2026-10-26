@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- B13 后台评论与留言管理的写入（22 文档第 6 节；WriteRegistry 登记 comment 的 mac_comment/mac_gbook）。 -->
+<mapper namespace="com.maccms.backend.comment.infrastructure.CommentAdminWriteMapper">
+
+    <!-- mac_comment：新增、按主键整行覆盖与按主键列表修改（旧 allowField(true)，只写参数里有的列；列清单与 install.sql 相同，AdminWriteMapperXmlTest 锁定） -->
+    <insert id="insertComment" useGeneratedKeys="true" keyProperty="id" keyColumn="comment_id">
+        INSERT INTO mac_comment (<trim suffixOverrides=",">
+            <if test="c.containsKey('comment_id')">comment_id,</if>
+            <if test="c.containsKey('comment_mid')">comment_mid,</if>
+            <if test="c.containsKey('comment_rid')">comment_rid,</if>
+            <if test="c.containsKey('comment_pid')">comment_pid,</if>
+            <if test="c.containsKey('user_id')">user_id,</if>
+            <if test="c.containsKey('comment_status')">comment_status,</if>
+            <if test="c.containsKey('comment_name')">comment_name,</if>
+            <if test="c.containsKey('comment_ip')">comment_ip,</if>
+            <if test="c.containsKey('comment_time')">comment_time,</if>
+            <if test="c.containsKey('comment_content')">comment_content,</if>
+            <if test="c.containsKey('comment_up')">comment_up,</if>
+            <if test="c.containsKey('comment_down')">comment_down,</if>
+            <if test="c.containsKey('comment_reply')">comment_reply,</if>
+            <if test="c.containsKey('comment_report')">comment_report,</if>
+        </trim>) VALUES (<trim suffixOverrides=",">
+            <if test="c.containsKey('comment_id')">#{c.comment_id},</if>
+            <if test="c.containsKey('comment_mid')">#{c.comment_mid},</if>
+            <if test="c.containsKey('comment_rid')">#{c.comment_rid},</if>
+            <if test="c.containsKey('comment_pid')">#{c.comment_pid},</if>
+            <if test="c.containsKey('user_id')">#{c.user_id},</if>
+            <if test="c.containsKey('comment_status')">#{c.comment_status},</if>
+            <if test="c.containsKey('comment_name')">#{c.comment_name},</if>
+            <if test="c.containsKey('comment_ip')">#{c.comment_ip},</if>
+            <if test="c.containsKey('comment_time')">#{c.comment_time},</if>
+            <if test="c.containsKey('comment_content')">#{c.comment_content},</if>
+            <if test="c.containsKey('comment_up')">#{c.comment_up},</if>
+            <if test="c.containsKey('comment_down')">#{c.comment_down},</if>
+            <if test="c.containsKey('comment_reply')">#{c.comment_reply},</if>
+            <if test="c.containsKey('comment_report')">#{c.comment_report},</if>
+        </trim>)
+    </insert>
+
+    <update id="updateComment">
+        UPDATE mac_comment SET <trim suffixOverrides=",">
+            <if test="c.containsKey('comment_id')">comment_id = #{c.comment_id},</if>
+            <if test="c.containsKey('comment_mid')">comment_mid = #{c.comment_mid},</if>
+            <if test="c.containsKey('comment_rid')">comment_rid = #{c.comment_rid},</if>
+            <if test="c.containsKey('comment_pid')">comment_pid = #{c.comment_pid},</if>
+            <if test="c.containsKey('user_id')">user_id = #{c.user_id},</if>
+            <if test="c.containsKey('comment_status')">comment_status = #{c.comment_status},</if>
+            <if test="c.containsKey('comment_name')">comment_name = #{c.comment_name},</if>
+            <if test="c.containsKey('comment_ip')">comment_ip = #{c.comment_ip},</if>
+            <if test="c.containsKey('comment_time')">comment_time = #{c.comment_time},</if>
+            <if test="c.containsKey('comment_content')">comment_content = #{c.comment_content},</if>
+            <if test="c.containsKey('comment_up')">comment_up = #{c.comment_up},</if>
+            <if test="c.containsKey('comment_down')">comment_down = #{c.comment_down},</if>
+            <if test="c.containsKey('comment_reply')">comment_reply = #{c.comment_reply},</if>
+            <if test="c.containsKey('comment_report')">comment_report = #{c.comment_report},</if>
+        </trim>
+        WHERE comment_id = #{id}
+    </update>
+
+    <update id="updateCommentByIds">
+        UPDATE mac_comment SET <trim suffixOverrides=",">
+            <if test="c.containsKey('comment_id')">comment_id = #{c.comment_id},</if>
+            <if test="c.containsKey('comment_mid')">comment_mid = #{c.comment_mid},</if>
+            <if test="c.containsKey('comment_rid')">comment_rid = #{c.comment_rid},</if>
+            <if test="c.containsKey('comment_pid')">comment_pid = #{c.comment_pid},</if>
+            <if test="c.containsKey('user_id')">user_id = #{c.user_id},</if>
+            <if test="c.containsKey('comment_status')">comment_status = #{c.comment_status},</if>
+            <if test="c.containsKey('comment_name')">comment_name = #{c.comment_name},</if>
+            <if test="c.containsKey('comment_ip')">comment_ip = #{c.comment_ip},</if>
+            <if test="c.containsKey('comment_time')">comment_time = #{c.comment_time},</if>
+            <if test="c.containsKey('comment_content')">comment_content = #{c.comment_content},</if>
+            <if test="c.containsKey('comment_up')">comment_up = #{c.comment_up},</if>
+            <if test="c.containsKey('comment_down')">comment_down = #{c.comment_down},</if>
+            <if test="c.containsKey('comment_reply')">comment_reply = #{c.comment_reply},</if>
+            <if test="c.containsKey('comment_report')">comment_report = #{c.comment_report},</if>
+        </trim>
+        WHERE comment_id IN <foreach collection="ids" item="i" open="(" separator="," close=")">#{i}</foreach>
+    </update>
+
+    <delete id="deleteCommentByIds">
+        DELETE FROM mac_comment WHERE comment_id IN <foreach collection="ids" item="i" open="(" separator="," close=")">#{i}</foreach>
+    </delete>
+
+    <!-- mac_gbook：新增、按主键整行覆盖与按主键列表修改（旧 allowField(true)，只写参数里有的列；列清单与 install.sql 相同，AdminWriteMapperXmlTest 锁定） -->
+    <insert id="insertGbook" useGeneratedKeys="true" keyProperty="id" keyColumn="gbook_id">
+        INSERT INTO mac_gbook (<trim suffixOverrides=",">
+            <if test="c.containsKey('gbook_id')">gbook_id,</if>
+            <if test="c.containsKey('gbook_rid')">gbook_rid,</if>
+            <if test="c.containsKey('user_id')">user_id,</if>
+            <if test="c.containsKey('gbook_status')">gbook_status,</if>
+            <if test="c.containsKey('gbook_name')">gbook_name,</if>
+            <if test="c.containsKey('gbook_ip')">gbook_ip,</if>
+            <if test="c.containsKey('gbook_time')">gbook_time,</if>
+            <if test="c.containsKey('gbook_reply_time')">gbook_reply_time,</if>
+            <if test="c.containsKey('gbook_content')">gbook_content,</if>
+            <if test="c.containsKey('gbook_reply')">gbook_reply,</if>
+        </trim>) VALUES (<trim suffixOverrides=",">
+            <if test="c.containsKey('gbook_id')">#{c.gbook_id},</if>
+            <if test="c.containsKey('gbook_rid')">#{c.gbook_rid},</if>
+            <if test="c.containsKey('user_id')">#{c.user_id},</if>
+            <if test="c.containsKey('gbook_status')">#{c.gbook_status},</if>
+            <if test="c.containsKey('gbook_name')">#{c.gbook_name},</if>
+            <if test="c.containsKey('gbook_ip')">#{c.gbook_ip},</if>
+            <if test="c.containsKey('gbook_time')">#{c.gbook_time},</if>
+            <if test="c.containsKey('gbook_reply_time')">#{c.gbook_reply_time},</if>
+            <if test="c.containsKey('gbook_content')">#{c.gbook_content},</if>
+            <if test="c.containsKey('gbook_reply')">#{c.gbook_reply},</if>
+        </trim>)
+    </insert>
+
+    <update id="updateGbook">
+        UPDATE mac_gbook SET <trim suffixOverrides=",">
+            <if test="c.containsKey('gbook_id')">gbook_id = #{c.gbook_id},</if>
+            <if test="c.containsKey('gbook_rid')">gbook_rid = #{c.gbook_rid},</if>
+            <if test="c.containsKey('user_id')">user_id = #{c.user_id},</if>
+            <if test="c.containsKey('gbook_status')">gbook_status = #{c.gbook_status},</if>
+            <if test="c.containsKey('gbook_name')">gbook_name = #{c.gbook_name},</if>
+            <if test="c.containsKey('gbook_ip')">gbook_ip = #{c.gbook_ip},</if>
+            <if test="c.containsKey('gbook_time')">gbook_time = #{c.gbook_time},</if>
+            <if test="c.containsKey('gbook_reply_time')">gbook_reply_time = #{c.gbook_reply_time},</if>
+            <if test="c.containsKey('gbook_content')">gbook_content = #{c.gbook_content},</if>
+            <if test="c.containsKey('gbook_reply')">gbook_reply = #{c.gbook_reply},</if>
+        </trim>
+        WHERE gbook_id = #{id}
+    </update>
+
+    <update id="updateGbookByIds">
+        UPDATE mac_gbook SET <trim suffixOverrides=",">
+            <if test="c.containsKey('gbook_id')">gbook_id = #{c.gbook_id},</if>
+            <if test="c.containsKey('gbook_rid')">gbook_rid = #{c.gbook_rid},</if>
+            <if test="c.containsKey('user_id')">user_id = #{c.user_id},</if>
+            <if test="c.containsKey('gbook_status')">gbook_status = #{c.gbook_status},</if>
+            <if test="c.containsKey('gbook_name')">gbook_name = #{c.gbook_name},</if>
+            <if test="c.containsKey('gbook_ip')">gbook_ip = #{c.gbook_ip},</if>
+            <if test="c.containsKey('gbook_time')">gbook_time = #{c.gbook_time},</if>
+            <if test="c.containsKey('gbook_reply_time')">gbook_reply_time = #{c.gbook_reply_time},</if>
+            <if test="c.containsKey('gbook_content')">gbook_content = #{c.gbook_content},</if>
+            <if test="c.containsKey('gbook_reply')">gbook_reply = #{c.gbook_reply},</if>
+        </trim>
+        WHERE gbook_id IN <foreach collection="ids" item="i" open="(" separator="," close=")">#{i}</foreach>
+    </update>
+
+    <delete id="deleteGbookByIds">
+        DELETE FROM mac_gbook WHERE gbook_id IN <foreach collection="ids" item="i" open="(" separator="," close=")">#{i}</foreach>
+    </delete>
+
+    <!-- 旧"清空"（Comment::del / Gbook::del 的 all=1：主键 > 0 即全部） -->
+    <delete id="deleteAllComments">
+        DELETE FROM mac_comment WHERE comment_id &gt; 0
+    </delete>
+    <delete id="deleteAllGbooks">
+        DELETE FROM mac_gbook WHERE gbook_id &gt; 0
+    </delete>
+</mapper>

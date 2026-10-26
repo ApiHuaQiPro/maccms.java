@@ -686,4 +686,65 @@
     <select id="selectVodsByIds" resultMap="vodRow">
         SELECT <include refid="vodColumns"/> FROM mac_vod WHERE vod_id IN <foreach collection="ids" item="i" open="(" separator="," close=")">#{i}</foreach> ORDER BY vod_id
     </select>
+
+    <!-- ================================================================== 附件（旧 admin/controller/Annex.php、common/model/Annex.php） -->
+    <!-- 列表：类型（annex_type）、关键字（annex_file 包含）；旧 order annex_time desc，同序时按 annex_id 升序 -->
+    <sql id="annexCondition">
+        <where>
+            <if test="c.typeExact != null">AND annex_type = #{c.typeExact}</if>
+            <if test="c.wdLike != null">AND annex_file LIKE #{c.wdLike} ESCAPE '!'</if>
+        </where>
+    </sql>
+
+    <select id="countAnnexes" resultType="long">
+        SELECT COUNT(*) FROM mac_annex <include refid="annexCondition"/>
+    </select>
+
+    <select id="listAnnexes" resultMap="annexRow">
+        SELECT <include refid="annexColumns"/> FROM mac_annex <include refid="annexCondition"/>
+        ORDER BY annex_time DESC, annex_id ASC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- 上传与初始化登记前的查询（旧 infoData(['annex_file' => …])） -->
+    <select id="selectAnnexByFile" resultMap="annexRow">
+        SELECT <include refid="annexColumns"/> FROM mac_annex WHERE annex_file = #{file} ORDER BY annex_id LIMIT 1
+    </select>
+
+    <!-- 删除（旧 annex_id|annex_file IN ids）：编号或文件名在列表里的行 -->
+    <select id="selectAnnexesByIdsOrFiles" resultMap="annexRow">
+        SELECT <include refid="annexColumns"/> FROM mac_annex
+        WHERE annex_file IN <foreach collection="files" item="f" open="(" separator="," close=")">#{f}</foreach>
+        <if test="ids != null and !ids.isEmpty()">
+            OR annex_id IN <foreach collection="ids" item="i" open="(" separator="," close=")">#{i}</foreach>
+        </if>
+        ORDER BY annex_id
+    </select>
+
+    <!-- 附件初始化（旧 Annex::init）：各表按主键顺序分页取编号、名称、图片列与正文（表里没有的图片列取空串） -->
+    <select id="countAnnexScan" resultType="long">
+        SELECT COUNT(*) FROM
+        <choose>
+            <when test="t == 'actor'">mac_actor</when>
+            <when test="t == 'art'">mac_art</when>
+            <when test="t == 'topic'">mac_topic</when>
+            <when test="t == 'type'">mac_type</when>
+            <when test="t == 'vod'">mac_vod</when>
+            <when test="t == 'website'">mac_website</when>
+            <otherwise>mac_role</otherwise>
+        </choose>
+    </select>
+
+    <select id="listAnnexScan" resultType="map">
+        <choose>
+            <when test="t == 'actor'">SELECT CAST(actor_id AS CHAR) AS id, actor_name AS name, actor_pic AS pic, '' AS thumb, '' AS slide, actor_content AS content FROM mac_actor ORDER BY actor_id</when>
+            <when test="t == 'art'">SELECT CAST(art_id AS CHAR) AS id, art_name AS name, art_pic AS pic, art_pic_thumb AS thumb, art_pic_slide AS slide, art_content AS content FROM mac_art ORDER BY art_id</when>
+            <when test="t == 'topic'">SELECT CAST(topic_id AS CHAR) AS id, topic_name AS name, topic_pic AS pic, topic_pic_thumb AS thumb, topic_pic_slide AS slide, topic_content AS content FROM mac_topic ORDER BY topic_id</when>
+            <when test="t == 'type'">SELECT CAST(type_id AS CHAR) AS id, type_name AS name, type_pic AS pic, '' AS thumb, '' AS slide, '' AS content FROM mac_type ORDER BY type_id</when>
+            <when test="t == 'vod'">SELECT CAST(vod_id AS CHAR) AS id, vod_name AS name, vod_pic AS pic, vod_pic_thumb AS thumb, vod_pic_slide AS slide, vod_content AS content FROM mac_vod ORDER BY vod_id</when>
+            <when test="t == 'website'">SELECT CAST(website_id AS CHAR) AS id, website_name AS name, website_pic AS pic, '' AS thumb, '' AS slide, website_content AS content FROM mac_website ORDER BY website_id</when>
+            <otherwise>SELECT CAST(role_id AS CHAR) AS id, role_name AS name, role_pic AS pic, '' AS thumb, '' AS slide, role_content AS content FROM mac_role ORDER BY role_id</otherwise>
+        </choose>
+        LIMIT #{offset}, #{limit}
+    </select>
 </mapper>

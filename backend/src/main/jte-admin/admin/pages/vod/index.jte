@@ -209,11 +209,11 @@
                 <td><input type="checkbox" name="ids[]" value="${vo.s("vod_id")}" class="layui-checkbox checkbox-ids" lay-skin="primary"></td>
                 <td>${vo.s("vod_id")}</td>
                 <td>
-                    [${page.typeName(vo.n("type_id"))}] <a target="_blank" class="layui-badge-rim" href="${page.links().vod(vo)}">${page.xssText(vo.s("vod_name"))}</a>
+                    [${page.text(page.typeName(vo.n("type_id")))}] <a target="_blank" class="layui-badge-rim" href="${page.links().vod(vo)}">${page.xssText(vo.s("vod_name"))}</a>
                     @if(vo.n("vod_status") == 0) <span class="layui-badge">${page.lang().get("reviewed_not")}</span>@endif
                     @if(vo.n("vod_lock") == 1) <span class="layui-badge">${page.lang().get("lock")}</span>@endif
-                    @if(vo.n("vod_isend") == 0 && !vo.s("vod_serial").isEmpty()) <span class="layui-badge layui-bg-blue">${page.lang().get("admin/vod/serialize")}${vo.s("vod_serial")}</span>@endif
-                    @if(!vo.s("vod_remarks").isEmpty()) <span class="layui-badge layui-bg-orange">${vo.s("vod_remarks")}</span>@endif
+                    @if(vo.n("vod_isend") == 0 && !vo.s("vod_serial").isEmpty()) <span class="layui-badge layui-bg-blue">${page.lang().get("admin/vod/serialize")}${page.text(vo.s("vod_serial"))}</span>@endif
+                    @if(!vo.s("vod_remarks").isEmpty()) <span class="layui-badge layui-bg-orange">${page.text(vo.s("vod_remarks"))}</span>@endif
                     @if(vo.n("vod_plot") == 1) <span class="layui-badge layui-bg-cyan">${page.lang().get("plot")}</span>@endif
                     @if(vo.n("vod_copyright") == 1) <span class="layui-badge layui-bg-black">${page.lang().get("admin/vod/copyright")}</span>@endif
                 </td>
@@ -222,7 +222,7 @@
                 <td>${vo.s("vod_score")}</td>
                 <td><a data-href="${page.url().build("index/select") + "?tab=vod&col=vod_level&tpl=select_level&url=vod/field&ids=" + vo.s("vod_id")}" data-width="270" data-height="100" class=" j-select"><span class="layui-badge layui-bg-orange">${vo.s("vod_level")}</span></a></td>
                 <td>@if(page.made(vo, "vod_time", "vod_time_make"))<a target="_blank" class="layui-badge layui-bg-green " href="${page.links().vod(vo)}">Y</a>@else<a class="layui-badge" href="${page.url().build("make/make?ac=info&tab=vod") + "?ids=" + vo.s("vod_id") + "&ref=1"}">N</a>@endif</td>
-                <td><span title="${page.playGroups(vo)}">${page.playGroups(vo)}</span></td>
+                <td><span title="${page.attr(page.playGroups(vo))}">${page.text(page.playGroups(vo))}</span></td>
                 <td>@if(page.isToday(vo.n("vod_time")))<font color="#FF0000">${page.day(vo.n("vod_time"))}</font>@else${page.day(vo.n("vod_time"))}@endif</td>
                 <td>
                     <a class="layui-badge-rim j-iframe" data-full="1" data-href="${page.url().build("info?id=" + vo.s("vod_id"))}" href="javascript:;" title="${page.lang().get("edit")}">${page.lang().get("edit")}</a>
