@@ -203,6 +203,23 @@ public class AdminConfiguration {
     }
 
     @Bean
+    com.maccms.backend.admin.application.PlayerAdminService adminPlayerAdminService(LegacyConfigService legacy, LegacySiteFiles files) {
+        return new com.maccms.backend.admin.application.PlayerAdminService(legacy, files);
+    }
+
+    @Bean
+    com.maccms.backend.admin.application.ListConfigService adminListConfigService(LegacyConfigService legacy) {
+        return new com.maccms.backend.admin.application.ListConfigService(legacy);
+    }
+
+    @Bean
+    com.maccms.backend.admin.web.AdminPlayerActions adminPlayerActions(AdminEndpoint endpoint, AdminSettings settings,
+            AdminResponses responses, com.maccms.backend.admin.application.PlayerAdminService players,
+            com.maccms.backend.admin.application.ListConfigService lists, SystemConfigService system, AdminRandom random) {
+        return new com.maccms.backend.admin.web.AdminPlayerActions(endpoint, settings, responses, players, lists, system, random);
+    }
+
+    @Bean
     AdminSystemActions adminSystemActions(AdminEndpoint endpoint, AdminSettings settings, AdminResponses responses,
                                           SystemConfigService system, AdminRandom random) {
         return new AdminSystemActions(endpoint, settings, responses, system, random);

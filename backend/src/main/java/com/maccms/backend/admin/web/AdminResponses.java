@@ -157,6 +157,21 @@ public class AdminResponses {
                 .body(body);
     }
 
+    /**
+     * 附件下载（B15 站群、播放器导出，旧 {@code header("Content-type: application/octet-stream")} 加
+     * {@code Content-Disposition: attachment; filename=…} 后 {@code echo}）：正文按 UTF-8。
+     */
+    public ResponseEntity<String> attachment(String body, String disposition) {
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_TYPE, "application/octet-stream")
+                .header(HttpHeaders.CONTENT_DISPOSITION, disposition)
+                .contentLength(body.getBytes(StandardCharsets.UTF_8).length)
+                .cacheControl(CacheControl.noStore())
+                .header("X-Content-Type-Options", "nosniff")
+                .header("X-Robots-Tag", "noindex")
+                .body(body);
+    }
+
     /** 跳转提示页的 HTML（旧 {@code error()} 在已输出的内容后面接着输出时用）。 */
     public String jumpHtml(boolean success, String msg, String url) {
         return renderer.render(t -> t.adminPagesJump(new JumpPage(success, msg, url, 3, assetsPath)));

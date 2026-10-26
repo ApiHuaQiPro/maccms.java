@@ -135,7 +135,7 @@ public final class LegacyAdminUrl {
     }
 
     /** PHP {@code urlencode}：空格为 {@code +}，{@code -_.} 与字母数字之外的字节都是 {@code %XX}（大写）。 */
-    static String urlencode(String s) {
+    public static String urlencode(String s) {
         // Java 的 URLEncoder 与 PHP urlencode 只差 "*"（Java 不编码）与 "~"（两者都编码为 %7E）
         return URLEncoder.encode(s, StandardCharsets.UTF_8).replace("*", "%2A");
     }

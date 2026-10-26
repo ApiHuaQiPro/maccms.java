@@ -76,12 +76,15 @@ public class AdminController {
     private final AdminContentActions content;
     private final AdminMemberActions member;
     private final AdminSystemActions system;
+    private final AdminPlayerActions players;
+    private final com.maccms.backend.admin.application.PlayerAdminService playerCache;
 
     public AdminController(AdminEndpoint endpoint, AdminSessions sessions, AdminSettings settings, AdminLoginService logins,
                            AdminAccountService accounts, AdminPages pages, AdminResponses responses,
                            ClientIpResolver clientIp, ContentCacheMaintenance contentCache, AdminRandom random,
                            AdminContentActions content, ObjectProvider<AdminMemberActions> member,
-                           ObjectProvider<AdminSystemActions> system) {
+                           ObjectProvider<AdminSystemActions> system, ObjectProvider<AdminPlayerActions> players,
+                           ObjectProvider<com.maccms.backend.admin.application.PlayerAdminService> playerCache) {
         this.endpoint = endpoint;
         this.sessions = sessions;
         this.settings = settings;
@@ -95,6 +98,8 @@ public class AdminController {
         this.content = content;
         this.member = member.getIfAvailable();
         this.system = system.getIfAvailable();
+        this.players = players.getIfAvailable();
+        this.playerCache = playerCache.getIfAvailable();
     }
 
     /** 一次请求的上下文。 */
@@ -156,7 +161,8 @@ public class AdminController {
             case "index/quickmenu" -> isPost
                     ? (system == null ? pending(ctx, "B15") : system.handle(ctx, session))
                     : pages.quickmenu(ctx, token(session));
-            case "index/checkcache" -> responses.text("no");
+            // 旧 Index::checkcache：播放器、服务器组、下载器保存或删除之后为 haved，清理缓存后为 no（B15）
+            case "index/checkcache" -> responses.text(playerCache != null && playerCache.cacheDirty() ? "haved" : "no");
             case "index/clear" -> clear(ctx);
             case "index/iframe" -> iframe(ctx);
             case "index/unlocked" -> unlocked(ctx, session);
@@ -183,6 +189,9 @@ public class AdminController {
                     yield b14;
                 }
                 ResponseEntity<String> b15 = system == null ? null : system.handle(ctx, session);
+                if (b15 == null && players != null) {
+                    b15 = players.handle(ctx, session);
+                }
                 if (b15 != null) {
                     yield b15;
                 }
@@ -251,6 +260,10 @@ public class AdminController {
      * 过期的视频搜索缓存。新版没有运行目录与缓存驱动，playerconfig.js 由 B05 按旧配置即时生成，只剩视频搜索缓存（21 文档第 4.6 节）。
      */
     private ResponseEntity<String> clear(Ctx ctx) {
+        if (playerCache != null) {
+            // B15：按当前的播放器、服务器组、下载器配置重写 static/js/playerconfig.js 的"缓存"段（旧 Base::_cache_clear）
+            playerCache.clearCache();
+        }
         contentCache.clearVodSearchCache();
         return responses.success(ctx.ajax(), settings.lang().get("admin/index/clear_ok"), successUrl(ctx));
     }

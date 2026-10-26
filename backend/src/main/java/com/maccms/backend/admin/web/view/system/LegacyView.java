@@ -102,4 +102,59 @@ public interface LegacyView extends BrowserText {
     default String url(String route) {
         return urls().build(route);
     }
+
+    /** {@code count($v)}：数组的元素个数，其他为 0（旧版对 null 是告警或 TypeError）。 */
+    default int count(Object v) {
+        return v instanceof PhpArray a ? a.size() : 0;
+    }
+
+    /** 数组各项的 {@code (string)}，编码成 JSON 数组（放进 data-* 属性给页面脚本用）。 */
+    default String json(Object v) {
+        List<String> items = new ArrayList<>();
+        for (Item it : each(v)) {
+            items.add(s(it.value()));
+        }
+        return com.maccms.backend.common.web.LegacyJson.encode(items);
+    }
+
+    /**
+     * 旧 {@code mac_day($t)}（application/common.php:238-249）：{@code empty} 时空串；数字按 {@code Y-m-d H:i:s}（PRC）格式化；其余原样。
+     */
+    default String macDay(Object v) {
+        String t = s(v);
+        if (t.isEmpty() || t.equals("0")) {
+            return "";
+        }
+        if (PhpLoose.isNumeric(t)) {
+            long sec = com.maccms.backend.content.application.PhpIntval.of(t);
+            return java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+                    .format(java.time.Instant.ofEpochSecond(sec).atZone(java.time.ZoneId.of("Asia/Shanghai")));
+        }
+        return t;
+    }
+
+    /** PHP {@code rawurlencode}：字母数字与 {@code -_.~} 之外的字节写成 {@code %XX}。 */
+    default String rawurlencode(Object v) {
+        StringBuilder sb = new StringBuilder();
+        for (byte b : s(v).getBytes(java.nio.charset.StandardCharsets.UTF_8)) {
+            int c = b & 0xff;
+            if ((c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || c == '-' || c == '_' || c == '.'
+                    || c == '~') {
+                sb.append((char) c);
+            } else {
+                sb.append('%').append(Character.toUpperCase(Character.forDigit(c >> 4, 16)))
+                        .append(Character.toUpperCase(Character.forDigit(c & 15, 16)));
+            }
+        }
+        return sb.toString();
+    }
+
+    /** PHP {@code strtolower}（只转 ASCII 字母）。 */
+    default String lower(Object v) {
+        StringBuilder sb = new StringBuilder();
+        for (char c : s(v).toCharArray()) {
+            sb.append(c >= 'A' && c <= 'Z' ? (char) (c + 32) : c);
+        }
+        return sb.toString();
+    }
 }
