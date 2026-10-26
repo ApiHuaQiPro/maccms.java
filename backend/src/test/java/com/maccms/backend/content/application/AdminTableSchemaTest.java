@@ -17,7 +17,7 @@ import java.util.regex.Pattern;
 import org.junit.jupiter.api.Test;
 
 /**
- * 后台内容管理的列清单（B13，22 文档第 3 节）：{@link AdminTable} 与 install.sql 逐列一致（列名、顺序、类型、长度、有无符号）；写 Mapper XML
+ * 后台内容管理（B13，22 文档第 3 节）与后台会员、会员组（B14，23 文档第 3 节）的列清单：{@link AdminTable} 与 install.sql 逐列一致（列名、顺序、类型、长度、有无符号）；写 Mapper XML
  * 里每张表的新增、整行覆盖、按主键列表修改都列出了全部列（"表单字段多，遗漏字段导致数据被清空"的护栏，路线图 B13 行）。
  */
 class AdminTableSchemaTest {
@@ -49,15 +49,18 @@ class AdminTableSchemaTest {
     void writeMappersListEveryColumnOfEveryTable() throws IOException {
         String content = Files.readString(WRITE_MAPPERS.resolve("content/ContentAdminWriteMapper.xml"), StandardCharsets.UTF_8);
         String comment = Files.readString(WRITE_MAPPERS.resolve("comment/CommentAdminWriteMapper.xml"), StandardCharsets.UTF_8);
+        // B14（23 文档第 3 节）：后台会员与会员组的整行覆盖
+        String member = Files.readString(WRITE_MAPPERS.resolve("member/MemberAdminWriteMapper.xml"), StandardCharsets.UTF_8);
         Map<AdminTable, String> names = Map.ofEntries(Map.entry(AdminTable.VOD, "Vod"), Map.entry(AdminTable.ART, "Art"),
                 Map.entry(AdminTable.TOPIC, "Topic"), Map.entry(AdminTable.ACTOR, "Actor"), Map.entry(AdminTable.ROLE, "Role"),
                 Map.entry(AdminTable.WEBSITE, "Website"), Map.entry(AdminTable.LINK, "Link"), Map.entry(AdminTable.TYPE, "Type"),
                 Map.entry(AdminTable.ANNEX, "Annex"), Map.entry(AdminTable.COMMENT, "Comment"),
-                Map.entry(AdminTable.GBOOK, "Gbook"));
+                Map.entry(AdminTable.GBOOK, "Gbook"), Map.entry(AdminTable.USER, "User"), Map.entry(AdminTable.GROUP, "Group"));
         assertThat(names).hasSize(AdminTable.values().length);
         for (Map.Entry<AdminTable, String> e : names.entrySet()) {
             AdminTable t = e.getKey();
-            String xml = t == AdminTable.COMMENT || t == AdminTable.GBOOK ? comment : content;
+            String xml = t == AdminTable.COMMENT || t == AdminTable.GBOOK ? comment
+                    : t == AdminTable.USER || t == AdminTable.GROUP ? member : content;
             List<String> columns = List.copyOf(t.columns().keySet());
             for (String id : List.of("insert" + e.getValue(), "update" + e.getValue(), "update" + e.getValue() + "ByIds")) {
                 Matcher m = Pattern.compile("(?s)<(insert|update) id=\"" + id + "\"[^>]*>(.*?)</\\1>").matcher(xml);

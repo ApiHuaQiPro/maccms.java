@@ -132,6 +132,7 @@ class WriteGuardTest {
         // B10（MACC-34）登记会员模块对 mac_ulog/mac_plog/mac_card/mac_cash/mac_order/mac_visit 的写入（19 文档第 6.1 节）；
         // B12（MACC-36）登记后台模块对 mac_admin 的写入与后台"清理缓存"对 mac_vod_search 的删除（21 文档第 5 节）；
         // B13（MACC-37）登记后台内容管理：内容表的新增与删除、友情链接/分类/附件的增删改、评论删除与留言修改删除（22 文档第 6 节）
+        // B14（MACC-38）登记后台会员与财务：会员删除、会员组增删改、卡密生成与删除、订单删除、提现审核、推广访问删除（23 文档第 6 节）
         assertThat(WriteRegistry.registered().permissions()).extracting(p -> p.module() + " " + p.table() + " "
                 + p.operation() + " " + p.batch())
                 .containsExactly("member mac_user INSERT B09", "member mac_user UPDATE B09",
@@ -151,7 +152,10 @@ class WriteGuardTest {
                         "content mac_link INSERT B13", "content mac_link UPDATE B13", "content mac_link DELETE B13",
                         "content mac_type INSERT B13", "content mac_type UPDATE B13", "content mac_type DELETE B13",
                         "content mac_annex INSERT B13", "content mac_annex UPDATE B13", "content mac_annex DELETE B13",
-                        "comment mac_comment DELETE B13", "comment mac_gbook UPDATE B13", "comment mac_gbook DELETE B13");
+                        "comment mac_comment DELETE B13", "comment mac_gbook UPDATE B13", "comment mac_gbook DELETE B13",
+                        "member mac_user DELETE B14", "member mac_group INSERT B14", "member mac_group UPDATE B14",
+                        "member mac_group DELETE B14", "member mac_card INSERT B14", "member mac_card DELETE B14",
+                        "member mac_order DELETE B14", "member mac_cash UPDATE B14", "member mac_visit DELETE B14");
     }
 
     @Test

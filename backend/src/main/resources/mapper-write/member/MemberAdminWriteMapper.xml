@@ -1,0 +1,290 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+  B14 后台会员与财务管理的写入（23 文档第 6 节；WriteRegistry 登记 member 的 mac_user、mac_group、mac_card、mac_order、mac_cash、mac_plog、
+  mac_ulog、mac_visit）。单表、单语句、带顶层 WHERE；返回匹配行数。
+-->
+<mapper namespace="com.maccms.backend.member.infrastructure.MemberAdminWriteMapper">
+
+    <!-- mac_user：新增、按主键整行覆盖与按主键列表修改（旧 User::saveData 把整个 POST 交给 update/insert，fields_strict=false 时表里有的列
+         都写；列清单与 install.sql 相同，AdminTableSchemaTest 锁定） -->
+    <insert id="insertUser" useGeneratedKeys="true" keyProperty="id" keyColumn="user_id">
+        INSERT INTO mac_user (<trim suffixOverrides=",">
+            <if test="c.containsKey('user_id')">user_id,</if>
+            <if test="c.containsKey('group_id')">group_id,</if>
+            <if test="c.containsKey('user_name')">user_name,</if>
+            <if test="c.containsKey('user_pwd')">user_pwd,</if>
+            <if test="c.containsKey('user_nick_name')">user_nick_name,</if>
+            <if test="c.containsKey('user_qq')">user_qq,</if>
+            <if test="c.containsKey('user_email')">user_email,</if>
+            <if test="c.containsKey('user_phone')">user_phone,</if>
+            <if test="c.containsKey('user_status')">user_status,</if>
+            <if test="c.containsKey('user_portrait')">user_portrait,</if>
+            <if test="c.containsKey('user_portrait_thumb')">user_portrait_thumb,</if>
+            <if test="c.containsKey('user_openid_qq')">user_openid_qq,</if>
+            <if test="c.containsKey('user_openid_weixin')">user_openid_weixin,</if>
+            <if test="c.containsKey('user_question')">user_question,</if>
+            <if test="c.containsKey('user_answer')">user_answer,</if>
+            <if test="c.containsKey('user_points')">user_points,</if>
+            <if test="c.containsKey('user_points_froze')">user_points_froze,</if>
+            <if test="c.containsKey('user_reg_time')">user_reg_time,</if>
+            <if test="c.containsKey('user_reg_ip')">user_reg_ip,</if>
+            <if test="c.containsKey('user_login_time')">user_login_time,</if>
+            <if test="c.containsKey('user_login_ip')">user_login_ip,</if>
+            <if test="c.containsKey('user_last_login_time')">user_last_login_time,</if>
+            <if test="c.containsKey('user_last_login_ip')">user_last_login_ip,</if>
+            <if test="c.containsKey('user_login_num')">user_login_num,</if>
+            <if test="c.containsKey('user_extend')">user_extend,</if>
+            <if test="c.containsKey('user_random')">user_random,</if>
+            <if test="c.containsKey('user_end_time')">user_end_time,</if>
+            <if test="c.containsKey('user_pid')">user_pid,</if>
+            <if test="c.containsKey('user_pid_2')">user_pid_2,</if>
+            <if test="c.containsKey('user_pid_3')">user_pid_3,</if>
+        </trim>) VALUES (<trim suffixOverrides=",">
+            <if test="c.containsKey('user_id')">#{c.user_id},</if>
+            <if test="c.containsKey('group_id')">#{c.group_id},</if>
+            <if test="c.containsKey('user_name')">#{c.user_name},</if>
+            <if test="c.containsKey('user_pwd')">#{c.user_pwd},</if>
+            <if test="c.containsKey('user_nick_name')">#{c.user_nick_name},</if>
+            <if test="c.containsKey('user_qq')">#{c.user_qq},</if>
+            <if test="c.containsKey('user_email')">#{c.user_email},</if>
+            <if test="c.containsKey('user_phone')">#{c.user_phone},</if>
+            <if test="c.containsKey('user_status')">#{c.user_status},</if>
+            <if test="c.containsKey('user_portrait')">#{c.user_portrait},</if>
+            <if test="c.containsKey('user_portrait_thumb')">#{c.user_portrait_thumb},</if>
+            <if test="c.containsKey('user_openid_qq')">#{c.user_openid_qq},</if>
+            <if test="c.containsKey('user_openid_weixin')">#{c.user_openid_weixin},</if>
+            <if test="c.containsKey('user_question')">#{c.user_question},</if>
+            <if test="c.containsKey('user_answer')">#{c.user_answer},</if>
+            <if test="c.containsKey('user_points')">#{c.user_points},</if>
+            <if test="c.containsKey('user_points_froze')">#{c.user_points_froze},</if>
+            <if test="c.containsKey('user_reg_time')">#{c.user_reg_time},</if>
+            <if test="c.containsKey('user_reg_ip')">#{c.user_reg_ip},</if>
+            <if test="c.containsKey('user_login_time')">#{c.user_login_time},</if>
+            <if test="c.containsKey('user_login_ip')">#{c.user_login_ip},</if>
+            <if test="c.containsKey('user_last_login_time')">#{c.user_last_login_time},</if>
+            <if test="c.containsKey('user_last_login_ip')">#{c.user_last_login_ip},</if>
+            <if test="c.containsKey('user_login_num')">#{c.user_login_num},</if>
+            <if test="c.containsKey('user_extend')">#{c.user_extend},</if>
+            <if test="c.containsKey('user_random')">#{c.user_random},</if>
+            <if test="c.containsKey('user_end_time')">#{c.user_end_time},</if>
+            <if test="c.containsKey('user_pid')">#{c.user_pid},</if>
+            <if test="c.containsKey('user_pid_2')">#{c.user_pid_2},</if>
+            <if test="c.containsKey('user_pid_3')">#{c.user_pid_3},</if>
+        </trim>)
+    </insert>
+
+    <update id="updateUser">
+        UPDATE mac_user SET <trim suffixOverrides=",">
+            <if test="c.containsKey('user_id')">user_id = #{c.user_id},</if>
+            <if test="c.containsKey('group_id')">group_id = #{c.group_id},</if>
+            <if test="c.containsKey('user_name')">user_name = #{c.user_name},</if>
+            <if test="c.containsKey('user_pwd')">user_pwd = #{c.user_pwd},</if>
+            <if test="c.containsKey('user_nick_name')">user_nick_name = #{c.user_nick_name},</if>
+            <if test="c.containsKey('user_qq')">user_qq = #{c.user_qq},</if>
+            <if test="c.containsKey('user_email')">user_email = #{c.user_email},</if>
+            <if test="c.containsKey('user_phone')">user_phone = #{c.user_phone},</if>
+            <if test="c.containsKey('user_status')">user_status = #{c.user_status},</if>
+            <if test="c.containsKey('user_portrait')">user_portrait = #{c.user_portrait},</if>
+            <if test="c.containsKey('user_portrait_thumb')">user_portrait_thumb = #{c.user_portrait_thumb},</if>
+            <if test="c.containsKey('user_openid_qq')">user_openid_qq = #{c.user_openid_qq},</if>
+            <if test="c.containsKey('user_openid_weixin')">user_openid_weixin = #{c.user_openid_weixin},</if>
+            <if test="c.containsKey('user_question')">user_question = #{c.user_question},</if>
+            <if test="c.containsKey('user_answer')">user_answer = #{c.user_answer},</if>
+            <if test="c.containsKey('user_points')">user_points = #{c.user_points},</if>
+            <if test="c.containsKey('user_points_froze')">user_points_froze = #{c.user_points_froze},</if>
+            <if test="c.containsKey('user_reg_time')">user_reg_time = #{c.user_reg_time},</if>
+            <if test="c.containsKey('user_reg_ip')">user_reg_ip = #{c.user_reg_ip},</if>
+            <if test="c.containsKey('user_login_time')">user_login_time = #{c.user_login_time},</if>
+            <if test="c.containsKey('user_login_ip')">user_login_ip = #{c.user_login_ip},</if>
+            <if test="c.containsKey('user_last_login_time')">user_last_login_time = #{c.user_last_login_time},</if>
+            <if test="c.containsKey('user_last_login_ip')">user_last_login_ip = #{c.user_last_login_ip},</if>
+            <if test="c.containsKey('user_login_num')">user_login_num = #{c.user_login_num},</if>
+            <if test="c.containsKey('user_extend')">user_extend = #{c.user_extend},</if>
+            <if test="c.containsKey('user_random')">user_random = #{c.user_random},</if>
+            <if test="c.containsKey('user_end_time')">user_end_time = #{c.user_end_time},</if>
+            <if test="c.containsKey('user_pid')">user_pid = #{c.user_pid},</if>
+            <if test="c.containsKey('user_pid_2')">user_pid_2 = #{c.user_pid_2},</if>
+            <if test="c.containsKey('user_pid_3')">user_pid_3 = #{c.user_pid_3},</if>
+        </trim>
+        WHERE user_id = #{id}
+    </update>
+
+    <update id="updateUserByIds">
+        UPDATE mac_user SET <trim suffixOverrides=",">
+            <if test="c.containsKey('user_id')">user_id = #{c.user_id},</if>
+            <if test="c.containsKey('group_id')">group_id = #{c.group_id},</if>
+            <if test="c.containsKey('user_name')">user_name = #{c.user_name},</if>
+            <if test="c.containsKey('user_pwd')">user_pwd = #{c.user_pwd},</if>
+            <if test="c.containsKey('user_nick_name')">user_nick_name = #{c.user_nick_name},</if>
+            <if test="c.containsKey('user_qq')">user_qq = #{c.user_qq},</if>
+            <if test="c.containsKey('user_email')">user_email = #{c.user_email},</if>
+            <if test="c.containsKey('user_phone')">user_phone = #{c.user_phone},</if>
+            <if test="c.containsKey('user_status')">user_status = #{c.user_status},</if>
+            <if test="c.containsKey('user_portrait')">user_portrait = #{c.user_portrait},</if>
+            <if test="c.containsKey('user_portrait_thumb')">user_portrait_thumb = #{c.user_portrait_thumb},</if>
+            <if test="c.containsKey('user_openid_qq')">user_openid_qq = #{c.user_openid_qq},</if>
+            <if test="c.containsKey('user_openid_weixin')">user_openid_weixin = #{c.user_openid_weixin},</if>
+            <if test="c.containsKey('user_question')">user_question = #{c.user_question},</if>
+            <if test="c.containsKey('user_answer')">user_answer = #{c.user_answer},</if>
+            <if test="c.containsKey('user_points')">user_points = #{c.user_points},</if>
+            <if test="c.containsKey('user_points_froze')">user_points_froze = #{c.user_points_froze},</if>
+            <if test="c.containsKey('user_reg_time')">user_reg_time = #{c.user_reg_time},</if>
+            <if test="c.containsKey('user_reg_ip')">user_reg_ip = #{c.user_reg_ip},</if>
+            <if test="c.containsKey('user_login_time')">user_login_time = #{c.user_login_time},</if>
+            <if test="c.containsKey('user_login_ip')">user_login_ip = #{c.user_login_ip},</if>
+            <if test="c.containsKey('user_last_login_time')">user_last_login_time = #{c.user_last_login_time},</if>
+            <if test="c.containsKey('user_last_login_ip')">user_last_login_ip = #{c.user_last_login_ip},</if>
+            <if test="c.containsKey('user_login_num')">user_login_num = #{c.user_login_num},</if>
+            <if test="c.containsKey('user_extend')">user_extend = #{c.user_extend},</if>
+            <if test="c.containsKey('user_random')">user_random = #{c.user_random},</if>
+            <if test="c.containsKey('user_end_time')">user_end_time = #{c.user_end_time},</if>
+            <if test="c.containsKey('user_pid')">user_pid = #{c.user_pid},</if>
+            <if test="c.containsKey('user_pid_2')">user_pid_2 = #{c.user_pid_2},</if>
+            <if test="c.containsKey('user_pid_3')">user_pid_3 = #{c.user_pid_3},</if>
+        </trim>
+        WHERE user_id IN <foreach collection="ids" item="i" open="(" separator="," close=")">#{i}</foreach>
+    </update>
+
+    <!-- User::del（admin/controller/User.php:165-180） -->
+    <delete id="deleteUsers">
+        DELETE FROM mac_user WHERE user_id IN <foreach collection="ids" item="i" open="(" separator="," close=")">#{i}</foreach>
+    </delete>
+
+    <!-- mac_group：新增、按主键整行覆盖与按主键列表修改（旧 Group::saveData / fieldData，allowField(true)） -->
+    <insert id="insertGroup" useGeneratedKeys="true" keyProperty="id" keyColumn="group_id">
+        INSERT INTO mac_group (<trim suffixOverrides=",">
+            <if test="c.containsKey('group_id')">group_id,</if>
+            <if test="c.containsKey('group_name')">group_name,</if>
+            <if test="c.containsKey('group_status')">group_status,</if>
+            <if test="c.containsKey('group_type')">group_type,</if>
+            <if test="c.containsKey('group_popedom')">group_popedom,</if>
+            <if test="c.containsKey('group_points_day')">group_points_day,</if>
+            <if test="c.containsKey('group_points_week')">group_points_week,</if>
+            <if test="c.containsKey('group_points_month')">group_points_month,</if>
+            <if test="c.containsKey('group_points_year')">group_points_year,</if>
+            <if test="c.containsKey('group_points_free')">group_points_free,</if>
+        </trim>) VALUES (<trim suffixOverrides=",">
+            <if test="c.containsKey('group_id')">#{c.group_id},</if>
+            <if test="c.containsKey('group_name')">#{c.group_name},</if>
+            <if test="c.containsKey('group_status')">#{c.group_status},</if>
+            <if test="c.containsKey('group_type')">#{c.group_type},</if>
+            <if test="c.containsKey('group_popedom')">#{c.group_popedom},</if>
+            <if test="c.containsKey('group_points_day')">#{c.group_points_day},</if>
+            <if test="c.containsKey('group_points_week')">#{c.group_points_week},</if>
+            <if test="c.containsKey('group_points_month')">#{c.group_points_month},</if>
+            <if test="c.containsKey('group_points_year')">#{c.group_points_year},</if>
+            <if test="c.containsKey('group_points_free')">#{c.group_points_free},</if>
+        </trim>)
+    </insert>
+
+    <update id="updateGroup">
+        UPDATE mac_group SET <trim suffixOverrides=",">
+            <if test="c.containsKey('group_id')">group_id = #{c.group_id},</if>
+            <if test="c.containsKey('group_name')">group_name = #{c.group_name},</if>
+            <if test="c.containsKey('group_status')">group_status = #{c.group_status},</if>
+            <if test="c.containsKey('group_type')">group_type = #{c.group_type},</if>
+            <if test="c.containsKey('group_popedom')">group_popedom = #{c.group_popedom},</if>
+            <if test="c.containsKey('group_points_day')">group_points_day = #{c.group_points_day},</if>
+            <if test="c.containsKey('group_points_week')">group_points_week = #{c.group_points_week},</if>
+            <if test="c.containsKey('group_points_month')">group_points_month = #{c.group_points_month},</if>
+            <if test="c.containsKey('group_points_year')">group_points_year = #{c.group_points_year},</if>
+            <if test="c.containsKey('group_points_free')">group_points_free = #{c.group_points_free},</if>
+        </trim>
+        WHERE group_id = #{id}
+    </update>
+
+    <update id="updateGroupByIds">
+        UPDATE mac_group SET <trim suffixOverrides=",">
+            <if test="c.containsKey('group_id')">group_id = #{c.group_id},</if>
+            <if test="c.containsKey('group_name')">group_name = #{c.group_name},</if>
+            <if test="c.containsKey('group_status')">group_status = #{c.group_status},</if>
+            <if test="c.containsKey('group_type')">group_type = #{c.group_type},</if>
+            <if test="c.containsKey('group_popedom')">group_popedom = #{c.group_popedom},</if>
+            <if test="c.containsKey('group_points_day')">group_points_day = #{c.group_points_day},</if>
+            <if test="c.containsKey('group_points_week')">group_points_week = #{c.group_points_week},</if>
+            <if test="c.containsKey('group_points_month')">group_points_month = #{c.group_points_month},</if>
+            <if test="c.containsKey('group_points_year')">group_points_year = #{c.group_points_year},</if>
+            <if test="c.containsKey('group_points_free')">group_points_free = #{c.group_points_free},</if>
+        </trim>
+        WHERE group_id IN <foreach collection="ids" item="i" open="(" separator="," close=")">#{i}</foreach>
+    </update>
+
+    <!-- Group::delData（common/model/Group.php:88-100）：旧版先数该组下的会员、没有才删；新版删除时再按条件排除仍有会员的组（两步之间被分配了
+         会员时不删，MyISAM 整句持两张表的锁） -->
+    <delete id="deleteEmptyGroups">
+        DELETE FROM mac_group
+        WHERE group_id IN <foreach collection="ids" item="i" open="(" separator="," close=")">#{i}</foreach>
+          AND NOT EXISTS (SELECT 1 FROM mac_user AS u WHERE u.group_id = mac_group.group_id)
+    </delete>
+
+    <!-- mac_card：Card::saveAllData（common/model/Card.php:80-96）的 insertAll，一批一条多行 INSERT -->
+    <insert id="insertCards">
+        INSERT INTO mac_card (card_no, card_pwd, card_money, card_points, card_add_time) VALUES
+        <foreach collection="rows" item="r" separator=",">(#{r.no}, #{r.pwd}, #{money}, #{points}, #{now})</foreach>
+    </insert>
+
+    <delete id="deleteCards">
+        DELETE FROM mac_card WHERE card_id IN <foreach collection="ids" item="i" open="(" separator="," close=")">#{i}</foreach>
+    </delete>
+
+    <!-- 旧"清空"（Card::del 的 all=1：card_id > 0 即全部；以下各表同） -->
+    <delete id="deleteAllCards">
+        DELETE FROM mac_card WHERE card_id &gt; 0
+    </delete>
+
+    <!-- mac_order：Order::del -->
+    <delete id="deleteOrders">
+        DELETE FROM mac_order WHERE order_id IN <foreach collection="ids" item="i" open="(" separator="," close=")">#{i}</foreach>
+    </delete>
+
+    <delete id="deleteAllOrders">
+        DELETE FROM mac_order WHERE order_id &gt; 0
+    </delete>
+
+    <!-- mac_cash：Cash::auditData（common/model/Cash.php:165-187）逐行"标为已审核 → 扣冻结积分"改为条件写入：未审核才认领 -->
+    <update id="auditCash">
+        UPDATE mac_cash
+        SET cash_status = 1, cash_time_audit = #{now}
+        WHERE cash_id = #{cashId} AND cash_status = 0
+    </update>
+
+    <!-- 审核的补偿（扣冻结积分不命中时）：仍是本次写入的值才恢复 -->
+    <update id="revertAudit">
+        UPDATE mac_cash
+        SET cash_status = 0, cash_time_audit = #{oldAudit}
+        WHERE cash_id = #{cashId} AND cash_status = 1 AND cash_time_audit = #{now}
+    </update>
+
+    <!-- 旧 setDec('user_points_froze', cash_points)：冻结积分足够才命中（旧版不检查，扣成负数时 MySQL 报错） -->
+    <update id="settleFrozen">
+        UPDATE mac_user
+        SET user_points_froze = user_points_froze - #{points}
+        WHERE user_id = #{userId} AND user_points_froze &gt;= #{points}
+    </update>
+
+    <!-- mac_plog / mac_ulog / mac_visit：Plog::del、Ulog::del、Visit::del -->
+    <delete id="deletePlogs">
+        DELETE FROM mac_plog WHERE plog_id IN <foreach collection="ids" item="i" open="(" separator="," close=")">#{i}</foreach>
+    </delete>
+
+    <delete id="deleteAllPlogs">
+        DELETE FROM mac_plog WHERE plog_id &gt; 0
+    </delete>
+
+    <delete id="deleteUlogs">
+        DELETE FROM mac_ulog WHERE ulog_id IN <foreach collection="ids" item="i" open="(" separator="," close=")">#{i}</foreach>
+    </delete>
+
+    <delete id="deleteAllUlogs">
+        DELETE FROM mac_ulog WHERE ulog_id &gt; 0
+    </delete>
+
+    <delete id="deleteVisits">
+        DELETE FROM mac_visit WHERE visit_id IN <foreach collection="ids" item="i" open="(" separator="," close=")">#{i}</foreach>
+    </delete>
+
+    <delete id="deleteAllVisits">
+        DELETE FROM mac_visit WHERE visit_id &gt; 0
+    </delete>
+</mapper>
