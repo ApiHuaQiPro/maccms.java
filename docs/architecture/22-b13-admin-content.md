@@ -253,7 +253,7 @@
 | 头像登记附件 | `MemberAccountGoldenMySqlIT` ⑥（第 7.10 节） |
 | 随 B13 更新的已有 IT | `AdminGoldenMySqlIT`（B12）：去掉 `auth-editor/vod/data` 的"501 由 B13 提供"预期，改为与 PHP 黄金比较（视频列表页，通过）；`WriteInfrastructureMySqlIT`：生产登记表的断言加上 B13 的 content/comment 项 |
 | 仍为 B12 的测试 | `AdminMvcTest`（替身上下文没有内容服务时 B13 动作为"由 B13 批次提供"）、`AdminPermissionsGoldenTest`（B13 权限码的批次归属）——本批未改 |
-| 单元测试总数 | `./mvnw verify`：2637 个测试，0 失败 |
+| 测试总数 | `./mvnw verify -Pmysql-it`（MySQL 5.7.44，一次性库 `maccms_it_*`）：单元 2639、集成 75，0 失败、0 错误；唯一跳过的是 `MemberAccountGoldenMySqlIT` 的 PHP cookie 互认（需 `MACCMS_IT_PHP_CGI` 与 `vendor/`），补上环境后单独重跑 6/6 通过、0 跳过；16 个一次性库全部删除并确认不存在，没有连接 `maccms_dev` |
 
 未覆盖或只间接覆盖的（第 12 节）：水印与缩略图（黄金场景的配置把两者关闭；像素与 GD 不同，见第 12 节）、上传的脚本标记拒绝（D-B13-16，旧版留下文件，黄金无法直接对照）、`images/sync` 的合法 `tab`（黄金只有 `sync-bad`）、附件检查第 2 页以后、头像登记的 PHP 实跑对照、真实浏览器走查（本批没有 B13 的浏览器脚本；黄金只比页面结构，不比像素与脚本行为）。
 
