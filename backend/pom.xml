@@ -161,6 +161,8 @@
                     <include>layui/**</include>
                     <include>css/admin_style.css</include>
                     <include>js/admin_common.js</include>
+                    <!-- B15：系统配置各页记住所在标签页用的 jQuery cookie 插件（旧模板直接引用 __STATIC__/js/jquery.cookie.js） -->
+                    <include>js/jquery.cookie.js</include>
                 </includes>
             </resource>
             <!--

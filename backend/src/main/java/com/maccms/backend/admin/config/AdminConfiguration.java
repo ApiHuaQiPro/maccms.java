@@ -4,6 +4,7 @@ import com.maccms.backend.admin.application.AdminAccountService;
 import com.maccms.backend.admin.application.AdminLoginService;
 import com.maccms.backend.admin.application.AdminSettings;
 import com.maccms.backend.admin.application.LegacyInput;
+import com.maccms.backend.admin.application.SystemConfigService;
 import com.maccms.backend.admin.infrastructure.AdminMapper;
 import com.maccms.backend.admin.infrastructure.AdminWriteMapper;
 import com.maccms.backend.admin.web.AdminContentActions;
@@ -14,6 +15,7 @@ import com.maccms.backend.admin.web.AdminPages;
 import com.maccms.backend.admin.web.AdminRandom;
 import com.maccms.backend.admin.web.AdminResponses;
 import com.maccms.backend.admin.web.AdminSessions;
+import com.maccms.backend.admin.web.AdminSystemActions;
 import com.maccms.backend.admin.web.jte.StaticTemplates;
 import com.maccms.backend.common.captcha.CaptchaSettings;
 import com.maccms.backend.content.application.ContentAdminServices;
@@ -24,6 +26,7 @@ import com.maccms.backend.legacyconfig.application.LegacyConfigConfiguration;
 import com.maccms.backend.legacyconfig.application.LegacyConfigException;
 import com.maccms.backend.legacyconfig.application.LegacyConfigFile;
 import com.maccms.backend.legacyconfig.application.LegacyConfigService;
+import com.maccms.backend.legacyconfig.application.LegacySiteFiles;
 import com.maccms.backend.legacyconfig.application.view.PhpArray;
 import com.maccms.backend.legacyconfig.application.view.PhpValue;
 import com.maccms.backend.legacyconfig.application.view.PhpValues;
@@ -191,6 +194,18 @@ public class AdminConfiguration {
                                           ObjectProvider<ContentAdminServices> content) {
         return new AdminMemberActions(endpoint, settings, responses, members.getIfAvailable(), content.getIfAvailable(),
                 clock.getIfAvailable(Clock::systemUTC));
+    }
+
+    /** B15 后台系统配置（24 文档第 5 节）：读写旧配置文件与旧站目录里的文件，不访问数据库。 */
+    @Bean
+    SystemConfigService adminSystemConfigService(LegacyConfigService legacy, LegacySiteFiles files, ObjectProvider<Clock> clock) {
+        return new SystemConfigService(legacy, files, clock.getIfAvailable(Clock::systemUTC));
+    }
+
+    @Bean
+    AdminSystemActions adminSystemActions(AdminEndpoint endpoint, AdminSettings settings, AdminResponses responses,
+                                          SystemConfigService system, AdminRandom random) {
+        return new AdminSystemActions(endpoint, settings, responses, system, random);
     }
 
     /** 后台控制器的随机源（验证码、表单令牌）：不注册为 RandomGenerator 类型的 Bean。 */

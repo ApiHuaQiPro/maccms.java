@@ -1,7 +1,7 @@
 package com.maccms.backend.legacyconfig.application;
 
 /**
- * 旧配置读取失败。信息只含原因、固定说明与出错位置（行、列），不含文件内容、路径或配置取值（配置里可能有密钥）。
+ * 旧配置读取或写回（B15）失败。信息只含原因、固定说明与出错位置（行、列），不含文件内容、路径或配置取值（配置里可能有密钥）。
  */
 public class LegacyConfigException extends RuntimeException {
 
@@ -27,7 +27,13 @@ public class LegacyConfigException extends RuntimeException {
         /** 超过嵌套深度或元素总数上限，或数值超出范围。 */
         LIMIT_EXCEEDED,
         /** 读取文件时的 I/O 错误。 */
-        IO
+        IO,
+        /** 写回（B15）：文件在读出之后已被他人（另一位管理员或仍在运行的旧 PHP）修改，本次不写。 */
+        CONFLICT,
+        /** 写回（B15）：要写的值不能写成新旧两边都能读回的 var_export 数据（含 NUL 字节、非法 UTF-8 等）。 */
+        INVALID_VALUE,
+        /** 写回（B15）：写临时文件或原子改名失败；目标文件保持原样。 */
+        WRITE_FAILED
     }
 
     private final Reason reason;
