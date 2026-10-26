@@ -1,6 +1,6 @@
 ## B13 后台内容管理：视频、分类、文章、专题、演员、角色、网址、友链、评论留言、附件、图片与上传（路线图 B13，MACC-37）
 
-> **状态：开发完成（2026-10-25），待独立验收。** 依据：
+> **状态：开发完成（2026-10-25），补证完成（2026-10-26：D-B09-9 PHP 实跑黄金、缩略图与水印黄金、浏览器走查，第 9 节），待独立验收。** 依据：
 > - 路线图 `09-roadmap.md` 第 3.2 节 B13 行（第 156 行）、第 5.3 节 B13 验收行（第 395 行：逐列一致、整行覆盖计数字段与旧版一致、查重不用临时表、并发编辑、回滚演练、D-B09-9）、第 4.1 节 E02（第 187 行）与 E08（第 193 行）、第 5.3 节写入方矩阵（第 421-426 行）；
 > - 03 草稿第 3.1 节（后台表单整行覆盖计数字段）；B07 `12-write-infrastructure.md`（写 SQL 规范、MyISAM 非事务边界、并发与回滚演练工具）；B11 `20-b11-comment-gbook-counters.md`（内容计数与视频搜索缓存）；B12 `21-b12-admin-framework.md`（后台入口、入参、会话、`admin_auth`、页面与脚本策略）；B09 `18-b09-member-account.md` D-B09-9（头像登记附件延后到本批）；
 > - 用户决定（2026-10-17）：后台复用旧后台 HTML 结构与静态资产，转成 jte，不做新视觉设计；用户决定（2026-10-16，D1）：E02、E08 只做本地版本。
@@ -14,6 +14,7 @@
 | 起点 | 平台基线 `99ce3fe`（树与已验收 main `1cc5a2c` 相同，即 B12 验收后的路线图更新） |
 | 分支 | `agent/claude/macc-37`（本任务工作区；只用普通提交，不 reset、rebase、amend、force，不自行合并 main） |
 | 提交 | 见交付评论（最终 SHA 以评论为准） |
+| 补证（2026-10-26） | 分支 `agent/claude/macc-23`（MACC-23 定时唤醒的工作区）：合并提交 `30b052f` 的树取自交付版 `8564745`、保留该轮起点 `4e13952` 为祖先；其后 `0559f2f`（D-B09-9 黄金）、`002e1fc`（平台代提交的未提交改动：浏览器走查发现的三处修正与缩略图、水印黄金）与本节文档、清理提交。B13 功能代码以 `8564745` 为基线，补证只改第 7.10、8.1 节所列文件 |
 
 ### 1. 范围
 
@@ -202,8 +203,9 @@
 - **图片**（`admin/controller/Images.php`）：`opt` 显示选项页；`del` 删除 `ids[]` 里以 `./upload` 开头且只有一个 `./` 的文件，总是"删除成功"（`ids` 不是数组时"参数错误"，D-B13-18）；`sync` 不下载（D-B13-2）；`data` 为空页面（旧版空方法）。
 - **上传**（`common/model/Upload.php:38-286`）：编辑器（`from`：Ueditor/Umeditor/Ckeditor/Kindeditor/Tinymce）按各自格式返回，`action=config` 输出 `static/ueditor/config.json` 去注释后的 JSON；目录 `upload/<flag>/<Ymd>-<n>/`（目录里名称含点的文件超过 999 个换下一个，最多到 100），文件名为随机 32 位十六进制加原扩展名；按扩展名分图片、文件、媒体；以 `<?php` 开头的文件拒绝；开头与结尾各 512 字节的十六进制匹配脚本标记时拒绝（检查通过才写盘，D-B13-16）；`flag` 只接受 `[A-Za-z0-9_-]{1,64}`（D-B13-8），`flag=user` 在后台拒绝（D-B13-17）；图片按配置加文字水印（字体为 `watermark_font`，为空时用旧版自带的 `static/font/test.ttf`）、生成缩略图（`thumb_size` 各尺寸，缩略图也加水印、位置 9）；最后把 `upload` 开头的文件登记为附件，新登记了原图时再登记第一张缩略图。`upload.mode` 不论取值都存本地（D-B13-2）。`imgdata`（data URL）照旧不加扩展名，旧版用 `file_put_contents` 写入、不建目录，当天目录还不存在时"文件上传失败！"，新版照旧（黄金 `upload/imgdata-new-dir`；有文件上传建出目录后成功，`upload/imgdata-ok`）。
 - **上传弹窗页与写入测试**：`upload/index` 照旧模板只输出表单片段（不带后台外壳），`path`、`id` 写进隐藏字段（转义，D-B13-23）；旧模板不闭合 body 标签，jte 要求闭合，末尾补上（唯一的结构适配）。`upload/test` 在系统临时目录建 `Tux` 前缀的临时文件并输出语言包 `admin/upload/test_write_ok` + "：" + 路径（旧语言包这个键写了两次，生效的是后一条"写入失败，请检查临时文件目录权限"，照旧）。
-- **`LegacyImages`**：think-image 的 `thumb()`（六种缩略方式）与 `text()`（九个位置）的几何计算照旧，像素由 Java2D 生成，JPEG 质量 80；与 GD 的输出**不保证逐字节相同**；读不了的图片返回 null（旧版异常被吞掉，余下尺寸不再生成）。
-- **D-B09-9 头像登记附件**：前台头像写入并更新 `user_portrait` 成功后，`MemberAccountService.registerAnnex` 经 `PortraitAnnex` → `AnnexAdminService.register` 登记 `upload/user/<id%10>/<id>.jpg`：类型为 `image`（`imgdata` 时取 data URL 里的类型）、大小按新版重新编码后的 JPEG（KB 两位小数，写库取整）；同一文件已登记时不重复；可写数据源关闭或没有附件服务时不登记，登记失败只记日志。测试：`MemberAccountGoldenMySqlIT` ⑥ 断言成功的上传按（文件、类型、大小）登记、失败的不登记；登记行的写入（同名不重复、整数列取整）由 `AdminContentGoldenMySqlIT` ② 覆盖。路线图要求的"除 `annex_size` 外逐列对照 PHP 黄金"**按旧代码（`Upload.php:259-284`）逐列推得，没有用 PHP 实际跑头像上传**：本工作区没有恢复 `vendor/`（think-image），旧版头像缩略图跑不起来（第 12 节）。
+- **`LegacyImages`**：think-image 的 `thumb()`（六种缩略方式）与 `text()`（九个位置）的几何计算照旧，像素由 Java2D 生成，JPEG 质量 80；与 GD 的输出**不保证逐字节相同**；读不了的图片返回 null（旧版异常被吞掉，余下尺寸不再生成）。水印按 `imagettfbbox` 的字形外框定位（`x = minx`、`y = |miny|`、宽高取整到整像素，绘制坐标取整，同 `imagettftext`）；补证时由黄金对照改正，原先按字体行高与步进宽度定位。
+- **多个缩略图尺寸是链式缩出来的**（补证时由黄金查出并改正）：旧 `common/model/Image::makethumb` 只打开一次原图，同一个 think\Image 对象依次 `thumb()->save()`，开水印时改成打开刚存的缩略图加水印，所以后面的尺寸从前一张缩略图（开水印时是加过水印的那张）再缩：`120x80,300x300` 按等比例缩放时两张都是 120×67。`AdminUploadService` 原先每个尺寸都从原图缩，现照旧链式缩放。
+- **D-B09-9 头像登记附件**：前台头像写入并更新 `user_portrait` 成功后，`MemberAccountService.registerAnnex` 经 `PortraitAnnex` → `AnnexAdminService.register` 登记 `upload/user/<id%10>/<id>.jpg`：类型照旧 `Upload.php:118-119、144-152`——`imgdata` 时取 data URL 里的图片类型，文件上传按扩展名分 `image`/`file`/`media`（扩展名属于"文件"或"媒体"类而内容是图片时，旧版照样生成头像、登记为 `file`/`media`；补证时由 PHP 黄金查出，原先一律写 `image`，已改正，`PortraitImages.annexType`）；大小按新版重新编码后的 JPEG（KB 两位小数，写库取整）；同一文件已登记时不重复；可写数据源关闭或没有附件服务时不登记，登记失败只记日志。测试：**`PortraitAnnexGoldenMySqlIT` 与 PHP 实跑黄金逐列对照**（`backend/src/test/php/portrait_annex_golden.php` + `portrait_annex_child.php`：php-cgi 跑完整的 `index.php/user/portrait`，含 think-image 缩略图、`UPDATE mac_user`、`Annex::infoData/saveData`；PHP 8.0 与 7.3 各 17 个场景 18 步）：`mac_annex` 除 `annex_size` 外逐列、`mac_user` 全部列、`upload/` 路径与 PHP 相同，新版 `annex_size` 等于新版 JPEG 的 KB；有意差异只有 B09 已登记的两类（PHP 8 上 think-image 的 GIF 解码器致命错误按 PHP 7.3 的结果，D-B09-14；扩展名合法而内容不是图片时旧版 500、新版"文件上传失败！"，两边都不落盘不写库）。另有 `MemberAccountGoldenMySqlIT` ⑥（文件、类型、大小）与 `AdminContentGoldenMySqlIT` ②（同名不重复、整数列取整）。
 
 ### 8. 页面：复用旧后台结构
 
@@ -222,6 +224,7 @@
 | `upload/index` | 同名 `.html`（表单片段；末尾补上闭合的 body 标签） |
 
 - 内联脚本逐行移到 `backend/src/main/resources/static/admin-assets/`（本批新增 15 个：`actor-info` `art-info` `batch-form` `content-verify` `editor` `link-info` `progress` `role-info` `select-return` `topic-info` `type-info` `vod-index` `vod-info` `vod-iplot` `website-info`），服务端写入的地址与语言包文字改由 script 标签的 `data-*` 提供；拼进 HTML 的选项、扩展项、截图地址先转义（旧版原样拼接；显示不变，D-B13-19）。`static/admin-assets/` 按 B12 的决定由后端维护。
+- **浏览器走查查出、补证时改正的两处运行适配**（不改旧文件，只在新版的加载层处理）：① ueditor 的 `render` 用 `javascript:` 地址的 iframe 写入编辑区文档、文档里的内联脚本再调用 `editor._setup(document)`，两者都被后台的内容安全策略（21 文档第 8.2 节）拦截，编辑区空白、编辑器永不就绪、保存时取不到正文；`admin-assets/editor.js` 在 `render` 建这个 iframe 时去掉 `javascript:` 地址，取出它要写的同一份文档（去掉那段内联脚本）自行写入并调用 `_setup`，与原脚本做的事相同；② 取色器 `jquery.jscolor.js` 读取的 `static/images/jscolor/` 图片原先没有打包，`pom.xml` 补上这一目录（按旧路径提供）。
 - `AdminTemplatePolicyTest` 以 B12 的后台策略重新编译全部模板（禁止内联事件、`$unsafe`、外部主机等）；本批只放宽一处：`style="${条件 ? "字面量" : null}"` 这类两个分支都是不含输出的字面量的写法（旧模板 `{if …}style="display:none"{/if}`，`STYLE_CHOICE`）。
 
 #### 8.2 `BrowserText` / `RawOutput`：旧版原样输出的值
@@ -250,12 +253,14 @@
 | 文本函数 | `PhpTextGoldenTest`（两版各 1604 个用例，第 4.2 节） |
 | 护栏 | `WriteGuardTest`（登记表 51 项与写入方矩阵）、`WriteRegistryTest`（B13 的允许与不允许项，含 `member` 不能写 `mac_annex`）、`ReadOnlyGuardrailsTest`（新的读 Mapper 只有 SELECT）、`ModuleBoundaryTest`（`ADMIN_SITE`）、`AdminTemplatePolicyTest`（全部后台模板与 `admin-assets`）、`SchemaGuardTest`、`OutboundNetworkGuardTest` |
 | 列清单 | `AdminTableSchemaTest`（第 3 节） |
-| 头像登记附件 | `MemberAccountGoldenMySqlIT` ⑥（第 7.10 节） |
+| 头像登记附件（D-B09-9） | `PortraitAnnexGoldenMySqlIT`：PHP 8.0 与 7.3 实跑黄金 `backend/src/test/resources/member/portrait-annex-php{80,73}-golden.json`，两版共 36 步、登记 18 行，`mac_annex` 除 `annex_size` 外逐列一致（第 7.10 节）；`MemberAccountGoldenMySqlIT` ⑥ |
+| 缩略图与水印（几何） | `backend/src/test/php/legacy_images_golden.php` 直接调用 `vendor/` 的 think-image 与旧 `Image::makethumb`（PHP 8.0 与 7.3）→ `backend/src/test/resources/content/admin/legacy-images-php{80,73}-golden.json`。`LegacyImagesGoldenTest`：180 个缩略图（PNG/JPEG × 5 种源尺寸 × 3 种目标尺寸 × 六种方式）宽高与 3×3 网格类别逐个相同；18 个水印（九个位置 × 两种尺寸）红色像素外接矩形横向与宽高完全相同、上下两排纵向差 1 像素（容差 1，字形由 FreeType 与 Java2D 各自栅格化）。`AdminUploadThumbGoldenTest`：经完整的 `AdminUploadService.upload`，12 组多尺寸 × 方式 × 水印开关的每张缩略图宽高与网格同 `makethumb` |
+| 浏览器走查 | `backend/src/test/browser/b13_admin_content_check.py`（Playwright 本机 Chromium 无头）：一次性库 `maccms_it_*`、临时旧配置（开缩略图与水印）、临时站点根 `upload/`、本机 jar 与只服务本次的 nginx（自带前缀与配置，不动共用的 `D:/Tools/nginx`）。47 项全部通过：登录与框架页；视频列表、添加弹层（layui 下拉、ueditor 渲染）、上传选图（地址与缩略图地址回填、原图与缩略图都登记附件）、保存、`j-select` 批量改等级、编辑、查重与"保留小ID"删除、勾选删除（图片文件随之删除）；文章 ueditor 输入正文保存；友链"类型"下拉框照旧缺陷；分类树与编辑（表单令牌）；评论审核、留言回复；附件列表、目录逐级进入与返回、附件检查逐页推进（1104 条登记跨到第 2 页以后）并删掉文件已不存在的登记、附件初始化逐表推进与表内翻页（1101 行）、补登记不重复；视频批量处理逐页推进到完成；含脚本标记的图片被拒绝且不落盘不登记；图片同步合法 `tab` 固定提示且不改库；全程内容安全策略违规、页面脚本错误、控制台错误、对外部主机的请求、4xx/5xx 响应均为 0（补证版 jar 上重跑）。走查查出的三处问题（ueditor、取色器图片、链式缩略图）已改正（第 7.10、8.1 节） |
 | 随 B13 更新的已有 IT | `AdminGoldenMySqlIT`（B12）：去掉 `auth-editor/vod/data` 的"501 由 B13 提供"预期，改为与 PHP 黄金比较（视频列表页，通过）；`WriteInfrastructureMySqlIT`：生产登记表的断言加上 B13 的 content/comment 项 |
 | 仍为 B12 的测试 | `AdminMvcTest`（替身上下文没有内容服务时 B13 动作为"由 B13 批次提供"）、`AdminPermissionsGoldenTest`（B13 权限码的批次归属）——本批未改 |
-| 测试总数 | `./mvnw verify -Pmysql-it`（MySQL 5.7.44，一次性库 `maccms_it_*`）：单元 2639、集成 75，0 失败、0 错误；唯一跳过的是 `MemberAccountGoldenMySqlIT` 的 PHP cookie 互认（需 `MACCMS_IT_PHP_CGI` 与 `vendor/`），补上环境后单独重跑 6/6 通过、0 跳过；16 个一次性库全部删除并确认不存在，没有连接 `maccms_dev` |
+| 测试总数 | 见交付评论（补证版的 `./mvnw verify -Pmysql-it` 结果）。计数口径：Maven 控制台的 `Tests run` 合计与 surefire XML 的 `<testcase>` 个数相同（如交付版 2639）；各 XML 文件 `tests` 属性的合计少 1（2638），因为 `SiteSearchSwitchMvcTest` 的两个 `@Nested` 类各有一个同名方法 `searchControllerIsNotRegistered`，surefire 合并进同一个 XML 时 `tests` 属性按方法名计为 8（实际 9 个 `<testcase>`）——两种口径跑的是同一组测试 |
 
-未覆盖或只间接覆盖的（第 12 节）：水印与缩略图（黄金场景的配置把两者关闭；像素与 GD 不同，见第 12 节）、上传的脚本标记拒绝（D-B13-16，旧版留下文件，黄金无法直接对照）、`images/sync` 的合法 `tab`（黄金只有 `sync-bad`）、附件检查第 2 页以后、头像登记的 PHP 实跑对照、真实浏览器走查（本批没有 B13 的浏览器脚本；黄金只比页面结构，不比像素与脚本行为）。
+未覆盖或只间接覆盖的（第 12 节）：水印与缩略图的像素（只比几何）；上传的脚本标记拒绝（D-B13-16）、`images/sync` 的合法 `tab`、附件检查与初始化的多页只有浏览器走查，没有 PHP 黄金对照（旧版拒绝后留下文件，无法直接对照）。
 
 ### 10. 与旧版的差异
 
@@ -299,10 +304,9 @@
 |---|---|
 | MyISAM 没有事务 | 第 6 节所列多语句操作可能部分生效（先删文件后删行、逐行批量、逐组查重删除、新增视频后追加搜索结果）；与旧版相同，重试大多安全 |
 | 整行覆盖丢并发计数 | 打开表单到保存之间的前台点击、顶踩、评分被表单值覆盖；按路线图决定与旧版一致，未改 |
-| 图片像素差异 | `LegacyImages` 用 Java2D，几何与 think-image 相同，像素与 GD 不保证相同；水印字体渲染、JPEG 压缩结果会有差别；没有自动化比对 |
-| 未验证的路径 | 水印与缩略图（几何有实现、无黄金对照）、上传的脚本标记拒绝、`images/sync` 合法 `tab`、附件检查多页、附件初始化多页：黄金未覆盖、也没有单元测试 |
-| D-B09-9 只按代码对照 | 头像登记的（文件、类型、大小）与写入有测试，但"逐列对照 PHP 黄金"是按旧代码推得，没有 PHP 实跑（需要先从备份恢复 `vendor/` 的 think-image） |
-| 没有真实浏览器走查 | 黄金只比页面结构；layui 表单、上传组件、ueditor、弹窗 `j-select`、逐页跳转在浏览器里的行为未实测（B12 有 `b12_admin_check.py`，本批没有对应脚本）【待核实】 |
+| 图片像素差异 | `LegacyImages` 用 Java2D：缩略图几何与 think-image 逐个相同，水印位置纵向可差 1 像素（第 9 节）；像素与 GD 不保证相同，水印字体渲染、JPEG 压缩结果会有差别 |
+| 只有浏览器走查的路径 | 上传的脚本标记拒绝、`images/sync` 合法 `tab`、附件检查多页、附件初始化多页：浏览器走查通过（第 9 节），没有 PHP 黄金对照 |
+| 浏览器走查的范围 | 只在本机无头 Chromium 上走了第 9 节所列流程；专题、演员、角色、网址、分集剧情页只有黄金的页面结构对照，没有逐页点过；没有在其他浏览器上走查 |
 | 两个上传目录参数 | `maccms.upload.dir` 与 `maccms.member.upload-dir` 必须指向同一目录，配错时头像与附件不在一处 |
 | 友链类型下拉框 | 旧缺陷照旧：不改下拉框保存会把图片链接改回文字链接；是否修复需用户决定 |
 | 旧配置每次调用都读 | `AdminConfig`、`AdminPlayers` 每次调用读文件（按修改时间缓存）；读失败时按空值处理并告警，表单的默认值会随之变化 |
