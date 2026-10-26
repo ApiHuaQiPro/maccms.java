@@ -75,6 +75,20 @@ public class AdminResponses {
         return jump(ajax, true, msg, url);
     }
 
+    /** 旧 {@code $this->success($msg, null, $data)}（B13 分类扩展字典）：Ajax 时 data 原样编码；页面时与 {@link #success} 相同。 */
+    public ResponseEntity<String> success(boolean ajax, String msg, String url, Object data) {
+        if (ajax) {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("code", 1);
+            m.put("msg", msg);
+            m.put("data", data);
+            m.put("url", url);
+            m.put("wait", 3);
+            return json(HttpStatus.OK, LegacyJson.encode(m));
+        }
+        return jump(false, true, msg, url);
+    }
+
     /** 旧 {@code $this->error($msg)}：Ajax 时 {@code url} 为空串，否则为 {@code javascript:history.back(-1);}。 */
     public ResponseEntity<String> error(boolean ajax, String msg) {
         return jump(ajax, false, msg, ajax ? "" : JumpPage.BACK);
@@ -102,6 +116,16 @@ public class AdminResponses {
         return html(status, renderer.render(t -> t.adminPagesNotice(new NoticePage(title, msg))));
     }
 
+    /** 旧 {@code return json($res)}：按 PHP {@code json_encode(…, JSON_UNESCAPED_UNICODE)} 编码（B13 updateToday）。 */
+    public ResponseEntity<String> rawJson(Object value) {
+        return json(HttpStatus.OK, LegacyJson.encode(value));
+    }
+
+    /** 旧版 {@code echo} 出来的整段 HTML（B13 批量处理等逐页推进的输出）：带与页面相同的安全头。 */
+    public ResponseEntity<String> echoed(String body) {
+        return html(HttpStatus.OK, body);
+    }
+
     /** 纯文本（旧 {@code echo}，Content-Type 为 text/html）。 */
     public ResponseEntity<String> text(String body) {
         return ResponseEntity.ok()
@@ -110,6 +134,11 @@ public class AdminResponses {
                 .header("X-Content-Type-Options", "nosniff")
                 .header("X-Robots-Tag", "noindex")
                 .body(body);
+    }
+
+    /** 跳转提示页的 HTML（旧 {@code error()} 在已输出的内容后面接着输出时用）。 */
+    public String jumpHtml(boolean success, String msg, String url) {
+        return renderer.render(t -> t.adminPagesJump(new JumpPage(success, msg, url, 3, assetsPath)));
     }
 
     private ResponseEntity<String> jump(boolean ajax, boolean success, String msg, String url) {

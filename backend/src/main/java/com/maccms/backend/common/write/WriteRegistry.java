@@ -30,6 +30,10 @@ public final class WriteRegistry {
      * {@code member/mac_visit/INSERT}（同一条条件插入，{@code user_id = 0}）。</li>
      * <li>B12（MACC-36，21 文档第 5 节）：管理员登录记录、新增、编辑、删除与状态（admin / mac_admin INSERT、UPDATE、DELETE）；后台"清理缓存"
      * 删除过期的视频搜索缓存（content / mac_vod_search DELETE）。</li>
+     * <li>B13（MACC-37，22 文档第 6 节）：后台内容管理——六张内容表的新增与删除（content / INSERT、DELETE；整行覆盖与字段修改沿用 B11
+     * 已登记的 content / UPDATE）；友情链接、分类、附件的增删改（content / mac_link、mac_type、mac_annex）；评论的删除与留言的修改、删除
+     * （comment / mac_comment DELETE、mac_gbook UPDATE、DELETE；评论的修改沿用 B11 已登记的 comment / mac_comment UPDATE）。
+     * 新增视频时更新视频搜索缓存沿用 B11 已登记的 content / mac_vod_search INSERT、UPDATE。</li>
      * </ul>
      */
     static final List<WritePermission> REGISTERED = List.of(
@@ -59,7 +63,31 @@ public final class WriteRegistry {
             new WritePermission("admin", "mac_admin", WriteOperation.INSERT, "B12"),
             new WritePermission("admin", "mac_admin", WriteOperation.UPDATE, "B12"),
             new WritePermission("admin", "mac_admin", WriteOperation.DELETE, "B12"),
-            new WritePermission("content", "mac_vod_search", WriteOperation.DELETE, "B12"));
+            new WritePermission("content", "mac_vod_search", WriteOperation.DELETE, "B12"),
+            new WritePermission("content", "mac_vod", WriteOperation.INSERT, "B13"),
+            new WritePermission("content", "mac_vod", WriteOperation.DELETE, "B13"),
+            new WritePermission("content", "mac_art", WriteOperation.INSERT, "B13"),
+            new WritePermission("content", "mac_art", WriteOperation.DELETE, "B13"),
+            new WritePermission("content", "mac_topic", WriteOperation.INSERT, "B13"),
+            new WritePermission("content", "mac_topic", WriteOperation.DELETE, "B13"),
+            new WritePermission("content", "mac_actor", WriteOperation.INSERT, "B13"),
+            new WritePermission("content", "mac_actor", WriteOperation.DELETE, "B13"),
+            new WritePermission("content", "mac_role", WriteOperation.INSERT, "B13"),
+            new WritePermission("content", "mac_role", WriteOperation.DELETE, "B13"),
+            new WritePermission("content", "mac_website", WriteOperation.INSERT, "B13"),
+            new WritePermission("content", "mac_website", WriteOperation.DELETE, "B13"),
+            new WritePermission("content", "mac_link", WriteOperation.INSERT, "B13"),
+            new WritePermission("content", "mac_link", WriteOperation.UPDATE, "B13"),
+            new WritePermission("content", "mac_link", WriteOperation.DELETE, "B13"),
+            new WritePermission("content", "mac_type", WriteOperation.INSERT, "B13"),
+            new WritePermission("content", "mac_type", WriteOperation.UPDATE, "B13"),
+            new WritePermission("content", "mac_type", WriteOperation.DELETE, "B13"),
+            new WritePermission("content", "mac_annex", WriteOperation.INSERT, "B13"),
+            new WritePermission("content", "mac_annex", WriteOperation.UPDATE, "B13"),
+            new WritePermission("content", "mac_annex", WriteOperation.DELETE, "B13"),
+            new WritePermission("comment", "mac_comment", WriteOperation.DELETE, "B13"),
+            new WritePermission("comment", "mac_gbook", WriteOperation.UPDATE, "B13"),
+            new WritePermission("comment", "mac_gbook", WriteOperation.DELETE, "B13"));
 
     /** 写 Mapper 的全限定名：{@code com.maccms.backend.<module>.infrastructure[.子包].<类型>}。 */
     private static final Pattern MAPPER_TYPE = Pattern.compile(

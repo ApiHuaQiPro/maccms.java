@@ -122,6 +122,18 @@ public final class LegacyAdminUrl {
         return sb.substring(a, b);
     }
 
+    /** PHP {@code http_build_query($vars)}（标量参数）：键、值各按 {@code urlencode}，以 {@code &} 连接。 */
+    public static String httpBuildQuery(Map<String, String> vars) {
+        StringBuilder sb = new StringBuilder();
+        for (Map.Entry<String, String> e : vars.entrySet()) {
+            if (!sb.isEmpty()) {
+                sb.append('&');
+            }
+            sb.append(urlencode(e.getKey())).append('=').append(urlencode(e.getValue()));
+        }
+        return sb.toString();
+    }
+
     /** PHP {@code urlencode}：空格为 {@code +}，{@code -_.} 与字母数字之外的字节都是 {@code %XX}（大写）。 */
     static String urlencode(String s) {
         // Java 的 URLEncoder 与 PHP urlencode 只差 "*"（Java 不编码）与 "~"（两者都编码为 %7E）

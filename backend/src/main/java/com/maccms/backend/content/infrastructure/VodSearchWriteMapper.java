@@ -18,4 +18,10 @@ public interface VodSearchWriteMapper {
 
     /** 后台清理缓存（B12，登记 content / mac_vod_search DELETE）：删除结果更新时间早于 {@code before} 的全部行。 */
     int deleteUpdatedBefore(@Param("before") long before);
+
+    /**
+     * 后台新增视频后把它追加进一条已有的搜索结果（B13；旧 VodSearch::checkAndUpdateTopResults，VodSearch.php:121-125）：结果数 +1、编号以逗号
+     * 接在末尾、刷新结果更新时间（登记 content / mac_vod_search UPDATE，B11 已有）。
+     */
+    int appendResult(@Param("key") String key, @Param("id") long id, @Param("now") long now);
 }

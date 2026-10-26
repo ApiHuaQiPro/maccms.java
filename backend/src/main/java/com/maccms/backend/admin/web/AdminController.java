@@ -70,10 +70,12 @@ public class AdminController {
     private final ClientIpResolver clientIp;
     private final ContentCacheMaintenance contentCache;
     private final RandomGenerator random;
+    private final AdminContentActions content;
 
     public AdminController(AdminEndpoint endpoint, AdminSessions sessions, AdminSettings settings, AdminLoginService logins,
                            AdminAccountService accounts, AdminPages pages, AdminResponses responses,
-                           ClientIpResolver clientIp, ContentCacheMaintenance contentCache, AdminRandom random) {
+                           ClientIpResolver clientIp, ContentCacheMaintenance contentCache, AdminRandom random,
+                           AdminContentActions content) {
         this.endpoint = endpoint;
         this.sessions = sessions;
         this.settings = settings;
@@ -84,6 +86,7 @@ public class AdminController {
         this.clientIp = clientIp;
         this.contentCache = contentCache;
         this.random = random.generator();
+        this.content = content;
     }
 
     /** 一次请求的上下文。 */
@@ -158,6 +161,10 @@ public class AdminController {
             case "admin/field" -> reply(ctx, accounts.setStatus(ids(ctx.params()), ctx.params().scalar("col"),
                     ctx.params().scalar("val")));
             default -> {
+                ResponseEntity<String> b13 = content.handle(ctx, admin, session);
+                if (b13 != null) {
+                    yield b13;
+                }
                 String batch = AdminPermissions.batchOf(route.controller(), route.action());
                 yield batch == null ? notFound(ajax) : pending(ctx, batch);
             }
@@ -337,7 +344,7 @@ public class AdminController {
      * 旧 {@code success()} 的跳转地址：有 Referer 时用它（只接受 http/https 绝对地址或以 / 开头的站内路径），否则为当前动作的
      * {@code url()}（Jump.php:32-36）。
      */
-    private String successUrl(Ctx ctx) {
+    static String successUrl(Ctx ctx) {
         String ref = ctx.request().getHeader(HttpHeaders.REFERER);
         if (ref != null) {
             String lower = ref.toLowerCase(Locale.ROOT);

@@ -163,6 +163,17 @@
                     <include>js/admin_common.js</include>
                 </includes>
             </resource>
+            <!--
+              B13（docs/architecture/22-b13-admin-content.md 第 4 节）：旧拼音字典 static/data/pinyin.dat 原样打进 jar 的
+              legacy/data/（只供 LegacyPinyin 读取，不经静态资源对外提供）。旧文件只读，不改动。
+            -->
+            <resource>
+                <directory>${project.basedir}/../static</directory>
+                <targetPath>legacy</targetPath>
+                <includes>
+                    <include>data/pinyin.dat</include>
+                </includes>
+            </resource>
         </resources>
         <plugins>
             <plugin>

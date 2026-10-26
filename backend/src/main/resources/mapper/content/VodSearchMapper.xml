@@ -31,4 +31,12 @@
         ORDER BY vod_id ASC
         LIMIT #{limit}
     </select>
+
+    <!-- 后台新增视频时追加到已有搜索结果的候选行（B13，22 文档第 7.2 节；旧 VodSearch::checkAndUpdateTopResults，VodSearch.php:107） -->
+    <select id="selectTopRows" resultType="map">
+        SELECT search_key, search_word, search_field
+        FROM mac_vod_search
+        ORDER BY search_hit_count DESC, search_last_hit_time DESC, search_key ASC
+        LIMIT #{limit}
+    </select>
 </mapper>

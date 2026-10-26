@@ -25,11 +25,26 @@ import java.util.Map;
  */
 public final class AdminParams {
 
-    /** 一个参数：标量（{@code items} 为 null）或数组。 */
-    public record Value(byte[] scalar, List<byte[]> items) {
+    /**
+     * 一个参数：标量（{@code items} 为 null）或数组。{@code keys} 与 {@code items} 一一对应：{@code 名[]} 为 null，{@code 名[键]} 为键
+     * （B13：分类扩展字典 {@code type_extend[class]} 等）。
+     */
+    public record Value(byte[] scalar, List<byte[]> items, List<String> keys) {
+
+        public Value(byte[] scalar, List<byte[]> items) {
+            this(scalar, items, items == null ? null : nullKeys(items.size()));
+        }
 
         public boolean array() {
             return items != null;
+        }
+
+        private static List<String> nullKeys(int n) {
+            List<String> k = new ArrayList<>(n);
+            for (int i = 0; i < n; i++) {
+                k.add(null);
+            }
+            return Collections.unmodifiableList(k);
         }
     }
 
@@ -115,10 +130,14 @@ public final class AdminParams {
         int bracket = n.indexOf('[');
         boolean array = false;
         String base = n;
+        String arrayKey = null;
         if (bracket >= 0) {
-            if (n.indexOf(']', bracket) >= 0) {
+            int close = n.indexOf(']', bracket);
+            if (close >= 0) {
                 array = true;
                 base = n.substring(0, bracket);
+                String k = n.substring(bracket + 1, close);
+                arrayKey = k.isEmpty() ? null : new String(k.getBytes(StandardCharsets.ISO_8859_1), StandardCharsets.UTF_8);
             } else {
                 base = n.substring(0, bracket) + "_" + n.substring(bracket + 1);
             }
@@ -136,9 +155,11 @@ public final class AdminParams {
         if (array) {
             Value prev = out.get(key);
             List<byte[]> items = prev != null && prev.array() ? new ArrayList<>(prev.items()) : new ArrayList<>();
+            List<String> keys = prev != null && prev.array() ? new ArrayList<>(prev.keys()) : new ArrayList<>();
             items.add(filtered);
+            keys.add(arrayKey);
             // 同名覆盖时 PHP 数组保留键原来的位置（LinkedHashMap.put 同样不移动已有的键）
-            out.put(key, new Value(null, Collections.unmodifiableList(items)));
+            out.put(key, new Value(null, Collections.unmodifiableList(items), Collections.unmodifiableList(keys)));
         } else {
             out.put(key, new Value(filtered, null));
         }
