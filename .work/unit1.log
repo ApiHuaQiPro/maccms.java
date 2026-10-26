@@ -1,0 +1,59 @@
+Extension gg.jte.models.generator.ModelExtension generated 3 files.
+Extension gg.jte.models.generator.ModelExtension generated 3 files.
+[ERROR] COMPILATION ERROR : 
+[ERROR] /C:/Users/Administrator/multica_workspaces_desktop-localhost-8080/maccms-a5afce71bc1f/macc-23-419fd388b11f/worktree/backend/src/test/java/com/maccms/backend/member/application/MemberAccountUnitTest.java:[114,34] cannot find symbol
+  symbol:   method annexType(java.lang.String,<nulltype>)
+  location: class com.maccms.backend.member.application.PortraitImages
+[ERROR] /C:/Users/Administrator/multica_workspaces_desktop-localhost-8080/maccms-a5afce71bc1f/macc-23-419fd388b11f/worktree/backend/src/test/java/com/maccms/backend/member/application/MemberAccountUnitTest.java:[115,34] cannot find symbol
+  symbol:   method annexType(java.lang.String,<nulltype>)
+  location: class com.maccms.backend.member.application.PortraitImages
+[ERROR] /C:/Users/Administrator/multica_workspaces_desktop-localhost-8080/maccms-a5afce71bc1f/macc-23-419fd388b11f/worktree/backend/src/test/java/com/maccms/backend/member/application/MemberAccountUnitTest.java:[116,34] cannot find symbol
+  symbol:   method annexType(java.lang.String,<nulltype>)
+  location: class com.maccms.backend.member.application.PortraitImages
+[ERROR] /C:/Users/Administrator/multica_workspaces_desktop-localhost-8080/maccms-a5afce71bc1f/macc-23-419fd388b11f/worktree/backend/src/test/java/com/maccms/backend/member/application/MemberAccountUnitTest.java:[117,34] cannot find symbol
+  symbol:   method annexType(java.lang.String,<nulltype>)
+  location: class com.maccms.backend.member.application.PortraitImages
+[ERROR] /C:/Users/Administrator/multica_workspaces_desktop-localhost-8080/maccms-a5afce71bc1f/macc-23-419fd388b11f/worktree/backend/src/test/java/com/maccms/backend/member/application/MemberAccountUnitTest.java:[118,34] cannot find symbol
+  symbol:   method annexType(java.lang.String,<nulltype>)
+  location: class com.maccms.backend.member.application.PortraitImages
+[ERROR] /C:/Users/Administrator/multica_workspaces_desktop-localhost-8080/maccms-a5afce71bc1f/macc-23-419fd388b11f/worktree/backend/src/test/java/com/maccms/backend/member/application/MemberAccountUnitTest.java:[119,34] cannot find symbol
+  symbol:   method annexType(java.lang.String,<nulltype>)
+  location: class com.maccms.backend.member.application.PortraitImages
+[ERROR] /C:/Users/Administrator/multica_workspaces_desktop-localhost-8080/maccms-a5afce71bc1f/macc-23-419fd388b11f/worktree/backend/src/test/java/com/maccms/backend/member/application/MemberAccountUnitTest.java:[121,34] cannot find symbol
+  symbol:   method annexType(<nulltype>,java.lang.String)
+  location: class com.maccms.backend.member.application.PortraitImages
+[ERROR] /C:/Users/Administrator/multica_workspaces_desktop-localhost-8080/maccms-a5afce71bc1f/macc-23-419fd388b11f/worktree/backend/src/test/java/com/maccms/backend/member/application/MemberAccountUnitTest.java:[122,34] cannot find symbol
+  symbol:   method annexType(java.lang.String,java.lang.String)
+  location: class com.maccms.backend.member.application.PortraitImages
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-compiler-plugin:3.15.0:testCompile (default-testCompile) on project maccms-backend: Compilation failure: Compilation failure: 
+[ERROR] /C:/Users/Administrator/multica_workspaces_desktop-localhost-8080/maccms-a5afce71bc1f/macc-23-419fd388b11f/worktree/backend/src/test/java/com/maccms/backend/member/application/MemberAccountUnitTest.java:[114,34] cannot find symbol
+[ERROR]   symbol:   method annexType(java.lang.String,<nulltype>)
+[ERROR]   location: class com.maccms.backend.member.application.PortraitImages
+[ERROR] /C:/Users/Administrator/multica_workspaces_desktop-localhost-8080/maccms-a5afce71bc1f/macc-23-419fd388b11f/worktree/backend/src/test/java/com/maccms/backend/member/application/MemberAccountUnitTest.java:[115,34] cannot find symbol
+[ERROR]   symbol:   method annexType(java.lang.String,<nulltype>)
+[ERROR]   location: class com.maccms.backend.member.application.PortraitImages
+[ERROR] /C:/Users/Administrator/multica_workspaces_desktop-localhost-8080/maccms-a5afce71bc1f/macc-23-419fd388b11f/worktree/backend/src/test/java/com/maccms/backend/member/application/MemberAccountUnitTest.java:[116,34] cannot find symbol
+[ERROR]   symbol:   method annexType(java.lang.String,<nulltype>)
+[ERROR]   location: class com.maccms.backend.member.application.PortraitImages
+[ERROR] /C:/Users/Administrator/multica_workspaces_desktop-localhost-8080/maccms-a5afce71bc1f/macc-23-419fd388b11f/worktree/backend/src/test/java/com/maccms/backend/member/application/MemberAccountUnitTest.java:[117,34] cannot find symbol
+[ERROR]   symbol:   method annexType(java.lang.String,<nulltype>)
+[ERROR]   location: class com.maccms.backend.member.application.PortraitImages
+[ERROR] /C:/Users/Administrator/multica_workspaces_desktop-localhost-8080/maccms-a5afce71bc1f/macc-23-419fd388b11f/worktree/backend/src/test/java/com/maccms/backend/member/application/MemberAccountUnitTest.java:[118,34] cannot find symbol
+[ERROR]   symbol:   method annexType(java.lang.String,<nulltype>)
+[ERROR]   location: class com.maccms.backend.member.application.PortraitImages
+[ERROR] /C:/Users/Administrator/multica_workspaces_desktop-localhost-8080/maccms-a5afce71bc1f/macc-23-419fd388b11f/worktree/backend/src/test/java/com/maccms/backend/member/application/MemberAccountUnitTest.java:[119,34] cannot find symbol
+[ERROR]   symbol:   method annexType(java.lang.String,<nulltype>)
+[ERROR]   location: class com.maccms.backend.member.application.PortraitImages
+[ERROR] /C:/Users/Administrator/multica_workspaces_desktop-localhost-8080/maccms-a5afce71bc1f/macc-23-419fd388b11f/worktree/backend/src/test/java/com/maccms/backend/member/application/MemberAccountUnitTest.java:[121,34] cannot find symbol
+[ERROR]   symbol:   method annexType(<nulltype>,java.lang.String)
+[ERROR]   location: class com.maccms.backend.member.application.PortraitImages
+[ERROR] /C:/Users/Administrator/multica_workspaces_desktop-localhost-8080/maccms-a5afce71bc1f/macc-23-419fd388b11f/worktree/backend/src/test/java/com/maccms/backend/member/application/MemberAccountUnitTest.java:[122,34] cannot find symbol
+[ERROR]   symbol:   method annexType(java.lang.String,java.lang.String)
+[ERROR]   location: class com.maccms.backend.member.application.PortraitImages
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException

@@ -1,0 +1,73 @@
+Extension gg.jte.models.generator.ModelExtension generated 3 files.
+Extension gg.jte.models.generator.ModelExtension generated 3 files.
+[mysql-it] created disposable database maccms_it_20261025235505_65b5920c
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v4.1.1)
+
+2026-10-25T23:55:09.263-07:00  INFO 13356 --- [maccms-backend] [           main] o.a.maven.surefire.booter.ForkedBooter   : Starting ForkedBooter v3.5.6 using Java 21.0.11 with PID 13356 (started by Administrator in C:\Users\Administrator\multica_workspaces_desktop-localhost-8080\maccms-a5afce71bc1f\macc-23-419fd388b11f\worktree\backend)
+2026-10-25T23:55:09.278-07:00  INFO 13356 --- [maccms-backend] [           main] o.a.maven.surefire.booter.ForkedBooter   : No active profile set, falling back to 1 default profile: "default"
+2026-10-25T23:55:22.103-07:00  INFO 13356 --- [maccms-backend] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with port 0 (http)
+2026-10-25T23:55:22.176-07:00  INFO 13356 --- [maccms-backend] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-10-25T23:55:22.178-07:00  INFO 13356 --- [maccms-backend] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.24]
+2026-10-25T23:55:22.411-07:00  INFO 13356 --- [maccms-backend] [           main] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 12958 ms
+2026-10-25T23:55:27.467-07:00  INFO 13356 --- [maccms-backend] [           main] com.zaxxer.hikari.HikariDataSource       : maccms-rw - Starting...
+2026-10-25T23:55:27.569-07:00  INFO 13356 --- [maccms-backend] [           main] com.zaxxer.hikari.HikariDataSource       : maccms-rw - Start completed.
+2026-10-25T23:55:29.210-07:00  INFO 13356 --- [maccms-backend] [           main] c.m.b.c.clientip.ClientIpConfiguration   : client ip: 0 trusted proxy entries, forwarded header X-Forwarded-For
+2026-10-25T23:55:32.564-07:00  INFO 13356 --- [maccms-backend] [           main] o.s.b.a.e.web.EndpointLinksResolver      : Exposing 1 endpoint beneath base path '/actuator'
+2026-10-25T23:55:32.954-07:00  INFO 13356 --- [maccms-backend] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat started on port 52845 (http) with context path '/'
+2026-10-25T23:55:32.991-07:00  INFO 13356 --- [maccms-backend] [           main] o.a.maven.surefire.booter.ForkedBooter   : Started ForkedBooter in 25.284 seconds (process running for 30.868)
+2026-10-25T23:55:33.354-07:00  INFO 13356 --- [maccms-backend] [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring TestDispatcherServlet ''
+2026-10-25T23:55:33.356-07:00  INFO 13356 --- [maccms-backend] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-10-25T23:55:33.359-07:00  INFO 13356 --- [maccms-backend] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 3 ms
+2026-10-25T23:55:33.564-07:00  INFO 13356 --- [maccms-backend] [           main] com.zaxxer.hikari.HikariDataSource       : maccms-ro - Starting...
+2026-10-25T23:55:33.572-07:00  INFO 13356 --- [maccms-backend] [           main] com.zaxxer.hikari.pool.HikariPool        : maccms-ro - Added connection com.mysql.cj.jdbc.ConnectionImpl@67216c33
+2026-10-25T23:55:33.579-07:00  INFO 13356 --- [maccms-backend] [           main] com.zaxxer.hikari.HikariDataSource       : maccms-ro - Start completed.
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v4.1.1)
+
+2026-10-25T23:55:35.647-07:00  INFO 13356 --- [maccms-backend] [           main] o.a.maven.surefire.booter.ForkedBooter   : Starting ForkedBooter v3.5.6 using Java 21.0.11 with PID 13356 (started by Administrator in C:\Users\Administrator\multica_workspaces_desktop-localhost-8080\maccms-a5afce71bc1f\macc-23-419fd388b11f\worktree\backend)
+2026-10-25T23:55:35.648-07:00  INFO 13356 --- [maccms-backend] [           main] o.a.maven.surefire.booter.ForkedBooter   : No active profile set, falling back to 1 default profile: "default"
+2026-10-25T23:55:37.244-07:00  INFO 13356 --- [maccms-backend] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with port 0 (http)
+2026-10-25T23:55:37.247-07:00  INFO 13356 --- [maccms-backend] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-10-25T23:55:37.247-07:00  INFO 13356 --- [maccms-backend] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.24]
+2026-10-25T23:55:37.326-07:00  INFO 13356 --- [maccms-backend] [           main] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 1673 ms
+2026-10-25T23:55:38.011-07:00  INFO 13356 --- [maccms-backend] [           main] com.zaxxer.hikari.HikariDataSource       : maccms-rw - Starting...
+2026-10-25T23:55:38.013-07:00  INFO 13356 --- [maccms-backend] [           main] com.zaxxer.hikari.HikariDataSource       : maccms-rw - Start completed.
+2026-10-25T23:55:38.303-07:00  INFO 13356 --- [maccms-backend] [           main] c.m.b.c.clientip.ClientIpConfiguration   : client ip: 0 trusted proxy entries, forwarded header X-Forwarded-For
+2026-10-25T23:55:38.809-07:00  INFO 13356 --- [maccms-backend] [           main] o.s.b.a.e.web.EndpointLinksResolver      : Exposing 1 endpoint beneath base path '/actuator'
+2026-10-25T23:55:38.850-07:00  INFO 13356 --- [maccms-backend] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat started on port 52940 (http) with context path '/'
+2026-10-25T23:55:38.857-07:00  INFO 13356 --- [maccms-backend] [           main] o.a.maven.surefire.booter.ForkedBooter   : Started ForkedBooter in 3.277 seconds (process running for 36.734)
+2026-10-25T23:55:38.862-07:00  INFO 13356 --- [maccms-backend] [           main] o.a.c.c.C.[Tomcat-1].[localhost].[/]     : Initializing Spring TestDispatcherServlet ''
+2026-10-25T23:55:38.862-07:00  INFO 13356 --- [maccms-backend] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-10-25T23:55:38.866-07:00  INFO 13356 --- [maccms-backend] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 2 ms
+2026-10-25T23:55:38.923-07:00  INFO 13356 --- [maccms-backend] [           main] com.zaxxer.hikari.HikariDataSource       : maccms-ro - Starting...
+2026-10-25T23:55:38.932-07:00  INFO 13356 --- [maccms-backend] [           main] com.zaxxer.hikari.pool.HikariPool        : maccms-ro - Added connection com.mysql.cj.jdbc.ConnectionImpl@106c73ed
+2026-10-25T23:55:38.932-07:00  INFO 13356 --- [maccms-backend] [           main] com.zaxxer.hikari.HikariDataSource       : maccms-ro - Start completed.
+[mysql-it] portrait annex golden steps compared: 36, annex rows registered: 18
+2026-10-25T23:55:40.796-07:00  INFO 13356 --- [maccms-backend] [           main] o.s.boot.tomcat.GracefulShutdown         : Commencing graceful shutdown. Waiting for active requests to complete
+2026-10-25T23:55:40.802-07:00  INFO 13356 --- [maccms-backend] [tomcat-shutdown] o.s.boot.tomcat.GracefulShutdown         : Graceful shutdown complete
+2026-10-25T23:55:40.815-07:00  INFO 13356 --- [maccms-backend] [           main] com.zaxxer.hikari.HikariDataSource       : maccms-rw - Shutdown initiated...
+2026-10-25T23:55:40.819-07:00  INFO 13356 --- [maccms-backend] [           main] com.zaxxer.hikari.HikariDataSource       : maccms-rw - Shutdown completed.
+2026-10-25T23:55:40.825-07:00  INFO 13356 --- [maccms-backend] [           main] com.zaxxer.hikari.HikariDataSource       : maccms-ro - Shutdown initiated...
+2026-10-25T23:55:40.831-07:00  INFO 13356 --- [maccms-backend] [           main] com.zaxxer.hikari.HikariDataSource       : maccms-ro - Shutdown completed.
+2026-10-25T23:55:40.861-07:00  INFO 13356 --- [maccms-backend] [           main] o.s.boot.tomcat.GracefulShutdown         : Commencing graceful shutdown. Waiting for active requests to complete
+2026-10-25T23:55:40.865-07:00  INFO 13356 --- [maccms-backend] [tomcat-shutdown] o.s.boot.tomcat.GracefulShutdown         : Graceful shutdown complete
+2026-10-25T23:55:40.872-07:00  INFO 13356 --- [maccms-backend] [           main] com.zaxxer.hikari.HikariDataSource       : maccms-rw - Shutdown initiated...
+2026-10-25T23:55:40.874-07:00  INFO 13356 --- [maccms-backend] [           main] com.zaxxer.hikari.HikariDataSource       : maccms-rw - Shutdown completed.
+2026-10-25T23:55:40.878-07:00  INFO 13356 --- [maccms-backend] [           main] com.zaxxer.hikari.HikariDataSource       : maccms-ro - Shutdown initiated...
+2026-10-25T23:55:40.885-07:00  INFO 13356 --- [maccms-backend] [           main] com.zaxxer.hikari.HikariDataSource       : maccms-ro - Shutdown completed.
+[mysql-it] dropped disposable database maccms_it_20261025235505_65b5920c (verified absent)

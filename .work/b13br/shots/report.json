@@ -1,0 +1,334 @@
+{
+  "steps": [
+    {
+      "step": "登录后进入框架页",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "视频列表 layui 表格",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "视频表单 ueditor 已渲染",
+      "ok": true,
+      "detail": "1 个编辑器"
+    },
+    {
+      "step": "视频表单 layui 下拉已渲染",
+      "ok": true,
+      "detail": "8 个"
+    },
+    {
+      "step": "上传返回成功",
+      "ok": true,
+      "detail": "{\"msg\": \"文件上传成功！\", \"code\": 1, \"data\": {\"file\": \"upload/vod/20261026-1/53b0737d9c1148b557fd87e068a93fc2.png\", \"type\": \"image\", \"size\": 1.45, \"flag\": \"vod\", \"ctime\": 1793000983, \"thumb_class\": \"upload-t"
+    },
+    {
+      "step": "图片地址回填",
+      "ok": true,
+      "detail": "upload/vod/20261026-1/53b0737d9c1148b557fd87e068a93fc2.png"
+    },
+    {
+      "step": "缩略图地址回填且文件存在",
+      "ok": true,
+      "detail": "upload/vod/20261026-1/53b0737d9c1148b557fd87e068a93fc2.png_120x80.png"
+    },
+    {
+      "step": "原图与缩略图都登记附件",
+      "ok": true,
+      "detail": [
+        [
+          "upload/vod/20261026-1/53b0737d9c1148b557fd87e068a93fc2.png",
+          "image"
+        ],
+        [
+          "upload/vod/20261026-1/53b0737d9c1148b557fd87e068a93fc2.png_120x80.png",
+          "image"
+        ]
+      ]
+    },
+    {
+      "step": "视频保存提示",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "库里有新视频（名称、分类、图片）",
+      "ok": true,
+      "detail": [
+        [
+          "1",
+          "浏览器视频一",
+          "1",
+          "upload/vod/20261026-1/53b0737d9c1148b557fd87e068a93fc2.png",
+          "upload/vod/20261026-1/53b0737d9c1148b557fd87e068a93fc2.png_120x80.png"
+        ]
+      ]
+    },
+    {
+      "step": "保存后列表出现新视频",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "j-select 弹窗批量改等级",
+      "ok": true,
+      "detail": [
+        [
+          "5"
+        ]
+      ]
+    },
+    {
+      "step": "编辑保存（备注写库、图片地址不变）",
+      "ok": true,
+      "detail": [
+        [
+          "更新至第2集",
+          "upload/vod/20261026-1/53b0737d9c1148b557fd87e068a93fc2.png"
+        ]
+      ]
+    },
+    {
+      "step": "查重列表列出同名两条",
+      "ok": true,
+      "detail": "2 行"
+    },
+    {
+      "step": "删除重复保留最小编号",
+      "ok": true,
+      "detail": [
+        [
+          "1"
+        ]
+      ]
+    },
+    {
+      "step": "勾选删除后库里没有这条视频",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "删除视频时图片文件随之删除",
+      "ok": true,
+      "detail": "upload/vod/20261026-1/53b0737d9c1148b557fd87e068a93fc2.png"
+    },
+    {
+      "step": "文章表单 ueditor 就绪（编辑区可输入）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "文章保存：正文是编辑器里输入的内容",
+      "ok": true,
+      "detail": [
+        [
+          "浏览器文章",
+          "5",
+          "<p>富文本正文第一段</p>"
+        ]
+      ]
+    },
+    {
+      "step": "友链列表",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "友链\"类型\"下拉框照旧选中\"文字链接\"（旧模板 $vo 缺陷，22 文档第 7.8 节）",
+      "ok": true,
+      "detail": "文字链接"
+    },
+    {
+      "step": "友链保存：不改下拉框时图片链接存回文字链接（与旧版相同）",
+      "ok": true,
+      "detail": [
+        [
+          "图片友链改",
+          "0",
+          "upload/link/logo.png"
+        ]
+      ]
+    },
+    {
+      "step": "分类树形列表",
+      "ok": true,
+      "detail": "18 行"
+    },
+    {
+      "step": "分类编辑保存（带表单令牌）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "评论列表",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "评论审核",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "留言回复（写回复与回复时间）",
+      "ok": true,
+      "detail": [
+        [
+          "已收到，谢谢",
+          "1"
+        ]
+      ]
+    },
+    {
+      "step": "附件列表",
+      "ok": true,
+      "detail": "4 行"
+    },
+    {
+      "step": "附件目录浏览：默认列出 upload/ 下的目录",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "附件目录浏览：进入 upload/link/",
+      "ok": true,
+      "detail": "http://127.0.0.1:18297/_admin.php/admin/annex/file/path/%40upload%40link.html"
+    },
+    {
+      "step": "附件目录浏览：返回上级目录",
+      "ok": true,
+      "detail": "http://127.0.0.1:18297/_admin.php/admin/annex/file/path/%40upload.html"
+    },
+    {
+      "step": "附件检查逐页推进到结束（progress.js 3 秒跳转）",
+      "ok": true,
+      "detail": "1104 条登记，经过 4 个地址"
+    },
+    {
+      "step": "附件检查跨过第 2 页以后（start=2、3）",
+      "ok": true,
+      "detail": [
+        "annex/check.html",
+        "annex/check.html?data_count=1104&page_count=3&page_size=500&start=2",
+        "annex/check.html?data_count=1104&page_count=3&page_size=500&start=3",
+        "annex/check.html?data_count=1104&page_count=3&page_size=500&start=4"
+      ]
+    },
+    {
+      "step": "附件检查删掉全部文件已不存在的登记、保留文件存在的",
+      "ok": true,
+      "detail": [
+        [
+          "upload/link/logo.png"
+        ]
+      ]
+    },
+    {
+      "step": "附件初始化逐表推进到结束",
+      "ok": true,
+      "detail": "http://127.0.0.1:18297/_admin.php/admin/annex/init.html?ck=1&tbi=8&start=1"
+    },
+    {
+      "step": "附件初始化在文章表内翻页（1101 行）",
+      "ok": true,
+      "detail": [
+        "ck=1&tbi=1&start=1",
+        "ck=1&tbi=1&start=2",
+        "ck=1&tbi=1&start=3",
+        "ck=1&tbi=1&start=4"
+      ]
+    },
+    {
+      "step": "附件初始化补登记存在的图片且不重复登记",
+      "ok": true,
+      "detail": [
+        [
+          [
+            "0"
+          ]
+        ],
+        [
+          [
+            "1"
+          ]
+        ],
+        []
+      ]
+    },
+    {
+      "step": "批量处理逐页推进到完成",
+      "ok": true,
+      "detail": "http://127.0.0.1:18297/_admin.php/admin/vod/batch.html?type=&status=&level=&lock=&weekday=&area=&lang=&player=&downer=&pic=&isend=&copyright=&wd=%E6%89%B9%E9%87%8F&ck_level=1&val_level=3&val_lock=&val_status=&val_copyright=&val_hits_min=&val_hits_max=&val_points_play=&val_points_down=&limit=2&page=3&total=3&page_count=2"
+    },
+    {
+      "step": "批量处理改了全部符合条件的行",
+      "ok": true,
+      "detail": [
+        [
+          "3"
+        ],
+        [
+          "3"
+        ],
+        [
+          "3"
+        ]
+      ]
+    },
+    {
+      "step": "上传含脚本标记的图片被拒绝（文件包含危险内容）",
+      "ok": true,
+      "detail": "{\"msg\":\"文件包含危险内容！\",\"code\":0,\"data\":[]}"
+    },
+    {
+      "step": "被拒绝的上传不落盘、不登记附件",
+      "ok": true,
+      "detail": [
+        1,
+        1,
+        [
+          "20260101-1",
+          "20261026-1"
+        ]
+      ]
+    },
+    {
+      "step": "图片同步合法 tab：固定提示、不下载",
+      "ok": true,
+      "detail": "\n远程图片同步未开放：新系统只存本地、不下载外部图片，库内的图片地址保持不变。\n"
+    },
+    {
+      "step": "图片同步不改库内图片地址",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "无内容安全策略违规",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "无页面脚本错误",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "无控制台错误",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": "无外部主机请求",
+      "ok": true,
+      "detail": ""
+    }
+  ],
+  "csp": [],
+  "pageErrors": [],
+  "consoleErrors": [],
+  "external": [],
+  "responses4xx5xx": []
+}

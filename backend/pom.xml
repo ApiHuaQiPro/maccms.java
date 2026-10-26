@@ -165,7 +165,7 @@
             </resource>
             <!--
               B13（docs/architecture/22-b13-admin-content.md 第 8 节）：内容表单用到的旧富文本编辑器 static/ueditor/** 与取色器
-              static/js/jquery.jscolor.js 同样原样复用，按旧路径提供。
+              static/js/jquery.jscolor.js（连同它读取的 static/images/jscolor/ 图片）同样原样复用，按旧路径提供。
             -->
             <resource>
                 <directory>${project.basedir}/../static</directory>
@@ -173,6 +173,7 @@
                 <includes>
                     <include>ueditor/**</include>
                     <include>js/jquery.jscolor.js</include>
+                    <include>images/jscolor/**</include>
                 </includes>
             </resource>
             <!--

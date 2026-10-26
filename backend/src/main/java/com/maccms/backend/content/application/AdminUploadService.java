@@ -216,6 +216,8 @@ public class AdminUploadService {
             return out;
         }
         int type = (int) PhpIntval.of(config.text("upload", "thumb_type"));
+        // 旧 makethumb 只打开一次原图，同一个 think\Image 对象依次 thumb()->save()；开水印时再改成打开刚存的缩略图加水印。所以后面的尺寸
+        // 是从前一张缩略图（开水印时是加过水印的那张）再缩出来的（如 120x80,300x300 按等比例缩放时两张都是 120×67），这里照旧
         byte[] src = uploads.read(file);
         for (String v : sizes.split(",", -1)) {
             String[] t = v.toLowerCase(Locale.ROOT).split("x", -1);
@@ -234,6 +236,7 @@ public class AdminUploadService {
                 }
             }
             uploads.write(name, img);
+            src = img;
             Map<String, Object> m = new LinkedHashMap<>();
             m.put("type", "image");
             m.put("flag", flag);

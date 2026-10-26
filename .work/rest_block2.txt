@@ -1,0 +1,22 @@
+        # ---------------- 上传的脚本标记拒绝（D-B13-16：检查通过才落盘）与图片同步合法 tab（D-B13-2：不下载、不改库）
+        today_dirs = lambda: sorted(os.listdir(os.path.join(site, 'upload', 'vod'))) if os.path.isdir(os.path.join(site, 'upload', 'vod')) else []
+        files_before = sum(len(fs) for _, _, fs in os.walk(os.path.join(site, 'upload')))
+        annex_before = sql('SELECT COUNT(*) FROM mac_annex')
+        reply = page.evaluate("""async (url) => {
+            const head = new Uint8Array([0xFF, 0xD8, 0xFF, 0xE0]);
+            const body = new TextEncoder().encode('<script>alert(1)</script>' + 'x'.repeat(2000));
+            const fd = new FormData();
+            fd.append('file', new Blob([head, body], {type: 'image/jpeg'}), 'evil.jpg');
+            const r = await fetch(url, {method: 'POST', body: fd, headers: {'X-Requested-With': 'XMLHttpRequest'}});
+            return await r.text();
+        }""", entry + '/admin/upload/upload.html?flag=vod')
+        files_after = sum(len(fs) for _, _, fs in os.walk(os.path.join(site, 'upload')))
+        step('上传含脚本标记的图片被拒绝（文件包含危险内容）', '"code":0' in reply and '危险' in reply, reply[:160])
+        step('被拒绝的上传不落盘、不登记附件', files_after == files_before and sql('SELECT COUNT(*) FROM mac_annex') == annex_before,
+             [files_before, files_after, today_dirs()])
+        pics = sql('SELECT vod_id, vod_pic FROM mac_vod ORDER BY vod_id')
+        page.goto(entry + '/admin/images/sync.html?tab=vod')
+        settle()
+        text = page.inner_text('body')
+        step('图片同步合法 tab：固定提示、不下载', '远程图片同步未开放' in text, text[:120])
+        step('图片同步不改库内图片地址', sql('SELECT vod_id, vod_pic FROM mac_vod ORDER BY vod_id') == pics)

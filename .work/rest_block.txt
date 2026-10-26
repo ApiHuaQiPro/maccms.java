@@ -1,0 +1,121 @@
+        def choose(scope, name, text):
+            scope.locator('select[name=%s] + .layui-form-select .layui-select-title' % name).first.click()
+            scope.locator('select[name=%s] + .layui-form-select dd' % name, has_text=text).first.click()
+
+        def editor_ready(f):
+            f.wait_for_function("window.UE && Object.keys(UE.instants).length > 0 && "
+                                "Object.keys(UE.instants).every(function (k) { return UE.instants[k].isReady; })",
+                                timeout=15000)
+
+        # ---------------- 文章：ueditor 里输入正文
+        open_list('/admin/art/data.html')
+        page.locator('a.j-iframe', has_text='添加').first.click()
+        f = frame('/admin/art/info')
+        editor_ready(f)
+        step('文章表单 ueditor 就绪（编辑区可输入）', True)
+        f.fill('input[name=art_name]', '浏览器文章')
+        choose(f, 'type_id', '分类5')
+        body = f.frame_locator('iframe[id^=ueditor_]').first.locator('body')
+        body.click()
+        page.keyboard.type('富文本正文第一段')
+        shot('art-form-editor')
+        f.locator('button[lay-filter=formSubmit]').click()
+        page.wait_for_timeout(2500)
+        close_layer()
+        art = sql('SELECT art_name, type_id, art_content FROM mac_art')
+        step('文章保存：正文是编辑器里输入的内容', len(art) == 1 and art[0][0] == '浏览器文章' and art[0][1] == '5'
+             and '富文本正文第一段' in art[0][2], art)
+
+        # ---------------- 友链：编辑图片链接，"类型"下拉框照旧选中"文字链接"
+        open_list('/admin/link/index.html')
+        step('友链列表', page.locator('table.layui-table tbody tr').count() == 2)
+        page.locator('tr', has_text='图片友链').locator('a.j-iframe', has_text='编辑').click()
+        f = frame('/admin/link/info')
+        f.wait_for_selector('select[name=link_type]', state='attached', timeout=8000)
+        selected = f.eval_on_selector('select[name=link_type]', 'e => e.options[e.selectedIndex].text')
+        step('友链"类型"下拉框照旧选中"文字链接"（旧模板 $vo 缺陷，22 文档第 7.8 节）', selected == '文字链接', selected)
+        f.fill('input[name=link_name]', '图片友链改')
+        f.locator('button[lay-filter=formSubmit]').click()
+        page.wait_for_timeout(2000)
+        close_layer()
+        link = sql("SELECT link_name, link_type, link_logo FROM mac_link WHERE link_url = 'http://b.example.test/'")
+        step('友链保存：不改下拉框时图片链接存回文字链接（与旧版相同）', link == [['图片友链改', '0', 'upload/link/logo.png']], link)
+
+        # ---------------- 分类：树形列表、编辑（表单令牌）
+        open_list('/admin/type/index.html')
+        n = page.locator('table.layui-table tbody tr').count()
+        step('分类树形列表', n == 18, '%d 行' % n)
+        page.locator('tr', has_text='分类1').first.locator('a.j-iframe', has_text='编辑').click()
+        f = frame('/admin/type/info')
+        f.wait_for_selector('input[name=__token__]', state='attached', timeout=8000)
+        f.fill('input[name=type_name]', '分类一')
+        f.locator('button[lay-filter=formSubmit]').click()
+        page.wait_for_timeout(2000)
+        close_layer()
+        step('分类编辑保存（带表单令牌）', sql('SELECT type_name FROM mac_type WHERE type_id = 1') == [['分类一']])
+
+        # ---------------- 评论审核（j-select 改状态）、留言回复
+        open_list('/admin/comment/data.html')
+        step('评论列表', page.locator('table.layui-table tbody tr').count() == 2)
+        page.locator('tr', has_text='待审核的评论').locator('.layui-form-checkbox').click()
+        page.locator('a.j-select', has_text='状态').first.click()
+        pop = page.locator('.layui-layer-page form.layui-form')
+        pop.wait_for(timeout=8000)
+        choose(pop, 'val', '已审核')
+        pop.locator('button[lay-filter=formSubmit]').click()
+        page.wait_for_timeout(2000)
+        step('评论审核', sql("SELECT comment_status FROM mac_comment WHERE comment_content = '待审核的评论'") == [['1']])
+        open_list('/admin/gbook/data.html')
+        page.locator('a.j-iframe', has_text='回复').first.click()
+        f = frame('/admin/gbook/info')
+        f.wait_for_selector('textarea[name=gbook_reply]', timeout=8000)
+        f.fill('textarea[name=gbook_reply]', '已收到，谢谢')
+        f.locator('button[lay-filter=formSubmit]').click()
+        page.wait_for_timeout(2000)
+        close_layer()
+        gb = sql('SELECT gbook_reply, gbook_reply_time > 0 FROM mac_gbook')
+        step('留言回复（写回复与回复时间）', gb == [['已收到，谢谢', '1']], gb)
+
+        # ---------------- 附件：列表、目录浏览、附件检查逐页推进
+        open_list('/admin/annex/data.html')
+        n = page.locator('table.layui-table tbody tr').count()
+        step('附件列表', n >= 2, '%d 行' % n)
+        open_list('/admin/annex/file.html')
+        page.locator('a', has_text='upload').first.click()
+        settle()
+        page.locator('a', has_text='link').first.click()
+        settle()
+        step('附件目录浏览逐级进入 upload/link/', 'logo.png' in page.inner_text('body'), page.url)
+        shot('annex-file')
+        page.goto(entry + '/admin/annex/check.html')
+        try:
+            page.wait_for_selector('text=附件数据初始化结束', timeout=20000)
+            step('附件检查逐页推进到结束（progress.js 跳转）', True, page.url)
+        except Exception:
+            step('附件检查逐页推进到结束（progress.js 跳转）', False, page.inner_text('body')[:300])
+        shot('annex-check')
+        gone = sql("SELECT COUNT(*) FROM mac_annex WHERE annex_file = 'upload/vod/20260101-1/gone.jpg'")
+        kept = sql("SELECT COUNT(*) FROM mac_annex WHERE annex_file = 'upload/link/logo.png'")
+        step('附件检查删掉文件已不存在的登记、保留存在的', gone == [['0']] and kept == [['1']], [gone, kept])
+
+        # ---------------- 视频批量处理：筛选表单 → 逐页输出 → 自动跳转到完成
+        for name in ('批量一', '批量二', '批量三'):
+            sql("INSERT INTO mac_vod (type_id, type_id_1, vod_name, vod_status, vod_level, vod_content, vod_play_from, "
+                "vod_play_server, vod_play_note, vod_play_url, vod_down_from, vod_down_server, vod_down_note, vod_down_url, "
+                "vod_plot_name, vod_plot_detail) VALUES (1, 0, '%s', 1, 0, '', '', '', '', '', '', '', '', '', '', '')" % name)
+        page.goto(entry + '/admin/vod/batch.html')
+        settle()
+        page.fill('input[name=wd]', '批量')
+        page.check('input[name=ck_level]')
+        choose(page, 'val_level', '推荐3')
+        if page.locator('input[name=limit]').count():
+            page.fill('input[name=limit]', '2')
+        page.locator('button.btn_submit', has_text='开始执行').click()
+        try:
+            page.wait_for_selector('text=批量操作完毕', timeout=25000)
+            step('批量处理逐页推进到完成', True, page.url)
+        except Exception:
+            step('批量处理逐页推进到完成', False, page.inner_text('body')[:300])
+        shot('vod-batch')
+        lv = sql("SELECT vod_level FROM mac_vod WHERE vod_name LIKE '批量%' ORDER BY vod_id")
+        step('批量处理改了全部符合条件的行', lv == [['3'], ['3'], ['3']], lv)

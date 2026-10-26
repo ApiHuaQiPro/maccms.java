@@ -1,0 +1,28 @@
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v4.1.1)
+
+2026-10-26T00:13:33.657-07:00  INFO 15912 --- [maccms-backend] [           main] c.m.backend.MaccmsBackendApplication     : Starting MaccmsBackendApplication v0.1.0-SNAPSHOT using Java 21.0.11 with PID 15912 (C:\Users\Administrator\multica_workspaces_desktop-localhost-8080\maccms-a5afce71bc1f\macc-23-419fd388b11f\worktree\backend\target\maccms-backend-0.1.0-SNAPSHOT.jar started by Administrator in C:\Users\Administrator\multica_workspaces_desktop-localhost-8080\maccms-a5afce71bc1f\macc-23-419fd388b11f\worktree)
+2026-10-26T00:13:33.673-07:00  INFO 15912 --- [maccms-backend] [           main] c.m.backend.MaccmsBackendApplication     : No active profile set, falling back to 1 default profile: "default"
+2026-10-26T00:13:38.878-07:00  INFO 15912 --- [maccms-backend] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with port 18296 (http)
+2026-10-26T00:13:38.902-07:00  INFO 15912 --- [maccms-backend] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-10-26T00:13:38.903-07:00  INFO 15912 --- [maccms-backend] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.24]
+2026-10-26T00:13:38.957-07:00  INFO 15912 --- [maccms-backend] [           main] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 5142 ms
+2026-10-26T00:13:41.781-07:00  INFO 15912 --- [maccms-backend] [           main] com.zaxxer.hikari.HikariDataSource       : maccms-rw - Starting...
+2026-10-26T00:13:41.886-07:00  INFO 15912 --- [maccms-backend] [           main] com.zaxxer.hikari.HikariDataSource       : maccms-rw - Start completed.
+2026-10-26T00:13:42.520-07:00  INFO 15912 --- [maccms-backend] [           main] c.m.b.c.clientip.ClientIpConfiguration   : client ip: 0 trusted proxy entries, forwarded header X-Forwarded-For
+2026-10-26T00:13:44.858-07:00  INFO 15912 --- [maccms-backend] [           main] o.s.b.a.e.web.EndpointLinksResolver      : Exposing 1 endpoint beneath base path '/actuator'
+2026-10-26T00:13:45.212-07:00  INFO 15912 --- [maccms-backend] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat started on port 18296 (http) with context path '/'
+2026-10-26T00:13:45.232-07:00  INFO 15912 --- [maccms-backend] [           main] c.m.backend.MaccmsBackendApplication     : Started MaccmsBackendApplication in 12.725 seconds (process running for 14.161)
+2026-10-26T00:13:45.723-07:00  INFO 15912 --- [maccms-backend] [.1-18296-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-10-26T00:13:45.724-07:00  INFO 15912 --- [maccms-backend] [.1-18296-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-10-26T00:13:45.726-07:00  INFO 15912 --- [maccms-backend] [.1-18296-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 2 ms
+2026-10-26T00:13:45.823-07:00  INFO 15912 --- [maccms-backend] [.1-18296-exec-1] com.zaxxer.hikari.HikariDataSource       : maccms-ro - Starting...
+2026-10-26T00:13:45.834-07:00  INFO 15912 --- [maccms-backend] [.1-18296-exec-1] com.zaxxer.hikari.pool.HikariPool        : maccms-ro - Added connection com.mysql.cj.jdbc.ConnectionImpl@4c1a0ebf
+2026-10-26T00:13:45.844-07:00  INFO 15912 --- [maccms-backend] [.1-18296-exec-1] com.zaxxer.hikari.HikariDataSource       : maccms-ro - Start completed.

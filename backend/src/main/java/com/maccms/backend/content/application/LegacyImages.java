@@ -118,11 +118,15 @@ final class LegacyImages {
         // GD 的字号按 96 DPI 的磅值
         Font f = font.deriveFont((float) (size * 96 / 72));
         FontRenderContext frc = g.getFontRenderContext();
-        Rectangle2D b = f.getStringBounds(text, frc);
-        double tw = b.getWidth();
-        double th = b.getHeight();
-        double x = 0;
-        double y = -b.getY();
+        // think-image 按 imagettfbbox 的字形外框（不是字体的行高与步进宽度）定位：x = minx、y = |miny|、w = maxx - minx、
+        // h = maxy - miny（相对基线，向外取整为整像素，同 GD）
+        Rectangle2D b = f.createGlyphVector(frc, text).getVisualBounds();
+        double minx = Math.floor(b.getMinX());
+        double miny = Math.floor(b.getMinY());
+        double tw = Math.ceil(b.getMaxX()) - minx;
+        double th = Math.ceil(b.getMaxY()) - miny;
+        double x = minx;
+        double y = Math.abs(miny);
         double iw = src.getWidth();
         double ih = src.getHeight();
         switch (locate) {
@@ -156,7 +160,8 @@ final class LegacyImages {
         g.setColor(color(color));
         g.setComposite(AlphaComposite.SrcOver);
         g.setFont(f);
-        g.drawString(text, (float) x, (float) y);
+        // imagettftext 的坐标参数是整数（PHP 把浮点数截断）
+        g.drawString(text, (int) x, (int) y);
         g.dispose();
         return write(out, ext);
     }
