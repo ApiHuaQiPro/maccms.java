@@ -187,7 +187,7 @@
 #### 7.8 友情链接（`Link.php` → `common/model/Link.php`；`LinkAdminService`）
 
 - 列表：`link_name LIKE '%' . htmlspecialchars(urldecode(wd)) . '%'`，`link_id` 倒序。保存（`Link.php:99-120`）：名称、网址必填，写 `link_time`，新增另写 `link_add_time`。批量：`ids[]` 与同位置的 `link_name[] link_sort[] link_url[] link_type[] link_logo[]` 组成一行；没有 `ids[]` 时"参数错误"（D-B13-4）。
-- 旧表单的"类型"下拉框把 selected 判断写成未定义的 `$vo`（`application/admin/view/link/info.html:34-35`，应为 `$info`），`null eq 0` 为真，编辑图片链接时也总是选中"文字链接"。**新版照旧**（`link/info.jte`、`link-info.js` 注释）：保存时若不改下拉框，图片链接会被存回文字链接——这是旧版缺陷，按"行为兼容"保留，是否修复需用户决定。
+- 旧表单的"类型"下拉框把 selected 判断写成未定义的 `$vo`（`application/admin/view/link/info.html:34-35`，应为 `$info`），`null eq 0` 为真，编辑图片链接时也总是选中"文字链接"。**新版照旧**（`link/info.jte`、`link-info.js` 注释）：保存时若不改下拉框，图片链接会被存回文字链接——这是旧版缺陷，按"行为兼容"保留。已定（2026-10-26，MACC-23）：保持旧行为，不修。
 
 #### 7.9 评论与留言（`Comment.php`、`Gbook.php` → `common/model/Comment.php`、`Gbook.php`；`CommentAdminService`）
 
@@ -308,5 +308,5 @@
 | 只有浏览器走查的路径 | 上传的脚本标记拒绝、`images/sync` 合法 `tab`、附件检查多页、附件初始化多页：浏览器走查通过（第 9 节），没有 PHP 黄金对照 |
 | 浏览器走查的范围 | 只在本机无头 Chromium 上走了第 9 节所列流程；专题、演员、角色、网址、分集剧情页只有黄金的页面结构对照，没有逐页点过；没有在其他浏览器上走查 |
 | 两个上传目录参数 | `maccms.upload.dir` 与 `maccms.member.upload-dir` 必须指向同一目录，配错时头像与附件不在一处 |
-| 友链类型下拉框 | 旧缺陷照旧：不改下拉框保存会把图片链接改回文字链接；是否修复需用户决定 |
+| 友链类型下拉框 | 旧缺陷照旧：不改下拉框保存会把图片链接改回文字链接；已定保持旧行为（2026-10-26，MACC-23），编辑图片链接时需手动选回"图片链接" |
 | 旧配置每次调用都读 | `AdminConfig`、`AdminPlayers` 每次调用读文件（按修改时间缓存）；读失败时按空值处理并告警，表单的默认值会随之变化 |
