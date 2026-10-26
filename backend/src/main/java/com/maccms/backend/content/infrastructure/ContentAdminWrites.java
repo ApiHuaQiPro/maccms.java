@@ -55,6 +55,11 @@ public final class ContentAdminWrites {
         return row.getId() == null ? 0 : row.getId();
     }
 
+    /** 登记附件（{@code annex_time、annex_file、annex_size、annex_type}）：同名文件未登记时插入，返回是否插入。 */
+    public boolean registerAnnex(Map<String, String> columns) {
+        return run(() -> mapper.registerAnnex(columns)) == 1;
+    }
+
     /** 按主键整行覆盖（只写给出的列），返回匹配行数；没有列时不执行（旧版 ThinkPHP 对空数据返回 0 行）。 */
     public int update(String table, Map<String, String> columns, long id) {
         if (columns.isEmpty()) {

@@ -97,7 +97,7 @@ public class RoleAdminService {
         return ContentAdminSupport.field(param, AdminTable.ROLE, FIELD_COLS, null, writer);
     }
 
-    /** 旧 {@code Role::saveData}（common/model/Role.php:333-381）：名称、演员必填；没有 xss 过滤与简介。 */
+    /** 旧 {@code Role::saveData}（common/model/Role.php:311-365）：名称、演员必填；没有 xss 过滤与简介。 */
     private AdminResult saveData(PhpForm data) {
         if (!data.require("role_name")) {
             return AdminResult.error(AdminMessage.lang("param_err").thenText("：").thenLang("validate/require_name"));

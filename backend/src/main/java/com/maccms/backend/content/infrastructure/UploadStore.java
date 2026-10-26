@@ -55,6 +55,12 @@ public final class UploadStore {
         return p != null && Files.isRegularFile(p);
     }
 
+    /** 目录存在（只限根目录内）。 */
+    public boolean directoryExists(String siteRelative) {
+        Path p = resolve(siteRelative);
+        return p != null && Files.isDirectory(p);
+    }
+
     /** 文件大小（字节）；不存在时为 -1。 */
     public long size(String siteRelative) {
         Path p = resolve(siteRelative);

@@ -58,7 +58,7 @@ public class ArtAdminService {
         c.typeEither = ContentAdminSupport.nonEmpty(p, "type");
         c.level = ContentAdminSupport.nonEmpty(p, "level");
         c.status = ContentAdminSupport.zeroOne(p, "status");
-        c.lock = ContentAdminSupport.nonEmpty(p, "lock");
+        c.locked = ContentAdminSupport.nonEmpty(p, "lock");
         c.pic = ContentAdminSupport.pic(p);
         String wd = ContentAdminSupport.wdXss(p);
         c.wdLike = ContentAdminSupport.like(wd);
@@ -131,7 +131,7 @@ public class ArtAdminService {
         c.typeExact = ContentAdminSupport.nonEmpty(p, "type");
         c.level = ContentAdminSupport.nonEmpty(p, "level");
         c.status = ContentAdminSupport.zeroOne(p, "status");
-        c.lock = ContentAdminSupport.nonEmpty(p, "lock");
+        c.locked = ContentAdminSupport.nonEmpty(p, "lock");
         c.pic = ContentAdminSupport.pic(p);
         c.wdLike = ContentAdminSupport.like(ContentAdminSupport.wdHtml(p));
         c.order = "id_desc";
@@ -162,7 +162,7 @@ public class ArtAdminService {
     }
 
     /**
-     * 旧 {@code Art::saveData}（common/model/Art.php:451-545）：分页正文 {@code art_content[]} 非空时把 {@code art_content[]}、
+     * 旧 {@code Art::saveData}（common/model/Art.php:444-547）：分页正文 {@code art_content[]} 非空时把 {@code art_content[]}、
      * {@code art_title[]}、{@code art_note[]} 各以 {@code $$$} 连接，正文图片协议换成 {@code mac:}，图片为空时取正文第一张图；简介为空时取
      * 去掉 {@code $$$} 后的正文前 100 字。
      */

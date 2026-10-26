@@ -4,8 +4,20 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.maccms.backend.MaccmsBackendApplication;
 import com.maccms.backend.admin.AdminContentHtml;
+import com.maccms.backend.comment.application.CommentAdminService;
 import com.maccms.backend.common.session.MutableClock;
+import com.maccms.backend.content.application.AdminPaging;
+import com.maccms.backend.content.application.AnnexAdminService;
+import com.maccms.backend.content.application.ContentAdminServices;
+import com.maccms.backend.content.application.ContentCounterService;
+import com.maccms.backend.content.application.CounterTarget;
+import com.maccms.backend.content.application.PhpForm;
+import com.maccms.backend.content.application.view.AdminRowPage;
 import com.maccms.backend.schema.SchemaFingerprint;
+import com.maccms.backend.writedrill.ConcurrentWrites;
+import com.maccms.backend.writedrill.DatabaseSnapshot;
+import com.maccms.backend.writedrill.DmlRestore;
+import com.maccms.backend.writedrill.SnapshotDiff;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
@@ -64,7 +76,7 @@ import tools.jackson.databind.json.JsonMapper;
  * upload/ 重置为场景的文件，换新的会话；每个请求前把应用的时钟拨到 PHP 请求开始的秒，按同样的请求（方法、路径、查询串、正文字节、
  * Ajax 头）发给新版，比较状态码、Location、JSON 字节、页面结构（{@link AdminContentHtml}）、请求后各表的全部行与 upload/ 的文件。
  * 写入的时间列：PHP 的值落在请求的 [started, after] 秒内、新版的值等于拨好的秒时视为相同。有意差异（22 文档第 10 节）按 {@link #JAVA}
- * 断言新版的结果。结束时表结构指纹不变，删库并确认不存在。
+ * 断言新版的结果。之后是并发编辑（②）与回滚演练（③）。结束时表结构指纹不变，删库并确认不存在。
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class AdminContentGoldenMySqlIT {
@@ -293,6 +305,8 @@ class AdminContentGoldenMySqlIT {
         }
         Map<String, Object> lastPhpFiles = files(s.get("files0"));
         java.util.Set<String> acceptedTimes = new java.util.HashSet<>();
+        // 上传的文件名（旧版 md5(microtime(true))，新版 md5(毫秒.随机数)）两边各自生成：按出现顺序把 PHP 的名称对应到新版的名称
+        Map<String, String> names = new LinkedHashMap<>();
         String sid = null;
         String phpToken = null;
         String javaToken = null;
@@ -322,6 +336,7 @@ class AdminContentGoldenMySqlIT {
             if (jt != null) {
                 javaToken = jt;
             }
+            pairUploadNames(phpBody(st), body, names);
             String actual = observe(r.getStatus(), r.getHeader("Location"), body);
             String expected = JAVA.containsKey(tag + ":" + key) ? JAVA.get(tag + ":" + key)
                     : JAVA.containsKey(key) ? JAVA.get(key) : phpObservation(st);
@@ -330,12 +345,21 @@ class AdminContentGoldenMySqlIT {
                     expected = expected.replace(fix[0], fix[1]);
                 }
             }
+            if (expected != null) {
+                expected = requestTime(renamed(expected, names), started, after);
+            }
+            if (expected != null && key.equals("upload/test")) {
+                // 临时文件路径因机器而异
+                expected = expected.replaceFirst("：.*$", "：PATH");
+                actual = actual.replaceFirst("：.*$", "：PATH");
+            }
             if (expected != null && !expected.equals(actual)) {
                 problems.add(tag + ":" + key + "\n  expected: " + expected + "\n  actual:   " + actual);
             }
             // PHP 写了库而新版按有意差异拒绝（只用于场景的最后一步）：新版这一步之后的表应与上一步相同
             boolean noWrite = JAVA_NO_WRITE.contains(tag + ":" + key) || JAVA_NO_WRITE.contains(key);
-            Map<String, List<Map<String, Object>>> php = noWrite ? lastPhp : merge(lastPhp, st.get("tables"));
+            Map<String, List<Map<String, Object>>> php = noWrite ? lastPhp
+                    : renamedRows(merge(lastPhp, st.get("tables")), names);
             Map<String, List<Map<String, Object>>> java = javaRows();
             for (String t : TABLES.keySet()) {
                 List<String> diff = diffRows(php.get(t), java.get(t), started, after, acceptedTimes);
@@ -345,7 +369,7 @@ class AdminContentGoldenMySqlIT {
             }
             lastPhp = php;
             Map<String, Object> phpFiles = st.get("files") == null || st.get("files").isNull() ? lastPhpFiles
-                    : files(st.get("files"));
+                    : renamedFiles(files(st.get("files")), names);
             Map<String, Object> javaFiles = listFiles(v.siteRoot());
             if (!phpFiles.equals(javaFiles)) {
                 problems.add(tag + ":" + key + " upload/ 文件：\n  php:  " + phpFiles + "\n  java: " + javaFiles);
@@ -354,6 +378,69 @@ class AdminContentGoldenMySqlIT {
             n++;
         }
         return n;
+    }
+
+    private static final Pattern UPLOAD_NAME = Pattern.compile("[0-9]{8}-[0-9]+\\\\?/([0-9a-f]{32})");
+
+    /** 两边响应里依次出现的上传文件名（{@code 日期-序号/md5}）按顺序配对，记进 {@code names}（PHP → 新版）。 */
+    static void pairUploadNames(String php, String java, Map<String, String> names) {
+        if (php == null || java == null) {
+            return;
+        }
+        java.util.regex.Matcher p = UPLOAD_NAME.matcher(php);
+        java.util.regex.Matcher j = UPLOAD_NAME.matcher(java);
+        while (p.find() && j.find()) {
+            names.putIfAbsent(p.group(1), j.group(1));
+        }
+    }
+
+    private static final Pattern CTIME = Pattern.compile("\"ctime\":([0-9]+)");
+
+    /** 上传结果里的请求时间（旧 request()->time()）：PHP 的值落在 [started, after] 内时记为新版拨好的秒 started（同表里的时间列）。 */
+    static String requestTime(String s, long started, long after) {
+        java.util.regex.Matcher m = CTIME.matcher(s);
+        StringBuilder sb = new StringBuilder();
+        while (m.find()) {
+            long t = Long.parseLong(m.group(1));
+            m.appendReplacement(sb, "\"ctime\":" + (t >= started && t <= after ? started : t));
+        }
+        m.appendTail(sb);
+        return sb.toString();
+    }
+
+    static String renamed(String s, Map<String, String> names) {
+        for (Map.Entry<String, String> e : names.entrySet()) {
+            s = s.replace(e.getKey(), e.getValue());
+        }
+        return s;
+    }
+
+    /** 行里的文字列是十六进制编码的字节：名称同样按十六进制替换。 */
+    static Map<String, List<Map<String, Object>>> renamedRows(Map<String, List<Map<String, Object>>> rows,
+                                                              Map<String, String> names) {
+        if (names.isEmpty()) {
+            return rows;
+        }
+        Map<String, String> hex = new LinkedHashMap<>();
+        names.forEach((k, v) -> hex.put(HexFormat.of().formatHex(k.getBytes(StandardCharsets.US_ASCII)),
+                HexFormat.of().formatHex(v.getBytes(StandardCharsets.US_ASCII))));
+        Map<String, List<Map<String, Object>>> out = new LinkedHashMap<>();
+        rows.forEach((t, list) -> {
+            List<Map<String, Object>> copy = new ArrayList<>();
+            for (Map<String, Object> r : list) {
+                Map<String, Object> row = new LinkedHashMap<>();
+                r.forEach((c, v) -> row.put(c, v instanceof String str ? renamed(str, hex) : v));
+                copy.add(row);
+            }
+            out.put(t, copy);
+        });
+        return out;
+    }
+
+    static Map<String, Object> renamedFiles(Map<String, Object> files, Map<String, String> names) {
+        Map<String, Object> out = new TreeMap<>();
+        files.forEach((k, v) -> out.put(renamed(k, names), v));
+        return out;
     }
 
     /** PHP 这一步的观察结果（与 {@link #observe} 同格式）；正文没有记录时为 null（只比较表与文件）。 */
@@ -496,6 +583,245 @@ class AdminContentGoldenMySqlIT {
             }
         }
         return current;
+    }
+
+    // ------------------------------------------------------------------ ② 并发编辑（22 文档第 9 节）
+
+    /** PHP 8.0 黄金里的一个场景（取它的旧配置、种子行与文件）。 */
+    private static JsonNode scenario(String label) {
+        for (JsonNode s : load(PHP80).get("scenarios")) {
+            if (s.get("label").asString().equals(label)) {
+                return s;
+            }
+        }
+        throw new IllegalArgumentException(label);
+    }
+
+    /** 按场景准备库与 upload/，返回它的应用上下文。 */
+    private static Variant prepare(String label) throws Exception {
+        JsonNode s = scenario(label);
+        Variant v = variant(s.get("maccmsPhp").asString());
+        seed(s.get("seed"));
+        resetFiles(v.siteRoot(), s.get("filesSeed"));
+        return v;
+    }
+
+    /** 场景里某一步 POST 的正文解析成的参数表（与控制器 {@code input('post.')} 相同的解析）。 */
+    private static PhpForm postOf(String label, String step) {
+        for (JsonNode st : scenario(label).get("steps")) {
+            if (st.has("request") && st.get("label").asString().equals(step)) {
+                return form(st.get("request").get("post").asString());
+            }
+        }
+        throw new IllegalArgumentException(label + "/" + step);
+    }
+
+    private static PhpForm form(String urlencoded) {
+        return AdminContentActions.form(AdminParams.parse(urlencoded.getBytes(StandardCharsets.ISO_8859_1)));
+    }
+
+    private static Map<String, String> vodRow(long id) throws SQLException {
+        try (Connection c = admin(dbName); PreparedStatement ps = c.prepareStatement(
+                "SELECT vod_name, vod_blurb, vod_remarks, vod_hits FROM mac_vod WHERE vod_id = ?")) {
+            ps.setLong(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                assertThat(rs.next()).as("vod " + id).isTrue();
+                return Map.of("name", rs.getString(1), "blurb", rs.getString(2), "remarks", rs.getString(3),
+                        "hits", rs.getString(4));
+            }
+        }
+    }
+
+    private static long count(String sql, Object... args) throws SQLException {
+        try (Connection c = admin(dbName); PreparedStatement ps = c.prepareStatement(sql)) {
+            for (int i = 0; i < args.length; i++) {
+                ps.setObject(i + 1, args[i]);
+            }
+            try (ResultSet rs = ps.executeQuery()) {
+                rs.next();
+                return rs.getLong(1);
+            }
+        }
+    }
+
+    /** 每个名称 → 该名称最小的编号。 */
+    private static Map<String, Long> smallestIdByName() throws SQLException {
+        Map<String, Long> out = new HashMap<>();
+        try (Connection c = admin(dbName); Statement st = c.createStatement();
+             ResultSet rs = st.executeQuery("SELECT vod_name, MIN(vod_id) FROM mac_vod GROUP BY vod_name")) {
+            while (rs.next()) {
+                out.put(rs.getString(1), rs.getLong(2));
+            }
+        }
+        return out;
+    }
+
+    /**
+     * 12 个管理员同时保存同一条视频的编辑表单（各自不同的名称、简介、备注、点击数）：全部"保存成功"，库里是其中某一份表单的整行，
+     * 不会出现两份表单的列混在一行里（整行覆盖是一条 UPDATE）。
+     */
+    @Test
+    @Order(2)
+    void concurrentEditsOfOneVideoLeaveExactlyOneWholeForm() throws Exception {
+        Variant v = prepare("vod-save");
+        ContentAdminServices content = v.app().getBean(ContentAdminServices.class);
+        long rows = count("SELECT COUNT(*) FROM mac_vod");
+        var outcome = ConcurrentWrites.run(12, i -> content.vods().save(postOf("vod-save", "edit")
+                .put("vod_name", "并发改名" + i).put("vod_blurb", "简介" + i).put("vod_remarks", "备注" + i)
+                .put("vod_hits", Integer.toString(100 + i))).ok());
+        assertThat(outcome.failures()).isEmpty();
+        assertThat(outcome.count(true)).isEqualTo(12);
+        Map<String, String> row = vodRow(1);
+        assertThat(row.get("name")).startsWith("并发改名");
+        String k = row.get("name").substring("并发改名".length());
+        assertThat(row).containsEntry("blurb", "简介" + k).containsEntry("remarks", "备注" + k)
+                .containsEntry("hits", Integer.toString(100 + Integer.parseInt(k)));
+        assertThat(count("SELECT COUNT(*) FROM mac_vod")).as("编辑不新增行").isEqualTo(rows);
+    }
+
+    /**
+     * 后台视频表单带计数字段时整行覆盖（路线图 B13 验收、03 第 3.1 节，与旧版一致）：打开表单之后前台的点击（B11 原子 +1）被保存时
+     * 表单里的点击数覆盖；并发时最终点击数是表单值加上保存之后才执行的点击，保存与点击都不出错。
+     */
+    @Test
+    @Order(3)
+    void adminSaveOverwritesCountersLikeLegacyEvenWhileVisitorsClick() throws Exception {
+        Variant v = prepare("vod-save");
+        ContentAdminServices content = v.app().getBean(ContentAdminServices.class);
+        ContentCounterService counters = v.app().getBean(ContentCounterService.class);
+        PhpForm opened = postOf("vod-save", "edit");
+        assertThat(opened.text("vod_hits")).isEqualTo("55");
+        for (int i = 0; i < 5; i++) {
+            counters.hit(CounterTarget.VOD, 1);
+        }
+        assertThat(content.vods().save(opened.copy()).ok()).isTrue();
+        assertThat(vodRow(1)).as("打开表单后的 5 次点击被表单值覆盖").containsEntry("hits", "55");
+
+        var outcome = ConcurrentWrites.run(16, i -> i == 0
+                ? (content.vods().save(opened.copy()).ok() ? "saved" : "failed")
+                : counters.hit(CounterTarget.VOD, 1).status().name());
+        assertThat(outcome.failures()).isEmpty();
+        assertThat(outcome.values()).contains("saved").doesNotContain("failed", "REJECTED");
+        assertThat(Long.parseLong(vodRow(1).get("hits"))).isBetween(55L, 70L);
+    }
+
+    /**
+     * 查重（不建临时表，D-B13-7）：8 个并发新增同名视频全部保存（旧版也没有唯一约束），查重列表列出这一组；6 个管理员同时"查重删除"
+     * （保留最小编号）全部"删除成功"，每个名称只剩编号最小的一条。
+     */
+    @Test
+    @Order(4)
+    void concurrentSameNameAddsAreListedAndConcurrentRepeatDeletesKeepTheSmallestId() throws Exception {
+        Variant v = prepare("vod-save");
+        ContentAdminServices content = v.app().getBean(ContentAdminServices.class);
+        var added = ConcurrentWrites.run(8, i -> content.vods().save(postOf("vod-save", "new")
+                .put("vod_name", "重名甲")).ok());
+        assertThat(added.failures()).isEmpty();
+        assertThat(added.count(true)).isEqualTo(8);
+        assertThat(count("SELECT COUNT(*) FROM mac_vod WHERE vod_name = ?", "重名甲")).isEqualTo(8);
+        AdminRowPage page = content.vods().list(form("repeat=1"), new AdminPaging(1, 100));
+        assertThat(page.rows().stream().filter(r -> "重名甲".equals(r.s("vod_name"))).count()).isEqualTo(8);
+
+        Map<String, Long> keep = smallestIdByName();
+        var deleted = ConcurrentWrites.run(6, i -> content.vods().delete(form("repeat=1")).ok());
+        assertThat(deleted.failures()).isEmpty();
+        assertThat(deleted.count(true)).isEqualTo(6);
+        assertThat(count("SELECT COUNT(*) FROM mac_vod")).isEqualTo(keep.size());
+        assertThat(smallestIdByName()).isEqualTo(keep);
+    }
+
+    /**
+     * 16 个请求同时登记同一个附件文件：旧版"先查后插"会登记多行，新版条件插入只登记一行、只有一个请求报告"新登记"；不同的文件互不影响。
+     */
+    @Test
+    @Order(5)
+    void concurrentRegistrationOfOneFileInsertsOneAnnexRow() throws Exception {
+        Variant v = prepare("annex-list");
+        AnnexAdminService annexes = v.app().getBean(ContentAdminServices.class).annexes();
+        long before = count("SELECT COUNT(*) FROM mac_annex");
+        String file = "upload/vod/20261025-1/same.jpg";
+        var outcome = ConcurrentWrites.run(16, i -> annexes.register(file, "image", "12.5"));
+        assertThat(outcome.failures()).isEmpty();
+        assertThat(outcome.count(true)).isEqualTo(1);
+        assertThat(count("SELECT COUNT(*) FROM mac_annex WHERE annex_file = ?", file)).isEqualTo(1);
+        assertThat(count("SELECT annex_size FROM mac_annex WHERE annex_file = ?", file)).as("按 MySQL 整数列取整")
+                .isEqualTo(13);
+        var distinct = ConcurrentWrites.run(16, i -> annexes.register("upload/vod/20261025-1/f" + i + ".jpg", "image", "1"));
+        assertThat(distinct.failures()).isEmpty();
+        assertThat(distinct.count(true)).isEqualTo(16);
+        assertThat(count("SELECT COUNT(*) FROM mac_annex")).isEqualTo(before + 17);
+    }
+
+    /** 同一批编号被多个管理员同时删除（友链、评论、留言各 8 个）：全部"删除成功"，只删这些行，其余行不受影响。 */
+    @Test
+    @Order(6)
+    void concurrentDeletesOfTheSameIdsAllSucceedAndTouchNothingElse() throws Exception {
+        Variant v = prepare("vod-save");
+        ContentAdminServices content = v.app().getBean(ContentAdminServices.class);
+        CommentAdminService comments = v.app().getBean(CommentAdminService.class);
+        long links = count("SELECT COUNT(*) FROM mac_link");
+        long cms = count("SELECT COUNT(*) FROM mac_comment");
+        long gbooks = count("SELECT COUNT(*) FROM mac_gbook");
+        assertThat(count("SELECT COUNT(*) FROM mac_comment WHERE comment_id IN (1, 2)")).isEqualTo(2);
+        var outcome = ConcurrentWrites.run(24, i -> switch (i % 3) {
+            case 0 -> content.links().delete(form("ids=1")).ok();
+            case 1 -> comments.deleteComments(form("ids=1,2")).ok();
+            default -> comments.deleteGbooks(form("ids=1")).ok();
+        });
+        assertThat(outcome.failures()).isEmpty();
+        assertThat(outcome.count(true)).isEqualTo(24);
+        assertThat(count("SELECT COUNT(*) FROM mac_link WHERE link_id = 1")).isZero();
+        assertThat(count("SELECT COUNT(*) FROM mac_link")).isEqualTo(links - 1);
+        assertThat(count("SELECT COUNT(*) FROM mac_comment WHERE comment_id IN (1, 2)")).isZero();
+        assertThat(count("SELECT COUNT(*) FROM mac_comment")).isEqualTo(cms - 2);
+        assertThat(count("SELECT COUNT(*) FROM mac_gbook WHERE gbook_id = 1")).isZero();
+        assertThat(count("SELECT COUNT(*) FROM mac_gbook")).isEqualTo(gbooks - 1);
+    }
+
+    // ------------------------------------------------------------------ ③ 回滚演练
+
+    /**
+     * 快照（跟踪的 12 张表）→ 经各服务做一遍本批的写入（友链增改删、分类字段、视频新增/编辑/字段/删除、文章编辑、评论与留言的修改和删除、
+     * 附件登记）→ {@code DmlRestore} 只用 DML 恢复 → 与快照逐行 diff 为空 → 表结构指纹与导入 install.sql 时相同。
+     * upload/ 下被删除的图片不在 DML 恢复范围内（22 文档第 11 节：回滚前另行备份 upload/）。
+     */
+    @Test
+    @Order(7)
+    void rollbackDrillRestoresEveryB13WriteWithDmlOnly() throws Exception {
+        Variant v = prepare("vod-save");
+        ContentAdminServices content = v.app().getBean(ContentAdminServices.class);
+        CommentAdminService comments = v.app().getBean(CommentAdminService.class);
+        List<String> tables = List.copyOf(TABLES.keySet());
+        DatabaseSnapshot before;
+        try (Connection c = admin(dbName)) {
+            before = DatabaseSnapshot.take(c, tables);
+        }
+        assertThat(content.links().save(postOf("link-save", "new")).ok()).isTrue();
+        assertThat(content.links().save(postOf("link-save", "edit")).ok()).isTrue();
+        assertThat(content.links().delete(form("ids=2")).ok()).isTrue();
+        assertThat(content.types().field(form("ids=2&col=type_status&val=0")).ok()).isTrue();
+        assertThat(content.vods().save(postOf("vod-save", "new")).ok()).isTrue();
+        assertThat(content.vods().save(postOf("vod-save", "edit")).ok()).isTrue();
+        assertThat(content.vods().field(form("ids=2,3&col=vod_level&val=9")).ok()).isTrue();
+        assertThat(content.vods().delete(form("ids=4")).ok()).isTrue();
+        assertThat(content.arts().save(postOf("art-save", "edit")).ok()).isTrue();
+        assertThat(comments.saveComment(postOf("comment-edit", "save")).ok()).isTrue();
+        assertThat(comments.saveGbook(postOf("gbook", "reply-save")).ok()).isTrue();
+        assertThat(comments.deleteComments(form("ids=3")).ok()).isTrue();
+        assertThat(comments.deleteGbooks(form("ids=2")).ok()).isTrue();
+        assertThat(content.annexes().register("upload/vod/20261025-1/drill.jpg", "image", "3")).isTrue();
+        try (Connection c = admin(dbName)) {
+            DatabaseSnapshot changed = DatabaseSnapshot.take(c, tables);
+            assertThat(SnapshotDiff.between(before, changed).isEmpty()).isFalse();
+            List<DmlRestore.Statement> plan = DmlRestore.plan(before, changed);
+            assertThat(plan).isNotEmpty().allMatch(x -> x.sql().startsWith("INSERT") || x.sql().startsWith("UPDATE")
+                    || x.sql().startsWith("DELETE"));
+            DmlRestore.apply(c, plan);
+            SnapshotDiff diff = SnapshotDiff.between(before, DatabaseSnapshot.take(c, tables));
+            assertThat(diff.isEmpty()).as(diff.summary()).isTrue();
+            assertThat(SchemaFingerprint.diff(schemaAtImport, SchemaFingerprint.of(c, dbName))).isEmpty();
+            System.out.println("[mysql-it] B13 rollback drill restored with " + plan.size() + " DML statements");
+        }
     }
 
     // ------------------------------------------------------------------ 表与文件

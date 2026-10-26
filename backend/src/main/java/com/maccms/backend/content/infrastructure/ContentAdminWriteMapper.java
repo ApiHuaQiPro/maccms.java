@@ -100,5 +100,8 @@ public interface ContentAdminWriteMapper {
 
     int deleteVodRepeat(@Param("name") String name, @Param("keep") long keep);
 
+    /** 附件登记：同名文件未登记时插入，返回插入行数（0 或 1）。 */
+    int registerAnnex(@Param("c") Map<String, String> c);
+
     int deleteAnnexByFile(@Param("file") String file);
 }

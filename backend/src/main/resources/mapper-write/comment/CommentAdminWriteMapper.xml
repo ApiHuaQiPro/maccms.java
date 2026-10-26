@@ -3,7 +3,7 @@
 <!-- B13 后台评论与留言管理的写入（22 文档第 6 节；WriteRegistry 登记 comment 的 mac_comment/mac_gbook）。 -->
 <mapper namespace="com.maccms.backend.comment.infrastructure.CommentAdminWriteMapper">
 
-    <!-- mac_comment：新增、按主键整行覆盖与按主键列表修改（旧 allowField(true)，只写参数里有的列；列清单与 install.sql 相同，AdminWriteMapperXmlTest 锁定） -->
+    <!-- mac_comment：新增、按主键整行覆盖与按主键列表修改（旧 allowField(true)，只写参数里有的列；列清单与 install.sql 相同，AdminTableSchemaTest 锁定） -->
     <insert id="insertComment" useGeneratedKeys="true" keyProperty="id" keyColumn="comment_id">
         INSERT INTO mac_comment (<trim suffixOverrides=",">
             <if test="c.containsKey('comment_id')">comment_id,</if>
@@ -82,7 +82,7 @@
         DELETE FROM mac_comment WHERE comment_id IN <foreach collection="ids" item="i" open="(" separator="," close=")">#{i}</foreach>
     </delete>
 
-    <!-- mac_gbook：新增、按主键整行覆盖与按主键列表修改（旧 allowField(true)，只写参数里有的列；列清单与 install.sql 相同，AdminWriteMapperXmlTest 锁定） -->
+    <!-- mac_gbook：新增、按主键整行覆盖与按主键列表修改（旧 allowField(true)，只写参数里有的列；列清单与 install.sql 相同，AdminTableSchemaTest 锁定） -->
     <insert id="insertGbook" useGeneratedKeys="true" keyProperty="id" keyColumn="gbook_id">
         INSERT INTO mac_gbook (<trim suffixOverrides=",">
             <if test="c.containsKey('gbook_id')">gbook_id,</if>

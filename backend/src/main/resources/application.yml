@@ -73,6 +73,10 @@ maccms:
   # upload-dir 为旧站根目录下 upload/ 的本地路径（头像写到其下 user/<id%10>/<id>.jpg，由部署层的 nginx 直接提供），留空时头像上传不可用。
   member:
     upload-dir: ${MACCMS_MEMBER_UPLOAD_DIR:}
+  # 后台上传与附件（B13，docs/architecture/22-b13-admin-content.md 第 7.10 节）：同样是旧站根目录下 upload/ 的本地路径（与上面的头像目录
+  # 指向同一处）；只存本地（E08）。留空时后台上传、附件浏览与内容图片删除不可用。
+  upload:
+    dir: ${MACCMS_UPLOAD_DIR:}
   # 旧配置只读层（B02，docs/architecture/11-guards-and-legacy-config.md 第 4 节）：旧站 application 目录（含 extra/*.php、route.php），
   # 可以在仓库之外。留空表示未配置；只读解析 var_export 格式，不执行 PHP，不写回。不要指向线上目录。
   legacy-config:

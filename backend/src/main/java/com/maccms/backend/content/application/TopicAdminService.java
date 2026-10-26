@@ -114,7 +114,7 @@ public class TopicAdminService {
         });
     }
 
-    /** 旧 {@code Topic::saveData}（common/model/Topic.php:268-348），步骤与顺序照旧。 */
+    /** 旧 {@code Topic::saveData}（common/model/Topic.php:342-427），步骤与顺序照旧。 */
     private AdminResult saveData(PhpForm data) {
         if (!data.require("topic_name")) {
             return AdminResult.error(AdminMessage.lang("param_err").thenText("：").thenLang("validate/require_name"));

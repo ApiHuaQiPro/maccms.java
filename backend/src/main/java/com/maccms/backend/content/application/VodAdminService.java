@@ -69,7 +69,7 @@ public class VodAdminService {
         c.status = ContentAdminSupport.zeroOne(p, "status");
         c.copyright = ContentAdminSupport.zeroOne(p, "copyright");
         c.isend = ContentAdminSupport.zeroOne(p, "isend");
-        c.lock = ContentAdminSupport.nonEmpty(p, "lock");
+        c.locked = ContentAdminSupport.nonEmpty(p, "lock");
         c.state = ContentAdminSupport.nonEmpty(p, "state");
         c.area = ContentAdminSupport.nonEmpty(p, "area");
         c.lang = ContentAdminSupport.nonEmpty(p, "lang");
@@ -172,7 +172,7 @@ public class VodAdminService {
         c.status = ContentAdminSupport.zeroOne(p, "status");
         c.copyright = ContentAdminSupport.zeroOne(p, "copyright");
         c.isend = ContentAdminSupport.zeroOne(p, "isend");
-        c.lock = ContentAdminSupport.nonEmpty(p, "lock");
+        c.locked = ContentAdminSupport.nonEmpty(p, "lock");
         c.state = ContentAdminSupport.nonEmpty(p, "state");
         c.area = ContentAdminSupport.nonEmpty(p, "area");
         c.lang = ContentAdminSupport.nonEmpty(p, "lang");

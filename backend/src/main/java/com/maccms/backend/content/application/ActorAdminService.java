@@ -80,7 +80,7 @@ public class ActorAdminService {
         return ContentAdminSupport.field(param, AdminTable.ACTOR, FIELD_COLS, types.cacheList(), writer);
     }
 
-    /** 旧 {@code Actor::saveData}（common/model/Actor.php:373-457）。 */
+    /** 旧 {@code Actor::saveData}（common/model/Actor.php:377-472）。 */
     private AdminResult saveData(PhpForm data) {
         if (!data.require("actor_name")) {
             return AdminResult.error(AdminMessage.lang("param_err").thenText("：").thenLang("validate/require_name"));

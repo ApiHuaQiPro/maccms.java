@@ -912,8 +912,33 @@ function scenarios_annex()
         get('editor-unknown', '/admin/upload/upload', 'from=nope', ['ajax' => true]),
         req('editor-no-file', 'POST', '/admin/upload/upload', 'from=ueditor&flag=vod_editor&input=upfile', null,
             ['multipart' => [['x', '1']]]),
+        // 成功路径（缩略图、水印关闭：文件原样落盘并登记附件；文件名是 md5(microtime)，比较时按两边各自的名称对应）
+        req('image-ok', 'POST', '/admin/upload/upload', 'flag=vod', null, ['ajax' => true,
+            'multipart' => [['file', 'a.JPG', upload_jpeg(), 'image/jpeg']]]),
+        req('image-ok-2', 'POST', '/admin/upload/upload', 'flag=vod', null, ['ajax' => true,
+            'multipart' => [['file', 'b.png', upload_jpeg() . 'x', 'image/png']]]),
+        req('file-ok', 'POST', '/admin/upload/upload', 'flag=art', null, ['ajax' => true,
+            'multipart' => [['file', 'readme.txt', str_repeat("line\n", 300), 'text/plain']]]),
+        // imgdata 用 file_put_contents 写入、不建目录：当天目录不存在时失败，有文件上传建出目录后成功
+        req('imgdata-new-dir', 'POST', '/admin/upload/upload', 'flag=topic', ['imgdata' => 'data:image/png;base64,'
+            . base64_encode(upload_jpeg())], ['ajax' => true]),
+        req('topic-image', 'POST', '/admin/upload/upload', 'flag=topic', null, ['ajax' => true,
+            'multipart' => [['file', 't.webp', upload_jpeg(), 'image/webp']]]),
+        req('imgdata-ok', 'POST', '/admin/upload/upload', 'flag=topic', ['imgdata' => 'data:image/png;base64,'
+            . base64_encode(upload_jpeg())], ['ajax' => true]),
+        req('editor-ok', 'POST', '/admin/upload/upload', 'from=ueditor&flag=vod_editor&input=upfile', null,
+            ['multipart' => [['upfile', 'e.gif', 'GIF89a' . str_repeat('G', 40), 'image/gif']]]),
+        // 上传弹窗页与临时目录写入测试（输出里的临时文件路径因机器而异，比较时只比到"："为止）
+        get('index', '/admin/upload/index', 'path=vod&id=pic'),
+        get('test', '/admin/upload/test'),
     ]);
     return $s;
+}
+
+/** 上传成功路径用的图片字节（大于 512 字节，经过旧版的首尾各 512 字节安全检查；不是完整的 JPEG，缩略图与水印关闭时不解码）。 */
+function upload_jpeg()
+{
+    return "\xFF\xD8\xFF\xE0\x00\x10JFIF\x00" . str_repeat("\x11\x22\x33\x44", 200) . "\xFF\xD9";
 }
 
 // ====================================================================== 引擎

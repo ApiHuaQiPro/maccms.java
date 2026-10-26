@@ -308,7 +308,7 @@ public class AnnexAdminService {
     }
 
     /**
-     * 登记一个附件（旧 {@code Annex::infoData(['annex_file' => …])} 后 {@code saveData}）：同名文件已登记时什么也不做。上传（B13）与会员头像
+     * 登记一个附件（旧 {@code Annex::infoData(['annex_file' => …])} 后 {@code saveData}）：同名文件已登记时什么也不做（条件插入，并发时只登记一次）。上传（B13）与会员头像
      * （D-B09-9）也用这里登记。
      *
      * @param size 旧版写入的大小（上传为 KB 保留两位小数，初始化与缩略图为字节；写库时按 MySQL 整数列的规则取整）
@@ -319,16 +319,13 @@ public class AnnexAdminService {
     }
 
     private boolean register(String file, String type, String size, long now) {
-        if (reader.selectAnnexByFile(file) != null) {
-            return false;
-        }
         PhpForm row = PhpForm.empty();
         row.put("annex_file", file);
         row.put("annex_type", type);
         row.put("annex_size", size);
         row.put("annex_time", Long.toString(now));
-        writer.insert(AdminTable.ANNEX.table(), AdminRowValues.of(AdminTable.ANNEX, row, Set.of()));
-        return true;
+        // 旧版先查后插，并发登记同一文件会插入多行；新版一条条件插入
+        return writer.registerAnnex(AdminRowValues.of(AdminTable.ANNEX, row, Set.of()));
     }
 
     private static String escape(String s) {

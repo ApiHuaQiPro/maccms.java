@@ -118,6 +118,10 @@ public class AdminUploadService {
             if (bytes.length == 0) {
                 return reply(lang.apply("admin/upload/upload_faild"), editor, false, null);
             }
+            // 旧版 file_put_contents 不建目录：当天的目录还不存在时（这一天还没有文件上传）写入失败
+            if (!uploads.directoryExists("upload/" + flag + "/" + dir)) {
+                return reply(lang.apply("admin/upload/upload_faild"), editor, false, null);
+            }
         } else {
             if (req.file() == null) {
                 return reply(lang.apply("admin/upload/no_input_file"), editor, false, null);

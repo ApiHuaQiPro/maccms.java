@@ -160,7 +160,8 @@ class WriteInfrastructureMySqlIT {
                             || p.batch().equals("B10"))
                             || p.batch().equals("B11") && (p.module().equals("content") || p.module().equals("comment"))
                             || p.batch().equals("B12") && (p.module().equals("admin") && p.table().equals("mac_admin")
-                            || p.module().equals("content") && p.table().equals("mac_vod_search")));
+                            || p.module().equals("content") && p.table().equals("mac_vod_search"))
+                            || p.batch().equals("B13") && (p.module().equals("content") || p.module().equals("comment")));
             assertThatThrownBy(() -> db.mapper(DrillWriteMapper.class).hit(1)).isInstanceOf(WriteRejectedException.class)
                     .hasMessageContaining("未登记的写入").hasMessageContaining("mac_vod");
             assertReadPoolRejectsWrites(app);

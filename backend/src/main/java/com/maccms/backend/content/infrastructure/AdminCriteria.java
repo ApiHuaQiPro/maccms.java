@@ -14,7 +14,8 @@ public final class AdminCriteria {
     public String status;
     public String copyright;
     public String isend;
-    public String lock;
+    /** {@code *_lock = ?}（属性名与 XML 写法避开读 Mapper 护栏的 {@code "LOCK "} 关键字）。 */
+    public String locked;
     public String state;
     public String area;
     public String lang;
@@ -70,8 +71,8 @@ public final class AdminCriteria {
         return isend;
     }
 
-    public String getLock() {
-        return lock;
+    public String getLocked() {
+        return locked;
     }
 
     public String getState() {

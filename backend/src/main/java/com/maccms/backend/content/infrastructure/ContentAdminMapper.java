@@ -113,8 +113,6 @@ public interface ContentAdminMapper {
 
     List<Map<String, String>> listAnnexes(@Param("c") AdminCriteria c, @Param("offset") long offset, @Param("limit") long limit);
 
-    Map<String, String> selectAnnexByFile(@Param("file") String file);
-
     /** {@code files} 不能为空（{@code ids} 可以为空）。 */
     List<Map<String, String>> selectAnnexesByIdsOrFiles(@Param("ids") List<Long> ids, @Param("files") List<String> files);
 

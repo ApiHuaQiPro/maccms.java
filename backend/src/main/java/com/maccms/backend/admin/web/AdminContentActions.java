@@ -12,6 +12,7 @@ import com.maccms.backend.admin.web.view.content.LinkListView;
 import com.maccms.backend.admin.web.view.content.SelectView;
 import com.maccms.backend.admin.web.view.content.TypeInfoView;
 import com.maccms.backend.admin.web.view.content.TypeListView;
+import com.maccms.backend.admin.web.view.content.UploadIndexView;
 import com.maccms.backend.common.session.SessionState;
 import com.maccms.backend.content.application.AdminConfig;
 import com.maccms.backend.content.application.AdminPaging;
@@ -166,6 +167,8 @@ public class AdminContentActions {
             case "images/del" -> imagesDel(ctx, param);
             case "images/sync" -> imagesSync(ctx, param);
             case "upload/upload" -> upload(ctx);
+            case "upload/index" -> uploadIndex(ctx);
+            case "upload/test" -> uploadTest();
             default -> null;
         };
     }
@@ -513,6 +516,32 @@ public class AdminContentActions {
     private static final String SYNC_DISABLED = "远程图片同步未开放：新系统只存本地、不下载外部图片，库内的图片地址保持不变。";
 
     /** 旧 Upload::upload：文件取表单里名为 {@code input}（默认 file）的文件；后台请求返回 JSON，编辑器请求按编辑器格式。 */
+    /** 旧 Upload::index：上传弹窗页，{@code path}、{@code id} 写进隐藏字段（缺失时为空）。 */
+    private ResponseEntity<String> uploadIndex(Ctx ctx) {
+        byte[] path = ctx.params().scalar("path");
+        byte[] id = ctx.params().scalar("id");
+        UploadIndexView page = new UploadIndexView(settings.lang(), ctx.url().build("upload/upload"),
+                path == null ? "" : new String(path, StandardCharsets.UTF_8),
+                id == null ? "" : new String(id, StandardCharsets.UTF_8));
+        return responses.page(ctx.ajax(), HttpStatus.OK, t -> t.adminPagesUploadIndex(page));
+    }
+
+    /**
+     * 旧 Upload::test：在系统临时目录建一个 Tux 前缀的临时文件，输出语言包 {@code admin/upload/test_write_ok}（旧语言包里这个键写了两次，
+     * 后一条"写入失败，请检查临时文件目录权限"生效）+ "：" + 文件路径；建不出来时输出 {@code admin/upload/test_write_err} + "：" + 临时目录。
+     * 旧版把临时文件留在目录里，新版输出后删除（22 文档第 10 节）。
+     */
+    private ResponseEntity<String> uploadTest() {
+        String tmp = System.getProperty("java.io.tmpdir");
+        try {
+            java.nio.file.Path f = java.nio.file.Files.createTempFile(java.nio.file.Path.of(tmp), "Tux", ".tmp");
+            java.nio.file.Files.deleteIfExists(f);
+            return responses.text(escape(settings.lang().get("admin/upload/test_write_ok") + "：" + f));
+        } catch (java.io.IOException | RuntimeException e) {
+            return responses.text(escape(settings.lang().get("admin/upload/test_write_err") + "：" + tmp));
+        }
+    }
+
     private ResponseEntity<String> upload(Ctx ctx) {
         Map<String, String> params = scalars(ctx.params());
         String input = AdminUploadService.inputName(params);

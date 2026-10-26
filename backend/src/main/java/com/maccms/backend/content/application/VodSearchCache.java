@@ -112,7 +112,7 @@ public class VodSearchCache {
 
     /**
      * 旧 {@code VodSearch::checkAndUpdateTopResults(['vod_id' => $id] + $data)}（VodSearch.php:97-128，后台新增视频且开启前台优化时调用，
-     * common/model/Vod.php:723-725）：命中次数最多的前 50000 行里，每行的每个字段（{@code search_field} 按 {@code |} 拆分）在新视频里非空且
+     * common/model/Vod.php:724-726）：命中次数最多的前 50000 行里，每行的每个字段（{@code search_field} 按 {@code |} 拆分）在新视频里非空且
      * 不区分大小写地包含该词时，把编号追加到这一行（同一行多个字段都包含时追加多次，同旧版）。旧版把候选行缓存 1 小时或 1 天、缓存失效时顺带
      * 做一次非强制的过期清理；新版每次新增时读取候选行，不做附带清理（22 文档第 10 节）。
      *

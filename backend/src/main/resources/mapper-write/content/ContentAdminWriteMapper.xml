@@ -3,7 +3,7 @@
 <!-- B13 后台内容管理的写入（22 文档第 6 节；WriteRegistry 登记 content 的 mac_vod/art/topic/actor/role/website/link/type/annex）。 -->
 <mapper namespace="com.maccms.backend.content.infrastructure.ContentAdminWriteMapper">
 
-    <!-- mac_vod：新增、按主键整行覆盖与按主键列表修改（旧 allowField(true)，只写参数里有的列；列清单与 install.sql 相同，AdminWriteMapperXmlTest 锁定） -->
+    <!-- mac_vod：新增、按主键整行覆盖与按主键列表修改（旧 allowField(true)，只写参数里有的列；列清单与 install.sql 相同，AdminTableSchemaTest 锁定） -->
     <insert id="insertVod" useGeneratedKeys="true" keyProperty="id" keyColumn="vod_id">
         INSERT INTO mac_vod (<trim suffixOverrides=",">
             <if test="c.containsKey('vod_id')">vod_id,</if>
@@ -354,7 +354,7 @@
         DELETE FROM mac_vod WHERE vod_id IN <foreach collection="ids" item="i" open="(" separator="," close=")">#{i}</foreach>
     </delete>
 
-    <!-- mac_art：新增、按主键整行覆盖与按主键列表修改（旧 allowField(true)，只写参数里有的列；列清单与 install.sql 相同，AdminWriteMapperXmlTest 锁定） -->
+    <!-- mac_art：新增、按主键整行覆盖与按主键列表修改（旧 allowField(true)，只写参数里有的列；列清单与 install.sql 相同，AdminTableSchemaTest 锁定） -->
     <insert id="insertArt" useGeneratedKeys="true" keyProperty="id" keyColumn="art_id">
         INSERT INTO mac_art (<trim suffixOverrides=",">
             <if test="c.containsKey('art_id')">art_id,</if>
@@ -561,7 +561,7 @@
         DELETE FROM mac_art WHERE art_id IN <foreach collection="ids" item="i" open="(" separator="," close=")">#{i}</foreach>
     </delete>
 
-    <!-- mac_topic：新增、按主键整行覆盖与按主键列表修改（旧 allowField(true)，只写参数里有的列；列清单与 install.sql 相同，AdminWriteMapperXmlTest 锁定） -->
+    <!-- mac_topic：新增、按主键整行覆盖与按主键列表修改（旧 allowField(true)，只写参数里有的列；列清单与 install.sql 相同，AdminTableSchemaTest 锁定） -->
     <insert id="insertTopic" useGeneratedKeys="true" keyProperty="id" keyColumn="topic_id">
         INSERT INTO mac_topic (<trim suffixOverrides=",">
             <if test="c.containsKey('topic_id')">topic_id,</if>
@@ -732,7 +732,7 @@
         DELETE FROM mac_topic WHERE topic_id IN <foreach collection="ids" item="i" open="(" separator="," close=")">#{i}</foreach>
     </delete>
 
-    <!-- mac_actor：新增、按主键整行覆盖与按主键列表修改（旧 allowField(true)，只写参数里有的列；列清单与 install.sql 相同，AdminWriteMapperXmlTest 锁定） -->
+    <!-- mac_actor：新增、按主键整行覆盖与按主键列表修改（旧 allowField(true)，只写参数里有的列；列清单与 install.sql 相同，AdminTableSchemaTest 锁定） -->
     <insert id="insertActor" useGeneratedKeys="true" keyProperty="id" keyColumn="actor_id">
         INSERT INTO mac_actor (<trim suffixOverrides=",">
             <if test="c.containsKey('actor_id')">actor_id,</if>
@@ -923,7 +923,7 @@
         DELETE FROM mac_actor WHERE actor_id IN <foreach collection="ids" item="i" open="(" separator="," close=")">#{i}</foreach>
     </delete>
 
-    <!-- mac_role：新增、按主键整行覆盖与按主键列表修改（旧 allowField(true)，只写参数里有的列；列清单与 install.sql 相同，AdminWriteMapperXmlTest 锁定） -->
+    <!-- mac_role：新增、按主键整行覆盖与按主键列表修改（旧 allowField(true)，只写参数里有的列；列清单与 install.sql 相同，AdminTableSchemaTest 锁定） -->
     <insert id="insertRole" useGeneratedKeys="true" keyProperty="id" keyColumn="role_id">
         INSERT INTO mac_role (<trim suffixOverrides=",">
             <if test="c.containsKey('role_id')">role_id,</if>
@@ -1062,7 +1062,7 @@
         DELETE FROM mac_role WHERE role_id IN <foreach collection="ids" item="i" open="(" separator="," close=")">#{i}</foreach>
     </delete>
 
-    <!-- mac_website：新增、按主键整行覆盖与按主键列表修改（旧 allowField(true)，只写参数里有的列；列清单与 install.sql 相同，AdminWriteMapperXmlTest 锁定） -->
+    <!-- mac_website：新增、按主键整行覆盖与按主键列表修改（旧 allowField(true)，只写参数里有的列；列清单与 install.sql 相同，AdminTableSchemaTest 锁定） -->
     <insert id="insertWebsite" useGeneratedKeys="true" keyProperty="id" keyColumn="website_id">
         INSERT INTO mac_website (<trim suffixOverrides=",">
             <if test="c.containsKey('website_id')">website_id,</if>
@@ -1253,7 +1253,7 @@
         DELETE FROM mac_website WHERE website_id IN <foreach collection="ids" item="i" open="(" separator="," close=")">#{i}</foreach>
     </delete>
 
-    <!-- mac_link：新增、按主键整行覆盖与按主键列表修改（旧 allowField(true)，只写参数里有的列；列清单与 install.sql 相同，AdminWriteMapperXmlTest 锁定） -->
+    <!-- mac_link：新增、按主键整行覆盖与按主键列表修改（旧 allowField(true)，只写参数里有的列；列清单与 install.sql 相同，AdminTableSchemaTest 锁定） -->
     <insert id="insertLink" useGeneratedKeys="true" keyProperty="id" keyColumn="link_id">
         INSERT INTO mac_link (<trim suffixOverrides=",">
             <if test="c.containsKey('link_id')">link_id,</if>
@@ -1308,7 +1308,7 @@
         DELETE FROM mac_link WHERE link_id IN <foreach collection="ids" item="i" open="(" separator="," close=")">#{i}</foreach>
     </delete>
 
-    <!-- mac_type：新增、按主键整行覆盖与按主键列表修改（旧 allowField(true)，只写参数里有的列；列清单与 install.sql 相同，AdminWriteMapperXmlTest 锁定） -->
+    <!-- mac_type：新增、按主键整行覆盖与按主键列表修改（旧 allowField(true)，只写参数里有的列；列清单与 install.sql 相同，AdminTableSchemaTest 锁定） -->
     <insert id="insertType" useGeneratedKeys="true" keyProperty="id" keyColumn="type_id">
         INSERT INTO mac_type (<trim suffixOverrides=",">
             <if test="c.containsKey('type_id')">type_id,</if>
@@ -1411,7 +1411,7 @@
         DELETE FROM mac_type WHERE type_id IN <foreach collection="ids" item="i" open="(" separator="," close=")">#{i}</foreach>
     </delete>
 
-    <!-- mac_annex：新增、按主键整行覆盖与按主键列表修改（旧 allowField(true)，只写参数里有的列；列清单与 install.sql 相同，AdminWriteMapperXmlTest 锁定） -->
+    <!-- mac_annex：新增、按主键整行覆盖与按主键列表修改（旧 allowField(true)，只写参数里有的列；列清单与 install.sql 相同，AdminTableSchemaTest 锁定） -->
     <insert id="insertAnnex" useGeneratedKeys="true" keyProperty="id" keyColumn="annex_id">
         INSERT INTO mac_annex (<trim suffixOverrides=",">
             <if test="c.containsKey('annex_id')">annex_id,</if>
@@ -1474,6 +1474,13 @@
         DELETE FROM mac_vod WHERE vod_name = #{name} AND vod_id &lt;&gt; #{keep}
     </delete>
 
+    <!-- 附件登记：旧版"先按文件名查、没有再插入"合成一条条件插入（mac_annex 是 MyISAM，整句持表锁），并发登记同一文件只插入一行（22 文档第 6 节） -->
+    <insert id="registerAnnex">
+        INSERT INTO mac_annex (annex_time, annex_file, annex_size, annex_type)
+        SELECT #{c.annex_time}, #{c.annex_file}, #{c.annex_size}, #{c.annex_type}
+        FROM DUAL
+        WHERE NOT EXISTS (SELECT 1 FROM mac_annex AS a WHERE a.annex_file = #{c.annex_file})
+    </insert>
 
     <!-- 附件检查（旧 Annex::check）：文件已不存在的登记行按文件名删除 -->
     <delete id="deleteAnnexByFile">

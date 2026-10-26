@@ -477,7 +477,8 @@
             <if test="c.typeExact != null">AND type_id = #{c.typeExact}</if>
             <if test="c.level != null">AND website_level = #{c.level}</if>
             <if test="c.status != null">AND website_status = #{c.status}</if>
-            <if test="c.lock != null">AND website_lock = #{c.lock}</if>
+            <!-- 列名与 = 之间不留空格：读 Mapper 护栏按 "LOCK " 关键字拒绝锁语句（ReadOnlyGuardrailsTest） -->
+            <if test="c.locked != null">AND website_lock=#{c.locked}</if>
             <if test="c.pic == 1">AND website_pic = ''</if>
             <if test="c.pic == 2">AND website_pic LIKE 'http%'</if>
             <if test="c.pic == 3">AND website_pic LIKE '%#err%'</if>
@@ -520,7 +521,8 @@
             <if test="c.typeExact != null">AND type_id = #{c.typeExact}</if>
             <if test="c.level != null">AND art_level = #{c.level}</if>
             <if test="c.status != null">AND art_status = #{c.status}</if>
-            <if test="c.lock != null">AND art_lock = #{c.lock}</if>
+            <!-- 列名与 = 之间不留空格：读 Mapper 护栏按 "LOCK " 关键字拒绝锁语句（ReadOnlyGuardrailsTest） -->
+            <if test="c.locked != null">AND art_lock=#{c.locked}</if>
             <if test="c.pic == 1">AND art_pic = ''</if>
             <if test="c.pic == 2">AND art_pic LIKE 'http%'</if>
             <if test="c.pic == 3">AND art_pic LIKE '%#err%'</if>
@@ -631,7 +633,8 @@
             <if test="c.status != null">AND vod_status = #{c.status}</if>
             <if test="c.copyright != null">AND vod_copyright = #{c.copyright}</if>
             <if test="c.isend != null">AND vod_isend = #{c.isend}</if>
-            <if test="c.lock != null">AND vod_lock = #{c.lock}</if>
+            <!-- 列名与 = 之间不留空格：读 Mapper 护栏按 "LOCK " 关键字拒绝锁语句（ReadOnlyGuardrailsTest） -->
+            <if test="c.locked != null">AND vod_lock=#{c.locked}</if>
             <if test="c.state != null">AND vod_state = #{c.state}</if>
             <if test="c.area != null">AND vod_area = #{c.area}</if>
             <if test="c.lang != null">AND vod_lang = #{c.lang}</if>
@@ -704,11 +707,6 @@
         SELECT <include refid="annexColumns"/> FROM mac_annex <include refid="annexCondition"/>
         ORDER BY annex_time DESC, annex_id ASC
         LIMIT #{offset}, #{limit}
-    </select>
-
-    <!-- 上传与初始化登记前的查询（旧 infoData(['annex_file' => …])） -->
-    <select id="selectAnnexByFile" resultMap="annexRow">
-        SELECT <include refid="annexColumns"/> FROM mac_annex WHERE annex_file = #{file} ORDER BY annex_id LIMIT 1
     </select>
 
     <!-- 删除（旧 annex_id|annex_file IN ids）：编号或文件名在列表里的行 -->

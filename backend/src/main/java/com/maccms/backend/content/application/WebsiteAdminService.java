@@ -58,7 +58,7 @@ public class WebsiteAdminService {
         c.typeEither = ContentAdminSupport.nonEmpty(p, "type");
         c.level = ContentAdminSupport.nonEmpty(p, "level");
         c.status = ContentAdminSupport.zeroOne(p, "status");
-        c.lock = ContentAdminSupport.nonEmpty(p, "lock");
+        c.locked = ContentAdminSupport.nonEmpty(p, "lock");
         c.pic = ContentAdminSupport.pic(p);
         String wd = ContentAdminSupport.wdHtml(p);
         c.wdLike = ContentAdminSupport.like(wd);
@@ -142,7 +142,7 @@ public class WebsiteAdminService {
         c.typeExact = ContentAdminSupport.nonEmpty(p, "type");
         c.level = ContentAdminSupport.nonEmpty(p, "level");
         c.status = ContentAdminSupport.zeroOne(p, "status");
-        c.lock = ContentAdminSupport.nonEmpty(p, "lock");
+        c.locked = ContentAdminSupport.nonEmpty(p, "lock");
         c.pic = ContentAdminSupport.pic(p);
         c.wdLike = ContentAdminSupport.like(ContentAdminSupport.wdHtml(p));
         c.order = "id_desc";
@@ -171,7 +171,7 @@ public class WebsiteAdminService {
         return writer.delete(AdminTable.WEBSITE.table(), ids);
     }
 
-    /** 旧 {@code Website::saveData}（common/model/Website.php:482-555）。 */
+    /** 旧 {@code Website::saveData}（common/model/Website.php:469-544）。 */
     private AdminResult saveData(PhpForm data) {
         if (!data.require("website_name")) {
             return AdminResult.error(AdminMessage.lang("param_err").thenText("：").thenLang("validate/require_name"));
