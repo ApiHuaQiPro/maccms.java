@@ -27,18 +27,12 @@ public final class AdminParams {
 
     /**
      * 一个参数：标量（{@code items} 为 null）或数组。{@code keys} 与 {@code items} 一一对应：{@code 名[]} 为 null，{@code 名[键]} 为键
-     * （B13：分类扩展字典 {@code type_extend[class]} 等）。{@code rests} 同样一一对应：第一个 {@code [键]} 之后的原样名称（如
-     * {@code 名[1][3]} 的 {@code [3]}，没有时为 null），供需要多维数组的动作按 PHP 规则还原（B14 会员组权限 {@code group_popedom[分类][位]}，
-     * {@link #nested}）。
+     * （B13：分类扩展字典 {@code type_extend[class]} 等）。
      */
-    public record Value(byte[] scalar, List<byte[]> items, List<String> keys, List<String> rests) {
+    public record Value(byte[] scalar, List<byte[]> items, List<String> keys) {
 
         public Value(byte[] scalar, List<byte[]> items) {
             this(scalar, items, items == null ? null : nullKeys(items.size()));
-        }
-
-        public Value(byte[] scalar, List<byte[]> items, List<String> keys) {
-            this(scalar, items, keys, items == null ? null : nullKeys(items.size()));
         }
 
         public boolean array() {
@@ -117,65 +111,6 @@ public final class AdminParams {
         return values;
     }
 
-    /**
-     * PHP 多维数组参数 {@code $_POST[name]}（B14）：各项按 {@code 名[k1][k2]…} 逐层放进按出现顺序的 {@link LinkedHashMap}（键为字符串，
-     * {@code []} 按 PHP 取下一个整数下标），叶子为字节串。同 PHP：第一个之后的各段必须紧接着以 {@code [} 开头，否则其余部分忽略；已有的标量键
-     * 再按数组使用时换成数组。缺失时为 null，标量时为字节串。
-     */
-    public Object nested(String name) {
-        Value v = values.get(name);
-        if (v == null) {
-            return null;
-        }
-        if (!v.array()) {
-            return v.scalar();
-        }
-        Map<String, Object> root = new LinkedHashMap<>();
-        for (int i = 0; i < v.items().size(); i++) {
-            List<String> path = new ArrayList<>();
-            path.add(v.keys().get(i));
-            String rest = v.rests().get(i);
-            int p = 0;
-            while (rest != null && p < rest.length() && rest.charAt(p) == '[') {
-                int close = rest.indexOf(']', p);
-                if (close < 0) {
-                    break;
-                }
-                String k = rest.substring(p + 1, close);
-                path.add(k.isEmpty() ? null : k);
-                p = close + 1;
-            }
-            Map<String, Object> cur = root;
-            for (int d = 0; d < path.size(); d++) {
-                String k = path.get(d) == null ? nextIndex(cur) : path.get(d);
-                if (d == path.size() - 1) {
-                    cur.put(k, v.items().get(i));
-                } else {
-                    Object next = cur.get(k);
-                    if (!(next instanceof Map)) {
-                        next = new LinkedHashMap<String, Object>();
-                        cur.put(k, next);
-                    }
-                    @SuppressWarnings("unchecked")
-                    Map<String, Object> m = (Map<String, Object>) next;
-                    cur = m;
-                }
-            }
-        }
-        return root;
-    }
-
-    /** PHP {@code $a[] = …} 的下标：现有整数键的最大值 + 1（没有时为 0）。 */
-    private static String nextIndex(Map<String, Object> m) {
-        long max = -1;
-        for (String k : m.keySet()) {
-            if (k.matches("0|-?[1-9][0-9]{0,17}")) {
-                max = Math.max(max, Long.parseLong(k));
-            }
-        }
-        return Long.toString(max + 1);
-    }
-
     private static void segment(Map<String, Value> out, byte[] seg) {
         int eq = -1;
         for (int i = 0; i < seg.length; i++) {
@@ -196,13 +131,11 @@ public final class AdminParams {
         boolean array = false;
         String base = n;
         String arrayKey = null;
-        String rest = "";
         if (bracket >= 0) {
             int close = n.indexOf(']', bracket);
             if (close >= 0) {
                 array = true;
                 base = n.substring(0, bracket);
-                rest = n.substring(close + 1);
                 String k = n.substring(bracket + 1, close);
                 arrayKey = k.isEmpty() ? null : new String(k.getBytes(StandardCharsets.ISO_8859_1), StandardCharsets.UTF_8);
             } else {
@@ -223,13 +156,10 @@ public final class AdminParams {
             Value prev = out.get(key);
             List<byte[]> items = prev != null && prev.array() ? new ArrayList<>(prev.items()) : new ArrayList<>();
             List<String> keys = prev != null && prev.array() ? new ArrayList<>(prev.keys()) : new ArrayList<>();
-            List<String> rests = prev != null && prev.array() ? new ArrayList<>(prev.rests()) : new ArrayList<>();
             items.add(filtered);
             keys.add(arrayKey);
-            rests.add(rest.isEmpty() ? null : new String(rest.getBytes(StandardCharsets.ISO_8859_1), StandardCharsets.UTF_8));
             // 同名覆盖时 PHP 数组保留键原来的位置（LinkedHashMap.put 同样不移动已有的键）
-            out.put(key, new Value(null, Collections.unmodifiableList(items), Collections.unmodifiableList(keys),
-                    Collections.unmodifiableList(rests)));
+            out.put(key, new Value(null, Collections.unmodifiableList(items), Collections.unmodifiableList(keys)));
         } else {
             out.put(key, new Value(filtered, null));
         }

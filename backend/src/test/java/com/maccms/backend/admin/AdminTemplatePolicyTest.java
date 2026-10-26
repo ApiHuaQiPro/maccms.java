@@ -38,8 +38,7 @@ import org.junit.jupiter.api.Test;
  * <li>没有内联脚本与内联事件属性：{@code <script>} 只能带 {@code type}、{@code src} 与 {@code data-*}，且内容为空（页面脚本在
  * static/admin-assets/）；</li>
  * <li>不出现 {@code <object>}、{@code <embed>}、{@code <base>}、{@code srcdoc}、{@code formaction}、{@code http-equiv}；{@code <iframe>}
- * 只在框架页（欢迎页标签）与卡密列表（B14：旧模板导出用的隐藏 {@code <iframe id="if" width="0" height="0">}，模板里不带地址，由
- * card-index.js 写入本站的导出地址，{@link #FRAME_EXCEPTIONS}）；</li>
+ * 只在框架页（欢迎页标签）；</li>
  * <li>{@code <style>} 与 style 属性只能是固定文字（框架页侧栏的 display:none 由一个固定的三元表达式写出）；</li>
  * <li>不用 {@code $unsafe}、{@code @raw}、{@code !{}}；原样输出 HTML 只能经 {@code AdminText.trusted(page.lang().get("…"))}（语言包里自带
  * {@code <br>} 的文字）。</li>
@@ -48,9 +47,6 @@ import org.junit.jupiter.api.Test;
 class AdminTemplatePolicyTest {
 
     private static final Path ROOT = Path.of("src", "main", "jte-admin");
-    /** 允许 {@code <iframe>} 的模板：框架页（B12），卡密列表的导出目标（B14，只能是固定的一段 {@link #CARD_EXPORT_FRAME}）。 */
-    static final Set<String> FRAME_EXCEPTIONS = Set.of("admin/pages/index.jte", "admin/pages/card/index.jte");
-    static final String CARD_EXPORT_FRAME = "<iframe id=\"if\" width=\"0\" height=\"0\"></iframe>";
 
     static final class AdminHtmlPolicy extends OwaspHtmlPolicy {
         AdminHtmlPolicy(boolean frame) {
@@ -142,19 +138,13 @@ class AdminTemplatePolicyTest {
                 "admin/pages/welcome.jte", "admin/pages/quickmenu.jte", "admin/pages/adminList.jte",
                 "admin/pages/adminInfo.jte", "admin/pages/jump.jte", "admin/pages/notice.jte");
         for (String name : all) {
-            boolean frame = FRAME_EXCEPTIONS.contains(name);
+            boolean frame = name.equals("admin/pages/index.jte");
             assertThatCode(() -> engine("jte-admin-policy-" + name.replace('/', '_'), frame, List.of(name)).precompileAll())
                     .as(name).doesNotThrowAnyException();
         }
-        // 框架页与卡密列表的 <iframe> 是仅有的例外：在一般策略下确实被拒绝
-        for (String name : FRAME_EXCEPTIONS) {
-            assertThatThrownBy(() -> engine("jte-admin-policy-frame-strict-" + name.replace('/', '_'), false, List.of(name))
-                    .precompileAll()).as(name).isInstanceOf(TemplateException.class);
-        }
-        // 卡密列表只有那一段不带地址的隐藏 iframe
-        String card = Files.readString(ROOT.resolve("admin/pages/card/index.jte"), StandardCharsets.UTF_8);
-        assertThat(card.split("<iframe", -1).length - 1).isEqualTo(1);
-        assertThat(card).contains(CARD_EXPORT_FRAME);
+        // 框架页的 <iframe> 是唯一例外：在一般策略下确实被拒绝
+        assertThatThrownBy(() -> engine("jte-admin-policy-frame-strict", false, List.of("admin/pages/index.jte")).precompileAll())
+                .isInstanceOf(TemplateException.class);
     }
 
     private static final Pattern SCRIPT = Pattern.compile("<script\\b[^>]*>(.*?)</script>", Pattern.DOTALL);

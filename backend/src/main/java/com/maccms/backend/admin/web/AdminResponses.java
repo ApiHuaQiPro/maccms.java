@@ -141,22 +141,6 @@ public class AdminResponses {
                 .body(body);
     }
 
-    /**
-     * 文件下载（B14 卡密导出，旧 Card.php:49-62）：{@code Content-Type: text/csv;charset=UTF-8}、{@code Content-Disposition:
-     * attachment;filename=…}，与旧版相同；缓存头换成 no-store（旧版 {@code must-revalidate}、{@code Pragma: public}，卡密不应被缓存，
-     * 23 文档 D-B14-9）。
-     */
-    public ResponseEntity<String> download(String body, String filename) {
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_TYPE, "text/csv;charset=UTF-8")
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment;filename=" + filename)
-                .contentLength(body.getBytes(StandardCharsets.UTF_8).length)
-                .cacheControl(CacheControl.noStore())
-                .header("X-Content-Type-Options", "nosniff")
-                .header("X-Robots-Tag", "noindex")
-                .body(body);
-    }
-
     /** 跳转提示页的 HTML（旧 {@code error()} 在已输出的内容后面接着输出时用）。 */
     public String jumpHtml(boolean success, String msg, String url) {
         return renderer.render(t -> t.adminPagesJump(new JumpPage(success, msg, url, 3, assetsPath)));

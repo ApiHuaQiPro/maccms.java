@@ -164,18 +164,6 @@ class ReadOnlyGuardrailsTest {
     }
 
     /**
-     * B14（23 文档第 5 节）：后台会员与财务的只读查询不读会员密码、登录随机串与第三方登录标识（表单里的密码框总为空，旧 {@code infoData}
-     * 同样把密码置空）；卡密列（{@code card_pwd}）是后台卡密列表与导出要显示的，照旧读出。
-     */
-    @Test
-    void memberAdminMapperNeverSelectsPasswordsOrLoginSecrets() throws IOException {
-        String sql = sqlOnly(MAPPERS.resolve("member/MemberAdminMapper.xml"));
-        assertThat(sql).doesNotContain("SELECT *", ".*");
-        Matcher m = Pattern.compile("\\b(user_pwd|user_random|user_openid_\\w+|admin_pwd)\\b").matcher(sql);
-        assertThat(m.find()).as("不应读取" + (m.hitEnd() ? "" : "：" + m.group())).isFalse();
-    }
-
-    /**
      * B06 旧协议整行读取（LegacyRowMapper.xml，16 文档第 3.5、3.6 节）：访问密码列只能以 {@code CHAR_LENGTH(...) > 0} 的布尔结果出现
      * （不读出密码值）；其余整行列是旧协议输出的一部分，按 install.sql 列出。
      */

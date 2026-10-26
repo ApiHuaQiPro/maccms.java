@@ -26,22 +26,13 @@ class WriteRegistryTest {
         // B11（MACC-35）登记内容计数、视频搜索缓存、评论与留言
         assertThat(WriteRegistry.registered().allows("member", "mac_user", WriteOperation.UPDATE)).isTrue();
         assertThat(WriteRegistry.registered().allows("member", "mac_user", WriteOperation.INSERT)).isTrue();
-        // B14（MACC-38）：后台会员删除
-        assertThat(WriteRegistry.registered().allows("member", "mac_user", WriteOperation.DELETE)).isTrue();
+        assertThat(WriteRegistry.registered().allows("member", "mac_user", WriteOperation.DELETE)).isFalse();
         assertThat(WriteRegistry.registered().allows("member", "mac_plog", WriteOperation.INSERT)).isTrue();
         assertThat(WriteRegistry.registered().allows("member", "mac_plog", WriteOperation.UPDATE)).isFalse();
-        // B14：生成与删除卡密、删除订单（没有修改订单的后台动作）、会员组增删改、提现审核、删除推广访问
-        assertThat(WriteRegistry.registered().allows("member", "mac_card", WriteOperation.INSERT)).isTrue();
-        assertThat(WriteRegistry.registered().allows("member", "mac_card", WriteOperation.DELETE)).isTrue();
+        assertThat(WriteRegistry.registered().allows("member", "mac_card", WriteOperation.INSERT)).isFalse();
+        assertThat(WriteRegistry.registered().allows("member", "mac_card", WriteOperation.DELETE)).isFalse();
         assertThat(WriteRegistry.registered().allows("member", "mac_order", WriteOperation.UPDATE)).isFalse();
-        assertThat(WriteRegistry.registered().allows("member", "mac_order", WriteOperation.DELETE)).isTrue();
-        assertThat(WriteRegistry.registered().allows("member", "mac_group", WriteOperation.UPDATE)).isTrue();
-        assertThat(WriteRegistry.registered().allows("member", "mac_group", WriteOperation.INSERT)).isTrue();
-        assertThat(WriteRegistry.registered().allows("member", "mac_group", WriteOperation.DELETE)).isTrue();
-        assertThat(WriteRegistry.registered().allows("member", "mac_cash", WriteOperation.UPDATE)).isTrue();
-        assertThat(WriteRegistry.registered().allows("member", "mac_visit", WriteOperation.DELETE)).isTrue();
-        assertThat(WriteRegistry.registered().allows("member", "mac_visit", WriteOperation.UPDATE)).isFalse();
-        assertThat(WriteRegistry.registered().allows("admin", "mac_group", WriteOperation.UPDATE)).isFalse();
+        assertThat(WriteRegistry.registered().allows("member", "mac_group", WriteOperation.UPDATE)).isFalse();
         assertThat(WriteRegistry.registered().allows("content", "mac_user", WriteOperation.UPDATE)).isFalse();
         assertThat(WriteRegistry.registered().allows("content", "mac_vod", WriteOperation.UPDATE)).isTrue();
         // B13（MACC-37）：后台内容管理的新增与删除
@@ -62,7 +53,7 @@ class WriteRegistryTest {
         assertThat(WriteRegistry.registered().allows("comment", "mac_gbook", WriteOperation.UPDATE)).isTrue();
         assertThat(WriteRegistry.registered().allows("comment", "mac_gbook", WriteOperation.DELETE)).isTrue();
         assertThat(WriteRegistry.registered().allows("comment", "mac_vod", WriteOperation.UPDATE)).isFalse();
-        assertThat(WriteRegistry.registered().permissions()).hasSize(60);
+        assertThat(WriteRegistry.registered().permissions()).hasSize(51);
     }
 
     @Test

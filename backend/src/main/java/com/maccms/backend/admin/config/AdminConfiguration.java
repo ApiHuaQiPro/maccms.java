@@ -8,7 +8,6 @@ import com.maccms.backend.admin.infrastructure.AdminMapper;
 import com.maccms.backend.admin.infrastructure.AdminWriteMapper;
 import com.maccms.backend.admin.web.AdminContentActions;
 import com.maccms.backend.admin.web.AdminEndpoint;
-import com.maccms.backend.admin.web.AdminMemberActions;
 import com.maccms.backend.admin.web.AdminHtmlRenderer;
 import com.maccms.backend.admin.web.AdminPages;
 import com.maccms.backend.admin.web.AdminRandom;
@@ -17,7 +16,6 @@ import com.maccms.backend.admin.web.AdminSessions;
 import com.maccms.backend.admin.web.jte.StaticTemplates;
 import com.maccms.backend.common.captcha.CaptchaSettings;
 import com.maccms.backend.content.application.ContentAdminServices;
-import com.maccms.backend.member.application.MemberAdminServices;
 import com.maccms.backend.comment.application.CommentAdminService;
 import com.maccms.backend.common.lang.LegacyLang;
 import com.maccms.backend.legacyconfig.application.LegacyConfigConfiguration;
@@ -178,18 +176,6 @@ public class AdminConfiguration {
                                             ObjectProvider<ContentAdminServices> content,
                                             ObjectProvider<CommentAdminService> comments) {
         return new AdminContentActions(endpoint, settings, responses, content.getIfAvailable(), comments.getIfAvailable(), random,
-                clock.getIfAvailable(Clock::systemUTC));
-    }
-
-    /**
-     * B14 后台会员与财务管理的动作（23 文档）。会员服务只在可写数据源打开时注册；单元测试的替身上下文里没有时，B14 的动作按"由后续批次实现"
-     * 处理（同 B13）。
-     */
-    @Bean
-    AdminMemberActions adminMemberActions(AdminEndpoint endpoint, AdminSettings settings, AdminResponses responses,
-                                          ObjectProvider<Clock> clock, ObjectProvider<MemberAdminServices> members,
-                                          ObjectProvider<ContentAdminServices> content) {
-        return new AdminMemberActions(endpoint, settings, responses, members.getIfAvailable(), content.getIfAvailable(),
                 clock.getIfAvailable(Clock::systemUTC));
     }
 
