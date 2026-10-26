@@ -147,7 +147,8 @@ class WriteInfrastructureMySqlIT {
      * ② 打开可写数据源：Bean 存在，使用正式登记表（B07/B08 为空；B09 起 member 对 mac_user 的插入与更新，B10 另加 member 对
      * mac_ulog、mac_plog、mac_card、mac_cash、mac_order、mac_visit 的写入，19 文档第 6.1 节；B11 另加 content 对六张内容表计数列与
      * mac_vod_search、comment 对 mac_comment 与 mac_gbook 的写入，20 文档第 10.1 节；B12 另加 admin 对 mac_admin 的写入与 content 对
-     * mac_vod_search 的删除，21 文档第 5 节），演练写入（drill 模块、mac_vod）在执行前被拒——
+     * mac_vod_search 的删除，21 文档第 5 节；B13、B14 另加后台内容管理与会员财务管理的写入，22、23 文档第 6 节），演练写入（drill 模块、
+     * mac_vod）在执行前被拒——
      * B11 登记的是 content 模块对 mac_vod 的更新，drill 模块仍未登记；只读池不受影响。
      */
     @Test
@@ -161,7 +162,8 @@ class WriteInfrastructureMySqlIT {
                             || p.batch().equals("B11") && (p.module().equals("content") || p.module().equals("comment"))
                             || p.batch().equals("B12") && (p.module().equals("admin") && p.table().equals("mac_admin")
                             || p.module().equals("content") && p.table().equals("mac_vod_search"))
-                            || p.batch().equals("B13") && (p.module().equals("content") || p.module().equals("comment")));
+                            || p.batch().equals("B13") && (p.module().equals("content") || p.module().equals("comment"))
+                            || p.batch().equals("B14") && p.module().equals("member"));
             assertThatThrownBy(() -> db.mapper(DrillWriteMapper.class).hit(1)).isInstanceOf(WriteRejectedException.class)
                     .hasMessageContaining("未登记的写入").hasMessageContaining("mac_vod");
             assertReadPoolRejectsWrites(app);

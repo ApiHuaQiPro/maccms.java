@@ -45,6 +45,11 @@
 - 后续后台批次（B13～B20、B28、B29）在 `AdminController` 的分派里接上自己的动作，**不改** `AdminPermissions` 的菜单与权限码数据（路线图第 5.2 节"同文件冲突"）；权限一律经 `AdminAuthorization`（旧 `check_auth` 的文本语义）。
 - 后台页面模板在 `backend/src/main/jte-admin/`（生成到 `admin.web.jte`，与站点模板分开），按旧后台 HTML 结构原样转写，不做新视觉设计；旧内联脚本外移到 `src/main/resources/static/admin-assets/`，数据经 `data-*` 属性传入；旧 `static/layui`、`admin_style.css`、`admin_common.js` 构建时原样打包。`AdminTemplatePolicyTest` 锁定：无内联脚本与事件属性、`<script>` 只带 `type/src/data-*`、style 无输出、原样 HTML 只能是语言包文字（`AdminText.trusted`）。内容安全策略见 21 文档第 8 节（为复用旧脚本保留 `'unsafe-eval'` 与几段固定代码的 `'unsafe-hashes'`）。
 - 旧语言包只经 `common.lang.LegacyLang`（jar 内由 `lang_export.php` 导出的 JSON）；新页面上旧版也有的文字取语言包键，不写死简体（21 文档第 12.2 节）。
+
+### 2.3 B14 后台会员与财务
+
+- 会员与财务表（`mac_user`、`mac_group`、`mac_card`、`mac_order`、`mac_cash`、`mac_plog`、`mac_ulog`、`mac_visit`）的后台读写在 `member` 模块（`23-b14-admin-member.md` 第 2 节）：`member.application` 的 `MemberAdminServices`（只供 admin 调用，`@ConditionalOnWriteEnabled`）→ `member.infrastructure` 的只读 `MemberAdminMapper` 与写 `MemberAdminWriteMapper`/`MemberAdminWrites`。admin 只经 `AdminMemberActions` 调用这些服务；会员表单的取值规则复用 content 的 `AdminTable`（`USER`、`GROUP`）与 `AdminRowValues`（同 B13 comment 模块的用法）。
+- 提现审核、删除与会员中心（B10）共用"认领 → 转移 → 条件补偿"的写法与语句；资金一致性以 23 文档第 6.3 节的对账语句检查。
 ### 3. 数据库
 
 - **禁止 DDL**（路线图第 1.2 节"零结构变更"，B07 起取代原"DDL 独立评审"）：不建表、不加/改/删列与索引、不转引擎或字符集，不建触发器、存储过程、视图、事件；不执行表维护语句与账号/权限语句；应用代码与资源中不得有 `schema.sql`/`data.sql`、Flyway/Liquibase 或任何初始化器。数据库账号由数据库管理员在获批部署时创建，代码不建、不改账号。没有结构迁移，旧数据不需要迁移；回滚只用 DML（`12-write-infrastructure.md` 第 6 节）。

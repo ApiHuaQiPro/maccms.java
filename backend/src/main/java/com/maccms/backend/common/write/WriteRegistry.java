@@ -34,6 +34,10 @@ public final class WriteRegistry {
      * 已登记的 content / UPDATE）；友情链接、分类、附件的增删改（content / mac_link、mac_type、mac_annex）；评论的删除与留言的修改、删除
      * （comment / mac_comment DELETE、mac_gbook UPDATE、DELETE；评论的修改沿用 B11 已登记的 comment / mac_comment UPDATE）。
      * 新增视频时更新视频搜索缓存沿用 B11 已登记的 content / mac_vod_search INSERT、UPDATE。</li>
+     * <li>B14（MACC-38，23 文档第 6 节）：后台会员与财务——会员删除（member / mac_user DELETE；新增、编辑、状态与到期降级沿用 B09 已登记的
+     * INSERT、UPDATE）；会员组的增删改（mac_group）；生成与删除卡密（mac_card INSERT、DELETE）；删除订单（mac_order DELETE）；提现审核
+     * （mac_cash UPDATE；删除与补偿插回沿用 B10 的 DELETE、INSERT）；删除推广访问（mac_visit DELETE）。积分日志与访问日志的删除沿用 B10 已登记的
+     * mac_plog、mac_ulog DELETE。</li>
      * </ul>
      */
     static final List<WritePermission> REGISTERED = List.of(
@@ -87,7 +91,16 @@ public final class WriteRegistry {
             new WritePermission("content", "mac_annex", WriteOperation.DELETE, "B13"),
             new WritePermission("comment", "mac_comment", WriteOperation.DELETE, "B13"),
             new WritePermission("comment", "mac_gbook", WriteOperation.UPDATE, "B13"),
-            new WritePermission("comment", "mac_gbook", WriteOperation.DELETE, "B13"));
+            new WritePermission("comment", "mac_gbook", WriteOperation.DELETE, "B13"),
+            new WritePermission("member", "mac_user", WriteOperation.DELETE, "B14"),
+            new WritePermission("member", "mac_group", WriteOperation.INSERT, "B14"),
+            new WritePermission("member", "mac_group", WriteOperation.UPDATE, "B14"),
+            new WritePermission("member", "mac_group", WriteOperation.DELETE, "B14"),
+            new WritePermission("member", "mac_card", WriteOperation.INSERT, "B14"),
+            new WritePermission("member", "mac_card", WriteOperation.DELETE, "B14"),
+            new WritePermission("member", "mac_order", WriteOperation.DELETE, "B14"),
+            new WritePermission("member", "mac_cash", WriteOperation.UPDATE, "B14"),
+            new WritePermission("member", "mac_visit", WriteOperation.DELETE, "B14"));
 
     /** 写 Mapper 的全限定名：{@code com.maccms.backend.<module>.infrastructure[.子包].<类型>}。 */
     private static final Pattern MAPPER_TYPE = Pattern.compile(
