@@ -1,8 +1,8 @@
 /*
  * 会员表单的页面脚本（B14，docs/architecture/23-b14-admin-member.md 第 8 节）。
  * 逐行取自旧 application/admin/view/user/info.html:116-203 的内联脚本；上传地址与语言包文字改由本 script 标签的 data-* 属性提供。除此之外
- * 逻辑不变（旧版的 user_pwd 必填校验没有挂到任何输入框上，照旧不生效）。头像上传的 flag=user 在新版后台被拒绝（22 文档 D-B13-17），
- * 按钮照旧显示，点了得到"文件上传失败！"的提示，头像地址仍可手工填写（23 文档第 8.2 节）。
+ * 逻辑不变（旧版的 user_pwd 必填校验没有挂到任何输入框上，照旧不生效）。"上传图片"把文件交给 upload/upload?flag=user&user_id=…，
+ * 成功后把返回的头像地址填进头像一栏，点"保存"时随表单写进会员（23 文档第 7.7 节）。
  */
 (function () {
     var self = document.currentScript;

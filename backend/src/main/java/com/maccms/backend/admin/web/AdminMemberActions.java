@@ -9,12 +9,14 @@ import com.maccms.backend.admin.web.view.member.MemberListView;
 import com.maccms.backend.admin.web.view.member.RewardView;
 import com.maccms.backend.admin.web.view.member.UserInfoView;
 import com.maccms.backend.content.application.AdminPaging;
+import com.maccms.backend.content.application.AdminUploadService;
 import com.maccms.backend.content.application.ContentAdminServices;
 import com.maccms.backend.content.application.PhpForm;
 import com.maccms.backend.content.application.view.AdminResult;
 import com.maccms.backend.content.application.view.AdminRow;
 import com.maccms.backend.content.application.view.AdminRowPage;
 import com.maccms.backend.content.application.view.AdminTypeNode;
+import com.maccms.backend.content.application.view.UploadReply;
 import com.maccms.backend.member.application.CardAdminService;
 import com.maccms.backend.member.application.MemberAdminServices;
 import com.maccms.backend.member.application.view.MemberRewardStats;
@@ -94,6 +96,24 @@ public class AdminMemberActions {
             case "visit/del" -> result(ctx, s.logs().deleteVisits(param));
             default -> null;
         };
+    }
+
+    /**
+     * 会员表单的"上传图片"（23 文档第 7.7 节）：{@code upload/upload} 带 {@code flag=user}、不带编辑器 {@code from} 时由会员服务写头像；
+     * 其他上传返回 null，仍由 B13 的上传处理。在登录、同源与 {@code upload/upload} 权限检查之后调用（{@link AdminController}）。
+     */
+    ResponseEntity<String> portraitUpload(Ctx ctx) {
+        if (s == null || !ctx.route().code().equals("upload/upload")) {
+            return null;
+        }
+        AdminUploadService.Upload req = AdminContentActions.uploadRequest(ctx);
+        Map<String, String> p = req.params();
+        String from = p.get("from");
+        if (!"user".equals(p.get("flag")) || !(from == null || from.isEmpty() || from.equals("0"))) {
+            return null;
+        }
+        UploadReply r = s.portraits().upload(p, req.file(), req.fileName(), settings.lang()::get);
+        return responses.jsonBody(r.body());
     }
 
     // ------------------------------------------------------------------ 会员

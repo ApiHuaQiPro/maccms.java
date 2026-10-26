@@ -84,10 +84,13 @@ final class PortraitImages {
         this.height = height;
     }
 
-    /** 成功时 {@code jpeg} 非空；失败时 {@code error} 是旧版提示。 */
-    record Outcome(byte[] jpeg, String error) {
+    /**
+     * 成功时 {@code jpeg} 非空；失败时 {@code error} 是旧版提示。{@code sourceBytes} 为上传内容的字节数（{@code imgdata} 为解码后的字节数；
+     * 旧后台上传结果里的 {@code size} 按它计算，{@code Upload.php:125、157}）。
+     */
+    record Outcome(byte[] jpeg, String error, int sourceBytes) {
         static Outcome fail(String error) {
-            return new Outcome(null, error);
+            return new Outcome(null, error, 0);
         }
     }
 
@@ -128,7 +131,7 @@ final class PortraitImages {
             return Outcome.fail(FAILED);
         }
         try {
-            return new Outcome(jpeg(resize(source)), null);
+            return new Outcome(jpeg(resize(source)), null, content.length);
         } catch (IOException e) {
             return Outcome.fail(FAILED);
         }

@@ -165,6 +165,11 @@ public class AdminController {
             case "admin/field" -> reply(ctx, accounts.setStatus(ids(ctx.params()), ctx.params().scalar("col"),
                     ctx.params().scalar("val")));
             default -> {
+                // 会员表单的头像上传（upload/upload?flag=user，B14）先于 B13 的上传
+                ResponseEntity<String> portrait = member == null ? null : member.portraitUpload(ctx);
+                if (portrait != null) {
+                    yield portrait;
+                }
                 ResponseEntity<String> b13 = content.handle(ctx, admin, session);
                 if (b13 != null) {
                     yield b13;

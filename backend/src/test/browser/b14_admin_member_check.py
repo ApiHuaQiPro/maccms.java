@@ -4,6 +4,9 @@ b14_seed.sql 的合成数据），用 Playwright 的本机 Chromium 无头模式
   - 登录 → 会员列表（layui 表格、分页、状态开关写库）；
   - 会员"添加"弹层：layui 下拉、laydate 日期控件；选 VIP 组后到期时间一栏显示；保存后库里是 md5(密码)、组与到期时间；
   - 会员"编辑"弹层：改积分、密码留空保存，密码不变；行内删除（confirm 层）；推广会员页的三级人数与奖励合计；
+  - 会员头像：编辑弹层点"上传图片"选图 → upload/upload?flag=user&user_id=1 成功、地址回填、文件是 100×100 JPEG、登记附件、上传本身不改
+    user_portrait；悬停预览从 /upload/ 读到新头像（由前面的 nginx 提供）；保存后 user_portrait 写库；重新打开表单是新地址；伪装图片被拒绝且
+    原头像不变；不存在或非法的会员号失败、不落盘；
   - 会员组：添加弹层"全选"后保存（权限 JSON 与分类串）、编辑、状态开关、删除有会员的组得到提示且不删；
   - 充值卡：生成弹层生成 5 张（16 位卡号、8 位卡密）、"导出"按钮经隐藏 iframe 下载 CSV（文件名、表头、行数）、"清空"；
   - 订单列表与行内删除；提现：行内"审核"（冻结积分扣减）、勾选"删除"未审核的提现（冻结积分退回）；
@@ -12,7 +15,8 @@ b14_seed.sql 的合成数据），用 Playwright 的本机 Chromium 无头模式
   - 输出各步截图与 report.json。
 
 库内核对经 mysql 命令行只读查询（一次性库 maccms_it_*）。不在 ./mvnw verify 中运行；只访问给定的本机地址。
-用法：python b14_admin_member_check.py <后台入口地址，如 http://127.0.0.1:18298/_admin.php> <账号> <密码> <输出目录> <一次性库名>
+用法：python b14_admin_member_check.py <后台入口地址，如 http://127.0.0.1:18299/_admin.php> <账号> <密码> <输出目录> <一次性库名>
+      <站点根目录（其下 upload/，与 maccms.member.upload-dir 相同）> <上传用的样例图片>
 环境变量 MYSQL_LOCAL_USER / MYSQL_LOCAL_PW（本机开发库账号，只用于只读核对）。
 """
 
@@ -27,11 +31,30 @@ from urllib.parse import urlparse
 from playwright.sync_api import sync_playwright
 
 
+def jpeg_size(path):
+    """JPEG 文件的（宽, 高）；不是 JPEG 或没有这个文件时为 None。"""
+    if not os.path.isfile(path):
+        return None
+    data = open(path, 'rb').read()
+    if data[:2] != bytes([0xff, 0xd8]):
+        return None
+    i = 2
+    while i + 9 < len(data):
+        if data[i] != 0xff:
+            return None
+        marker = data[i + 1]
+        length = int.from_bytes(data[i + 2:i + 4], 'big')
+        if marker in (0xc0, 0xc1, 0xc2):
+            return int.from_bytes(data[i + 7:i + 9], 'big'), int.from_bytes(data[i + 5:i + 7], 'big')
+        i += 2 + length
+    return None
+
+
 def main():
-    if len(sys.argv) != 6:
+    if len(sys.argv) != 8:
         print(__doc__)
         sys.exit(2)
-    entry, account, password, out, db = sys.argv[1:]
+    entry, account, password, out, db, site, sample = sys.argv[1:]
     if not re.fullmatch(r'maccms_it_[0-9]{14}_[0-9a-f]{8}', db):
         print('只能核对一次性库 maccms_it_*')
         sys.exit(2)
@@ -171,6 +194,72 @@ def main():
         submit_child(f)
         after = sql('SELECT user_pwd, user_points FROM mac_user WHERE user_id = 1')
         step('编辑保存：积分写库、密码留空不改', after == [[before[0][0], '321']], after)
+
+        # ---------------- 会员头像：编辑表单的"上传图片" → 预览 → 保存 → 重新打开（23 文档第 7.7 节）
+        portrait = os.path.join(site, 'upload', 'user', '1', '1.jpg')
+        step('上传前没有头像文件，user_portrait 为空', not os.path.exists(portrait)
+             and sql('SELECT user_portrait FROM mac_user WHERE user_id = 1') == [['']])
+        page.locator('tr:has-text("alice01")').locator('a.j-iframe', has_text='编辑').click()
+        f = frame('/admin/user/info')
+        f.wait_for_selector('#upload1', timeout=8000)
+        with page.expect_response(lambda r: '/admin/upload/upload' in r.url and 'flag=user' in r.url, timeout=15000) as up:
+            with page.expect_file_chooser() as fc:
+                f.click('#upload1')
+            fc.value.set_files(sample)
+        reply = up.value.json()
+        step('按钮上传：地址带 flag=user&user_id=1，返回成功', 'flag=user&user_id=1' in up.value.url and reply.get('code') == 1
+             and reply['data']['file'] == 'upload/user/1/1.jpg', json.dumps(reply, ensure_ascii=False)[:200])
+        f.wait_for_function("document.querySelector('#user_portrait').value === 'upload/user/1/1.jpg'", timeout=8000)
+        step('头像地址回填到表单', f.input_value('#user_portrait') == 'upload/user/1/1.jpg')
+        size = jpeg_size(portrait)
+        step('头像文件是 100×100 的 JPEG（重新编码）', size == (100, 100), size)
+        annex = sql("SELECT annex_type FROM mac_annex WHERE annex_file = 'upload/user/1/1.jpg'")
+        step('头像登记附件（一行）', annex == [['image']], annex)
+        step('上传本身不改会员表（同旧版），保存前 user_portrait 仍为空',
+             sql('SELECT user_portrait FROM mac_user WHERE user_id = 1') == [['']])
+        f.hover('#user_portrait')
+        f.wait_for_function("(function(){var i=document.querySelector('.showpic_img');"
+                            "return i && i.complete && i.naturalWidth === 100 && i.src.indexOf('/upload/user/1/1.jpg') >= 0;})()",
+                            timeout=8000)
+        step('悬停预览：从 /upload/ 读到新头像', f.locator('.showpic').is_visible())
+        shot('user-portrait-uploaded')
+        page.mouse.move(5, 5)
+        submit_child(f)
+        step('保存表单后 user_portrait 写库', sql('SELECT user_portrait FROM mac_user WHERE user_id = 1') == [['upload/user/1/1.jpg']])
+        page.locator('tr:has-text("alice01")').locator('a.j-iframe', has_text='编辑').click()
+        f = frame('/admin/user/info')
+        f.wait_for_selector('#user_portrait', timeout=8000)
+        step('重新打开表单：头像一栏是新地址', f.input_value('#user_portrait') == 'upload/user/1/1.jpg')
+        shot('user-portrait-reopened')
+        digest = hashlib.sha256(open(portrait, 'rb').read()).hexdigest()
+        # 伪装图片（扩展名 .jpg、内容不是图片）：提示"文件上传失败！"，原头像文件不变、不新增附件
+        fake = os.path.join(out, 'fake.jpg')
+        with open(fake, 'w', encoding='utf-8') as fh:
+            fh.write('not an image ' * 40)
+        with page.expect_response(lambda r: '/admin/upload/upload' in r.url and 'flag=user' in r.url, timeout=15000) as up:
+            with page.expect_file_chooser() as fc:
+                f.click('#upload1')
+            fc.value.set_files(fake)
+        f.wait_for_selector('.layui-layer-msg:has-text("文件上传失败")', timeout=8000)
+        step('伪装图片被拒绝：提示失败，原头像文件与附件不变', up.value.json().get('code') == 0
+             and hashlib.sha256(open(portrait, 'rb').read()).hexdigest() == digest
+             and sql("SELECT COUNT(*) FROM mac_annex WHERE annex_file LIKE 'upload/user/%'") == [['1']]
+             and f.input_value('#user_portrait') == 'upload/user/1/1.jpg')
+        # 不存在的会员号、非法会员号（同源的脚本请求，带后台会话）：失败，不落盘
+        bad = f.evaluate("""async (ids) => {
+            const out = [];
+            for (const id of ids) {
+                const fd = new FormData();
+                fd.append('file', new Blob([new Uint8Array([137, 80, 78, 71])], {type: 'image/png'}), 'a.png');
+                const r = await fetch(ADMIN_PATH + '/admin/upload/upload.html?flag=user&user_id=' + id, {method: 'POST', body: fd,
+                    headers: {'X-Requested-With': 'XMLHttpRequest'}});
+                out.push((await r.json()).msg);
+            }
+            return out;
+        }""", ['999', '0', '..%2F..%2F1', 'abc'])
+        step('不存在或非法的会员号：文件上传失败、不落盘', bad == ['文件上传失败！'] * 4
+             and sorted(os.listdir(os.path.join(site, 'upload', 'user'))) == ['1'], bad)
+        open_list('/admin/user/data.html')
 
         # ---------------- 行内删除会员
         page.locator('tr:has-text("browser01") a.j-tr-del').click()
