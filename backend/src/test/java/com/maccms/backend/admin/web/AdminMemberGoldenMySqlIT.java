@@ -5,14 +5,20 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.maccms.backend.MaccmsBackendApplication;
 import com.maccms.backend.common.session.MutableClock;
 import com.maccms.backend.common.web.PhpInput;
+import com.maccms.backend.common.write.WriteDatabase;
 import com.maccms.backend.content.application.AdminPaging;
 import com.maccms.backend.content.application.PhpForm;
+import com.maccms.backend.content.application.view.AdminResult;
 import com.maccms.backend.content.application.view.AdminRowPage;
+import com.maccms.backend.member.application.FinanceAdminService;
 import com.maccms.backend.member.application.MemberAdminServices;
 import com.maccms.backend.member.application.MemberFinanceSettings;
 import com.maccms.backend.member.application.MemberWalletService;
 import com.maccms.backend.member.application.view.JsonReply;
 import com.maccms.backend.member.application.view.MemberState;
+import com.maccms.backend.member.infrastructure.MemberAdminMapper;
+import com.maccms.backend.member.infrastructure.MemberAdminWriteMapper;
+import com.maccms.backend.member.infrastructure.MemberAdminWrites;
 import com.maccms.backend.member.infrastructure.MemberFinanceMapper;
 import com.maccms.backend.member.infrastructure.MemberFinanceWriteMapper;
 import com.maccms.backend.schema.SchemaFingerprint;
@@ -23,6 +29,8 @@ import com.maccms.backend.writedrill.SnapshotDiff;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Proxy;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -49,6 +57,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterAll;
@@ -752,6 +764,261 @@ class AdminMemberGoldenMySqlIT {
         AdminRowPage page = admin.logs().ulogs(form(""), new AdminPaging(1, 1000));
         assertThat(page.rows()).hasSize(250);
         assertThat(page.rows()).allSatisfy(r -> assertThat(r.s("data_name")).isEqualTo("视频" + r.s("ulog_rid")));
+    }
+
+    // ------------------------------------------------------------------ ②' 同一条提现的审核与删除/撤销交错（屏障控制，23 文档第 6.2 节）
+
+    /**
+     * 屏障：被包装的 Mapper 第一次调用 {@code method} 时，在执行该语句之前停下（{@link #reached}），等测试 {@link #release()} 后再执行。
+     * 用来把"认领之后、扣冻结之前"等窗口固定下来，逐步断言库里的状态；不靠随机多跑。
+     */
+    static final class Pause {
+        final String method;
+        final CountDownLatch reached = new CountDownLatch(1);
+        final CountDownLatch released = new CountDownLatch(1);
+        final AtomicBoolean armed = new AtomicBoolean(true);
+
+        Pause(String method) {
+            this.method = method;
+        }
+
+        void awaitReached() throws InterruptedException {
+            assertThat(reached.await(30, TimeUnit.SECONDS)).as("到达屏障 " + method).isTrue();
+        }
+
+        void release() {
+            released.countDown();
+        }
+    }
+
+    static <T> T pausing(Class<T> type, T target, Pause... pauses) {
+        return type.cast(Proxy.newProxyInstance(type.getClassLoader(), new Class<?>[] {type}, (proxy, m, args) -> {
+            for (Pause p : pauses) {
+                if (m.getName().equals(p.method) && p.armed.compareAndSet(true, false)) {
+                    p.reached.countDown();
+                    if (!p.released.await(30, TimeUnit.SECONDS)) {
+                        throw new IllegalStateException("屏障超时：" + p.method);
+                    }
+                }
+            }
+            try {
+                return m.invoke(target, args);
+            } catch (InvocationTargetException e) {
+                throw e.getCause();
+            }
+        }));
+    }
+
+    /** 与容器里的提现服务相同（同一可写数据源、同样的语句），只是写入经带屏障的 Mapper。 */
+    private static FinanceAdminService pausedFinance(Variant v, Pause... pauses) {
+        WriteDatabase db = v.app().getBean(WriteDatabase.class);
+        MemberAdminWriteMapper adminWrites = pausing(MemberAdminWriteMapper.class, db.mapper(MemberAdminWriteMapper.class), pauses);
+        MemberFinanceWriteMapper financeWrites = pausing(MemberFinanceWriteMapper.class, db.mapper(MemberFinanceWriteMapper.class),
+                pauses);
+        return new FinanceAdminService(v.app().getBean(MemberAdminMapper.class), new MemberAdminWrites(adminWrites, financeWrites),
+                CLOCK);
+    }
+
+    /** 会员 50：可用 100、冻结 {@code froze}；提现 50：会员 50、未审核、20 积分。其余提现不参与。 */
+    private static Variant cashRace(long froze) throws Exception {
+        Variant v = prepare("cash-list");
+        exec("DELETE FROM mac_cash");
+        exec("INSERT INTO mac_user (user_id, group_id, user_name, user_points, user_points_froze) VALUES (50, 2, 'race50', 100, "
+                + froze + ")");
+        exec("INSERT INTO mac_cash (cash_id, user_id, cash_status, cash_points, cash_money, cash_bank_name, cash_bank_no, "
+                + "cash_payee_name, cash_time, cash_time_audit) VALUES (50, 50, 0, 20, '0.20', 'b', '1', 'p', 1700000000, 0)");
+        exec("UPDATE mac_user SET user_points_froze = 0 WHERE user_id <> 50");
+        CLOCK.set(1_800_000_000L);
+        return v;
+    }
+
+    private static long points50() throws SQLException {
+        return count("SELECT user_points FROM mac_user WHERE user_id = 50");
+    }
+
+    private static long froze50() throws SQLException {
+        return count("SELECT user_points_froze FROM mac_user WHERE user_id = 50");
+    }
+
+    /** 提现 50 的一列；这一行不存在时为 -1。 */
+    private static long cash50(String col) throws SQLException {
+        return count("SELECT COALESCE(MAX(" + col + "), -1) FROM mac_cash WHERE cash_id = 50");
+    }
+
+    private static String text(AdminResult r) {
+        return r.message().render(k -> k);
+    }
+
+    /**
+     * 成功分支：审核认领了提现 50（{@code cash_status=1}、写了审核时间），还没扣冻结时，同一行被后台删除——删除按"已审核"只删记录、不退冻结；
+     * 放行后扣冻结命中。冻结只扣一次、没有退回，冻结积分与未审核合计一致。
+     */
+    @Test
+    @Order(10)
+    void auditClaimedThenAdminDeleteOfTheSameCashSettlesOnceWithoutRefund() throws Exception {
+        Variant v = cashRace(20);
+        MemberAdminServices admin = v.app().getBean(MemberAdminServices.class);
+        Pause beforeSettle = new Pause("settleFrozen");
+        FinanceAdminService auditor = pausedFinance(v, beforeSettle);
+        CompletableFuture<AdminResult> audit = CompletableFuture.supplyAsync(() -> auditor.audit(form("ids=50")));
+        beforeSettle.awaitReached();
+        assertThat(cash50("cash_status")).as("已认领").isEqualTo(1);
+        assertThat(cash50("cash_time_audit")).isEqualTo(1_800_000_000L);
+        assertThat(froze50()).as("还没扣冻结").isEqualTo(20);
+
+        AdminResult del = admin.finance().deleteCashes(form("ids=50"));
+        assertThat(del.ok()).isTrue();
+        assertThat(cash50("cash_id")).as("已审核的记录被删除").isEqualTo(-1);
+        assertThat(points50()).as("按已审核删除，不退冻结").isEqualTo(100);
+        assertThat(froze50()).isEqualTo(20);
+
+        beforeSettle.release();
+        AdminResult a = audit.get(30, TimeUnit.SECONDS);
+        assertThat(a.ok()).isTrue();
+        assertThat(text(a)).isEqualTo("审核成功");
+        assertThat(froze50()).as("冻结只扣一次").isZero();
+        assertThat(points50()).as("没有退回").isEqualTo(100);
+        assertThat(count(FROZE_RECONCILIATION)).as("冻结积分 = 未审核提现合计").isZero();
+    }
+
+    /** 同上，删除换成会员中心的撤销提现（B10）：撤销按"已审核"只删记录、不退冻结，放行后扣冻结命中一次。 */
+    @Test
+    @Order(11)
+    void auditClaimedThenMemberRevokeOfTheSameCashSettlesOnceWithoutRefund() throws Exception {
+        Variant v = cashRace(20);
+        MemberWalletService wallet = wallet(v);
+        Pause beforeSettle = new Pause("settleFrozen");
+        FinanceAdminService auditor = pausedFinance(v, beforeSettle);
+        CompletableFuture<AdminResult> audit = CompletableFuture.supplyAsync(() -> auditor.audit(form("ids=50")));
+        beforeSettle.awaitReached();
+        assertThat(cash50("cash_status")).isEqualTo(1);
+
+        JsonReply revoke = wallet.deleteCash(member(50), params("ids=50"));
+        assertThat(revoke.code()).isEqualTo(1);
+        assertThat(cash50("cash_id")).isEqualTo(-1);
+        assertThat(points50()).isEqualTo(100);
+        assertThat(froze50()).isEqualTo(20);
+
+        beforeSettle.release();
+        assertThat(audit.get(30, TimeUnit.SECONDS).ok()).isTrue();
+        assertThat(froze50()).isZero();
+        assertThat(points50()).isEqualTo(100);
+        assertThat(count(FROZE_RECONCILIATION)).isZero();
+    }
+
+    /**
+     * 删除先认领：审核读到未审核、去认领之前停下；后台删除认领（删掉这一行）、退冻结之前停下；放行审核——认领不命中，跳过；放行删除——退冻结命中。
+     * 只退一次、没有扣减。
+     */
+    @Test
+    @Order(12)
+    void deleteClaimedFirstThenAuditSkipsAndTheRefundHappensOnce() throws Exception {
+        Variant v = cashRace(20);
+        Pause beforeUnfreeze = new Pause("unfreezePoints");
+        Pause beforeClaim = new Pause("auditCash");
+        FinanceAdminService deleter = pausedFinance(v, beforeUnfreeze);
+        FinanceAdminService auditor = pausedFinance(v, beforeClaim);
+        CompletableFuture<AdminResult> audit = CompletableFuture.supplyAsync(() -> auditor.audit(form("ids=50")));
+        beforeClaim.awaitReached();
+        assertThat(cash50("cash_status")).as("审核已读到未审核，尚未认领").isZero();
+        CompletableFuture<AdminResult> del = CompletableFuture.supplyAsync(() -> deleter.deleteCashes(form("ids=50")));
+        beforeUnfreeze.awaitReached();
+        assertThat(cash50("cash_id")).as("删除已认领").isEqualTo(-1);
+        assertThat(froze50()).isEqualTo(20);
+
+        beforeClaim.release();
+        AdminResult a = audit.get(30, TimeUnit.SECONDS);
+        assertThat(a.ok()).as("认领不命中：跳过").isTrue();
+        assertThat(froze50()).as("审核没有扣").isEqualTo(20);
+        assertThat(points50()).isEqualTo(100);
+
+        beforeUnfreeze.release();
+        assertThat(del.get(30, TimeUnit.SECONDS).ok()).isTrue();
+        assertThat(points50()).as("退回一次").isEqualTo(120);
+        assertThat(froze50()).isZero();
+        assertThat(count(FROZE_RECONCILIATION)).isZero();
+    }
+
+    /**
+     * 补偿分支（扣冻结不命中）：会员的冻结积分已不够（数据不一致，如后台表单改过冻结积分；旧版此时扣成负数报 500），审核认领后扣冻结不命中、
+     * 撤回审核之前，同一行被后台删除（按已审核只删记录）。放行后撤回审核不命中：审核返回"更新用户积分失败："，并记 ERROR 日志（提现号、会员号、
+     * 积分）。没有重复退或扣：可用、冻结都没变；对账语句列出这位会员（冻结 19、未审核 0），可人工核对处理。
+     */
+    @Test
+    @Order(13)
+    void settleMissThenConcurrentDeleteIsReportedForManualReconciliationWithoutDoubleMoves() throws Exception {
+        Variant v = cashRace(19);
+        MemberAdminServices admin = v.app().getBean(MemberAdminServices.class);
+        Pause beforeRevert = new Pause("revertAudit");
+        FinanceAdminService auditor = pausedFinance(v, beforeRevert);
+        ch.qos.logback.classic.Logger logger = (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger(FinanceAdminService.class);
+        ch.qos.logback.core.read.ListAppender<ch.qos.logback.classic.spi.ILoggingEvent> logs = new ch.qos.logback.core.read.ListAppender<>();
+        logs.start();
+        logger.addAppender(logs);
+        try {
+            CompletableFuture<AdminResult> audit = CompletableFuture.supplyAsync(() -> auditor.audit(form("ids=50")));
+            beforeRevert.awaitReached();
+            assertThat(cash50("cash_status")).as("已认领，扣冻结没有命中").isEqualTo(1);
+            assertThat(froze50()).isEqualTo(19);
+
+            assertThat(admin.finance().deleteCashes(form("ids=50")).ok()).isTrue();
+            assertThat(cash50("cash_id")).isEqualTo(-1);
+            assertThat(points50()).isEqualTo(100);
+            assertThat(froze50()).isEqualTo(19);
+
+            beforeRevert.release();
+            AdminResult a = audit.get(30, TimeUnit.SECONDS);
+            assertThat(a.ok()).isFalse();
+            assertThat(text(a)).isEqualTo("更新用户积分失败：");
+        } finally {
+            logger.detachAppender(logs);
+        }
+        assertThat(points50()).as("没有退回").isEqualTo(100);
+        assertThat(froze50()).as("没有扣减").isEqualTo(19);
+        assertThat(count(FROZE_RECONCILIATION)).as("对账语句列出这位会员").isEqualTo(1);
+        assertThat(count("SELECT COUNT(*) FROM (SELECT u.user_id FROM mac_user AS u LEFT JOIN mac_cash AS c ON c.user_id = u.user_id "
+                + "AND c.cash_status = 0 WHERE u.user_id = 50 GROUP BY u.user_id, u.user_points_froze "
+                + "HAVING u.user_points_froze = 19 AND COALESCE(SUM(c.cash_points), 0) = 0) AS x")).isEqualTo(1);
+        assertThat(logs.list).anySatisfy(e -> {
+            assertThat(e.getLevel()).isEqualTo(ch.qos.logback.classic.Level.ERROR);
+            assertThat(e.getFormattedMessage()).contains("cash_id=50").contains("user_id=50").contains("points=20");
+        });
+    }
+
+    /**
+     * 补偿分支（撤回成功）：冻结积分不够，扣冻结不命中，撤回审核命中——提现回到未审核、审核时间复原，审核返回"更新用户积分失败："；之后同一行的
+     * 后台删除认领成功、退冻结同样不命中，插回之前停下（此时再审核读不到这一行，什么都不做），放行后原样插回。可用、冻结、提现行都与开始时相同。
+     */
+    @Test
+    @Order(14)
+    void settleMissWithSuccessfulCompensationThenDeleteRestoresEverything() throws Exception {
+        Variant v = cashRace(19);
+        Pause beforeRevert = new Pause("revertAudit");
+        Pause beforeRestore = new Pause("restoreCash");
+        FinanceAdminService auditor = pausedFinance(v, beforeRevert);
+        FinanceAdminService deleter = pausedFinance(v, beforeRestore);
+        CompletableFuture<AdminResult> audit = CompletableFuture.supplyAsync(() -> auditor.audit(form("ids=50")));
+        beforeRevert.awaitReached();
+        assertThat(cash50("cash_status")).isEqualTo(1);
+        assertThat(froze50()).isEqualTo(19);
+        beforeRevert.release();
+        AdminResult a = audit.get(30, TimeUnit.SECONDS);
+        assertThat(text(a)).isEqualTo("更新用户积分失败：");
+        assertThat(cash50("cash_status")).as("撤回审核").isZero();
+        assertThat(cash50("cash_time_audit")).isZero();
+
+        CompletableFuture<AdminResult> del = CompletableFuture.supplyAsync(() -> deleter.deleteCashes(form("ids=50")));
+        beforeRestore.awaitReached();
+        assertThat(cash50("cash_id")).as("删除已认领，退冻结不命中，插回之前").isEqualTo(-1);
+        assertThat(v.app().getBean(MemberAdminServices.class).finance().audit(form("ids=50")).ok()).isTrue();
+        assertThat(froze50()).isEqualTo(19);
+        beforeRestore.release();
+        assertThat(text(del.get(30, TimeUnit.SECONDS))).isEqualTo("更新用户积分失败：");
+        assertThat(cash50("cash_status")).as("原样插回").isZero();
+        assertThat(cash50("cash_points")).isEqualTo(20);
+        assertThat(cash50("cash_time")).isEqualTo(1_700_000_000L);
+        assertThat(points50()).isEqualTo(100);
+        assertThat(froze50()).isEqualTo(19);
     }
 
     // ------------------------------------------------------------------ ③ 回滚演练

@@ -120,6 +120,9 @@ public final class FinanceAdminService {
                     }
                     // 期间已被别人审核或删除：跳过
                 } catch (CompensationFailedException e) {
+                    // 扣冻结不命中、撤回审核也不命中（如认领之后这一行被并发删除）：这一行与会员的冻结积分需人工对账（23 文档第 6.2 节）
+                    log.error("admin cash audit needs reconciliation: cash_id={} user_id={} points={} {}", cashId, userId, points,
+                            SafeExceptionLog.typeChain(e));
                     return AdminResult.error(AdminMessage.text(POINTS_ERR));
                 }
             }
@@ -190,7 +193,9 @@ public final class FinanceAdminService {
             }
             return AdminResult.error(AdminMessage.text(POINTS_ERR));
         } catch (CompensationFailedException e) {
-            log.warn("admin cash delete needs reconciliation: {}", SafeExceptionLog.typeChain(e));
+            // 退冻结不命中、插回也不成功：这一行与会员的冻结积分需人工对账（不记银行信息）
+            log.error("admin cash delete needs reconciliation: cash_id={} user_id={} points={} cash_time={} {}", cashId, userId,
+                    points, nz(row.time()), SafeExceptionLog.typeChain(e));
             return AdminResult.error(AdminMessage.text(POINTS_ERR));
         }
     }

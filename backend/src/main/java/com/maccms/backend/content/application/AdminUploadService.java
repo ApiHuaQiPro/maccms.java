@@ -92,7 +92,8 @@ public class AdminUploadService {
             pre = "";
         }
         if (!uploads.configured() || !FLAG.matcher(flag).matches() || flag.equals("user")) {
-            // 会员头像（flag=user）只走前台（B09）；后台不接受
+            // 会员头像（flag=user）：后台会员表单的上传（不带编辑器 from）由 B14 的会员服务处理，不进这里（23 文档第 7.7 节）；
+            // 编辑器带 flag=user 的请求照旧拒绝（22 文档 D-B13-17）
             return reply(lang.apply("admin/upload/upload_faild"), editor, false, null);
         }
         String dir = directory(flag);
@@ -328,6 +329,19 @@ public class AdminUploadService {
         arr.put("code", ok ? 1 : 0);
         arr.put("data", data == null ? List.of() : data);
         return new UploadReply(com.maccms.backend.common.web.LegacyJson.encode(arr), true);
+    }
+
+    /**
+     * 后台请求（不带编辑器 {@code from}）的上传结果 {@code {msg, code, data}}（旧 {@code upload_return}，失败时 data 为空数组）。B14 的会员头像
+     * 上传（23 文档第 7.7 节）用同一格式。
+     */
+    public static UploadReply adminReply(String info, boolean ok, Map<String, Object> data) {
+        return reply(info, null, ok, data);
+    }
+
+    /** 上传结果里的 {@code size}：{@code round(字节数 / 1024, 2)}（JSON 里整数值不带小数点）。 */
+    public static Object sizeKb(long bytes) {
+        return number(PhpNumbers.round2Text(bytes / 1024.0));
     }
 
     private static Object number(String text) {

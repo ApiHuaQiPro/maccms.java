@@ -10,7 +10,7 @@ import java.util.List;
  * 会员表单（旧 admin/view/user/info.html）；新增时 {@code info} 为空行。密码框总为空（旧 {@code infoData} 把密码置空）。
  *
  * @param groups    全部会员组（旧 {@code Group::listData([], 'group_id asc')}）
- * @param uploadUrl 头像上传地址（旧 {@code url('upload/upload')?flag=user&user_id=…}；新版后台上传拒绝 {@code flag=user}，见 23 文档第 8.2 节）
+ * @param uploadUrl 头像上传地址（旧 {@code url('upload/upload')?flag=user&user_id=…}，由会员服务写头像，见 23 文档第 7.7 节）
  */
 public record UserInfoView(AdminHead head, LegacyLang lang, AdminRow info, List<AdminRow> groups, String uploadUrl)
         implements RawOutput {

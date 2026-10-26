@@ -543,6 +543,15 @@ public class AdminContentActions {
     }
 
     private ResponseEntity<String> upload(Ctx ctx) {
+        UploadReply r = s.uploads().upload(uploadRequest(ctx), settings.lang()::get);
+        return r.json() ? responses.jsonBody(r.body()) : responses.echoed(r.body());
+    }
+
+    /**
+     * 上传请求：{@code input()} 的标量参数与表单里名为 {@code input}（默认 file）的文件。B13 的上传与 B14 的会员头像上传（23 文档第 7.7 节）
+     * 共用。
+     */
+    static AdminUploadService.Upload uploadRequest(Ctx ctx) {
         Map<String, String> params = scalars(ctx.params());
         String input = AdminUploadService.inputName(params);
         byte[] file = null;
@@ -561,9 +570,9 @@ public class AdminContentActions {
         } catch (java.io.IOException | jakarta.servlet.ServletException | RuntimeException e) {
             // 超出大小等解析失败：同旧版上传的文件被丢弃（"未找到上传的文件"）
             file = null;
+            name = null;
         }
-        UploadReply r = s.uploads().upload(new AdminUploadService.Upload(params, file, name), settings.lang()::get);
-        return r.json() ? responses.jsonBody(r.body()) : responses.echoed(r.body());
+        return new AdminUploadService.Upload(params, file, name);
     }
 
     /** 批量处理页（没有任何参数时，旧 batch() 显示筛选表单）。 */
