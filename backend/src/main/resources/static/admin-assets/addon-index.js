@@ -1,5 +1,5 @@
 /*
- * 插件管理页的脚本（B15，docs/architecture/24-b15-admin-system.md 第 7 节）。逐行取自旧 application/admin/view/addon/index.html:36-133 的内联脚本；
+ * 插件管理页的脚本（B15，docs/architecture/24-b15-admin-system.md 第 11 节）。逐行取自旧 application/admin/view/addon/index.html:36-133 的内联脚本；
  * 地址与语言包文字改由本 script 标签的 data-* 属性提供。插件信息（标题、作者、简介等，来自插件目录里的 info.ini）旧版原样拼进 HTML，新版先转义
  * 再拼（显示相同，含 < & " 时不会注入页面）。列表照旧用 JSONP 读同站的 addon/downloaded。除此之外逻辑不变。
  */

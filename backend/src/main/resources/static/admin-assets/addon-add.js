@@ -1,5 +1,5 @@
 /*
- * 插件"本地安装"页的脚本（B15，docs/architecture/24-b15-admin-system.md 第 7 节）。逐行取自旧 application/admin/view/addon/add.html:21-52 的
+ * 插件"本地安装"页的脚本（B15，docs/architecture/24-b15-admin-system.md 第 11 节）。逐行取自旧 application/admin/view/addon/add.html:21-52 的
  * 内联脚本；上传地址与语言包文字改由本 script 标签的 data-* 属性提供。旧版的上传接口 addon/local 在校验表单令牌后直接输出 closed（不安装），
  * 新版照旧。除此之外逻辑不变。
  */

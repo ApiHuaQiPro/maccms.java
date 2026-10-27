@@ -26,7 +26,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 
 /**
- * B15 本地插件的动作（旧 admin/controller/Addon.php；路线图第 5.7 节，24 文档第 7 节）。插件市场的 {@code install}、{@code upgrade}（E13）在 B29，
+ * B15 本地插件的动作（旧 admin/controller/Addon.php；路线图第 5.7 节，24 文档第 11 节）。插件市场的 {@code install}、{@code upgrade}（E13）在 B29，
  * 由 B12 的分派返回"由 B29 批次提供"；{@code downloaded} 在这份生产代码里只列本地插件（旧版已去掉市场列表），本批实现。
  */
 public class AdminAddonActions {

@@ -44,7 +44,7 @@ class SchemaGuardTest {
     /**
      * 登记的例外（B15，MACC-39；路线图 B15 行，docs/architecture/24-b15-admin-system.md 第 9.3 节）：数据库工具"备份导出"把建表语句写进备份文件，
      * 格式与旧版相同——{@code SHOW CREATE TABLE} 读出建表语句文本、取结果里的 {@code Create Table} 列，再在文件里写一行 {@code DROP TABLE IF EXISTS}。
-     * 这些只是写进文件的文字，新系统从不执行备份文件（还原备份在入口拒绝），{@code DatabaseToolMySqlIT} 断言导出期间只发出 SHOW/SELECT。
+     * 这些只是写进文件的文字，新系统从不执行备份文件（还原备份在入口拒绝），{@code AdminSystemGoldenMySqlIT} 断言导出期间只发出 SHOW/SELECT。
      * 每一项按"文件 → 匹配到的文字"逐个消耗，多出现一次就是违规。
      */
     static final Map<String, List<String>> REGISTERED_TEXT = Map.of(

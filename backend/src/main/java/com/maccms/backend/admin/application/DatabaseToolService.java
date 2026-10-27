@@ -37,7 +37,7 @@ import java.util.zip.GZIPOutputStream;
  * <b>还原备份、执行 SQL、优化表、修复表不在这里</b>：它们会执行结构语句或表维护语句，按零结构变更在入口拒绝（{@link #REFUSED}）。
  *
  * <p>备份文件里的 {@code DROP TABLE IF EXISTS} 与建表语句只是写进文件的文本，新系统从不执行它们（SchemaGuardTest 登记的例外，
- * {@code DatabaseToolMySqlIT} 断言导出只发出 SHOW/SELECT）。
+ * {@code AdminSystemGoldenMySqlIT} 断言导出只发出 SHOW/SELECT）。
  */
 public final class DatabaseToolService {
 
@@ -394,7 +394,7 @@ public final class DatabaseToolService {
 
     /**
      * 写进备份文件的"删表"文本（旧 common/util/Database.php:118）。只是文件内容：新系统从不执行备份文件，也不把这段文字交给数据库
-     * （SchemaGuardTest 登记的唯一例外；DatabaseToolMySqlIT 断言导出期间只发出 SHOW/SELECT）。
+     * （SchemaGuardTest 登记的唯一例外；AdminSystemGoldenMySqlIT 断言导出期间只发出 SHOW/SELECT）。
      */
     static String dropTableText(String table) {
         return "DROP TABLE IF EXISTS `" + table + "`;";

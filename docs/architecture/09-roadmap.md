@@ -278,7 +278,7 @@ B02 起每个输出页面的批次（B02、B05、B06、B09～B15、B24～B26）�
 | B12 | 已验收（MACC-36，main `6a9054d`；`21-b12-admin-framework.md`；旧后台结构与静态资产原样复用，未另做视觉设计，`static/admin-assets/` 由后端维护；D-B12-6 队长已接受；D-B05-8 前台接线已完成非共享部分——手机 Logo、`Vary`、`lang()` 文字，外壳/组件/`static/site/` 未改，可选的手机样式类待队长与前端另定，第 12 节） | 后台框架：登录、会话、`admin_auth` 鉴权、管理员管理（D2 ⑤） | C + K | B07、B08 | — | 是 | 否 |
 | B13 | 已合并（MACC-37，main `8bfce79`；`22-b13-admin-content.md`；同作者复核后合入，未经队长独立测试，不算独立验收；D-B09-9 头像登记附件已用 PHP 黄金补齐；友链"类型"下拉框已定保持旧行为） | 后台内容管理 | C + K | B11、B12 | — | 是 | 否 |
 | B14 | 已合并（MACC-38，main `769bfd6`；`23-b14-admin-member.md`；第二轮候选 `32e3878` 经同作者复核与前端独立只读复核后合入，主线 `verify -Pmysql-it` 2667/92 全过；回滚点 `d7bddf8`） | 后台会员与财务管理 | C + K | B10、B12 | — | 是 | 否 |
-| B15 | 待建 | 后台系统配置与运维（配置文件写回、模板在线编辑、本地插件） | C + K | B12、B02、B05 | — | 是（文件 + 库） | 否 |
+| B15 | 交付待验收（MACC-39，分支 `agent/claude/macc-39`；`24-b15-admin-system.md`；配置写回后前台设置的热加载未完成，见该文档第 12 节） | 后台系统配置与运维（配置文件写回、模板在线编辑、本地插件） | C + K | B12、B02、B05 | — | 是（文件 + 库） | 否 |
 | B16 | 待建 | 静态生成与定时任务（D2 ③） | C | B05、B06、B15 | — | 是（文件） | 否 |
 | B17 | 待建 | 采集配置管理（先只读，再编辑） | C + K | B13、B15 | — | 是 | 否 |
 | B18 | 待建 | 采集解析与预览（本地文件源） | C + K | B17 | — | 否（只写本地缓存） | 否 |
@@ -427,6 +427,8 @@ graph LR
 | `mac_collect`、`mac_cj_node` | B17；`mac_cj_content`、`mac_cj_history` 在 B20 |
 | `application/extra/*.php`、`route.php`、`static/js/playerconfig.js` | B15（`bind.php` 在 B17，`timming.php` 的 runtime 在 B16，安装时的 `maccms.php` 在 B22） |
 | 模板目录中的模板文件与广告文件、`addons/` 插件目录与 `application/extra/addons.php` | B15；插件市场安装/升级 B29 |
+| 数据库工具"批量替换"：管理员手工对任一 `mac_*` 表的一列做 `REPLACE`（单表 UPDATE，表与列按白名单） | B15（`mac_admin` 沿用 B12 的登记；24 文档第 9.4 节） |
+| `application/data/backup/`（数据库备份文件、在线编辑模板的上一版） | B15 |
 | 新系统的部署配置文件（数据库连接）与安装锁、`mac_admin` 第一个管理员、`initdata.sql` 的 `mac_type` 数据 | B22 |
 | 静态生成的 HTML 文件 | B16 |
 

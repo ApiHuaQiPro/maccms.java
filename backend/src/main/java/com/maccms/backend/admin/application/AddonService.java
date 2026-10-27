@@ -27,7 +27,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * 本地插件（旧 admin/controller/Addon.php → fastadmin-addons {@code Service}；路线图第 5.7 节，24 文档第 7 节）：列表、配置、启用/禁用、卸载，
+ * 本地插件（旧 admin/controller/Addon.php → fastadmin-addons {@code Service}；路线图第 5.7 节，24 文档第 11 节）：列表、配置、启用/禁用、卸载，
  * 以及插件钩子的新版实现。文件效果与旧版相同：{@code addons/<名称>/info.ini}（{@code set_addon_info}）、{@code config.php}
  * （{@code set_addon_fullconfig}）、资源目录 {@code static/addons/<名称>/}、全局文件、{@code static/js/addons.js} 与
  * {@code application/extra/addons.php}（{@code Service::refresh}）。

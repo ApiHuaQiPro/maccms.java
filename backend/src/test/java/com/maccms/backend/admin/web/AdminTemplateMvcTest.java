@@ -145,6 +145,68 @@ class AdminTemplateMvcTest {
         return JSON.readTree(send(sid, "POST", "/admin/template/info?" + INFO, body).getContentAsString(StandardCharsets.UTF_8));
     }
 
+    /**
+     * 回滚演练（路线图 B15 回滚方案"从快照恢复配置文件与模板目录，diff 为空"；库的一半在 AdminSystemGoldenMySqlIT）：
+     * 部署方先整体复制会被写的区域 → 后台做几次写入（快捷菜单、播放器状态、jte 模板及其上一版备份）→ 用复制件覆盖回去、
+     * 删除新出现的文件 → 被跟踪的文件与快照逐字节相同；重启（这里重新执行启动编译）后前台用回滚后的模板。
+     */
+    @Test
+    void fileRollbackDrill() throws Exception {
+        java.util.List<String> areas = java.util.List.of("application/extra", "application/route.php", "static", "template", "addons",
+                "application/data/backup");
+        Path backup = temp("maccms-b15-rollback");
+        for (String a : areas) {
+            copy(SITE.resolve(a), backup.resolve(a));
+        }
+        java.util.Map<String, byte[]> before = AdminSystemGoldenTest.tracked(SITE);
+        String sid = login();
+        String qm = page(sid, "/admin/index/quickmenu");
+        assertThat(send(sid, "POST", "/admin/index/quickmenu", "__token__=" + field(qm, "__token__") + "&quickmenu=" + enc("回滚,system/config"))
+                .getContentAsString(StandardCharsets.UTF_8)).contains("\"code\":1");
+        assertThat(send(sid, "GET", "/admin/vodplayer/field?ids=dplayer&col=status&val=0", null)
+                .getContentAsString(StandardCharsets.UTF_8)).contains("\"code\":1");
+        String html = page(sid, "/admin/template/info?" + INFO);
+        String original = Files.readString(SITE.resolve(HOME), StandardCharsets.UTF_8);
+        assertThat(post(sid, field(html, "__token__"), field(html, "fversion"), "", original + "<%-- 回滚演练 --%>\n")
+                .get("code").asInt()).isEqualTo(1);
+        java.util.Map<String, String> changed = AdminSystemGoldenTest.diff(before, AdminSystemGoldenTest.tracked(SITE));
+        assertThat(changed).containsOnlyKeys("application/extra/quickmenu.php", "application/extra/vodplayer.php", HOME,
+                SiteTemplateService.BACKUP_DIR + HOME);
+
+        // 回滚：复制件覆盖回去，删除快照里没有的文件
+        for (String a : areas) {
+            Path live = SITE.resolve(a);
+            if (Files.isDirectory(live)) {
+                AdminSystemGoldenTest.deleteTree(live);
+            } else {
+                Files.deleteIfExists(live);
+            }
+            copy(backup.resolve(a), live);
+        }
+        assertThat(AdminSystemGoldenTest.diff(before, AdminSystemGoldenTest.tracked(SITE))).isEmpty();
+        templates.start();
+        assertThat(templates.notice()).isNull();
+        assertThat(Files.readString(SITE.resolve(HOME), StandardCharsets.UTF_8)).isEqualTo(original);
+        AdminSystemGoldenTest.deleteTree(backup);
+    }
+
+    private static void copy(Path from, Path to) throws IOException {
+        if (!Files.exists(from)) {
+            return;
+        }
+        try (java.util.stream.Stream<Path> s = Files.walk(from)) {
+            for (Path p : s.toList()) {
+                Path t = to.resolve(from.relativize(p).toString());
+                if (Files.isDirectory(p)) {
+                    Files.createDirectories(t);
+                } else {
+                    Files.createDirectories(t.getParent());
+                    Files.copy(p, t, java.nio.file.StandardCopyOption.COPY_ATTRIBUTES, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                }
+            }
+        }
+    }
+
     @Test
     void editCompileRestoreAndConflictThroughTheAdmin() throws Exception {
         // 启动时已导出内置模板并以外部目录为准

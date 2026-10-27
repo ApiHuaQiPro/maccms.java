@@ -1,5 +1,5 @@
 /*
- * 插件配置页的脚本（B15，docs/architecture/24-b15-admin-system.md 第 7 节）。逐行取自旧 application/admin/view/addon/config.html:110-152 的
+ * 插件配置页的脚本（B15，docs/architecture/24-b15-admin-system.md 第 11 节）。逐行取自旧 application/admin/view/addon/config.html:110-152 的
  * 内联脚本；上传地址与语言包文字改由本 script 标签的 data-* 属性提供。除此之外逻辑不变。
  */
 (function () {
