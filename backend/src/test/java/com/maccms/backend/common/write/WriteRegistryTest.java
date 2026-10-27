@@ -73,8 +73,11 @@ class WriteRegistryTest {
         assertThat(WriteRegistry.registered().allows("collect", "mac_cj_content", WriteOperation.DELETE)).isTrue();
         assertThat(WriteRegistry.registered().allows("collect", "mac_cj_content", WriteOperation.INSERT)).isFalse();
         assertThat(WriteRegistry.registered().allows("collect", "mac_cj_history", WriteOperation.UPDATE)).isFalse();
-        assertThat(WriteRegistry.registered().allows("collect", "mac_vod", WriteOperation.INSERT)).isFalse();
-        assertThat(WriteRegistry.registered().permissions()).hasSize(93);
+        // B19（MACC-43）：采集入库与 Receive 新增、更新视频（不删除）
+        assertThat(WriteRegistry.registered().allows("collect", "mac_vod", WriteOperation.INSERT)).isTrue();
+        assertThat(WriteRegistry.registered().allows("collect", "mac_vod", WriteOperation.UPDATE)).isTrue();
+        assertThat(WriteRegistry.registered().allows("collect", "mac_vod", WriteOperation.DELETE)).isFalse();
+        assertThat(WriteRegistry.registered().permissions()).hasSize(95);
     }
 
     @Test

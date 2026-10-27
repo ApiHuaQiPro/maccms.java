@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- B19 采集入库的查重（27 文档第 4 节）：旧 Collect::vod_data 的 $where 与 $GLOBALS['blend']，不排序取第一行（同旧 find()）。
+     只取更新规则与合并要比较的列，一律按文字取回。LIKE 模式原样绑定（旧版不转义 % 与 _）。 -->
+<mapper namespace="com.maccms.backend.collect.infrastructure.CollectIngestMapper">
+
+    <resultMap id="vodRow" type="map">
+        <result column="vod_id" property="vod_id" javaType="string"/>
+        <result column="type_id" property="type_id" javaType="string"/>
+        <result column="vod_name" property="vod_name" javaType="string"/>
+        <result column="vod_lock" property="vod_lock" javaType="string"/>
+        <result column="vod_play_from" property="vod_play_from" javaType="string"/>
+        <result column="vod_play_url" property="vod_play_url" javaType="string"/>
+        <result column="vod_play_server" property="vod_play_server" javaType="string"/>
+        <result column="vod_play_note" property="vod_play_note" javaType="string"/>
+        <result column="vod_down_from" property="vod_down_from" javaType="string"/>
+        <result column="vod_down_url" property="vod_down_url" javaType="string"/>
+        <result column="vod_down_server" property="vod_down_server" javaType="string"/>
+        <result column="vod_down_note" property="vod_down_note" javaType="string"/>
+        <result column="vod_serial" property="vod_serial" javaType="string"/>
+        <result column="vod_remarks" property="vod_remarks" javaType="string"/>
+        <result column="vod_director" property="vod_director" javaType="string"/>
+        <result column="vod_actor" property="vod_actor" javaType="string"/>
+        <result column="vod_year" property="vod_year" javaType="string"/>
+        <result column="vod_area" property="vod_area" javaType="string"/>
+        <result column="vod_lang" property="vod_lang" javaType="string"/>
+        <result column="vod_pic" property="vod_pic" javaType="string"/>
+        <result column="vod_content" property="vod_content" javaType="string"/>
+        <result column="vod_tag" property="vod_tag" javaType="string"/>
+        <result column="vod_sub" property="vod_sub" javaType="string"/>
+        <result column="vod_class" property="vod_class" javaType="string"/>
+        <result column="vod_writer" property="vod_writer" javaType="string"/>
+        <result column="vod_version" property="vod_version" javaType="string"/>
+        <result column="vod_state" property="vod_state" javaType="string"/>
+        <result column="vod_blurb" property="vod_blurb" javaType="string"/>
+        <result column="vod_tv" property="vod_tv" javaType="string"/>
+        <result column="vod_weekday" property="vod_weekday" javaType="string"/>
+        <result column="vod_total" property="vod_total" javaType="string"/>
+        <result column="vod_isend" property="vod_isend" javaType="string"/>
+        <result column="vod_plot_name" property="vod_plot_name" javaType="string"/>
+    </resultMap>
+
+    <select id="findVod" resultMap="vodRow">
+        SELECT vod_id, type_id, vod_name, vod_lock, vod_play_from, vod_play_url, vod_play_server, vod_play_note, vod_down_from, vod_down_url, vod_down_server, vod_down_note, vod_serial, vod_remarks, vod_director, vod_actor, vod_year, vod_area, vod_lang, vod_pic, vod_content, vod_tag, vod_sub, vod_class, vod_writer, vod_version, vod_state, vod_blurb, vod_tv, vod_weekday, vod_total, vod_isend, vod_plot_name
+        FROM mac_vod
+        WHERE vod_name = #{name}
+        <if test="typeId != null">AND type_id = #{typeId}</if>
+        <if test="year != null">AND vod_year = #{year}</if>
+        <if test="area != null">AND vod_area = #{area}</if>
+        <if test="lang != null">AND vod_lang = #{lang}</if>
+        <choose>
+            <when test="blend">
+                AND (vod_director = #{director} OR
+                <choose>
+                    <when test="blendIds != null and !blendIds.isEmpty()">
+                        vod_id IN <foreach collection="blendIds" item="x" open="(" separator="," close=")">#{x}</foreach>
+                    </when>
+                    <otherwise>
+                        <foreach collection="actorLikes" item="x" open="(" separator=" OR " close=")">vod_actor LIKE #{x}</foreach>
+                    </otherwise>
+                </choose>)
+            </when>
+            <otherwise>
+                <if test="actorLikes != null">
+                    AND <foreach collection="actorLikes" item="x" open="(" separator=" OR " close=")">vod_actor LIKE #{x}</foreach>
+                </if>
+                <if test="director != null">AND vod_director = #{director}</if>
+            </otherwise>
+        </choose>
+        LIMIT 1
+    </select>
+</mapper>

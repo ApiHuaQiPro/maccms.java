@@ -1,0 +1,264 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- B19 采集入库的写入（27 文档第 4 节；WriteRegistry 登记 collect 的 mac_vod 新增与修改）。列清单与 install.sql 相同（同 B13 的 insertVod/updateVod），
+     只写参数里有的列（旧 insert/update 按表结构过滤，fields_strict=false）。 -->
+<mapper namespace="com.maccms.backend.collect.infrastructure.CollectIngestWriteMapper">
+
+    <insert id="insertVod" useGeneratedKeys="true" keyProperty="id" keyColumn="vod_id">
+        INSERT INTO mac_vod (<trim suffixOverrides=",">
+            <if test="c.containsKey('vod_id')">vod_id,</if>
+            <if test="c.containsKey('type_id')">type_id,</if>
+            <if test="c.containsKey('type_id_1')">type_id_1,</if>
+            <if test="c.containsKey('group_id')">group_id,</if>
+            <if test="c.containsKey('vod_name')">vod_name,</if>
+            <if test="c.containsKey('vod_sub')">vod_sub,</if>
+            <if test="c.containsKey('vod_en')">vod_en,</if>
+            <if test="c.containsKey('vod_status')">vod_status,</if>
+            <if test="c.containsKey('vod_letter')">vod_letter,</if>
+            <if test="c.containsKey('vod_color')">vod_color,</if>
+            <if test="c.containsKey('vod_tag')">vod_tag,</if>
+            <if test="c.containsKey('vod_class')">vod_class,</if>
+            <if test="c.containsKey('vod_pic')">vod_pic,</if>
+            <if test="c.containsKey('vod_pic_thumb')">vod_pic_thumb,</if>
+            <if test="c.containsKey('vod_pic_slide')">vod_pic_slide,</if>
+            <if test="c.containsKey('vod_pic_screenshot')">vod_pic_screenshot,</if>
+            <if test="c.containsKey('vod_actor')">vod_actor,</if>
+            <if test="c.containsKey('vod_director')">vod_director,</if>
+            <if test="c.containsKey('vod_writer')">vod_writer,</if>
+            <if test="c.containsKey('vod_behind')">vod_behind,</if>
+            <if test="c.containsKey('vod_blurb')">vod_blurb,</if>
+            <if test="c.containsKey('vod_remarks')">vod_remarks,</if>
+            <if test="c.containsKey('vod_pubdate')">vod_pubdate,</if>
+            <if test="c.containsKey('vod_total')">vod_total,</if>
+            <if test="c.containsKey('vod_serial')">vod_serial,</if>
+            <if test="c.containsKey('vod_tv')">vod_tv,</if>
+            <if test="c.containsKey('vod_weekday')">vod_weekday,</if>
+            <if test="c.containsKey('vod_area')">vod_area,</if>
+            <if test="c.containsKey('vod_lang')">vod_lang,</if>
+            <if test="c.containsKey('vod_year')">vod_year,</if>
+            <if test="c.containsKey('vod_version')">vod_version,</if>
+            <if test="c.containsKey('vod_state')">vod_state,</if>
+            <if test="c.containsKey('vod_author')">vod_author,</if>
+            <if test="c.containsKey('vod_jumpurl')">vod_jumpurl,</if>
+            <if test="c.containsKey('vod_tpl')">vod_tpl,</if>
+            <if test="c.containsKey('vod_tpl_play')">vod_tpl_play,</if>
+            <if test="c.containsKey('vod_tpl_down')">vod_tpl_down,</if>
+            <if test="c.containsKey('vod_isend')">vod_isend,</if>
+            <if test="c.containsKey('vod_lock')">vod_lock,</if>
+            <if test="c.containsKey('vod_level')">vod_level,</if>
+            <if test="c.containsKey('vod_copyright')">vod_copyright,</if>
+            <if test="c.containsKey('vod_points')">vod_points,</if>
+            <if test="c.containsKey('vod_points_play')">vod_points_play,</if>
+            <if test="c.containsKey('vod_points_down')">vod_points_down,</if>
+            <if test="c.containsKey('vod_hits')">vod_hits,</if>
+            <if test="c.containsKey('vod_hits_day')">vod_hits_day,</if>
+            <if test="c.containsKey('vod_hits_week')">vod_hits_week,</if>
+            <if test="c.containsKey('vod_hits_month')">vod_hits_month,</if>
+            <if test="c.containsKey('vod_duration')">vod_duration,</if>
+            <if test="c.containsKey('vod_up')">vod_up,</if>
+            <if test="c.containsKey('vod_down')">vod_down,</if>
+            <if test="c.containsKey('vod_score')">vod_score,</if>
+            <if test="c.containsKey('vod_score_all')">vod_score_all,</if>
+            <if test="c.containsKey('vod_score_num')">vod_score_num,</if>
+            <if test="c.containsKey('vod_time')">vod_time,</if>
+            <if test="c.containsKey('vod_time_add')">vod_time_add,</if>
+            <if test="c.containsKey('vod_time_hits')">vod_time_hits,</if>
+            <if test="c.containsKey('vod_time_make')">vod_time_make,</if>
+            <if test="c.containsKey('vod_trysee')">vod_trysee,</if>
+            <if test="c.containsKey('vod_douban_id')">vod_douban_id,</if>
+            <if test="c.containsKey('vod_douban_score')">vod_douban_score,</if>
+            <if test="c.containsKey('vod_reurl')">vod_reurl,</if>
+            <if test="c.containsKey('vod_rel_vod')">vod_rel_vod,</if>
+            <if test="c.containsKey('vod_rel_art')">vod_rel_art,</if>
+            <if test="c.containsKey('vod_pwd')">vod_pwd,</if>
+            <if test="c.containsKey('vod_pwd_url')">vod_pwd_url,</if>
+            <if test="c.containsKey('vod_pwd_play')">vod_pwd_play,</if>
+            <if test="c.containsKey('vod_pwd_play_url')">vod_pwd_play_url,</if>
+            <if test="c.containsKey('vod_pwd_down')">vod_pwd_down,</if>
+            <if test="c.containsKey('vod_pwd_down_url')">vod_pwd_down_url,</if>
+            <if test="c.containsKey('vod_content')">vod_content,</if>
+            <if test="c.containsKey('vod_play_from')">vod_play_from,</if>
+            <if test="c.containsKey('vod_play_server')">vod_play_server,</if>
+            <if test="c.containsKey('vod_play_note')">vod_play_note,</if>
+            <if test="c.containsKey('vod_play_url')">vod_play_url,</if>
+            <if test="c.containsKey('vod_down_from')">vod_down_from,</if>
+            <if test="c.containsKey('vod_down_server')">vod_down_server,</if>
+            <if test="c.containsKey('vod_down_note')">vod_down_note,</if>
+            <if test="c.containsKey('vod_down_url')">vod_down_url,</if>
+            <if test="c.containsKey('vod_plot')">vod_plot,</if>
+            <if test="c.containsKey('vod_plot_name')">vod_plot_name,</if>
+            <if test="c.containsKey('vod_plot_detail')">vod_plot_detail,</if>
+        </trim>) VALUES (<trim suffixOverrides=",">
+            <if test="c.containsKey('vod_id')">#{c.vod_id},</if>
+            <if test="c.containsKey('type_id')">#{c.type_id},</if>
+            <if test="c.containsKey('type_id_1')">#{c.type_id_1},</if>
+            <if test="c.containsKey('group_id')">#{c.group_id},</if>
+            <if test="c.containsKey('vod_name')">#{c.vod_name},</if>
+            <if test="c.containsKey('vod_sub')">#{c.vod_sub},</if>
+            <if test="c.containsKey('vod_en')">#{c.vod_en},</if>
+            <if test="c.containsKey('vod_status')">#{c.vod_status},</if>
+            <if test="c.containsKey('vod_letter')">#{c.vod_letter},</if>
+            <if test="c.containsKey('vod_color')">#{c.vod_color},</if>
+            <if test="c.containsKey('vod_tag')">#{c.vod_tag},</if>
+            <if test="c.containsKey('vod_class')">#{c.vod_class},</if>
+            <if test="c.containsKey('vod_pic')">#{c.vod_pic},</if>
+            <if test="c.containsKey('vod_pic_thumb')">#{c.vod_pic_thumb},</if>
+            <if test="c.containsKey('vod_pic_slide')">#{c.vod_pic_slide},</if>
+            <if test="c.containsKey('vod_pic_screenshot')">#{c.vod_pic_screenshot},</if>
+            <if test="c.containsKey('vod_actor')">#{c.vod_actor},</if>
+            <if test="c.containsKey('vod_director')">#{c.vod_director},</if>
+            <if test="c.containsKey('vod_writer')">#{c.vod_writer},</if>
+            <if test="c.containsKey('vod_behind')">#{c.vod_behind},</if>
+            <if test="c.containsKey('vod_blurb')">#{c.vod_blurb},</if>
+            <if test="c.containsKey('vod_remarks')">#{c.vod_remarks},</if>
+            <if test="c.containsKey('vod_pubdate')">#{c.vod_pubdate},</if>
+            <if test="c.containsKey('vod_total')">#{c.vod_total},</if>
+            <if test="c.containsKey('vod_serial')">#{c.vod_serial},</if>
+            <if test="c.containsKey('vod_tv')">#{c.vod_tv},</if>
+            <if test="c.containsKey('vod_weekday')">#{c.vod_weekday},</if>
+            <if test="c.containsKey('vod_area')">#{c.vod_area},</if>
+            <if test="c.containsKey('vod_lang')">#{c.vod_lang},</if>
+            <if test="c.containsKey('vod_year')">#{c.vod_year},</if>
+            <if test="c.containsKey('vod_version')">#{c.vod_version},</if>
+            <if test="c.containsKey('vod_state')">#{c.vod_state},</if>
+            <if test="c.containsKey('vod_author')">#{c.vod_author},</if>
+            <if test="c.containsKey('vod_jumpurl')">#{c.vod_jumpurl},</if>
+            <if test="c.containsKey('vod_tpl')">#{c.vod_tpl},</if>
+            <if test="c.containsKey('vod_tpl_play')">#{c.vod_tpl_play},</if>
+            <if test="c.containsKey('vod_tpl_down')">#{c.vod_tpl_down},</if>
+            <if test="c.containsKey('vod_isend')">#{c.vod_isend},</if>
+            <if test="c.containsKey('vod_lock')">#{c.vod_lock},</if>
+            <if test="c.containsKey('vod_level')">#{c.vod_level},</if>
+            <if test="c.containsKey('vod_copyright')">#{c.vod_copyright},</if>
+            <if test="c.containsKey('vod_points')">#{c.vod_points},</if>
+            <if test="c.containsKey('vod_points_play')">#{c.vod_points_play},</if>
+            <if test="c.containsKey('vod_points_down')">#{c.vod_points_down},</if>
+            <if test="c.containsKey('vod_hits')">#{c.vod_hits},</if>
+            <if test="c.containsKey('vod_hits_day')">#{c.vod_hits_day},</if>
+            <if test="c.containsKey('vod_hits_week')">#{c.vod_hits_week},</if>
+            <if test="c.containsKey('vod_hits_month')">#{c.vod_hits_month},</if>
+            <if test="c.containsKey('vod_duration')">#{c.vod_duration},</if>
+            <if test="c.containsKey('vod_up')">#{c.vod_up},</if>
+            <if test="c.containsKey('vod_down')">#{c.vod_down},</if>
+            <if test="c.containsKey('vod_score')">#{c.vod_score},</if>
+            <if test="c.containsKey('vod_score_all')">#{c.vod_score_all},</if>
+            <if test="c.containsKey('vod_score_num')">#{c.vod_score_num},</if>
+            <if test="c.containsKey('vod_time')">#{c.vod_time},</if>
+            <if test="c.containsKey('vod_time_add')">#{c.vod_time_add},</if>
+            <if test="c.containsKey('vod_time_hits')">#{c.vod_time_hits},</if>
+            <if test="c.containsKey('vod_time_make')">#{c.vod_time_make},</if>
+            <if test="c.containsKey('vod_trysee')">#{c.vod_trysee},</if>
+            <if test="c.containsKey('vod_douban_id')">#{c.vod_douban_id},</if>
+            <if test="c.containsKey('vod_douban_score')">#{c.vod_douban_score},</if>
+            <if test="c.containsKey('vod_reurl')">#{c.vod_reurl},</if>
+            <if test="c.containsKey('vod_rel_vod')">#{c.vod_rel_vod},</if>
+            <if test="c.containsKey('vod_rel_art')">#{c.vod_rel_art},</if>
+            <if test="c.containsKey('vod_pwd')">#{c.vod_pwd},</if>
+            <if test="c.containsKey('vod_pwd_url')">#{c.vod_pwd_url},</if>
+            <if test="c.containsKey('vod_pwd_play')">#{c.vod_pwd_play},</if>
+            <if test="c.containsKey('vod_pwd_play_url')">#{c.vod_pwd_play_url},</if>
+            <if test="c.containsKey('vod_pwd_down')">#{c.vod_pwd_down},</if>
+            <if test="c.containsKey('vod_pwd_down_url')">#{c.vod_pwd_down_url},</if>
+            <if test="c.containsKey('vod_content')">#{c.vod_content},</if>
+            <if test="c.containsKey('vod_play_from')">#{c.vod_play_from},</if>
+            <if test="c.containsKey('vod_play_server')">#{c.vod_play_server},</if>
+            <if test="c.containsKey('vod_play_note')">#{c.vod_play_note},</if>
+            <if test="c.containsKey('vod_play_url')">#{c.vod_play_url},</if>
+            <if test="c.containsKey('vod_down_from')">#{c.vod_down_from},</if>
+            <if test="c.containsKey('vod_down_server')">#{c.vod_down_server},</if>
+            <if test="c.containsKey('vod_down_note')">#{c.vod_down_note},</if>
+            <if test="c.containsKey('vod_down_url')">#{c.vod_down_url},</if>
+            <if test="c.containsKey('vod_plot')">#{c.vod_plot},</if>
+            <if test="c.containsKey('vod_plot_name')">#{c.vod_plot_name},</if>
+            <if test="c.containsKey('vod_plot_detail')">#{c.vod_plot_detail},</if>
+        </trim>)
+    </insert>
+
+    <update id="updateVod">
+        UPDATE mac_vod SET <trim suffixOverrides=",">
+            <if test="c.containsKey('vod_id')">vod_id = #{c.vod_id},</if>
+            <if test="c.containsKey('type_id')">type_id = #{c.type_id},</if>
+            <if test="c.containsKey('type_id_1')">type_id_1 = #{c.type_id_1},</if>
+            <if test="c.containsKey('group_id')">group_id = #{c.group_id},</if>
+            <if test="c.containsKey('vod_name')">vod_name = #{c.vod_name},</if>
+            <if test="c.containsKey('vod_sub')">vod_sub = #{c.vod_sub},</if>
+            <if test="c.containsKey('vod_en')">vod_en = #{c.vod_en},</if>
+            <if test="c.containsKey('vod_status')">vod_status = #{c.vod_status},</if>
+            <if test="c.containsKey('vod_letter')">vod_letter = #{c.vod_letter},</if>
+            <if test="c.containsKey('vod_color')">vod_color = #{c.vod_color},</if>
+            <if test="c.containsKey('vod_tag')">vod_tag = #{c.vod_tag},</if>
+            <if test="c.containsKey('vod_class')">vod_class = #{c.vod_class},</if>
+            <if test="c.containsKey('vod_pic')">vod_pic = #{c.vod_pic},</if>
+            <if test="c.containsKey('vod_pic_thumb')">vod_pic_thumb = #{c.vod_pic_thumb},</if>
+            <if test="c.containsKey('vod_pic_slide')">vod_pic_slide = #{c.vod_pic_slide},</if>
+            <if test="c.containsKey('vod_pic_screenshot')">vod_pic_screenshot = #{c.vod_pic_screenshot},</if>
+            <if test="c.containsKey('vod_actor')">vod_actor = #{c.vod_actor},</if>
+            <if test="c.containsKey('vod_director')">vod_director = #{c.vod_director},</if>
+            <if test="c.containsKey('vod_writer')">vod_writer = #{c.vod_writer},</if>
+            <if test="c.containsKey('vod_behind')">vod_behind = #{c.vod_behind},</if>
+            <if test="c.containsKey('vod_blurb')">vod_blurb = #{c.vod_blurb},</if>
+            <if test="c.containsKey('vod_remarks')">vod_remarks = #{c.vod_remarks},</if>
+            <if test="c.containsKey('vod_pubdate')">vod_pubdate = #{c.vod_pubdate},</if>
+            <if test="c.containsKey('vod_total')">vod_total = #{c.vod_total},</if>
+            <if test="c.containsKey('vod_serial')">vod_serial = #{c.vod_serial},</if>
+            <if test="c.containsKey('vod_tv')">vod_tv = #{c.vod_tv},</if>
+            <if test="c.containsKey('vod_weekday')">vod_weekday = #{c.vod_weekday},</if>
+            <if test="c.containsKey('vod_area')">vod_area = #{c.vod_area},</if>
+            <if test="c.containsKey('vod_lang')">vod_lang = #{c.vod_lang},</if>
+            <if test="c.containsKey('vod_year')">vod_year = #{c.vod_year},</if>
+            <if test="c.containsKey('vod_version')">vod_version = #{c.vod_version},</if>
+            <if test="c.containsKey('vod_state')">vod_state = #{c.vod_state},</if>
+            <if test="c.containsKey('vod_author')">vod_author = #{c.vod_author},</if>
+            <if test="c.containsKey('vod_jumpurl')">vod_jumpurl = #{c.vod_jumpurl},</if>
+            <if test="c.containsKey('vod_tpl')">vod_tpl = #{c.vod_tpl},</if>
+            <if test="c.containsKey('vod_tpl_play')">vod_tpl_play = #{c.vod_tpl_play},</if>
+            <if test="c.containsKey('vod_tpl_down')">vod_tpl_down = #{c.vod_tpl_down},</if>
+            <if test="c.containsKey('vod_isend')">vod_isend = #{c.vod_isend},</if>
+            <if test="c.containsKey('vod_lock')">vod_lock = #{c.vod_lock},</if>
+            <if test="c.containsKey('vod_level')">vod_level = #{c.vod_level},</if>
+            <if test="c.containsKey('vod_copyright')">vod_copyright = #{c.vod_copyright},</if>
+            <if test="c.containsKey('vod_points')">vod_points = #{c.vod_points},</if>
+            <if test="c.containsKey('vod_points_play')">vod_points_play = #{c.vod_points_play},</if>
+            <if test="c.containsKey('vod_points_down')">vod_points_down = #{c.vod_points_down},</if>
+            <if test="c.containsKey('vod_hits')">vod_hits = #{c.vod_hits},</if>
+            <if test="c.containsKey('vod_hits_day')">vod_hits_day = #{c.vod_hits_day},</if>
+            <if test="c.containsKey('vod_hits_week')">vod_hits_week = #{c.vod_hits_week},</if>
+            <if test="c.containsKey('vod_hits_month')">vod_hits_month = #{c.vod_hits_month},</if>
+            <if test="c.containsKey('vod_duration')">vod_duration = #{c.vod_duration},</if>
+            <if test="c.containsKey('vod_up')">vod_up = #{c.vod_up},</if>
+            <if test="c.containsKey('vod_down')">vod_down = #{c.vod_down},</if>
+            <if test="c.containsKey('vod_score')">vod_score = #{c.vod_score},</if>
+            <if test="c.containsKey('vod_score_all')">vod_score_all = #{c.vod_score_all},</if>
+            <if test="c.containsKey('vod_score_num')">vod_score_num = #{c.vod_score_num},</if>
+            <if test="c.containsKey('vod_time')">vod_time = #{c.vod_time},</if>
+            <if test="c.containsKey('vod_time_add')">vod_time_add = #{c.vod_time_add},</if>
+            <if test="c.containsKey('vod_time_hits')">vod_time_hits = #{c.vod_time_hits},</if>
+            <if test="c.containsKey('vod_time_make')">vod_time_make = #{c.vod_time_make},</if>
+            <if test="c.containsKey('vod_trysee')">vod_trysee = #{c.vod_trysee},</if>
+            <if test="c.containsKey('vod_douban_id')">vod_douban_id = #{c.vod_douban_id},</if>
+            <if test="c.containsKey('vod_douban_score')">vod_douban_score = #{c.vod_douban_score},</if>
+            <if test="c.containsKey('vod_reurl')">vod_reurl = #{c.vod_reurl},</if>
+            <if test="c.containsKey('vod_rel_vod')">vod_rel_vod = #{c.vod_rel_vod},</if>
+            <if test="c.containsKey('vod_rel_art')">vod_rel_art = #{c.vod_rel_art},</if>
+            <if test="c.containsKey('vod_pwd')">vod_pwd = #{c.vod_pwd},</if>
+            <if test="c.containsKey('vod_pwd_url')">vod_pwd_url = #{c.vod_pwd_url},</if>
+            <if test="c.containsKey('vod_pwd_play')">vod_pwd_play = #{c.vod_pwd_play},</if>
+            <if test="c.containsKey('vod_pwd_play_url')">vod_pwd_play_url = #{c.vod_pwd_play_url},</if>
+            <if test="c.containsKey('vod_pwd_down')">vod_pwd_down = #{c.vod_pwd_down},</if>
+            <if test="c.containsKey('vod_pwd_down_url')">vod_pwd_down_url = #{c.vod_pwd_down_url},</if>
+            <if test="c.containsKey('vod_content')">vod_content = #{c.vod_content},</if>
+            <if test="c.containsKey('vod_play_from')">vod_play_from = #{c.vod_play_from},</if>
+            <if test="c.containsKey('vod_play_server')">vod_play_server = #{c.vod_play_server},</if>
+            <if test="c.containsKey('vod_play_note')">vod_play_note = #{c.vod_play_note},</if>
+            <if test="c.containsKey('vod_play_url')">vod_play_url = #{c.vod_play_url},</if>
+            <if test="c.containsKey('vod_down_from')">vod_down_from = #{c.vod_down_from},</if>
+            <if test="c.containsKey('vod_down_server')">vod_down_server = #{c.vod_down_server},</if>
+            <if test="c.containsKey('vod_down_note')">vod_down_note = #{c.vod_down_note},</if>
+            <if test="c.containsKey('vod_down_url')">vod_down_url = #{c.vod_down_url},</if>
+            <if test="c.containsKey('vod_plot')">vod_plot = #{c.vod_plot},</if>
+            <if test="c.containsKey('vod_plot_name')">vod_plot_name = #{c.vod_plot_name},</if>
+            <if test="c.containsKey('vod_plot_detail')">vod_plot_detail = #{c.vod_plot_detail},</if>
+        </trim>
+        WHERE vod_id = #{id}
+    </update>
+</mapper>
