@@ -57,6 +57,12 @@
 - `admin` 可用的 site 类型加 `site.application.PhpJson`（`ModuleBoundaryTest.ADMIN_SITE`）。
 - `sitetemplate` 模块（前台模板在线编辑，D4，24 文档第 7 节）：`application`（`SiteTemplateService` 实现 `site.application.SiteTemplateSource`，安全过滤 `JteSecurityFilter`，装配 `SiteTemplateConfiguration`）→ `infrastructure`（`JteOnlineCompiler`、`JteClassPath`、`OnlineHtmlPolicy`）。运行时编译模板只能出现在 `sitetemplate.infrastructure`（`SiteGuardrailsTest.runtimeTemplateCompilationOnlyInSiteTemplateInfrastructure`）；jte 编译器为此进入编译作用域。`site` 仍不编译模板、不读模板文件，只经 `SiteTemplateSource` 取当前引擎（没有或为 null 时用内置的预编译模板）；第 4 节的模板规则对外部模板目录同样适用（编译时用同一套站点 HTML 策略，`<script>`/`<iframe>` 只限内置版本本身含有它们的模板）。
 - 数据库工具（24 文档第 9 节）只做只读查询与单表 DML：只读 Mapper `mapper/admin/DatabaseToolMapper.xml` 的 SHOW 语句与 `${table}`/`${columns}` 是 `ReadOnlyGuardrailsTest`、`SqlEntryGuardTest` 登记的例外；备份文件里的 DDL 文本是 `SchemaGuardTest` 登记的唯一例外（只写进文件、从不执行）；还原、执行 SQL、优化、修复在入口拒绝。
+
+### 2.5 B17 采集配置管理
+
+- 采集源与自定义规则节点的后台读写在 `collect` 模块（`25-b17-collect-config.md` 第 2 节）：`collect.application` 的 `CollectAdminServices`（只供 admin 调用，`@ConditionalOnWriteEnabled`）→ `collect.infrastructure` 的只读 `CollectAdminMapper` 与写 `CollectAdminWriteMapper`/`CollectAdminWrites`；取值规则复用 content 的 `AdminTable`（`COLLECT`、`CJ_NODE`）与 `AdminRowValues`。只读查询不取 `collect_appid`、`collect_appkey`（`ReadOnlyGuardrailsTest` 锁定）。
+- 分类绑定的键与取值只用 `collect.application.CollectBindings`（`md5(采集地址) . '_' . 远程分类编号`，`intval` 大于 0 为已绑定），B18/B19 沿用；`application/extra/bind.php` 只经 `CollectBindService` → `LegacyConfigService.update` 写回。
+- 采集相关批次不发起任何出站请求（"测试连接"类入口返回固定提示，E01 只做本地文件源）。
 ### 3. 数据库
 
 - **禁止 DDL**（路线图第 1.2 节"零结构变更"，B07 起取代原"DDL 独立评审"）：不建表、不加/改/删列与索引、不转引擎或字符集，不建触发器、存储过程、视图、事件；不执行表维护语句与账号/权限语句；应用代码与资源中不得有 `schema.sql`/`data.sql`、Flyway/Liquibase 或任何初始化器。数据库账号由数据库管理员在获批部署时创建，代码不建、不改账号。没有结构迁移，旧数据不需要迁移；回滚只用 DML（`12-write-infrastructure.md` 第 6 节）。

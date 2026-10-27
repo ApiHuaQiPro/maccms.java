@@ -280,7 +280,7 @@ B02 起每个输出页面的批次（B02、B05、B06、B09～B15、B24～B26）�
 | B14 | 已合并（MACC-38，main `769bfd6`；`23-b14-admin-member.md`；第二轮候选 `32e3878` 经同作者复核与前端独立只读复核后合入，主线 `verify -Pmysql-it` 2667/92 全过；回滚点 `d7bddf8`） | 后台会员与财务管理 | C + K | B10、B12 | — | 是 | 否 |
 | B15 | 已合并（MACC-39，main `1a0ac63`；`24-b15-admin-system.md`；候选 `449fc8a` 经前端独立只读验收后合入，主线 `verify` 2696/0、`-Pmysql-it` 96 个 IT 0 失败（跳过 1 个原有项）；回滚点 `2d2b7e8`；D-B15-18 已决：配置写回后，前台启动时构建的设置重启生效，见该文档第 12 节） | 后台系统配置与运维（配置文件写回、模板在线编辑、本地插件） | C + K | B12、B02、B05 | — | 是（文件 + 库） | 否 |
 | B16 | 待建 | 静态生成与定时任务（D2 ③） | C | B05、B06、B15 | — | 是（文件） | 否 |
-| B17 | 待建 | 采集配置管理（先只读，再编辑） | C + K | B13、B15 | — | 是 | 否 |
+| B17 | 交付待验收（MACC-41，分支 `agent/claude/macc-41`；`25-b17-collect-config.md`；不发起任何请求，`collect/test` 返回固定提示） | 采集配置管理（先只读，再编辑） | C + K | B13、B15 | — | 是 | 否 |
 | B18 | 待建 | 采集解析与预览（本地文件源） | C + K | B17 | — | 否（只写本地缓存） | 否 |
 | B19 | 待建 | 采集入库与 Receive 接口 | C | B18、B13、B11 | — | 是 | 否 |
 | B20 | 待建 | 自定义规则采集（本地 HTML 源） | C + K | B19 | — | 是 | 否 |
@@ -424,7 +424,7 @@ graph LR
 | `mac_vod_search` | B11、B19；后台"清理缓存"删除过期行由 B12 写入（21 文档第 4.6 节） |
 | `mac_admin` | B12 |
 | `mac_annex` | B13 |
-| `mac_collect`、`mac_cj_node` | B17；`mac_cj_content`、`mac_cj_history` 在 B20 |
+| `mac_collect`、`mac_cj_node` | B17；`mac_cj_content`、`mac_cj_history` 在 B20（B17 只在删除规则节点时照旧连带删除，25 文档第 6 节） |
 | `application/extra/*.php`、`route.php`、`static/js/playerconfig.js` | B15（`bind.php` 在 B17，`timming.php` 的 runtime 在 B16，安装时的 `maccms.php` 在 B22） |
 | 模板目录中的模板文件与广告文件、`addons/` 插件目录与 `application/extra/addons.php` | B15；插件市场安装/升级 B29 |
 | 数据库工具"批量替换"：管理员手工对任一 `mac_*` 表的一列做 `REPLACE`（单表 UPDATE，表与列按白名单） | B15（`mac_admin` 沿用 B12 的登记；24 文档第 9.4 节） |

@@ -41,7 +41,7 @@
 
         //监听折叠
         element.on('collapse(lay_state)', function(data){
-            //layer.msg('展开状态：'+ data.show);
+            // layer.msg('展开状态：'+ data.show);
         });
     });
 
