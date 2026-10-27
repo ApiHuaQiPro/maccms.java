@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- B17 采集配置管理的写入（25 文档第 6 节；WriteRegistry 登记 collect 的 mac_collect、mac_cj_node 增删改与 mac_cj_content、mac_cj_history 删除）。 -->
+<mapper namespace="com.maccms.backend.collect.infrastructure.CollectAdminWriteMapper">
+
+    <!-- mac_collect：新增与按主键整行覆盖（旧 Collect::saveData，只写参数里有的列；列清单与 install.sql 相同，AdminTableSchemaTest 锁定） -->
+    <insert id="insertCollect" useGeneratedKeys="true" keyProperty="id" keyColumn="collect_id">
+        INSERT INTO mac_collect (<trim suffixOverrides=",">
+            <if test="c.containsKey('collect_id')">collect_id,</if>
+            <if test="c.containsKey('collect_name')">collect_name,</if>
+            <if test="c.containsKey('collect_url')">collect_url,</if>
+            <if test="c.containsKey('collect_type')">collect_type,</if>
+            <if test="c.containsKey('collect_mid')">collect_mid,</if>
+            <if test="c.containsKey('collect_appid')">collect_appid,</if>
+            <if test="c.containsKey('collect_appkey')">collect_appkey,</if>
+            <if test="c.containsKey('collect_param')">collect_param,</if>
+            <if test="c.containsKey('collect_filter')">collect_filter,</if>
+            <if test="c.containsKey('collect_filter_from')">collect_filter_from,</if>
+            <if test="c.containsKey('collect_opt')">collect_opt,</if>
+            <if test="c.containsKey('collect_sync_pic_opt')">collect_sync_pic_opt,</if>
+        </trim>) VALUES (<trim suffixOverrides=",">
+            <if test="c.containsKey('collect_id')">#{c.collect_id},</if>
+            <if test="c.containsKey('collect_name')">#{c.collect_name},</if>
+            <if test="c.containsKey('collect_url')">#{c.collect_url},</if>
+            <if test="c.containsKey('collect_type')">#{c.collect_type},</if>
+            <if test="c.containsKey('collect_mid')">#{c.collect_mid},</if>
+            <if test="c.containsKey('collect_appid')">#{c.collect_appid},</if>
+            <if test="c.containsKey('collect_appkey')">#{c.collect_appkey},</if>
+            <if test="c.containsKey('collect_param')">#{c.collect_param},</if>
+            <if test="c.containsKey('collect_filter')">#{c.collect_filter},</if>
+            <if test="c.containsKey('collect_filter_from')">#{c.collect_filter_from},</if>
+            <if test="c.containsKey('collect_opt')">#{c.collect_opt},</if>
+            <if test="c.containsKey('collect_sync_pic_opt')">#{c.collect_sync_pic_opt},</if>
+        </trim>)
+    </insert>
+
+    <update id="updateCollect">
+        UPDATE mac_collect SET <trim suffixOverrides=",">
+            <if test="c.containsKey('collect_id')">collect_id = #{c.collect_id},</if>
+            <if test="c.containsKey('collect_name')">collect_name = #{c.collect_name},</if>
+            <if test="c.containsKey('collect_url')">collect_url = #{c.collect_url},</if>
+            <if test="c.containsKey('collect_type')">collect_type = #{c.collect_type},</if>
+            <if test="c.containsKey('collect_mid')">collect_mid = #{c.collect_mid},</if>
+            <if test="c.containsKey('collect_appid')">collect_appid = #{c.collect_appid},</if>
+            <if test="c.containsKey('collect_appkey')">collect_appkey = #{c.collect_appkey},</if>
+            <if test="c.containsKey('collect_param')">collect_param = #{c.collect_param},</if>
+            <if test="c.containsKey('collect_filter')">collect_filter = #{c.collect_filter},</if>
+            <if test="c.containsKey('collect_filter_from')">collect_filter_from = #{c.collect_filter_from},</if>
+            <if test="c.containsKey('collect_opt')">collect_opt = #{c.collect_opt},</if>
+            <if test="c.containsKey('collect_sync_pic_opt')">collect_sync_pic_opt = #{c.collect_sync_pic_opt},</if>
+        </trim>
+        WHERE collect_id = #{id}
+    </update>
+
+    <!-- 旧 Collect::delData：where collect_id in ids -->
+    <delete id="deleteCollects">
+        DELETE FROM mac_collect WHERE collect_id IN
+        <foreach collection="ids" item="x" open="(" separator="," close=")">#{x}</foreach>
+    </delete>
+
+    <!-- mac_cj_node：新增与按主键整行覆盖（旧 Cj::saveData，同上） -->
+    <insert id="insertCjNode" useGeneratedKeys="true" keyProperty="id" keyColumn="nodeid">
+        INSERT INTO mac_cj_node (<trim suffixOverrides=",">
+            <if test="c.containsKey('nodeid')">nodeid,</if>
+            <if test="c.containsKey('name')">name,</if>
+            <if test="c.containsKey('lastdate')">lastdate,</if>
+            <if test="c.containsKey('sourcecharset')">sourcecharset,</if>
+            <if test="c.containsKey('sourcetype')">sourcetype,</if>
+            <if test="c.containsKey('urlpage')">urlpage,</if>
+            <if test="c.containsKey('pagesize_start')">pagesize_start,</if>
+            <if test="c.containsKey('pagesize_end')">pagesize_end,</if>
+            <if test="c.containsKey('page_base')">page_base,</if>
+            <if test="c.containsKey('par_num')">par_num,</if>
+            <if test="c.containsKey('url_contain')">url_contain,</if>
+            <if test="c.containsKey('url_except')">url_except,</if>
+            <if test="c.containsKey('url_start')">url_start,</if>
+            <if test="c.containsKey('url_end')">url_end,</if>
+            <if test="c.containsKey('title_rule')">title_rule,</if>
+            <if test="c.containsKey('title_html_rule')">title_html_rule,</if>
+            <if test="c.containsKey('type_rule')">type_rule,</if>
+            <if test="c.containsKey('type_html_rule')">type_html_rule,</if>
+            <if test="c.containsKey('content_rule')">content_rule,</if>
+            <if test="c.containsKey('content_html_rule')">content_html_rule,</if>
+            <if test="c.containsKey('content_page_start')">content_page_start,</if>
+            <if test="c.containsKey('content_page_end')">content_page_end,</if>
+            <if test="c.containsKey('content_page_rule')">content_page_rule,</if>
+            <if test="c.containsKey('content_page')">content_page,</if>
+            <if test="c.containsKey('content_nextpage')">content_nextpage,</if>
+            <if test="c.containsKey('down_attachment')">down_attachment,</if>
+            <if test="c.containsKey('watermark')">watermark,</if>
+            <if test="c.containsKey('coll_order')">coll_order,</if>
+            <if test="c.containsKey('customize_config')">customize_config,</if>
+            <if test="c.containsKey('program_config')">program_config,</if>
+            <if test="c.containsKey('mid')">mid,</if>
+        </trim>) VALUES (<trim suffixOverrides=",">
+            <if test="c.containsKey('nodeid')">#{c.nodeid},</if>
+            <if test="c.containsKey('name')">#{c.name},</if>
+            <if test="c.containsKey('lastdate')">#{c.lastdate},</if>
+            <if test="c.containsKey('sourcecharset')">#{c.sourcecharset},</if>
+            <if test="c.containsKey('sourcetype')">#{c.sourcetype},</if>
+            <if test="c.containsKey('urlpage')">#{c.urlpage},</if>
+            <if test="c.containsKey('pagesize_start')">#{c.pagesize_start},</if>
+            <if test="c.containsKey('pagesize_end')">#{c.pagesize_end},</if>
+            <if test="c.containsKey('page_base')">#{c.page_base},</if>
+            <if test="c.containsKey('par_num')">#{c.par_num},</if>
+            <if test="c.containsKey('url_contain')">#{c.url_contain},</if>
+            <if test="c.containsKey('url_except')">#{c.url_except},</if>
+            <if test="c.containsKey('url_start')">#{c.url_start},</if>
+            <if test="c.containsKey('url_end')">#{c.url_end},</if>
+            <if test="c.containsKey('title_rule')">#{c.title_rule},</if>
+            <if test="c.containsKey('title_html_rule')">#{c.title_html_rule},</if>
+            <if test="c.containsKey('type_rule')">#{c.type_rule},</if>
+            <if test="c.containsKey('type_html_rule')">#{c.type_html_rule},</if>
+            <if test="c.containsKey('content_rule')">#{c.content_rule},</if>
+            <if test="c.containsKey('content_html_rule')">#{c.content_html_rule},</if>
+            <if test="c.containsKey('content_page_start')">#{c.content_page_start},</if>
+            <if test="c.containsKey('content_page_end')">#{c.content_page_end},</if>
+            <if test="c.containsKey('content_page_rule')">#{c.content_page_rule},</if>
+            <if test="c.containsKey('content_page')">#{c.content_page},</if>
+            <if test="c.containsKey('content_nextpage')">#{c.content_nextpage},</if>
+            <if test="c.containsKey('down_attachment')">#{c.down_attachment},</if>
+            <if test="c.containsKey('watermark')">#{c.watermark},</if>
+            <if test="c.containsKey('coll_order')">#{c.coll_order},</if>
+            <if test="c.containsKey('customize_config')">#{c.customize_config},</if>
+            <if test="c.containsKey('program_config')">#{c.program_config},</if>
+            <if test="c.containsKey('mid')">#{c.mid},</if>
+        </trim>)
+    </insert>
+
+    <update id="updateCjNode">
+        UPDATE mac_cj_node SET <trim suffixOverrides=",">
+            <if test="c.containsKey('nodeid')">nodeid = #{c.nodeid},</if>
+            <if test="c.containsKey('name')">name = #{c.name},</if>
+            <if test="c.containsKey('lastdate')">lastdate = #{c.lastdate},</if>
+            <if test="c.containsKey('sourcecharset')">sourcecharset = #{c.sourcecharset},</if>
+            <if test="c.containsKey('sourcetype')">sourcetype = #{c.sourcetype},</if>
+            <if test="c.containsKey('urlpage')">urlpage = #{c.urlpage},</if>
+            <if test="c.containsKey('pagesize_start')">pagesize_start = #{c.pagesize_start},</if>
+            <if test="c.containsKey('pagesize_end')">pagesize_end = #{c.pagesize_end},</if>
+            <if test="c.containsKey('page_base')">page_base = #{c.page_base},</if>
+            <if test="c.containsKey('par_num')">par_num = #{c.par_num},</if>
+            <if test="c.containsKey('url_contain')">url_contain = #{c.url_contain},</if>
+            <if test="c.containsKey('url_except')">url_except = #{c.url_except},</if>
+            <if test="c.containsKey('url_start')">url_start = #{c.url_start},</if>
+            <if test="c.containsKey('url_end')">url_end = #{c.url_end},</if>
+            <if test="c.containsKey('title_rule')">title_rule = #{c.title_rule},</if>
+            <if test="c.containsKey('title_html_rule')">title_html_rule = #{c.title_html_rule},</if>
+            <if test="c.containsKey('type_rule')">type_rule = #{c.type_rule},</if>
+            <if test="c.containsKey('type_html_rule')">type_html_rule = #{c.type_html_rule},</if>
+            <if test="c.containsKey('content_rule')">content_rule = #{c.content_rule},</if>
+            <if test="c.containsKey('content_html_rule')">content_html_rule = #{c.content_html_rule},</if>
+            <if test="c.containsKey('content_page_start')">content_page_start = #{c.content_page_start},</if>
+            <if test="c.containsKey('content_page_end')">content_page_end = #{c.content_page_end},</if>
+            <if test="c.containsKey('content_page_rule')">content_page_rule = #{c.content_page_rule},</if>
+            <if test="c.containsKey('content_page')">content_page = #{c.content_page},</if>
+            <if test="c.containsKey('content_nextpage')">content_nextpage = #{c.content_nextpage},</if>
+            <if test="c.containsKey('down_attachment')">down_attachment = #{c.down_attachment},</if>
+            <if test="c.containsKey('watermark')">watermark = #{c.watermark},</if>
+            <if test="c.containsKey('coll_order')">coll_order = #{c.coll_order},</if>
+            <if test="c.containsKey('customize_config')">customize_config = #{c.customize_config},</if>
+            <if test="c.containsKey('program_config')">program_config = #{c.program_config},</if>
+            <if test="c.containsKey('mid')">mid = #{c.mid},</if>
+        </trim>
+        WHERE nodeid = #{id}
+    </update>
+
+    <!-- 旧 Cj::delData（common/model/Cj.php:46-63）：先删节点，再按节点下内容的网址删采集历史（md5），最后删内容 -->
+    <delete id="deleteCjNodes">
+        DELETE FROM mac_cj_node WHERE nodeid IN
+        <foreach collection="ids" item="x" open="(" separator="," close=")">#{x}</foreach>
+    </delete>
+
+    <delete id="deleteCjHistories">
+        DELETE FROM mac_cj_history WHERE md5 IN
+        <foreach collection="ids" item="x" open="(" separator="," close=")">#{x}</foreach>
+    </delete>
+
+    <delete id="deleteCjContentsOfNodes">
+        DELETE FROM mac_cj_content WHERE nodeid IN
+        <foreach collection="ids" item="x" open="(" separator="," close=")">#{x}</foreach>
+    </delete>
+</mapper>

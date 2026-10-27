@@ -298,6 +298,16 @@ public class AdminConfiguration {
         return new AdminSystemActions(endpoint, settings, responses, system, random);
     }
 
+    /**
+     * B17 采集配置管理的动作（25 文档）。采集服务只在可写数据源打开时注册；单元测试的替身上下文里没有时，B17 的动作按"由后续批次实现"处理（同 B13）。
+     */
+    @Bean
+    com.maccms.backend.admin.web.AdminCollectActions adminCollectActions(AdminEndpoint endpoint, AdminSettings settings,
+            AdminResponses responses, ObjectProvider<com.maccms.backend.collect.application.CollectAdminServices> collect,
+            AdminRandom random) {
+        return new com.maccms.backend.admin.web.AdminCollectActions(endpoint, settings, responses, collect.getIfAvailable(), random);
+    }
+
     /** 后台控制器的随机源（验证码、表单令牌）：不注册为 RandomGenerator 类型的 Bean。 */
     @Bean
     AdminRandom adminRandom() {

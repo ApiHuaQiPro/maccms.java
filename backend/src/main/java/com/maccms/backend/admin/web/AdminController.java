@@ -51,7 +51,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
  * 已改密、已删除 → 作废会话、302 到登录页；</li>
  * <li>除 {@code update} 控制器外按 {@code admin_auth} 判定权限（{@link AdminAuthorization}），不通过 → "您没有权限访问此页面"；</li>
  * <li>B12 的动作在这里实现，B13、B14 的动作分别交给 {@link AdminContentActions}、{@link AdminMemberActions}，B15 的交给
- * {@link AdminSystemActions} 等（24 文档第 2 节）；auth.php 中其余动作返回
+ * {@link AdminSystemActions} 等（24 文档第 2 节），B17 的交给 {@link AdminCollectActions}（25 文档第 2 节）；auth.php 中其余动作返回
  * "由后续批次实现"的提示（{@link AdminPermissions#batchOf}）；不存在的动作 404。</li>
  * </ol>
  * POST 请求带 {@code Origin}（没有时看 {@code Referer}）且与 {@code maccms.admin.base-url} 不同源时 403。
@@ -80,6 +80,7 @@ public class AdminController {
     private final AdminAddonActions addons;
     private final AdminDatabaseActions database;
     private final AdminTemplateActions templates;
+    private final AdminCollectActions collect;
     private final com.maccms.backend.admin.application.PlayerAdminService playerCache;
 
     public AdminController(AdminEndpoint endpoint, AdminSessions sessions, AdminSettings settings, AdminLoginService logins,
@@ -89,7 +90,7 @@ public class AdminController {
                            ObjectProvider<AdminSystemActions> system, ObjectProvider<AdminPlayerActions> players,
                            ObjectProvider<com.maccms.backend.admin.application.PlayerAdminService> playerCache,
                            ObjectProvider<AdminAddonActions> addons, ObjectProvider<AdminDatabaseActions> database,
-                           ObjectProvider<AdminTemplateActions> templates) {
+                           ObjectProvider<AdminTemplateActions> templates, ObjectProvider<AdminCollectActions> collect) {
         this.endpoint = endpoint;
         this.sessions = sessions;
         this.settings = settings;
@@ -108,6 +109,7 @@ public class AdminController {
         this.addons = addons.getIfAvailable();
         this.database = database.getIfAvailable();
         this.templates = templates.getIfAvailable();
+        this.collect = collect.getIfAvailable();
     }
 
     /** 一次请求的上下文。 */
@@ -211,6 +213,10 @@ public class AdminController {
                 }
                 if (b15 != null) {
                     yield b15;
+                }
+                ResponseEntity<String> b17 = collect == null ? null : collect.handle(ctx, session);
+                if (b17 != null) {
+                    yield b17;
                 }
                 String batch = AdminPermissions.batchOf(route.controller(), route.action());
                 yield batch == null ? notFound(ajax) : pending(ctx, batch);

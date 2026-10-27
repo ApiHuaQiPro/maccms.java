@@ -246,8 +246,11 @@ class AdminTemplatePolicyTest {
             while (m.find()) {
                 boolean nav = f.toString().replace('\\', '/').contains("/admin/pages/system/")
                         && navigation.getOrDefault(f.getFileName().toString(), java.util.Set.of()).contains(m.group());
+                // B17：自定义规则表单里旧模板自带的采集地址示例文字（"如：http://www.phpcms.cn/help/rumen/(*).html"），不是链接也不是资源
+                boolean example = f.toString().replace('\\', '/').endsWith("/admin/pages/cj/info.jte")
+                        && m.group().equals("http://www.phpcms.cn");
                 // 跳转页的 XHTML 文档类型声明与命名空间是标识符，不是加载的资源
-                if (!m.group().startsWith("http://www.w3.org") && !nav) {
+                if (!m.group().startsWith("http://www.w3.org") && !nav && !example) {
                     hits.add(f + ": " + m.group());
                 }
             }

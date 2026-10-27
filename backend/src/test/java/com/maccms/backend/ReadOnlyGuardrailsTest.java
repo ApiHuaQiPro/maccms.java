@@ -191,6 +191,15 @@ class ReadOnlyGuardrailsTest {
         assertThat(m.find()).as("不应读取" + (m.hitEnd() ? "" : "：" + m.group())).isFalse();
     }
 
+    /** B17 采集配置（CollectAdminMapper.xml，25 文档第 5 节）：采集源不读资源站接口的账号与密钥（旧后台页面也不显示）。 */
+    @Test
+    void collectAdminMapperNeverSelectsResourceSiteCredentials() throws IOException {
+        String sql = sqlOnly(MAPPERS.resolve("collect/CollectAdminMapper.xml"));
+        assertThat(sql).doesNotContain("SELECT *", ".*").contains("FROM mac_collect").contains("FROM mac_cj_node");
+        Matcher m = Pattern.compile("\\b(collect_appid|collect_appkey)\\b").matcher(sql);
+        assertThat(m.find()).as("不应读取" + (m.hitEnd() ? "" : "：" + m.group())).isFalse();
+    }
+
     /**
      * B06 旧协议整行读取（LegacyRowMapper.xml，16 文档第 3.5、3.6 节）：访问密码列只能以 {@code CHAR_LENGTH(...) > 0} 的布尔结果出现
      * （不读出密码值）；其余整行列是旧协议输出的一部分，按 install.sql 列出。
