@@ -163,7 +163,10 @@ class WriteInfrastructureMySqlIT {
                             || p.batch().equals("B12") && (p.module().equals("admin") && p.table().equals("mac_admin")
                             || p.module().equals("content") && p.table().equals("mac_vod_search"))
                             || p.batch().equals("B13") && (p.module().equals("content") || p.module().equals("comment"))
-                            || p.batch().equals("B14") && p.module().equals("member"));
+                            || p.batch().equals("B14") && p.module().equals("member")
+                            // B15 数据库工具"批量替换"：后台对 mac_* 表的单表 UPDATE（24 文档第 9.4 节）
+                            || p.batch().equals("B15") && p.module().equals("admin") && p.operation().name().equals("UPDATE")
+                            && p.table().startsWith("mac_"));
             assertThatThrownBy(() -> db.mapper(DrillWriteMapper.class).hit(1)).isInstanceOf(WriteRejectedException.class)
                     .hasMessageContaining("未登记的写入").hasMessageContaining("mac_vod");
             assertReadPoolRejectsWrites(app);
