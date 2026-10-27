@@ -63,6 +63,12 @@
 - 采集源与自定义规则节点的后台读写在 `collect` 模块（`25-b17-collect-config.md` 第 2 节）：`collect.application` 的 `CollectAdminServices`（只供 admin 调用，`@ConditionalOnWriteEnabled`）→ `collect.infrastructure` 的只读 `CollectAdminMapper` 与写 `CollectAdminWriteMapper`/`CollectAdminWrites`；取值规则复用 content 的 `AdminTable`（`COLLECT`、`CJ_NODE`）与 `AdminRowValues`。只读查询不取 `collect_appid`、`collect_appkey`（`ReadOnlyGuardrailsTest` 锁定）。
 - 分类绑定的键与取值只用 `collect.application.CollectBindings`（`md5(采集地址) . '_' . 远程分类编号`，`intval` 大于 0 为已绑定），B18/B19 沿用；`application/extra/bind.php` 只经 `CollectBindService` → `LegacyConfigService.update` 写回。
 - 采集相关批次不发起任何出站请求（"测试连接"类入口返回固定提示，E01 只做本地文件源）。
+
+### 2.6 B18 本地文件源解析与预览
+
+- Provide 文件（JSON/XML）只经 `collect.application.ProvideParser` 解析（`26-b18-collect-preview.md` 第 3 节）：`parse` 得到与绑定无关、可缓存的 `ProvideDocument`，`bind` 按当时的 `bind.php` 换算出与旧方法返回值同构的数组，`precheck` 给出旧 `{type}_data` 的跳过原因；B19 入库沿用这三步，不另写解析。PHP 语义（`json_decode`、SimpleXML 子集、字符串转换、`empty`）只在 `ProvideJson`、`ProvideXml`、`ProvideValues`，由 PHP 黄金（`ProvideParserGoldenTest`）锁定。
+- XML 一律拒绝 DOCTYPE；新增 XML 入口（B19 的 Receive 等）也只经 `ProvideXml`，不要另建解析器或打开 DTD 支持。
+- 预览缓存只经 `collect.infrastructure.FileProvidePreviewStore`，本地文件只经 `DirectoryProvideSourceFiles`（只认目录下直接存放的普通文件）；B18 的类不引用数据访问与网络类型（`CollectPreviewGuardTest`）。
 ### 3. 数据库
 
 - **禁止 DDL**（路线图第 1.2 节"零结构变更"，B07 起取代原"DDL 独立评审"）：不建表、不加/改/删列与索引、不转引擎或字符集，不建触发器、存储过程、视图、事件；不执行表维护语句与账号/权限语句；应用代码与资源中不得有 `schema.sql`/`data.sql`、Flyway/Liquibase 或任何初始化器。数据库账号由数据库管理员在获批部署时创建，代码不建、不改账号。没有结构迁移，旧数据不需要迁移；回滚只用 DML（`12-write-infrastructure.md` 第 6 节）。
