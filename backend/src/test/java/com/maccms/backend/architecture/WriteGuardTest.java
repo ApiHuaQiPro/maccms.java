@@ -49,36 +49,36 @@ class WriteGuardTest {
     private static final Path TEST_WRITE_MAPPERS = Path.of("src", "test", "resources", "mapper-write");
     private static final Path INSTALL_SQL = Path.of("..", "application", "install", "sql", "install.sql");
 
-    private static final Set<String> CONTENT = Set.of("B11", "B13", "B19", "B20");
+    private static final Set<String> CONTENT = Set.of("B11", "B13", "B15", "B19", "B20");
 
     /** 路线图第 5.3 节"写入方矩阵"：表 → 可以登记写入的批次。改矩阵须先改路线图。 */
     static final Map<String, Set<String>> OWNER_MATRIX = Map.ofEntries(
-            entry("mac_user", Set.of("B09", "B10", "B14", "B24", "B25", "B26")),
-            entry("mac_group", Set.of("B14")),
-            entry("mac_order", Set.of("B10", "B14", "B24")),
-            entry("mac_card", Set.of("B10", "B14")),
-            entry("mac_cash", Set.of("B10", "B14")),
-            entry("mac_plog", Set.of("B10", "B14", "B24")),
-            entry("mac_ulog", Set.of("B10", "B14")),
-            entry("mac_visit", Set.of("B10", "B14")),
-            entry("mac_msg", Set.of("B25")),
-            entry("mac_comment", Set.of("B11", "B13", "B19")),
-            entry("mac_gbook", Set.of("B11", "B13")),
+            entry("mac_user", Set.of("B09", "B10", "B14", "B24", "B25", "B26", "B15")),
+            entry("mac_group", Set.of("B14", "B15")),
+            entry("mac_order", Set.of("B10", "B14", "B24", "B15")),
+            entry("mac_card", Set.of("B10", "B14", "B15")),
+            entry("mac_cash", Set.of("B10", "B14", "B15")),
+            entry("mac_plog", Set.of("B10", "B14", "B24", "B15")),
+            entry("mac_ulog", Set.of("B10", "B14", "B15")),
+            entry("mac_visit", Set.of("B10", "B14", "B15")),
+            entry("mac_msg", Set.of("B25", "B15")),
+            entry("mac_comment", Set.of("B11", "B13", "B19", "B15")),
+            entry("mac_gbook", Set.of("B11", "B13", "B15")),
             entry("mac_vod", CONTENT),
             entry("mac_art", CONTENT),
             entry("mac_topic", CONTENT),
             entry("mac_actor", CONTENT),
             entry("mac_role", CONTENT),
             entry("mac_website", CONTENT),
-            entry("mac_link", Set.of("B13", "B19", "B20")),
-            entry("mac_type", Set.of("B13", "B19", "B20", "B22")),
-            entry("mac_vod_search", Set.of("B11", "B12", "B19")),
-            entry("mac_admin", Set.of("B12", "B22")),
-            entry("mac_annex", Set.of("B13")),
-            entry("mac_collect", Set.of("B17")),
-            entry("mac_cj_node", Set.of("B17")),
-            entry("mac_cj_content", Set.of("B20")),
-            entry("mac_cj_history", Set.of("B20")));
+            entry("mac_link", Set.of("B13", "B19", "B20", "B15")),
+            entry("mac_type", Set.of("B13", "B19", "B20", "B22", "B15")),
+            entry("mac_vod_search", Set.of("B11", "B12", "B19", "B15")),
+            entry("mac_admin", Set.of("B12", "B22", "B15")),
+            entry("mac_annex", Set.of("B13", "B15")),
+            entry("mac_collect", Set.of("B17", "B15")),
+            entry("mac_cj_node", Set.of("B17", "B15")),
+            entry("mac_cj_content", Set.of("B20", "B15")),
+            entry("mac_cj_history", Set.of("B20", "B15")));
 
     /** Java 源码中（含字符串）对 mac_* 表的写语句文本。 */
     private static final Pattern WRITE_SQL_TEXT = Pattern.compile("(?i)\\b("
@@ -133,6 +133,7 @@ class WriteGuardTest {
         // B12（MACC-36）登记后台模块对 mac_admin 的写入与后台"清理缓存"对 mac_vod_search 的删除（21 文档第 5 节）；
         // B13（MACC-37）登记后台内容管理：内容表的新增与删除、友情链接/分类/附件的增删改、评论删除与留言修改删除（22 文档第 6 节）
         // B14（MACC-38）登记后台会员与财务：会员删除、会员组增删改、卡密生成与删除、订单删除、提现审核、推广访问删除（23 文档第 6 节）
+        // B15（MACC-39）登记数据库工具"批量替换"：后台模块对每张 mac_* 表的 UPDATE（mac_admin 沿用 B12；24 文档第 9.4 节）
         assertThat(WriteRegistry.registered().permissions()).extracting(p -> p.module() + " " + p.table() + " "
                 + p.operation() + " " + p.batch())
                 .containsExactly("member mac_user INSERT B09", "member mac_user UPDATE B09",
@@ -155,7 +156,32 @@ class WriteGuardTest {
                         "comment mac_comment DELETE B13", "comment mac_gbook UPDATE B13", "comment mac_gbook DELETE B13",
                         "member mac_user DELETE B14", "member mac_group INSERT B14", "member mac_group UPDATE B14",
                         "member mac_group DELETE B14", "member mac_card INSERT B14", "member mac_card DELETE B14",
-                        "member mac_order DELETE B14", "member mac_cash UPDATE B14", "member mac_visit DELETE B14");
+                        "member mac_order DELETE B14", "member mac_cash UPDATE B14", "member mac_visit DELETE B14",
+                        "admin mac_actor UPDATE B15",
+                        "admin mac_annex UPDATE B15",
+                        "admin mac_art UPDATE B15",
+                        "admin mac_card UPDATE B15",
+                        "admin mac_cash UPDATE B15",
+                        "admin mac_cj_content UPDATE B15",
+                        "admin mac_cj_history UPDATE B15",
+                        "admin mac_cj_node UPDATE B15",
+                        "admin mac_collect UPDATE B15",
+                        "admin mac_comment UPDATE B15",
+                        "admin mac_gbook UPDATE B15",
+                        "admin mac_group UPDATE B15",
+                        "admin mac_link UPDATE B15",
+                        "admin mac_msg UPDATE B15",
+                        "admin mac_order UPDATE B15",
+                        "admin mac_plog UPDATE B15",
+                        "admin mac_role UPDATE B15",
+                        "admin mac_topic UPDATE B15",
+                        "admin mac_type UPDATE B15",
+                        "admin mac_ulog UPDATE B15",
+                        "admin mac_user UPDATE B15",
+                        "admin mac_visit UPDATE B15",
+                        "admin mac_vod UPDATE B15",
+                        "admin mac_website UPDATE B15",
+                        "admin mac_vod_search UPDATE B15");
     }
 
     @Test

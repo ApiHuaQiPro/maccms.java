@@ -143,6 +143,23 @@ public class LegacySiteFiles {
         write(r, relative, content, expectedVersion);
     }
 
+    /**
+     * 以追加方式打开文件写入（不存在时创建，上级目录自动创建；B15 数据库备份逐行写入，同旧版 {@code fopen($f, 'a')}）。调用方负责关闭。
+     */
+    public java.io.OutputStream openAppend(String relative) {
+        LegacySiteRoot r = check(relative, Mode.WRITE);
+        try {
+            java.nio.file.Path p = r.resolve(relative);
+            java.nio.file.Files.createDirectories(p.getParent());
+            return java.nio.file.Files.newOutputStream(p, java.nio.file.StandardOpenOption.CREATE,
+                    java.nio.file.StandardOpenOption.APPEND, java.nio.file.StandardOpenOption.WRITE);
+        } catch (LegacySiteRoot.AccessException e) {
+            throw translate(e);
+        } catch (java.io.IOException e) {
+            throw new FileException(Reason.IO);
+        }
+    }
+
     /** 插件的全局文件（{@code application/…}、{@code static/…}）原子写入。 */
     public void replaceAddonGlobal(String relative, byte[] content) {
         LegacySiteRoot r = checkAddonGlobal(relative);

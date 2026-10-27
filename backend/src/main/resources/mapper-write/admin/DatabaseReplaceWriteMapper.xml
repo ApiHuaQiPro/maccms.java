@@ -1,0 +1,670 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+  B15 数据库工具"批量替换"（旧 admin/controller/Database.php:287-323；docs/architecture/24-b15-admin-system.md 第 9.4 节；
+  登记 WriteRegistry：admin / 全部 26 张 mac_* 表 / UPDATE / B15）。按 install.sql 逐表逐列写出（DatabaseReplaceMapperTest 核对与 install.sql 一致），
+  每张表一条语句：表名与列名都是 XML 里的固定文字（写 Mapper 不允许 ${}），列由 <choose> 按调用方传入的、已用 SHOW COLUMNS 校验过的列名选出。
+  旧版是 UPDATE 表 SET `列`=Replace(`列`, :findstr, :tostr) where 1=1（整表）；新版条件写成 LOCATE(查找串, 列) > 0：只改含查找串的行
+  （LOCATE 按列的排序规则比较，不分大小写，是 REPLACE 精确匹配的超集），写入结果与旧版相同，不碰其余各行。
+-->
+<mapper namespace="com.maccms.backend.admin.infrastructure.DatabaseReplaceWriteMapper">
+
+    <update id="replaceInMacActor">
+        UPDATE mac_actor SET
+        <choose>
+            <when test="column == 'actor_id'">actor_id = REPLACE(actor_id, #{find}, #{to}) WHERE LOCATE(#{find}, actor_id) &gt; 0</when>
+            <when test="column == 'type_id'">type_id = REPLACE(type_id, #{find}, #{to}) WHERE LOCATE(#{find}, type_id) &gt; 0</when>
+            <when test="column == 'type_id_1'">type_id_1 = REPLACE(type_id_1, #{find}, #{to}) WHERE LOCATE(#{find}, type_id_1) &gt; 0</when>
+            <when test="column == 'actor_name'">actor_name = REPLACE(actor_name, #{find}, #{to}) WHERE LOCATE(#{find}, actor_name) &gt; 0</when>
+            <when test="column == 'actor_en'">actor_en = REPLACE(actor_en, #{find}, #{to}) WHERE LOCATE(#{find}, actor_en) &gt; 0</when>
+            <when test="column == 'actor_alias'">actor_alias = REPLACE(actor_alias, #{find}, #{to}) WHERE LOCATE(#{find}, actor_alias) &gt; 0</when>
+            <when test="column == 'actor_status'">actor_status = REPLACE(actor_status, #{find}, #{to}) WHERE LOCATE(#{find}, actor_status) &gt; 0</when>
+            <when test="column == 'actor_lock'">actor_lock = REPLACE(actor_lock, #{find}, #{to}) WHERE LOCATE(#{find}, actor_lock) &gt; 0</when>
+            <when test="column == 'actor_letter'">actor_letter = REPLACE(actor_letter, #{find}, #{to}) WHERE LOCATE(#{find}, actor_letter) &gt; 0</when>
+            <when test="column == 'actor_sex'">actor_sex = REPLACE(actor_sex, #{find}, #{to}) WHERE LOCATE(#{find}, actor_sex) &gt; 0</when>
+            <when test="column == 'actor_color'">actor_color = REPLACE(actor_color, #{find}, #{to}) WHERE LOCATE(#{find}, actor_color) &gt; 0</when>
+            <when test="column == 'actor_pic'">actor_pic = REPLACE(actor_pic, #{find}, #{to}) WHERE LOCATE(#{find}, actor_pic) &gt; 0</when>
+            <when test="column == 'actor_blurb'">actor_blurb = REPLACE(actor_blurb, #{find}, #{to}) WHERE LOCATE(#{find}, actor_blurb) &gt; 0</when>
+            <when test="column == 'actor_remarks'">actor_remarks = REPLACE(actor_remarks, #{find}, #{to}) WHERE LOCATE(#{find}, actor_remarks) &gt; 0</when>
+            <when test="column == 'actor_area'">actor_area = REPLACE(actor_area, #{find}, #{to}) WHERE LOCATE(#{find}, actor_area) &gt; 0</when>
+            <when test="column == 'actor_height'">actor_height = REPLACE(actor_height, #{find}, #{to}) WHERE LOCATE(#{find}, actor_height) &gt; 0</when>
+            <when test="column == 'actor_weight'">actor_weight = REPLACE(actor_weight, #{find}, #{to}) WHERE LOCATE(#{find}, actor_weight) &gt; 0</when>
+            <when test="column == 'actor_birthday'">actor_birthday = REPLACE(actor_birthday, #{find}, #{to}) WHERE LOCATE(#{find}, actor_birthday) &gt; 0</when>
+            <when test="column == 'actor_birtharea'">actor_birtharea = REPLACE(actor_birtharea, #{find}, #{to}) WHERE LOCATE(#{find}, actor_birtharea) &gt; 0</when>
+            <when test="column == 'actor_blood'">actor_blood = REPLACE(actor_blood, #{find}, #{to}) WHERE LOCATE(#{find}, actor_blood) &gt; 0</when>
+            <when test="column == 'actor_starsign'">actor_starsign = REPLACE(actor_starsign, #{find}, #{to}) WHERE LOCATE(#{find}, actor_starsign) &gt; 0</when>
+            <when test="column == 'actor_school'">actor_school = REPLACE(actor_school, #{find}, #{to}) WHERE LOCATE(#{find}, actor_school) &gt; 0</when>
+            <when test="column == 'actor_works'">actor_works = REPLACE(actor_works, #{find}, #{to}) WHERE LOCATE(#{find}, actor_works) &gt; 0</when>
+            <when test="column == 'actor_tag'">actor_tag = REPLACE(actor_tag, #{find}, #{to}) WHERE LOCATE(#{find}, actor_tag) &gt; 0</when>
+            <when test="column == 'actor_class'">actor_class = REPLACE(actor_class, #{find}, #{to}) WHERE LOCATE(#{find}, actor_class) &gt; 0</when>
+            <when test="column == 'actor_level'">actor_level = REPLACE(actor_level, #{find}, #{to}) WHERE LOCATE(#{find}, actor_level) &gt; 0</when>
+            <when test="column == 'actor_time'">actor_time = REPLACE(actor_time, #{find}, #{to}) WHERE LOCATE(#{find}, actor_time) &gt; 0</when>
+            <when test="column == 'actor_time_add'">actor_time_add = REPLACE(actor_time_add, #{find}, #{to}) WHERE LOCATE(#{find}, actor_time_add) &gt; 0</when>
+            <when test="column == 'actor_time_hits'">actor_time_hits = REPLACE(actor_time_hits, #{find}, #{to}) WHERE LOCATE(#{find}, actor_time_hits) &gt; 0</when>
+            <when test="column == 'actor_time_make'">actor_time_make = REPLACE(actor_time_make, #{find}, #{to}) WHERE LOCATE(#{find}, actor_time_make) &gt; 0</when>
+            <when test="column == 'actor_hits'">actor_hits = REPLACE(actor_hits, #{find}, #{to}) WHERE LOCATE(#{find}, actor_hits) &gt; 0</when>
+            <when test="column == 'actor_hits_day'">actor_hits_day = REPLACE(actor_hits_day, #{find}, #{to}) WHERE LOCATE(#{find}, actor_hits_day) &gt; 0</when>
+            <when test="column == 'actor_hits_week'">actor_hits_week = REPLACE(actor_hits_week, #{find}, #{to}) WHERE LOCATE(#{find}, actor_hits_week) &gt; 0</when>
+            <when test="column == 'actor_hits_month'">actor_hits_month = REPLACE(actor_hits_month, #{find}, #{to}) WHERE LOCATE(#{find}, actor_hits_month) &gt; 0</when>
+            <when test="column == 'actor_score'">actor_score = REPLACE(actor_score, #{find}, #{to}) WHERE LOCATE(#{find}, actor_score) &gt; 0</when>
+            <when test="column == 'actor_score_all'">actor_score_all = REPLACE(actor_score_all, #{find}, #{to}) WHERE LOCATE(#{find}, actor_score_all) &gt; 0</when>
+            <when test="column == 'actor_score_num'">actor_score_num = REPLACE(actor_score_num, #{find}, #{to}) WHERE LOCATE(#{find}, actor_score_num) &gt; 0</when>
+            <when test="column == 'actor_up'">actor_up = REPLACE(actor_up, #{find}, #{to}) WHERE LOCATE(#{find}, actor_up) &gt; 0</when>
+            <when test="column == 'actor_down'">actor_down = REPLACE(actor_down, #{find}, #{to}) WHERE LOCATE(#{find}, actor_down) &gt; 0</when>
+            <when test="column == 'actor_tpl'">actor_tpl = REPLACE(actor_tpl, #{find}, #{to}) WHERE LOCATE(#{find}, actor_tpl) &gt; 0</when>
+            <when test="column == 'actor_jumpurl'">actor_jumpurl = REPLACE(actor_jumpurl, #{find}, #{to}) WHERE LOCATE(#{find}, actor_jumpurl) &gt; 0</when>
+            <when test="column == 'actor_content'">actor_content = REPLACE(actor_content, #{find}, #{to}) WHERE LOCATE(#{find}, actor_content) &gt; 0</when>
+        </choose>
+    </update>
+
+    <update id="replaceInMacAdmin">
+        UPDATE mac_admin SET
+        <choose>
+            <when test="column == 'admin_id'">admin_id = REPLACE(admin_id, #{find}, #{to}) WHERE LOCATE(#{find}, admin_id) &gt; 0</when>
+            <when test="column == 'admin_name'">admin_name = REPLACE(admin_name, #{find}, #{to}) WHERE LOCATE(#{find}, admin_name) &gt; 0</when>
+            <when test="column == 'admin_pwd'">admin_pwd = REPLACE(admin_pwd, #{find}, #{to}) WHERE LOCATE(#{find}, admin_pwd) &gt; 0</when>
+            <when test="column == 'admin_random'">admin_random = REPLACE(admin_random, #{find}, #{to}) WHERE LOCATE(#{find}, admin_random) &gt; 0</when>
+            <when test="column == 'admin_status'">admin_status = REPLACE(admin_status, #{find}, #{to}) WHERE LOCATE(#{find}, admin_status) &gt; 0</when>
+            <when test="column == 'admin_auth'">admin_auth = REPLACE(admin_auth, #{find}, #{to}) WHERE LOCATE(#{find}, admin_auth) &gt; 0</when>
+            <when test="column == 'admin_login_time'">admin_login_time = REPLACE(admin_login_time, #{find}, #{to}) WHERE LOCATE(#{find}, admin_login_time) &gt; 0</when>
+            <when test="column == 'admin_login_ip'">admin_login_ip = REPLACE(admin_login_ip, #{find}, #{to}) WHERE LOCATE(#{find}, admin_login_ip) &gt; 0</when>
+            <when test="column == 'admin_login_num'">admin_login_num = REPLACE(admin_login_num, #{find}, #{to}) WHERE LOCATE(#{find}, admin_login_num) &gt; 0</when>
+            <when test="column == 'admin_last_login_time'">admin_last_login_time = REPLACE(admin_last_login_time, #{find}, #{to}) WHERE LOCATE(#{find}, admin_last_login_time) &gt; 0</when>
+            <when test="column == 'admin_last_login_ip'">admin_last_login_ip = REPLACE(admin_last_login_ip, #{find}, #{to}) WHERE LOCATE(#{find}, admin_last_login_ip) &gt; 0</when>
+        </choose>
+    </update>
+
+    <update id="replaceInMacAnnex">
+        UPDATE mac_annex SET
+        <choose>
+            <when test="column == 'annex_id'">annex_id = REPLACE(annex_id, #{find}, #{to}) WHERE LOCATE(#{find}, annex_id) &gt; 0</when>
+            <when test="column == 'annex_time'">annex_time = REPLACE(annex_time, #{find}, #{to}) WHERE LOCATE(#{find}, annex_time) &gt; 0</when>
+            <when test="column == 'annex_file'">annex_file = REPLACE(annex_file, #{find}, #{to}) WHERE LOCATE(#{find}, annex_file) &gt; 0</when>
+            <when test="column == 'annex_size'">annex_size = REPLACE(annex_size, #{find}, #{to}) WHERE LOCATE(#{find}, annex_size) &gt; 0</when>
+            <when test="column == 'annex_type'">annex_type = REPLACE(annex_type, #{find}, #{to}) WHERE LOCATE(#{find}, annex_type) &gt; 0</when>
+        </choose>
+    </update>
+
+    <update id="replaceInMacArt">
+        UPDATE mac_art SET
+        <choose>
+            <when test="column == 'art_id'">art_id = REPLACE(art_id, #{find}, #{to}) WHERE LOCATE(#{find}, art_id) &gt; 0</when>
+            <when test="column == 'type_id'">type_id = REPLACE(type_id, #{find}, #{to}) WHERE LOCATE(#{find}, type_id) &gt; 0</when>
+            <when test="column == 'type_id_1'">type_id_1 = REPLACE(type_id_1, #{find}, #{to}) WHERE LOCATE(#{find}, type_id_1) &gt; 0</when>
+            <when test="column == 'group_id'">group_id = REPLACE(group_id, #{find}, #{to}) WHERE LOCATE(#{find}, group_id) &gt; 0</when>
+            <when test="column == 'art_name'">art_name = REPLACE(art_name, #{find}, #{to}) WHERE LOCATE(#{find}, art_name) &gt; 0</when>
+            <when test="column == 'art_sub'">art_sub = REPLACE(art_sub, #{find}, #{to}) WHERE LOCATE(#{find}, art_sub) &gt; 0</when>
+            <when test="column == 'art_en'">art_en = REPLACE(art_en, #{find}, #{to}) WHERE LOCATE(#{find}, art_en) &gt; 0</when>
+            <when test="column == 'art_status'">art_status = REPLACE(art_status, #{find}, #{to}) WHERE LOCATE(#{find}, art_status) &gt; 0</when>
+            <when test="column == 'art_letter'">art_letter = REPLACE(art_letter, #{find}, #{to}) WHERE LOCATE(#{find}, art_letter) &gt; 0</when>
+            <when test="column == 'art_color'">art_color = REPLACE(art_color, #{find}, #{to}) WHERE LOCATE(#{find}, art_color) &gt; 0</when>
+            <when test="column == 'art_from'">art_from = REPLACE(art_from, #{find}, #{to}) WHERE LOCATE(#{find}, art_from) &gt; 0</when>
+            <when test="column == 'art_author'">art_author = REPLACE(art_author, #{find}, #{to}) WHERE LOCATE(#{find}, art_author) &gt; 0</when>
+            <when test="column == 'art_tag'">art_tag = REPLACE(art_tag, #{find}, #{to}) WHERE LOCATE(#{find}, art_tag) &gt; 0</when>
+            <when test="column == 'art_class'">art_class = REPLACE(art_class, #{find}, #{to}) WHERE LOCATE(#{find}, art_class) &gt; 0</when>
+            <when test="column == 'art_pic'">art_pic = REPLACE(art_pic, #{find}, #{to}) WHERE LOCATE(#{find}, art_pic) &gt; 0</when>
+            <when test="column == 'art_pic_thumb'">art_pic_thumb = REPLACE(art_pic_thumb, #{find}, #{to}) WHERE LOCATE(#{find}, art_pic_thumb) &gt; 0</when>
+            <when test="column == 'art_pic_slide'">art_pic_slide = REPLACE(art_pic_slide, #{find}, #{to}) WHERE LOCATE(#{find}, art_pic_slide) &gt; 0</when>
+            <when test="column == 'art_pic_screenshot'">art_pic_screenshot = REPLACE(art_pic_screenshot, #{find}, #{to}) WHERE LOCATE(#{find}, art_pic_screenshot) &gt; 0</when>
+            <when test="column == 'art_blurb'">art_blurb = REPLACE(art_blurb, #{find}, #{to}) WHERE LOCATE(#{find}, art_blurb) &gt; 0</when>
+            <when test="column == 'art_remarks'">art_remarks = REPLACE(art_remarks, #{find}, #{to}) WHERE LOCATE(#{find}, art_remarks) &gt; 0</when>
+            <when test="column == 'art_jumpurl'">art_jumpurl = REPLACE(art_jumpurl, #{find}, #{to}) WHERE LOCATE(#{find}, art_jumpurl) &gt; 0</when>
+            <when test="column == 'art_tpl'">art_tpl = REPLACE(art_tpl, #{find}, #{to}) WHERE LOCATE(#{find}, art_tpl) &gt; 0</when>
+            <when test="column == 'art_level'">art_level = REPLACE(art_level, #{find}, #{to}) WHERE LOCATE(#{find}, art_level) &gt; 0</when>
+            <when test="column == 'art_lock'">art_lock = REPLACE(art_lock, #{find}, #{to}) WHERE LOCATE(#{find}, art_lock) &gt; 0</when>
+            <when test="column == 'art_points'">art_points = REPLACE(art_points, #{find}, #{to}) WHERE LOCATE(#{find}, art_points) &gt; 0</when>
+            <when test="column == 'art_points_detail'">art_points_detail = REPLACE(art_points_detail, #{find}, #{to}) WHERE LOCATE(#{find}, art_points_detail) &gt; 0</when>
+            <when test="column == 'art_up'">art_up = REPLACE(art_up, #{find}, #{to}) WHERE LOCATE(#{find}, art_up) &gt; 0</when>
+            <when test="column == 'art_down'">art_down = REPLACE(art_down, #{find}, #{to}) WHERE LOCATE(#{find}, art_down) &gt; 0</when>
+            <when test="column == 'art_hits'">art_hits = REPLACE(art_hits, #{find}, #{to}) WHERE LOCATE(#{find}, art_hits) &gt; 0</when>
+            <when test="column == 'art_hits_day'">art_hits_day = REPLACE(art_hits_day, #{find}, #{to}) WHERE LOCATE(#{find}, art_hits_day) &gt; 0</when>
+            <when test="column == 'art_hits_week'">art_hits_week = REPLACE(art_hits_week, #{find}, #{to}) WHERE LOCATE(#{find}, art_hits_week) &gt; 0</when>
+            <when test="column == 'art_hits_month'">art_hits_month = REPLACE(art_hits_month, #{find}, #{to}) WHERE LOCATE(#{find}, art_hits_month) &gt; 0</when>
+            <when test="column == 'art_time'">art_time = REPLACE(art_time, #{find}, #{to}) WHERE LOCATE(#{find}, art_time) &gt; 0</when>
+            <when test="column == 'art_time_add'">art_time_add = REPLACE(art_time_add, #{find}, #{to}) WHERE LOCATE(#{find}, art_time_add) &gt; 0</when>
+            <when test="column == 'art_time_hits'">art_time_hits = REPLACE(art_time_hits, #{find}, #{to}) WHERE LOCATE(#{find}, art_time_hits) &gt; 0</when>
+            <when test="column == 'art_time_make'">art_time_make = REPLACE(art_time_make, #{find}, #{to}) WHERE LOCATE(#{find}, art_time_make) &gt; 0</when>
+            <when test="column == 'art_score'">art_score = REPLACE(art_score, #{find}, #{to}) WHERE LOCATE(#{find}, art_score) &gt; 0</when>
+            <when test="column == 'art_score_all'">art_score_all = REPLACE(art_score_all, #{find}, #{to}) WHERE LOCATE(#{find}, art_score_all) &gt; 0</when>
+            <when test="column == 'art_score_num'">art_score_num = REPLACE(art_score_num, #{find}, #{to}) WHERE LOCATE(#{find}, art_score_num) &gt; 0</when>
+            <when test="column == 'art_rel_art'">art_rel_art = REPLACE(art_rel_art, #{find}, #{to}) WHERE LOCATE(#{find}, art_rel_art) &gt; 0</when>
+            <when test="column == 'art_rel_vod'">art_rel_vod = REPLACE(art_rel_vod, #{find}, #{to}) WHERE LOCATE(#{find}, art_rel_vod) &gt; 0</when>
+            <when test="column == 'art_pwd'">art_pwd = REPLACE(art_pwd, #{find}, #{to}) WHERE LOCATE(#{find}, art_pwd) &gt; 0</when>
+            <when test="column == 'art_pwd_url'">art_pwd_url = REPLACE(art_pwd_url, #{find}, #{to}) WHERE LOCATE(#{find}, art_pwd_url) &gt; 0</when>
+            <when test="column == 'art_title'">art_title = REPLACE(art_title, #{find}, #{to}) WHERE LOCATE(#{find}, art_title) &gt; 0</when>
+            <when test="column == 'art_note'">art_note = REPLACE(art_note, #{find}, #{to}) WHERE LOCATE(#{find}, art_note) &gt; 0</when>
+            <when test="column == 'art_content'">art_content = REPLACE(art_content, #{find}, #{to}) WHERE LOCATE(#{find}, art_content) &gt; 0</when>
+        </choose>
+    </update>
+
+    <update id="replaceInMacCard">
+        UPDATE mac_card SET
+        <choose>
+            <when test="column == 'card_id'">card_id = REPLACE(card_id, #{find}, #{to}) WHERE LOCATE(#{find}, card_id) &gt; 0</when>
+            <when test="column == 'card_no'">card_no = REPLACE(card_no, #{find}, #{to}) WHERE LOCATE(#{find}, card_no) &gt; 0</when>
+            <when test="column == 'card_pwd'">card_pwd = REPLACE(card_pwd, #{find}, #{to}) WHERE LOCATE(#{find}, card_pwd) &gt; 0</when>
+            <when test="column == 'card_money'">card_money = REPLACE(card_money, #{find}, #{to}) WHERE LOCATE(#{find}, card_money) &gt; 0</when>
+            <when test="column == 'card_points'">card_points = REPLACE(card_points, #{find}, #{to}) WHERE LOCATE(#{find}, card_points) &gt; 0</when>
+            <when test="column == 'card_use_status'">card_use_status = REPLACE(card_use_status, #{find}, #{to}) WHERE LOCATE(#{find}, card_use_status) &gt; 0</when>
+            <when test="column == 'card_sale_status'">card_sale_status = REPLACE(card_sale_status, #{find}, #{to}) WHERE LOCATE(#{find}, card_sale_status) &gt; 0</when>
+            <when test="column == 'user_id'">user_id = REPLACE(user_id, #{find}, #{to}) WHERE LOCATE(#{find}, user_id) &gt; 0</when>
+            <when test="column == 'card_add_time'">card_add_time = REPLACE(card_add_time, #{find}, #{to}) WHERE LOCATE(#{find}, card_add_time) &gt; 0</when>
+            <when test="column == 'card_use_time'">card_use_time = REPLACE(card_use_time, #{find}, #{to}) WHERE LOCATE(#{find}, card_use_time) &gt; 0</when>
+        </choose>
+    </update>
+
+    <update id="replaceInMacCash">
+        UPDATE mac_cash SET
+        <choose>
+            <when test="column == 'cash_id'">cash_id = REPLACE(cash_id, #{find}, #{to}) WHERE LOCATE(#{find}, cash_id) &gt; 0</when>
+            <when test="column == 'user_id'">user_id = REPLACE(user_id, #{find}, #{to}) WHERE LOCATE(#{find}, user_id) &gt; 0</when>
+            <when test="column == 'cash_status'">cash_status = REPLACE(cash_status, #{find}, #{to}) WHERE LOCATE(#{find}, cash_status) &gt; 0</when>
+            <when test="column == 'cash_points'">cash_points = REPLACE(cash_points, #{find}, #{to}) WHERE LOCATE(#{find}, cash_points) &gt; 0</when>
+            <when test="column == 'cash_money'">cash_money = REPLACE(cash_money, #{find}, #{to}) WHERE LOCATE(#{find}, cash_money) &gt; 0</when>
+            <when test="column == 'cash_bank_name'">cash_bank_name = REPLACE(cash_bank_name, #{find}, #{to}) WHERE LOCATE(#{find}, cash_bank_name) &gt; 0</when>
+            <when test="column == 'cash_bank_no'">cash_bank_no = REPLACE(cash_bank_no, #{find}, #{to}) WHERE LOCATE(#{find}, cash_bank_no) &gt; 0</when>
+            <when test="column == 'cash_payee_name'">cash_payee_name = REPLACE(cash_payee_name, #{find}, #{to}) WHERE LOCATE(#{find}, cash_payee_name) &gt; 0</when>
+            <when test="column == 'cash_time'">cash_time = REPLACE(cash_time, #{find}, #{to}) WHERE LOCATE(#{find}, cash_time) &gt; 0</when>
+            <when test="column == 'cash_time_audit'">cash_time_audit = REPLACE(cash_time_audit, #{find}, #{to}) WHERE LOCATE(#{find}, cash_time_audit) &gt; 0</when>
+        </choose>
+    </update>
+
+    <update id="replaceInMacCjContent">
+        UPDATE mac_cj_content SET
+        <choose>
+            <when test="column == 'id'">id = REPLACE(id, #{find}, #{to}) WHERE LOCATE(#{find}, id) &gt; 0</when>
+            <when test="column == 'nodeid'">nodeid = REPLACE(nodeid, #{find}, #{to}) WHERE LOCATE(#{find}, nodeid) &gt; 0</when>
+            <when test="column == 'status'">status = REPLACE(status, #{find}, #{to}) WHERE LOCATE(#{find}, status) &gt; 0</when>
+            <when test="column == 'url'">url = REPLACE(url, #{find}, #{to}) WHERE LOCATE(#{find}, url) &gt; 0</when>
+            <when test="column == 'title'">title = REPLACE(title, #{find}, #{to}) WHERE LOCATE(#{find}, title) &gt; 0</when>
+            <when test="column == 'data'">data = REPLACE(data, #{find}, #{to}) WHERE LOCATE(#{find}, data) &gt; 0</when>
+        </choose>
+    </update>
+
+    <update id="replaceInMacCjHistory">
+        UPDATE mac_cj_history SET
+        <choose>
+            <when test="column == 'md5'">md5 = REPLACE(md5, #{find}, #{to}) WHERE LOCATE(#{find}, md5) &gt; 0</when>
+        </choose>
+    </update>
+
+    <update id="replaceInMacCjNode">
+        UPDATE mac_cj_node SET
+        <choose>
+            <when test="column == 'nodeid'">nodeid = REPLACE(nodeid, #{find}, #{to}) WHERE LOCATE(#{find}, nodeid) &gt; 0</when>
+            <when test="column == 'name'">name = REPLACE(name, #{find}, #{to}) WHERE LOCATE(#{find}, name) &gt; 0</when>
+            <when test="column == 'lastdate'">lastdate = REPLACE(lastdate, #{find}, #{to}) WHERE LOCATE(#{find}, lastdate) &gt; 0</when>
+            <when test="column == 'sourcecharset'">sourcecharset = REPLACE(sourcecharset, #{find}, #{to}) WHERE LOCATE(#{find}, sourcecharset) &gt; 0</when>
+            <when test="column == 'sourcetype'">sourcetype = REPLACE(sourcetype, #{find}, #{to}) WHERE LOCATE(#{find}, sourcetype) &gt; 0</when>
+            <when test="column == 'urlpage'">urlpage = REPLACE(urlpage, #{find}, #{to}) WHERE LOCATE(#{find}, urlpage) &gt; 0</when>
+            <when test="column == 'pagesize_start'">pagesize_start = REPLACE(pagesize_start, #{find}, #{to}) WHERE LOCATE(#{find}, pagesize_start) &gt; 0</when>
+            <when test="column == 'pagesize_end'">pagesize_end = REPLACE(pagesize_end, #{find}, #{to}) WHERE LOCATE(#{find}, pagesize_end) &gt; 0</when>
+            <when test="column == 'page_base'">page_base = REPLACE(page_base, #{find}, #{to}) WHERE LOCATE(#{find}, page_base) &gt; 0</when>
+            <when test="column == 'par_num'">par_num = REPLACE(par_num, #{find}, #{to}) WHERE LOCATE(#{find}, par_num) &gt; 0</when>
+            <when test="column == 'url_contain'">url_contain = REPLACE(url_contain, #{find}, #{to}) WHERE LOCATE(#{find}, url_contain) &gt; 0</when>
+            <when test="column == 'url_except'">url_except = REPLACE(url_except, #{find}, #{to}) WHERE LOCATE(#{find}, url_except) &gt; 0</when>
+            <when test="column == 'url_start'">url_start = REPLACE(url_start, #{find}, #{to}) WHERE LOCATE(#{find}, url_start) &gt; 0</when>
+            <when test="column == 'url_end'">url_end = REPLACE(url_end, #{find}, #{to}) WHERE LOCATE(#{find}, url_end) &gt; 0</when>
+            <when test="column == 'title_rule'">title_rule = REPLACE(title_rule, #{find}, #{to}) WHERE LOCATE(#{find}, title_rule) &gt; 0</when>
+            <when test="column == 'title_html_rule'">title_html_rule = REPLACE(title_html_rule, #{find}, #{to}) WHERE LOCATE(#{find}, title_html_rule) &gt; 0</when>
+            <when test="column == 'type_rule'">type_rule = REPLACE(type_rule, #{find}, #{to}) WHERE LOCATE(#{find}, type_rule) &gt; 0</when>
+            <when test="column == 'type_html_rule'">type_html_rule = REPLACE(type_html_rule, #{find}, #{to}) WHERE LOCATE(#{find}, type_html_rule) &gt; 0</when>
+            <when test="column == 'content_rule'">content_rule = REPLACE(content_rule, #{find}, #{to}) WHERE LOCATE(#{find}, content_rule) &gt; 0</when>
+            <when test="column == 'content_html_rule'">content_html_rule = REPLACE(content_html_rule, #{find}, #{to}) WHERE LOCATE(#{find}, content_html_rule) &gt; 0</when>
+            <when test="column == 'content_page_start'">content_page_start = REPLACE(content_page_start, #{find}, #{to}) WHERE LOCATE(#{find}, content_page_start) &gt; 0</when>
+            <when test="column == 'content_page_end'">content_page_end = REPLACE(content_page_end, #{find}, #{to}) WHERE LOCATE(#{find}, content_page_end) &gt; 0</when>
+            <when test="column == 'content_page_rule'">content_page_rule = REPLACE(content_page_rule, #{find}, #{to}) WHERE LOCATE(#{find}, content_page_rule) &gt; 0</when>
+            <when test="column == 'content_page'">content_page = REPLACE(content_page, #{find}, #{to}) WHERE LOCATE(#{find}, content_page) &gt; 0</when>
+            <when test="column == 'content_nextpage'">content_nextpage = REPLACE(content_nextpage, #{find}, #{to}) WHERE LOCATE(#{find}, content_nextpage) &gt; 0</when>
+            <when test="column == 'down_attachment'">down_attachment = REPLACE(down_attachment, #{find}, #{to}) WHERE LOCATE(#{find}, down_attachment) &gt; 0</when>
+            <when test="column == 'watermark'">watermark = REPLACE(watermark, #{find}, #{to}) WHERE LOCATE(#{find}, watermark) &gt; 0</when>
+            <when test="column == 'coll_order'">coll_order = REPLACE(coll_order, #{find}, #{to}) WHERE LOCATE(#{find}, coll_order) &gt; 0</when>
+            <when test="column == 'customize_config'">customize_config = REPLACE(customize_config, #{find}, #{to}) WHERE LOCATE(#{find}, customize_config) &gt; 0</when>
+            <when test="column == 'program_config'">program_config = REPLACE(program_config, #{find}, #{to}) WHERE LOCATE(#{find}, program_config) &gt; 0</when>
+            <when test="column == 'mid'">mid = REPLACE(mid, #{find}, #{to}) WHERE LOCATE(#{find}, mid) &gt; 0</when>
+        </choose>
+    </update>
+
+    <update id="replaceInMacCollect">
+        UPDATE mac_collect SET
+        <choose>
+            <when test="column == 'collect_id'">collect_id = REPLACE(collect_id, #{find}, #{to}) WHERE LOCATE(#{find}, collect_id) &gt; 0</when>
+            <when test="column == 'collect_name'">collect_name = REPLACE(collect_name, #{find}, #{to}) WHERE LOCATE(#{find}, collect_name) &gt; 0</when>
+            <when test="column == 'collect_url'">collect_url = REPLACE(collect_url, #{find}, #{to}) WHERE LOCATE(#{find}, collect_url) &gt; 0</when>
+            <when test="column == 'collect_type'">collect_type = REPLACE(collect_type, #{find}, #{to}) WHERE LOCATE(#{find}, collect_type) &gt; 0</when>
+            <when test="column == 'collect_mid'">collect_mid = REPLACE(collect_mid, #{find}, #{to}) WHERE LOCATE(#{find}, collect_mid) &gt; 0</when>
+            <when test="column == 'collect_appid'">collect_appid = REPLACE(collect_appid, #{find}, #{to}) WHERE LOCATE(#{find}, collect_appid) &gt; 0</when>
+            <when test="column == 'collect_appkey'">collect_appkey = REPLACE(collect_appkey, #{find}, #{to}) WHERE LOCATE(#{find}, collect_appkey) &gt; 0</when>
+            <when test="column == 'collect_param'">collect_param = REPLACE(collect_param, #{find}, #{to}) WHERE LOCATE(#{find}, collect_param) &gt; 0</when>
+            <when test="column == 'collect_filter'">collect_filter = REPLACE(collect_filter, #{find}, #{to}) WHERE LOCATE(#{find}, collect_filter) &gt; 0</when>
+            <when test="column == 'collect_filter_from'">collect_filter_from = REPLACE(collect_filter_from, #{find}, #{to}) WHERE LOCATE(#{find}, collect_filter_from) &gt; 0</when>
+            <when test="column == 'collect_opt'">collect_opt = REPLACE(collect_opt, #{find}, #{to}) WHERE LOCATE(#{find}, collect_opt) &gt; 0</when>
+            <when test="column == 'collect_sync_pic_opt'">collect_sync_pic_opt = REPLACE(collect_sync_pic_opt, #{find}, #{to}) WHERE LOCATE(#{find}, collect_sync_pic_opt) &gt; 0</when>
+        </choose>
+    </update>
+
+    <update id="replaceInMacComment">
+        UPDATE mac_comment SET
+        <choose>
+            <when test="column == 'comment_id'">comment_id = REPLACE(comment_id, #{find}, #{to}) WHERE LOCATE(#{find}, comment_id) &gt; 0</when>
+            <when test="column == 'comment_mid'">comment_mid = REPLACE(comment_mid, #{find}, #{to}) WHERE LOCATE(#{find}, comment_mid) &gt; 0</when>
+            <when test="column == 'comment_rid'">comment_rid = REPLACE(comment_rid, #{find}, #{to}) WHERE LOCATE(#{find}, comment_rid) &gt; 0</when>
+            <when test="column == 'comment_pid'">comment_pid = REPLACE(comment_pid, #{find}, #{to}) WHERE LOCATE(#{find}, comment_pid) &gt; 0</when>
+            <when test="column == 'user_id'">user_id = REPLACE(user_id, #{find}, #{to}) WHERE LOCATE(#{find}, user_id) &gt; 0</when>
+            <when test="column == 'comment_status'">comment_status = REPLACE(comment_status, #{find}, #{to}) WHERE LOCATE(#{find}, comment_status) &gt; 0</when>
+            <when test="column == 'comment_name'">comment_name = REPLACE(comment_name, #{find}, #{to}) WHERE LOCATE(#{find}, comment_name) &gt; 0</when>
+            <when test="column == 'comment_ip'">comment_ip = REPLACE(comment_ip, #{find}, #{to}) WHERE LOCATE(#{find}, comment_ip) &gt; 0</when>
+            <when test="column == 'comment_time'">comment_time = REPLACE(comment_time, #{find}, #{to}) WHERE LOCATE(#{find}, comment_time) &gt; 0</when>
+            <when test="column == 'comment_content'">comment_content = REPLACE(comment_content, #{find}, #{to}) WHERE LOCATE(#{find}, comment_content) &gt; 0</when>
+            <when test="column == 'comment_up'">comment_up = REPLACE(comment_up, #{find}, #{to}) WHERE LOCATE(#{find}, comment_up) &gt; 0</when>
+            <when test="column == 'comment_down'">comment_down = REPLACE(comment_down, #{find}, #{to}) WHERE LOCATE(#{find}, comment_down) &gt; 0</when>
+            <when test="column == 'comment_reply'">comment_reply = REPLACE(comment_reply, #{find}, #{to}) WHERE LOCATE(#{find}, comment_reply) &gt; 0</when>
+            <when test="column == 'comment_report'">comment_report = REPLACE(comment_report, #{find}, #{to}) WHERE LOCATE(#{find}, comment_report) &gt; 0</when>
+        </choose>
+    </update>
+
+    <update id="replaceInMacGbook">
+        UPDATE mac_gbook SET
+        <choose>
+            <when test="column == 'gbook_id'">gbook_id = REPLACE(gbook_id, #{find}, #{to}) WHERE LOCATE(#{find}, gbook_id) &gt; 0</when>
+            <when test="column == 'gbook_rid'">gbook_rid = REPLACE(gbook_rid, #{find}, #{to}) WHERE LOCATE(#{find}, gbook_rid) &gt; 0</when>
+            <when test="column == 'user_id'">user_id = REPLACE(user_id, #{find}, #{to}) WHERE LOCATE(#{find}, user_id) &gt; 0</when>
+            <when test="column == 'gbook_status'">gbook_status = REPLACE(gbook_status, #{find}, #{to}) WHERE LOCATE(#{find}, gbook_status) &gt; 0</when>
+            <when test="column == 'gbook_name'">gbook_name = REPLACE(gbook_name, #{find}, #{to}) WHERE LOCATE(#{find}, gbook_name) &gt; 0</when>
+            <when test="column == 'gbook_ip'">gbook_ip = REPLACE(gbook_ip, #{find}, #{to}) WHERE LOCATE(#{find}, gbook_ip) &gt; 0</when>
+            <when test="column == 'gbook_time'">gbook_time = REPLACE(gbook_time, #{find}, #{to}) WHERE LOCATE(#{find}, gbook_time) &gt; 0</when>
+            <when test="column == 'gbook_reply_time'">gbook_reply_time = REPLACE(gbook_reply_time, #{find}, #{to}) WHERE LOCATE(#{find}, gbook_reply_time) &gt; 0</when>
+            <when test="column == 'gbook_content'">gbook_content = REPLACE(gbook_content, #{find}, #{to}) WHERE LOCATE(#{find}, gbook_content) &gt; 0</when>
+            <when test="column == 'gbook_reply'">gbook_reply = REPLACE(gbook_reply, #{find}, #{to}) WHERE LOCATE(#{find}, gbook_reply) &gt; 0</when>
+        </choose>
+    </update>
+
+    <update id="replaceInMacGroup">
+        UPDATE mac_group SET
+        <choose>
+            <when test="column == 'group_id'">group_id = REPLACE(group_id, #{find}, #{to}) WHERE LOCATE(#{find}, group_id) &gt; 0</when>
+            <when test="column == 'group_name'">group_name = REPLACE(group_name, #{find}, #{to}) WHERE LOCATE(#{find}, group_name) &gt; 0</when>
+            <when test="column == 'group_status'">group_status = REPLACE(group_status, #{find}, #{to}) WHERE LOCATE(#{find}, group_status) &gt; 0</when>
+            <when test="column == 'group_type'">group_type = REPLACE(group_type, #{find}, #{to}) WHERE LOCATE(#{find}, group_type) &gt; 0</when>
+            <when test="column == 'group_popedom'">group_popedom = REPLACE(group_popedom, #{find}, #{to}) WHERE LOCATE(#{find}, group_popedom) &gt; 0</when>
+            <when test="column == 'group_points_day'">group_points_day = REPLACE(group_points_day, #{find}, #{to}) WHERE LOCATE(#{find}, group_points_day) &gt; 0</when>
+            <when test="column == 'group_points_week'">group_points_week = REPLACE(group_points_week, #{find}, #{to}) WHERE LOCATE(#{find}, group_points_week) &gt; 0</when>
+            <when test="column == 'group_points_month'">group_points_month = REPLACE(group_points_month, #{find}, #{to}) WHERE LOCATE(#{find}, group_points_month) &gt; 0</when>
+            <when test="column == 'group_points_year'">group_points_year = REPLACE(group_points_year, #{find}, #{to}) WHERE LOCATE(#{find}, group_points_year) &gt; 0</when>
+            <when test="column == 'group_points_free'">group_points_free = REPLACE(group_points_free, #{find}, #{to}) WHERE LOCATE(#{find}, group_points_free) &gt; 0</when>
+        </choose>
+    </update>
+
+    <update id="replaceInMacLink">
+        UPDATE mac_link SET
+        <choose>
+            <when test="column == 'link_id'">link_id = REPLACE(link_id, #{find}, #{to}) WHERE LOCATE(#{find}, link_id) &gt; 0</when>
+            <when test="column == 'link_type'">link_type = REPLACE(link_type, #{find}, #{to}) WHERE LOCATE(#{find}, link_type) &gt; 0</when>
+            <when test="column == 'link_name'">link_name = REPLACE(link_name, #{find}, #{to}) WHERE LOCATE(#{find}, link_name) &gt; 0</when>
+            <when test="column == 'link_sort'">link_sort = REPLACE(link_sort, #{find}, #{to}) WHERE LOCATE(#{find}, link_sort) &gt; 0</when>
+            <when test="column == 'link_add_time'">link_add_time = REPLACE(link_add_time, #{find}, #{to}) WHERE LOCATE(#{find}, link_add_time) &gt; 0</when>
+            <when test="column == 'link_time'">link_time = REPLACE(link_time, #{find}, #{to}) WHERE LOCATE(#{find}, link_time) &gt; 0</when>
+            <when test="column == 'link_url'">link_url = REPLACE(link_url, #{find}, #{to}) WHERE LOCATE(#{find}, link_url) &gt; 0</when>
+            <when test="column == 'link_logo'">link_logo = REPLACE(link_logo, #{find}, #{to}) WHERE LOCATE(#{find}, link_logo) &gt; 0</when>
+        </choose>
+    </update>
+
+    <update id="replaceInMacMsg">
+        UPDATE mac_msg SET
+        <choose>
+            <when test="column == 'msg_id'">msg_id = REPLACE(msg_id, #{find}, #{to}) WHERE LOCATE(#{find}, msg_id) &gt; 0</when>
+            <when test="column == 'user_id'">user_id = REPLACE(user_id, #{find}, #{to}) WHERE LOCATE(#{find}, user_id) &gt; 0</when>
+            <when test="column == 'msg_type'">msg_type = REPLACE(msg_type, #{find}, #{to}) WHERE LOCATE(#{find}, msg_type) &gt; 0</when>
+            <when test="column == 'msg_status'">msg_status = REPLACE(msg_status, #{find}, #{to}) WHERE LOCATE(#{find}, msg_status) &gt; 0</when>
+            <when test="column == 'msg_to'">msg_to = REPLACE(msg_to, #{find}, #{to}) WHERE LOCATE(#{find}, msg_to) &gt; 0</when>
+            <when test="column == 'msg_code'">msg_code = REPLACE(msg_code, #{find}, #{to}) WHERE LOCATE(#{find}, msg_code) &gt; 0</when>
+            <when test="column == 'msg_content'">msg_content = REPLACE(msg_content, #{find}, #{to}) WHERE LOCATE(#{find}, msg_content) &gt; 0</when>
+            <when test="column == 'msg_time'">msg_time = REPLACE(msg_time, #{find}, #{to}) WHERE LOCATE(#{find}, msg_time) &gt; 0</when>
+        </choose>
+    </update>
+
+    <update id="replaceInMacOrder">
+        UPDATE mac_order SET
+        <choose>
+            <when test="column == 'order_id'">order_id = REPLACE(order_id, #{find}, #{to}) WHERE LOCATE(#{find}, order_id) &gt; 0</when>
+            <when test="column == 'user_id'">user_id = REPLACE(user_id, #{find}, #{to}) WHERE LOCATE(#{find}, user_id) &gt; 0</when>
+            <when test="column == 'order_status'">order_status = REPLACE(order_status, #{find}, #{to}) WHERE LOCATE(#{find}, order_status) &gt; 0</when>
+            <when test="column == 'order_code'">order_code = REPLACE(order_code, #{find}, #{to}) WHERE LOCATE(#{find}, order_code) &gt; 0</when>
+            <when test="column == 'order_price'">order_price = REPLACE(order_price, #{find}, #{to}) WHERE LOCATE(#{find}, order_price) &gt; 0</when>
+            <when test="column == 'order_time'">order_time = REPLACE(order_time, #{find}, #{to}) WHERE LOCATE(#{find}, order_time) &gt; 0</when>
+            <when test="column == 'order_points'">order_points = REPLACE(order_points, #{find}, #{to}) WHERE LOCATE(#{find}, order_points) &gt; 0</when>
+            <when test="column == 'order_pay_type'">order_pay_type = REPLACE(order_pay_type, #{find}, #{to}) WHERE LOCATE(#{find}, order_pay_type) &gt; 0</when>
+            <when test="column == 'order_pay_time'">order_pay_time = REPLACE(order_pay_time, #{find}, #{to}) WHERE LOCATE(#{find}, order_pay_time) &gt; 0</when>
+            <when test="column == 'order_remarks'">order_remarks = REPLACE(order_remarks, #{find}, #{to}) WHERE LOCATE(#{find}, order_remarks) &gt; 0</when>
+        </choose>
+    </update>
+
+    <update id="replaceInMacPlog">
+        UPDATE mac_plog SET
+        <choose>
+            <when test="column == 'plog_id'">plog_id = REPLACE(plog_id, #{find}, #{to}) WHERE LOCATE(#{find}, plog_id) &gt; 0</when>
+            <when test="column == 'user_id'">user_id = REPLACE(user_id, #{find}, #{to}) WHERE LOCATE(#{find}, user_id) &gt; 0</when>
+            <when test="column == 'user_id_1'">user_id_1 = REPLACE(user_id_1, #{find}, #{to}) WHERE LOCATE(#{find}, user_id_1) &gt; 0</when>
+            <when test="column == 'plog_type'">plog_type = REPLACE(plog_type, #{find}, #{to}) WHERE LOCATE(#{find}, plog_type) &gt; 0</when>
+            <when test="column == 'plog_points'">plog_points = REPLACE(plog_points, #{find}, #{to}) WHERE LOCATE(#{find}, plog_points) &gt; 0</when>
+            <when test="column == 'plog_time'">plog_time = REPLACE(plog_time, #{find}, #{to}) WHERE LOCATE(#{find}, plog_time) &gt; 0</when>
+            <when test="column == 'plog_remarks'">plog_remarks = REPLACE(plog_remarks, #{find}, #{to}) WHERE LOCATE(#{find}, plog_remarks) &gt; 0</when>
+        </choose>
+    </update>
+
+    <update id="replaceInMacRole">
+        UPDATE mac_role SET
+        <choose>
+            <when test="column == 'role_id'">role_id = REPLACE(role_id, #{find}, #{to}) WHERE LOCATE(#{find}, role_id) &gt; 0</when>
+            <when test="column == 'role_rid'">role_rid = REPLACE(role_rid, #{find}, #{to}) WHERE LOCATE(#{find}, role_rid) &gt; 0</when>
+            <when test="column == 'role_name'">role_name = REPLACE(role_name, #{find}, #{to}) WHERE LOCATE(#{find}, role_name) &gt; 0</when>
+            <when test="column == 'role_en'">role_en = REPLACE(role_en, #{find}, #{to}) WHERE LOCATE(#{find}, role_en) &gt; 0</when>
+            <when test="column == 'role_status'">role_status = REPLACE(role_status, #{find}, #{to}) WHERE LOCATE(#{find}, role_status) &gt; 0</when>
+            <when test="column == 'role_lock'">role_lock = REPLACE(role_lock, #{find}, #{to}) WHERE LOCATE(#{find}, role_lock) &gt; 0</when>
+            <when test="column == 'role_letter'">role_letter = REPLACE(role_letter, #{find}, #{to}) WHERE LOCATE(#{find}, role_letter) &gt; 0</when>
+            <when test="column == 'role_color'">role_color = REPLACE(role_color, #{find}, #{to}) WHERE LOCATE(#{find}, role_color) &gt; 0</when>
+            <when test="column == 'role_actor'">role_actor = REPLACE(role_actor, #{find}, #{to}) WHERE LOCATE(#{find}, role_actor) &gt; 0</when>
+            <when test="column == 'role_remarks'">role_remarks = REPLACE(role_remarks, #{find}, #{to}) WHERE LOCATE(#{find}, role_remarks) &gt; 0</when>
+            <when test="column == 'role_pic'">role_pic = REPLACE(role_pic, #{find}, #{to}) WHERE LOCATE(#{find}, role_pic) &gt; 0</when>
+            <when test="column == 'role_sort'">role_sort = REPLACE(role_sort, #{find}, #{to}) WHERE LOCATE(#{find}, role_sort) &gt; 0</when>
+            <when test="column == 'role_level'">role_level = REPLACE(role_level, #{find}, #{to}) WHERE LOCATE(#{find}, role_level) &gt; 0</when>
+            <when test="column == 'role_time'">role_time = REPLACE(role_time, #{find}, #{to}) WHERE LOCATE(#{find}, role_time) &gt; 0</when>
+            <when test="column == 'role_time_add'">role_time_add = REPLACE(role_time_add, #{find}, #{to}) WHERE LOCATE(#{find}, role_time_add) &gt; 0</when>
+            <when test="column == 'role_time_hits'">role_time_hits = REPLACE(role_time_hits, #{find}, #{to}) WHERE LOCATE(#{find}, role_time_hits) &gt; 0</when>
+            <when test="column == 'role_time_make'">role_time_make = REPLACE(role_time_make, #{find}, #{to}) WHERE LOCATE(#{find}, role_time_make) &gt; 0</when>
+            <when test="column == 'role_hits'">role_hits = REPLACE(role_hits, #{find}, #{to}) WHERE LOCATE(#{find}, role_hits) &gt; 0</when>
+            <when test="column == 'role_hits_day'">role_hits_day = REPLACE(role_hits_day, #{find}, #{to}) WHERE LOCATE(#{find}, role_hits_day) &gt; 0</when>
+            <when test="column == 'role_hits_week'">role_hits_week = REPLACE(role_hits_week, #{find}, #{to}) WHERE LOCATE(#{find}, role_hits_week) &gt; 0</when>
+            <when test="column == 'role_hits_month'">role_hits_month = REPLACE(role_hits_month, #{find}, #{to}) WHERE LOCATE(#{find}, role_hits_month) &gt; 0</when>
+            <when test="column == 'role_score'">role_score = REPLACE(role_score, #{find}, #{to}) WHERE LOCATE(#{find}, role_score) &gt; 0</when>
+            <when test="column == 'role_score_all'">role_score_all = REPLACE(role_score_all, #{find}, #{to}) WHERE LOCATE(#{find}, role_score_all) &gt; 0</when>
+            <when test="column == 'role_score_num'">role_score_num = REPLACE(role_score_num, #{find}, #{to}) WHERE LOCATE(#{find}, role_score_num) &gt; 0</when>
+            <when test="column == 'role_up'">role_up = REPLACE(role_up, #{find}, #{to}) WHERE LOCATE(#{find}, role_up) &gt; 0</when>
+            <when test="column == 'role_down'">role_down = REPLACE(role_down, #{find}, #{to}) WHERE LOCATE(#{find}, role_down) &gt; 0</when>
+            <when test="column == 'role_tpl'">role_tpl = REPLACE(role_tpl, #{find}, #{to}) WHERE LOCATE(#{find}, role_tpl) &gt; 0</when>
+            <when test="column == 'role_jumpurl'">role_jumpurl = REPLACE(role_jumpurl, #{find}, #{to}) WHERE LOCATE(#{find}, role_jumpurl) &gt; 0</when>
+            <when test="column == 'role_content'">role_content = REPLACE(role_content, #{find}, #{to}) WHERE LOCATE(#{find}, role_content) &gt; 0</when>
+        </choose>
+    </update>
+
+    <update id="replaceInMacTopic">
+        UPDATE mac_topic SET
+        <choose>
+            <when test="column == 'topic_id'">topic_id = REPLACE(topic_id, #{find}, #{to}) WHERE LOCATE(#{find}, topic_id) &gt; 0</when>
+            <when test="column == 'topic_name'">topic_name = REPLACE(topic_name, #{find}, #{to}) WHERE LOCATE(#{find}, topic_name) &gt; 0</when>
+            <when test="column == 'topic_en'">topic_en = REPLACE(topic_en, #{find}, #{to}) WHERE LOCATE(#{find}, topic_en) &gt; 0</when>
+            <when test="column == 'topic_sub'">topic_sub = REPLACE(topic_sub, #{find}, #{to}) WHERE LOCATE(#{find}, topic_sub) &gt; 0</when>
+            <when test="column == 'topic_status'">topic_status = REPLACE(topic_status, #{find}, #{to}) WHERE LOCATE(#{find}, topic_status) &gt; 0</when>
+            <when test="column == 'topic_sort'">topic_sort = REPLACE(topic_sort, #{find}, #{to}) WHERE LOCATE(#{find}, topic_sort) &gt; 0</when>
+            <when test="column == 'topic_letter'">topic_letter = REPLACE(topic_letter, #{find}, #{to}) WHERE LOCATE(#{find}, topic_letter) &gt; 0</when>
+            <when test="column == 'topic_color'">topic_color = REPLACE(topic_color, #{find}, #{to}) WHERE LOCATE(#{find}, topic_color) &gt; 0</when>
+            <when test="column == 'topic_tpl'">topic_tpl = REPLACE(topic_tpl, #{find}, #{to}) WHERE LOCATE(#{find}, topic_tpl) &gt; 0</when>
+            <when test="column == 'topic_type'">topic_type = REPLACE(topic_type, #{find}, #{to}) WHERE LOCATE(#{find}, topic_type) &gt; 0</when>
+            <when test="column == 'topic_pic'">topic_pic = REPLACE(topic_pic, #{find}, #{to}) WHERE LOCATE(#{find}, topic_pic) &gt; 0</when>
+            <when test="column == 'topic_pic_thumb'">topic_pic_thumb = REPLACE(topic_pic_thumb, #{find}, #{to}) WHERE LOCATE(#{find}, topic_pic_thumb) &gt; 0</when>
+            <when test="column == 'topic_pic_slide'">topic_pic_slide = REPLACE(topic_pic_slide, #{find}, #{to}) WHERE LOCATE(#{find}, topic_pic_slide) &gt; 0</when>
+            <when test="column == 'topic_key'">topic_key = REPLACE(topic_key, #{find}, #{to}) WHERE LOCATE(#{find}, topic_key) &gt; 0</when>
+            <when test="column == 'topic_des'">topic_des = REPLACE(topic_des, #{find}, #{to}) WHERE LOCATE(#{find}, topic_des) &gt; 0</when>
+            <when test="column == 'topic_title'">topic_title = REPLACE(topic_title, #{find}, #{to}) WHERE LOCATE(#{find}, topic_title) &gt; 0</when>
+            <when test="column == 'topic_blurb'">topic_blurb = REPLACE(topic_blurb, #{find}, #{to}) WHERE LOCATE(#{find}, topic_blurb) &gt; 0</when>
+            <when test="column == 'topic_remarks'">topic_remarks = REPLACE(topic_remarks, #{find}, #{to}) WHERE LOCATE(#{find}, topic_remarks) &gt; 0</when>
+            <when test="column == 'topic_level'">topic_level = REPLACE(topic_level, #{find}, #{to}) WHERE LOCATE(#{find}, topic_level) &gt; 0</when>
+            <when test="column == 'topic_up'">topic_up = REPLACE(topic_up, #{find}, #{to}) WHERE LOCATE(#{find}, topic_up) &gt; 0</when>
+            <when test="column == 'topic_down'">topic_down = REPLACE(topic_down, #{find}, #{to}) WHERE LOCATE(#{find}, topic_down) &gt; 0</when>
+            <when test="column == 'topic_score'">topic_score = REPLACE(topic_score, #{find}, #{to}) WHERE LOCATE(#{find}, topic_score) &gt; 0</when>
+            <when test="column == 'topic_score_all'">topic_score_all = REPLACE(topic_score_all, #{find}, #{to}) WHERE LOCATE(#{find}, topic_score_all) &gt; 0</when>
+            <when test="column == 'topic_score_num'">topic_score_num = REPLACE(topic_score_num, #{find}, #{to}) WHERE LOCATE(#{find}, topic_score_num) &gt; 0</when>
+            <when test="column == 'topic_hits'">topic_hits = REPLACE(topic_hits, #{find}, #{to}) WHERE LOCATE(#{find}, topic_hits) &gt; 0</when>
+            <when test="column == 'topic_hits_day'">topic_hits_day = REPLACE(topic_hits_day, #{find}, #{to}) WHERE LOCATE(#{find}, topic_hits_day) &gt; 0</when>
+            <when test="column == 'topic_hits_week'">topic_hits_week = REPLACE(topic_hits_week, #{find}, #{to}) WHERE LOCATE(#{find}, topic_hits_week) &gt; 0</when>
+            <when test="column == 'topic_hits_month'">topic_hits_month = REPLACE(topic_hits_month, #{find}, #{to}) WHERE LOCATE(#{find}, topic_hits_month) &gt; 0</when>
+            <when test="column == 'topic_time'">topic_time = REPLACE(topic_time, #{find}, #{to}) WHERE LOCATE(#{find}, topic_time) &gt; 0</when>
+            <when test="column == 'topic_time_add'">topic_time_add = REPLACE(topic_time_add, #{find}, #{to}) WHERE LOCATE(#{find}, topic_time_add) &gt; 0</when>
+            <when test="column == 'topic_time_hits'">topic_time_hits = REPLACE(topic_time_hits, #{find}, #{to}) WHERE LOCATE(#{find}, topic_time_hits) &gt; 0</when>
+            <when test="column == 'topic_time_make'">topic_time_make = REPLACE(topic_time_make, #{find}, #{to}) WHERE LOCATE(#{find}, topic_time_make) &gt; 0</when>
+            <when test="column == 'topic_tag'">topic_tag = REPLACE(topic_tag, #{find}, #{to}) WHERE LOCATE(#{find}, topic_tag) &gt; 0</when>
+            <when test="column == 'topic_rel_vod'">topic_rel_vod = REPLACE(topic_rel_vod, #{find}, #{to}) WHERE LOCATE(#{find}, topic_rel_vod) &gt; 0</when>
+            <when test="column == 'topic_rel_art'">topic_rel_art = REPLACE(topic_rel_art, #{find}, #{to}) WHERE LOCATE(#{find}, topic_rel_art) &gt; 0</when>
+            <when test="column == 'topic_content'">topic_content = REPLACE(topic_content, #{find}, #{to}) WHERE LOCATE(#{find}, topic_content) &gt; 0</when>
+            <when test="column == 'topic_extend'">topic_extend = REPLACE(topic_extend, #{find}, #{to}) WHERE LOCATE(#{find}, topic_extend) &gt; 0</when>
+        </choose>
+    </update>
+
+    <update id="replaceInMacType">
+        UPDATE mac_type SET
+        <choose>
+            <when test="column == 'type_id'">type_id = REPLACE(type_id, #{find}, #{to}) WHERE LOCATE(#{find}, type_id) &gt; 0</when>
+            <when test="column == 'type_name'">type_name = REPLACE(type_name, #{find}, #{to}) WHERE LOCATE(#{find}, type_name) &gt; 0</when>
+            <when test="column == 'type_en'">type_en = REPLACE(type_en, #{find}, #{to}) WHERE LOCATE(#{find}, type_en) &gt; 0</when>
+            <when test="column == 'type_sort'">type_sort = REPLACE(type_sort, #{find}, #{to}) WHERE LOCATE(#{find}, type_sort) &gt; 0</when>
+            <when test="column == 'type_mid'">type_mid = REPLACE(type_mid, #{find}, #{to}) WHERE LOCATE(#{find}, type_mid) &gt; 0</when>
+            <when test="column == 'type_pid'">type_pid = REPLACE(type_pid, #{find}, #{to}) WHERE LOCATE(#{find}, type_pid) &gt; 0</when>
+            <when test="column == 'type_status'">type_status = REPLACE(type_status, #{find}, #{to}) WHERE LOCATE(#{find}, type_status) &gt; 0</when>
+            <when test="column == 'type_tpl'">type_tpl = REPLACE(type_tpl, #{find}, #{to}) WHERE LOCATE(#{find}, type_tpl) &gt; 0</when>
+            <when test="column == 'type_tpl_list'">type_tpl_list = REPLACE(type_tpl_list, #{find}, #{to}) WHERE LOCATE(#{find}, type_tpl_list) &gt; 0</when>
+            <when test="column == 'type_tpl_detail'">type_tpl_detail = REPLACE(type_tpl_detail, #{find}, #{to}) WHERE LOCATE(#{find}, type_tpl_detail) &gt; 0</when>
+            <when test="column == 'type_tpl_play'">type_tpl_play = REPLACE(type_tpl_play, #{find}, #{to}) WHERE LOCATE(#{find}, type_tpl_play) &gt; 0</when>
+            <when test="column == 'type_tpl_down'">type_tpl_down = REPLACE(type_tpl_down, #{find}, #{to}) WHERE LOCATE(#{find}, type_tpl_down) &gt; 0</when>
+            <when test="column == 'type_key'">type_key = REPLACE(type_key, #{find}, #{to}) WHERE LOCATE(#{find}, type_key) &gt; 0</when>
+            <when test="column == 'type_des'">type_des = REPLACE(type_des, #{find}, #{to}) WHERE LOCATE(#{find}, type_des) &gt; 0</when>
+            <when test="column == 'type_title'">type_title = REPLACE(type_title, #{find}, #{to}) WHERE LOCATE(#{find}, type_title) &gt; 0</when>
+            <when test="column == 'type_union'">type_union = REPLACE(type_union, #{find}, #{to}) WHERE LOCATE(#{find}, type_union) &gt; 0</when>
+            <when test="column == 'type_extend'">type_extend = REPLACE(type_extend, #{find}, #{to}) WHERE LOCATE(#{find}, type_extend) &gt; 0</when>
+            <when test="column == 'type_logo'">type_logo = REPLACE(type_logo, #{find}, #{to}) WHERE LOCATE(#{find}, type_logo) &gt; 0</when>
+            <when test="column == 'type_pic'">type_pic = REPLACE(type_pic, #{find}, #{to}) WHERE LOCATE(#{find}, type_pic) &gt; 0</when>
+            <when test="column == 'type_jumpurl'">type_jumpurl = REPLACE(type_jumpurl, #{find}, #{to}) WHERE LOCATE(#{find}, type_jumpurl) &gt; 0</when>
+        </choose>
+    </update>
+
+    <update id="replaceInMacUlog">
+        UPDATE mac_ulog SET
+        <choose>
+            <when test="column == 'ulog_id'">ulog_id = REPLACE(ulog_id, #{find}, #{to}) WHERE LOCATE(#{find}, ulog_id) &gt; 0</when>
+            <when test="column == 'user_id'">user_id = REPLACE(user_id, #{find}, #{to}) WHERE LOCATE(#{find}, user_id) &gt; 0</when>
+            <when test="column == 'ulog_mid'">ulog_mid = REPLACE(ulog_mid, #{find}, #{to}) WHERE LOCATE(#{find}, ulog_mid) &gt; 0</when>
+            <when test="column == 'ulog_type'">ulog_type = REPLACE(ulog_type, #{find}, #{to}) WHERE LOCATE(#{find}, ulog_type) &gt; 0</when>
+            <when test="column == 'ulog_rid'">ulog_rid = REPLACE(ulog_rid, #{find}, #{to}) WHERE LOCATE(#{find}, ulog_rid) &gt; 0</when>
+            <when test="column == 'ulog_sid'">ulog_sid = REPLACE(ulog_sid, #{find}, #{to}) WHERE LOCATE(#{find}, ulog_sid) &gt; 0</when>
+            <when test="column == 'ulog_nid'">ulog_nid = REPLACE(ulog_nid, #{find}, #{to}) WHERE LOCATE(#{find}, ulog_nid) &gt; 0</when>
+            <when test="column == 'ulog_points'">ulog_points = REPLACE(ulog_points, #{find}, #{to}) WHERE LOCATE(#{find}, ulog_points) &gt; 0</when>
+            <when test="column == 'ulog_time'">ulog_time = REPLACE(ulog_time, #{find}, #{to}) WHERE LOCATE(#{find}, ulog_time) &gt; 0</when>
+        </choose>
+    </update>
+
+    <update id="replaceInMacUser">
+        UPDATE mac_user SET
+        <choose>
+            <when test="column == 'user_id'">user_id = REPLACE(user_id, #{find}, #{to}) WHERE LOCATE(#{find}, user_id) &gt; 0</when>
+            <when test="column == 'group_id'">group_id = REPLACE(group_id, #{find}, #{to}) WHERE LOCATE(#{find}, group_id) &gt; 0</when>
+            <when test="column == 'user_name'">user_name = REPLACE(user_name, #{find}, #{to}) WHERE LOCATE(#{find}, user_name) &gt; 0</when>
+            <when test="column == 'user_pwd'">user_pwd = REPLACE(user_pwd, #{find}, #{to}) WHERE LOCATE(#{find}, user_pwd) &gt; 0</when>
+            <when test="column == 'user_nick_name'">user_nick_name = REPLACE(user_nick_name, #{find}, #{to}) WHERE LOCATE(#{find}, user_nick_name) &gt; 0</when>
+            <when test="column == 'user_qq'">user_qq = REPLACE(user_qq, #{find}, #{to}) WHERE LOCATE(#{find}, user_qq) &gt; 0</when>
+            <when test="column == 'user_email'">user_email = REPLACE(user_email, #{find}, #{to}) WHERE LOCATE(#{find}, user_email) &gt; 0</when>
+            <when test="column == 'user_phone'">user_phone = REPLACE(user_phone, #{find}, #{to}) WHERE LOCATE(#{find}, user_phone) &gt; 0</when>
+            <when test="column == 'user_status'">user_status = REPLACE(user_status, #{find}, #{to}) WHERE LOCATE(#{find}, user_status) &gt; 0</when>
+            <when test="column == 'user_portrait'">user_portrait = REPLACE(user_portrait, #{find}, #{to}) WHERE LOCATE(#{find}, user_portrait) &gt; 0</when>
+            <when test="column == 'user_portrait_thumb'">user_portrait_thumb = REPLACE(user_portrait_thumb, #{find}, #{to}) WHERE LOCATE(#{find}, user_portrait_thumb) &gt; 0</when>
+            <when test="column == 'user_openid_qq'">user_openid_qq = REPLACE(user_openid_qq, #{find}, #{to}) WHERE LOCATE(#{find}, user_openid_qq) &gt; 0</when>
+            <when test="column == 'user_openid_weixin'">user_openid_weixin = REPLACE(user_openid_weixin, #{find}, #{to}) WHERE LOCATE(#{find}, user_openid_weixin) &gt; 0</when>
+            <when test="column == 'user_question'">user_question = REPLACE(user_question, #{find}, #{to}) WHERE LOCATE(#{find}, user_question) &gt; 0</when>
+            <when test="column == 'user_answer'">user_answer = REPLACE(user_answer, #{find}, #{to}) WHERE LOCATE(#{find}, user_answer) &gt; 0</when>
+            <when test="column == 'user_points'">user_points = REPLACE(user_points, #{find}, #{to}) WHERE LOCATE(#{find}, user_points) &gt; 0</when>
+            <when test="column == 'user_points_froze'">user_points_froze = REPLACE(user_points_froze, #{find}, #{to}) WHERE LOCATE(#{find}, user_points_froze) &gt; 0</when>
+            <when test="column == 'user_reg_time'">user_reg_time = REPLACE(user_reg_time, #{find}, #{to}) WHERE LOCATE(#{find}, user_reg_time) &gt; 0</when>
+            <when test="column == 'user_reg_ip'">user_reg_ip = REPLACE(user_reg_ip, #{find}, #{to}) WHERE LOCATE(#{find}, user_reg_ip) &gt; 0</when>
+            <when test="column == 'user_login_time'">user_login_time = REPLACE(user_login_time, #{find}, #{to}) WHERE LOCATE(#{find}, user_login_time) &gt; 0</when>
+            <when test="column == 'user_login_ip'">user_login_ip = REPLACE(user_login_ip, #{find}, #{to}) WHERE LOCATE(#{find}, user_login_ip) &gt; 0</when>
+            <when test="column == 'user_last_login_time'">user_last_login_time = REPLACE(user_last_login_time, #{find}, #{to}) WHERE LOCATE(#{find}, user_last_login_time) &gt; 0</when>
+            <when test="column == 'user_last_login_ip'">user_last_login_ip = REPLACE(user_last_login_ip, #{find}, #{to}) WHERE LOCATE(#{find}, user_last_login_ip) &gt; 0</when>
+            <when test="column == 'user_login_num'">user_login_num = REPLACE(user_login_num, #{find}, #{to}) WHERE LOCATE(#{find}, user_login_num) &gt; 0</when>
+            <when test="column == 'user_extend'">user_extend = REPLACE(user_extend, #{find}, #{to}) WHERE LOCATE(#{find}, user_extend) &gt; 0</when>
+            <when test="column == 'user_random'">user_random = REPLACE(user_random, #{find}, #{to}) WHERE LOCATE(#{find}, user_random) &gt; 0</when>
+            <when test="column == 'user_end_time'">user_end_time = REPLACE(user_end_time, #{find}, #{to}) WHERE LOCATE(#{find}, user_end_time) &gt; 0</when>
+            <when test="column == 'user_pid'">user_pid = REPLACE(user_pid, #{find}, #{to}) WHERE LOCATE(#{find}, user_pid) &gt; 0</when>
+            <when test="column == 'user_pid_2'">user_pid_2 = REPLACE(user_pid_2, #{find}, #{to}) WHERE LOCATE(#{find}, user_pid_2) &gt; 0</when>
+            <when test="column == 'user_pid_3'">user_pid_3 = REPLACE(user_pid_3, #{find}, #{to}) WHERE LOCATE(#{find}, user_pid_3) &gt; 0</when>
+        </choose>
+    </update>
+
+    <update id="replaceInMacVisit">
+        UPDATE mac_visit SET
+        <choose>
+            <when test="column == 'visit_id'">visit_id = REPLACE(visit_id, #{find}, #{to}) WHERE LOCATE(#{find}, visit_id) &gt; 0</when>
+            <when test="column == 'user_id'">user_id = REPLACE(user_id, #{find}, #{to}) WHERE LOCATE(#{find}, user_id) &gt; 0</when>
+            <when test="column == 'visit_ip'">visit_ip = REPLACE(visit_ip, #{find}, #{to}) WHERE LOCATE(#{find}, visit_ip) &gt; 0</when>
+            <when test="column == 'visit_ly'">visit_ly = REPLACE(visit_ly, #{find}, #{to}) WHERE LOCATE(#{find}, visit_ly) &gt; 0</when>
+            <when test="column == 'visit_time'">visit_time = REPLACE(visit_time, #{find}, #{to}) WHERE LOCATE(#{find}, visit_time) &gt; 0</when>
+        </choose>
+    </update>
+
+    <update id="replaceInMacVod">
+        UPDATE mac_vod SET
+        <choose>
+            <when test="column == 'vod_id'">vod_id = REPLACE(vod_id, #{find}, #{to}) WHERE LOCATE(#{find}, vod_id) &gt; 0</when>
+            <when test="column == 'type_id'">type_id = REPLACE(type_id, #{find}, #{to}) WHERE LOCATE(#{find}, type_id) &gt; 0</when>
+            <when test="column == 'type_id_1'">type_id_1 = REPLACE(type_id_1, #{find}, #{to}) WHERE LOCATE(#{find}, type_id_1) &gt; 0</when>
+            <when test="column == 'group_id'">group_id = REPLACE(group_id, #{find}, #{to}) WHERE LOCATE(#{find}, group_id) &gt; 0</when>
+            <when test="column == 'vod_name'">vod_name = REPLACE(vod_name, #{find}, #{to}) WHERE LOCATE(#{find}, vod_name) &gt; 0</when>
+            <when test="column == 'vod_sub'">vod_sub = REPLACE(vod_sub, #{find}, #{to}) WHERE LOCATE(#{find}, vod_sub) &gt; 0</when>
+            <when test="column == 'vod_en'">vod_en = REPLACE(vod_en, #{find}, #{to}) WHERE LOCATE(#{find}, vod_en) &gt; 0</when>
+            <when test="column == 'vod_status'">vod_status = REPLACE(vod_status, #{find}, #{to}) WHERE LOCATE(#{find}, vod_status) &gt; 0</when>
+            <when test="column == 'vod_letter'">vod_letter = REPLACE(vod_letter, #{find}, #{to}) WHERE LOCATE(#{find}, vod_letter) &gt; 0</when>
+            <when test="column == 'vod_color'">vod_color = REPLACE(vod_color, #{find}, #{to}) WHERE LOCATE(#{find}, vod_color) &gt; 0</when>
+            <when test="column == 'vod_tag'">vod_tag = REPLACE(vod_tag, #{find}, #{to}) WHERE LOCATE(#{find}, vod_tag) &gt; 0</when>
+            <when test="column == 'vod_class'">vod_class = REPLACE(vod_class, #{find}, #{to}) WHERE LOCATE(#{find}, vod_class) &gt; 0</when>
+            <when test="column == 'vod_pic'">vod_pic = REPLACE(vod_pic, #{find}, #{to}) WHERE LOCATE(#{find}, vod_pic) &gt; 0</when>
+            <when test="column == 'vod_pic_thumb'">vod_pic_thumb = REPLACE(vod_pic_thumb, #{find}, #{to}) WHERE LOCATE(#{find}, vod_pic_thumb) &gt; 0</when>
+            <when test="column == 'vod_pic_slide'">vod_pic_slide = REPLACE(vod_pic_slide, #{find}, #{to}) WHERE LOCATE(#{find}, vod_pic_slide) &gt; 0</when>
+            <when test="column == 'vod_pic_screenshot'">vod_pic_screenshot = REPLACE(vod_pic_screenshot, #{find}, #{to}) WHERE LOCATE(#{find}, vod_pic_screenshot) &gt; 0</when>
+            <when test="column == 'vod_actor'">vod_actor = REPLACE(vod_actor, #{find}, #{to}) WHERE LOCATE(#{find}, vod_actor) &gt; 0</when>
+            <when test="column == 'vod_director'">vod_director = REPLACE(vod_director, #{find}, #{to}) WHERE LOCATE(#{find}, vod_director) &gt; 0</when>
+            <when test="column == 'vod_writer'">vod_writer = REPLACE(vod_writer, #{find}, #{to}) WHERE LOCATE(#{find}, vod_writer) &gt; 0</when>
+            <when test="column == 'vod_behind'">vod_behind = REPLACE(vod_behind, #{find}, #{to}) WHERE LOCATE(#{find}, vod_behind) &gt; 0</when>
+            <when test="column == 'vod_blurb'">vod_blurb = REPLACE(vod_blurb, #{find}, #{to}) WHERE LOCATE(#{find}, vod_blurb) &gt; 0</when>
+            <when test="column == 'vod_remarks'">vod_remarks = REPLACE(vod_remarks, #{find}, #{to}) WHERE LOCATE(#{find}, vod_remarks) &gt; 0</when>
+            <when test="column == 'vod_pubdate'">vod_pubdate = REPLACE(vod_pubdate, #{find}, #{to}) WHERE LOCATE(#{find}, vod_pubdate) &gt; 0</when>
+            <when test="column == 'vod_total'">vod_total = REPLACE(vod_total, #{find}, #{to}) WHERE LOCATE(#{find}, vod_total) &gt; 0</when>
+            <when test="column == 'vod_serial'">vod_serial = REPLACE(vod_serial, #{find}, #{to}) WHERE LOCATE(#{find}, vod_serial) &gt; 0</when>
+            <when test="column == 'vod_tv'">vod_tv = REPLACE(vod_tv, #{find}, #{to}) WHERE LOCATE(#{find}, vod_tv) &gt; 0</when>
+            <when test="column == 'vod_weekday'">vod_weekday = REPLACE(vod_weekday, #{find}, #{to}) WHERE LOCATE(#{find}, vod_weekday) &gt; 0</when>
+            <when test="column == 'vod_area'">vod_area = REPLACE(vod_area, #{find}, #{to}) WHERE LOCATE(#{find}, vod_area) &gt; 0</when>
+            <when test="column == 'vod_lang'">vod_lang = REPLACE(vod_lang, #{find}, #{to}) WHERE LOCATE(#{find}, vod_lang) &gt; 0</when>
+            <when test="column == 'vod_year'">vod_year = REPLACE(vod_year, #{find}, #{to}) WHERE LOCATE(#{find}, vod_year) &gt; 0</when>
+            <when test="column == 'vod_version'">vod_version = REPLACE(vod_version, #{find}, #{to}) WHERE LOCATE(#{find}, vod_version) &gt; 0</when>
+            <when test="column == 'vod_state'">vod_state = REPLACE(vod_state, #{find}, #{to}) WHERE LOCATE(#{find}, vod_state) &gt; 0</when>
+            <when test="column == 'vod_author'">vod_author = REPLACE(vod_author, #{find}, #{to}) WHERE LOCATE(#{find}, vod_author) &gt; 0</when>
+            <when test="column == 'vod_jumpurl'">vod_jumpurl = REPLACE(vod_jumpurl, #{find}, #{to}) WHERE LOCATE(#{find}, vod_jumpurl) &gt; 0</when>
+            <when test="column == 'vod_tpl'">vod_tpl = REPLACE(vod_tpl, #{find}, #{to}) WHERE LOCATE(#{find}, vod_tpl) &gt; 0</when>
+            <when test="column == 'vod_tpl_play'">vod_tpl_play = REPLACE(vod_tpl_play, #{find}, #{to}) WHERE LOCATE(#{find}, vod_tpl_play) &gt; 0</when>
+            <when test="column == 'vod_tpl_down'">vod_tpl_down = REPLACE(vod_tpl_down, #{find}, #{to}) WHERE LOCATE(#{find}, vod_tpl_down) &gt; 0</when>
+            <when test="column == 'vod_isend'">vod_isend = REPLACE(vod_isend, #{find}, #{to}) WHERE LOCATE(#{find}, vod_isend) &gt; 0</when>
+            <when test="column == 'vod_lock'">vod_lock = REPLACE(vod_lock, #{find}, #{to}) WHERE LOCATE(#{find}, vod_lock) &gt; 0</when>
+            <when test="column == 'vod_level'">vod_level = REPLACE(vod_level, #{find}, #{to}) WHERE LOCATE(#{find}, vod_level) &gt; 0</when>
+            <when test="column == 'vod_copyright'">vod_copyright = REPLACE(vod_copyright, #{find}, #{to}) WHERE LOCATE(#{find}, vod_copyright) &gt; 0</when>
+            <when test="column == 'vod_points'">vod_points = REPLACE(vod_points, #{find}, #{to}) WHERE LOCATE(#{find}, vod_points) &gt; 0</when>
+            <when test="column == 'vod_points_play'">vod_points_play = REPLACE(vod_points_play, #{find}, #{to}) WHERE LOCATE(#{find}, vod_points_play) &gt; 0</when>
+            <when test="column == 'vod_points_down'">vod_points_down = REPLACE(vod_points_down, #{find}, #{to}) WHERE LOCATE(#{find}, vod_points_down) &gt; 0</when>
+            <when test="column == 'vod_hits'">vod_hits = REPLACE(vod_hits, #{find}, #{to}) WHERE LOCATE(#{find}, vod_hits) &gt; 0</when>
+            <when test="column == 'vod_hits_day'">vod_hits_day = REPLACE(vod_hits_day, #{find}, #{to}) WHERE LOCATE(#{find}, vod_hits_day) &gt; 0</when>
+            <when test="column == 'vod_hits_week'">vod_hits_week = REPLACE(vod_hits_week, #{find}, #{to}) WHERE LOCATE(#{find}, vod_hits_week) &gt; 0</when>
+            <when test="column == 'vod_hits_month'">vod_hits_month = REPLACE(vod_hits_month, #{find}, #{to}) WHERE LOCATE(#{find}, vod_hits_month) &gt; 0</when>
+            <when test="column == 'vod_duration'">vod_duration = REPLACE(vod_duration, #{find}, #{to}) WHERE LOCATE(#{find}, vod_duration) &gt; 0</when>
+            <when test="column == 'vod_up'">vod_up = REPLACE(vod_up, #{find}, #{to}) WHERE LOCATE(#{find}, vod_up) &gt; 0</when>
+            <when test="column == 'vod_down'">vod_down = REPLACE(vod_down, #{find}, #{to}) WHERE LOCATE(#{find}, vod_down) &gt; 0</when>
+            <when test="column == 'vod_score'">vod_score = REPLACE(vod_score, #{find}, #{to}) WHERE LOCATE(#{find}, vod_score) &gt; 0</when>
+            <when test="column == 'vod_score_all'">vod_score_all = REPLACE(vod_score_all, #{find}, #{to}) WHERE LOCATE(#{find}, vod_score_all) &gt; 0</when>
+            <when test="column == 'vod_score_num'">vod_score_num = REPLACE(vod_score_num, #{find}, #{to}) WHERE LOCATE(#{find}, vod_score_num) &gt; 0</when>
+            <when test="column == 'vod_time'">vod_time = REPLACE(vod_time, #{find}, #{to}) WHERE LOCATE(#{find}, vod_time) &gt; 0</when>
+            <when test="column == 'vod_time_add'">vod_time_add = REPLACE(vod_time_add, #{find}, #{to}) WHERE LOCATE(#{find}, vod_time_add) &gt; 0</when>
+            <when test="column == 'vod_time_hits'">vod_time_hits = REPLACE(vod_time_hits, #{find}, #{to}) WHERE LOCATE(#{find}, vod_time_hits) &gt; 0</when>
+            <when test="column == 'vod_time_make'">vod_time_make = REPLACE(vod_time_make, #{find}, #{to}) WHERE LOCATE(#{find}, vod_time_make) &gt; 0</when>
+            <when test="column == 'vod_trysee'">vod_trysee = REPLACE(vod_trysee, #{find}, #{to}) WHERE LOCATE(#{find}, vod_trysee) &gt; 0</when>
+            <when test="column == 'vod_douban_id'">vod_douban_id = REPLACE(vod_douban_id, #{find}, #{to}) WHERE LOCATE(#{find}, vod_douban_id) &gt; 0</when>
+            <when test="column == 'vod_douban_score'">vod_douban_score = REPLACE(vod_douban_score, #{find}, #{to}) WHERE LOCATE(#{find}, vod_douban_score) &gt; 0</when>
+            <when test="column == 'vod_reurl'">vod_reurl = REPLACE(vod_reurl, #{find}, #{to}) WHERE LOCATE(#{find}, vod_reurl) &gt; 0</when>
+            <when test="column == 'vod_rel_vod'">vod_rel_vod = REPLACE(vod_rel_vod, #{find}, #{to}) WHERE LOCATE(#{find}, vod_rel_vod) &gt; 0</when>
+            <when test="column == 'vod_rel_art'">vod_rel_art = REPLACE(vod_rel_art, #{find}, #{to}) WHERE LOCATE(#{find}, vod_rel_art) &gt; 0</when>
+            <when test="column == 'vod_pwd'">vod_pwd = REPLACE(vod_pwd, #{find}, #{to}) WHERE LOCATE(#{find}, vod_pwd) &gt; 0</when>
+            <when test="column == 'vod_pwd_url'">vod_pwd_url = REPLACE(vod_pwd_url, #{find}, #{to}) WHERE LOCATE(#{find}, vod_pwd_url) &gt; 0</when>
+            <when test="column == 'vod_pwd_play'">vod_pwd_play = REPLACE(vod_pwd_play, #{find}, #{to}) WHERE LOCATE(#{find}, vod_pwd_play) &gt; 0</when>
+            <when test="column == 'vod_pwd_play_url'">vod_pwd_play_url = REPLACE(vod_pwd_play_url, #{find}, #{to}) WHERE LOCATE(#{find}, vod_pwd_play_url) &gt; 0</when>
+            <when test="column == 'vod_pwd_down'">vod_pwd_down = REPLACE(vod_pwd_down, #{find}, #{to}) WHERE LOCATE(#{find}, vod_pwd_down) &gt; 0</when>
+            <when test="column == 'vod_pwd_down_url'">vod_pwd_down_url = REPLACE(vod_pwd_down_url, #{find}, #{to}) WHERE LOCATE(#{find}, vod_pwd_down_url) &gt; 0</when>
+            <when test="column == 'vod_content'">vod_content = REPLACE(vod_content, #{find}, #{to}) WHERE LOCATE(#{find}, vod_content) &gt; 0</when>
+            <when test="column == 'vod_play_from'">vod_play_from = REPLACE(vod_play_from, #{find}, #{to}) WHERE LOCATE(#{find}, vod_play_from) &gt; 0</when>
+            <when test="column == 'vod_play_server'">vod_play_server = REPLACE(vod_play_server, #{find}, #{to}) WHERE LOCATE(#{find}, vod_play_server) &gt; 0</when>
+            <when test="column == 'vod_play_note'">vod_play_note = REPLACE(vod_play_note, #{find}, #{to}) WHERE LOCATE(#{find}, vod_play_note) &gt; 0</when>
+            <when test="column == 'vod_play_url'">vod_play_url = REPLACE(vod_play_url, #{find}, #{to}) WHERE LOCATE(#{find}, vod_play_url) &gt; 0</when>
+            <when test="column == 'vod_down_from'">vod_down_from = REPLACE(vod_down_from, #{find}, #{to}) WHERE LOCATE(#{find}, vod_down_from) &gt; 0</when>
+            <when test="column == 'vod_down_server'">vod_down_server = REPLACE(vod_down_server, #{find}, #{to}) WHERE LOCATE(#{find}, vod_down_server) &gt; 0</when>
+            <when test="column == 'vod_down_note'">vod_down_note = REPLACE(vod_down_note, #{find}, #{to}) WHERE LOCATE(#{find}, vod_down_note) &gt; 0</when>
+            <when test="column == 'vod_down_url'">vod_down_url = REPLACE(vod_down_url, #{find}, #{to}) WHERE LOCATE(#{find}, vod_down_url) &gt; 0</when>
+            <when test="column == 'vod_plot'">vod_plot = REPLACE(vod_plot, #{find}, #{to}) WHERE LOCATE(#{find}, vod_plot) &gt; 0</when>
+            <when test="column == 'vod_plot_name'">vod_plot_name = REPLACE(vod_plot_name, #{find}, #{to}) WHERE LOCATE(#{find}, vod_plot_name) &gt; 0</when>
+            <when test="column == 'vod_plot_detail'">vod_plot_detail = REPLACE(vod_plot_detail, #{find}, #{to}) WHERE LOCATE(#{find}, vod_plot_detail) &gt; 0</when>
+        </choose>
+    </update>
+
+    <update id="replaceInMacWebsite">
+        UPDATE mac_website SET
+        <choose>
+            <when test="column == 'website_id'">website_id = REPLACE(website_id, #{find}, #{to}) WHERE LOCATE(#{find}, website_id) &gt; 0</when>
+            <when test="column == 'type_id'">type_id = REPLACE(type_id, #{find}, #{to}) WHERE LOCATE(#{find}, type_id) &gt; 0</when>
+            <when test="column == 'type_id_1'">type_id_1 = REPLACE(type_id_1, #{find}, #{to}) WHERE LOCATE(#{find}, type_id_1) &gt; 0</when>
+            <when test="column == 'website_name'">website_name = REPLACE(website_name, #{find}, #{to}) WHERE LOCATE(#{find}, website_name) &gt; 0</when>
+            <when test="column == 'website_sub'">website_sub = REPLACE(website_sub, #{find}, #{to}) WHERE LOCATE(#{find}, website_sub) &gt; 0</when>
+            <when test="column == 'website_en'">website_en = REPLACE(website_en, #{find}, #{to}) WHERE LOCATE(#{find}, website_en) &gt; 0</when>
+            <when test="column == 'website_status'">website_status = REPLACE(website_status, #{find}, #{to}) WHERE LOCATE(#{find}, website_status) &gt; 0</when>
+            <when test="column == 'website_letter'">website_letter = REPLACE(website_letter, #{find}, #{to}) WHERE LOCATE(#{find}, website_letter) &gt; 0</when>
+            <when test="column == 'website_color'">website_color = REPLACE(website_color, #{find}, #{to}) WHERE LOCATE(#{find}, website_color) &gt; 0</when>
+            <when test="column == 'website_lock'">website_lock = REPLACE(website_lock, #{find}, #{to}) WHERE LOCATE(#{find}, website_lock) &gt; 0</when>
+            <when test="column == 'website_sort'">website_sort = REPLACE(website_sort, #{find}, #{to}) WHERE LOCATE(#{find}, website_sort) &gt; 0</when>
+            <when test="column == 'website_jumpurl'">website_jumpurl = REPLACE(website_jumpurl, #{find}, #{to}) WHERE LOCATE(#{find}, website_jumpurl) &gt; 0</when>
+            <when test="column == 'website_pic'">website_pic = REPLACE(website_pic, #{find}, #{to}) WHERE LOCATE(#{find}, website_pic) &gt; 0</when>
+            <when test="column == 'website_pic_screenshot'">website_pic_screenshot = REPLACE(website_pic_screenshot, #{find}, #{to}) WHERE LOCATE(#{find}, website_pic_screenshot) &gt; 0</when>
+            <when test="column == 'website_logo'">website_logo = REPLACE(website_logo, #{find}, #{to}) WHERE LOCATE(#{find}, website_logo) &gt; 0</when>
+            <when test="column == 'website_area'">website_area = REPLACE(website_area, #{find}, #{to}) WHERE LOCATE(#{find}, website_area) &gt; 0</when>
+            <when test="column == 'website_lang'">website_lang = REPLACE(website_lang, #{find}, #{to}) WHERE LOCATE(#{find}, website_lang) &gt; 0</when>
+            <when test="column == 'website_level'">website_level = REPLACE(website_level, #{find}, #{to}) WHERE LOCATE(#{find}, website_level) &gt; 0</when>
+            <when test="column == 'website_time'">website_time = REPLACE(website_time, #{find}, #{to}) WHERE LOCATE(#{find}, website_time) &gt; 0</when>
+            <when test="column == 'website_time_add'">website_time_add = REPLACE(website_time_add, #{find}, #{to}) WHERE LOCATE(#{find}, website_time_add) &gt; 0</when>
+            <when test="column == 'website_time_hits'">website_time_hits = REPLACE(website_time_hits, #{find}, #{to}) WHERE LOCATE(#{find}, website_time_hits) &gt; 0</when>
+            <when test="column == 'website_time_make'">website_time_make = REPLACE(website_time_make, #{find}, #{to}) WHERE LOCATE(#{find}, website_time_make) &gt; 0</when>
+            <when test="column == 'website_time_referer'">website_time_referer = REPLACE(website_time_referer, #{find}, #{to}) WHERE LOCATE(#{find}, website_time_referer) &gt; 0</when>
+            <when test="column == 'website_hits'">website_hits = REPLACE(website_hits, #{find}, #{to}) WHERE LOCATE(#{find}, website_hits) &gt; 0</when>
+            <when test="column == 'website_hits_day'">website_hits_day = REPLACE(website_hits_day, #{find}, #{to}) WHERE LOCATE(#{find}, website_hits_day) &gt; 0</when>
+            <when test="column == 'website_hits_week'">website_hits_week = REPLACE(website_hits_week, #{find}, #{to}) WHERE LOCATE(#{find}, website_hits_week) &gt; 0</when>
+            <when test="column == 'website_hits_month'">website_hits_month = REPLACE(website_hits_month, #{find}, #{to}) WHERE LOCATE(#{find}, website_hits_month) &gt; 0</when>
+            <when test="column == 'website_score'">website_score = REPLACE(website_score, #{find}, #{to}) WHERE LOCATE(#{find}, website_score) &gt; 0</when>
+            <when test="column == 'website_score_all'">website_score_all = REPLACE(website_score_all, #{find}, #{to}) WHERE LOCATE(#{find}, website_score_all) &gt; 0</when>
+            <when test="column == 'website_score_num'">website_score_num = REPLACE(website_score_num, #{find}, #{to}) WHERE LOCATE(#{find}, website_score_num) &gt; 0</when>
+            <when test="column == 'website_up'">website_up = REPLACE(website_up, #{find}, #{to}) WHERE LOCATE(#{find}, website_up) &gt; 0</when>
+            <when test="column == 'website_down'">website_down = REPLACE(website_down, #{find}, #{to}) WHERE LOCATE(#{find}, website_down) &gt; 0</when>
+            <when test="column == 'website_referer'">website_referer = REPLACE(website_referer, #{find}, #{to}) WHERE LOCATE(#{find}, website_referer) &gt; 0</when>
+            <when test="column == 'website_referer_day'">website_referer_day = REPLACE(website_referer_day, #{find}, #{to}) WHERE LOCATE(#{find}, website_referer_day) &gt; 0</when>
+            <when test="column == 'website_referer_week'">website_referer_week = REPLACE(website_referer_week, #{find}, #{to}) WHERE LOCATE(#{find}, website_referer_week) &gt; 0</when>
+            <when test="column == 'website_referer_month'">website_referer_month = REPLACE(website_referer_month, #{find}, #{to}) WHERE LOCATE(#{find}, website_referer_month) &gt; 0</when>
+            <when test="column == 'website_tag'">website_tag = REPLACE(website_tag, #{find}, #{to}) WHERE LOCATE(#{find}, website_tag) &gt; 0</when>
+            <when test="column == 'website_class'">website_class = REPLACE(website_class, #{find}, #{to}) WHERE LOCATE(#{find}, website_class) &gt; 0</when>
+            <when test="column == 'website_remarks'">website_remarks = REPLACE(website_remarks, #{find}, #{to}) WHERE LOCATE(#{find}, website_remarks) &gt; 0</when>
+            <when test="column == 'website_tpl'">website_tpl = REPLACE(website_tpl, #{find}, #{to}) WHERE LOCATE(#{find}, website_tpl) &gt; 0</when>
+            <when test="column == 'website_blurb'">website_blurb = REPLACE(website_blurb, #{find}, #{to}) WHERE LOCATE(#{find}, website_blurb) &gt; 0</when>
+            <when test="column == 'website_content'">website_content = REPLACE(website_content, #{find}, #{to}) WHERE LOCATE(#{find}, website_content) &gt; 0</when>
+        </choose>
+    </update>
+
+    <update id="replaceInMacVodSearch">
+        UPDATE mac_vod_search SET
+        <choose>
+            <when test="column == 'search_key'">search_key = REPLACE(search_key, #{find}, #{to}) WHERE LOCATE(#{find}, search_key) &gt; 0</when>
+            <when test="column == 'search_word'">search_word = REPLACE(search_word, #{find}, #{to}) WHERE LOCATE(#{find}, search_word) &gt; 0</when>
+            <when test="column == 'search_field'">search_field = REPLACE(search_field, #{find}, #{to}) WHERE LOCATE(#{find}, search_field) &gt; 0</when>
+            <when test="column == 'search_hit_count'">search_hit_count = REPLACE(search_hit_count, #{find}, #{to}) WHERE LOCATE(#{find}, search_hit_count) &gt; 0</when>
+            <when test="column == 'search_last_hit_time'">search_last_hit_time = REPLACE(search_last_hit_time, #{find}, #{to}) WHERE LOCATE(#{find}, search_last_hit_time) &gt; 0</when>
+            <when test="column == 'search_update_time'">search_update_time = REPLACE(search_update_time, #{find}, #{to}) WHERE LOCATE(#{find}, search_update_time) &gt; 0</when>
+            <when test="column == 'search_result_count'">search_result_count = REPLACE(search_result_count, #{find}, #{to}) WHERE LOCATE(#{find}, search_result_count) &gt; 0</when>
+            <when test="column == 'search_result_ids'">search_result_ids = REPLACE(search_result_ids, #{find}, #{to}) WHERE LOCATE(#{find}, search_result_ids) &gt; 0</when>
+        </choose>
+    </update>
+</mapper>

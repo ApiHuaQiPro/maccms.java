@@ -30,7 +30,9 @@ import org.junit.jupiter.api.Test;
 class SqlEntryGuardTest {
 
     /** 允许出现在 {@code ${...}} 里的表达式 → 登记批次与校验方式。B02 交付时为空。 */
-    static final Map<String, String> REGISTERED_DOLLAR = Map.of();
+    static final Map<String, String> REGISTERED_DOLLAR = Map.of(
+            "table", "B15 数据库工具（24 文档第 9.2 节）：必须出现在 SHOW TABLE STATUS 的结果里且只含字母数字下划线",
+            "columns", "B15 数据库工具（24 文档第 9.3 节）：SHOW COLUMNS 的列名逐个校验（只含字母数字下划线）后拼成 CAST(`列` AS CHAR) AS `列`");
 
     private static final Path MAPPERS = JavaSources.MAIN_RESOURCES.resolve("mapper");
 

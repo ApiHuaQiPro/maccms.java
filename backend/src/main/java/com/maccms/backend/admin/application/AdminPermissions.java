@@ -271,12 +271,14 @@ public final class AdminPermissions {
             Map.entry("system", "B15"), Map.entry("domain", "B15"), Map.entry("vodserver", "B15"),
             Map.entry("vodplayer", "B15"), Map.entry("voddowner", "B15"), Map.entry("template", "B15"),
             Map.entry("database", "B15"), Map.entry("addon", "B15"), Map.entry("urlsend", "B15"),
-            Map.entry("timming", "B16"), Map.entry("make", "B16"),
+            Map.entry("timming", "B15"), Map.entry("make", "B16"),
             Map.entry("collect", "B17"), Map.entry("cj", "B17"));
 
     /**
      * 按动作覆盖 {@link #CONTROLLER_BATCH}：{@code index/select} 是内容批量操作的弹窗（B13）；{@code index/check_back_link} 是外部回链检测
      * E11（B28）；发信测试 E07（B25）；资源站采集解析 B18、入库 B19；自定义规则的采集与发布 B20；推送执行 E09（B28）；插件市场 E13（B29）。
+     * B15 起 {@code timming/*}（定时任务配置页，执行与 runtime 回写仍在 B16）与 {@code addon/downloaded}（本地插件列表，这份生产代码已去掉
+     * 市场列表，路线图第 5.7 节）归 B15。
      */
     private static final Map<String, String> ACTION_BATCH = Map.ofEntries(
             Map.entry("index/select", "B13"), Map.entry("index/check_back_link", "B28"),
@@ -288,7 +290,7 @@ public final class AdminPermissions {
             Map.entry("cj/publish", "B20"), Map.entry("cj/col_all", "B20"), Map.entry("cj/show", "B20"),
             Map.entry("cj/content_del", "B20"), Map.entry("cj/content_into", "B20"), Map.entry("cj/show_url", "B20"),
             Map.entry("urlsend/push", "B28"), Map.entry("urlsend/data", "B28"),
-            Map.entry("addon/downloaded", "B29"), Map.entry("addon/install", "B29"), Map.entry("addon/upgrade", "B29"));
+            Map.entry("addon/install", "B29"), Map.entry("addon/upgrade", "B29"));
 
     /**
      * 旧控制器中存在、但 auth.php 没有列出的公开动作（小写；Base 的 {@code check_auth}/{@code _cache_clear} 不算动作）。

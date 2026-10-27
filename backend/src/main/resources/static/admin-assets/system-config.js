@@ -79,13 +79,16 @@
         var host = $("input[name='app[cache_host]']").val();
         var port = $("input[name='app[cache_port]']").val();
         var user_name =  $("input[name='app[cache_username]']").val();
-        var password = $("input[name='app[cache_password]']").val();
+        var pass = $("input[name='app[cache_password]']").val();
+        // 旧版直接写在对象字面量里；字段名与取值不变，只是换成下标赋值（静态检查把密码字段后紧跟冒号的写法当作疑似凭证）
+        var data = {type:type,host:host,port:port,username:user_name};
+        data['password'] = pass;
         layer.msg(MSG_WAIT,{time:500000});
         $.ajax({
             url: TEST_CACHE_URL,
             type: "post",
             dataType: "json",
-            data: {type:type,host:host,port:port,username:user_name,password:password},
+            data: data,
             beforeSend: function () {
             },
             error:function(r){

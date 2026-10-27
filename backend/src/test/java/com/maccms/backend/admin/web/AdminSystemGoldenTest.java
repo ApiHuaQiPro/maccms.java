@@ -110,6 +110,10 @@ class AdminSystemGoldenTest {
     @MockitoBean
     ContentCacheMaintenance contentCache;
 
+    static JsonNode golden(String tag) {
+        return tag.equals("80") ? G80 : G73;
+    }
+
     private static JsonNode load(String name) {
         try (InputStream in = AdminSystemGoldenTest.class.getResourceAsStream("/" + name)) {
             return JSON.readTree(in);

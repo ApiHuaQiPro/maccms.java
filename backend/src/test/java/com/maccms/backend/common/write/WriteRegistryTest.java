@@ -41,7 +41,10 @@ class WriteRegistryTest {
         assertThat(WriteRegistry.registered().allows("member", "mac_cash", WriteOperation.UPDATE)).isTrue();
         assertThat(WriteRegistry.registered().allows("member", "mac_visit", WriteOperation.DELETE)).isTrue();
         assertThat(WriteRegistry.registered().allows("member", "mac_visit", WriteOperation.UPDATE)).isFalse();
-        assertThat(WriteRegistry.registered().allows("admin", "mac_group", WriteOperation.UPDATE)).isFalse();
+        // B15（MACC-39）：数据库工具"批量替换"可以 UPDATE 任一 mac_* 表，但后台模块不能借此新增或删除会员组等
+        assertThat(WriteRegistry.registered().allows("admin", "mac_group", WriteOperation.UPDATE)).isTrue();
+        assertThat(WriteRegistry.registered().allows("admin", "mac_group", WriteOperation.INSERT)).isFalse();
+        assertThat(WriteRegistry.registered().allows("admin", "mac_vod", WriteOperation.DELETE)).isFalse();
         assertThat(WriteRegistry.registered().allows("content", "mac_user", WriteOperation.UPDATE)).isFalse();
         assertThat(WriteRegistry.registered().allows("content", "mac_vod", WriteOperation.UPDATE)).isTrue();
         // B13（MACC-37）：后台内容管理的新增与删除
@@ -56,13 +59,15 @@ class WriteRegistryTest {
         assertThat(WriteRegistry.registered().allows("admin", "mac_admin", WriteOperation.INSERT)).isTrue();
         assertThat(WriteRegistry.registered().allows("admin", "mac_admin", WriteOperation.UPDATE)).isTrue();
         assertThat(WriteRegistry.registered().allows("admin", "mac_admin", WriteOperation.DELETE)).isTrue();
-        assertThat(WriteRegistry.registered().allows("admin", "mac_user", WriteOperation.UPDATE)).isFalse();
+        // B15：数据库工具的批量替换让后台模块可以 UPDATE mac_user（不能新增或删除会员）
+        assertThat(WriteRegistry.registered().allows("admin", "mac_user", WriteOperation.UPDATE)).isTrue();
+        assertThat(WriteRegistry.registered().allows("admin", "mac_user", WriteOperation.DELETE)).isFalse();
         assertThat(WriteRegistry.registered().allows("member", "mac_admin", WriteOperation.UPDATE)).isFalse();
         assertThat(WriteRegistry.registered().allows("comment", "mac_comment", WriteOperation.DELETE)).isTrue();
         assertThat(WriteRegistry.registered().allows("comment", "mac_gbook", WriteOperation.UPDATE)).isTrue();
         assertThat(WriteRegistry.registered().allows("comment", "mac_gbook", WriteOperation.DELETE)).isTrue();
         assertThat(WriteRegistry.registered().allows("comment", "mac_vod", WriteOperation.UPDATE)).isFalse();
-        assertThat(WriteRegistry.registered().permissions()).hasSize(60);
+        assertThat(WriteRegistry.registered().permissions()).hasSize(85);
     }
 
     @Test

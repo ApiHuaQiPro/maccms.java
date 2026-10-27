@@ -243,6 +243,40 @@ public class AdminConfiguration {
                 clock.getIfAvailable(Clock::systemUTC));
     }
 
+    /**
+     * B15 数据库工具（24 文档第 9 节）：只读查询经只读连接池，批量替换经可写数据源。备份文件头部的主机、端口、库名取自
+     * {@code spring.datasource.url}（不含账号与密码）。只装配了部分 Bean 的测试里没有只读 Mapper 时不注册（数据库工具的动作按"由 B15 提供"处理）。
+     */
+    @Bean
+    com.maccms.backend.admin.application.DatabaseToolService adminDatabaseToolService(
+            ObjectProvider<com.maccms.backend.admin.infrastructure.DatabaseToolMapper> reader,
+            ObjectProvider<com.maccms.backend.admin.infrastructure.DatabaseReplaceWriteMapper> writer, LegacyConfigService legacy,
+            LegacySiteFiles files, ObjectProvider<Clock> clock, @Value("${spring.datasource.url:}") String url) {
+        com.maccms.backend.admin.infrastructure.DatabaseToolMapper r = reader.getIfAvailable();
+        if (r == null) {
+            return null;
+        }
+        return new com.maccms.backend.admin.application.DatabaseToolService(r, writer.getIfAvailable(), legacy, files,
+                clock.getIfAvailable(Clock::systemUTC), databaseEndpoint(url));
+    }
+
+    /** {@code jdbc:mysql://主机[:端口]/库名?…} 的主机、端口（缺省 3306）与库名。 */
+    static com.maccms.backend.admin.application.DatabaseToolService.Endpoint databaseEndpoint(String url) {
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("^jdbc:mysql://([^/:?]+)(?::(\\d+))?/([^?]*)").matcher(url == null ? "" : url);
+        if (!m.find()) {
+            return new com.maccms.backend.admin.application.DatabaseToolService.Endpoint("", "", "");
+        }
+        return new com.maccms.backend.admin.application.DatabaseToolService.Endpoint(m.group(1), m.group(2) == null ? "3306" : m.group(2),
+                m.group(3));
+    }
+
+    @Bean
+    com.maccms.backend.admin.web.AdminDatabaseActions adminDatabaseActions(AdminEndpoint endpoint, AdminSettings settings,
+            AdminResponses responses, ObjectProvider<com.maccms.backend.admin.application.DatabaseToolService> db, AdminRandom random) {
+        com.maccms.backend.admin.application.DatabaseToolService s = db.getIfAvailable();
+        return s == null ? null : new com.maccms.backend.admin.web.AdminDatabaseActions(endpoint, settings, responses, s, random);
+    }
+
     @Bean
     AdminSystemActions adminSystemActions(AdminEndpoint endpoint, AdminSettings settings, AdminResponses responses,
                                           SystemConfigService system, AdminRandom random) {

@@ -17,7 +17,12 @@ import com.maccms.backend.common.clientip.ClientIpConfiguration;
 import com.maccms.backend.common.session.SessionState;
 import com.maccms.backend.content.application.ContentCacheMaintenance;
 import jakarta.servlet.http.Cookie;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
@@ -26,6 +31,8 @@ import java.util.SplittableRandom;
 import java.util.random.RandomGenerator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,6 +41,8 @@ import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -43,18 +52,52 @@ import tools.jackson.databind.json.JsonMapper;
 /**
  * 后台入口的 HTTP 契约（21 文档第 4、8 节）：路由与旧地址写法、登录（验证码、会话轮换、cookie 属性）、D2 ⑤（停用/改密/删除/改权限
  * 在下一个请求生效）、auth.php 每个权限码对非超级管理员的拒绝、后续批次的提示、表单令牌、来源校验、响应头与 JSON 字节。
- * 库用内存替身 {@link FakeAdminTable}；与 PHP 黄金的逐项对照在 AdminGoldenMySqlIT。旧配置目录用仓库的 application/（登录要验证码）。
+ * 库用内存替身 {@link FakeAdminTable}；与 PHP 黄金的逐项对照在 AdminGoldenMySqlIT。旧配置目录用仓库 application/ 的临时副本（登录要验证码；
+ * B15 起后台的动作会写回配置文件与 static/js/playerconfig.js，不能指向仓库本身）。
  */
 @WebMvcTest(controllers = AdminController.class, properties = {
         "maccms.admin.enabled=true",
         "maccms.admin.entry=/_admin.php",
-        "maccms.admin.base-url=http://admin.local.test/",
-        "maccms.legacy-config.dir=../application"})
+        "maccms.admin.base-url=http://admin.local.test/"})
 @Import({AdminConfiguration.class, ClientIpConfiguration.class, AdminMvcTest.Fakes.class})
 class AdminMvcTest {
 
     static final String E = "/_admin.php";
     private static final JsonMapper JSON = JsonMapper.builder().build();
+    private static final Path SITE = copySite();
+
+    /** 仓库的 application/、static/js/、addons/ 复制到临时目录（站点根目录 = application 的上一级）。 */
+    private static Path copySite() {
+        try {
+            Path site = Files.createTempDirectory("maccms-admin-mvc-site");
+            for (String dir : List.of("application", "static/js", "addons")) {
+                Path from = Path.of("..").resolve(dir);
+                try (Stream<Path> s = Files.walk(from)) {
+                    for (Path p : s.toList()) {
+                        Path to = site.resolve(dir).resolve(from.relativize(p).toString());
+                        if (Files.isDirectory(p)) {
+                            Files.createDirectories(to);
+                        } else {
+                            Files.copy(p, to, StandardCopyOption.COPY_ATTRIBUTES);
+                        }
+                    }
+                }
+            }
+            return site;
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    @DynamicPropertySource
+    static void legacyDir(DynamicPropertyRegistry r) {
+        r.add("maccms.legacy-config.dir", () -> SITE.resolve("application").toString());
+    }
+
+    @AfterAll
+    static void deleteSite() throws IOException {
+        AdminSystemGoldenTest.deleteTree(SITE);
+    }
 
     @TestConfiguration
     static class Fakes {
@@ -325,6 +368,14 @@ class AdminMvcTest {
                 continue;
             }
             String b = body(as(sid, ajax(get(E + "/admin/" + ca))));
+            if (batch.equals("B15")) {
+                // B15 的动作已实现（与 PHP 的对照在 AdminSystemGoldenTest）：这里只确认不再是批次提示。数据库工具要库（本测试没有
+                // DatabaseToolMapper，新版此时仍给批次提示；真实库上的对照在 AdminSystemGoldenMySqlIT）
+                if (b.contains("批次提供") && !p[0].equals("database")) {
+                    wrong.add(ca + " " + b);
+                }
+                continue;
+            }
             if (!b.equals("{\"code\":0,\"msg\":\"该功能尚未在新系统中实现（由 " + batch + " 批次提供）\",\"data\":\"\","
                     + "\"url\":\"\",\"wait\":3}")) {
                 wrong.add(ca + " " + b);
@@ -379,7 +430,16 @@ class AdminMvcTest {
         MvcResult q = as(sid, get(E + "/admin/index/quickmenu.html"));
         assertThat(AdminHtml.quickmenu(body(q))).startsWith("title=快捷菜单配置 - 安全第一请勿泄露后台地址")
                 .contains("text=测试系统模块菜单,system/config\\n测试远程地址菜单,//www.baidu.com/").endsWith("token=true");
-        assertThat(body(as(sid, ajax(form("/admin/index/quickmenu", "quickmenu=a,b"))))).contains("由 B15 批次提供");
+        // 保存归 B15：没有表单令牌时拒绝、不写文件；带上页面的令牌后写回（临时副本里的）quickmenu.php
+        Path quickmenu = SITE.resolve("application/extra/quickmenu.php");
+        byte[] before = Files.readAllBytes(quickmenu);
+        assertThat(body(as(sid, ajax(form("/admin/index/quickmenu", "quickmenu=a,b"))))).contains("\"code\":0", "非法请求");
+        assertThat(Files.readAllBytes(quickmenu)).isEqualTo(before);
+        Matcher tk = Pattern.compile("name=\"__token__\" value=\"([0-9a-f]+)\"").matcher(body(q));
+        assertThat(tk.find()).isTrue();
+        assertThat(body(as(sid, ajax(form("/admin/index/quickmenu", "__token__=" + tk.group(1) + "&quickmenu=a,b")))))
+                .contains("\"code\":1");
+        assertThat(Files.readString(quickmenu, StandardCharsets.UTF_8)).isEqualTo("<?php\nreturn array (\n  0 => 'a,b',\n);");
 
         MvcResult out = as(sid, get(E + "/admin/index/logout"));
         assertThat(out.getResponse().getHeader("Location")).isEqualTo(E + "/admin/index/login.html");

@@ -164,10 +164,11 @@ class AdminTemplatePolicyTest {
     private static final Pattern STYLE_ATTR = Pattern.compile("\\sstyle=\"");
     /**
      * B13：按条件二选一的固定样式（旧模板 {@code {if …}style="display:none"{/if}} 一类写法）：{@code style="${条件 ? "字面量" : null}"}，
-     * 两个分支都是不含输出的字面量或 null，条件只是方法调用与成员访问。
+     * 两个分支都是不含输出的字面量或 null，条件只是方法调用与成员访问（B15 起条件里可以有字符串字面量与 {@code ||}/{@code &&}，如
+     * {@code page.eq(page.at("config.upload.mode"), "Ftp")}；输出仍只能是两个固定分支之一）。
      */
     private static final Pattern STYLE_CHOICE = Pattern.compile(
-            "style=\"\\$\\{[\\w.()!]+ \\? (?:null|\"[^\"$@{}]*\") : (?:null|\"[^\"$@{}]*\")}\"");
+            "style=\"\\$\\{(?:[\\w.()!|&, ]|\"[^\"$@{}?]*\")+ \\? (?:null|\"[^\"$@{}]*\") : (?:null|\"[^\"$@{}]*\")}\"");
     private static final Pattern TRUSTED = Pattern.compile(
             "AdminText\\.trusted\\(page\\.lang\\(\\)\\.get\\(\"[a-z_/]+\"\\)\\)");
 
@@ -224,12 +225,29 @@ class AdminTemplatePolicyTest {
             s.forEach(files::add);
         }
         Pattern host = Pattern.compile("(?i)(https?:)?//[a-z0-9-]+\\.[a-z0-9.-]+");
+        // B15（24 文档第 8 节）：系统配置各页里旧模板自带的"去服务商注册/申请"按钮，是管理员点击后在新标签页打开的链接（a href，target=_blank），
+        // 不是页面加载的资源；地址原样保留，只允许出现在这几个模板里
+        java.util.Map<String, java.util.Set<String>> navigation = java.util.Map.ofEntries(
+                java.util.Map.entry("configconnect.jte", java.util.Set.of("http://connect.qq.com", "https://open.weixin.qq.com")),
+                java.util.Map.entry("pay_alipay.jte", java.util.Set.of("https://open.alipay.com")),
+                java.util.Map.entry("pay_codepay.jte", java.util.Set.of("https://api.xiuxiu888.com")),
+                java.util.Map.entry("pay_weixin.jte", java.util.Set.of("https://pay.weixin.qq.com")),
+                java.util.Map.entry("pay_zhapay.jte", java.util.Set.of("https://www.zhapay.com")),
+                java.util.Map.entry("sms_aliyun.jte", java.util.Set.of("https://www.aliyun.com")),
+                java.util.Map.entry("sms_qcloud.jte", java.util.Set.of("https://cloud.tencent.com")),
+                java.util.Map.entry("upload_alibaba.jte", java.util.Set.of("http://alibaba.com")),
+                java.util.Map.entry("upload_qiniu.jte", java.util.Set.of("https://www.qiniu.com")),
+                java.util.Map.entry("upload_uomg.jte", java.util.Set.of("http://api.uomg.com")),
+                java.util.Map.entry("upload_upyun.jte", java.util.Set.of("https://www.upyun.com")),
+                java.util.Map.entry("upload_weibo.jte", java.util.Set.of("https://www.weibo.com")));
         List<String> hits = new ArrayList<>();
         for (Path f : files) {
             Matcher m = host.matcher(Files.readString(f, StandardCharsets.UTF_8));
             while (m.find()) {
+                boolean nav = f.toString().replace('\\', '/').contains("/admin/pages/system/")
+                        && navigation.getOrDefault(f.getFileName().toString(), java.util.Set.of()).contains(m.group());
                 // 跳转页的 XHTML 文档类型声明与命名空间是标识符，不是加载的资源
-                if (!m.group().startsWith("http://www.w3.org")) {
+                if (!m.group().startsWith("http://www.w3.org") && !nav) {
                     hits.add(f + ": " + m.group());
                 }
             }

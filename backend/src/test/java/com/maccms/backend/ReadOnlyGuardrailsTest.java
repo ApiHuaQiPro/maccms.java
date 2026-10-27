@@ -41,6 +41,22 @@ class ReadOnlyGuardrailsTest {
         assertThat(mapperFiles()).isNotEmpty();
         for (Path p : mapperFiles()) {
             String xml = sqlOnly(p);
+            if (p.endsWith(Path.of("admin", "DatabaseToolMapper.xml"))) {
+                // B15 数据库工具（24 文档第 9 节）：只有 SHOW TABLE STATUS / SHOW COLUMNS / SHOW CREATE TABLE（只读出建表语句文本写进备份文件）
+                // 与 SELECT；${table}、${columns} 是 SqlEntryGuardTest 登记的、经校验的标识符
+                assertThat(xml).as(p.toString()).doesNotContain("<insert", "<update", "<delete");
+                Matcher stmt = Pattern.compile("(?s)<select\\b[^>]*>(.*?)</select>").matcher(xml);
+                int n = 0;
+                while (stmt.find()) {
+                    String sql = stmt.group(1).strip().replaceAll("\\s+", " ");
+                    assertThat(sql).as(p.toString()).matches("SHOW TABLE STATUS|SHOW COLUMNS FROM `\\$\\{table}`"
+                            + "|SHOW CREATE TABLE `\\$\\{table}`|SELECT COUNT\\(\\*\\) AS count FROM `\\$\\{table}`"
+                            + "|SELECT \\$\\{columns} FROM `\\$\\{table}` LIMIT #\\{offset}, 1000");
+                    n++;
+                }
+                assertThat(n).isEqualTo(5);
+                continue;
+            }
             assertThat(xml).as(p.toString()).doesNotContain("<insert", "<update", "<delete", "${");
             String upper = xml.toUpperCase(Locale.ROOT);
             for (String kw : List.of("INSERT ", "UPDATE ", "DELETE ", "REPLACE ", "TRUNCATE ", "DROP ", "ALTER ",
