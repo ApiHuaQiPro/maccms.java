@@ -256,9 +256,25 @@ class SiteGuardrailsTest {
                 .contains("<contentType>Html</contentType>")
                 .contains("<htmlPolicyClass>gg.jte.html.OwaspHtmlPolicy</htmlPolicyClass>")
                 .contains("<className>gg.jte.models.generator.ModelExtension</className>");
-        // jte 的 "test" 作用域：编译器只用于 SiteTemplatePolicyTest，不进入运行时
-        assertThat(pom).containsPattern("(?s)<artifactId>jte</artifactId>\\s*<version>\\$\\{jte.version}</version>"
-                + "\\s*<scope>test</scope>");
+        // B15（D4 模板在线编辑，24 文档第 7 节）起 jte 编译器进入运行时（编译作用域）；site 仍只用预编译的类，运行时编译只能出现在
+        // sitetemplate.infrastructure（下面 runtimeTemplateCompilationOnlyInSiteTemplateInfrastructure）
+        assertThat(pom).containsPattern("(?s)<artifactId>jte</artifactId>\\s*<version>\\$\\{jte.version}</version>\\s*</dependency>");
+    }
+
+    @Test
+    void runtimeTemplateCompilationOnlyInSiteTemplateInfrastructure() throws IOException {
+        Pattern compile = Pattern.compile("TemplateEngine\\s*\\.\\s*create\\s*\\(|DirectoryCodeResolver|ResourceCodeResolver"
+                + "|gg\\.jte\\.compiler|precompileAll|javax\\.tools");
+        List<String> hits = new ArrayList<>();
+        Path root = Path.of("src", "main", "java");
+        for (Path p : files(root, ".java")) {
+            String rel = root.relativize(p).toString().replace('\\', '/');
+            if (compile.matcher(Files.readString(p, StandardCharsets.UTF_8)).find()
+                    && !rel.startsWith("com/maccms/backend/sitetemplate/infrastructure/")) {
+                hits.add(rel);
+            }
+        }
+        assertThat(hits).isEmpty();
     }
 
     private static List<Path> files(Path root, String suffix) throws IOException {

@@ -5,6 +5,9 @@
 
     <blockquote class="layui-elem-quote layui-quote-nm mt10">
         <p class="f-20 text-success">${page.lang().get("admin/index/welcome/tip_warn")}</p>
+        @if(!page.notice().isEmpty())
+        <p class="red">${page.notice()}</p>
+        @endif
         <p>${page.lang().get("admin/index/welcome/filed_login_num")}：${page.loginNum()}  ${page.lang().get("admin/index/welcome/filed_last_login_ip")}：${page.lastLoginIp()}  ${page.lang().get("admin/index/welcome/filed_last_login_time")}：${page.lastLoginTime()}</p>
     </blockquote>
 

@@ -10,7 +10,8 @@ import com.maccms.backend.common.lang.LegacyLang;
  * @param loginNum      当前行的登录次数（D2 ⑤ 重读，含本次登录）
  * @param lastLoginIp   {@code long2ip(admin_last_login_ip)}
  * @param lastLoginTime {@code mac_day(admin_last_login_time)}（0 为空串）
+ * @param notice        B15：系统提示（启动时外部模板编译失败、前台回退到内置模板，24 文档第 7 节）；没有时为空串
  */
 public record WelcomePage(AdminHead head, LegacyLang lang, long loginNum, String lastLoginIp, String lastLoginTime,
-                          String os, String server, String host, String maxUpload, String date) {
+                          String os, String server, String host, String maxUpload, String date, String notice) {
 }

@@ -372,6 +372,58 @@ function scenarios($repo)
         get_page('backups', '/admin/database/index', 'group=import'),
     ])];
 
+    // ---------------- 模板管理与广告位（Template.php）：列目录、广告位、静态文件的编辑与删除、路径与扩展名检查
+    $tpl = [
+        'template/default/html/index.html' => "<html>{\$maccms.site_name}</html>\n",
+        'template/default/html/label/a.html' => "<p>a</p>\n",
+        'template/default/html/style.css' => "body{}\n",
+        'template/default/html/.hidden' => "h",
+        'template/default/ads/a.js' => "document.write('a');\n",
+        'template/default/ads/b.txt' => "b",
+        'template/other/x.html' => str_repeat('x', 3000),
+    ];
+    $s[] = ['label' => 'template', 'files' => $tpl, 'steps' => array_merge($L, [
+        get_page('root', '/admin/template/index'),
+        get_page('dir', '/admin/template/index', 'path=.@template@default'),
+        get_page('html', '/admin/template/index', 'path=.@template@default@html'),
+        get_page('slashes', '/admin/template/index', 'path=.@template/default\\@html'),
+        get_page('current', '/admin/template/index', 'current=1'),
+        get_page('label', '/admin/template/index', 'label=1'),
+        get_page('adsdir', '/admin/template/index', 'ads=1'),
+        get_page('outside', '/admin/template/index', 'path=.@application'),
+        req('illegal', 'GET', '/admin/template/index', 'path=.@template.@x'),
+        get_page('ads', '/admin/template/ads'),
+        get_page('info-page', '/admin/template/info', 'fpath=.@template@default@html@label&fname=a.html'),
+        form_step('save-html', '/admin/template/info', [set('fcontent', "<p>b</p>\r\n")],
+            ['query' => 'fpath=.@template@default@html@label&fname=a.html']),
+        form_step('save-php', '/admin/template/info', [set('fcontent', "<?php echo 1;")],
+            ['query' => 'fpath=.@template@default@html@label&fname=a.html']),
+        form_step('save-tag', '/admin/template/info', [set('fcontent', "<p>{\$vo.name}</p>")],
+            ['query' => 'fpath=.@template@default@html@label&fname=a.html']),
+        form_step('save-new', '/admin/template/info', [set('fname', 'new.js'), set('fcontent', "var a = 1;")],
+            ['query' => 'fpath=./template/default/ads&fname=']),
+        form_step('save-noname', '/admin/template/info', [set('fcontent', "x")],
+            ['query' => 'fpath=./template/default/ads&fname=']),
+        raw_post('save-notoken', '/admin/template/info', 'fname=a.js&fpath=.%2Ftemplate%2Fdefault%2Fads&fcontent=x',
+            ['query' => 'fpath=./template/default/ads&fname=a.js']),
+        req('bad-ext', 'GET', '/admin/template/info', 'fpath=./template/default/html&fname=x.php'),
+        req('bad-ext-htm', 'GET', '/admin/template/info', 'fpath=./template/default/html&fname=x.htm'),
+        req('no-path', 'GET', '/admin/template/info', 'fname=a.html'),
+        req('bad-path', 'GET', '/admin/template/info', 'fpath=./template/./default&fname=a.html'),
+        req('outside-path', 'GET', '/admin/template/info', 'fpath=./application/extra&fname=a.html'),
+        req('del', 'GET', '/admin/template/del', 'fname=./template/default/html/style.css'),
+        req('del-outside', 'GET', '/admin/template/del', 'fname=./application/extra/quickmenu.php'),
+        req('del-dots', 'GET', '/admin/template/del', 'fname=./template/./other/x.html'),
+        req('del-missing', 'GET', '/admin/template/del', 'fname=./template/default/nope.html'),
+        req('del-array', 'GET', '/admin/template/del', 'fname%5B%5D=./template/default/ads/a.js&fname%5B%5D=./template/other/x.html'),
+        get_page('after', '/admin/template/index', 'path=.@template@default@html'),
+        get_page('wizard', '/admin/template/wizard'),
+    ])];
+    $s[] = ['label' => 'template-ads-empty', 'steps' => array_merge($L, [
+        get_page('ads', '/admin/template/ads'),
+        get_page('root', '/admin/template/index'),
+    ])];
+
     // ---------------- 本地插件（Addon.php → fastadmin-addons Service）
     $demo = demo_addon();
     $s[] = ['label' => 'addon', 'files' => $demo, 'steps' => array_merge($L, [

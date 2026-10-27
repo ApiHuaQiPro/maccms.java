@@ -79,6 +79,7 @@ public class AdminController {
     private final AdminPlayerActions players;
     private final AdminAddonActions addons;
     private final AdminDatabaseActions database;
+    private final AdminTemplateActions templates;
     private final com.maccms.backend.admin.application.PlayerAdminService playerCache;
 
     public AdminController(AdminEndpoint endpoint, AdminSessions sessions, AdminSettings settings, AdminLoginService logins,
@@ -87,7 +88,8 @@ public class AdminController {
                            AdminContentActions content, ObjectProvider<AdminMemberActions> member,
                            ObjectProvider<AdminSystemActions> system, ObjectProvider<AdminPlayerActions> players,
                            ObjectProvider<com.maccms.backend.admin.application.PlayerAdminService> playerCache,
-                           ObjectProvider<AdminAddonActions> addons, ObjectProvider<AdminDatabaseActions> database) {
+                           ObjectProvider<AdminAddonActions> addons, ObjectProvider<AdminDatabaseActions> database,
+                           ObjectProvider<AdminTemplateActions> templates) {
         this.endpoint = endpoint;
         this.sessions = sessions;
         this.settings = settings;
@@ -105,6 +107,7 @@ public class AdminController {
         this.playerCache = playerCache.getIfAvailable();
         this.addons = addons.getIfAvailable();
         this.database = database.getIfAvailable();
+        this.templates = templates.getIfAvailable();
     }
 
     /** 一次请求的上下文。 */
@@ -202,6 +205,9 @@ public class AdminController {
                 }
                 if (b15 == null && database != null) {
                     b15 = database.handle(ctx, session);
+                }
+                if (b15 == null && templates != null) {
+                    b15 = templates.handle(ctx, session);
                 }
                 if (b15 != null) {
                     yield b15;

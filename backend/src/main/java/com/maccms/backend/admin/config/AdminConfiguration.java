@@ -32,6 +32,8 @@ import com.maccms.backend.legacyconfig.application.view.PhpValue;
 import com.maccms.backend.legacyconfig.application.view.PhpValues;
 import com.maccms.backend.content.application.PhpIntval;
 import java.security.SecureRandom;
+import com.maccms.backend.sitetemplate.application.SiteTemplateConfiguration;
+import com.maccms.backend.sitetemplate.application.SiteTemplateService;
 import java.time.Clock;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -60,7 +62,7 @@ import org.springframework.context.annotation.Import;
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnAdminEnabled
 @EnableConfigurationProperties(AdminProperties.class)
-@Import(LegacyConfigConfiguration.class)
+@Import({LegacyConfigConfiguration.class, SiteTemplateConfiguration.class})
 public class AdminConfiguration {
 
     private static final Logger log = LoggerFactory.getLogger(AdminConfiguration.class);
@@ -170,8 +172,13 @@ public class AdminConfiguration {
                           LegacyConfigService legacy, ObjectProvider<Clock> clock,
                           @Value("${spring.servlet.multipart.max-file-size:1MB}") String maxUpload,
                           ObjectProvider<com.maccms.backend.admin.application.AddonService> addons,
-                          ObjectProvider<com.maccms.backend.common.browser.BrowserExternalAccess> external) {
+                          ObjectProvider<com.maccms.backend.common.browser.BrowserExternalAccess> external,
+                          ObjectProvider<SiteTemplateService> templates) {
         AdminPages pages = new AdminPages(endpoint, settings, responses, legacy, clock.getIfAvailable(Clock::systemUTC), maxUpload);
+        SiteTemplateService t = templates.getIfAvailable();
+        if (t != null) {
+            pages.notice(t::notice);
+        }
         com.maccms.backend.admin.application.AddonService a = addons.getIfAvailable();
         if (a != null) {
             // B15：adminloginbg 插件的 admin_login_init 钩子（登录页背景）；外部主机的背景图受 W2 放行开关约束
@@ -275,6 +282,14 @@ public class AdminConfiguration {
             AdminResponses responses, ObjectProvider<com.maccms.backend.admin.application.DatabaseToolService> db, AdminRandom random) {
         com.maccms.backend.admin.application.DatabaseToolService s = db.getIfAvailable();
         return s == null ? null : new com.maccms.backend.admin.web.AdminDatabaseActions(endpoint, settings, responses, s, random);
+    }
+
+    @Bean
+    com.maccms.backend.admin.web.AdminTemplateActions adminTemplateActions(AdminEndpoint endpoint, AdminSettings settings,
+            AdminResponses responses, LegacySiteFiles files, LegacyConfigService legacy, SiteTemplateService templates,
+            AdminRandom random, ObjectProvider<Clock> clock) {
+        return new com.maccms.backend.admin.web.AdminTemplateActions(endpoint, settings, responses, files, legacy, templates, random,
+                clock.getIfAvailable(Clock::systemUTC));
     }
 
     @Bean

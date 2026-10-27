@@ -125,6 +125,20 @@ public class AdminResponses {
         return jump(ajax, false, msg, ajax ? "" : JumpPage.BACK);
     }
 
+    /** Ajax 的 {@code code=0} 带 data（B15 模板编辑页保存失败时给新的表单令牌，编辑页留在原处）；页面时与 {@link #error} 相同。 */
+    public ResponseEntity<String> error(boolean ajax, String msg, Object data) {
+        if (ajax) {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("code", 0);
+            m.put("msg", msg);
+            m.put("data", data);
+            m.put("url", "");
+            m.put("wait", 3);
+            return json(HttpStatus.OK, LegacyJson.encode(m));
+        }
+        return error(false, msg);
+    }
+
     /** 302（旧 {@code $this->redirect()} 与 Begin 行为里的 {@code header('Location: …')}）。 */
     public ResponseEntity<String> redirect(String location) {
         return ResponseEntity.status(HttpStatus.FOUND)

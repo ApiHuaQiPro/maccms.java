@@ -3,6 +3,7 @@ package com.maccms.backend.legacyconfig.infrastructure;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.channels.FileChannel;
+import java.nio.file.AccessDeniedException;
 import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
@@ -121,11 +122,7 @@ public final class AtomicFiles {
             if (tmpPosix != null) {
                 tmpPosix.setPermissions(perms);
             }
-            try {
-                Files.move(tmp, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
-            } catch (AtomicMoveNotSupportedException e) {
-                throw new WriteException(Failure.IO);
-            }
+            move(tmp, target);
             tmp = null;
         } catch (IOException e) {
             throw new WriteException(Failure.IO);
@@ -138,6 +135,31 @@ public final class AtomicFiles {
                 }
             }
             lock.unlock();
+        }
+    }
+
+    /**
+     * 原子改名。Windows 上目标文件正被别的线程或进程打开读取时，替换会短暂地因共享冲突失败（{@link AccessDeniedException}）：
+     * 稍等后重试，最多约 2 秒；仍失败则按写入失败处理（原文件不变）。
+     */
+    private static void move(Path tmp, Path target) throws IOException, WriteException {
+        for (int attempt = 0; ; attempt++) {
+            try {
+                Files.move(tmp, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+                return;
+            } catch (AtomicMoveNotSupportedException e) {
+                throw new WriteException(Failure.IO);
+            } catch (AccessDeniedException e) {
+                if (attempt >= 40 || Files.isDirectory(target, LinkOption.NOFOLLOW_LINKS)) {
+                    throw e;
+                }
+                try {
+                    Thread.sleep(50);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    throw e;
+                }
+            }
         }
     }
 }

@@ -86,6 +86,12 @@ class AdminSystemGoldenTest {
         // 只重写同样内容的 info.ini 与 addons.php，文件不变
         JAVA.put("addon/enable-demo", "status=200\nbody={\"code\":0,\"msg\":\"该插件没有新系统实现，无法启用\",\"data\":\"\",\"url\":\"\",\"wait\":3}\n");
         JAVA.put("addon/disable-demo", ok);
+        // D-B15-14：可编辑的扩展名由 htm/html/js/xml 改为 jte/html/js/xml（htm 不再允许；提示文字随之改）
+        String extTip = "status=200\nbody={\"code\":0,\"msg\":\"安全提示，后缀名只允许jte,html,js,xml\",\"data\":\"\",\"url\":\"\",\"wait\":3}\n";
+        JAVA.put("template/bad-ext", extTip);
+        JAVA.put("template/bad-ext-htm", extTip);
+        // D-B15-15：标签向导改为按页面模板列出参数与 jte 写法，没有旧版生成标签的结果框 labels
+        JAVA.put("template/wizard", observeGolden(stepOf(G80, "template", "wizard"), "80").replace("labels=\n", ""));
     }
 
     @TestConfiguration
@@ -319,7 +325,7 @@ class AdminSystemGoldenTest {
                 token = token(javaPage);
                 String phpPage = new String(Base64.getDecoder().decode(st.get("page").get("body").asString()), StandardCharsets.UTF_8);
                 String a = AdminForm.describe(AdminForm.fields(phpPage, 0));
-                String b = AdminForm.describe(AdminForm.fields(javaPage, 0));
+                String b = AdminForm.describe(AdminForm.fields(javaPage, 0)).replaceAll("(?m)^(fversion|op)=.*\n", "");
                 if (!a.equals(b)) {
                     problems.add(tag + ":" + step + " (表单页)\n" + firstDiff(a, b));
                 }
@@ -402,11 +408,31 @@ class AdminSystemGoldenTest {
                 background = (bg.group(1) != null ? bg.group(1) : org.jsoup.parser.Parser.unescapeEntities(bg.group(2), true))
                         .replaceAll("wallpaper/[0-9]+\\.jpg", "wallpaper/<n>.jpg");
             }
+            // 模板编辑页新增的隐藏字段 fversion（乐观并发）与 op（恢复上一版），旧页面没有（24 文档第 7 节）
+            String form = AdminForm.describe(AdminForm.fields(body, 0)).replaceAll("(?m)^(fversion|op)=.*\n", "");
             return "page title=" + d.title() + (background.isEmpty() ? "" : "\nbackground=" + background) + "\n"
-                    + AdminForm.describe(AdminForm.fields(body, 0));
+                    + form + templateTable(d);
         }
         // 插件列表的 createtime 是插件目录的修改时间
         return "body=" + body.replaceAll("\"createtime\":[0-9]+", "\"createtime\":<t>") + "\n";
+    }
+
+    /**
+     * 模板管理、广告位列表的表格（各行单元格文字；文件时间两边各自不同，归一）。新版表尾多一行"前台当前使用的模板"，不比较。
+     */
+    private static String templateTable(org.jsoup.nodes.Document d) {
+        if (!d.title().startsWith("模板管理") && !d.title().startsWith("广告位管理")) {
+            return "";
+        }
+        StringBuilder sb = new StringBuilder();
+        for (org.jsoup.nodes.Element tr : d.select("table.layui-table tr")) {
+            String row = String.join(" | ", tr.select("th, td").eachText())
+                    .replaceAll("\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}", "<time>");
+            if (!row.startsWith("前台当前使用")) {
+                sb.append("row ").append(row).append('\n');
+            }
+        }
+        return sb.toString();
     }
 
     /** 文件内容的归一：定时任务保存时旧版把表单令牌也写进了 timming.php（新旧令牌各自随机）；随机的 cache_flag。 */
@@ -428,7 +454,8 @@ class AdminSystemGoldenTest {
 
     private MockHttpServletResponse send(String sid, String method, String path, String query, String post, boolean ajax,
                                          JsonNode headers) throws Exception {
-        String uri = E + path + (query == null || query.isEmpty() ? "" : "?" + query);
+        // 黄金里原样发给 php-cgi 的反斜杠（模板目录参数）在 URI 里写成 %5C，服务端解码后相同
+        String uri = E + path + (query == null || query.isEmpty() ? "" : "?" + query.replace("\\", "%5C"));
         MockHttpServletRequestBuilder b = MockMvcRequestBuilders.request(HttpMethod.valueOf(method), URI.create(uri));
         if (ajax) {
             b.header("X-Requested-With", "XMLHttpRequest");
