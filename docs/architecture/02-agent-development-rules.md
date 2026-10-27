@@ -63,6 +63,12 @@
 - 采集源与自定义规则节点的后台读写在 `collect` 模块（`25-b17-collect-config.md` 第 2 节）：`collect.application` 的 `CollectAdminServices`（只供 admin 调用，`@ConditionalOnWriteEnabled`）→ `collect.infrastructure` 的只读 `CollectAdminMapper` 与写 `CollectAdminWriteMapper`/`CollectAdminWrites`；取值规则复用 content 的 `AdminTable`（`COLLECT`、`CJ_NODE`）与 `AdminRowValues`。只读查询不取 `collect_appid`、`collect_appkey`（`ReadOnlyGuardrailsTest` 锁定）。
 - 分类绑定的键与取值只用 `collect.application.CollectBindings`（`md5(采集地址) . '_' . 远程分类编号`，`intval` 大于 0 为已绑定），B18/B19 沿用；`application/extra/bind.php` 只经 `CollectBindService` → `LegacyConfigService.update` 写回。
 - 采集相关批次不发起任何出站请求（"测试连接"类入口返回固定提示，E01 只做本地文件源）。
+
+### 2.6 B23 integration 基础
+
+- `integration` 模块（`26-b23-integration-foundation.md`）：`integration.application`（登记表 `IntegrationPackages`、第三方配置 `ThirdPartyConfig`/`Secret`、脱敏 `LogRedactor`，其他模块可用）；`integration.http`（出站客户端，唯一可以直接用出站 API 的包）；B24～B29 的业务子包 `integration.pay` 等经客户端发请求，登记写进 `IntegrationPackages.REGISTERED`，与该批的合并提交一起出现。
+- 第三方配置只经 `ThirdPartyConfig` 读取（启动时读一次，修改后重启生效）；密钥字段只能用 `secret()` 取 `Secret`，明文不得写入日志、异常信息或评论。第三方请求与响应要写日志时先经 `LogRedactor`（客户端已对自己的日志这样做）。
+- 第三方接口的测试用 `LoopbackMockServer`（回环地址、随机端口），假值一律形如 `test-only-…`；外部地址的反例只用 TEST-NET（203.0.113.0/24）与 `.invalid`/`.test` 保留名。
 ### 3. 数据库
 
 - **禁止 DDL**（路线图第 1.2 节"零结构变更"，B07 起取代原"DDL 独立评审"）：不建表、不加/改/删列与索引、不转引擎或字符集，不建触发器、存储过程、视图、事件；不执行表维护语句与账号/权限语句；应用代码与资源中不得有 `schema.sql`/`data.sql`、Flyway/Liquibase 或任何初始化器。数据库账号由数据库管理员在获批部署时创建，代码不建、不改账号。没有结构迁移，旧数据不需要迁移；回滚只用 DML（`12-write-infrastructure.md` 第 6 节）。
@@ -91,7 +97,8 @@
 - 数据库等凭证只从环境变量读取，`application.yml` 中不写默认值；缺失时必须启动失败，不能回落到任何默认库或 root。可写数据源（B07）默认关闭，所以 `MACCMS_WRITE_DB_*` 的占位符带空默认值；打开时三项缺一即启动失败，不回落到只读池的配置，错误信息与日志不回显地址、账号、密码。
 - 样例配置只用占位符（`config/*.env.example`）；真实 `*.env` 已被忽略，不提交。
 - 不读取仓库外的线上配置（`D:\Ai\MACCMS\prod-config\`），不连接线上库或服务器。
-- 运行时出站网络 API（HTTP、SMTP、FTP、套接字、DNS 查询等）只允许出现在 `OutboundNetworkGuardTest.REGISTERED` 登记的 `integration` 子包（B02 起；登记表为空，B23 起按批登记，路线图第 4.3 节）。
+- 运行时出站网络 API（HTTP、SMTP、FTP、套接字、DNS 查询等）只允许出现在 `integration.application.IntegrationPackages.RAW_API` 登记的子包（B23 起只有出站客户端 `integration.http`）；第三方 HTTP 请求一律经 `integration.http.OutboundHttpClient`，它只能被 `IntegrationPackages.REGISTERED` 登记的 `integration` 子包使用（B23 交付时为空，B24～B29 每批只登记本批子包；`OutboundNetworkGuardTest` 静态锁定，客户端运行期再查调用方）。见第 2.6 节与路线图第 4.3 节。
+- 测试不得访问外部主机：测试期出站护栏（B23）对全部测试自动生效，连接非回环地址或解析外部主机名即判测试失败；第三方接口一律用 `integration.testing.LoopbackMockServer` 在回环地址上模拟。
 - 页面不输出让浏览器访问外部主机的地址，除非对应的部署参数 `maccms.browser-external.w1/w2/w3` 已打开（B02；按路线图第五轮 W1/W2 默认打开、W3 默认关闭）；"本站"只按 `maccms.site.base-url` 的主机判定。
 - 日志不记录 cookie、session、会员身份、密码；异常处理只返回错误码与通用说明。
 - 请求处理中的异常**不得**把 Throwable 或 `getMessage()` 交给日志框架（message 可能含 SQL 参数、连接串、账号）；统一用 `common.web.SafeExceptionLog` 只记录类型与栈帧。新增异常分支要补日志捕获测试（`OutputCaptureExtension` + 合成标记，不用真实密钥）。
