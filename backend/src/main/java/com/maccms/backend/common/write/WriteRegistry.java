@@ -41,6 +41,8 @@ public final class WriteRegistry {
      * <li>B15（MACC-39，24 文档第 9.4 节）：数据库工具"批量替换"——管理员手工对任一 mac_* 表的一列做 {@code REPLACE}（admin / 26 张表 / UPDATE；
      * 每张表一条固定的单表语句，列名按 SHOW COLUMNS 与 install.sql 双重校验；mac_admin 沿用 B12 已登记的 admin / mac_admin / UPDATE）。
      * 不登记任何 INSERT/DELETE。</li>
+     * <li>B17（MACC-41，25 文档第 6 节）：采集源的增删改（collect / mac_collect）；自定义规则节点的增删改（collect / mac_cj_node）；删除节点时
+     * 照旧连同删掉节点下的内容与采集历史（collect / mac_cj_content、mac_cj_history DELETE，旧 {@code Cj::delData}）。</li>
      * </ul>
      */
     static final List<WritePermission> REGISTERED = List.of(
@@ -128,7 +130,15 @@ public final class WriteRegistry {
             new WritePermission("admin", "mac_visit", WriteOperation.UPDATE, "B15"),
             new WritePermission("admin", "mac_vod", WriteOperation.UPDATE, "B15"),
             new WritePermission("admin", "mac_website", WriteOperation.UPDATE, "B15"),
-            new WritePermission("admin", "mac_vod_search", WriteOperation.UPDATE, "B15"));
+            new WritePermission("admin", "mac_vod_search", WriteOperation.UPDATE, "B15"),
+            new WritePermission("collect", "mac_collect", WriteOperation.INSERT, "B17"),
+            new WritePermission("collect", "mac_collect", WriteOperation.UPDATE, "B17"),
+            new WritePermission("collect", "mac_collect", WriteOperation.DELETE, "B17"),
+            new WritePermission("collect", "mac_cj_node", WriteOperation.INSERT, "B17"),
+            new WritePermission("collect", "mac_cj_node", WriteOperation.UPDATE, "B17"),
+            new WritePermission("collect", "mac_cj_node", WriteOperation.DELETE, "B17"),
+            new WritePermission("collect", "mac_cj_content", WriteOperation.DELETE, "B17"),
+            new WritePermission("collect", "mac_cj_history", WriteOperation.DELETE, "B17"));
 
     /** 写 Mapper 的全限定名：{@code com.maccms.backend.<module>.infrastructure[.子包].<类型>}。 */
     private static final Pattern MAPPER_TYPE = Pattern.compile(

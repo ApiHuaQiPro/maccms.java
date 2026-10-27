@@ -77,8 +77,8 @@ class WriteGuardTest {
             entry("mac_annex", Set.of("B13", "B15")),
             entry("mac_collect", Set.of("B17", "B15")),
             entry("mac_cj_node", Set.of("B17", "B15")),
-            entry("mac_cj_content", Set.of("B20", "B15")),
-            entry("mac_cj_history", Set.of("B20", "B15")));
+            entry("mac_cj_content", Set.of("B20", "B15", "B17")),
+            entry("mac_cj_history", Set.of("B20", "B15", "B17")));
 
     /** Java 源码中（含字符串）对 mac_* 表的写语句文本。 */
     private static final Pattern WRITE_SQL_TEXT = Pattern.compile("(?i)\\b("
@@ -134,6 +134,7 @@ class WriteGuardTest {
         // B13（MACC-37）登记后台内容管理：内容表的新增与删除、友情链接/分类/附件的增删改、评论删除与留言修改删除（22 文档第 6 节）
         // B14（MACC-38）登记后台会员与财务：会员删除、会员组增删改、卡密生成与删除、订单删除、提现审核、推广访问删除（23 文档第 6 节）
         // B15（MACC-39）登记数据库工具"批量替换"：后台模块对每张 mac_* 表的 UPDATE（mac_admin 沿用 B12；24 文档第 9.4 节）
+        // B17（MACC-41）登记采集配置：采集源与自定义规则节点的增删改，删除节点时连同节点下的内容与采集历史（25 文档第 6 节）
         assertThat(WriteRegistry.registered().permissions()).extracting(p -> p.module() + " " + p.table() + " "
                 + p.operation() + " " + p.batch())
                 .containsExactly("member mac_user INSERT B09", "member mac_user UPDATE B09",
@@ -181,7 +182,10 @@ class WriteGuardTest {
                         "admin mac_visit UPDATE B15",
                         "admin mac_vod UPDATE B15",
                         "admin mac_website UPDATE B15",
-                        "admin mac_vod_search UPDATE B15");
+                        "admin mac_vod_search UPDATE B15",
+                        "collect mac_collect INSERT B17", "collect mac_collect UPDATE B17", "collect mac_collect DELETE B17",
+                        "collect mac_cj_node INSERT B17", "collect mac_cj_node UPDATE B17", "collect mac_cj_node DELETE B17",
+                        "collect mac_cj_content DELETE B17", "collect mac_cj_history DELETE B17");
     }
 
     @Test

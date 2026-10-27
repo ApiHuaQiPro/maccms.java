@@ -67,7 +67,14 @@ class WriteRegistryTest {
         assertThat(WriteRegistry.registered().allows("comment", "mac_gbook", WriteOperation.UPDATE)).isTrue();
         assertThat(WriteRegistry.registered().allows("comment", "mac_gbook", WriteOperation.DELETE)).isTrue();
         assertThat(WriteRegistry.registered().allows("comment", "mac_vod", WriteOperation.UPDATE)).isFalse();
-        assertThat(WriteRegistry.registered().permissions()).hasSize(85);
+        // B17（MACC-41）：采集源与自定义规则的增删改；删除规则时连同内容与采集历史（只删，不新增、不修改，B20 才写它们）
+        assertThat(WriteRegistry.registered().allows("collect", "mac_collect", WriteOperation.INSERT)).isTrue();
+        assertThat(WriteRegistry.registered().allows("collect", "mac_cj_node", WriteOperation.DELETE)).isTrue();
+        assertThat(WriteRegistry.registered().allows("collect", "mac_cj_content", WriteOperation.DELETE)).isTrue();
+        assertThat(WriteRegistry.registered().allows("collect", "mac_cj_content", WriteOperation.INSERT)).isFalse();
+        assertThat(WriteRegistry.registered().allows("collect", "mac_cj_history", WriteOperation.UPDATE)).isFalse();
+        assertThat(WriteRegistry.registered().allows("collect", "mac_vod", WriteOperation.INSERT)).isFalse();
+        assertThat(WriteRegistry.registered().permissions()).hasSize(93);
     }
 
     @Test

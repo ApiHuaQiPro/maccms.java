@@ -57,7 +57,14 @@
 - `admin` 可用的 site 类型加 `site.application.PhpJson`（`ModuleBoundaryTest.ADMIN_SITE`）。
 - `sitetemplate` 模块（前台模板在线编辑，D4，24 文档第 7 节）：`application`（`SiteTemplateService` 实现 `site.application.SiteTemplateSource`，安全过滤 `JteSecurityFilter`，装配 `SiteTemplateConfiguration`）→ `infrastructure`（`JteOnlineCompiler`、`JteClassPath`、`OnlineHtmlPolicy`）。运行时编译模板只能出现在 `sitetemplate.infrastructure`（`SiteGuardrailsTest.runtimeTemplateCompilationOnlyInSiteTemplateInfrastructure`）；jte 编译器为此进入编译作用域。`site` 仍不编译模板、不读模板文件，只经 `SiteTemplateSource` 取当前引擎（没有或为 null 时用内置的预编译模板）；第 4 节的模板规则对外部模板目录同样适用（编译时用同一套站点 HTML 策略，`<script>`/`<iframe>` 只限内置版本本身含有它们的模板）。
 - 数据库工具（24 文档第 9 节）只做只读查询与单表 DML：只读 Mapper `mapper/admin/DatabaseToolMapper.xml` 的 SHOW 语句与 `${table}`/`${columns}` 是 `ReadOnlyGuardrailsTest`、`SqlEntryGuardTest` 登记的例外；备份文件里的 DDL 文本是 `SchemaGuardTest` 登记的唯一例外（只写进文件、从不执行）；还原、执行 SQL、优化、修复在入口拒绝。
-### 2.5 B16 静态生成与定时任务
+
+### 2.5 B17 采集配置管理
+
+- 采集源与自定义规则节点的后台读写在 `collect` 模块（`25-b17-collect-config.md` 第 2 节）：`collect.application` 的 `CollectAdminServices`（只供 admin 调用，`@ConditionalOnWriteEnabled`）→ `collect.infrastructure` 的只读 `CollectAdminMapper` 与写 `CollectAdminWriteMapper`/`CollectAdminWrites`；取值规则复用 content 的 `AdminTable`（`COLLECT`、`CJ_NODE`）与 `AdminRowValues`。只读查询不取 `collect_appid`、`collect_appkey`（`ReadOnlyGuardrailsTest` 锁定）。
+- 分类绑定的键与取值只用 `collect.application.CollectBindings`（`md5(采集地址) . '_' . 远程分类编号`，`intval` 大于 0 为已绑定），B18/B19 沿用；`application/extra/bind.php` 只经 `CollectBindService` → `LegacyConfigService.update` 写回。
+- 采集相关批次不发起任何出站请求（"测试连接"类入口返回固定提示，E01 只做本地文件源）。
+
+### 2.6 B16 静态生成与定时任务
 
 - `staticgen` 模块（`25-b16-static-timming.md` 第 2 节）：`application`（`StaticPaths`、`MakeService`、`StaticFiles`、`TimmingSchedule`、`TimmingService`、`TimmingTasks`）→ `web`（`TimmingController`、`TimmingAccess`）、`config`。静态页的内容只经 `site.application.StaticPageSource` 取得（前台对动态地址的进程内游客 GET，实现 `site.web.InternalPageRenderer`），不另写页面模板；静态页文件只经 `LegacySiteFiles.replaceStaticPage`（扩展名与目录白名单）写入并登记，回滚按登记删除。
 - 定时任务入口的放行只看部署级参数（`MACCMS_TIMMING_ENABLED`、`MACCMS_TIMMING_TOKEN`，第 4 节的密钥规则同样适用）与 `ClientIpResolver` 的结果；不得新增按请求参数放行的分支。

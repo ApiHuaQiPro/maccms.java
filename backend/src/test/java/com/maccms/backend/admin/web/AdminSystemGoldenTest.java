@@ -6,6 +6,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import com.maccms.backend.admin.AdminForm;
 import com.maccms.backend.admin.application.LegacyInput;
 import com.maccms.backend.admin.config.AdminConfiguration;
+import com.maccms.backend.common.LegacyCheckout;
 import com.maccms.backend.common.clientip.ClientIpConfiguration;
 import com.maccms.backend.content.application.ContentCacheMaintenance;
 import java.io.IOException;
@@ -157,8 +158,9 @@ class AdminSystemGoldenTest {
             Path p = site.resolve(rel);
             Files.createDirectories(p.getParent());
             if (v.startsWith("sha256:")) {
-                byte[] repo = Files.readAllBytes(Path.of("..").resolve(rel));
-                assertThat(sha256(repo)).as("仓库里的 " + rel + " 与生成黄金时不同（检出的换行设置？）").isEqualTo(v.substring(7));
+                // 写对上哈希的那份：后面逐字节比对的输出是按 CRLF 检出生成的
+                byte[] repo = LegacyCheckout.read(Path.of("..").resolve(rel), v.substring(7));
+                assertThat(sha256(repo)).as("仓库里的 " + rel + " 与生成黄金时不同" + LegacyCheckout.HINT).isEqualTo(v.substring(7));
                 Files.write(p, repo);
             } else {
                 Files.write(p, Base64.getDecoder().decode(v));

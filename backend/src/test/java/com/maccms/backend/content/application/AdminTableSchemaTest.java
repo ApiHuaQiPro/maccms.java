@@ -51,18 +51,24 @@ class AdminTableSchemaTest {
         String comment = Files.readString(WRITE_MAPPERS.resolve("comment/CommentAdminWriteMapper.xml"), StandardCharsets.UTF_8);
         // B14（23 文档第 3 节）：后台会员与会员组的整行覆盖
         String member = Files.readString(WRITE_MAPPERS.resolve("member/MemberAdminWriteMapper.xml"), StandardCharsets.UTF_8);
+        // B17（25 文档第 6 节）：采集源与自定义规则节点的新增与整行覆盖（没有按编号列表修改的动作）
+        String collect = Files.readString(WRITE_MAPPERS.resolve("collect/CollectAdminWriteMapper.xml"), StandardCharsets.UTF_8);
         Map<AdminTable, String> names = Map.ofEntries(Map.entry(AdminTable.VOD, "Vod"), Map.entry(AdminTable.ART, "Art"),
                 Map.entry(AdminTable.TOPIC, "Topic"), Map.entry(AdminTable.ACTOR, "Actor"), Map.entry(AdminTable.ROLE, "Role"),
                 Map.entry(AdminTable.WEBSITE, "Website"), Map.entry(AdminTable.LINK, "Link"), Map.entry(AdminTable.TYPE, "Type"),
                 Map.entry(AdminTable.ANNEX, "Annex"), Map.entry(AdminTable.COMMENT, "Comment"),
-                Map.entry(AdminTable.GBOOK, "Gbook"), Map.entry(AdminTable.USER, "User"), Map.entry(AdminTable.GROUP, "Group"));
+                Map.entry(AdminTable.GBOOK, "Gbook"), Map.entry(AdminTable.USER, "User"), Map.entry(AdminTable.GROUP, "Group"),
+                Map.entry(AdminTable.COLLECT, "Collect"), Map.entry(AdminTable.CJ_NODE, "CjNode"));
         assertThat(names).hasSize(AdminTable.values().length);
         for (Map.Entry<AdminTable, String> e : names.entrySet()) {
             AdminTable t = e.getKey();
+            boolean b17 = t == AdminTable.COLLECT || t == AdminTable.CJ_NODE;
             String xml = t == AdminTable.COMMENT || t == AdminTable.GBOOK ? comment
-                    : t == AdminTable.USER || t == AdminTable.GROUP ? member : content;
+                    : t == AdminTable.USER || t == AdminTable.GROUP ? member : b17 ? collect : content;
             List<String> columns = List.copyOf(t.columns().keySet());
-            for (String id : List.of("insert" + e.getValue(), "update" + e.getValue(), "update" + e.getValue() + "ByIds")) {
+            List<String> ids = b17 ? List.of("insert" + e.getValue(), "update" + e.getValue())
+                    : List.of("insert" + e.getValue(), "update" + e.getValue(), "update" + e.getValue() + "ByIds");
+            for (String id : ids) {
                 Matcher m = Pattern.compile("(?s)<(insert|update) id=\"" + id + "\"[^>]*>(.*?)</\\1>").matcher(xml);
                 assertThat(m.find()).as(id).isTrue();
                 String body = m.group(2);

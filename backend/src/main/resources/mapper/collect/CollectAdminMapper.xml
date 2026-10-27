@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- B17 采集配置管理的只读查询（25 文档第 5 节）。列一律按文字取回（getString：整数为十进制，与旧版模板输出的文字相同；不受 TINYINT(1) 映射影响）。 -->
+<!-- mac_collect 不读 collect_appid、collect_appkey（资源站接口的账号与密钥；旧后台页面也不显示，ReadOnlyGuardrailsTest 锁定）。 -->
+<mapper namespace="com.maccms.backend.collect.infrastructure.CollectAdminMapper">
+
+    <resultMap id="collectRow" type="map">
+        <result column="collect_id" property="collect_id" javaType="string"/>
+        <result column="collect_name" property="collect_name" javaType="string"/>
+        <result column="collect_url" property="collect_url" javaType="string"/>
+        <result column="collect_type" property="collect_type" javaType="string"/>
+        <result column="collect_mid" property="collect_mid" javaType="string"/>
+        <result column="collect_param" property="collect_param" javaType="string"/>
+        <result column="collect_filter" property="collect_filter" javaType="string"/>
+        <result column="collect_filter_from" property="collect_filter_from" javaType="string"/>
+        <result column="collect_opt" property="collect_opt" javaType="string"/>
+        <result column="collect_sync_pic_opt" property="collect_sync_pic_opt" javaType="string"/>
+    </resultMap>
+    <sql id="collectColumns">collect_id, collect_name, collect_url, collect_type, collect_mid, collect_param, collect_filter, collect_filter_from, collect_opt, collect_sync_pic_opt</sql>
+
+    <select id="selectCollect" resultMap="collectRow">
+        SELECT <include refid="collectColumns"/> FROM mac_collect WHERE collect_id = #{id}
+    </select>
+
+    <!-- 旧 Collect::index（admin/controller/Collect.php:15-23）：无条件，collect_id desc -->
+    <select id="countCollects" resultType="long">
+        SELECT COUNT(*) FROM mac_collect
+    </select>
+
+    <select id="listCollects" resultMap="collectRow">
+        SELECT <include refid="collectColumns"/> FROM mac_collect ORDER BY collect_id DESC LIMIT #{offset}, #{limit}
+    </select>
+
+    <resultMap id="nodeRow" type="map">
+        <result column="nodeid" property="nodeid" javaType="string"/>
+        <result column="name" property="name" javaType="string"/>
+        <result column="lastdate" property="lastdate" javaType="string"/>
+        <result column="sourcecharset" property="sourcecharset" javaType="string"/>
+        <result column="sourcetype" property="sourcetype" javaType="string"/>
+        <result column="urlpage" property="urlpage" javaType="string"/>
+        <result column="pagesize_start" property="pagesize_start" javaType="string"/>
+        <result column="pagesize_end" property="pagesize_end" javaType="string"/>
+        <result column="page_base" property="page_base" javaType="string"/>
+        <result column="par_num" property="par_num" javaType="string"/>
+        <result column="url_contain" property="url_contain" javaType="string"/>
+        <result column="url_except" property="url_except" javaType="string"/>
+        <result column="url_start" property="url_start" javaType="string"/>
+        <result column="url_end" property="url_end" javaType="string"/>
+        <result column="title_rule" property="title_rule" javaType="string"/>
+        <result column="title_html_rule" property="title_html_rule" javaType="string"/>
+        <result column="type_rule" property="type_rule" javaType="string"/>
+        <result column="type_html_rule" property="type_html_rule" javaType="string"/>
+        <result column="content_rule" property="content_rule" javaType="string"/>
+        <result column="content_html_rule" property="content_html_rule" javaType="string"/>
+        <result column="content_page_start" property="content_page_start" javaType="string"/>
+        <result column="content_page_end" property="content_page_end" javaType="string"/>
+        <result column="content_page_rule" property="content_page_rule" javaType="string"/>
+        <result column="content_page" property="content_page" javaType="string"/>
+        <result column="content_nextpage" property="content_nextpage" javaType="string"/>
+        <result column="down_attachment" property="down_attachment" javaType="string"/>
+        <result column="watermark" property="watermark" javaType="string"/>
+        <result column="coll_order" property="coll_order" javaType="string"/>
+        <result column="customize_config" property="customize_config" javaType="string"/>
+        <result column="program_config" property="program_config" javaType="string"/>
+        <result column="mid" property="mid" javaType="string"/>
+    </resultMap>
+    <sql id="nodeColumns">nodeid, name, lastdate, sourcecharset, sourcetype, urlpage, pagesize_start, pagesize_end, page_base, par_num, url_contain, url_except, url_start, url_end, title_rule, title_html_rule, type_rule, type_html_rule, content_rule, content_html_rule, content_page_start, content_page_end, content_page_rule, content_page, content_nextpage, down_attachment, watermark, coll_order, customize_config, program_config, mid</sql>
+
+    <select id="selectCjNode" resultMap="nodeRow">
+        SELECT <include refid="nodeColumns"/> FROM mac_cj_node WHERE nodeid = #{id}
+    </select>
+
+    <!-- 旧 Cj::index（admin/controller/Cj.php:15-35）：无条件，nodeid desc -->
+    <select id="countCjNodes" resultType="long">
+        SELECT COUNT(*) FROM mac_cj_node
+    </select>
+
+    <select id="listCjNodes" resultMap="nodeRow">
+        SELECT <include refid="nodeColumns"/> FROM mac_cj_node ORDER BY nodeid DESC LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- 旧 Cj::delData 删除采集历史前取节点下内容的网址（field('url')->where(nodeid in ids)）：新版按 id 分批（每批有上限）取完 -->
+    <resultMap id="contentUrlRow" type="map">
+        <result column="id" property="id" javaType="string"/>
+        <result column="url" property="url" javaType="string"/>
+    </resultMap>
+    <select id="listCjContentUrls" resultMap="contentUrlRow">
+        SELECT id, url FROM mac_cj_content WHERE nodeid IN
+        <foreach collection="ids" item="x" open="(" separator="," close=")">#{x}</foreach>
+        AND id &gt; #{after} ORDER BY id LIMIT #{limit}
+    </select>
+</mapper>
