@@ -31,6 +31,7 @@ import com.maccms.backend.site.application.SiteLegacyConfig;
 import com.maccms.backend.site.application.SitePasswordProperties;
 import com.maccms.backend.site.application.SiteProperties;
 import com.maccms.backend.site.application.SiteSettings;
+import com.maccms.backend.site.application.SiteTemplateSource;
 import com.maccms.backend.site.application.SiteUrlProperties;
 import com.maccms.backend.site.web.SearchThrottle;
 import com.maccms.backend.site.web.SiteHtmlRenderer;
@@ -40,12 +41,17 @@ import com.maccms.backend.site.web.SiteMemberCacheFilter;
 import com.maccms.backend.site.web.SiteMemberInterceptor;
 import com.maccms.backend.site.web.SiteStatusInterceptor;
 import com.maccms.backend.site.web.SiteVariants;
+import com.maccms.backend.site.web.jte.DynamicTemplates;
 import com.maccms.backend.site.web.jte.StaticTemplates;
+import com.maccms.backend.site.web.jte.Templates;
+import gg.jte.TemplateEngine;
 import java.security.SecureRandom;
 import java.time.Clock;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 import java.util.random.RandomGenerator;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
@@ -70,8 +76,9 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
  * <p>页面用的图片规范化器按部署参数 {@code maccms.browser-external.w2}（{@link BrowserExternalAccess}，默认打开）决定是否输出
  * 外部主机的图片地址；关闭时外部图片按空值处理（显示占位），正文里的外部图片整张删除（B02，11 文档第 5 节）。
  *
- * <p>模板使用构建期预编译的类（{@link StaticTemplates}），运行时不编译模板、不读取模板文件，
- * 不引入 jte 的 Spring Boot starter 与视图解析器（页面不走边渲染边输出的视图路径）。
+ * <p>模板默认使用构建期预编译的类（{@link StaticTemplates}），site 模块自己不编译模板、不读取模板文件，
+ * 不引入 jte 的 Spring Boot starter 与视图解析器（页面不走边渲染边输出的视图路径）。B15 起有 {@link SiteTemplateSource}
+ * （在线编辑的外部模板，sitetemplate 模块）时，每次渲染取它当前的引擎，没有时仍用内置模板（24 文档第 7 节）。
  */
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnSiteEnabled
@@ -329,8 +336,42 @@ public class SiteConfiguration {
     }
 
     @Bean
-    SiteHtmlRenderer siteHtmlRenderer(SiteVariants variants) {
-        return new SiteHtmlRenderer(new StaticTemplates(), variants.dependsOnUserAgent());
+    SiteHtmlRenderer siteHtmlRenderer(SiteVariants variants, ObjectProvider<SiteTemplateSource> online) {
+        Templates builtin = new StaticTemplates();
+        SiteTemplateSource source = online.getIfAvailable();
+        if (source == null) {
+            return new SiteHtmlRenderer(builtin, variants.dependsOnUserAgent());
+        }
+        return new SiteHtmlRenderer(new OnlineTemplates(source, builtin), variants.dependsOnUserAgent());
+    }
+
+    /** 外部模板引擎换了才新建 {@link DynamicTemplates}（引擎与入口成对缓存，请求之间无锁）。 */
+    static final class OnlineTemplates implements Supplier<Templates> {
+        private record Pair(TemplateEngine engine, Templates templates) {
+        }
+
+        private final SiteTemplateSource source;
+        private final Templates builtin;
+        private final AtomicReference<Pair> last = new AtomicReference<>();
+
+        OnlineTemplates(SiteTemplateSource source, Templates builtin) {
+            this.source = source;
+            this.builtin = builtin;
+        }
+
+        @Override
+        public Templates get() {
+            TemplateEngine engine = source.current();
+            if (engine == null) {
+                return builtin;
+            }
+            Pair p = last.get();
+            if (p == null || p.engine() != engine) {
+                p = new Pair(engine, new DynamicTemplates(engine));
+                last.set(p);
+            }
+            return p.templates();
+        }
     }
 
     /**

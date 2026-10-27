@@ -4,6 +4,7 @@ import com.maccms.backend.admin.application.AdminAccountService;
 import com.maccms.backend.admin.application.AdminLoginService;
 import com.maccms.backend.admin.application.AdminSettings;
 import com.maccms.backend.admin.application.LegacyInput;
+import com.maccms.backend.admin.application.SystemConfigService;
 import com.maccms.backend.admin.infrastructure.AdminMapper;
 import com.maccms.backend.admin.infrastructure.AdminWriteMapper;
 import com.maccms.backend.admin.web.AdminContentActions;
@@ -14,6 +15,7 @@ import com.maccms.backend.admin.web.AdminPages;
 import com.maccms.backend.admin.web.AdminRandom;
 import com.maccms.backend.admin.web.AdminResponses;
 import com.maccms.backend.admin.web.AdminSessions;
+import com.maccms.backend.admin.web.AdminSystemActions;
 import com.maccms.backend.admin.web.jte.StaticTemplates;
 import com.maccms.backend.common.captcha.CaptchaSettings;
 import com.maccms.backend.content.application.ContentAdminServices;
@@ -24,11 +26,14 @@ import com.maccms.backend.legacyconfig.application.LegacyConfigConfiguration;
 import com.maccms.backend.legacyconfig.application.LegacyConfigException;
 import com.maccms.backend.legacyconfig.application.LegacyConfigFile;
 import com.maccms.backend.legacyconfig.application.LegacyConfigService;
+import com.maccms.backend.legacyconfig.application.LegacySiteFiles;
 import com.maccms.backend.legacyconfig.application.view.PhpArray;
 import com.maccms.backend.legacyconfig.application.view.PhpValue;
 import com.maccms.backend.legacyconfig.application.view.PhpValues;
 import com.maccms.backend.content.application.PhpIntval;
 import java.security.SecureRandom;
+import com.maccms.backend.sitetemplate.application.SiteTemplateConfiguration;
+import com.maccms.backend.sitetemplate.application.SiteTemplateService;
 import java.time.Clock;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -57,7 +62,7 @@ import org.springframework.context.annotation.Import;
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnAdminEnabled
 @EnableConfigurationProperties(AdminProperties.class)
-@Import(LegacyConfigConfiguration.class)
+@Import({LegacyConfigConfiguration.class, SiteTemplateConfiguration.class})
 public class AdminConfiguration {
 
     private static final Logger log = LoggerFactory.getLogger(AdminConfiguration.class);
@@ -165,8 +170,22 @@ public class AdminConfiguration {
     @Bean
     AdminPages adminPages(AdminEndpoint endpoint, AdminSettings settings, AdminResponses responses,
                           LegacyConfigService legacy, ObjectProvider<Clock> clock,
-                          @Value("${spring.servlet.multipart.max-file-size:1MB}") String maxUpload) {
-        return new AdminPages(endpoint, settings, responses, legacy, clock.getIfAvailable(Clock::systemUTC), maxUpload);
+                          @Value("${spring.servlet.multipart.max-file-size:1MB}") String maxUpload,
+                          ObjectProvider<com.maccms.backend.admin.application.AddonService> addons,
+                          ObjectProvider<com.maccms.backend.common.browser.BrowserExternalAccess> external,
+                          ObjectProvider<SiteTemplateService> templates) {
+        AdminPages pages = new AdminPages(endpoint, settings, responses, legacy, clock.getIfAvailable(Clock::systemUTC), maxUpload);
+        SiteTemplateService t = templates.getIfAvailable();
+        if (t != null) {
+            pages.notice(t::notice);
+        }
+        com.maccms.backend.admin.application.AddonService a = addons.getIfAvailable();
+        if (a != null) {
+            // B15：adminloginbg 插件的 admin_login_init 钩子（登录页背景）；外部主机的背景图受 W2 放行开关约束
+            pages.loginBackground(a::loginBackground,
+                    external.getIfAvailable(() -> com.maccms.backend.common.browser.BrowserExternalAccess.DEFAULT).w2());
+        }
+        return pages;
     }
 
     /**
@@ -191,6 +210,92 @@ public class AdminConfiguration {
                                           ObjectProvider<ContentAdminServices> content) {
         return new AdminMemberActions(endpoint, settings, responses, members.getIfAvailable(), content.getIfAvailable(),
                 clock.getIfAvailable(Clock::systemUTC));
+    }
+
+    /** B15 后台系统配置（24 文档第 5 节）：读写旧配置文件与旧站目录里的文件，不访问数据库。 */
+    @Bean
+    SystemConfigService adminSystemConfigService(LegacyConfigService legacy, LegacySiteFiles files, ObjectProvider<Clock> clock) {
+        return new SystemConfigService(legacy, files, clock.getIfAvailable(Clock::systemUTC));
+    }
+
+    @Bean
+    com.maccms.backend.admin.application.PlayerAdminService adminPlayerAdminService(LegacyConfigService legacy, LegacySiteFiles files) {
+        return new com.maccms.backend.admin.application.PlayerAdminService(legacy, files);
+    }
+
+    @Bean
+    com.maccms.backend.admin.application.ListConfigService adminListConfigService(LegacyConfigService legacy) {
+        return new com.maccms.backend.admin.application.ListConfigService(legacy);
+    }
+
+    @Bean
+    com.maccms.backend.admin.web.AdminPlayerActions adminPlayerActions(AdminEndpoint endpoint, AdminSettings settings,
+            AdminResponses responses, com.maccms.backend.admin.application.PlayerAdminService players,
+            com.maccms.backend.admin.application.ListConfigService lists, SystemConfigService system, AdminRandom random) {
+        return new com.maccms.backend.admin.web.AdminPlayerActions(endpoint, settings, responses, players, lists, system, random);
+    }
+
+    @Bean
+    com.maccms.backend.admin.application.AddonService adminAddonService(LegacySiteFiles files, LegacyConfigService legacy,
+                                                                        AdminEndpoint endpoint, ObjectProvider<Clock> clock) {
+        return new com.maccms.backend.admin.application.AddonService(files, legacy, endpoint.sitePath(),
+                clock.getIfAvailable(Clock::systemUTC), RANDOM);
+    }
+
+    @Bean
+    com.maccms.backend.admin.web.AdminAddonActions adminAddonActions(AdminEndpoint endpoint, AdminSettings settings,
+            AdminResponses responses, com.maccms.backend.admin.application.AddonService addons, AdminRandom random,
+            ObjectProvider<Clock> clock) {
+        return new com.maccms.backend.admin.web.AdminAddonActions(endpoint, settings, responses, addons, random,
+                clock.getIfAvailable(Clock::systemUTC));
+    }
+
+    /**
+     * B15 数据库工具（24 文档第 9 节）：只读查询经只读连接池，批量替换经可写数据源。备份文件头部的主机、端口、库名取自
+     * {@code spring.datasource.url}（不含账号与密码）。只装配了部分 Bean 的测试里没有只读 Mapper 时不注册（数据库工具的动作按"由 B15 提供"处理）。
+     */
+    @Bean
+    com.maccms.backend.admin.application.DatabaseToolService adminDatabaseToolService(
+            ObjectProvider<com.maccms.backend.admin.infrastructure.DatabaseToolMapper> reader,
+            ObjectProvider<com.maccms.backend.admin.infrastructure.DatabaseReplaceWriteMapper> writer, LegacyConfigService legacy,
+            LegacySiteFiles files, ObjectProvider<Clock> clock, @Value("${spring.datasource.url:}") String url) {
+        com.maccms.backend.admin.infrastructure.DatabaseToolMapper r = reader.getIfAvailable();
+        if (r == null) {
+            return null;
+        }
+        return new com.maccms.backend.admin.application.DatabaseToolService(r, writer.getIfAvailable(), legacy, files,
+                clock.getIfAvailable(Clock::systemUTC), databaseEndpoint(url));
+    }
+
+    /** {@code jdbc:mysql://主机[:端口]/库名?…} 的主机、端口（缺省 3306）与库名。 */
+    static com.maccms.backend.admin.application.DatabaseToolService.Endpoint databaseEndpoint(String url) {
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("^jdbc:mysql://([^/:?]+)(?::(\\d+))?/([^?]*)").matcher(url == null ? "" : url);
+        if (!m.find()) {
+            return new com.maccms.backend.admin.application.DatabaseToolService.Endpoint("", "", "");
+        }
+        return new com.maccms.backend.admin.application.DatabaseToolService.Endpoint(m.group(1), m.group(2) == null ? "3306" : m.group(2),
+                m.group(3));
+    }
+
+    @Bean
+    com.maccms.backend.admin.web.AdminDatabaseActions adminDatabaseActions(AdminEndpoint endpoint, AdminSettings settings,
+            AdminResponses responses, ObjectProvider<com.maccms.backend.admin.application.DatabaseToolService> db, AdminRandom random) {
+        com.maccms.backend.admin.application.DatabaseToolService s = db.getIfAvailable();
+        return s == null ? null : new com.maccms.backend.admin.web.AdminDatabaseActions(endpoint, settings, responses, s, random);
+    }
+
+    @Bean
+    com.maccms.backend.admin.web.AdminTemplateActions adminTemplateActions(AdminEndpoint endpoint, AdminSettings settings,
+            AdminResponses responses, LegacySiteFiles files, LegacyConfigService legacy, SiteTemplateService templates,
+            AdminRandom random, ObjectProvider<Clock> clock) {
+        return new com.maccms.backend.admin.web.AdminTemplateActions(endpoint, settings, responses, files, legacy, templates, random,
+                clock.getIfAvailable(Clock::systemUTC));
+    }
+
+    @Bean
+    AdminSystemActions adminSystemActions(AdminEndpoint endpoint, AdminSettings settings, AdminResponses responses,
+                                          SystemConfigService system, AdminRandom random) {
+        return new AdminSystemActions(endpoint, settings, responses, system, random);
     }
 
     /** 后台控制器的随机源（验证码、表单令牌）：不注册为 RandomGenerator 类型的 Bean。 */

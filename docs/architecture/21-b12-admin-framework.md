@@ -49,10 +49,10 @@
 | **B12（本批实现）** | 9 | `index/welcome` `index/quickmenu`（保存归 B15） `index/iframe` `index/clear` `index/unlocked` `admin/index` `admin/info` `admin/del` `admin/field`；另有不在 auth.php 的 `index/index`、`index/login`、`index/logout`、`index/checkcache` |
 | B13 | 54 | `index/select` `upload/upload`，`type/*` `topic/*` `link/*` `gbook/*` `comment/*` `annex/*` `images/*` `art/*` `vod/*` `actor/*` `role/*` `website/*` |
 | B14 | 20 | `group/*` `user/*` `card/*` `order/*` `ulog/*` `plog/*` `cash/*` |
-| B15 | 52 | `system/*` `domain/*` `vodserver/*` `vodplayer/*` `voddowner/*` `template/*` `database/*`（其中还原、执行 SQL、优化、修复按零结构变更在入口拒绝）`addon/index|uninstall|config|state|local|add` `urlsend/index` |
-| B16 | 15 | `timming/*` `make/*`（含 `make/index?ac2=wap`） |
+| B15 | 57 | `system/*` `domain/*` `vodserver/*` `vodplayer/*` `voddowner/*` `template/*` `database/*`（其中还原、执行 SQL、优化、修复按零结构变更在入口拒绝）`addon/index|downloaded|uninstall|config|state|local|add` `urlsend/index` `timming/*`（B15 调整：定时任务配置页与本地插件列表归 B15，24 文档第 2 节） |
+| B16 | 11 | `make/*`（含 `make/index?ac2=wap`）；定时任务的执行与 runtime 回写 |
 | B17 / B18 / B19 / B20 | 10 / 2 / 3 / 4 | 采集：`collect/union|bind|index|info|del`、`cj/index|info|del|export|import`；`collect/api|load`；`collect/vod|art|timing`；`cj/program|col_url|col_content|publish` |
-| B28 / B29 | 1 / 3 | `urlsend/push`；`addon/downloaded|install|upgrade` |
+| B28 / B29 | 1 / 2 | `urlsend/push`；`addon/install|upgrade` |
 | 旧版无方法（死链） | 6 | `topic/batch` `link/field` `safety/file` `safety/data` `urlsend/baidu_push` `urlsend/baidu_bear`：菜单或权限树里有，旧控制器里没有方法，新旧都是"页面不存在" |
 
 后续批次接手时只在 `AdminController` 的分派里接上自己的动作，不改 `AdminPermissions` 的菜单数据（路线图第 5.2 节"同文件冲突"）。

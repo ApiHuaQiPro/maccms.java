@@ -64,12 +64,14 @@ class ModuleBoundaryTest {
             "legacyconfig.application.view.PhpValues");
 
     /**
-     * admin 可用的 site 类型（B13，MACC-37，docs/architecture/22-b13-admin-content.md 第 8.3 节）：后台内容列表里指向前台详情页的链接
+     * admin 可用的 site 类型（B13，MACC-37，docs/architecture/22-b13-admin-content.md 第 8.3 节；B15 加 {@code PhpJson}）：后台内容列表里指向前台详情页的链接
      * （旧 {@code mac_url_vod_detail} 等，与前台共用同一套地址规则）。只有纯计算的地址生成类，不含页面、控制器与数据访问。扩充须同步 02 规范。
      */
     private static final Set<String> ADMIN_SITE = Set.of(
             "site.application.LegacyUrlBuilder", "site.application.LegacyUrlStyle", "site.application.LegacyPage",
-            "site.application.SiteRoute");
+            "site.application.SiteRoute",
+            // B15（MACC-39，24 文档第 2 节）：写 playerconfig.js 的"参数""缓存"两段与播放器导出用的 PHP json_encode 等价编码（纯计算）
+            "site.application.PhpJson");
 
     /**
      * infrastructure 之外允许出现数据访问类型的包（精确匹配，不含子包）：common.config 的数据源账号检查；common.write 的

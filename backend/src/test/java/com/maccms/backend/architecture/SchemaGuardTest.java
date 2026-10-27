@@ -41,6 +41,29 @@ class SchemaGuardTest {
             + "|LOAD\\s+DATA|LOAD\\s+XML|IMPORT\\s+TABLE|SOURCE\\s+\\S+\\.sql"
             + ")");
 
+    /**
+     * 登记的例外（B15，MACC-39；路线图 B15 行，docs/architecture/24-b15-admin-system.md 第 9.3 节）：数据库工具"备份导出"把建表语句写进备份文件，
+     * 格式与旧版相同——{@code SHOW CREATE TABLE} 读出建表语句文本、取结果里的 {@code Create Table} 列，再在文件里写一行 {@code DROP TABLE IF EXISTS}。
+     * 这些只是写进文件的文字，新系统从不执行备份文件（还原备份在入口拒绝），{@code AdminSystemGoldenMySqlIT} 断言导出期间只发出 SHOW/SELECT。
+     * 每一项按"文件 → 匹配到的文字"逐个消耗，多出现一次就是违规。
+     */
+    static final Map<String, List<String>> REGISTERED_TEXT = Map.of(
+            "com/maccms/backend/admin/application/DatabaseToolService.java", List.of("Create Table", "DROP TABLE"),
+            "mapper/admin/DatabaseToolMapper.xml", List.of("CREATE TABLE"));
+
+    /** 去掉 {@link #REGISTERED_TEXT} 为该文件登记的例外（每项只抵消一次）。 */
+    static List<String> withoutRegistered(String file, List<String> violations) {
+        List<String> allowed = new ArrayList<>(REGISTERED_TEXT.getOrDefault(file, List.of()));
+        List<String> out = new ArrayList<>();
+        for (String v : violations) {
+            String hit = v.substring(v.indexOf('：') + 1);
+            if (!allowed.remove(hit)) {
+                out.add(v);
+            }
+        }
+        return out;
+    }
+
     /** 相邻字符串字面量的拼接（"a " + "b"），合并后再匹配，防止把关键字拆成两段绕过。 */
     private static final Pattern LITERAL_CONCAT = Pattern.compile("\"\\s*\\+\\s*\"");
 
@@ -54,7 +77,7 @@ class SchemaGuardTest {
     void mainJavaContainsNoDdl() throws IOException {
         List<String> all = new ArrayList<>();
         for (Map.Entry<String, String> e : JavaSources.mainJava().entrySet()) {
-            for (String v : javaViolations(e.getValue())) {
+            for (String v : withoutRegistered(e.getKey(), javaViolations(e.getValue()))) {
                 all.add(e.getKey() + ": " + v);
             }
         }
@@ -87,7 +110,7 @@ class SchemaGuardTest {
                         }
                     }
                 }
-                for (String v : textViolations(text)) {
+                for (String v : withoutRegistered(rel, textViolations(text))) {
                     all.add(rel + ": " + v);
                 }
             }

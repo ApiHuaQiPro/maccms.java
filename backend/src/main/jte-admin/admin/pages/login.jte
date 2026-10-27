@@ -61,6 +61,6 @@
 
 <script type="text/javascript" src="${page.head().staticPath()}/layui/layui.js"></script>
 <script type="text/javascript" src="${page.head().staticPath()}/js/admin_common.js"></script>
-<script type="text/javascript" src="${page.head().assetsPath()}/login.js" data-login-url="${page.loginUrl()}" data-index-url="${page.indexUrl()}" data-msg-no="${page.lang().get("admin/index/login/verify_no")}" data-msg-pass="${page.lang().get("admin/index/login/verify_pass")}" data-msg-verify="${page.lang().get("admin/index/login/verify_verify")}" data-msg-wait="${page.lang().get("wait_submit")}"></script>
+<script type="text/javascript" src="${page.head().assetsPath()}/login.js" data-background="${page.background()}" data-login-url="${page.loginUrl()}" data-index-url="${page.indexUrl()}" data-msg-no="${page.lang().get("admin/index/login/verify_no")}" data-msg-pass="${page.lang().get("admin/index/login/verify_pass")}" data-msg-verify="${page.lang().get("admin/index/login/verify_verify")}" data-msg-wait="${page.lang().get("wait_submit")}"></script>
 </body>
 </html>

@@ -17,4 +17,11 @@ public class AdminInfrastructureConfiguration {
     AdminWriteMapper adminWriteMapper(WriteDatabase db) {
         return db.mapper(AdminWriteMapper.class);
     }
+
+    /** B15 数据库工具"批量替换"的写入（24 文档第 9.4 节）。 */
+    @Bean
+    @ConditionalOnWriteEnabled
+    DatabaseReplaceWriteMapper adminDatabaseReplaceWriteMapper(WriteDatabase db) {
+        return db.mapper(DatabaseReplaceWriteMapper.class);
+    }
 }

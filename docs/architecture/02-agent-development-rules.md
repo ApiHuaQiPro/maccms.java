@@ -50,6 +50,13 @@
 
 - 会员与财务表（`mac_user`、`mac_group`、`mac_card`、`mac_order`、`mac_cash`、`mac_plog`、`mac_ulog`、`mac_visit`）的后台读写在 `member` 模块（`23-b14-admin-member.md` 第 2 节）：`member.application` 的 `MemberAdminServices`（只供 admin 调用，`@ConditionalOnWriteEnabled`）→ `member.infrastructure` 的只读 `MemberAdminMapper` 与写 `MemberAdminWriteMapper`/`MemberAdminWrites`。admin 只经 `AdminMemberActions` 调用这些服务；会员表单的取值规则复用 content 的 `AdminTable`（`USER`、`GROUP`）与 `AdminRowValues`（同 B13 comment 模块的用法）。
 - 提现审核、删除与会员中心（B10）共用"认领 → 转移 → 条件补偿"的写法与语句；资金一致性以 23 文档第 6.3 节的对账语句检查。
+
+### 2.4 B15 后台系统配置、模板在线编辑与本地插件
+
+- 旧配置文件只经 `legacyconfig.application.LegacyConfigService` 写回（`replace`/`update`：先确认新版能读回，再经 `legacyconfig.infrastructure.AtomicFiles` 原子写入并核对读到时的版本），文件内容只由 `VarExportWriter` 生成（与 PHP `var_export`/`mac_arr2file` 逐字节相同）；旧站的其他文件只经 `legacyconfig.application.LegacySiteFiles`（读写区域 `static/`、`template/`、`addons/`、`application/data/backup/`），其他模块不自己读写旧站文件（`24-b15-admin-system.md` 第 3 节）。
+- `admin` 可用的 site 类型加 `site.application.PhpJson`（`ModuleBoundaryTest.ADMIN_SITE`）。
+- `sitetemplate` 模块（前台模板在线编辑，D4，24 文档第 7 节）：`application`（`SiteTemplateService` 实现 `site.application.SiteTemplateSource`，安全过滤 `JteSecurityFilter`，装配 `SiteTemplateConfiguration`）→ `infrastructure`（`JteOnlineCompiler`、`JteClassPath`、`OnlineHtmlPolicy`）。运行时编译模板只能出现在 `sitetemplate.infrastructure`（`SiteGuardrailsTest.runtimeTemplateCompilationOnlyInSiteTemplateInfrastructure`）；jte 编译器为此进入编译作用域。`site` 仍不编译模板、不读模板文件，只经 `SiteTemplateSource` 取当前引擎（没有或为 null 时用内置的预编译模板）；第 4 节的模板规则对外部模板目录同样适用（编译时用同一套站点 HTML 策略，`<script>`/`<iframe>` 只限内置版本本身含有它们的模板）。
+- 数据库工具（24 文档第 9 节）只做只读查询与单表 DML：只读 Mapper `mapper/admin/DatabaseToolMapper.xml` 的 SHOW 语句与 `${table}`/`${columns}` 是 `ReadOnlyGuardrailsTest`、`SqlEntryGuardTest` 登记的例外；备份文件里的 DDL 文本是 `SchemaGuardTest` 登记的唯一例外（只写进文件、从不执行）；还原、执行 SQL、优化、修复在入口拒绝。
 ### 3. 数据库
 
 - **禁止 DDL**（路线图第 1.2 节"零结构变更"，B07 起取代原"DDL 独立评审"）：不建表、不加/改/删列与索引、不转引擎或字符集，不建触发器、存储过程、视图、事件；不执行表维护语句与账号/权限语句；应用代码与资源中不得有 `schema.sql`/`data.sql`、Flyway/Liquibase 或任何初始化器。数据库账号由数据库管理员在获批部署时创建，代码不建、不改账号。没有结构迁移，旧数据不需要迁移；回滚只用 DML（`12-write-infrastructure.md` 第 6 节）。

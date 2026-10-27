@@ -38,6 +38,9 @@ public final class WriteRegistry {
      * INSERT、UPDATE）；会员组的增删改（mac_group）；生成与删除卡密（mac_card INSERT、DELETE）；删除订单（mac_order DELETE）；提现审核
      * （mac_cash UPDATE；删除与补偿插回沿用 B10 的 DELETE、INSERT）；删除推广访问（mac_visit DELETE）。积分日志与访问日志的删除沿用 B10 已登记的
      * mac_plog、mac_ulog DELETE。</li>
+     * <li>B15（MACC-39，24 文档第 9.4 节）：数据库工具"批量替换"——管理员手工对任一 mac_* 表的一列做 {@code REPLACE}（admin / 26 张表 / UPDATE；
+     * 每张表一条固定的单表语句，列名按 SHOW COLUMNS 与 install.sql 双重校验；mac_admin 沿用 B12 已登记的 admin / mac_admin / UPDATE）。
+     * 不登记任何 INSERT/DELETE。</li>
      * </ul>
      */
     static final List<WritePermission> REGISTERED = List.of(
@@ -100,7 +103,32 @@ public final class WriteRegistry {
             new WritePermission("member", "mac_card", WriteOperation.DELETE, "B14"),
             new WritePermission("member", "mac_order", WriteOperation.DELETE, "B14"),
             new WritePermission("member", "mac_cash", WriteOperation.UPDATE, "B14"),
-            new WritePermission("member", "mac_visit", WriteOperation.DELETE, "B14"));
+            new WritePermission("member", "mac_visit", WriteOperation.DELETE, "B14"),
+            new WritePermission("admin", "mac_actor", WriteOperation.UPDATE, "B15"),
+            new WritePermission("admin", "mac_annex", WriteOperation.UPDATE, "B15"),
+            new WritePermission("admin", "mac_art", WriteOperation.UPDATE, "B15"),
+            new WritePermission("admin", "mac_card", WriteOperation.UPDATE, "B15"),
+            new WritePermission("admin", "mac_cash", WriteOperation.UPDATE, "B15"),
+            new WritePermission("admin", "mac_cj_content", WriteOperation.UPDATE, "B15"),
+            new WritePermission("admin", "mac_cj_history", WriteOperation.UPDATE, "B15"),
+            new WritePermission("admin", "mac_cj_node", WriteOperation.UPDATE, "B15"),
+            new WritePermission("admin", "mac_collect", WriteOperation.UPDATE, "B15"),
+            new WritePermission("admin", "mac_comment", WriteOperation.UPDATE, "B15"),
+            new WritePermission("admin", "mac_gbook", WriteOperation.UPDATE, "B15"),
+            new WritePermission("admin", "mac_group", WriteOperation.UPDATE, "B15"),
+            new WritePermission("admin", "mac_link", WriteOperation.UPDATE, "B15"),
+            new WritePermission("admin", "mac_msg", WriteOperation.UPDATE, "B15"),
+            new WritePermission("admin", "mac_order", WriteOperation.UPDATE, "B15"),
+            new WritePermission("admin", "mac_plog", WriteOperation.UPDATE, "B15"),
+            new WritePermission("admin", "mac_role", WriteOperation.UPDATE, "B15"),
+            new WritePermission("admin", "mac_topic", WriteOperation.UPDATE, "B15"),
+            new WritePermission("admin", "mac_type", WriteOperation.UPDATE, "B15"),
+            new WritePermission("admin", "mac_ulog", WriteOperation.UPDATE, "B15"),
+            new WritePermission("admin", "mac_user", WriteOperation.UPDATE, "B15"),
+            new WritePermission("admin", "mac_visit", WriteOperation.UPDATE, "B15"),
+            new WritePermission("admin", "mac_vod", WriteOperation.UPDATE, "B15"),
+            new WritePermission("admin", "mac_website", WriteOperation.UPDATE, "B15"),
+            new WritePermission("admin", "mac_vod_search", WriteOperation.UPDATE, "B15"));
 
     /** 写 Mapper 的全限定名：{@code com.maccms.backend.<module>.infrastructure[.子包].<类型>}。 */
     private static final Pattern MAPPER_TYPE = Pattern.compile(

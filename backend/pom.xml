@@ -120,12 +120,14 @@
             <artifactId>spring-boot-starter-webmvc-test</artifactId>
             <scope>test</scope>
         </dependency>
-        <!-- 仅测试：用 jte 编译器以更严格的站点 HTML 策略重新编译全部正式模板（SiteTemplatePolicyTest） -->
+        <!--
+          jte 编译器：B15 模板在线编辑（D4，路线图第 5.6 节）在运行时编译外部模板目录（需要 JDK 的 javac；只有 JRE 时在线编辑拒绝保存）；
+          测试里 SiteTemplatePolicyTest 也用它以更严格的站点 HTML 策略重新编译全部正式模板。
+        -->
         <dependency>
             <groupId>gg.jte</groupId>
             <artifactId>jte</artifactId>
             <version>${jte.version}</version>
-            <scope>test</scope>
         </dependency>
     </dependencies>
 
@@ -133,6 +135,17 @@
         <resources>
             <resource>
                 <directory>src/main/resources</directory>
+            </resource>
+            <!--
+              B15（docs/architecture/24-b15-admin-system.md 第 7 节）：前台 jte 模板源码随 jar 带一份（classpath:/site-jte/），
+              首次启用在线编辑时导出到外部模板目录；运行时只在开启在线编辑后编译外部目录，不编译这份内置源码。
+            -->
+            <resource>
+                <directory>src/main/jte</directory>
+                <targetPath>site-jte</targetPath>
+                <includes>
+                    <include>**/*.jte</include>
+                </includes>
             </resource>
             <!--
               B05（docs/architecture/15-b05-readonly-pages.md 第 6.2 节）：旧前台播放器资源原样复用，不复制进 backend/：
@@ -161,6 +174,10 @@
                     <include>layui/**</include>
                     <include>css/admin_style.css</include>
                     <include>js/admin_common.js</include>
+                    <!-- B15：系统配置各页记住所在标签页用的 jQuery cookie 插件（旧模板直接引用 __STATIC__/js/jquery.cookie.js） -->
+                    <include>js/jquery.cookie.js</include>
+                    <!-- B15：广告位列表"复制调用代码"（旧 template/ads.html 引用 __STATIC__/js/jquery.clipboard.js） -->
+                    <include>js/jquery.clipboard.js</include>
                 </includes>
             </resource>
             <!--

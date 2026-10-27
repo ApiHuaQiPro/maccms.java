@@ -8,6 +8,7 @@ import gg.jte.output.StringOutput;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.CacheControl;
@@ -40,18 +41,23 @@ public class SiteHtmlRenderer {
 
     private static final Logger log = LoggerFactory.getLogger(SiteHtmlRenderer.class);
 
-    private final Templates templates;
+    private final Supplier<Templates> templates;
     private final boolean varyUserAgent;
 
     public SiteHtmlRenderer(Templates templates) {
         this(templates, false);
     }
 
+    public SiteHtmlRenderer(Templates templates, boolean varyUserAgent) {
+        this(() -> templates, varyUserAgent);
+    }
+
     /**
      * @param varyUserAgent 页面输出随 {@code User-Agent} 不同（旧配置 {@code mob_status} 为 1 或 2，{@link SiteVariants#dependsOnUserAgent}）：
      *                      每个页面响应带 {@code Vary: User-Agent}，共享缓存不会把手机版给桌面（旧版页面缓存键带 {@code MAC_MOB}）
+     * @param templates     每次渲染取一次模板入口（B15：在线编辑的外部模板整体替换后，新请求用新版本，24 文档第 7 节）
      */
-    public SiteHtmlRenderer(Templates templates, boolean varyUserAgent) {
+    public SiteHtmlRenderer(Supplier<Templates> templates, boolean varyUserAgent) {
         this.templates = templates;
         this.varyUserAgent = varyUserAgent;
     }
@@ -60,7 +66,7 @@ public class SiteHtmlRenderer {
     public String render(Function<Templates, JteModel> page) {
         try {
             StringOutput out = new StringOutput();
-            page.apply(templates).render(out);
+            page.apply(templates.get()).render(out);
             return out.toString();
         } catch (RuntimeException e) {
             throw new PageRenderException(e);

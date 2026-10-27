@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+  B15 数据库工具的只读查询（旧 admin/controller/Database.php、common/util/Database.php；docs/architecture/24-b15-admin-system.md 第 9 节）。
+  只有 SHOW 与 SELECT，经只读连接池执行。${table} 与 ${columns} 是 SqlEntryGuardTest.REGISTERED_DOLLAR 登记的标识符：表名必须出现在
+  SHOW TABLE STATUS 的结果里、只含字母数字下划线；列清单由 SHOW COLUMNS 的列名逐个校验后拼成 CAST(`列` AS CHAR) AS `列`
+  （取值一律按字符串，与旧版 PDO 取出后 addslashes 的结果相同）。
+  "SHOW CREATE TABLE" 只把建表语句文本读出来写进备份文件（SchemaGuardTest 登记的唯一例外），从不执行。
+-->
+<mapper namespace="com.maccms.backend.admin.infrastructure.DatabaseToolMapper">
+
+    <!-- 表状态（Database.php:54、:325-333） -->
+    <select id="tableStatus" resultType="java.util.LinkedHashMap">
+        SHOW TABLE STATUS
+    </select>
+
+    <!-- 列（Database.php:281、:310） -->
+    <select id="columns" resultType="java.util.LinkedHashMap">
+        SHOW COLUMNS FROM `${table}`
+    </select>
+
+    <!-- 建表语句文本（common/util/Database.php:110） -->
+    <select id="createTable" resultType="java.util.LinkedHashMap">
+        SHOW CREATE TABLE `${table}`
+    </select>
+
+    <!-- 行数（common/util/Database.php:121） -->
+    <select id="count" resultType="long">
+        SELECT COUNT(*) AS count FROM `${table}`
+    </select>
+
+    <!-- 每次 1000 行（common/util/Database.php:133；旧版没有 ORDER BY，MyISAM 按存储顺序） -->
+    <select id="rows" resultType="java.util.LinkedHashMap">
+        SELECT ${columns} FROM `${table}` LIMIT #{offset}, 1000
+    </select>
+</mapper>

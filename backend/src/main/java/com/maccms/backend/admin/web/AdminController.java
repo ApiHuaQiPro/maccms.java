@@ -50,7 +50,8 @@ import org.springframework.web.bind.annotation.RequestMethod;
  * <li>除 {@code index/login}（与新版的登录页验证码 {@code index/verify}）外都要登录：会话里没有管理员，或 D2 ⑤ 重读当前行发现已停用、
  * 已改密、已删除 → 作废会话、302 到登录页；</li>
  * <li>除 {@code update} 控制器外按 {@code admin_auth} 判定权限（{@link AdminAuthorization}），不通过 → "您没有权限访问此页面"；</li>
- * <li>B12 的动作在这里实现，B13、B14 的动作分别交给 {@link AdminContentActions}、{@link AdminMemberActions}；auth.php 中其余动作返回
+ * <li>B12 的动作在这里实现，B13、B14 的动作分别交给 {@link AdminContentActions}、{@link AdminMemberActions}，B15 的交给
+ * {@link AdminSystemActions} 等（24 文档第 2 节）；auth.php 中其余动作返回
  * "由后续批次实现"的提示（{@link AdminPermissions#batchOf}）；不存在的动作 404。</li>
  * </ol>
  * POST 请求带 {@code Origin}（没有时看 {@code Referer}）且与 {@code maccms.admin.base-url} 不同源时 403。
@@ -74,11 +75,21 @@ public class AdminController {
     private final RandomGenerator random;
     private final AdminContentActions content;
     private final AdminMemberActions member;
+    private final AdminSystemActions system;
+    private final AdminPlayerActions players;
+    private final AdminAddonActions addons;
+    private final AdminDatabaseActions database;
+    private final AdminTemplateActions templates;
+    private final com.maccms.backend.admin.application.PlayerAdminService playerCache;
 
     public AdminController(AdminEndpoint endpoint, AdminSessions sessions, AdminSettings settings, AdminLoginService logins,
                            AdminAccountService accounts, AdminPages pages, AdminResponses responses,
                            ClientIpResolver clientIp, ContentCacheMaintenance contentCache, AdminRandom random,
-                           AdminContentActions content, ObjectProvider<AdminMemberActions> member) {
+                           AdminContentActions content, ObjectProvider<AdminMemberActions> member,
+                           ObjectProvider<AdminSystemActions> system, ObjectProvider<AdminPlayerActions> players,
+                           ObjectProvider<com.maccms.backend.admin.application.PlayerAdminService> playerCache,
+                           ObjectProvider<AdminAddonActions> addons, ObjectProvider<AdminDatabaseActions> database,
+                           ObjectProvider<AdminTemplateActions> templates) {
         this.endpoint = endpoint;
         this.sessions = sessions;
         this.settings = settings;
@@ -91,6 +102,12 @@ public class AdminController {
         this.random = random.generator();
         this.content = content;
         this.member = member.getIfAvailable();
+        this.system = system.getIfAvailable();
+        this.players = players.getIfAvailable();
+        this.playerCache = playerCache.getIfAvailable();
+        this.addons = addons.getIfAvailable();
+        this.database = database.getIfAvailable();
+        this.templates = templates.getIfAvailable();
     }
 
     /** 一次请求的上下文。 */
@@ -150,9 +167,10 @@ public class AdminController {
             case "index/index" -> pages.frame(ctx, admin);
             case "index/welcome" -> pages.welcome(ctx, admin);
             case "index/quickmenu" -> isPost
-                    ? pending(ctx, "B15")
+                    ? (system == null ? pending(ctx, "B15") : system.handle(ctx, session))
                     : pages.quickmenu(ctx, token(session));
-            case "index/checkcache" -> responses.text("no");
+            // 旧 Index::checkcache：播放器、服务器组、下载器保存或删除之后为 haved，清理缓存后为 no（B15）
+            case "index/checkcache" -> responses.text(playerCache != null && playerCache.cacheDirty() ? "haved" : "no");
             case "index/clear" -> clear(ctx);
             case "index/iframe" -> iframe(ctx);
             case "index/unlocked" -> unlocked(ctx, session);
@@ -177,6 +195,22 @@ public class AdminController {
                 ResponseEntity<String> b14 = member == null ? null : member.handle(ctx);
                 if (b14 != null) {
                     yield b14;
+                }
+                ResponseEntity<String> b15 = system == null ? null : system.handle(ctx, session);
+                if (b15 == null && players != null) {
+                    b15 = players.handle(ctx, session);
+                }
+                if (b15 == null && addons != null) {
+                    b15 = addons.handle(ctx, session);
+                }
+                if (b15 == null && database != null) {
+                    b15 = database.handle(ctx, session);
+                }
+                if (b15 == null && templates != null) {
+                    b15 = templates.handle(ctx, session);
+                }
+                if (b15 != null) {
+                    yield b15;
                 }
                 String batch = AdminPermissions.batchOf(route.controller(), route.action());
                 yield batch == null ? notFound(ajax) : pending(ctx, batch);
@@ -243,6 +277,10 @@ public class AdminController {
      * 过期的视频搜索缓存。新版没有运行目录与缓存驱动，playerconfig.js 由 B05 按旧配置即时生成，只剩视频搜索缓存（21 文档第 4.6 节）。
      */
     private ResponseEntity<String> clear(Ctx ctx) {
+        if (playerCache != null) {
+            // B15：按当前的播放器、服务器组、下载器配置重写 static/js/playerconfig.js 的"缓存"段（旧 Base::_cache_clear）
+            playerCache.clearCache();
+        }
         contentCache.clearVodSearchCache();
         return responses.success(ctx.ajax(), settings.lang().get("admin/index/clear_ok"), successUrl(ctx));
     }

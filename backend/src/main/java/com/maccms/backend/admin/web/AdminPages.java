@@ -53,6 +53,9 @@ public class AdminPages {
     private final LegacyConfigService legacy;
     private final Clock clock;
     private final String maxUpload;
+    private java.util.function.Supplier<String> loginBackground = () -> null;
+    private java.util.function.Supplier<String> notice = () -> null;
+    private boolean externalImages = true;
 
     /**
      * @param legacy    旧配置（快捷菜单按修改时间热加载）；未配置时快捷菜单为空
@@ -68,16 +71,37 @@ public class AdminPages {
         this.maxUpload = maxUpload;
     }
 
+    /**
+     * B15：登录页背景（{@code admin_login_init} 钩子，{@code AddonService#loginBackground}）与浏览器侧外部图片放行（W2，部署参数
+     * {@code maccms.browser-external.w2}；关闭时外部主机的背景图不输出）。
+     */
+    /** B15：欢迎页的系统提示（模板在线编辑启动回退，{@code SiteTemplateService#notice}）。 */
+    public void notice(java.util.function.Supplier<String> notice) {
+        this.notice = notice;
+    }
+
+    public void loginBackground(java.util.function.Supplier<String> background, boolean externalImages) {
+        this.loginBackground = background;
+        this.externalImages = externalImages;
+    }
+
     private AdminHead head(String titleKey) {
         return new AdminHead(settings.lang().get(titleKey), endpoint.sitePath(), endpoint.root(), settings.versionCode());
     }
 
     /** 登录页（旧 Index::login 的 GET）。 */
     ResponseEntity<String> login(Ctx ctx) {
+        String bg = loginBackground.get();
+        String origin = AdminResponses.externalOrigin(bg);
+        if (origin != null && !externalImages) {
+            bg = null;
+            origin = null;
+        }
         LoginPage page = new LoginPage(head("admin/index/login/title"), settings.lang(), settings.loginVerify(),
                 ctx.url().build("index/login"), ctx.url().build("index/index"),
-                endpoint.root() + "/admin/index/verify.html");
-        return responses.page(ctx.ajax(), HttpStatus.OK, t -> t.adminPagesLogin(page));
+                endpoint.root() + "/admin/index/verify.html", bg == null ? "" : bg);
+        return origin == null ? responses.page(ctx.ajax(), HttpStatus.OK, t -> t.adminPagesLogin(page))
+                : responses.page(ctx.ajax(), HttpStatus.OK, t -> t.adminPagesLogin(page), origin);
     }
 
     /** 框架页（旧 Index::index）。 */
@@ -95,7 +119,7 @@ public class AdminPages {
         WelcomePage page = new WelcomePage(head("admin/index/welcome/title"), settings.lang(), admin.loginNum(),
                 long2ip(admin.lastLoginIp()), macDay(admin.lastLoginTime()), System.getProperty("os.name"),
                 ctx.request().getServletContext().getServerInfo(), host == null ? "" : host, maxUpload,
-                LocalDate.now(clock.withZone(ZONE)).format(DATE));
+                LocalDate.now(clock.withZone(ZONE)).format(DATE), java.util.Objects.requireNonNullElse(notice.get(), ""));
         return responses.page(ctx.ajax(), HttpStatus.OK, t -> t.adminPagesWelcome(page));
     }
 

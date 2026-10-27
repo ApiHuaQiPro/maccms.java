@@ -70,6 +70,37 @@ public class AdminResponses {
         return html(status, html);
     }
 
+    /**
+     * 同 {@link #page}，内容安全策略的 {@code img-src} 另放行一个外部来源（B15 登录页背景图：adminloginbg 插件的随机/每日背景在外部主机，
+     * W2 打开时按旧版放行）。
+     */
+    public ResponseEntity<String> page(boolean ajax, HttpStatus status, Function<Templates, JteModel> page, String imgOrigin) {
+        String html = renderer.render(page);
+        if (ajax) {
+            return json(status, LegacyJson.encode(html));
+        }
+        ResponseEntity<String> r = html(status, html);
+        String csp = CONTENT_SECURITY_POLICY.replace("img-src 'self' data:", "img-src 'self' data: " + imgOrigin);
+        return ResponseEntity.status(r.getStatusCode()).headers(h -> {
+            h.putAll(r.getHeaders());
+            h.set("Content-Security-Policy", csp);
+        }).body(html);
+    }
+
+    /** http/https 绝对地址（或 {@code //} 开头）的源，如 {@code http://img.example.test}；其他为 null。只接受主机名里的字母数字、点、横线与端口。 */
+    public static String externalOrigin(String url) {
+        if (url == null) {
+            return null;
+        }
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("(?i)^(https?:)?//([a-z0-9.-]+(?::[0-9]{1,5})?)(?:[/?#].*)?$")
+                .matcher(url);
+        if (!m.matches()) {
+            return null;
+        }
+        String scheme = m.group(1) == null ? "" : m.group(1).toLowerCase(java.util.Locale.ROOT);
+        return scheme.isEmpty() ? "http://" + m.group(2) + " https://" + m.group(2) : scheme + "//" + m.group(2);
+    }
+
     /** 旧 {@code $this->success($msg)}：{@code url} 为来源页或当前动作的地址。 */
     public ResponseEntity<String> success(boolean ajax, String msg, String url) {
         return jump(ajax, true, msg, url);
@@ -92,6 +123,20 @@ public class AdminResponses {
     /** 旧 {@code $this->error($msg)}：Ajax 时 {@code url} 为空串，否则为 {@code javascript:history.back(-1);}。 */
     public ResponseEntity<String> error(boolean ajax, String msg) {
         return jump(ajax, false, msg, ajax ? "" : JumpPage.BACK);
+    }
+
+    /** Ajax 的 {@code code=0} 带 data（B15 模板编辑页保存失败时给新的表单令牌，编辑页留在原处）；页面时与 {@link #error} 相同。 */
+    public ResponseEntity<String> error(boolean ajax, String msg, Object data) {
+        if (ajax) {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("code", 0);
+            m.put("msg", msg);
+            m.put("data", data);
+            m.put("url", "");
+            m.put("wait", 3);
+            return json(HttpStatus.OK, LegacyJson.encode(m));
+        }
+        return error(false, msg);
     }
 
     /** 302（旧 {@code $this->redirect()} 与 Begin 行为里的 {@code header('Location: …')}）。 */
@@ -150,6 +195,21 @@ public class AdminResponses {
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_TYPE, "text/csv;charset=UTF-8")
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment;filename=" + filename)
+                .contentLength(body.getBytes(StandardCharsets.UTF_8).length)
+                .cacheControl(CacheControl.noStore())
+                .header("X-Content-Type-Options", "nosniff")
+                .header("X-Robots-Tag", "noindex")
+                .body(body);
+    }
+
+    /**
+     * 附件下载（B15 站群、播放器导出，旧 {@code header("Content-type: application/octet-stream")} 加
+     * {@code Content-Disposition: attachment; filename=…} 后 {@code echo}）：正文按 UTF-8。
+     */
+    public ResponseEntity<String> attachment(String body, String disposition) {
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_TYPE, "application/octet-stream")
+                .header(HttpHeaders.CONTENT_DISPOSITION, disposition)
                 .contentLength(body.getBytes(StandardCharsets.UTF_8).length)
                 .cacheControl(CacheControl.noStore())
                 .header("X-Content-Type-Options", "nosniff")
