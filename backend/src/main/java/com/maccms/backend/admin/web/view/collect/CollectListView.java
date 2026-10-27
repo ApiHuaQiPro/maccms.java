@@ -14,7 +14,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * 采集源列表（旧 admin/view/collect/index.html）。断点采集的按钮（旧版按缓存里的断点地址显示）在 B18 接上，本批没有断点，不显示。
+ * 采集源列表（旧 admin/view/collect/index.html）。断点采集的按钮（旧版按缓存里的断点地址显示）在 B19 接上（断点只在入库时记下），
+ * 现在没有断点，不显示。
  */
 public record CollectListView(AdminHead head, LegacyLang lang, LegacyAdminUrl url, AdminRowPage list) implements BrowserText {
 

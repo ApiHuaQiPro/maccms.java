@@ -276,14 +276,14 @@ public final class AdminPermissions {
 
     /**
      * 按动作覆盖 {@link #CONTROLLER_BATCH}：{@code index/select} 是内容批量操作的弹窗（B13）；{@code index/check_back_link} 是外部回链检测
-     * E11（B28）；发信测试 E07（B25）；资源站采集解析 B18、入库 B19；自定义规则的采集与发布 B20；推送执行 E09（B28）；插件市场 E13（B29）。
+     * E11（B28）；发信测试 E07（B25）；资源站采集解析 B18、入库与断点续采 B19（collect/load 的断点只在入库时记下）；自定义规则的采集与发布 B20；推送执行 E09（B28）；插件市场 E13（B29）。
      * B15 起 {@code timming/*}（定时任务配置页，执行与 runtime 回写仍在 B16）与 {@code addon/downloaded}（本地插件列表，这份生产代码已去掉
      * 市场列表，路线图第 5.7 节）归 B15。
      */
     private static final Map<String, String> ACTION_BATCH = Map.ofEntries(
             Map.entry("index/select", "B13"), Map.entry("index/check_back_link", "B28"),
             Map.entry("system/test_email", "B25"),
-            Map.entry("collect/api", "B18"), Map.entry("collect/load", "B18"), Map.entry("collect/vod", "B19"),
+            Map.entry("collect/api", "B18"), Map.entry("collect/load", "B19"), Map.entry("collect/vod", "B19"),
             Map.entry("collect/art", "B19"), Map.entry("collect/actor", "B19"), Map.entry("collect/role", "B19"),
             Map.entry("collect/website", "B19"), Map.entry("collect/timing", "B19"),
             Map.entry("cj/program", "B20"), Map.entry("cj/col_url", "B20"), Map.entry("cj/col_content", "B20"),

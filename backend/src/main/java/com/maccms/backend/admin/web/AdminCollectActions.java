@@ -5,9 +5,12 @@ import com.maccms.backend.admin.web.AdminController.Ctx;
 import com.maccms.backend.admin.web.view.AdminHead;
 import com.maccms.backend.admin.web.view.collect.CjInfoView;
 import com.maccms.backend.admin.web.view.collect.CjListView;
+import com.maccms.backend.admin.web.view.collect.CollectApiView;
 import com.maccms.backend.admin.web.view.collect.CollectInfoView;
 import com.maccms.backend.admin.web.view.collect.CollectListView;
 import com.maccms.backend.collect.application.CollectAdminServices;
+import com.maccms.backend.collect.application.CollectPreviewService;
+import com.maccms.backend.collect.application.ProvideKind;
 import com.maccms.backend.collect.application.view.CjNodeExport;
 import com.maccms.backend.collect.application.view.CjNodeForm;
 import com.maccms.backend.common.session.SessionState;
@@ -17,10 +20,13 @@ import com.maccms.backend.content.application.view.AdminResult;
 import com.maccms.backend.content.application.view.AdminRow;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.time.Clock;
+import java.util.List;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.UnaryOperator;
 import java.util.random.RandomGenerator;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -28,8 +34,10 @@ import org.springframework.http.ResponseEntity;
 /**
  * B17 采集配置管理的动作（docs/architecture/25-b17-collect-config.md）：旧 {@code admin/controller/Collect.php} 的 {@code index}、{@code info}、
  * {@code del}、{@code union}、{@code bind}、{@code clearbind}、{@code test}，{@code admin/controller/Cj.php} 的 {@code index}、{@code info}、
- * {@code del}、{@code export}、{@code import}。资源站的解析与预览（{@code collect/api}、{@code load}）在 B18，入库在 B19，规则的执行在 B20
- * （{@code AdminPermissions} 的批次表）。本批不发起任何网络请求：{@code collect/test} 返回固定提示（E01 只做本地版本）。
+ * {@code del}、{@code export}、{@code import}；B18 资源库预览的本地文件版本（docs/architecture/26-b18-collect-preview.md 第 5 节）：
+ * {@code collect/api} 的 {@code ac=list}（预览）与新增的 {@code ac=localload}、{@code ac=localclear}（载入本地文件、清除预览缓存）。
+ * {@code collect/api} 的其他 {@code ac}（采集入库）与断点续采 {@code collect/load} 在 B19，规则的执行在 B20（{@code AdminPermissions} 的批次表）。
+ * 不发起任何网络请求：{@code collect/test} 返回固定提示（E01 只做本地版本）。
  */
 public class AdminCollectActions {
 
@@ -44,14 +52,18 @@ public class AdminCollectActions {
     private final AdminResponses responses;
     private final CollectAdminServices s;
     private final RandomGenerator random;
+    private final Clock clock;
+    private final String maxUpload;
 
     public AdminCollectActions(AdminEndpoint endpoint, AdminSettings settings, AdminResponses responses, CollectAdminServices services,
-                               AdminRandom random) {
+                               AdminRandom random, Clock clock, String maxUpload) {
         this.endpoint = endpoint;
         this.settings = settings;
         this.responses = responses;
         this.s = services;
         this.random = random.generator();
+        this.clock = clock;
+        this.maxUpload = maxUpload;
     }
 
     /** 处理 B17 的动作；不是本批的动作（或采集服务未注册）时返回 null。 */
@@ -68,6 +80,7 @@ public class AdminCollectActions {
             case "collect/bind" -> result(ctx, s.binds().bind(param));
             case "collect/clearbind" -> clearBind(param);
             case "collect/test" -> testRefused();
+            case "collect/api" -> api(ctx);
             case "cj/index" -> cjList(ctx);
             case "cj/info" -> ctx.post_() ? result(ctx, s.nodes().save(ctx.params().nested("data"), param)) : cjInfo(ctx);
             case "cj/del" -> result(ctx, s.nodes().delete(param));
@@ -85,7 +98,7 @@ public class AdminCollectActions {
         return responses.page(ctx.ajax(), HttpStatus.OK, t -> t.adminPagesCollectIndex(page));
     }
 
-    /** 旧 Collect::union：本生产代码里只剩断点采集的按钮（B18）与一个空的 {@code <script src="">}（新版不输出）。 */
+    /** 旧 Collect::union：本生产代码里只剩断点采集的按钮（B19）与一个空的 {@code <script src="">}（新版不输出）。 */
     private ResponseEntity<String> union(Ctx ctx) {
         CollectListView page = new CollectListView(head("admin/collect/title"), settings.lang(), ctx.url(),
                 new com.maccms.backend.content.application.view.AdminRowPage(java.util.List.of(), 0, 1, 1, null));
@@ -128,6 +141,122 @@ public class AdminCollectActions {
         m.put("code", 1001);
         m.put("msg", TEST_REFUSED);
         return responses.rawJson(m);
+    }
+
+    // ------------------------------------------------------------------ 资源库预览（B18）
+
+    /** 旧 {@code collect/api} 带到预览页的参数（采集源列表"进入资源库"链接的键，加上分页）。 */
+    private static final List<String> API_KEYS = List.of("ac", "cjflag", "cjurl", "h", "t", "ids", "wd", "type", "mid", "opt",
+            "sync_pic_opt", "filter", "filter_from", "param", "page", "limit");
+
+    /**
+     * 旧 {@code Collect::api}（{@code admin/controller/Collect.php:140-171}）：{@code pg} 非空时当作 {@code page}；按 {@code mid} 分派（其他值
+     * 旧版没有输出，新版"参数错误"）。{@code ac=list} 显示预览；{@code ac=localload}、{@code ac=localclear}（POST）载入本地文件、清除预览缓存；
+     * 其他 {@code ac} 是采集入库，由 B19 提供。
+     */
+    private ResponseEntity<String> api(Ctx ctx) {
+        Map<String, String> param = new LinkedHashMap<>();
+        for (String k : API_KEYS) {
+            byte[] v = ctx.params().scalar(k);
+            if (v != null) {
+                param.put(k, new String(v, StandardCharsets.UTF_8));
+            }
+        }
+        String pg = str(ctx.params().scalar("pg"));
+        if (!pg.isEmpty() && !pg.equals("0")) {
+            param.put("page", pg);
+        }
+        CollectPreviewService.Source source = new CollectPreviewService.Source(param.get("cjflag"), param.get("mid"), param.get("type"),
+                param.get("param"));
+        Optional<ProvideKind> kind = source.kind();
+        if (kind.isEmpty()) {
+            return responses.error(ctx.ajax(), settings.lang().get("param_err"));
+        }
+        String ac = param.getOrDefault("ac", "");
+        UnaryOperator<String> lang = settings.lang()::get;
+        Map<String, String> back = new LinkedHashMap<>(param);
+        back.put("ac", "list");
+        back.remove("page");
+        String listUrl = ctx.url().build("api") + "?" + com.maccms.backend.admin.application.LegacyAdminUrl.httpBuildQuery(back);
+        switch (ac) {
+            case "list" -> {
+                CollectPreviewService.Preview preview = s.preview().preview(source, param.get("t"), param.get("wd"), param.get("page"),
+                        param.get("limit"), lang).orElse(null);
+                CollectApiView page = new CollectApiView(head("admin/collect/title"), settings.lang(), ctx.url(), kind.get(), param, preview,
+                        s.preview().localDirectoryConfigured(), s.preview().localFiles(), s.preview().maxBytes(), maxUpload, clock.instant());
+                return responses.page(ctx.ajax(), HttpStatus.OK, t -> t.adminPagesCollectApi(page));
+            }
+            case "localload" -> {
+                if (!ctx.post_()) {
+                    return responses.error(ctx.ajax(), settings.lang().get("param_err"));
+                }
+                String local = str(ctx.post().scalar("local"));
+                Upload up = upload(ctx, s.preview().maxBytes());
+                CollectPreviewService.LoadOutcome r;
+                if (up.tooLarge()) {
+                    r = new CollectPreviewService.LoadOutcome(false, "文件超过上传上限（" + maxUpload + "），更大的文件请放进本地目录", 0);
+                } else if (up.content() != null) {
+                    r = s.preview().load(source, up.name(), up.content(), lang);
+                } else if (!local.isEmpty()) {
+                    r = s.preview().loadLocal(source, local, lang);
+                } else {
+                    r = s.preview().load(source, null, null, lang);
+                }
+                return r.ok() ? responses.success(ctx.ajax(), r.message(), listUrl) : responses.error(ctx.ajax(), r.message());
+            }
+            case "localclear" -> {
+                if (!ctx.post_()) {
+                    return responses.error(ctx.ajax(), settings.lang().get("param_err"));
+                }
+                s.preview().clear(source);
+                return responses.success(ctx.ajax(), settings.lang().get("clear_ok"), listUrl);
+            }
+            default -> {
+                return responses.notice(ctx.ajax(), HttpStatus.NOT_IMPLEMENTED, "跳转提示", "该功能尚未在新系统中实现（由 B19 批次提供）");
+            }
+        }
+    }
+
+    private record Upload(String name, byte[] content, boolean tooLarge) {
+    }
+
+    /** 上传的 {@code file}：没有选文件时内容为 null；超过 multipart 上限或 {@code max} 时 {@code tooLarge}。 */
+    private static Upload upload(Ctx ctx, long max) {
+        String type = ctx.request().getContentType();
+        if (type == null || !type.toLowerCase(Locale.ROOT).startsWith("multipart/")) {
+            return new Upload(null, null, false);
+        }
+        try {
+            if (ctx.request() instanceof org.springframework.web.multipart.MultipartHttpServletRequest m) {
+                org.springframework.web.multipart.MultipartFile f = m.getFile("file");
+                if (f == null || f.isEmpty() && (f.getOriginalFilename() == null || f.getOriginalFilename().isEmpty())) {
+                    return new Upload(null, null, false);
+                }
+                if (f.getSize() > max) {
+                    return new Upload(null, null, true);
+                }
+                return new Upload(f.getOriginalFilename(), f.getBytes(), false);
+            }
+            jakarta.servlet.http.Part part = ctx.request().getPart("file");
+            if (part == null || part.getSubmittedFileName() == null || part.getSubmittedFileName().isEmpty() && part.getSize() == 0) {
+                return new Upload(null, null, false);
+            }
+            if (part.getSize() > max) {
+                return new Upload(null, null, true);
+            }
+            try (InputStream in = part.getInputStream()) {
+                byte[] b = in.readNBytes((int) Math.min(max + 1, Integer.MAX_VALUE - 8));
+                return b.length > max ? new Upload(null, null, true) : new Upload(part.getSubmittedFileName(), b, false);
+            }
+        } catch (org.springframework.web.multipart.MaxUploadSizeExceededException | IllegalStateException e) {
+            return new Upload(null, null, true);
+        } catch (java.io.IOException | jakarta.servlet.ServletException | RuntimeException e) {
+            return new Upload(null, null, false);
+        }
+    }
+
+    private static String str(byte[] b) {
+        return b == null ? "" : new String(b, StandardCharsets.UTF_8);
     }
 
     // ------------------------------------------------------------------ 自定义规则节点
