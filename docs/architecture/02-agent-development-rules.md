@@ -57,6 +57,12 @@
 - `admin` 可用的 site 类型加 `site.application.PhpJson`（`ModuleBoundaryTest.ADMIN_SITE`）。
 - `sitetemplate` 模块（前台模板在线编辑，D4，24 文档第 7 节）：`application`（`SiteTemplateService` 实现 `site.application.SiteTemplateSource`，安全过滤 `JteSecurityFilter`，装配 `SiteTemplateConfiguration`）→ `infrastructure`（`JteOnlineCompiler`、`JteClassPath`、`OnlineHtmlPolicy`）。运行时编译模板只能出现在 `sitetemplate.infrastructure`（`SiteGuardrailsTest.runtimeTemplateCompilationOnlyInSiteTemplateInfrastructure`）；jte 编译器为此进入编译作用域。`site` 仍不编译模板、不读模板文件，只经 `SiteTemplateSource` 取当前引擎（没有或为 null 时用内置的预编译模板）；第 4 节的模板规则对外部模板目录同样适用（编译时用同一套站点 HTML 策略，`<script>`/`<iframe>` 只限内置版本本身含有它们的模板）。
 - 数据库工具（24 文档第 9 节）只做只读查询与单表 DML：只读 Mapper `mapper/admin/DatabaseToolMapper.xml` 的 SHOW 语句与 `${table}`/`${columns}` 是 `ReadOnlyGuardrailsTest`、`SqlEntryGuardTest` 登记的例外；备份文件里的 DDL 文本是 `SchemaGuardTest` 登记的唯一例外（只写进文件、从不执行）；还原、执行 SQL、优化、修复在入口拒绝。
+### 2.5 B16 静态生成与定时任务
+
+- `staticgen` 模块（`25-b16-static-timming.md` 第 2 节）：`application`（`StaticPaths`、`MakeService`、`StaticFiles`、`TimmingSchedule`、`TimmingService`、`TimmingTasks`）→ `web`（`TimmingController`、`TimmingAccess`）、`config`。静态页的内容只经 `site.application.StaticPageSource` 取得（前台对动态地址的进程内游客 GET，实现 `site.web.InternalPageRenderer`），不另写页面模板；静态页文件只经 `LegacySiteFiles.replaceStaticPage`（扩展名与目录白名单）写入并登记，回滚按登记删除。
+- 定时任务入口的放行只看部署级参数（`MACCMS_TIMMING_ENABLED`、`MACCMS_TIMMING_TOKEN`，第 4 节的密钥规则同样适用）与 `ClientIpResolver` 的结果；不得新增按请求参数放行的分支。
+- 后续批次接入采集、推送任务时，替换 `TimmingTasks` 里对应的分支，runtime 回写与鉴权不变。
+
 ### 3. 数据库
 
 - **禁止 DDL**（路线图第 1.2 节"零结构变更"，B07 起取代原"DDL 独立评审"）：不建表、不加/改/删列与索引、不转引擎或字符集，不建触发器、存储过程、视图、事件；不执行表维护语句与账号/权限语句；应用代码与资源中不得有 `schema.sql`/`data.sql`、Flyway/Liquibase 或任何初始化器。数据库账号由数据库管理员在获批部署时创建，代码不建、不改账号。没有结构迁移，旧数据不需要迁移；回滚只用 DML（`12-write-infrastructure.md` 第 6 节）。
