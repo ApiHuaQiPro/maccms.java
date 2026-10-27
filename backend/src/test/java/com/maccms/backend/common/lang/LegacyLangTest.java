@@ -3,10 +3,8 @@ package com.maccms.backend.common.lang;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import java.nio.file.Files;
+import com.maccms.backend.common.LegacyCheckout;
 import java.nio.file.Path;
-import java.security.MessageDigest;
-import java.util.HexFormat;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -20,11 +18,11 @@ class LegacyLangTest {
     @ParameterizedTest
     @CsvSource({"zh-cn", "zh-tw"})
     void bundledPacksMatchTheRepositorySources(String code) throws Exception {
-        byte[] source = Files.readAllBytes(Path.of("..", "application", "lang", code + ".php"));
-        String sha = HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(source));
-        assertThat(LegacyLang.of(code).sourceSha256())
-                .as("application/lang/%s.php 变了：用 backend/src/test/php/lang_export.php 重新导出", code)
-                .isEqualTo(sha);
+        String want = LegacyLang.of(code).sourceSha256();
+        byte[] source = LegacyCheckout.read(Path.of("..", "application", "lang", code + ".php"), want);
+        assertThat(LegacyCheckout.sha256(source))
+                .as("application/lang/%s.php 变了：用 backend/src/test/php/lang_export.php 重新导出" + LegacyCheckout.HINT, code)
+                .isEqualTo(want);
         assertThat(LegacyLang.of(code).size()).isEqualTo(1773);
     }
 
