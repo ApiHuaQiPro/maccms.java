@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+  只读映射：静态生成（B16，25 文档第 5 节）要遍历的分类、视频、文章与专题。条件与旧 admin/controller/Make.php 相同：
+  分类页的条数 type_id|type_id_1 + 已审核（Make.php:294-305）；内容页按分类（type_id）或编号列表，"当天"加 *_time > 今天零点，
+  "未生成"加 *_time_make < *_time，不加审核条件（Make.php:601 把前面设的审核条件清掉了，照旧）；排序 *_time desc（:569、:580）。
+  当天分类（旧 updateToday('type')，Vod.php:829-847）按主键顺序去重。
+-->
+<mapper namespace="com.maccms.backend.content.infrastructure.StaticSourceMapper">
+
+    <select id="selectTypes" resultType="com.maccms.backend.content.infrastructure.StaticTypeRow">
+        SELECT type_id   AS id,
+               type_name AS name,
+               type_en   AS en,
+               type_pid  AS pid,
+               type_mid  AS mid
+        FROM mac_type
+        ORDER BY type_id ASC
+    </select>
+
+    <select id="countVodInType" resultType="long">
+        SELECT COUNT(*) FROM mac_vod
+        WHERE (type_id = #{typeId} OR type_id_1 = #{typeId}) AND vod_status = 1
+    </select>
+
+    <select id="countArtInType" resultType="long">
+        SELECT COUNT(*) FROM mac_art
+        WHERE (type_id = #{typeId} OR type_id_1 = #{typeId}) AND art_status = 1
+    </select>
+
+    <sql id="vodWhere">
+        <where>
+            <if test="f.typeId != null">AND type_id = #{f.typeId}</if>
+            <if test="f.typeId == null and f.ids != null">
+                AND vod_id IN <foreach collection="f.ids" item="i" open="(" separator="," close=")">#{i}</foreach>
+            </if>
+            <if test="f.since != null">AND vod_time &gt; #{f.since}</if>
+            <if test="f.notMade">AND vod_time_make &lt; vod_time</if>
+        </where>
+    </sql>
+
+    <sql id="artWhere">
+        <where>
+            <if test="f.typeId != null">AND type_id = #{f.typeId}</if>
+            <if test="f.typeId == null and f.ids != null">
+                AND art_id IN <foreach collection="f.ids" item="i" open="(" separator="," close=")">#{i}</foreach>
+            </if>
+            <if test="f.since != null">AND art_time &gt; #{f.since}</if>
+            <if test="f.notMade">AND art_time_make &lt; art_time</if>
+        </where>
+    </sql>
+
+    <select id="countVod" resultType="long">
+        SELECT COUNT(*) FROM mac_vod <include refid="vodWhere"/>
+    </select>
+
+    <select id="countArt" resultType="long">
+        SELECT COUNT(*) FROM mac_art <include refid="artWhere"/>
+    </select>
+
+    <select id="selectVod" resultType="com.maccms.backend.content.infrastructure.StaticItemRow">
+        SELECT vod_id        AS id,
+               vod_name      AS name,
+               vod_en        AS en,
+               vod_time      AS time,
+               type_id       AS typeId,
+               vod_play_from AS playFrom,
+               vod_play_url  AS playUrl,
+               vod_down_from AS downFrom,
+               vod_down_url  AS downUrl,
+               ''            AS content
+        FROM mac_vod <include refid="vodWhere"/>
+        ORDER BY vod_time DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <select id="selectArt" resultType="com.maccms.backend.content.infrastructure.StaticItemRow">
+        SELECT art_id      AS id,
+               art_name    AS name,
+               art_en      AS en,
+               art_time    AS time,
+               type_id     AS typeId,
+               ''          AS playFrom,
+               ''          AS playUrl,
+               ''          AS downFrom,
+               ''          AS downUrl,
+               art_content AS content
+        FROM mac_art <include refid="artWhere"/>
+        ORDER BY art_time DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <select id="selectVodTypesSince" resultType="long">
+        SELECT type_id FROM mac_vod WHERE vod_time &gt; #{since} ORDER BY vod_id ASC
+    </select>
+
+    <select id="selectArtTypesSince" resultType="long">
+        SELECT type_id FROM mac_art WHERE art_time &gt; #{since} ORDER BY art_id ASC
+    </select>
+
+    <select id="selectTopics" resultType="com.maccms.backend.content.infrastructure.StaticTopicRow">
+        SELECT topic_id AS id, topic_name AS name, topic_en AS en
+        FROM mac_topic
+        WHERE topic_status = 1
+        ORDER BY topic_id DESC
+        LIMIT 999
+    </select>
+
+    <select id="selectTopic" resultType="com.maccms.backend.content.infrastructure.StaticTopicRow">
+        SELECT topic_id AS id, topic_name AS name, topic_en AS en
+        FROM mac_topic
+        WHERE topic_id = #{id} AND topic_status = 1
+    </select>
+
+    <select id="countTopics" resultType="long">
+        SELECT COUNT(*) FROM mac_topic WHERE topic_status = 1
+    </select>
+</mapper>

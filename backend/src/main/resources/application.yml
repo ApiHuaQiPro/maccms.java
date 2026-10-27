@@ -100,6 +100,13 @@ maccms:
   # 全部输出 closed。charge=1 的白名单按 maccms.client-ip 解析客户端 IP。只读：detail_inc_hits 开启时也不写计数（B11）。
   openapi:
     enabled: ${MACCMS_OPENAPI_ENABLED:false}
+  # 定时任务入口（B16，docs/architecture/25-b16-static-timming.md 第 7 节，D2 ③）：默认关闭，关闭时不注册 /api.php/timming/**。
+  # 打开后只接受本机请求（客户端地址按上面的 client-ip 规则解析为回环地址；带转发头时连接对端须是可信代理），或请求头
+  # X-Maccms-Timming-Token 与 token 相同的请求（外部 cron 服务用）。token 留空表示不接受口令；设置时至少 32 个可见 ASCII 字符，
+  # 只经环境变量提供，不要写进任何文件或日志。未通过的请求（含 enforce=1）返回 403，不执行任务、不回写 extra/timming.php。
+  timming:
+    enabled: ${MACCMS_TIMMING_ENABLED:false}
+    token: ${MACCMS_TIMMING_TOKEN:}
   # 后台（B12，docs/architecture/21-b12-admin-framework.md 第 7 节）：默认关闭，关闭时不注册任何后台路由。启用时需要可写数据源
   # （maccms.write.enabled，登录记录与管理员管理写 mac_admin），entry 与 base-url 必填并校验，缺失或不合法即启动失败（不回显取值）。
   # entry 是后台入口文件的路径（旧版改名后的 _admin.php，形如 /_admin.php；不能是 /admin.php、/index.php、/api.php、/install.php）；

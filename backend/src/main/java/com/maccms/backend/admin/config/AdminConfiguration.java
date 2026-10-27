@@ -284,6 +284,15 @@ public class AdminConfiguration {
         return s == null ? null : new com.maccms.backend.admin.web.AdminDatabaseActions(endpoint, settings, responses, s, random);
     }
 
+    /** B16 生成静态（25 文档第 8 节）。 */
+    @Bean
+    com.maccms.backend.admin.web.AdminMakeActions adminMakeActions(AdminEndpoint endpoint, AdminSettings settings,
+            AdminResponses responses, ObjectProvider<com.maccms.backend.staticgen.application.MakeService> make,
+            ObjectProvider<com.maccms.backend.content.application.StaticSourceService> sources, ObjectProvider<Clock> clock) {
+        return new com.maccms.backend.admin.web.AdminMakeActions(endpoint, settings, responses, make, sources,
+                clock.getIfAvailable(Clock::systemUTC), com.maccms.backend.staticgen.application.MakeService.LEGACY_ZONE);
+    }
+
     @Bean
     com.maccms.backend.admin.web.AdminTemplateActions adminTemplateActions(AdminEndpoint endpoint, AdminSettings settings,
             AdminResponses responses, LegacySiteFiles files, LegacyConfigService legacy, SiteTemplateService templates,

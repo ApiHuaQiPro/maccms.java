@@ -80,6 +80,7 @@ public class AdminController {
     private final AdminAddonActions addons;
     private final AdminDatabaseActions database;
     private final AdminTemplateActions templates;
+    private final AdminMakeActions make;
     private final com.maccms.backend.admin.application.PlayerAdminService playerCache;
 
     public AdminController(AdminEndpoint endpoint, AdminSessions sessions, AdminSettings settings, AdminLoginService logins,
@@ -89,7 +90,7 @@ public class AdminController {
                            ObjectProvider<AdminSystemActions> system, ObjectProvider<AdminPlayerActions> players,
                            ObjectProvider<com.maccms.backend.admin.application.PlayerAdminService> playerCache,
                            ObjectProvider<AdminAddonActions> addons, ObjectProvider<AdminDatabaseActions> database,
-                           ObjectProvider<AdminTemplateActions> templates) {
+                           ObjectProvider<AdminTemplateActions> templates, ObjectProvider<AdminMakeActions> make) {
         this.endpoint = endpoint;
         this.sessions = sessions;
         this.settings = settings;
@@ -108,6 +109,7 @@ public class AdminController {
         this.addons = addons.getIfAvailable();
         this.database = database.getIfAvailable();
         this.templates = templates.getIfAvailable();
+        this.make = make.getIfAvailable();
     }
 
     /** 一次请求的上下文。 */
@@ -211,6 +213,10 @@ public class AdminController {
                 }
                 if (b15 != null) {
                     yield b15;
+                }
+                ResponseEntity<String> b16 = make == null ? null : make.handle(ctx);
+                if (b16 != null) {
+                    yield b16;
                 }
                 String batch = AdminPermissions.batchOf(route.controller(), route.action());
                 yield batch == null ? notFound(ajax) : pending(ctx, batch);

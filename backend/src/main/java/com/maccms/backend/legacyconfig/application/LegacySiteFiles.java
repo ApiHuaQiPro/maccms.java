@@ -248,6 +248,96 @@ public class LegacySiteFiles {
         }
     }
 
+    // ---- B16 静态生成的页面文件（25 文档第 6 节） ----
+
+    /** 静态页文件允许的扩展名（不区分大小写）：旧版的 html/xml 与 {@code path.suffix} 常见取值。 */
+    public static final List<String> STATIC_PAGE_EXTENSIONS = List.of("html", "htm", "shtml", "xml");
+    /** 静态页不能写进的顶层目录（旧站代码、配置、资源、上传、运行目录与新系统目录）；以 . 开头的段一律不行。 */
+    private static final java.util.Set<String> STATIC_PAGE_FORBIDDEN_TOP = java.util.Set.of("application", "thinkphp", "vendor",
+            "extend", "addons", "static", "template", "upload", "runtime", "backend", "install", "cgi-bin");
+    /** 站点根目录下随旧站分发、不能被静态页覆盖的文件。 */
+    private static final java.util.Set<String> STATIC_PAGE_FORBIDDEN_FILES = java.util.Set.of("crossdomain.xml");
+
+    /**
+     * 静态页的文件名是否允许写：合法相对路径、扩展名在 {@link #STATIC_PAGE_EXTENSIONS} 内、顶层目录不在禁写表、任何一段不以 . 开头、不是
+     * 根目录下随旧站分发的文件。旧版的 {@code buildHtml} 没有任何限制（{@code path.*} 规则可以把文件写到任意位置）。
+     */
+    public static boolean isStaticPageName(String relative) {
+        if (!LegacySiteRoot.validRelative(relative)) {
+            return false;
+        }
+        String[] segs = relative.split("/");
+        for (String seg : segs) {
+            if (seg.startsWith(".")) {
+                return false;
+            }
+        }
+        String name = segs[segs.length - 1];
+        int dot = name.lastIndexOf('.');
+        if (dot <= 0 || !STATIC_PAGE_EXTENSIONS.contains(name.substring(dot + 1).toLowerCase(java.util.Locale.ROOT))) {
+            return false;
+        }
+        if (segs.length > 1 && STATIC_PAGE_FORBIDDEN_TOP.contains(segs[0].toLowerCase(java.util.Locale.ROOT))) {
+            return false;
+        }
+        return !(segs.length == 1 && STATIC_PAGE_FORBIDDEN_FILES.contains(name.toLowerCase(java.util.Locale.ROOT)));
+    }
+
+    /** 原子写入一个静态页（上级目录自动创建）。文件名不允许时 {@link Reason#FORBIDDEN}。 */
+    public void replaceStaticPage(String relative, byte[] content) {
+        write(checkStaticPage(relative), relative, content, null);
+    }
+
+    /** 删除一个静态页；不存在时返回 false。 */
+    public boolean deleteStaticPage(String relative) {
+        LegacySiteRoot r = checkStaticPage(relative);
+        try {
+            return r.delete(relative);
+        } catch (LegacySiteRoot.AccessException e) {
+            throw translate(e);
+        }
+    }
+
+    /**
+     * 删除静态页所在的空目录（回滚时，从文件所在目录往上逐级，遇到非空目录或禁写的顶层目录即停）。
+     *
+     * @param relativeFile 静态页的相对路径
+     */
+    public void deleteEmptyStaticDirectories(String relativeFile) {
+        LegacySiteRoot r = checkStaticPage(relativeFile);
+        String dir = relativeFile;
+        try {
+            while (dir.lastIndexOf('/') > 0) {
+                dir = dir.substring(0, dir.lastIndexOf('/'));
+                if (!r.isDirectory(dir) || !r.deleteEmptyDirectory(dir)) {
+                    return;
+                }
+            }
+        } catch (LegacySiteRoot.AccessException e) {
+            throw translate(e);
+        }
+    }
+
+    /** 读取一个静态页（回滚演练与测试用）；不存在时为 null。 */
+    public byte[] readStaticPage(String relative, int maxBytes) {
+        LegacySiteRoot r = checkStaticPage(relative);
+        try {
+            return r.read(relative, maxBytes);
+        } catch (LegacySiteRoot.AccessException e) {
+            throw translate(e);
+        }
+    }
+
+    private LegacySiteRoot checkStaticPage(String relative) {
+        if (root == null) {
+            throw new FileException(Reason.NOT_CONFIGURED);
+        }
+        if (!isStaticPageName(relative)) {
+            throw new FileException(LegacySiteRoot.validRelative(relative) ? Reason.FORBIDDEN : Reason.INVALID_NAME);
+        }
+        return root;
+    }
+
     /** 根目录的真实路径（写回之外的用途：运行时模板编译的外部目录）。 */
     public Path resolve(String relative) {
         LegacySiteRoot r = check(relative, Mode.READ);

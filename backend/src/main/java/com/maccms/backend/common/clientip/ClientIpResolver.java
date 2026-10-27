@@ -92,6 +92,11 @@ public final class ClientIpResolver {
         return header;
     }
 
+    /** 连接对端是否在可信代理网段内（B16：有转发头时，只有可信代理给出的客户端地址才可信）。 */
+    public boolean trusts(String peer) {
+        return IpAddress.parse(peer).map(this::isTrusted).orElse(false);
+    }
+
     public String resolve(HttpServletRequest request) {
         return resolve(request.getRemoteAddr(), name -> {
             Enumeration<String> e = request.getHeaders(name);
