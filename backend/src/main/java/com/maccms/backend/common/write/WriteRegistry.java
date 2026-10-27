@@ -43,6 +43,8 @@ public final class WriteRegistry {
      * 不登记任何 INSERT/DELETE。</li>
      * <li>B17（MACC-41，25 文档第 6 节）：采集源的增删改（collect / mac_collect）；自定义规则节点的增删改（collect / mac_cj_node）；删除节点时
      * 照旧连同删掉节点下的内容与采集历史（collect / mac_cj_content、mac_cj_history DELETE，旧 {@code Cj::delData}）。</li>
+     * <li>B19（MACC-43，27 文档第 4 节）：采集入库与 Receive 入站接口新增、更新视频（collect / mac_vod INSERT、UPDATE，旧
+     * {@code Collect::vod_data}）；搜索缓存沿用 content 已登记的 mac_vod_search 写入。</li>
      * </ul>
      */
     static final List<WritePermission> REGISTERED = List.of(
@@ -138,7 +140,9 @@ public final class WriteRegistry {
             new WritePermission("collect", "mac_cj_node", WriteOperation.UPDATE, "B17"),
             new WritePermission("collect", "mac_cj_node", WriteOperation.DELETE, "B17"),
             new WritePermission("collect", "mac_cj_content", WriteOperation.DELETE, "B17"),
-            new WritePermission("collect", "mac_cj_history", WriteOperation.DELETE, "B17"));
+            new WritePermission("collect", "mac_cj_history", WriteOperation.DELETE, "B17"),
+            new WritePermission("collect", "mac_vod", WriteOperation.INSERT, "B19"),
+            new WritePermission("collect", "mac_vod", WriteOperation.UPDATE, "B19"));
 
     /** 写 Mapper 的全限定名：{@code com.maccms.backend.<module>.infrastructure[.子包].<类型>}。 */
     private static final Pattern MAPPER_TYPE = Pattern.compile(

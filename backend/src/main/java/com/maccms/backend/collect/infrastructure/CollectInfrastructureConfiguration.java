@@ -7,7 +7,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * collect 模块的写入（B17）与本地文件源（B18）：可写数据源打开时注册；关闭时没有这些 Bean（后台本身要求可写数据源打开）。
+ * collect 模块的写入（B17、B19 入库）与本地文件源（B18）：可写数据源打开时注册；关闭时没有这些 Bean（后台本身要求可写数据源打开）。
  */
 @Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties(CollectLocalProperties.class)
@@ -17,6 +17,12 @@ public class CollectInfrastructureConfiguration {
     @ConditionalOnWriteEnabled
     CollectAdminWrites collectAdminWrites(WriteDatabase db) {
         return new CollectAdminWrites(db.mapper(CollectAdminWriteMapper.class));
+    }
+
+    @Bean
+    @ConditionalOnWriteEnabled
+    CollectIngestWrites collectIngestWrites(WriteDatabase db) {
+        return new CollectIngestWrites(db.mapper(CollectIngestWriteMapper.class));
     }
 
     @Bean
