@@ -38,7 +38,7 @@ import org.springframework.http.ResponseEntity;
  * {@code del}、{@code export}、{@code import}；B18 资源库预览的本地文件版本（docs/architecture/26-b18-collect-preview.md 第 5 节）：
  * {@code collect/api} 的 {@code ac=list}（预览）与新增的 {@code ac=localload}、{@code ac=localclear}（载入本地文件、清除预览缓存）。
  * {@code collect/api} 的其他 {@code ac}（采集入库）与断点续采 {@code collect/load} 是 B19 增量 3（docs/architecture/27-b19-collect-ingest.md 第 12 节），
- * 规则的执行在 B20（{@code AdminPermissions} 的批次表）。
+ * 自定义规则的采集与发布是 B20（{@link AdminCjActions}，docs/architecture/28-b20-cj-local-html.md）。
  * 不发起任何网络请求：{@code collect/test} 返回固定提示（E01 只做本地版本）。
  */
 public class AdminCollectActions {
@@ -56,6 +56,7 @@ public class AdminCollectActions {
     private final RandomGenerator random;
     private final Clock clock;
     private final String maxUpload;
+    private final AdminCjActions cj;
 
     public AdminCollectActions(AdminEndpoint endpoint, AdminSettings settings, AdminResponses responses, CollectAdminServices services,
                                AdminRandom random, Clock clock, String maxUpload) {
@@ -66,6 +67,7 @@ public class AdminCollectActions {
         this.random = random.generator();
         this.clock = clock;
         this.maxUpload = maxUpload;
+        this.cj = services == null ? null : new AdminCjActions(this, endpoint, settings, responses, services.cj());
     }
 
     /** 处理 B17 的动作；不是本批的动作（或采集服务未注册）时返回 null。 */
@@ -89,6 +91,8 @@ public class AdminCollectActions {
             case "cj/del" -> result(ctx, s.nodes().delete(param));
             case "cj/export" -> export(ctx);
             case "cj/import" -> importNode(ctx);
+            case "cj/show_url", "cj/col_url", "cj/col_content", "cj/col_all", "cj/publish", "cj/show", "cj/content_del",
+                 "cj/content_into", "cj/program" -> cj.handle(ctx);
             default -> null;
         };
     }
@@ -325,7 +329,7 @@ public class AdminCollectActions {
     }
 
     /** 旧 {@code mac_jump($url, $sec)}：内联脚本改为 progress.js 的 data-*（同 B13，22 文档第 8.4 节），地址与文字转义。 */
-    private String jump(String url, long seconds) {
+    String jump(String url, long seconds) {
         String u = escape(url);
         return "<script src=\"" + escape(endpoint.sitePath()) + "/admin-assets/progress.js\" data-url=\"" + u + "\" data-seconds=\"" + seconds
                 + "\"></script><span>" + escape(settings.lang().get("pause")) + seconds + escape(settings.lang().get("continue_in_second"))
@@ -385,7 +389,7 @@ public class AdminCollectActions {
         return Character.digit((char) (b & 0xff), 16);
     }
 
-    private static String escape(String s) {
+    static String escape(String s) {
         StringBuilder sb = new StringBuilder(s.length() + 16);
         for (int i = 0; i < s.length(); i++) {
             char c = s.charAt(i);

@@ -43,6 +43,12 @@ B12（MACC-36）后台框架见 `docs/architecture/21-b12-admin-framework.md`：
 管理员管理；页面复用旧后台 HTML 结构与 `static/` 下的 layui/admin 资产。PHP 黄金样本 `src/test/php/admin_golden.php`，对照测试
 `AdminGoldenMySqlIT`；浏览器检查 `src/test/browser/b12_admin_check.py`。
 
+B16（MACC-40）静态生成与定时任务见 `docs/architecture/25-b16-static-timming.md`：后台 `make/*` 按旧路径写静态文件（内容是对动态地址的
+进程内游客 GET，与浏览器访问逐字节相同；文件名与 PHP `mac_url`/`reset_html_filename` 一致），每个文件登记在
+`application/data/backup/static-pages/generated.txt`，回滚按登记删除；定时任务入口 `/api.php/timming/index`（`MACCMS_TIMMING_ENABLED`
+**默认关闭**，只接受本机请求或请求头 `X-Maccms-Timming-Token` 携带的 `MACCMS_TIMMING_TOKEN`，D2 ③）。PHP 黄金样本
+`src/test/php/b16_static_timming_golden.php`；对照测试 `StaticPathsGoldenTest`、`TimmingGoldenTest`、`StaticTimmingMySqlIT`。
+
 B06（MACC-30）见 `docs/architecture/16-b06-misc-pages-provide.md`：客户端 IP 组件（`MACCMS_TRUSTED_PROXIES`、`MACCMS_CLIENT_IP_HEADER`，
 默认只信连接对端）；Provide 资源站接口（`/api.php/provide/**`，`MACCMS_OPENAPI_ENABLED` **默认关闭**，各模块再按旧配置 `api.*.status`
 判定，JSON/XML、白名单、`cachetime` 转为 HTTP 缓存头，只读）；site 新增地图、帮助、版权提示、站点级 RSS 与 6 种搜索引擎地图、

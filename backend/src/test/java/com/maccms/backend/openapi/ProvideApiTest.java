@@ -15,6 +15,7 @@ import com.maccms.backend.common.web.ErrorCode;
 import com.maccms.backend.content.application.LegacyColumnSet;
 import com.maccms.backend.content.application.LegacyRowOrder;
 import com.maccms.backend.content.application.LegacyRowQuery;
+import com.maccms.backend.content.application.ContentReadService;
 import com.maccms.backend.content.application.LegacyRowReadService;
 import com.maccms.backend.content.application.LegacyTable;
 import com.maccms.backend.legacyconfig.application.LegacyConfigService;
@@ -70,6 +71,9 @@ class ProvideApiTest {
     LegacyRowReadService rows;
     @MockitoBean
     LegacyConfigService legacy;
+    /** B27：OpenApiConfiguration 同时装配微信公众号接口，它的视频搜索经 content 读取服务。 */
+    @MockitoBean
+    ContentReadService content;
 
     @BeforeEach
     void setUp() {

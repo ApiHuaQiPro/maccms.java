@@ -1,5 +1,7 @@
 package com.maccms.backend.collect.application;
 
+import com.maccms.backend.collect.infrastructure.CjMapper;
+import com.maccms.backend.collect.infrastructure.CjWrites;
 import com.maccms.backend.collect.infrastructure.CollectAdminMapper;
 import com.maccms.backend.collect.infrastructure.CollectAdminWrites;
 import com.maccms.backend.collect.infrastructure.CollectIngestMapper;
@@ -8,6 +10,7 @@ import com.maccms.backend.collect.infrastructure.CollectLocalProperties;
 import com.maccms.backend.collect.infrastructure.DirectoryProvideSourceFiles;
 import com.maccms.backend.collect.infrastructure.FileCollectBreakpointStore;
 import com.maccms.backend.collect.infrastructure.FileProvidePreviewStore;
+import com.maccms.backend.collect.infrastructure.LocalHtmlFiles;
 import com.maccms.backend.common.write.ConditionalOnWriteEnabled;
 import com.maccms.backend.content.application.ContentAdminServices;
 import com.maccms.backend.content.application.VodSearchCache;
@@ -28,6 +31,7 @@ import org.springframework.context.annotation.Configuration;
  * {@code extra/bind.php}（经 {@link LegacyConfigService}），取本站分类名用 content 模块的分类表（旧 {@code getCache('type_list')}）。
  * B19 采集入库与 Receive 入站接口（27 文档第 2 节）：{@link CollectIngestService}（入库锁、查重与写入）、{@link ReceiveService}；
  * 增量 3 的后台入库与断点续采 {@link CollectRunService}（与 Receive 共用同一个 {@link CollectIngestService}，断点见 {@link FileCollectBreakpointStore}）。
+ * B20 自定义规则的采集与发布 {@link CjRunService}（本地 HTML 见 {@link LocalHtmlFiles}，导入同样经 {@link CollectIngestService}）。
  */
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnWriteEnabled
@@ -39,7 +43,8 @@ public class CollectAdminConfiguration {
                                               ObjectProvider<ContentAdminServices> content, ObjectProvider<Clock> clock,
                                               FileProvidePreviewStore previewStore, DirectoryProvideSourceFiles sourceFiles,
                                               CollectLocalProperties local, CollectIngestService ingest,
-                                              FileCollectBreakpointStore breakpoints) {
+                                              FileCollectBreakpointStore breakpoints, CjMapper cjReader, CjWrites cjWriter,
+                                              LocalHtmlFiles html) {
         TypeNames types = id -> {
             ContentAdminServices c = content.getIfAvailable();
             if (c == null) {
@@ -53,7 +58,8 @@ public class CollectAdminConfiguration {
         CollectPreviewService preview = new CollectPreviewService(previewStore, sourceFiles, binds, types, legacy.getIfAvailable(), c,
                 local.cacheTtl(), local.maxFileBytes(), local.maxEntries());
         return new CollectAdminServices(new CollectSourceAdminService(reader, writer), binds, new CjNodeAdminService(reader, writer, c),
-                preview, new CollectRunService(preview, ingest, breakpoints, c));
+                preview, new CollectRunService(preview, ingest, breakpoints, c),
+                new CjRunService(reader, cjReader, cjWriter, writer, html, ingest, c));
     }
 
     @Bean

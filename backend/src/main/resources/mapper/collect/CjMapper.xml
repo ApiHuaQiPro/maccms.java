@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- B20 自定义规则采集的只读查询（28 文档第 5 节）。列一律按文字取回（整数为十进制，与旧模板输出的文字相同）。 -->
+<mapper namespace="com.maccms.backend.collect.infrastructure.CjMapper">
+    <resultMap id="contentRow" type="map">
+        <result column="id" property="id" javaType="string"/>
+        <result column="nodeid" property="nodeid" javaType="string"/>
+        <result column="status" property="status" javaType="string"/>
+        <result column="url" property="url" javaType="string"/>
+        <result column="title" property="title" javaType="string"/>
+    </resultMap>
+    <resultMap id="contentDataRow" type="map">
+        <result column="id" property="id" javaType="string"/>
+        <result column="nodeid" property="nodeid" javaType="string"/>
+        <result column="status" property="status" javaType="string"/>
+        <result column="url" property="url" javaType="string"/>
+        <result column="title" property="title" javaType="string"/>
+        <result column="data" property="data" javaType="string"/>
+    </resultMap>
+
+    <!-- 旧 Cj::col_url（admin/controller/Cj.php:162-163）：infoData('cj_history', md5) -->
+    <select id="countHistory" resultType="long">
+        SELECT COUNT(*) FROM mac_cj_history WHERE md5 = #{md5}
+    </select>
+
+    <!-- 旧 Cj::publish（Cj.php:261-275）：where nodeid = id [and status = status]，id desc -->
+    <sql id="publishWhere">
+        WHERE nodeid = #{nodeid}
+        <if test="status != null">AND status = #{status}</if>
+    </sql>
+    <select id="countContents" resultType="long">
+        SELECT COUNT(*) FROM mac_cj_content <include refid="publishWhere"/>
+    </select>
+    <select id="listContents" resultMap="contentRow">
+        SELECT id, nodeid, status, url, title FROM mac_cj_content <include refid="publishWhere"/>
+        ORDER BY id DESC LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- 旧 Cj::show（Cj.php:287-292）：where id = id -->
+    <select id="selectContent" resultMap="contentDataRow">
+        SELECT id, nodeid, status, url, title, data FROM mac_cj_content WHERE id = #{id}
+    </select>
+
+    <!-- 旧 Cj::col_content（Cj.php:210-217）：where nodeid = id and status = 1；新版按编号升序取前 limit 条（D-B20-8） -->
+    <select id="countPending" resultType="long">
+        SELECT COUNT(*) FROM mac_cj_content WHERE nodeid = #{nodeid} AND status = 1
+    </select>
+    <select id="listPending" resultMap="contentRow">
+        SELECT id, nodeid, status, url, title FROM mac_cj_content WHERE nodeid = #{nodeid} AND status = 1
+        ORDER BY id LIMIT #{limit}
+    </select>
+
+    <!-- 旧 Cj::content_into（Cj.php:347-361）：where nodeid = id and status = 2 and (id in ids | id > 0)；新版按编号接着上一页取（D-B20-9） -->
+    <sql id="importWhere">
+        WHERE nodeid = #{nodeid} AND status = 2
+        <if test="ids != null">AND id IN <foreach collection="ids" item="x" open="(" separator="," close=")">#{x}</foreach></if>
+    </sql>
+    <select id="countImportable" resultType="long">
+        SELECT COUNT(*) FROM mac_cj_content <include refid="importWhere"/>
+    </select>
+    <select id="listImportable" resultMap="contentDataRow">
+        SELECT id, nodeid, status, url, title, data FROM mac_cj_content <include refid="importWhere"/>
+        AND id &gt; #{after} ORDER BY id LIMIT #{limit}
+    </select>
+
+    <!-- 旧 Cj::content_del（Cj.php:303-311）：field('url')->where(id in ids | id > 0)；新版按编号分批取完 -->
+    <resultMap id="contentUrlRow" type="map">
+        <result column="id" property="id" javaType="string"/>
+        <result column="url" property="url" javaType="string"/>
+    </resultMap>
+    <select id="listContentUrls" resultMap="contentUrlRow">
+        SELECT id, url FROM mac_cj_content WHERE id &gt; #{after}
+        <if test="ids != null">AND id IN <foreach collection="ids" item="x" open="(" separator="," close=")">#{x}</foreach></if>
+        ORDER BY id LIMIT #{limit}
+    </select>
+</mapper>

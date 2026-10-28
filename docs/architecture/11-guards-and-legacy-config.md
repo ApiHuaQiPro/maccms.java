@@ -17,7 +17,7 @@
 
 - **扫描对象**：`src/main/java` 全部源文件，去掉注释与字符串后匹配（注释、字符串里提到的类名不算）。
 - **视为出站的 API**：`java.net.http.*`、`java.net.URL/URLConnection/HttpURLConnection/Socket/InetAddress/…`、`java.net.*` 通配导入、`java.nio.channels` 的套接字通道、`javax.net.*`、RMI、JNDI（`javax.naming`）、JavaMail（`jakarta.mail`/`javax.mail`/Angus/Spring Mail）、Spring `web.client`（RestClient、RestTemplate）、WebClient、`http.client`、HTTP Interface、WebSocket 客户端、OpenFeign、`UrlResource`/`ResourceUtils`、Apache HttpClient、commons-net（FTP）、OkHttp、Retrofit、Netty、Jetty 客户端、JSch、`com.sun.net`/`sun.net`，以及 jsoup 的 `Jsoup`、`Connection`、`HttpConnection` 与通配导入。另按方法名拦截不需要导入就能调用的 `.openConnection(`、`.openStream(`、`.toURL(`。
-- **登记表** `OutboundNetworkGuardTest.REGISTERED`：键为 `integration.<子包>`，值为登记批次。B02 交付时为空。只接受 `integration.[a-z][a-z0-9]*`；登记子包的下级包同样允许，名字相似的包（`integration.payx`）不算。B23 起每批只登记本批子包（路线图 4.3 ④），登记改动必须出现在该批的合并提交中。E01/E02/E03/E08 的本地版本、采集链、上传、图片处理永远不登记；E05、E12 是入站，不需要登记。
+- **登记表** `OutboundNetworkGuardTest.REGISTERED`：键为 `integration.<子包>`，值为登记批次。B02 交付时为空。只接受 `integration.[a-z][a-z0-9]*`；登记子包的下级包同样允许，名字相似的包（`integration.payx`）不算。B23 起每批只登记本批子包（路线图 4.3 ④），登记改动必须出现在该批的合并提交中。E01/E02/E03/E08 的本地版本、采集链、上传、图片处理永远不登记；E05、E12 是入站，不需要登记。**B23（MACC-46）改为两级**：登记表移到主代码 `IntegrationPackages`；出站 API 只允许在 `RAW_API`（`integration.http`，出站客户端本身），`REGISTERED` 的子包只能经出站客户端发请求，客户端只能被已登记子包引用，运行期再查调用方。详见 `26-b23-integration-foundation.md` 第 2 节。
 - **pom 检查**：`spring-boot-starter-mail/webflux/webclient/restclient/websocket`、OpenFeign、commons-net、OkHttp、httpclient(5)、Jakarta Mail、Angus Mail、JSch、Netty 等不得出现。B23 引入出站客户端时同步调整。
 - **局限**（静态扫描本身的边界，B23 的"测试期出站护栏"在运行时补上）：反射/动态类加载、第三方库内部发起的请求（例如 XML 解析器解析外部实体）扫描不到。B27 解析公众号 XML 时必须关闭外部实体（路线图 E12 行），这一点不能靠本护栏保证。
 
@@ -106,7 +106,7 @@
   - `app.pathinfo_depr`（:47）不是 `/`（PHP `empty()` 为真时按 `/`，`Init.php:82`）；
   - `site.install_dir`（:31）不是 `/`（`MAC_PATH`，`Init.php:48`；键不存在也拒绝）；
   - `rewrite.type_id`、`rewrite.vod_id`（:495、:493）不是 0 或空串（`common.php:1807,1866` 的 switch：1 拼音、2 加密 id）；
-  - `view.index`、`view.vod_type`、`view.vod_detail`（:457、:462、:468）为 2（静态页，`common.php:1758,1828,1858`）或不是数字。
+  - `view.index`、`view.vod_type`、`view.vod_detail`（:457、:462、:468）不是数字（B16 起取值 2 不再拒绝：静态文件由静态生成写出，前台链接仍是动态地址，`25-b16-static-timming.md` D-B16-1）。
 - **错误信息**：只写键名与原因，不写取值，也不含文件内容。读文件失败时写 `LegacyConfigException` 的原因（如 `NOT_FOUND`、`UNSUPPORTED_CONSTRUCT`）与行列；合并后的校验失败时在原信息后补"以下项取自旧配置 extra/maccms.php，可用对应环境变量覆盖：maccms.site.name←site.site_name，……"。
 - **依赖边界**：site 只能引用 `LegacyConfigService`、`LegacyConfigFile`、`LegacyConfigException`、`LegacyConfigConfiguration`、`PhpArray`、`PhpValue`（`ModuleBoundaryTest.SITE_LEGACYCONFIG`，02 规范第 2 节）；site 仍不自己读文件，不能引用 `LegacyConfigProperties` 与 `legacyconfig.infrastructure`。`LegacyConfigConfiguration` 让 site 的切片测试也能拿到同一个服务，与组件扫描并存时只有一份。
 - **测试**：
@@ -142,7 +142,7 @@
 | 页面中的外部图片 | 原样输出，浏览器直接请求外部主机；`img_key` 命中时拼 `img_api` 代理前缀 | 默认（W2 打开）与 MACC-11/14 一致，即与旧版相同；部署方把 W2 设为 `false` 时外部图片显示占位（正文中删除），不拼 `img_api` |
 | 站点设置来源 | PHP 每次请求 `include` 配置，后台改完立即生效 | 环境变量优先、留空取旧 `extra/maccms.php`；启动时读一次，改了要重启（热加载在 B15）；`base-url` 只能由环境变量给出 |
 | `site_status` 为空串 | PHP 7：`'' == 0` 为真 → 关站；PHP 8：为假 → 开站 | 按开站（PHP 8 的结果）。线上 PHP 版本未核实；后台单选框只写 `0`/`1`，正常不会出现空串。其他非数字字符串两版结果不同，新版拒绝启动 |
-| 旧配置里新版不支持的 URL 形态 | 路由别名、`-` 分隔符、子目录安装、拼音/加密 id、静态页都能用 | 启动失败（第 4.4 节），不生成与旧站不同的地址 |
+| 旧配置里新版不支持的 URL 形态 | 路由别名、`-` 分隔符、子目录安装、拼音/加密 id、静态页都能用 | 启动失败（第 4.4 节），不生成与旧站不同的地址；静态页（`view.*=2`）B16 起不再拒绝，链接仍为动态地址（25 文档 D-B16-1） |
 | 配置读取 | PHP `include` 执行配置文件 | 只解析 `var_export` 子集，任何可执行写法都拒绝；负数键后省略键、NUL 字符串、`PHP_INT_MIN` 写法拒绝（第 4.2 节） |
 | 配置语法错误 | ThinkPHP 报错 | 抛 `LegacyConfigException`（不含内容），不回退旧值 |
 | 数据库工具、执行 SQL 等 | 可执行任意 SQL | 新系统任何入口都没有执行结构/维护/账号语句的路径，由护栏锁定（D10） |
