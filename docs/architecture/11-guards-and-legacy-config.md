@@ -106,7 +106,7 @@
   - `app.pathinfo_depr`（:47）不是 `/`（PHP `empty()` 为真时按 `/`，`Init.php:82`）；
   - `site.install_dir`（:31）不是 `/`（`MAC_PATH`，`Init.php:48`；键不存在也拒绝）；
   - `rewrite.type_id`、`rewrite.vod_id`（:495、:493）不是 0 或空串（`common.php:1807,1866` 的 switch：1 拼音、2 加密 id）；
-  - `view.index`、`view.vod_type`、`view.vod_detail`（:457、:462、:468）为 2（静态页，`common.php:1758,1828,1858`）或不是数字。
+  - `view.index`、`view.vod_type`、`view.vod_detail`（:457、:462、:468）不是数字（B16 起取值 2 不再拒绝：静态文件由静态生成写出，前台链接仍是动态地址，`25-b16-static-timming.md` D-B16-1）。
 - **错误信息**：只写键名与原因，不写取值，也不含文件内容。读文件失败时写 `LegacyConfigException` 的原因（如 `NOT_FOUND`、`UNSUPPORTED_CONSTRUCT`）与行列；合并后的校验失败时在原信息后补"以下项取自旧配置 extra/maccms.php，可用对应环境变量覆盖：maccms.site.name←site.site_name，……"。
 - **依赖边界**：site 只能引用 `LegacyConfigService`、`LegacyConfigFile`、`LegacyConfigException`、`LegacyConfigConfiguration`、`PhpArray`、`PhpValue`（`ModuleBoundaryTest.SITE_LEGACYCONFIG`，02 规范第 2 节）；site 仍不自己读文件，不能引用 `LegacyConfigProperties` 与 `legacyconfig.infrastructure`。`LegacyConfigConfiguration` 让 site 的切片测试也能拿到同一个服务，与组件扫描并存时只有一份。
 - **测试**：
@@ -142,7 +142,7 @@
 | 页面中的外部图片 | 原样输出，浏览器直接请求外部主机；`img_key` 命中时拼 `img_api` 代理前缀 | 默认（W2 打开）与 MACC-11/14 一致，即与旧版相同；部署方把 W2 设为 `false` 时外部图片显示占位（正文中删除），不拼 `img_api` |
 | 站点设置来源 | PHP 每次请求 `include` 配置，后台改完立即生效 | 环境变量优先、留空取旧 `extra/maccms.php`；启动时读一次，改了要重启（热加载在 B15）；`base-url` 只能由环境变量给出 |
 | `site_status` 为空串 | PHP 7：`'' == 0` 为真 → 关站；PHP 8：为假 → 开站 | 按开站（PHP 8 的结果）。线上 PHP 版本未核实；后台单选框只写 `0`/`1`，正常不会出现空串。其他非数字字符串两版结果不同，新版拒绝启动 |
-| 旧配置里新版不支持的 URL 形态 | 路由别名、`-` 分隔符、子目录安装、拼音/加密 id、静态页都能用 | 启动失败（第 4.4 节），不生成与旧站不同的地址 |
+| 旧配置里新版不支持的 URL 形态 | 路由别名、`-` 分隔符、子目录安装、拼音/加密 id、静态页都能用 | 启动失败（第 4.4 节），不生成与旧站不同的地址；静态页（`view.*=2`）B16 起不再拒绝，链接仍为动态地址（25 文档 D-B16-1） |
 | 配置读取 | PHP `include` 执行配置文件 | 只解析 `var_export` 子集，任何可执行写法都拒绝；负数键后省略键、NUL 字符串、`PHP_INT_MIN` 写法拒绝（第 4.2 节） |
 | 配置语法错误 | ThinkPHP 报错 | 抛 `LegacyConfigException`（不含内容），不回退旧值 |
 | 数据库工具、执行 SQL 等 | 可执行任意 SQL | 新系统任何入口都没有执行结构/维护/账号语句的路径，由护栏锁定（D10） |

@@ -150,7 +150,7 @@ stateDiagram-v2
 
 #### 6.2 给 B16 的入口
 
-定时任务执行文件 `cj`（旧 `Timming::cj` → `Cj::col_all($output)`）由 B16 调用 `CjRunService` 的 `colUrl`、`colContent`、`contentInto`（与 `cj/col_all` 相同的一轮）。
+定时任务执行文件 `cj`（旧 `Timming::cj` → `Cj::col_all($output)`）由 B16 调用 `collect.application.CjColAll`：与后台 `cj/col_all` 共用同一实现（`colUrl`、`colContent`、`contentInto` 一轮），B16 合入时接上（25 文档第 7.3 节、D-B16-16）。
 
 ### 7. PHP 与 Java 的提取一致（黄金）
 

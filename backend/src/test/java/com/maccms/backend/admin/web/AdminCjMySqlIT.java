@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.maccms.backend.MaccmsBackendApplication;
 import com.maccms.backend.schema.SchemaFingerprint;
+import com.maccms.backend.staticgen.application.TimmingTasks;
 import com.maccms.backend.writedrill.DatabaseSnapshot;
 import com.maccms.backend.writedrill.DmlRestore;
 import com.maccms.backend.writedrill.SnapshotDiff;
@@ -113,6 +114,8 @@ class AdminCjMySqlIT {
             insertNode(c, 1, "主流程", HOST + "/list_(*).html", 2);
             insertNode(c, 2, "并发", HOST + "/race_(*).html", 1);
             insertNode(c, 3, "演练", HOST + "/drill_(*).html", 1);
+            insertNode(c, 4, "定时", HOST + "/timming_(*).html", 1);
+            insertNode(c, 5, "一轮", HOST + "/all_(*).html", 1);
             schemaAtImport = SchemaFingerprint.of(c, dbName);
         }
         work = Files.createTempDirectory("maccms-b20-it");
@@ -211,6 +214,12 @@ class AdminCjMySqlIT {
         }
         for (int i = 201; i <= 210; i++) {
             page("a/" + i + ".html", article("演练" + i, i));
+        }
+        page("timming_1.html", list(301, 303));
+        page("all_1.html", list(401, 403));
+        for (int i = 301; i <= 303; i++) {
+            page("a/" + i + ".html", article("定时" + i, i));
+            page("a/" + (i + 100) + ".html", article("一轮" + (i + 100), i + 100));
         }
     }
 
@@ -314,6 +323,45 @@ class AdminCjMySqlIT {
         // 再导入一遍：只剩没入库的那条，不新增视频
         assertThat(get("/admin/cj/content_into", "id=1&all=1").getContentAsString(StandardCharsets.UTF_8)).contains("共【1】条", "导入完成");
         assertThat(count("SELECT COUNT(*) FROM mac_vod")).isEqualTo(6);
+    }
+
+    // ------------------------------------------------------------------ ⑤ 一轮（col_all）与定时任务 cj（B16 × B20）
+
+    /**
+     * 后台 {@code cj/col_all} 与定时任务的执行文件 {@code cj}（{@code TimmingTasks}，B16）都做旧 {@code Cj::col_all} 的一轮：网址、内容、导入；
+     * 定时任务 {@code collect} 固定"该功能未在新系统中提供"（D-B19-15），没有节点时"获取失败"，都不写库。
+     */
+    @Test
+    @Order(5)
+    void colAllRoundFromAdminAndTimmingTask() throws Exception {
+        for (int node : new int[] {4, 5}) {
+            String post = "id=" + node + "&model_field%5B%5D=vod_name&node_field%5B%5D=title&funcs%5B%5D=trim"
+                    + "&model_field%5B%5D=type_id&node_field%5B%5D=type&funcs%5B%5D="
+                    + "&model_field%5B%5D=vod_content&node_field%5B%5D=content&funcs%5B%5D=";
+            assertThat(send("POST", "/admin/cj/program", "", post, sid, null).getContentAsString(StandardCharsets.UTF_8)).contains("\"code\":1");
+        }
+        int vods = count("SELECT COUNT(*) FROM mac_vod");
+
+        String admin = get("/admin/cj/col_all", "id=5").getContentAsString(StandardCharsets.UTF_8);
+        assertThat(admin).startsWith("URL采集完成<br><style type=\"text/css\">")
+                .contains("正在采集内容，共【3】条，分1页，每页采集20条，当前1页<br>", "http://cj.invalid/a/401.html&nbsp;&nbsp;ok<br>",
+                        "内容采集完成<br><style", "正在导入内容，共【3】条，分1页，每页采集999条，当前1页<br>")
+                .endsWith("内容入库完成<br>").doesNotContain("data-url=");
+        assertThat(count("SELECT COUNT(*) FROM mac_vod WHERE vod_name LIKE '一轮40%'")).isEqualTo(3);
+
+        TimmingTasks tasks = app.getBean(TimmingTasks.class);
+        String timming = tasks.run("cj", "id=4");
+        assertThat(timming).isEqualTo(admin.replace("一轮4", "定时3").replace("/a/4", "/a/3"));
+        assertThat(count("SELECT COUNT(*) FROM mac_vod WHERE vod_name LIKE '定时30%'")).isEqualTo(3);
+        assertThat(count("SELECT COUNT(*) FROM mac_cj_content WHERE nodeid = 4 AND status = 3")).isEqualTo(3);
+        assertThat(lastdate(4)).isPositive();
+        assertThat(tasks.run("cj", "id=4")).as("再执行一轮：网址全部重复，没有待采内容").contains("内容采集完成<br>")
+                .doesNotContain("正在导入内容");
+        assertThat(count("SELECT COUNT(*) FROM mac_vod")).isEqualTo(vods + 6);
+
+        assertThat(tasks.run("cj", "id=99")).isEqualTo("获取失败<br>");
+        assertThat(tasks.run("collect", "ac=cjall&h=24")).isEqualTo("该功能未在新系统中提供<br>");
+        assertThat(count("SELECT COUNT(*) FROM mac_vod")).isEqualTo(vods + 6);
     }
 
     // ------------------------------------------------------------------ ② 并发

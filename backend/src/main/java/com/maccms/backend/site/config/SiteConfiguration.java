@@ -37,6 +37,8 @@ import com.maccms.backend.site.web.SearchThrottle;
 import com.maccms.backend.site.web.SiteHtmlRenderer;
 import com.maccms.backend.site.web.SitePages;
 import com.maccms.backend.site.web.SiteSessions;
+import com.maccms.backend.site.application.StaticPageSource;
+import com.maccms.backend.site.web.InternalPageRenderer;
 import com.maccms.backend.site.web.SiteMemberCacheFilter;
 import com.maccms.backend.site.web.SiteMemberInterceptor;
 import com.maccms.backend.site.web.SiteStatusInterceptor;
@@ -57,6 +59,7 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
@@ -66,6 +69,8 @@ import org.springframework.core.Ordered;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter;
+import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
 /**
  * site 模块装配，仅在 {@code maccms.site.enabled=true} 时生效。站点配置（{@code maccms.site.*}，含 URL 形态
@@ -184,6 +189,17 @@ public class SiteConfiguration {
         bean.addUrlPatterns("/*");
         bean.setOrder(Ordered.HIGHEST_PRECEDENCE + 10);
         return bean;
+    }
+
+    /**
+     * 静态生成的页面来源（B16，25 文档第 4 节）：进程内对动态地址做游客 GET，取得与浏览器访问相同的正文。处理器映射与适配器按需取。
+     */
+    @Bean
+    StaticPageSource siteStaticPageSource(LegacyUrlBuilder urls, SiteVariants variants,
+                                          @Qualifier("requestMappingHandlerMapping")
+                                          ObjectProvider<RequestMappingHandlerMapping> mapping,
+                                          ObjectProvider<RequestMappingHandlerAdapter> adapter) {
+        return new InternalPageRenderer(urls, variants, mapping::getObject, adapter::getObject);
     }
 
     /**

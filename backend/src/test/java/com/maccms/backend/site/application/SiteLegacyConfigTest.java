@@ -147,8 +147,6 @@ class SiteLegacyConfigTest {
             "'site' => array ('install_dir' => '')|site.install_dir",
             "'rewrite' => array ('vod_id' => '1')|rewrite.vod_id",
             "'rewrite' => array ('type_id' => '2')|rewrite.type_id",
-            "'view' => array ('vod_detail' => '2')|view.vod_detail",
-            "'view' => array ('index' => '2')|view.index",
             "'view' => array ('vod_type' => 'x')|view.vod_type"})
     void unsupportedUrlShapesFailInsteadOfGeneratingDifferentUrls(String override, String key) {
         // 后写的同名组整体覆盖前面的组（PHP 数组重复键后者覆盖），其余前提由 php() 给出
@@ -157,6 +155,15 @@ class SiteLegacyConfigTest {
         assertThatThrownBy(() -> merge(EMPTY_SITE, legacy))
                 .isInstanceOf(IllegalStateException.class).hasMessageContaining(key)
                 .hasMessageContaining("extra/maccms.php");
+    }
+
+    /** B16（25 文档第 10 节 D-B16-1）：静态页模式不再拒绝启动——静态文件由静态生成写出，前台链接仍是动态地址。 */
+    @ParameterizedTest
+    @ValueSource(strings = {"'index' => '2'", "'vod_type' => '2'", "'vod_detail' => 2"})
+    void staticViewModesAreAcceptedSinceB16(String view) {
+        PhpArray legacy = VarExportParser.parse(("<?php return array ('site' => array ('install_dir' => '/'), "
+                + "'app' => array ('pathinfo_depr' => '/'), 'view' => array (" + view + "));").getBytes(StandardCharsets.UTF_8));
+        assertThat(merge(EMPTY_SITE, legacy).fromLegacy()).isEmpty();
     }
 
     @ParameterizedTest

@@ -218,7 +218,8 @@ public final class SiteLegacyConfig {
          * <li>{@code app.pathinfo_depr} 为 {@code /}，PHP {@code empty()} 时按 {@code /}（{@code Init.php:82}）；</li>
          * <li>{@code site.install_dir} 为 {@code /}（{@code MAC_PATH}，{@code Init.php:48}）；</li>
          * <li>{@code rewrite.type_id}、{@code rewrite.vod_id} 不是 1、2（{@code common.php:1807,1866} 的 switch，数字 id）；</li>
-         * <li>{@code view.index}、{@code view.vod_type}、{@code view.vod_detail} 不是 2（静态页，{@code common.php:1758,1828,1858}）。</li>
+         * <li>{@code view.index}、{@code view.vod_type}、{@code view.vod_detail} 是数字。B16 起接受 2（静态页）：静态文件由静态生成按旧路径
+         * 写出、交给部署层直接提供，前台页面里的链接仍是动态地址（25 文档第 10 节 D-B16-1）。</li>
          * </ul>
          * 键不存在时按旧版的取值（未定义即 null）处理：前两项视为满足，{@code install_dir} 视为不满足。
          */
@@ -248,8 +249,8 @@ public final class SiteLegacyConfig {
                 PhpValue v = root.path("view", k);
                 if (v != null && !(v instanceof PhpString s && s.value().isEmpty())) {
                     BigDecimal n = number(v);
-                    if (n == null || n.compareTo(BigDecimal.TWO) == 0) {
-                        errors.add("view." + k + "（新版不支持静态页，不能为 2）");
+                    if (n == null) {
+                        errors.add("view." + k + "（须为数字）");
                     }
                 }
             }

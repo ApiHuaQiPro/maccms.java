@@ -82,6 +82,7 @@ public class AdminController {
     private final AdminAddonActions addons;
     private final AdminDatabaseActions database;
     private final AdminTemplateActions templates;
+    private final AdminMakeActions make;
     private final AdminCollectActions collect;
     private final com.maccms.backend.admin.application.PlayerAdminService playerCache;
 
@@ -92,7 +93,8 @@ public class AdminController {
                            ObjectProvider<AdminSystemActions> system, ObjectProvider<AdminPlayerActions> players,
                            ObjectProvider<com.maccms.backend.admin.application.PlayerAdminService> playerCache,
                            ObjectProvider<AdminAddonActions> addons, ObjectProvider<AdminDatabaseActions> database,
-                           ObjectProvider<AdminTemplateActions> templates, ObjectProvider<AdminCollectActions> collect) {
+                           ObjectProvider<AdminTemplateActions> templates, ObjectProvider<AdminMakeActions> make,
+                           ObjectProvider<AdminCollectActions> collect) {
         this.endpoint = endpoint;
         this.sessions = sessions;
         this.settings = settings;
@@ -111,6 +113,7 @@ public class AdminController {
         this.addons = addons.getIfAvailable();
         this.database = database.getIfAvailable();
         this.templates = templates.getIfAvailable();
+        this.make = make.getIfAvailable();
         this.collect = collect.getIfAvailable();
     }
 
@@ -215,6 +218,10 @@ public class AdminController {
                 }
                 if (b15 != null) {
                     yield b15;
+                }
+                ResponseEntity<String> b16 = make == null ? null : make.handle(ctx);
+                if (b16 != null) {
+                    yield b16;
                 }
                 ResponseEntity<String> b17 = collect == null ? null : collect.handle(ctx, session);
                 if (b17 != null) {

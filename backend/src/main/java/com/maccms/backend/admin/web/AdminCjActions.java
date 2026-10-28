@@ -9,6 +9,7 @@ import com.maccms.backend.admin.web.view.collect.CjProgramView;
 import com.maccms.backend.admin.web.view.collect.CjPublishView;
 import com.maccms.backend.admin.web.view.collect.CjShowUrlView;
 import com.maccms.backend.admin.web.view.collect.CjShowView;
+import com.maccms.backend.collect.application.CjColAll;
 import com.maccms.backend.collect.application.CjRules;
 import com.maccms.backend.collect.application.CjRunService;
 import com.maccms.backend.content.application.AdminIds;
@@ -35,9 +36,8 @@ final class AdminCjActions {
 
     /** 旧 {@code mac_jump(..., 3)}。 */
     static final long JUMP_SECONDS = 3;
-    static final String NOT_CONFIGURED = "未配置本地 HTML 目录（maccms.collect.local.html-dir），无法采集";
-    private static final String STYLE = "<style type=\"text/css\">body{font-size:12px;color: #333333;line-height:21px;}"
-            + "span{font-weight:bold;color:#FF0000}</style>";
+    static final String NOT_CONFIGURED = CjColAll.NOT_CONFIGURED;
+    private static final String STYLE = CjColAll.STYLE;
 
     private final AdminCollectActions owner;
     private final AdminEndpoint endpoint;
@@ -62,7 +62,7 @@ final class AdminCjActions {
             return switch (ctx.route().code()) {
                 case "cj/show_url" -> showUrl(ctx);
                 case "cj/col_url" -> withNode(ctx, true, node -> colUrl(ctx, node));
-                case "cj/col_content" -> withNode(ctx, true, node -> responses.echoed(colContent(ctx, node, false).html()));
+                case "cj/col_content" -> withNode(ctx, true, node -> responses.echoed(colContent(ctx, node)));
                 case "cj/col_all" -> withNode(ctx, true, node -> colAll(ctx, node));
                 case "cj/publish" -> publish(ctx);
                 case "cj/show" -> show(ctx);
@@ -132,14 +132,11 @@ final class AdminCjActions {
 
     // ------------------------------------------------------------------ col_content
 
-    private record Echo(String html, List<Long> ids, boolean empty) {
-    }
-
     /**
      * 旧 {@code col_content} 的输出：样式、提示（共几条、几批）、逐条网址与结果；还有"未采集"的内容时"让服务器休息一会"并跳到下一批，采完时
-     * "采集完成"；开始时就没有时"内容采集完成"。{@code all} 时（col_all）只做这一批，最后输出"内容采集完成"，不跳转。
+     * "采集完成"；开始时就没有时"内容采集完成"。
      */
-    private Echo colContent(Ctx ctx, Map<String, String> node, boolean all) {
+    private String colContent(Ctx ctx, Map<String, String> node) {
         CjRunService.ColContent r = cj.colContent(node, ctx.params().scalar("page"));
         StringBuilder sb = new StringBuilder();
         sb.append(STYLE).append("<br>");
@@ -147,22 +144,20 @@ final class AdminCjActions {
                 .append("<br>");
         if (r.empty()) {
             sb.append(esc(settings.lang().get("admin/cj/content_cj_complete"))).append("<br>");
-            return new Echo(sb.toString(), List.of(), true);
+            return sb.toString();
         }
         for (CjRunService.ContentLine line : r.lines()) {
             sb.append(esc(line.url())).append("&nbsp;&nbsp;");
             sb.append(line.note() == null ? "ok" : "<span>" + esc(line.note()) + "</span>").append("<br>");
         }
-        if (all) {
-            sb.append(esc(settings.lang().get("admin/cj/content_cj_complete"))).append("<br>");
-        } else if (r.remaining() > 0) {
+        if (r.remaining() > 0) {
             sb.append(esc(settings.lang().get("server_rest"))).append("<br>");
             sb.append(owner.jump(self(ctx, "col_content", Map.of("id", node.get("nodeid"), "page", Long.toString(r.page() + 1))),
                     JUMP_SECONDS));
         } else {
             sb.append(esc(settings.lang().get("admin/cj/cj_complete"))).append("<br>");
         }
-        return new Echo(sb.toString(), r.ids(), false);
+        return sb.toString();
     }
 
     // ------------------------------------------------------------------ col_all
@@ -172,19 +167,7 @@ final class AdminCjActions {
      * → 导入这一批（每页 999 条）→"内容入库完成"。只做一轮，不跳转。
      */
     private ResponseEntity<String> colAll(Ctx ctx, Map<String, String> node) {
-        cj.colUrl(node, ctx.params().scalar("page"), lang());
-        StringBuilder sb = new StringBuilder();
-        sb.append(esc(settings.lang().get("admin/cj/url_cj_complete"))).append("<br>");
-        Echo content = colContent(ctx, node, true);
-        sb.append(content.html());
-        if (content.empty()) {
-            return responses.echoed(sb.toString());
-        }
-        long page = pageOf(ctx.params().scalar("page"));
-        CjRunService.Into r = cj.contentInto(node, content.ids(), false, page, 999, null, 0, lang());
-        sb.append(intoHtml(r));
-        sb.append(esc(settings.lang().get("admin/cj/content_into/complete"))).append("<br>");
-        return responses.echoed(sb.toString());
+        return responses.echoed(CjColAll.round(cj, node, ctx.params().scalar("page"), lang()));
     }
 
     // ------------------------------------------------------------------ publish、show、content_del
@@ -255,13 +238,7 @@ final class AdminCjActions {
     }
 
     private String intoHtml(CjRunService.Into r) {
-        StringBuilder sb = new StringBuilder();
-        sb.append(STYLE).append("<br>");
-        sb.append(esc(format(settings.lang().get("admin/cj/content_into/tip"), r.total(), r.totalPage(), r.limit(), r.page()))).append("<br>");
-        for (CjRunService.IntoLine line : r.lines()) {
-            sb.append(esc(line.msg())).append("<br>");
-        }
-        return sb.toString();
+        return CjColAll.intoHtml(r, lang());
     }
 
     // ------------------------------------------------------------------ program
@@ -278,26 +255,12 @@ final class AdminCjActions {
 
     // ------------------------------------------------------------------ 公共
 
-    /** 旧 {@code intval($param['page']) < 1 ? 1 : $param['page']}。 */
     private static long pageOf(byte[] page) {
-        long p = page == null ? 0 : PhpIntval.of(str(page));
-        return p < 1 ? 1 : p;
+        return CjColAll.pageOf(page);
     }
 
-    /** {@code lang(key, [a, b, c, d])}：按顺序替换 {@code %s}（ThinkPHP 的 {@code sprintf}）。 */
     static String format(String t, Object... args) {
-        StringBuilder sb = new StringBuilder();
-        int a = 0;
-        int i = 0;
-        while (i < t.length()) {
-            if (t.startsWith("%s", i) && a < args.length) {
-                sb.append(args[a++]);
-                i += 2;
-            } else {
-                sb.append(t.charAt(i++));
-            }
-        }
-        return sb.toString();
+        return CjColAll.format(t, args);
     }
 
     private static String esc(String s) {

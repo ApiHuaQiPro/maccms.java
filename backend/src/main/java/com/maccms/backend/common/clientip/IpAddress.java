@@ -54,6 +54,19 @@ public final class IpAddress {
         return true;
     }
 
+    /** 回环地址：IPv4 {@code 127.0.0.0/8}、IPv6 {@code ::1}（B16 定时任务入口的本机判定）。 */
+    public boolean isLoopback() {
+        if (bytes.length == 4) {
+            return bytes[0] == 127;
+        }
+        for (int i = 0; i < 15; i++) {
+            if (bytes[i] != 0) {
+                return false;
+            }
+        }
+        return bytes[15] == 1;
+    }
+
     /** 地址的字节（IPv4 为 4 字节，IPv6 为 16 字节）的副本。 */
     byte[] bytes() {
         return bytes.clone();

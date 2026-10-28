@@ -1,0 +1,743 @@
+{
+    "description": "B16 黄金向量：由 backend/src/test/php/b16_static_timming_golden.php 执行仓库内旧 PHP 代码生成（PHP 8.0.30）；输入全部为合成数据。不要手工修改，修改生成脚本后重新生成。",
+    "paths": [
+        {
+            "branch": "repo_paths_mode2",
+            "view": {
+                "index": "2",
+                "map": "2",
+                "search": "0",
+                "rss": "2",
+                "label": "2",
+                "vod_type": "2",
+                "vod_show": "0",
+                "art_type": "2",
+                "art_show": "0",
+                "topic_index": "2",
+                "topic_detail": "2",
+                "vod_detail": "2",
+                "vod_play": "2",
+                "vod_down": "2",
+                "art_detail": "2"
+            },
+            "path": {
+                "topic_index": "topic/index",
+                "topic_detail": "topic/{id}/index",
+                "vod_type": "vodtypehtml/{id}/index",
+                "vod_detail": "vodhtml/{id}/index",
+                "vod_play": "vodplayhtml/{id}/index",
+                "vod_down": "voddownhtml/{id}/index",
+                "art_type": "arttypehtml/{id}/index",
+                "art_detail": "arthtml/{id}/index",
+                "page_sp": "_",
+                "suffix": "html"
+            },
+            "cases": [
+                {
+                    "id": "index",
+                    "url": "index.html",
+                    "file": "./index.html"
+                },
+                {
+                    "id": "index.wap",
+                    "url": "wap_index.html",
+                    "file": "./wap_index.html"
+                },
+                {
+                    "id": "map",
+                    "url": "map.html",
+                    "file": "./map.html"
+                },
+                {
+                    "id": "rss.baidu",
+                    "url": "rss/baidu.xml",
+                    "file": "./rss/baidu.xml"
+                },
+                {
+                    "id": "rss.index.p2",
+                    "url": "rss/index_2.xml",
+                    "file": "./rss/index_2.xml"
+                },
+                {
+                    "id": "label.dotted",
+                    "url": "label/about.html",
+                    "file": "./label/about.html"
+                },
+                {
+                    "id": "label.bare",
+                    "url": "label/about",
+                    "file": "./label/about.html"
+                },
+                {
+                    "id": "vod.type.top",
+                    "url": "/vodtypehtml/1/",
+                    "file": "./vodtypehtml/1/index.html"
+                },
+                {
+                    "id": "vod.type.top.p2",
+                    "url": "/vodtypehtml/1/index_2.html",
+                    "file": "./vodtypehtml/1/index_2.html"
+                },
+                {
+                    "id": "vod.type.sub.p3",
+                    "url": "/vodtypehtml/6/index_3.html",
+                    "file": "./vodtypehtml/6/index_3.html"
+                },
+                {
+                    "id": "art.type",
+                    "url": "/arttypehtml/21/",
+                    "file": "./arttypehtml/21/index.html"
+                },
+                {
+                    "id": "art.type.p2",
+                    "url": "/arttypehtml/21/index_2.html",
+                    "file": "./arttypehtml/21/index_2.html"
+                },
+                {
+                    "id": "vod.detail.sub",
+                    "url": "/vodhtml/123/",
+                    "file": "./vodhtml/123/index.html"
+                },
+                {
+                    "id": "vod.detail.top",
+                    "url": "/vodhtml/9/",
+                    "file": "./vodhtml/9/index.html"
+                },
+                {
+                    "id": "vod.play.1-1",
+                    "url": "/vodplayhtml/123/index.html?123-1-1",
+                    "file": "./vodplayhtml/123/index.html"
+                },
+                {
+                    "id": "vod.play.2-3",
+                    "url": "/vodplayhtml/123/index.html?123-2-3",
+                    "file": "./vodplayhtml/123/index.html"
+                },
+                {
+                    "id": "vod.play.top.1-12",
+                    "url": "/vodplayhtml/9/index.html?9-1-12",
+                    "file": "./vodplayhtml/9/index.html"
+                },
+                {
+                    "id": "vod.down.1-1",
+                    "url": "/voddownhtml/123/index.html?123-1-1",
+                    "file": "./voddownhtml/123/index.html"
+                },
+                {
+                    "id": "vod.down.3-2",
+                    "url": "/voddownhtml/9/index.html?9-3-2",
+                    "file": "./voddownhtml/9/index.html"
+                },
+                {
+                    "id": "art.detail.p1",
+                    "url": "/arthtml/55/",
+                    "file": "./arthtml/55/index.html"
+                },
+                {
+                    "id": "art.detail.p2",
+                    "url": "/arthtml/55/index_2.html",
+                    "file": "./arthtml/55/index_2.html"
+                },
+                {
+                    "id": "topic.index.p1",
+                    "url": "/topic/",
+                    "file": "./topic/index.html"
+                },
+                {
+                    "id": "topic.index.p2",
+                    "url": "/topic/index_2.html",
+                    "file": "./topic/index_2.html"
+                },
+                {
+                    "id": "topic.detail",
+                    "url": "/topic/7/",
+                    "file": "./topic/7/index.html"
+                }
+            ]
+        },
+        {
+            "branch": "placeholders_mode3",
+            "view": {
+                "index": "2",
+                "map": "2",
+                "search": "0",
+                "rss": "2",
+                "label": "2",
+                "vod_type": "2",
+                "vod_show": "0",
+                "art_type": "2",
+                "art_show": "0",
+                "topic_index": "2",
+                "topic_detail": "2",
+                "vod_detail": "2",
+                "vod_play": "3",
+                "vod_down": "3",
+                "art_detail": "2"
+            },
+            "path": {
+                "topic_index": "zt/list",
+                "topic_detail": "zt/{en}-{md5}",
+                "vod_type": "{type_en}/",
+                "vod_detail": "v/{type_pen}/{type_en}/{en}/{id}",
+                "vod_play": "p/{year}/{month}{day}/{id}-{md5}",
+                "vod_down": "d/{type_id}/{type_pid}/{id}",
+                "art_type": "a/{id}/{md5}",
+                "art_detail": "a/{year}{month}/{en}",
+                "page_sp": "-",
+                "suffix": "htm"
+            },
+            "cases": [
+                {
+                    "id": "index",
+                    "url": "index.html",
+                    "file": "./index.html"
+                },
+                {
+                    "id": "index.wap",
+                    "url": "wap_index.html",
+                    "file": "./wap_index.html"
+                },
+                {
+                    "id": "map",
+                    "url": "map.html",
+                    "file": "./map.html"
+                },
+                {
+                    "id": "rss.baidu",
+                    "url": "rss/baidu.xml",
+                    "file": "./rss/baidu.xml"
+                },
+                {
+                    "id": "rss.index.p2",
+                    "url": "rss/index-2.xml",
+                    "file": "./rss/index-2.xml"
+                },
+                {
+                    "id": "label.dotted",
+                    "url": "label/about.html",
+                    "file": "./label/about.html"
+                },
+                {
+                    "id": "label.bare",
+                    "url": "label/about",
+                    "file": "./label/about.htm"
+                },
+                {
+                    "id": "vod.type.top",
+                    "url": "/",
+                    "file": "./index.htm"
+                },
+                {
+                    "id": "vod.type.top.p2",
+                    "url": "/index-2.htm",
+                    "file": "./index-2.htm"
+                },
+                {
+                    "id": "vod.type.sub.p3",
+                    "url": "/index-3.htm",
+                    "file": "./index-3.htm"
+                },
+                {
+                    "id": "art.type",
+                    "url": "/a/21/3c59dc048e8850243be8079a5c74d079.htm",
+                    "file": "./a/21/3c59dc048e8850243be8079a5c74d079.htm"
+                },
+                {
+                    "id": "art.type.p2",
+                    "url": "/a/21/3c59dc048e8850243be8079a5c74d079-2.htm",
+                    "file": "./a/21/3c59dc048e8850243be8079a5c74d079-2.htm"
+                },
+                {
+                    "id": "vod.detail.sub",
+                    "url": "/v/dianying/dongzuopian/hecheng-shipin/123.htm",
+                    "file": "./v/dianying/dongzuopian/hecheng-shipin/123.htm"
+                },
+                {
+                    "id": "vod.detail.top",
+                    "url": "/v/dianying/dingji/9.htm",
+                    "file": "./v/dianying/dingji/9.htm"
+                },
+                {
+                    "id": "vod.play.1-1",
+                    "url": "/p/2023/1115/123-202cb962ac59075b964b07152d234b70-1-1.htm",
+                    "file": "./p/2023/1115/123-202cb962ac59075b964b07152d234b70-1-1.htm"
+                },
+                {
+                    "id": "vod.play.2-3",
+                    "url": "/p/2023/1115/123-202cb962ac59075b964b07152d234b70-2-3.htm",
+                    "file": "./p/2023/1115/123-202cb962ac59075b964b07152d234b70-2-3.htm"
+                },
+                {
+                    "id": "vod.play.top.1-12",
+                    "url": "/p/2024/0101/9-45c48cce2e2d7fbdea1afc51c7c6ad26-1-12.htm",
+                    "file": "./p/2024/0101/9-45c48cce2e2d7fbdea1afc51c7c6ad26-1-12.htm"
+                },
+                {
+                    "id": "vod.down.1-1",
+                    "url": "/d/6/1/123-1-1.htm",
+                    "file": "./d/6/1/123-1-1.htm"
+                },
+                {
+                    "id": "vod.down.3-2",
+                    "url": "/d/1/9-3-2.htm",
+                    "file": "./d/1/9-3-2.htm"
+                },
+                {
+                    "id": "art.detail.p1",
+                    "url": "/a/202311/wenzhang55.htm",
+                    "file": "./a/202311/wenzhang55.htm"
+                },
+                {
+                    "id": "art.detail.p2",
+                    "url": "/a/202311/wenzhang55-2.htm",
+                    "file": "./a/202311/wenzhang55-2.htm"
+                },
+                {
+                    "id": "topic.index.p1",
+                    "url": "/zt/list.htm",
+                    "file": "./zt/list.htm"
+                },
+                {
+                    "id": "topic.index.p2",
+                    "url": "/zt/list-2.htm",
+                    "file": "./zt/list-2.htm"
+                },
+                {
+                    "id": "topic.detail",
+                    "url": "/zt/zhuanti7-8f14e45fceea167a5a36dedd4bea2543.htm",
+                    "file": "./zt/zhuanti7-8f14e45fceea167a5a36dedd4bea2543.htm"
+                }
+            ]
+        },
+        {
+            "branch": "slashes_mode4",
+            "view": {
+                "index": "2",
+                "map": "2",
+                "search": "0",
+                "rss": "2",
+                "label": "2",
+                "vod_type": "2",
+                "vod_show": "0",
+                "art_type": "2",
+                "art_show": "0",
+                "topic_index": "2",
+                "topic_detail": "2",
+                "vod_detail": "2",
+                "vod_play": "4",
+                "vod_down": "4",
+                "art_detail": "2"
+            },
+            "path": {
+                "topic_index": "topic/",
+                "topic_detail": "/zhuanti/{id}/",
+                "vod_type": "list/{id}/{page}",
+                "vod_detail": "/vod/{id}/",
+                "vod_play": "play/{id}/",
+                "vod_down": "down/{id}/index",
+                "art_type": "artlist/{type_en}/index",
+                "art_detail": "art/{type_id}/{id}/",
+                "page_sp": "_",
+                "suffix": "shtml"
+            },
+            "cases": [
+                {
+                    "id": "index",
+                    "url": "index.html",
+                    "file": "./index.html"
+                },
+                {
+                    "id": "index.wap",
+                    "url": "wap_index.html",
+                    "file": "./wap_index.html"
+                },
+                {
+                    "id": "map",
+                    "url": "map.html",
+                    "file": "./map.html"
+                },
+                {
+                    "id": "rss.baidu",
+                    "url": "rss/baidu.xml",
+                    "file": "./rss/baidu.xml"
+                },
+                {
+                    "id": "rss.index.p2",
+                    "url": "rss/index_2.xml",
+                    "file": "./rss/index_2.xml"
+                },
+                {
+                    "id": "label.dotted",
+                    "url": "label/about.html",
+                    "file": "./label/about.html"
+                },
+                {
+                    "id": "label.bare",
+                    "url": "label/about",
+                    "file": "./label/about.shtml"
+                },
+                {
+                    "id": "vod.type.top",
+                    "url": "/list/1/.shtml",
+                    "file": "./list/1/.shtml"
+                },
+                {
+                    "id": "vod.type.top.p2",
+                    "url": "/list/1/2_2.shtml",
+                    "file": "./list/1/2_2.shtml"
+                },
+                {
+                    "id": "vod.type.sub.p3",
+                    "url": "/list/6/3_3.shtml",
+                    "file": "./list/6/3_3.shtml"
+                },
+                {
+                    "id": "art.type",
+                    "url": "/artlist/",
+                    "file": "./artlist/index.shtml"
+                },
+                {
+                    "id": "art.type.p2",
+                    "url": "/artlist/index_2.shtml",
+                    "file": "./artlist/index_2.shtml"
+                },
+                {
+                    "id": "vod.detail.sub",
+                    "url": "/vod/123/",
+                    "file": "./vod/123/index.shtml"
+                },
+                {
+                    "id": "vod.detail.top",
+                    "url": "/vod/9/",
+                    "file": "./vod/9/index.shtml"
+                },
+                {
+                    "id": "vod.play.1-1",
+                    "url": "/play/123/index_1_1.shtml?123-1-1",
+                    "file": "./play/123/index_1_1.shtml"
+                },
+                {
+                    "id": "vod.play.2-3",
+                    "url": "/play/123/index_2_1.shtml?123-2-3",
+                    "file": "./play/123/index_2_1.shtml"
+                },
+                {
+                    "id": "vod.play.top.1-12",
+                    "url": "/play/9/index_1_1.shtml?9-1-12",
+                    "file": "./play/9/index_1_1.shtml"
+                },
+                {
+                    "id": "vod.down.1-1",
+                    "url": "/down/123/index_1_1.shtml?123-1-1",
+                    "file": "./down/123/index_1_1.shtml"
+                },
+                {
+                    "id": "vod.down.3-2",
+                    "url": "/down/9/index_3_1.shtml?9-3-2",
+                    "file": "./down/9/index_3_1.shtml"
+                },
+                {
+                    "id": "art.detail.p1",
+                    "url": "/art/21/55/",
+                    "file": "./art/21/55/index.shtml"
+                },
+                {
+                    "id": "art.detail.p2",
+                    "url": "/art/21/55/index_2.shtml",
+                    "file": "./art/21/55/index_2.shtml"
+                },
+                {
+                    "id": "topic.index.p1",
+                    "url": "/topic/",
+                    "file": "./topic/index.shtml"
+                },
+                {
+                    "id": "topic.index.p2",
+                    "url": "/topic/index_2.shtml",
+                    "file": "./topic/index_2.shtml"
+                },
+                {
+                    "id": "topic.detail",
+                    "url": "/zhuanti/7/",
+                    "file": "./zhuanti/7/index.shtml"
+                }
+            ]
+        }
+    ],
+    "schedules": [
+        {
+            "id": "never.run",
+            "task": {
+                "status": "1",
+                "weeks": "1",
+                "hours": "10",
+                "runtime": ""
+            },
+            "now": 1792978200,
+            "enforce": "",
+            "due": true,
+            "last": "从未"
+        },
+        {
+            "id": "never.run.zero",
+            "task": {
+                "status": "1",
+                "weeks": "1",
+                "hours": "10",
+                "runtime": 0
+            },
+            "now": 1792978200,
+            "enforce": "",
+            "due": true,
+            "last": "从未"
+        },
+        {
+            "id": "closed",
+            "task": {
+                "status": "0",
+                "weeks": "1",
+                "hours": "00,01,02,03,04,05,06,07,08,09,10,11,12,13,14,15,16,17,18,19,20,21,22,23",
+                "runtime": ""
+            },
+            "now": 1792978200,
+            "enforce": "",
+            "due": false,
+            "last": "从未"
+        },
+        {
+            "id": "closed.enforce",
+            "task": {
+                "status": "0",
+                "weeks": "1",
+                "hours": "00,01,02,03,04,05,06,07,08,09,10,11,12,13,14,15,16,17,18,19,20,21,22,23",
+                "runtime": 1
+            },
+            "now": 1792978200,
+            "enforce": "1",
+            "due": false,
+            "last": "1970-01-01 08:00:01"
+        },
+        {
+            "id": "same.hour",
+            "task": {
+                "status": "1",
+                "weeks": "1",
+                "hours": "00,01,02,03,04,05,06,07,08,09,10,11,12,13,14,15,16,17,18,19,20,21,22,23",
+                "runtime": 1792977600
+            },
+            "now": 1792978200,
+            "enforce": "",
+            "due": false,
+            "last": "2026-10-26 09:20:00"
+        },
+        {
+            "id": "same.hour.enforce",
+            "task": {
+                "status": "1",
+                "weeks": "1",
+                "hours": "00,01,02,03,04,05,06,07,08,09,10,11,12,13,14,15,16,17,18,19,20,21,22,23",
+                "runtime": 1792977600
+            },
+            "now": 1792978200,
+            "enforce": "1",
+            "due": true,
+            "last": "2026-10-26 09:20:00"
+        },
+        {
+            "id": "prev.hour",
+            "task": {
+                "status": "1",
+                "weeks": "1",
+                "hours": "00,01,02,03,04,05,06,07,08,09,10,11,12,13,14,15,16,17,18,19,20,21,22,23",
+                "runtime": 1792974600
+            },
+            "now": 1792978200,
+            "enforce": "",
+            "due": true,
+            "last": "2026-10-26 08:30:00"
+        },
+        {
+            "id": "same.hour.last.week",
+            "task": {
+                "status": "1",
+                "weeks": "1",
+                "hours": "00,01,02,03,04,05,06,07,08,09,10,11,12,13,14,15,16,17,18,19,20,21,22,23",
+                "runtime": 1792373400
+            },
+            "now": 1792978200,
+            "enforce": "",
+            "due": false,
+            "last": "2026-10-19 09:30:00"
+        },
+        {
+            "id": "week.not.listed",
+            "task": {
+                "status": "1",
+                "weeks": "2,3",
+                "hours": "00,01,02,03,04,05,06,07,08,09,10,11,12,13,14,15,16,17,18,19,20,21,22,23",
+                "runtime": 1792891800
+            },
+            "now": 1792978200,
+            "enforce": "",
+            "due": false,
+            "last": "2026-10-25 09:30:00"
+        },
+        {
+            "id": "hour.not.listed",
+            "task": {
+                "status": "1",
+                "weeks": "1",
+                "hours": "08,10",
+                "runtime": 1792891800
+            },
+            "now": 1792978200,
+            "enforce": "",
+            "due": false,
+            "last": "2026-10-25 09:30:00"
+        },
+        {
+            "id": "hour.substring",
+            "task": {
+                "status": "1",
+                "weeks": "1",
+                "hours": "109",
+                "runtime": 1792891800
+            },
+            "now": 1792978200,
+            "enforce": "",
+            "due": true,
+            "last": "2026-10-25 09:30:00"
+        },
+        {
+            "id": "week.substring",
+            "task": {
+                "status": "1",
+                "weeks": "10",
+                "hours": "09",
+                "runtime": 1792891800
+            },
+            "now": 1792978200,
+            "enforce": "",
+            "due": true,
+            "last": "2026-10-25 09:30:00"
+        },
+        {
+            "id": "sunday",
+            "task": {
+                "status": "1",
+                "weeks": "0",
+                "hours": "23",
+                "runtime": 1792893600
+            },
+            "now": 1792943999,
+            "enforce": "",
+            "due": true,
+            "last": "2026-10-25 10:00:00"
+        },
+        {
+            "id": "midnight",
+            "task": {
+                "status": "1",
+                "weeks": "1,2,3,4,5,6,0",
+                "hours": "00",
+                "runtime": 1792893600
+            },
+            "now": 1792944000,
+            "enforce": "",
+            "due": true,
+            "last": "2026-10-25 10:00:00"
+        },
+        {
+            "id": "empty.weeks",
+            "task": {
+                "status": "1",
+                "weeks": "",
+                "hours": "00,01,02,03,04,05,06,07,08,09,10,11,12,13,14,15,16,17,18,19,20,21,22,23",
+                "runtime": 1792891800
+            },
+            "now": 1792978200,
+            "enforce": "",
+            "due": false,
+            "last": "2026-10-25 09:30:00"
+        },
+        {
+            "id": "status.int",
+            "task": {
+                "status": 1,
+                "weeks": "1",
+                "hours": "09",
+                "runtime": 1792891800
+            },
+            "now": 1792978200,
+            "enforce": "",
+            "due": true,
+            "last": "2026-10-25 09:30:00"
+        },
+        {
+            "id": "status.spaced",
+            "task": {
+                "status": " 1",
+                "weeks": "1",
+                "hours": "09",
+                "runtime": 1792891800
+            },
+            "now": 1792978200,
+            "enforce": "",
+            "due": true,
+            "last": "2026-10-25 09:30:00"
+        },
+        {
+            "id": "runtime.string",
+            "task": {
+                "status": "1",
+                "weeks": "1",
+                "hours": "09",
+                "runtime": "1792977600"
+            },
+            "now": 1792978200,
+            "enforce": "",
+            "due": false,
+            "last": "2026-10-26 09:20:00"
+        },
+        {
+            "id": "runtime.zero.string",
+            "task": {
+                "status": "1",
+                "weeks": "1",
+                "hours": "09",
+                "runtime": "0"
+            },
+            "now": 1792978200,
+            "enforce": "",
+            "due": true,
+            "last": "从未"
+        },
+        {
+            "id": "enforce.other",
+            "task": {
+                "status": "1",
+                "weeks": "1",
+                "hours": "09",
+                "runtime": 1792977600
+            },
+            "now": 1792978200,
+            "enforce": "2",
+            "due": false,
+            "last": "2026-10-26 09:20:00"
+        }
+    ],
+    "runtime": {
+        "writes": [
+            {
+                "set": "bb",
+                "runtime": 1792978200,
+                "content": "<?php\nreturn array (\n  'aa' => \n  array (\n    'id' => 'aa',\n    'status' => '0',\n    'name' => 'aa',\n    'des' => '采集今日数据',\n    'file' => 'collect',\n    'param' => 'ac=cjday&xt=1&ct=&rday=24&cjflag=tv6_com&cjurl=http://cj2.tv6.com/mox/inc/youku.php',\n    'weeks' => '1,2,3,4,5,6,0',\n    'hours' => '00,01,02,03,04,05,06,07,08,09,10,11,12,13,14,15,16,17,18,19,20,21,22,23',\n    'runtime' => 1676894178,\n  ),\n  'bb' => \n  array (\n    'status' => '0',\n    'name' => 'bb',\n    'des' => '生成首页',\n    'file' => 'make',\n    'param' => 'ac=index',\n    'weeks' => '1,2,3,4,5,6,0',\n    'hours' => '00,01,02,03,04,05,06,07,08,09,10,11,12,13,14,15,16,17,18,19,20,21,22,23',\n    'id' => 'bb',\n    'runtime' => 1792978200,\n  ),\n);"
+            },
+            {
+                "set": "aa",
+                "runtime": 1792981800,
+                "content": "<?php\nreturn array (\n  'aa' => \n  array (\n    'id' => 'aa',\n    'status' => '0',\n    'name' => 'aa',\n    'des' => '采集今日数据',\n    'file' => 'collect',\n    'param' => 'ac=cjday&xt=1&ct=&rday=24&cjflag=tv6_com&cjurl=http://cj2.tv6.com/mox/inc/youku.php',\n    'weeks' => '1,2,3,4,5,6,0',\n    'hours' => '00,01,02,03,04,05,06,07,08,09,10,11,12,13,14,15,16,17,18,19,20,21,22,23',\n    'runtime' => 1792981800,\n  ),\n  'bb' => \n  array (\n    'status' => '0',\n    'name' => 'bb',\n    'des' => '生成首页',\n    'file' => 'make',\n    'param' => 'ac=index',\n    'weeks' => '1,2,3,4,5,6,0',\n    'hours' => '00,01,02,03,04,05,06,07,08,09,10,11,12,13,14,15,16,17,18,19,20,21,22,23',\n    'id' => 'bb',\n    'runtime' => 1792978200,\n  ),\n);"
+            }
+        ]
+    }
+}

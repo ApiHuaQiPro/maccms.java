@@ -314,6 +314,19 @@ public final class LegacyUrlBuilder {
         return macUrl(model, new LinkedHashMap<>(sorted));
     }
 
+    private static final Pattern LABEL_NAME = Pattern.compile("[A-Za-z0-9_-]{1,64}");
+
+    /**
+     * 自定义页（B16 静态生成取页面用），等价 {@code mac_url('label/<名称>')}（动态分支，common.php:1797-1803）。名称只能是字母、数字、
+     * {@code _}、{@code -}。
+     */
+    public String label(String name) {
+        if (name == null || !LABEL_NAME.matcher(name).matches()) {
+            throw new IllegalArgumentException("自定义页名称不合法");
+        }
+        return macUrl("label/" + name, new LinkedHashMap<>());
+    }
+
     /** 旧 {@code mac_url_*($info)} 在 {@code $info} 为空时的地址（B10：会员记录里已删除的内容，只有模块/操作、没有编号）。 */
     public String bare(String model) {
         if (!List.of("vod/detail", "vod/type", "art/detail", "topic/detail", "actor/detail").contains(model)) {
