@@ -112,6 +112,19 @@ maccms:
   # entry 是后台入口文件的路径（旧版改名后的 _admin.php，形如 /_admin.php；不能是 /admin.php、/index.php、/api.php、/install.php）；
   # base-url 是对外地址（同 maccms.site.base-url 的写法），决定页面里的路径前缀、会话 cookie 的 Path/Secure 与表单提交的来源校验。
   # 登录验证码、每页条数、语言（zh-cn/zh-tw）取旧配置 extra/maccms.php（启动时读一次），没有旧配置目录时用仓库值。
+  # 采集本地文件源（B18，docs/architecture/26-b18-collect-preview.md 第 4 节）：不连接资源站（E01 只做本地版本），Provide 文件由后台上传，
+  # 或放进 source-dir（留空表示只能上传）。解析结果只存进本机的预览缓存 cache-dir（留空时为系统临时目录下的 maccms-collect-preview），
+  # cache-ttl 后失效；不写库。max-file-bytes 为每个文件的上限（默认 10240000），max-entries 为缓存最多保留的项数。
+  collect:
+    local:
+      source-dir: ${MACCMS_COLLECT_SOURCE_DIR:}
+      cache-dir: ${MACCMS_COLLECT_CACHE_DIR:}
+      cache-ttl: ${MACCMS_COLLECT_CACHE_TTL:PT24H}
+      max-file-bytes: ${MACCMS_COLLECT_MAX_FILE_BYTES:10240000}
+      max-entries: ${MACCMS_COLLECT_CACHE_MAX_ENTRIES:200}
+      # 自定义规则采集（B20，docs/architecture/28-b20-cj-local-html.md 第 4 节）：规则里的网址不去请求，而是读这个目录里按网址镜像存放的
+      # HTML（http://主机/路径?查询 → html-dir/主机/路径@查询，与 wget --mirror 的布局相同）；留空表示未配置，采集时提示。
+      html-dir: ${MACCMS_COLLECT_HTML_DIR:}
   admin:
     enabled: ${MACCMS_ADMIN_ENABLED:false}
     entry: ${MACCMS_ADMIN_ENTRY:}

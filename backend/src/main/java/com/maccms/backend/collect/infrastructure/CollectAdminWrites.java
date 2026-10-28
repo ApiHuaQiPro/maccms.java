@@ -63,7 +63,7 @@ public final class CollectAdminWrites {
         return ids.isEmpty() ? 0 : run(() -> mapper.deleteCjContentsOfNodes(ids));
     }
 
-    private static <T> T run(Supplier<T> write) {
+    static <T> T run(Supplier<T> write) {
         try {
             return write.get();
         } catch (RuntimeException e) {

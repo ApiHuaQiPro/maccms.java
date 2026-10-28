@@ -64,7 +64,17 @@
 - 分类绑定的键与取值只用 `collect.application.CollectBindings`（`md5(采集地址) . '_' . 远程分类编号`，`intval` 大于 0 为已绑定），B18/B19 沿用；`application/extra/bind.php` 只经 `CollectBindService` → `LegacyConfigService.update` 写回。
 - 采集相关批次不发起任何出站请求（"测试连接"类入口返回固定提示，E01 只做本地文件源）。
 
-### 2.6 B16 静态生成与定时任务
+### 2.6 B18 本地文件源解析与预览
+
+- Provide 文件（JSON/XML）只经 `collect.application.ProvideParser` 解析（`26-b18-collect-preview.md` 第 3 节）：`parse` 得到与绑定无关、可缓存的 `ProvideDocument`，`bind` 按当时的 `bind.php` 换算出与旧方法返回值同构的数组，`precheck` 给出旧 `{type}_data` 的跳过原因；B19 入库沿用这三步，不另写解析。PHP 语义（`json_decode`、SimpleXML 子集、字符串转换、`empty`）只在 `ProvideJson`、`ProvideXml`、`ProvideValues`，由 PHP 黄金（`ProvideParserGoldenTest`）锁定。
+- XML 一律拒绝 DOCTYPE；新增 XML 入口（B19 的 Receive 等）也只经 `ProvideXml`，不要另建解析器或打开 DTD 支持。
+- 预览缓存只经 `collect.infrastructure.FileProvidePreviewStore`，本地文件只经 `DirectoryProvideSourceFiles`（只认目录下直接存放的普通文件）；B18 的类不引用数据访问与网络类型（`CollectPreviewGuardTest`）。
+### 2.7 B20 自定义规则采集
+
+- 规则（`mac_cj_node` 的各项规则）只经 `collect.application.CjRules` 执行（`28-b20-cj-local-html.md` 第 3 节）：文字按字节（ISO-8859-1 字符串）处理，过滤规则的 PCRE 只经 `CjPcre` 转写与替换（带匹配时限），不要另写正则执行；PHP 语义由黄金（`CjRulesGoldenTest`）锁定。
+- 页面只经 `collect.infrastructure.LocalHtmlFiles` 按网址的镜像布局读取本地 HTML 目录（只读、不跟随符号链接），不发起请求。
+- 内容的状态（未采集 → 已采集 → 已发布）只用带前置条件的 UPDATE 推进，采集历史用条件插入；导入只经 B19 的 `CollectIngestService`。
+### 2.8 B16 静态生成与定时任务
 
 - `staticgen` 模块（`25-b16-static-timming.md` 第 2 节）：`application`（`StaticPaths`、`MakeService`、`StaticFiles`、`TimmingSchedule`、`TimmingService`、`TimmingTasks`）→ `web`（`TimmingController`、`TimmingAccess`）、`config`。静态页的内容只经 `site.application.StaticPageSource` 取得（前台对动态地址的进程内游客 GET，实现 `site.web.InternalPageRenderer`），不另写页面模板；静态页文件只经 `LegacySiteFiles.replaceStaticPage`（扩展名与目录白名单）写入并登记，回滚按登记删除。
 - 定时任务入口的放行只看部署级参数（`MACCMS_TIMMING_ENABLED`、`MACCMS_TIMMING_TOKEN`，第 4 节的密钥规则同样适用）与 `ClientIpResolver` 的结果；不得新增按请求参数放行的分支。

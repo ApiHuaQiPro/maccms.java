@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- B19 采集入库的查重（27 文档第 4 节）：旧 Collect::vod_data 的 $where 与 $GLOBALS['blend']，不排序取第一行（同旧 find()）。
+     只取更新规则与合并要比较的列，一律按文字取回。LIKE 模式原样绑定（旧版不转义 % 与 _）。 -->
+<mapper namespace="com.maccms.backend.collect.infrastructure.CollectIngestMapper">
+
+    <resultMap id="vodRow" type="map">
+        <result column="vod_id" property="vod_id" javaType="string"/>
+        <result column="type_id" property="type_id" javaType="string"/>
+        <result column="vod_name" property="vod_name" javaType="string"/>
+        <result column="vod_lock" property="vod_lock" javaType="string"/>
+        <result column="vod_play_from" property="vod_play_from" javaType="string"/>
+        <result column="vod_play_url" property="vod_play_url" javaType="string"/>
+        <result column="vod_play_server" property="vod_play_server" javaType="string"/>
+        <result column="vod_play_note" property="vod_play_note" javaType="string"/>
+        <result column="vod_down_from" property="vod_down_from" javaType="string"/>
+        <result column="vod_down_url" property="vod_down_url" javaType="string"/>
+        <result column="vod_down_server" property="vod_down_server" javaType="string"/>
+        <result column="vod_down_note" property="vod_down_note" javaType="string"/>
+        <result column="vod_serial" property="vod_serial" javaType="string"/>
+        <result column="vod_remarks" property="vod_remarks" javaType="string"/>
+        <result column="vod_director" property="vod_director" javaType="string"/>
+        <result column="vod_actor" property="vod_actor" javaType="string"/>
+        <result column="vod_year" property="vod_year" javaType="string"/>
+        <result column="vod_area" property="vod_area" javaType="string"/>
+        <result column="vod_lang" property="vod_lang" javaType="string"/>
+        <result column="vod_pic" property="vod_pic" javaType="string"/>
+        <result column="vod_content" property="vod_content" javaType="string"/>
+        <result column="vod_tag" property="vod_tag" javaType="string"/>
+        <result column="vod_sub" property="vod_sub" javaType="string"/>
+        <result column="vod_class" property="vod_class" javaType="string"/>
+        <result column="vod_writer" property="vod_writer" javaType="string"/>
+        <result column="vod_version" property="vod_version" javaType="string"/>
+        <result column="vod_state" property="vod_state" javaType="string"/>
+        <result column="vod_blurb" property="vod_blurb" javaType="string"/>
+        <result column="vod_tv" property="vod_tv" javaType="string"/>
+        <result column="vod_weekday" property="vod_weekday" javaType="string"/>
+        <result column="vod_total" property="vod_total" javaType="string"/>
+        <result column="vod_isend" property="vod_isend" javaType="string"/>
+        <result column="vod_plot_name" property="vod_plot_name" javaType="string"/>
+    </resultMap>
+
+    <select id="findVod" resultMap="vodRow">
+        SELECT vod_id, type_id, vod_name, vod_lock, vod_play_from, vod_play_url, vod_play_server, vod_play_note, vod_down_from, vod_down_url, vod_down_server, vod_down_note, vod_serial, vod_remarks, vod_director, vod_actor, vod_year, vod_area, vod_lang, vod_pic, vod_content, vod_tag, vod_sub, vod_class, vod_writer, vod_version, vod_state, vod_blurb, vod_tv, vod_weekday, vod_total, vod_isend, vod_plot_name
+        FROM mac_vod
+        WHERE vod_name = #{name}
+        <if test="typeId != null">AND type_id = #{typeId}</if>
+        <if test="year != null">AND vod_year = #{year}</if>
+        <if test="area != null">AND vod_area = #{area}</if>
+        <if test="lang != null">AND vod_lang = #{lang}</if>
+        <choose>
+            <when test="blend">
+                AND (vod_director = #{director} OR
+                <choose>
+                    <when test="blendIds != null and !blendIds.isEmpty()">
+                        vod_id IN <foreach collection="blendIds" item="x" open="(" separator="," close=")">#{x}</foreach>
+                    </when>
+                    <otherwise>
+                        <foreach collection="actorLikes" item="x" open="(" separator=" OR " close=")">vod_actor LIKE #{x}</foreach>
+                    </otherwise>
+                </choose>)
+            </when>
+            <otherwise>
+                <if test="actorLikes != null">
+                    AND <foreach collection="actorLikes" item="x" open="(" separator=" OR " close=")">vod_actor LIKE #{x}</foreach>
+                </if>
+                <if test="director != null">AND vod_director = #{director}</if>
+            </otherwise>
+        </choose>
+        LIMIT 1
+    </select>
+
+    <!-- 增量 2：文章、演员、角色、网址、评论的查重（旧 Collect::{种类}_data 的 $where，不排序取第一行）与角色、评论的关联查找 -->
+    <resultMap id="artRow" type="map">
+        <result column="art_id" property="art_id" javaType="string"/>
+        <result column="art_lock" property="art_lock" javaType="string"/>
+        <result column="art_content" property="art_content" javaType="string"/>
+        <result column="art_author" property="art_author" javaType="string"/>
+        <result column="art_from" property="art_from" javaType="string"/>
+        <result column="art_pic" property="art_pic" javaType="string"/>
+        <result column="art_tag" property="art_tag" javaType="string"/>
+        <result column="art_blurb" property="art_blurb" javaType="string"/>
+    </resultMap>
+    <resultMap id="actorRow" type="map">
+        <result column="actor_id" property="actor_id" javaType="string"/>
+        <result column="actor_lock" property="actor_lock" javaType="string"/>
+        <result column="actor_content" property="actor_content" javaType="string"/>
+        <result column="actor_blurb" property="actor_blurb" javaType="string"/>
+        <result column="actor_remarks" property="actor_remarks" javaType="string"/>
+        <result column="actor_works" property="actor_works" javaType="string"/>
+        <result column="actor_pic" property="actor_pic" javaType="string"/>
+    </resultMap>
+    <resultMap id="roleRow" type="map">
+        <result column="role_id" property="role_id" javaType="string"/>
+        <result column="role_lock" property="role_lock" javaType="string"/>
+        <result column="role_content" property="role_content" javaType="string"/>
+        <result column="role_remarks" property="role_remarks" javaType="string"/>
+        <result column="role_pic" property="role_pic" javaType="string"/>
+    </resultMap>
+    <resultMap id="websiteRow" type="map">
+        <result column="website_id" property="website_id" javaType="string"/>
+        <result column="website_lock" property="website_lock" javaType="string"/>
+        <result column="website_content" property="website_content" javaType="string"/>
+        <result column="website_blurb" property="website_blurb" javaType="string"/>
+        <result column="website_remarks" property="website_remarks" javaType="string"/>
+        <result column="website_jumpurl" property="website_jumpurl" javaType="string"/>
+        <result column="website_pic" property="website_pic" javaType="string"/>
+    </resultMap>
+    <resultMap id="commentRow" type="map">
+        <result column="comment_id" property="comment_id" javaType="string"/>
+        <result column="comment_time" property="comment_time" javaType="string"/>
+    </resultMap>
+
+    <select id="findArt" resultMap="artRow">
+        SELECT art_id, art_lock, art_content, art_author, art_from, art_pic, art_tag, art_blurb FROM mac_art WHERE art_name = #{name}
+        <if test="typeId != null">AND type_id = #{typeId}</if>
+        LIMIT 1
+    </select>
+
+    <select id="findActor" resultMap="actorRow">
+        SELECT actor_id, actor_lock, actor_content, actor_blurb, actor_remarks, actor_works, actor_pic FROM mac_actor WHERE actor_name = #{name}
+        <if test="sex != null">AND actor_sex = #{sex}</if>
+        <if test="typeId != null">AND type_id = #{typeId}</if>
+        LIMIT 1
+    </select>
+
+    <select id="findWebsite" resultMap="websiteRow">
+        SELECT website_id, website_lock, website_content, website_blurb, website_remarks, website_jumpurl, website_pic FROM mac_website WHERE website_name = #{name}
+        <if test="typeId != null">AND type_id = #{typeId}</if>
+        LIMIT 1
+    </select>
+
+    <select id="findRole" resultMap="roleRow">
+        SELECT role_id, role_lock, role_content, role_remarks, role_pic FROM mac_role WHERE role_name = #{name} AND role_actor = #{actor} AND role_rid = #{rid}
+        LIMIT 1
+    </select>
+
+    <!-- 评论查重：内容、昵称至少一项参与（都不参与时旧版不查，直接新增） -->
+    <select id="findComment" resultMap="commentRow">
+        SELECT comment_id, comment_time FROM mac_comment WHERE comment_rid = #{rid}
+        <if test="content != null">AND comment_content = #{content}</if>
+        <if test="name != null">AND comment_name = #{name}</if>
+        LIMIT 1
+    </select>
+
+    <!-- 角色的关联视频：豆瓣编号或视频名称相等；主演、导演 LIKE 任一（不转义通配符）；两者都参与时 (导演条件 OR 主演条件) -->
+    <select id="findRoleVod" resultType="string">
+        SELECT vod_id FROM mac_vod WHERE
+        <choose>
+            <when test="doubanId != null">vod_douban_id = #{doubanId}</when>
+            <otherwise>vod_name = #{vodName}</otherwise>
+        </choose>
+        <choose>
+            <when test="actorLikes != null and directorLikes != null">
+                AND (<foreach collection="directorLikes" item="x" open="(" separator=" OR " close=")">vod_director LIKE #{x}</foreach>
+                OR <foreach collection="actorLikes" item="x" open="(" separator=" OR " close=")">vod_actor LIKE #{x}</foreach>)
+            </when>
+            <otherwise>
+                <if test="actorLikes != null">
+                    AND <foreach collection="actorLikes" item="x" open="(" separator=" OR " close=")">vod_actor LIKE #{x}</foreach>
+                </if>
+                <if test="directorLikes != null">
+                    AND <foreach collection="directorLikes" item="x" open="(" separator=" OR " close=")">vod_director LIKE #{x}</foreach>
+                </if>
+            </otherwise>
+        </choose>
+        LIMIT 1
+    </select>
+
+    <!-- 评论的关联数据（旧 comment_data 按 comment_mid 查对应的表，取主键）：1 视频（豆瓣编号或名称）、2 文章、3 专题、8 演员、9 角色、11 网址 -->
+    <select id="findRelId" resultType="string">
+        <choose>
+            <when test="mid == 1 and doubanId != null">SELECT vod_id FROM mac_vod WHERE vod_douban_id = #{doubanId}</when>
+            <when test="mid == 1">SELECT vod_id FROM mac_vod WHERE vod_name = #{name}</when>
+            <when test="mid == 2">SELECT art_id FROM mac_art WHERE art_name = #{name}</when>
+            <when test="mid == 3">SELECT topic_id FROM mac_topic WHERE topic_name = #{name}</when>
+            <when test="mid == 8">SELECT actor_id FROM mac_actor WHERE actor_name = #{name}</when>
+            <when test="mid == 9">SELECT role_id FROM mac_role WHERE role_name = #{name}</when>
+            <otherwise>SELECT website_id FROM mac_website WHERE website_name = #{name}</otherwise>
+        </choose>
+        LIMIT 1
+    </select>
+</mapper>

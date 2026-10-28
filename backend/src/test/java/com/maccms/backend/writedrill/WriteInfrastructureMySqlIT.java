@@ -147,7 +147,7 @@ class WriteInfrastructureMySqlIT {
      * ② 打开可写数据源：Bean 存在，使用正式登记表（B07/B08 为空；B09 起 member 对 mac_user 的插入与更新，B10 另加 member 对
      * mac_ulog、mac_plog、mac_card、mac_cash、mac_order、mac_visit 的写入，19 文档第 6.1 节；B11 另加 content 对六张内容表计数列与
      * mac_vod_search、comment 对 mac_comment 与 mac_gbook 的写入，20 文档第 10.1 节；B12 另加 admin 对 mac_admin 的写入与 content 对
-     * mac_vod_search 的删除，21 文档第 5 节；B13、B14 另加后台内容管理与会员财务管理的写入，22、23 文档第 6 节；B17 另加采集配置的写入，25 文档第 6 节），演练写入（drill 模块、
+     * mac_vod_search 的删除，21 文档第 5 节；B13、B14 另加后台内容管理与会员财务管理的写入，22、23 文档第 6 节；B17 另加采集配置的写入，25 文档第 6 节；B19、B20 另加采集入库与规则采集的写入，27、28 文档），演练写入（drill 模块、
      * mac_vod）在执行前被拒——
      * B11 登记的是 content 模块对 mac_vod 的更新，drill 模块仍未登记；只读池不受影响。
      */
@@ -169,7 +169,15 @@ class WriteInfrastructureMySqlIT {
                             && p.table().startsWith("mac_")
                             // B17 采集配置：采集源与自定义规则节点的增删改，删除节点时连带的内容与采集历史（25 文档第 6 节）
                             || p.batch().equals("B17") && p.module().equals("collect")
-                            && java.util.Set.of("mac_collect", "mac_cj_node", "mac_cj_content", "mac_cj_history").contains(p.table()));
+                            && java.util.Set.of("mac_collect", "mac_cj_node", "mac_cj_content", "mac_cj_history").contains(p.table())
+                            // B19 采集入库与 Receive：新增、更新视频、文章、演员、角色、网址、评论（27 文档第 4 节）
+                            || p.batch().equals("B19") && p.module().equals("collect")
+                            && java.util.Set.of("mac_vod", "mac_art", "mac_actor", "mac_role", "mac_website", "mac_comment")
+                            .contains(p.table()) && !p.operation().name().equals("DELETE")
+                            // B20 规则采集：采集历史新增、内容的新增与更新（28 文档第 5 节）
+                            || p.batch().equals("B20") && p.module().equals("collect")
+                            && (p.table().equals("mac_cj_history") && p.operation().name().equals("INSERT")
+                            || p.table().equals("mac_cj_content") && !p.operation().name().equals("DELETE")));
             assertThatThrownBy(() -> db.mapper(DrillWriteMapper.class).hit(1)).isInstanceOf(WriteRejectedException.class)
                     .hasMessageContaining("未登记的写入").hasMessageContaining("mac_vod");
             assertReadPoolRejectsWrites(app);

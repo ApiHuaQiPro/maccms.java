@@ -276,14 +276,14 @@ public final class AdminPermissions {
 
     /**
      * 按动作覆盖 {@link #CONTROLLER_BATCH}：{@code index/select} 是内容批量操作的弹窗（B13）；{@code index/check_back_link} 是外部回链检测
-     * E11（B28）；发信测试 E07（B25）；资源站采集解析 B18、入库 B19；自定义规则的采集与发布 B20；推送执行 E09（B28）；插件市场 E13（B29）。
+     * E11（B28）；发信测试 E07（B25）；资源站采集解析 B18、入库与断点续采 B19（collect/load 的断点只在入库时记下）；自定义规则的采集与发布 B20；推送执行 E09（B28）；插件市场 E13（B29）。
      * B15 起 {@code timming/*}（定时任务配置页，执行与 runtime 回写仍在 B16）与 {@code addon/downloaded}（本地插件列表，这份生产代码已去掉
      * 市场列表，路线图第 5.7 节）归 B15。
      */
     private static final Map<String, String> ACTION_BATCH = Map.ofEntries(
             Map.entry("index/select", "B13"), Map.entry("index/check_back_link", "B28"),
             Map.entry("system/test_email", "B25"),
-            Map.entry("collect/api", "B18"), Map.entry("collect/load", "B18"), Map.entry("collect/vod", "B19"),
+            Map.entry("collect/api", "B18"), Map.entry("collect/load", "B19"), Map.entry("collect/vod", "B19"),
             Map.entry("collect/art", "B19"), Map.entry("collect/actor", "B19"), Map.entry("collect/role", "B19"),
             Map.entry("collect/website", "B19"), Map.entry("collect/timing", "B19"),
             Map.entry("cj/program", "B20"), Map.entry("cj/col_url", "B20"), Map.entry("cj/col_content", "B20"),
@@ -291,6 +291,13 @@ public final class AdminPermissions {
             Map.entry("cj/content_del", "B20"), Map.entry("cj/content_into", "B20"), Map.entry("cj/show_url", "B20"),
             Map.entry("urlsend/push", "B28"), Map.entry("urlsend/data", "B28"),
             Map.entry("addon/install", "B29"), Map.entry("addon/upgrade", "B29"));
+
+    /**
+     * 新系统不提供的动作（用户决定删除的入口）：权限码与菜单数据照旧保留（与 auth.php 逐项相同），请求时固定返回"该功能未在新系统中提供"，
+     * 不再是批次提示。{@code collect/timing}（浏览器端定时挂机页，按间隔调用在线采集）：2026-10-28 用户决定删除，与本地文件源方针 D1/E01
+     * 冲突（27 文档 D-B19-15）。
+     */
+    static final Set<String> NOT_PROVIDED = Set.of("collect/timing");
 
     /**
      * 旧控制器中存在、但 auth.php 没有列出的公开动作（小写；Base 的 {@code check_auth}/{@code _cache_clear} 不算动作）。
@@ -375,6 +382,11 @@ public final class AdminPermissions {
         }
         String byAction = ACTION_BATCH.get(controller + "/" + action);
         return byAction != null ? byAction : CONTROLLER_BATCH.get(controller);
+    }
+
+    /** 是否是新系统不提供的动作（{@link #NOT_PROVIDED}）。 */
+    public static boolean notProvided(String controller, String action) {
+        return NOT_PROVIDED.contains(controller + "/" + action);
     }
 
     /** 全部已知动作（控制器/动作，小写，按控制器排序），供测试与文档逐项核对实现批次。 */
