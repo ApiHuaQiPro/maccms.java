@@ -69,4 +69,115 @@
         </choose>
         LIMIT 1
     </select>
+
+    <!-- 增量 2：文章、演员、角色、网址、评论的查重（旧 Collect::{种类}_data 的 $where，不排序取第一行）与角色、评论的关联查找 -->
+    <resultMap id="artRow" type="map">
+        <result column="art_id" property="art_id" javaType="string"/>
+        <result column="art_lock" property="art_lock" javaType="string"/>
+        <result column="art_content" property="art_content" javaType="string"/>
+        <result column="art_author" property="art_author" javaType="string"/>
+        <result column="art_from" property="art_from" javaType="string"/>
+        <result column="art_pic" property="art_pic" javaType="string"/>
+        <result column="art_tag" property="art_tag" javaType="string"/>
+        <result column="art_blurb" property="art_blurb" javaType="string"/>
+    </resultMap>
+    <resultMap id="actorRow" type="map">
+        <result column="actor_id" property="actor_id" javaType="string"/>
+        <result column="actor_lock" property="actor_lock" javaType="string"/>
+        <result column="actor_content" property="actor_content" javaType="string"/>
+        <result column="actor_blurb" property="actor_blurb" javaType="string"/>
+        <result column="actor_remarks" property="actor_remarks" javaType="string"/>
+        <result column="actor_works" property="actor_works" javaType="string"/>
+        <result column="actor_pic" property="actor_pic" javaType="string"/>
+    </resultMap>
+    <resultMap id="roleRow" type="map">
+        <result column="role_id" property="role_id" javaType="string"/>
+        <result column="role_lock" property="role_lock" javaType="string"/>
+        <result column="role_content" property="role_content" javaType="string"/>
+        <result column="role_remarks" property="role_remarks" javaType="string"/>
+        <result column="role_pic" property="role_pic" javaType="string"/>
+    </resultMap>
+    <resultMap id="websiteRow" type="map">
+        <result column="website_id" property="website_id" javaType="string"/>
+        <result column="website_lock" property="website_lock" javaType="string"/>
+        <result column="website_content" property="website_content" javaType="string"/>
+        <result column="website_blurb" property="website_blurb" javaType="string"/>
+        <result column="website_remarks" property="website_remarks" javaType="string"/>
+        <result column="website_jumpurl" property="website_jumpurl" javaType="string"/>
+        <result column="website_pic" property="website_pic" javaType="string"/>
+    </resultMap>
+    <resultMap id="commentRow" type="map">
+        <result column="comment_id" property="comment_id" javaType="string"/>
+        <result column="comment_time" property="comment_time" javaType="string"/>
+    </resultMap>
+
+    <select id="findArt" resultMap="artRow">
+        SELECT art_id, art_lock, art_content, art_author, art_from, art_pic, art_tag, art_blurb FROM mac_art WHERE art_name = #{name}
+        <if test="typeId != null">AND type_id = #{typeId}</if>
+        LIMIT 1
+    </select>
+
+    <select id="findActor" resultMap="actorRow">
+        SELECT actor_id, actor_lock, actor_content, actor_blurb, actor_remarks, actor_works, actor_pic FROM mac_actor WHERE actor_name = #{name}
+        <if test="sex != null">AND actor_sex = #{sex}</if>
+        <if test="typeId != null">AND type_id = #{typeId}</if>
+        LIMIT 1
+    </select>
+
+    <select id="findWebsite" resultMap="websiteRow">
+        SELECT website_id, website_lock, website_content, website_blurb, website_remarks, website_jumpurl, website_pic FROM mac_website WHERE website_name = #{name}
+        <if test="typeId != null">AND type_id = #{typeId}</if>
+        LIMIT 1
+    </select>
+
+    <select id="findRole" resultMap="roleRow">
+        SELECT role_id, role_lock, role_content, role_remarks, role_pic FROM mac_role WHERE role_name = #{name} AND role_actor = #{actor} AND role_rid = #{rid}
+        LIMIT 1
+    </select>
+
+    <!-- 评论查重：内容、昵称至少一项参与（都不参与时旧版不查，直接新增） -->
+    <select id="findComment" resultMap="commentRow">
+        SELECT comment_id, comment_time FROM mac_comment WHERE comment_rid = #{rid}
+        <if test="content != null">AND comment_content = #{content}</if>
+        <if test="name != null">AND comment_name = #{name}</if>
+        LIMIT 1
+    </select>
+
+    <!-- 角色的关联视频：豆瓣编号或视频名称相等；主演、导演 LIKE 任一（不转义通配符）；两者都参与时 (导演条件 OR 主演条件) -->
+    <select id="findRoleVod" resultType="string">
+        SELECT vod_id FROM mac_vod WHERE
+        <choose>
+            <when test="doubanId != null">vod_douban_id = #{doubanId}</when>
+            <otherwise>vod_name = #{vodName}</otherwise>
+        </choose>
+        <choose>
+            <when test="actorLikes != null and directorLikes != null">
+                AND (<foreach collection="directorLikes" item="x" open="(" separator=" OR " close=")">vod_director LIKE #{x}</foreach>
+                OR <foreach collection="actorLikes" item="x" open="(" separator=" OR " close=")">vod_actor LIKE #{x}</foreach>)
+            </when>
+            <otherwise>
+                <if test="actorLikes != null">
+                    AND <foreach collection="actorLikes" item="x" open="(" separator=" OR " close=")">vod_actor LIKE #{x}</foreach>
+                </if>
+                <if test="directorLikes != null">
+                    AND <foreach collection="directorLikes" item="x" open="(" separator=" OR " close=")">vod_director LIKE #{x}</foreach>
+                </if>
+            </otherwise>
+        </choose>
+        LIMIT 1
+    </select>
+
+    <!-- 评论的关联数据（旧 comment_data 按 comment_mid 查对应的表，取主键）：1 视频（豆瓣编号或名称）、2 文章、3 专题、8 演员、9 角色、11 网址 -->
+    <select id="findRelId" resultType="string">
+        <choose>
+            <when test="mid == 1 and doubanId != null">SELECT vod_id FROM mac_vod WHERE vod_douban_id = #{doubanId}</when>
+            <when test="mid == 1">SELECT vod_id FROM mac_vod WHERE vod_name = #{name}</when>
+            <when test="mid == 2">SELECT art_id FROM mac_art WHERE art_name = #{name}</when>
+            <when test="mid == 3">SELECT topic_id FROM mac_topic WHERE topic_name = #{name}</when>
+            <when test="mid == 8">SELECT actor_id FROM mac_actor WHERE actor_name = #{name}</when>
+            <when test="mid == 9">SELECT role_id FROM mac_role WHERE role_name = #{name}</when>
+            <otherwise>SELECT website_id FROM mac_website WHERE website_name = #{name}</otherwise>
+        </choose>
+        LIMIT 1
+    </select>
 </mapper>

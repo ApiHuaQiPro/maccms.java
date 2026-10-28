@@ -49,8 +49,15 @@ if (!preg_match('/^maccms_it_[0-9]{14}_[0-9a-f]{8}$/', $dbName)) {
     exit(2);
 }
 
+define('GOLDEN_SET', getenv('GOLDEN_SET') === 'kinds' ? 'kinds' : 'vod');
 /** 每个场景开始前清空、请求后整表记录的表（表 => 主键）。 */
-const TABLES = ['mac_vod' => 'vod_id', 'mac_vod_search' => 'search_key'];
+define('TABLES', GOLDEN_SET === 'kinds'
+    ? ['mac_art' => 'art_id', 'mac_actor' => 'actor_id', 'mac_role' => 'role_id', 'mac_website' => 'website_id',
+        'mac_comment' => 'comment_id', 'mac_vod' => 'vod_id', 'mac_topic' => 'topic_id']
+    : ['mac_vod' => 'vod_id', 'mac_vod_search' => 'search_key']);
+if (GOLDEN_SET === 'kinds') {
+    require __DIR__ . '/receive_kinds_scenarios.php';
+}
 /** 入站密码（16 位以上）。 */
 const PASS = 'golden-pass-0123456789';
 
@@ -68,6 +75,9 @@ try {
     $pdo->exec("SET SESSION sql_mode = ''");
     $pdo->exec("INSERT INTO mac_type (type_id, type_name, type_en, type_sort, type_mid, type_pid, type_status) VALUES "
         . "(1, '电影', 'dianying', 1, 1, 0, 1), (6, '动作片', 'dongzuopian', 2, 1, 1, 1), (7, '喜剧片', 'xijupian', 3, 1, 1, 1)");
+    if (GOLDEN_SET === 'kinds') {
+        $pdo->exec(KINDS_TYPES_SQL);
+    }
     $pdo->exec("SET SESSION sql_mode = DEFAULT");
     echo generate($repo, $pdo, $phpCgi, $work, $host, $port, $dbName, $adminUser, $adminPassword);
 } catch (\Throwable $e) {
@@ -406,10 +416,16 @@ function generate($repo, $pdo, $phpCgi, $work, $host, $port, $db, $user, $passwo
             'score' => '0', 'pic' => '0', 'tag' => '0', 'class_filter' => '1', 'psename' => '0', 'psernd' => '0', 'psesyn' => '0',
             'urlrole' => '0', 'inrule' => ',f,g', 'uprule' => ',a', 'filter' => '色戒,色即是空']],
     ]);
+    if (GOLDEN_SET === 'kinds') {
+        $base = deep_merge($base, kinds_config());
+    }
     $only = getenv('GOLDEN_ONLY');
     $out = ['php' => PHP_VERSION, 'pass' => PASS, 'scenarios' => []];
+    if (GOLDEN_SET === 'kinds') {
+        $out = ['php' => PHP_VERSION, 'pass' => PASS, 'set' => 'kinds', 'tables' => array_keys(TABLES), 'scenarios' => []];
+    }
     $n = 0;
-    foreach (scenarios() as $sc) {
+    foreach (GOLDEN_SET === 'kinds' ? kinds_scenarios() : scenarios() as $sc) {
         list($label, $over, $seed, $steps) = $sc;
         $opt = isset($sc[4]) ? $sc[4] : [];
         if ($only !== false && $only !== '' && count(array_filter(explode(',', $only), function ($o) use ($label) {
@@ -426,6 +442,7 @@ function generate($repo, $pdo, $phpCgi, $work, $host, $port, $db, $user, $passwo
         reset_tables($pdo, $seed);
         $rec = ['label' => $label, 'maccmsPhp' => base64_encode(file_get_contents($conf . '/extra/maccms.php')),
             'seed' => $seed, 'random' => !empty($opt['random']), 'steps' => []];
+        $prev = [];
         foreach ($steps as $st) {
             list($slabel, $method, $path, $query, $post) = $st;
             $body = $post === null ? '' : http_build_query($post);
@@ -435,7 +452,10 @@ function generate($repo, $pdo, $phpCgi, $work, $host, $port, $db, $user, $passwo
             $after = time();
             $tables = [];
             foreach (TABLES as $t => $pk) {
-                $tables[$t] = table_rows($pdo, $t, $pk);
+                $rows = table_rows($pdo, $t, $pk);
+                // kinds：与本场景上一步相同的表记为 null（复放时沿用上一步的期望），减小样本体积
+                $tables[$t] = GOLDEN_SET === 'kinds' && isset($prev[$t]) && $prev[$t] === $rows ? null : $rows;
+                $prev[$t] = $rows;
             }
             $rec['steps'][] = ['label' => $slabel, 'method' => $method, 'path' => $path, 'query' => $query, 'body' => $body,
                 'status' => $status, 'contentType' => isset($headers['content-type']) ? $headers['content-type'] : null,

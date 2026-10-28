@@ -77,7 +77,13 @@ class WriteRegistryTest {
         assertThat(WriteRegistry.registered().allows("collect", "mac_vod", WriteOperation.INSERT)).isTrue();
         assertThat(WriteRegistry.registered().allows("collect", "mac_vod", WriteOperation.UPDATE)).isTrue();
         assertThat(WriteRegistry.registered().allows("collect", "mac_vod", WriteOperation.DELETE)).isFalse();
-        assertThat(WriteRegistry.registered().permissions()).hasSize(95);
+        // B19 增量 2：文章、演员、角色、网址、评论的新增与更新（不删除）
+        for (String t : java.util.List.of("mac_art", "mac_actor", "mac_role", "mac_website", "mac_comment")) {
+            assertThat(WriteRegistry.registered().allows("collect", t, WriteOperation.INSERT)).isTrue();
+            assertThat(WriteRegistry.registered().allows("collect", t, WriteOperation.UPDATE)).isTrue();
+            assertThat(WriteRegistry.registered().allows("collect", t, WriteOperation.DELETE)).isFalse();
+        }
+        assertThat(WriteRegistry.registered().permissions()).hasSize(105);
     }
 
     @Test

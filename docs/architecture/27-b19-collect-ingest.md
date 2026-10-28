@@ -1,6 +1,6 @@
 ## B19 采集入库与 Receive 入站接口（路线图 B19，MACC-43）
 
-> **状态：增量 1（视频入库核心 + Receive `vod`）交付待验收；增量 2、3 待建（第 1 节）。** 依据：
+> **状态：增量 1（视频入库核心 + Receive `vod`）已合并（main `738352f`）；增量 2（文章、演员、角色、网址、评论）交付待验收；增量 3 待建（第 1 节）。** 依据：
 > - 路线图 `09-roadmap.md` 第 3.2 节 B19 行、第 5.3 节 B19 验收行（影子合并对比、并发提交同一条视频不重复、Receive 校验、回滚演练）、E01/E02 行（只做本地版本，不发请求、不下载图片）、第 1.2 节（零结构变更）；
 > - B07 `12-write-infrastructure.md`（可写数据源、写入登记、回滚演练工具）、B13 `22-b13-admin-content.md`（`formatDataBeforeDb`、`mac_substring` 的 D-B13-5、严格模式报错的 D-B13-3）、B11 `20-b11-comment-gbook-counters.md`（视频搜索缓存）、B18 `26-b18-collect-preview.md`（解析结果与值的表示）。
 >
@@ -10,9 +10,9 @@
 
 | 项 | 值 |
 |---|---|
-| 起点 | main `b673c71`（含 B18 合并 `39b9902`）；平台基线提交 `0f8ada9` 的树与它相同 |
+| 起点 | 增量 1：main `b673c71`（含 B18 合并 `39b9902`）；平台基线提交 `0f8ada9` 的树与它相同。增量 2：main `5367468`（含增量 1 合并 `738352f`） |
 | 分支 | `agent/claude/macc-23`（本任务的工作分支），只用普通提交 |
-| 回滚点 | main `b673c71` |
+| 回滚点 | 增量 1：main `b673c71`；增量 2：main `5367468` |
 
 ### 1. 范围与增量
 
@@ -20,8 +20,8 @@ B19 的旧代码是 `common/model/Collect.php` 的六个 `{种类}_data`（约 1
 
 | 增量 | 内容 | 状态 |
 |---|---|---|
-| **1** | 视频入库核心（`vod_data`，`Collect.php:419-1015`）：过滤、`strip_tags`、拼音、`inrule` 查重（含 `vod_search_optimise` 的主演结果编号）、新增、`uprule` a～w 更新、播放组与下载组的追加/替换/`urlrole` 合并去重、`opt`/`filter`/`filter_from`、随机点击顶踩评分、伪原创替换、搜索缓存追加；入库锁；Receive 构造函数三道检查与 `vod`、`index` | **本次交付** |
-| 2 | 文章、演员、角色、网址、评论的 `*_data` 与对应的 Receive 入口（`art/actor/role/website/comment`，现在返回 501"由 B19 后续增量提供"） | 待建 |
+| 1 | 视频入库核心（`vod_data`，`Collect.php:419-1015`）：过滤、`strip_tags`、拼音、`inrule` 查重（含 `vod_search_optimise` 的主演结果编号）、新增、`uprule` a～w 更新、播放组与下载组的追加/替换/`urlrole` 合并去重、`opt`/`filter`/`filter_from`、随机点击顶踩评分、伪原创替换、搜索缓存追加；入库锁；Receive 构造函数三道检查与 `vod`、`index` | 已合并（main `738352f`） |
+| **2** | 文章、演员、角色、网址、评论的 `*_data`（`Collect.php:1126-2532`）与对应的 Receive 入口 `art/actor/role/website/comment`（第 3.2、5 节），共用入库锁 | **本次交付** |
 | 3 | 后台 `collect/api` 的 `cj`/`cjsel`/`cjday`/`cjall`（从 B18 的预览缓存入库，`show=1` 的逐行输出与跳页）与 `collect/load` 断点续采（现在仍是 501"由 B19 批次提供"） | 待建 |
 
 | 不在本批 | 归属 |
@@ -34,12 +34,12 @@ B19 的旧代码是 `common/model/Collect.php` 的六个 `{种类}_data`（约 1
 
 | 包 | 内容 |
 |---|---|
-| `collect.application` | `VodIngest`（一行的入库规则，纯计算，经 `Store` 查重与写入）、`IngestPhp`（旧 PHP 函数：`mac_format_text`、`mac_txt_merge`、`mac_txt_explain`、`mac_rep_pse_syn/rnd`、`mac_array_filter`、`mac_like_arr`、`mac_substring`（含起点）与 PHP 8 的宽松比较、`intval`、`floatval`）、`CollectIngestService`（入库锁、配置读取、`Store` 的实现、列值换算）、`ReceiveService`（Receive 的检查、参数整理、分类名映射、JSON 输出） |
-| `collect.infrastructure` | `CollectIngestMapper`（查重，`mapper/collect/CollectIngestMapper.xml`）、`CollectIngestWriteMapper` + `CollectIngestWrites`（`mac_vod` 新增与修改，`mapper-write/collect/CollectIngestWriteMapper.xml`，列清单同 B13） |
+| `collect.application` | `KindIngest`（增量 2：文章、演员、角色、网址、评论一行的入库规则，纯计算，经 `KindIngest.Store` 查重、关联查找与写入）、`VodIngest`（一行的入库规则，纯计算，经 `Store` 查重与写入）、`IngestPhp`（旧 PHP 函数：`mac_format_text`、`mac_txt_merge`、`mac_txt_explain`、`mac_rep_pse_syn/rnd`、`mac_array_filter`、`mac_like_arr`、`mac_substring`（含起点）与 PHP 8 的宽松比较、`intval`、`floatval`）、`CollectIngestService`（入库锁、配置读取、`Store` 的实现、列值换算）、`ReceiveService`（Receive 的检查、参数整理、分类名映射、JSON 输出） |
+| `collect.infrastructure` | `CollectIngestMapper`（查重；增量 2 另加五个种类的查重、角色的关联视频与评论的关联数据，`mapper/collect/CollectIngestMapper.xml`）、`CollectIngestWriteMapper` + `CollectIngestWrites`（`mac_vod` 与增量 2 的 `mac_art`/`mac_actor`/`mac_role`/`mac_website`/`mac_comment` 的新增与修改，`mapper-write/collect/CollectIngestWriteMapper.xml`，列清单与 install.sql 相同） |
 | `collect.api` | `ReceiveController`：`/api.php/receive/<操作>`，可写数据源打开时注册 |
 | 复用 | content：`LegacyPinyin`、`PhpText`（`strip_tags`、`mac_filter_xss`、`mb_substr`、`urldecode`）、`PhpIntval`、`AdminRowValues`/`AdminTable`（列值规则同 B13）、`VodSearchCache`（主演结果编号与新增视频追加，同 B11/B13）、分类缓存（`type_pid` 与分类名 → 编号）；common：`PhpInput`（按字节解析 GET/POST）、`LegacyJson`、`LegacyLang`；legacyconfig：`maccms.php`、`vodplayer.php`、`voddowner.php` |
 
-- **写入登记**（`WriteRegistry`）：`collect / mac_vod / INSERT、UPDATE / B19`；不登记 DELETE。搜索缓存的写入沿用 content 已登记的 `mac_vod_search`。
+- **写入登记**（`WriteRegistry`）：`collect / mac_vod / INSERT、UPDATE / B19`；增量 2 另加 `collect / mac_art、mac_actor、mac_role、mac_website、mac_comment / INSERT、UPDATE / B19`（共 105 项）；不登记 DELETE。搜索缓存的写入沿用 content 已登记的 `mac_vod_search`。五张表都在路线图写入方矩阵的 B19 范围内。
 - 依赖方向符合 `ModuleBoundaryTest`：collect 只引用 content、common、legacyconfig 的 `application` 公开类型与 common 的支持类。
 
 ### 3. 入库规则（`VodIngest`，与 `vod_data` 逐步对应）
@@ -54,9 +54,26 @@ B19 的旧代码是 `common/model/Collect.php` 的六个 `{种类}_data`（约 1
 
 比较一律按 PHP 8 的宽松比较（数字串按数值，`"1e1" == "10"`），与 B18 相同。
 
+#### 3.2 文章、演员、角色、网址、评论（`KindIngest`，增量 2）
+
+五个种类的规则比视频简单，共同部分与差别如下（旧代码 `Collect.php` 的 `art_data:1126`、`actor_data:1453`、`role_data:1725`、`website_data:2044`、`comment_data:2314`）。结果的 `msg` 是"名称 + 空格 + 说明"（评论是"内容 + 空格 + 说明"），更新成功时说明为空（如 `"旧文 "`）——视频只有说明，照旧不同。
+
+| 步骤 | 文章 | 演员 | 网址 | 角色 | 评论 |
+|---|---|---|---|---|---|
+| 跳过 | `type_id == 0`；名称为空；名称含过滤词 | 同左；名称或性别为空时说明是旧代码少了开头 m 的键名 `odel/collect/actor_data_require`（语言包里没有，原样输出） | 同文章 | 角色名、演员名、`vod_name` 任一为空 → `role_data_require`；角色名含过滤词 | 昵称、内容、`rel_name` 任一为空 → `comment_data_require`；**内容**含过滤词 |
+| 整理 | 去掉主键；除键名含 `_content` 外 `strip_tags`；名称 `trim`；`type_id_1`；拼音、首字母；`*_time_add`、`*_time` 一律当前时间（提交的不起作用）；状态取配置；整数与评分字段；随机点击、顶踩、评分；正文的随机词与同义词 | 同左 | 同左 | 同左，但名称不 `trim`、没有分类 | 只有 `comment_time`（当前时间）、状态取配置、顶踩与 `comment_mid` 取整、IP 不是数字时按 `mac_get_ip_long` 换成整数（不是点分十进制 IPv4 时为 0）、随机顶踩、正文伪原创 |
+| 简介 | 为空时 `mac_substring(strip_tags(去掉 $$$ 的正文), 100)` | 为空时 `mac_substring(strip_tags(正文), 100)` | 同演员 | 无 | 无 |
+| 分页 | 标题、备注按正文 `$$$` 的页数对齐（多的丢弃，少的补空串） | — | — | — | — |
+| 查重 | 名称相等；b 另按分类 | 名称相等；b 性别、c 分类 | 名称相等；b 分类 | 先找关联视频：`douban_id` 非空时按 `vod_douban_id`（并从数据里去掉），否则按 `vod_name`；c 另加 `vod_actor LIKE` 演员名的任一项、d 另加 `vod_director LIKE`，两者都有时 `(导演条件 OR 主演条件)`；找不到 → `not_found_rel_vod`。再按角色名、演员名、`role_rid` 查重 | `rel_id` 非空时直接用作关联编号；否则按 `comment_mid` 查：1 视频（`douban_id` 非空按豆瓣编号，否则名称）、2 文章、3 专题、8 演员、9 角色、11 网址，其他模块找不到；找不到 → `not_found_rel_data`。inrule b 内容、c 昵称参与查重，都不参与时不查、直接新增 |
+| 新增 | 图片写 `(string)` 后的值 | 图片写提交的原值，**没有提交时为 NULL**（D-B19-9） | 同演员 | 同演员 | — |
+| 更新 | `uprule` 为空跳过；锁定跳过；a 正文、b 作者、c 来源、d 图片、e 标签、f 简介 | a 正文、b 简介、c 备注、d 作品、e 图片 | a 正文、b 简介、c 备注、d 跳转地址、e 图片 | a 正文、b 备注、c 图片 | 没有锁定；a：库里的 `comment_time` 与当前时间不同就改成当前时间 |
+
+- 各字段的更新条件同视频："提交的值非空且与库里不同"；图片是"库里是 http 开头或为空，且提交的值与库里不同"（所以没提交图片而库里是远程图片时，文章把图片清成空串，演员、角色、网址写 NULL 报错，D-B19-9）。有更新项时另写 `*_time`。
+- 写库只写表里有的列（`vod_name`、`rel_name`、`douban_id`、`type_name` 等丢弃）；列值规则同第 4 节。
+
 ### 4. 入库锁、查重与写入（`CollectIngestService`）
 
-- **入库串行**：每一行的"查重 → 新增或更新"在进程内的公平锁里执行；等锁超过 30 秒时放弃本行（Receive 返回 503 与"入库排队超时，请稍后重试"）。所以同一部视频的并发提交只会新增一次，其余按更新规则处理（`ReceiveGoldenMySqlIT` ②）。旧版没有锁，并发时可能写出重复行（D-B19-2）。
+- **入库串行**：每一行的"查重 → 新增或更新"（增量 2 含角色、评论的关联查找）在进程内的公平锁里执行，六个种类共用一把锁；等锁超过 30 秒时放弃本行（Receive 返回 503 与"入库排队超时，请稍后重试"）。所以同一部视频的并发提交只会新增一次，其余按更新规则处理（`ReceiveGoldenMySqlIT` ②）。旧版没有锁，并发时可能写出重复行（D-B19-2）。
 - **查重**走只读连接池（自动提交，读到已提交的写入）；**写入**走可写数据源（B07，自动提交、不开事务）。
 - **列值**：只写 `mac_vod` 里有的列（旧版 `fields_strict=false` 静默丢弃其他键，如 `pass`、`type_name`）；值按 PHP 字符串转换后经 B13 的 `AdminRowValues`（数值列空串写 0；超长、非法 UTF-8、4 字节字符拒绝）。MySQL 严格模式下的数据错误（如缺 `vod_content`，见第 8 节）换成"参数错误"，不写库。
 
@@ -69,7 +86,10 @@ B19 的旧代码是 `common/model/Collect.php` 的六个 `{种类}_data`（约 1
 | 检查 | 顺序不变：`interface.status != 1` → 3001；`interface.pass != pass`（宽松比较，`1e15` 等于 `1000000000000000`）→ 3002；`strlen(interface.pass) < 16` → 3003 |
 | `vod` | 名称为空 → 2001；`type_id` 与 `type_name` 都为空 → 2002；`type_id` 为空时按 `interface.vodtype` 映射（每行 `本站分类名=接口分类名`，换成本站分类编号，没有该分类时 0）；然后按第 3 节入库一行（`$param = []`） |
 | `index` | 空白（200） |
-| `art/actor/role/website/comment` | 501"由 B19 后续增量提供"（增量 2） |
+| `art`、`website` | 名称为空 → 2001；`type_id` 与 `type_name` 都为空 → 2002；`type_id` 为空时按 `interface.arttype`/`websitetype` 映射（规则同 `vodtype`）；然后按第 3.2 节入库一行 |
+| `actor` | 演员名为空 → 2001；性别为空（含 `"0"`）→ 2002；分类都为空 → 2003；按 `interface.actortype` 映射 |
+| `role` | 角色名为空 → 2001；演员名为空 → 2002；`vod_name` 与 `douban_id` 都为空 → 2003（只给 `douban_id` 时入库仍要求 `vod_name`，得到 `role_data_require`，照旧） |
+| `comment` | 昵称为空 → 2001；内容为空 → 2002；`comment_mid` 为空（含 `"0"`）→ 2004；`rel_name` 与 `douban_id` 都为空 → 2003。2001 与 2002 的说明都是"评论内容必须err"（旧语言包里 `api/require_comment_name` 写了两次，后者覆盖前者，照旧） |
 | 响应 | `text/html; charset=utf-8`，正文 `{"code":…,"msg":"…"}`（`json_encode(…, JSON_UNESCAPED_UNICODE)`，`LegacyJson`） |
 
 ### 6. 配置
@@ -81,6 +101,8 @@ B19 的旧代码是 `common/model/Collect.php` 的六个 `{种类}_data`（约 1
 - `backend/src/test/php/receive_golden.php` 在 PHP 8.0.30 与 7.3.33 上，经 `legacy_http_child.php`（api 入口）以 php-cgi 跑**完整的 ThinkPHP 路由、`Receive` 控制器与旧 `Collect::vod_data`**（不改旧代码），对一次性库 `maccms_it_*` 发出真实请求；每个场景先清空 `mac_vod`、`mac_vod_search` 并复位自增、写入种子行，用自己的配置与运行目录。记录每一步的状态码、Content-Type、正文、两张表的全部行（十六进制）与请求前后的时间。
 - **22 个场景、42 步**：接口关闭、密码错误与缺失、密码数值相等、密码太短与为空、名称与分类必填、分类名映射（已映射、未映射、本站没有该分类、`type_id=0`）、缺 `vod_content`、`index`；整行新增（`strip_tags`、拼音、扩展分类合并、主演分隔符、未知播放器与空类型的组、地址末尾 `#`、下载地址末尾空白、剧情 `$$$`、时间字段、提交的 `vod_status`/`vod_letter`/`vod_id` 被忽略、多余字段）；过滤词；伪原创名称；播放组"地址相同 + 新增组"、同类型替换、同组无需更新、没有播放组；`urlrole=1` 合并去重与下载组新增；`uprule` a～w 全部字段（含连载取较大值、库里是本地图片时不更新图片、扩展分类合并）；锁定；`uprule` 为空；无需更新；`inrule` 主演导演混合匹配的四种情况；`inrule` 分类、年份、地区、语言；路径参数与查询串（双重解码）；`trim` 与查询表达式补空格；`<script>` 名称与 iframe/link 播放器；`vod_search_optimise=collect` 的主演结果编号查重与新增后追加；随机点击顶踩评分。
 - 两份黄金互相比较：除 PHP 8 的 `mac_substring` 把 ASCII 字符换成空格（简介由纯 ASCII 正文生成的 4 行，B13 已登记为 D-B13-5，新版按 7.3）外完全相同。
+- **增量 2**：同一脚本在 `GOLDEN_SET=kinds` 时改跑 `receive_kinds_scenarios.php`，输出 `php80-kinds-golden.json`、`php73-kinds-golden.json`；每步记录 `mac_art`、`mac_actor`、`mac_role`、`mac_website`、`mac_comment`、`mac_vod`、`mac_topic` 七张表（与本场景上一步相同的表记为 null，减小体积）；另加 6 个分类（文章、明星、网址各一个顶级与子分类）。**32 个场景、98 步**：五个入口的必填检查与编号、分类名映射（已映射、未映射、映射到 0、`type_id=0`）、密码错误；整行新增（`strip_tags`、名称 `trim`、拼音、提交的状态/首字母/拼音/主键被忽略、多余字段、文章分页对齐、简介生成含纯 ASCII 正文、子分类的 `type_id_1`）；过滤词（评论按内容）；更新规则全部字段、无需更新、库里是本地图片时不改图片、文章没提交图片时清空图片、锁定、`uprule` 为空、inrule 不含分类时跨分类命中；演员按性别、分类区分；角色的关联视频（名称、豆瓣编号、找不到、inrule c/d 的主演/导演 LIKE 与两者混合、多个演员名）；评论的六种关联模块、未知模块、找不到、直接给 `rel_id`、`comment_mid` 为 `1abc`、IP 三种写法、按内容与昵称查重后更新时间；同义词替换；随机点击顶踩评分；以及旧版整页 500 的 8 步（没提交图片、缺正文、更新时没提交图片）。
+- 两份增量 2 的黄金互相比较：除 D-B13-5 的简介（由纯 ASCII 正文生成的行）与随机列外完全相同。
 
 ### 8. 测试与验证
 
@@ -89,8 +111,12 @@ B19 的旧代码是 `common/model/Collect.php` 的六个 `{种类}_data`（约 1
 | 影子合并对比 | `ReceiveGoldenMySqlIT` ①：以真实 HTTP 启动应用，逐场景写入同样的旧配置与种子，发送同样的请求；状态码、正文与 PHP 8.0、7.3 逐字节相同（Content-Type 只差参数前的空格，Tomcat 统一去掉），两张表逐行逐列相同（写入时刻按各自的请求时间窗比较，随机列按旧版范围比较；8.0 的简介按 D-B13-5 取 7.3 的值）；登记差异 `require/no-content` 断言新版行为。变异检查：故意改坏播放组追加，该测试即报出 4 处行差异 |
 | 入库排队 | `ReceiveGoldenMySqlIT` ②：16 个并发请求提交同一部新视频，只有 1 个"新加入库"，其余 15 个"播放组(dplayer)，更新ok。"，表里只有 1 行 |
 | 回滚演练 | `ReceiveGoldenMySqlIT` ③：快照 → 场景 update-fields 的 3 次更新与 1 次新增 → `DmlRestore` 只用 DML 恢复 → 与快照逐行 diff 为空 → 表结构指纹与导入时相同 |
+| 增量 2 影子对比 | `ReceiveGoldenMySqlIT` ④：同 ①，复放增量 2 的黄金（7 张表；8 步登记差异断言"参数错误"且不写库）。变异检查：故意把文章分页的标题全写空串，该测试即对 8.0、7.3 两份黄金都报出 `art_title` 差异 |
+| 增量 2 入库排队 | `ReceiveGoldenMySqlIT` ⑤：16 个并发请求提交同一篇新文章（正文各不相同），只有 1 个"新加入库"，其余 15 个按更新规则改正文（`"并发文 "`），表里只有 1 行 |
+| 增量 2 回滚演练 | `ReceiveGoldenMySqlIT` ⑥：快照 7 张表 → 评论场景的 11 步与文章更新、演员更新、角色新增、网址新增 → `DmlRestore` 只用 DML 恢复 → diff 为空 → 表结构不变 |
+| 增量 2 规则分支 | `KindIngestTest`：数组字段拒绝、演员必填的语言键、文章分页对齐、演员与网址的 NULL 图片被列值规则拒绝、宽松比较与本地图片、锁定、评论不查重时直接新增、未知模块不查库、豆瓣编号只对视频生效、角色的 LIKE 条件与找不到关联视频、`mac_get_ip_long`、随机项范围（评论只有顶踩）、伪原创只改正文、分类为 0 与过滤词在查库前跳过 |
 | 规则分支与旧函数 | `VodIngestTest`：`opt`、`filter` 1/2/3 与 `filter_from` 子串匹配、随机项范围、搜索优化的结果编号与追加、`tag=1`、连载规则与 D-B19-4、数组字段拒绝、旧 PHP 文本函数、`mac_rep_pse_rnd` 的 crc32 选词、Receive 参数整理、分类名映射 |
-| 护栏 | `WriteGuardTest`、`WriteRegistryTest`（登记 95 项）、`WriteInfrastructureMySqlIT`（B19 只允许 collect 对 mac_vod 的新增与修改）、`ModuleBoundaryTest`、`ReadOnlyGuardrailsTest`、`OutboundNetworkGuardTest`、`SchemaGuardTest`、`CollectPreviewGuardTest` |
+| 护栏 | `WriteGuardTest`、`WriteRegistryTest`（登记 105 项）、`WriteInfrastructureMySqlIT`（B19 只允许 collect 对 mac_vod、mac_art、mac_actor、mac_role、mac_website、mac_comment 的新增与修改）、`ModuleBoundaryTest`、`ReadOnlyGuardrailsTest`、`OutboundNetworkGuardTest`、`SchemaGuardTest`、`CollectPreviewGuardTest` |
 
 ### 9. 风险与遗留
 
@@ -98,7 +124,9 @@ B19 的旧代码是 `common/model/Collect.php` 的六个 `{种类}_data`（约 1
 |---|---|
 | 入库锁是进程内的 | 多实例部署时各实例的锁互不相干；Receive 与后台入库要落在同一实例（与 B18 的预览缓存相同的部署约束）。需要多实例时改成数据库命名锁，届时在 B21 演练 |
 | 严格模式 | 旧表 `vod_content` 等 TEXT 列没有默认值，严格模式下缺这些列的新增失败（旧版 500，新版"参数错误"）。生产库的 `sql_mode` 未核实（D9-b）；若生产不是严格模式，旧版会写入空值，新版仍拒绝——B21 演练时核对 |
-| 增量 2、3 | 其他五个种类与后台入库按钮、断点续采尚未实现，入口返回 501 |
+| 增量 3 | 后台入库按钮与断点续采尚未实现，入口返回 501 |
+| 演员、角色、网址必须带图片 | 旧版没提交图片时整页 500（D-B19-9），新版照旧拒绝（"参数错误"）。资源站数据一般带图片，影响有限；若要改成"没有图片时写空串"属于功能调整，需队长决定 |
+| `mac_get_ip_long` | 新版只认标准点分十进制（每段 0～255、没有前导 0）；PHP `ip2long` 依赖系统 `inet_pton`，个别写法（如前导 0）可能因平台而异 |
 | 图片同步 | 不下载（E02）；`pic=1` 时旧版会下载失败并保留原地址（本机无网络时的结果与新版相同），能下载时旧版换成本地地址，新版不换 |
 
 ### 10. 与旧版的差异
@@ -113,11 +141,12 @@ B19 的旧代码是 `common/model/Collect.php` 的六个 `{种类}_data`（约 1
 | D-B19-6 | `mac_txt_explain` 用 `html_entity_decode` 解码全部 HTML 实体 | 只解码五个基本实体与数字实体，其他命名实体原样保留 | 伪原创词表里实际只用到这几种；完整实体表收益小 |
 | D-B19-7 | `mac_interface_type` 的第一步结果放在缓存里，改配置后要等缓存失效 | 每次按当前配置计算 | 配置改动立即生效 |
 | D-B19-8 | Receive 正文没有大小上限 | urlencoded 正文上限 2MB（413） | 资源边界 |
+| D-B19-9 | 演员、角色、网址新增时没有提交图片（`$tmp['pic']` 为 null），或更新时没有提交图片而库里的图片是远程地址或为空：把 NULL 写进不允许 NULL 的图片列，整页 500，不写库 | 不写库，`{"code":1001,"msg":"参数错误"}`（同 D-B19-3）；文章照旧转成空串 | 旧版报错时的统一处理 |
 | — | `mac_substring` 在 PHP 8 把 ASCII 字符换成空格 | 按 PHP 7.3 | 沿用 D-B13-5 |
 | — | Content-Type `text/html;charset=utf-8` 与 `text/html; charset=utf-8` 两种写法 | 一律 `text/html;charset=utf-8`（Tomcat 输出） | 语义相同 |
 
 ### 11. 回滚
 
-- **代码**：本增量以普通提交进入 main；出问题时 `git revert` 这些提交，回到 `b673c71` 的行为（`/api.php/receive/*` 404；`WriteRegistry` 去掉 collect 对 mac_vod 的两项）。不涉及表结构与配置项。
+- **代码**：每个增量以普通提交进入 main；出问题时 `git revert` 对应提交。撤回增量 2 回到 `5367468` 的行为（`art/actor/role/website/comment` 回到 501；`WriteRegistry` 去掉五张表的十项）；再撤回增量 1 回到 `b673c71` 的行为（`/api.php/receive/*` 404；去掉 collect 对 mac_vod 的两项）。不涉及表结构与配置项。
 - **数据**：入库只有对现有列的 DML；回滚演练（第 8 节 ③）证明一批入库可以用 `DmlRestore` 只用 DML 恢复。生产切换时按 13 文档在停止写入后取快照。
 - **开关**：Receive 本身受旧配置 `interface.status` 控制，关闭即 3001、不写库。

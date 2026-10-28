@@ -170,9 +170,10 @@ class WriteInfrastructureMySqlIT {
                             // B17 采集配置：采集源与自定义规则节点的增删改，删除节点时连带的内容与采集历史（25 文档第 6 节）
                             || p.batch().equals("B17") && p.module().equals("collect")
                             && java.util.Set.of("mac_collect", "mac_cj_node", "mac_cj_content", "mac_cj_history").contains(p.table())
-                            // B19 采集入库与 Receive：新增、更新视频（27 文档第 4 节）
-                            || p.batch().equals("B19") && p.module().equals("collect") && p.table().equals("mac_vod")
-                            && !p.operation().name().equals("DELETE"));
+                            // B19 采集入库与 Receive：新增、更新视频、文章、演员、角色、网址、评论（27 文档第 4 节）
+                            || p.batch().equals("B19") && p.module().equals("collect")
+                            && java.util.Set.of("mac_vod", "mac_art", "mac_actor", "mac_role", "mac_website", "mac_comment")
+                            .contains(p.table()) && !p.operation().name().equals("DELETE"));
             assertThatThrownBy(() -> db.mapper(DrillWriteMapper.class).hit(1)).isInstanceOf(WriteRejectedException.class)
                     .hasMessageContaining("未登记的写入").hasMessageContaining("mac_vod");
             assertReadPoolRejectsWrites(app);
