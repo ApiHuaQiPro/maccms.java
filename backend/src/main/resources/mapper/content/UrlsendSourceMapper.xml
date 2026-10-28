@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+  只读映射：后台 URL 推送（B28，30 文档第 2 节）要推送的地址。条件与旧 admin/controller/Urlsend.php::data 相同：
+  按模型（mid：1 视频、2 文章、3 专题、8 演员、9 角色、11 网址）取已审核（*_status = 1）的行；"当天"加 *_time（或 range=1 时 *_time_add）
+  大于今天零点；指定编号时加 *_id IN (...)；按编号升序分页。表名与列名逐个写出，不用拼接。
+-->
+<mapper namespace="com.maccms.backend.content.infrastructure.UrlsendSourceMapper">
+
+    <select id="count" resultType="long">
+        <choose>
+            <when test="q.mid == 1">
+                SELECT COUNT(*) FROM mac_vod
+                <where>
+                vod_status = 1
+                <if test="q.since != null and !q.added">AND vod_time &gt; #{q.since}</if>
+                <if test="q.since != null and q.added">AND vod_time_add &gt; #{q.since}</if>
+                <if test="q.ids != null">
+                    AND vod_id IN <foreach collection="q.ids" item="i" open="(" separator="," close=")">#{i}</foreach>
+                </if>
+            </where>
+            </when>
+            <when test="q.mid == 2">
+                SELECT COUNT(*) FROM mac_art
+                <where>
+                art_status = 1
+                <if test="q.since != null and !q.added">AND art_time &gt; #{q.since}</if>
+                <if test="q.since != null and q.added">AND art_time_add &gt; #{q.since}</if>
+                <if test="q.ids != null">
+                    AND art_id IN <foreach collection="q.ids" item="i" open="(" separator="," close=")">#{i}</foreach>
+                </if>
+            </where>
+            </when>
+            <when test="q.mid == 3">
+                SELECT COUNT(*) FROM mac_topic
+                <where>
+                topic_status = 1
+                <if test="q.since != null and !q.added">AND topic_time &gt; #{q.since}</if>
+                <if test="q.since != null and q.added">AND topic_time_add &gt; #{q.since}</if>
+                <if test="q.ids != null">
+                    AND topic_id IN <foreach collection="q.ids" item="i" open="(" separator="," close=")">#{i}</foreach>
+                </if>
+            </where>
+            </when>
+            <when test="q.mid == 8">
+                SELECT COUNT(*) FROM mac_actor
+                <where>
+                actor_status = 1
+                <if test="q.since != null and !q.added">AND actor_time &gt; #{q.since}</if>
+                <if test="q.since != null and q.added">AND actor_time_add &gt; #{q.since}</if>
+                <if test="q.ids != null">
+                    AND actor_id IN <foreach collection="q.ids" item="i" open="(" separator="," close=")">#{i}</foreach>
+                </if>
+            </where>
+            </when>
+            <when test="q.mid == 9">
+                SELECT COUNT(*) FROM mac_role
+                <where>
+                role_status = 1
+                <if test="q.since != null and !q.added">AND role_time &gt; #{q.since}</if>
+                <if test="q.since != null and q.added">AND role_time_add &gt; #{q.since}</if>
+                <if test="q.ids != null">
+                    AND role_id IN <foreach collection="q.ids" item="i" open="(" separator="," close=")">#{i}</foreach>
+                </if>
+            </where>
+            </when>
+            <when test="q.mid == 11">
+                SELECT COUNT(*) FROM mac_website
+                <where>
+                website_status = 1
+                <if test="q.since != null and !q.added">AND website_time &gt; #{q.since}</if>
+                <if test="q.since != null and q.added">AND website_time_add &gt; #{q.since}</if>
+                <if test="q.ids != null">
+                    AND website_id IN <foreach collection="q.ids" item="i" open="(" separator="," close=")">#{i}</foreach>
+                </if>
+            </where>
+            </when>
+            <otherwise>SELECT 0</otherwise>
+        </choose>
+    </select>
+
+    <select id="select" resultType="com.maccms.backend.content.infrastructure.UrlsendItemRow">
+        <choose>
+            <when test="q.mid == 1">
+                SELECT vod_id AS id, vod_name AS name, vod_en AS en, vod_time AS time, type_id AS typeId FROM mac_vod
+                <where>
+                vod_status = 1
+                <if test="q.since != null and !q.added">AND vod_time &gt; #{q.since}</if>
+                <if test="q.since != null and q.added">AND vod_time_add &gt; #{q.since}</if>
+                <if test="q.ids != null">
+                    AND vod_id IN <foreach collection="q.ids" item="i" open="(" separator="," close=")">#{i}</foreach>
+                </if>
+            </where>
+                ORDER BY vod_id ASC
+                LIMIT #{offset}, #{limit}
+            </when>
+            <when test="q.mid == 2">
+                SELECT art_id AS id, art_name AS name, art_en AS en, art_time AS time, type_id AS typeId FROM mac_art
+                <where>
+                art_status = 1
+                <if test="q.since != null and !q.added">AND art_time &gt; #{q.since}</if>
+                <if test="q.since != null and q.added">AND art_time_add &gt; #{q.since}</if>
+                <if test="q.ids != null">
+                    AND art_id IN <foreach collection="q.ids" item="i" open="(" separator="," close=")">#{i}</foreach>
+                </if>
+            </where>
+                ORDER BY art_id ASC
+                LIMIT #{offset}, #{limit}
+            </when>
+            <when test="q.mid == 3">
+                SELECT topic_id AS id, topic_name AS name, topic_en AS en, topic_time AS time, 0 AS typeId FROM mac_topic
+                <where>
+                topic_status = 1
+                <if test="q.since != null and !q.added">AND topic_time &gt; #{q.since}</if>
+                <if test="q.since != null and q.added">AND topic_time_add &gt; #{q.since}</if>
+                <if test="q.ids != null">
+                    AND topic_id IN <foreach collection="q.ids" item="i" open="(" separator="," close=")">#{i}</foreach>
+                </if>
+            </where>
+                ORDER BY topic_id ASC
+                LIMIT #{offset}, #{limit}
+            </when>
+            <when test="q.mid == 8">
+                SELECT actor_id AS id, actor_name AS name, actor_en AS en, actor_time AS time, type_id AS typeId FROM mac_actor
+                <where>
+                actor_status = 1
+                <if test="q.since != null and !q.added">AND actor_time &gt; #{q.since}</if>
+                <if test="q.since != null and q.added">AND actor_time_add &gt; #{q.since}</if>
+                <if test="q.ids != null">
+                    AND actor_id IN <foreach collection="q.ids" item="i" open="(" separator="," close=")">#{i}</foreach>
+                </if>
+            </where>
+                ORDER BY actor_id ASC
+                LIMIT #{offset}, #{limit}
+            </when>
+            <when test="q.mid == 9">
+                SELECT role_id AS id, role_name AS name, role_en AS en, role_time AS time, 0 AS typeId FROM mac_role
+                <where>
+                role_status = 1
+                <if test="q.since != null and !q.added">AND role_time &gt; #{q.since}</if>
+                <if test="q.since != null and q.added">AND role_time_add &gt; #{q.since}</if>
+                <if test="q.ids != null">
+                    AND role_id IN <foreach collection="q.ids" item="i" open="(" separator="," close=")">#{i}</foreach>
+                </if>
+            </where>
+                ORDER BY role_id ASC
+                LIMIT #{offset}, #{limit}
+            </when>
+            <when test="q.mid == 11">
+                SELECT website_id AS id, website_name AS name, website_en AS en, website_time AS time, type_id AS typeId FROM mac_website
+                <where>
+                website_status = 1
+                <if test="q.since != null and !q.added">AND website_time &gt; #{q.since}</if>
+                <if test="q.since != null and q.added">AND website_time_add &gt; #{q.since}</if>
+                <if test="q.ids != null">
+                    AND website_id IN <foreach collection="q.ids" item="i" open="(" separator="," close=")">#{i}</foreach>
+                </if>
+            </where>
+                ORDER BY website_id ASC
+                LIMIT #{offset}, #{limit}
+            </when>
+            <otherwise>SELECT 0 AS id, '' AS name, '' AS en, 0 AS time, 0 AS typeId FROM DUAL WHERE 1 = 0</otherwise>
+        </choose>
+    </select>
+</mapper>

@@ -138,7 +138,7 @@ class TimmingControllerMvcTest {
         MvcResult r = call(get("/api.php/timming/index"), "127.0.0.1");
         assertThat(r.getResponse().getStatus()).isEqualTo(200);
         assertThat(r.getResponse().getContentType()).isEqualTo("text/html;charset=UTF-8");
-        assertThat(body(r)).isEqualTo("任务：cc，状态：开启，上次执行时间：从未---执行<br>推送任务由后续批次（B28）提供，本次未执行<br>");
+        assertThat(body(r)).isEqualTo("任务：cc，状态：开启，上次执行时间：从未---执行<br>参数错误<br>");
         String after = Files.readString(FILE, StandardCharsets.UTF_8);
         assertThat(after).doesNotContain("\r").contains("'runtime' => ");
         long written = Long.parseLong(after.replaceAll("(?s).*'cc' => \n  array \\(.*?'runtime' => (\\d+),.*", "$1"));

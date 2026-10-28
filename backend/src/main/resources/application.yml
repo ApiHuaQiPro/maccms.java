@@ -97,6 +97,9 @@ maccms:
       connect-timeout: ${MACCMS_INTEGRATION_OUTBOUND_CONNECT_TIMEOUT:15s}
       read-timeout: ${MACCMS_INTEGRATION_OUTBOUND_READ_TIMEOUT:30s}
       max-response-bytes: ${MACCMS_INTEGRATION_OUTBOUND_MAX_RESPONSE_BYTES:4194304}
+    # 百度推送（B28，docs/architecture/30-b28-urlsend-backlink.md 第 3 节）的接口地址，默认与旧版相同；令牌仍在旧配置 urlsend.*.token。
+    urlsend:
+      baidu-endpoint: ${MACCMS_INTEGRATION_URLSEND_BAIDU_ENDPOINT:http://data.zz.baidu.com/urls}
   # 客户端 IP 解析（B06，D2 ④，docs/architecture/16-b06-misc-pages-provide.md 第 2 节）：部署级参数。默认只用连接对端；
   # trusted-proxies 为逗号分隔的 IP/CIDR，只有对端落在其中时才采用 header 指定的转发头（X-Forwarded-For 列表，或单值头
   # X-Real-IP/CF-Connecting-IP/True-Client-IP/Ali-CDN-Real-IP）。部署在 CDN/反向代理后面时必须填写代理出口网段，否则客户端 IP

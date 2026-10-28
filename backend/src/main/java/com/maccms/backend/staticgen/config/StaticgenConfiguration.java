@@ -8,6 +8,8 @@ import com.maccms.backend.collect.application.CollectAdminServices;
 import com.maccms.backend.common.lang.LegacyLang;
 import com.maccms.backend.content.application.ContentCacheMaintenance;
 import com.maccms.backend.content.application.StaticSourceService;
+import com.maccms.backend.content.application.UrlsendSourceService;
+import com.maccms.backend.integration.application.UrlPush;
 import com.maccms.backend.legacyconfig.application.LegacyConfigFile;
 import com.maccms.backend.legacyconfig.application.LegacyConfigService;
 import com.maccms.backend.legacyconfig.application.LegacySiteFiles;
@@ -17,6 +19,7 @@ import com.maccms.backend.staticgen.application.MakeService;
 import com.maccms.backend.staticgen.application.StaticFiles;
 import com.maccms.backend.staticgen.application.TimmingService;
 import com.maccms.backend.staticgen.application.TimmingTasks;
+import com.maccms.backend.staticgen.application.UrlsendService;
 import com.maccms.backend.staticgen.web.TimmingAccess;
 import java.time.Clock;
 import java.time.ZoneId;
@@ -63,6 +66,17 @@ public class StaticgenConfiguration {
                 LEGACY_ZONE);
     }
 
+    /**
+     * URL 推送（B28）：后台 {@code urlsend/push}、{@code urlsend/data} 与定时任务 {@code urlsend} 共用。数据来自 content（只读数据源），推送经
+     * {@code integration.urlsend}；都在执行时取，缺哪个就按"没有获取到数据"/"参数错误"报告。
+     */
+    @Bean
+    UrlsendService staticgenUrlsendService(LegacyConfigService legacy, ObjectProvider<UrlsendSourceService> source,
+                                           ObjectProvider<StaticSourceService> types, ObjectProvider<UrlPush> push) {
+        return new UrlsendService(legacy, source::getIfAvailable, types::getIfAvailable, push::getIfAvailable, lang(legacy),
+                Clock.systemUTC(), LEGACY_ZONE);
+    }
+
     @Bean
     TimmingService staticgenTimmingService(LegacyConfigService legacy) {
         return new TimmingService(legacy, lang(legacy), Clock.systemUTC(), LEGACY_ZONE);
@@ -70,12 +84,13 @@ public class StaticgenConfiguration {
 
     /**
      * 定时任务里的 {@code cache}：同后台"清理缓存"（重写 playerconfig.js 的缓存段、清理过期的视频搜索缓存，有哪个做哪个）；{@code cj}：B20 规则采集的一轮
-     * （{@link CjColAll#timming}，执行时取采集服务，采集模块未启用时没有）。
+     * （{@link CjColAll#timming}，执行时取采集服务，采集模块未启用时没有）；{@code urlsend}：URL 推送（B28）。
      */
     @Bean
     TimmingTasks staticgenTimmingTasks(MakeService make, ObjectProvider<PlayerAdminService> players,
                                        ObjectProvider<ContentCacheMaintenance> contentCache,
-                                       ObjectProvider<CollectAdminServices> collect, LegacyConfigService legacy) {
+                                       ObjectProvider<CollectAdminServices> collect, UrlsendService urlsend,
+                                       LegacyConfigService legacy) {
         LegacyLang lang = lang(legacy);
         return new TimmingTasks(make, () -> {
             PlayerAdminService p = players.getIfAvailable();
@@ -90,7 +105,7 @@ public class StaticgenConfiguration {
             CollectAdminServices c = collect.getIfAvailable();
             CjRunService cj = c == null ? null : c.cj();
             return cj == null ? null : CjColAll.timming(cj, param, lang::get);
-        }, lang);
+        }, urlsend, lang);
     }
 
     @Bean

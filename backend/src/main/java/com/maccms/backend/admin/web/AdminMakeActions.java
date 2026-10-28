@@ -149,14 +149,18 @@ public class AdminMakeActions {
                     url = url + "?" + LegacyAdminUrl.httpBuildQuery(o.jump().query());
                 }
             }
-            String u = escape(url);
-            sb.append("<script src=\"").append(escape(endpoint.sitePath())).append("/admin-assets/progress.js\" data-url=\"")
-                    .append(u).append("\" data-seconds=\"").append(o.jump().seconds()).append("\"></script><span>")
-                    .append(escape(settings.lang().get("pause"))).append(o.jump().seconds())
-                    .append(escape(settings.lang().get("continue_in_second"))).append("  >>>  </span><a href=\"")
-                    .append(u).append("\" >").append(escape(settings.lang().get("browser_jump"))).append("</a><br>");
+            sb.append(progressJump(endpoint, settings, url, o.jump().seconds()));
         }
         return responses.echoed(sb.toString());
+    }
+
+    /** 旧 {@code mac_jump($url, $sec)} 的输出，跳转改为 progress.js（内容安全策略不允许内联脚本，22 文档第 8.4 节）。 */
+    static String progressJump(AdminEndpoint endpoint, AdminSettings settings, String url, int seconds) {
+        String u = escape(url);
+        return "<script src=\"" + escape(endpoint.sitePath()) + "/admin-assets/progress.js\" data-url=\"" + u
+                + "\" data-seconds=\"" + seconds + "\"></script><span>" + escape(settings.lang().get("pause")) + seconds
+                + escape(settings.lang().get("continue_in_second")) + "  >>>  </span><a href=\"" + u + "\" >"
+                + escape(settings.lang().get("browser_jump")) + "</a><br>";
     }
 
     private static String escape(String s) {

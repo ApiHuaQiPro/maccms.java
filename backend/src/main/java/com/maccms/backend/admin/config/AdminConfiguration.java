@@ -293,6 +293,14 @@ public class AdminConfiguration {
                 clock.getIfAvailable(Clock::systemUTC), com.maccms.backend.staticgen.application.MakeService.LEGACY_ZONE);
     }
 
+    /** B28 URL 推送与友链回链检测（30 文档第 5 节）。 */
+    @Bean
+    com.maccms.backend.admin.web.AdminUrlsendActions adminUrlsendActions(AdminEndpoint endpoint, AdminSettings settings,
+            AdminResponses responses, ObjectProvider<com.maccms.backend.staticgen.application.UrlsendService> urlsend,
+            ObjectProvider<com.maccms.backend.integration.application.BacklinkPages> pages, LegacyConfigService legacy) {
+        return new com.maccms.backend.admin.web.AdminUrlsendActions(endpoint, settings, responses, urlsend, pages, legacy);
+    }
+
     @Bean
     com.maccms.backend.admin.web.AdminTemplateActions adminTemplateActions(AdminEndpoint endpoint, AdminSettings settings,
             AdminResponses responses, LegacySiteFiles files, LegacyConfigService legacy, SiteTemplateService templates,
