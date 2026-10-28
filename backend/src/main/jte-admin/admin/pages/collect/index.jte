@@ -1,4 +1,5 @@
 @import com.maccms.backend.admin.web.view.collect.CollectListView
+@import com.maccms.backend.collect.application.ProvideKind
 @import com.maccms.backend.content.application.view.AdminRow
 @param CollectListView page
 @template.admin.layout.page(head = page.head(), lang = page.lang(), content = @`
@@ -10,6 +11,10 @@
             <a data-href="${page.url().build("info")}" class="layui-btn layui-btn-primary j-iframe" data-width="800px" data-height="610px"><i class="layui-icon">&#xe654;</i>${page.lang().get("add")}</a>
             <a data-href="${page.url().build("del")}" class="layui-btn layui-btn-primary j-page-btns confirm"><i class="layui-icon">&#xe640;</i>${page.lang().get("del")}</a>
             <a data-href="${page.url().build("clearbind")}" class="layui-btn layui-btn-primary j-page-btns confirm" data-checkbox="false" data-ajax="yes"><i class="layui-icon">&#xe640;</i>${page.lang().get("admin/collect/clear_bind")}</a>
+
+                @for(ProvideKind k : page.breakpoints())
+                <a href="${page.breakHref(k)}" class="layui-btn layui-btn-danger ">${page.breakLabel(k)}</a>
+                @endfor
 
         </div>
 

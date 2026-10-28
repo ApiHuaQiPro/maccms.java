@@ -5,19 +5,37 @@ import com.maccms.backend.admin.web.view.AdminHead;
 import com.maccms.backend.admin.web.view.content.BrowserText;
 import com.maccms.backend.admin.web.view.content.TypeListView;
 import com.maccms.backend.collect.application.CollectBindings;
+import com.maccms.backend.collect.application.ProvideKind;
 import com.maccms.backend.common.lang.LegacyLang;
 import com.maccms.backend.content.application.view.AdminRow;
 import com.maccms.backend.content.application.view.AdminRowPage;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
- * 采集源列表（旧 admin/view/collect/index.html）。断点采集的按钮（旧版按缓存里的断点地址显示）在 B19 接上（断点只在入库时记下），
- * 现在没有断点，不显示。
+ * 采集源列表（旧 admin/view/collect/index.html）与断点采集页（旧 union.html）。断点采集的按钮按断点是否存在显示（B19 增量 3，断点在入库时记下）。
+ *
+ * @param breakpoints 有断点的种类（旧 {@code $collect_break_<种类> neq ''}），按视频、文章、明星、角色、网址的顺序
  */
-public record CollectListView(AdminHead head, LegacyLang lang, LegacyAdminUrl url, AdminRowPage list) implements BrowserText {
+public record CollectListView(AdminHead head, LegacyLang lang, LegacyAdminUrl url, AdminRowPage list, List<ProvideKind> breakpoints)
+        implements BrowserText {
+
+    /** 断点采集按钮的文字（旧模板写死的中文）。 */
+    private static final Map<ProvideKind, String> BREAK_LABELS = Map.of(ProvideKind.VOD, "【进入视频断点采集】", ProvideKind.ART,
+            "【进入文章断点采集】", ProvideKind.ACTOR, "【进入明星断点采集】", ProvideKind.ROLE, "【进入角色断点采集】", ProvideKind.WEBSITE,
+            "【进入网址断点采集】");
+
+    /** 旧 {@code {:url('load')}?flag=<种类>}。 */
+    public String breakHref(ProvideKind kind) {
+        return url.build("load") + "?flag=" + kind.code();
+    }
+
+    public String breakLabel(ProvideKind kind) {
+        return BREAK_LABELS.get(kind);
+    }
 
     /** 旧 {@code {:url('api')}?{:http_build_query([...])}}：进入资源库（{@code ac=list}）与采集当天/本周/所有（{@code ac=cj}）的地址。 */
     public String api(AdminRow vo, String ac, String h) {

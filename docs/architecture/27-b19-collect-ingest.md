@@ -1,6 +1,6 @@
 ## B19 采集入库与 Receive 入站接口（路线图 B19，MACC-43）
 
-> **状态：增量 1（视频入库核心 + Receive `vod`）已合并（main `738352f`）；增量 2（文章、演员、角色、网址、评论）交付待验收；增量 3 待建（第 1 节）。** 依据：
+> **状态：增量 1（视频入库核心 + Receive `vod`）已合并（main `738352f`）；增量 2（文章、演员、角色、网址、评论）已合并（main `644b74c`）；增量 3（后台入库按钮与断点续采）交付待验收（第 12 节）。** 依据：
 > - 路线图 `09-roadmap.md` 第 3.2 节 B19 行、第 5.3 节 B19 验收行（影子合并对比、并发提交同一条视频不重复、Receive 校验、回滚演练）、E01/E02 行（只做本地版本，不发请求、不下载图片）、第 1.2 节（零结构变更）；
 > - B07 `12-write-infrastructure.md`（可写数据源、写入登记、回滚演练工具）、B13 `22-b13-admin-content.md`（`formatDataBeforeDb`、`mac_substring` 的 D-B13-5、严格模式报错的 D-B13-3）、B11 `20-b11-comment-gbook-counters.md`（视频搜索缓存）、B18 `26-b18-collect-preview.md`（解析结果与值的表示）。
 >
@@ -10,9 +10,9 @@
 
 | 项 | 值 |
 |---|---|
-| 起点 | 增量 1：main `b673c71`（含 B18 合并 `39b9902`）；平台基线提交 `0f8ada9` 的树与它相同。增量 2：main `5367468`（含增量 1 合并 `738352f`） |
+| 起点 | 增量 1：main `b673c71`（含 B18 合并 `39b9902`）；平台基线提交 `0f8ada9` 的树与它相同。增量 2：main `5367468`（含增量 1 合并 `738352f`）。增量 3：main `a9a036d`（含增量 2 合并 `644b74c`；平台基线提交 `82f685b` 的树与它相同） |
 | 分支 | `agent/claude/macc-23`（本任务的工作分支），只用普通提交 |
-| 回滚点 | 增量 1：main `b673c71`；增量 2：main `5367468` |
+| 回滚点 | 增量 1：main `b673c71`；增量 2：main `5367468`；增量 3：main `a9a036d` |
 
 ### 1. 范围与增量
 
@@ -21,14 +21,16 @@ B19 的旧代码是 `common/model/Collect.php` 的六个 `{种类}_data`（约 1
 | 增量 | 内容 | 状态 |
 |---|---|---|
 | 1 | 视频入库核心（`vod_data`，`Collect.php:419-1015`）：过滤、`strip_tags`、拼音、`inrule` 查重（含 `vod_search_optimise` 的主演结果编号）、新增、`uprule` a～w 更新、播放组与下载组的追加/替换/`urlrole` 合并去重、`opt`/`filter`/`filter_from`、随机点击顶踩评分、伪原创替换、搜索缓存追加；入库锁；Receive 构造函数三道检查与 `vod`、`index` | 已合并（main `738352f`） |
-| **2** | 文章、演员、角色、网址、评论的 `*_data`（`Collect.php:1126-2532`）与对应的 Receive 入口 `art/actor/role/website/comment`（第 3.2、5 节），共用入库锁 | **本次交付** |
-| 3 | 后台 `collect/api` 的 `cj`/`cjsel`/`cjday`/`cjall`（从 B18 的预览缓存入库，`show=1` 的逐行输出与跳页）与 `collect/load` 断点续采（现在仍是 501"由 B19 批次提供"） | 待建 |
+| 2 | 文章、演员、角色、网址、评论的 `*_data`（`Collect.php:1126-2532`）与对应的 Receive 入口 `art/actor/role/website/comment`（第 3.2、5 节），共用入库锁 | 已合并（main `644b74c`） |
+| **3** | 后台 `collect/api` 的 `cj`/`cjsel`/`cjday`/`cjall`（从 B18 的预览缓存入库，`show=1` 的逐行输出与跳页）、`collect/load` 断点续采、采集源列表与断点采集页的断点按钮（第 12 节） | **本次交付** |
 
 | 不在本批 | 归属 |
 |---|---|
 | 远程图片下载（`syncImages` 的 `down_load`） | 不实施（E02）：库内图片地址保持提交的值，相当于 `sync_pic_opt` 关闭 |
 | 在线抓取资源站 | 不实施（E01） |
 | 自定义规则采集 | B20 |
+| `collect/timing`（浏览器端定时页：按间隔在 iframe 里打开 `collect/apis` 与生成静态页） | 未实施，仍是"由 B19 批次提供"：页面依赖的 `collect/apis` 在这份生产代码里不存在（在线采集，E01 不实施），生成静态页属 B16。是否保留需队长决定（第 9 节） |
+| 直接访问 `collect/vod`、`collect/art` 等 | 不实施：旧方法要求参数，直接访问在旧版是 500（ArgumentCountError）；仍是"由 B19 批次提供"的提示 |
 
 ### 2. 模块与依赖
 
@@ -37,9 +39,10 @@ B19 的旧代码是 `common/model/Collect.php` 的六个 `{种类}_data`（约 1
 | `collect.application` | `KindIngest`（增量 2：文章、演员、角色、网址、评论一行的入库规则，纯计算，经 `KindIngest.Store` 查重、关联查找与写入）、`VodIngest`（一行的入库规则，纯计算，经 `Store` 查重与写入）、`IngestPhp`（旧 PHP 函数：`mac_format_text`、`mac_txt_merge`、`mac_txt_explain`、`mac_rep_pse_syn/rnd`、`mac_array_filter`、`mac_like_arr`、`mac_substring`（含起点）与 PHP 8 的宽松比较、`intval`、`floatval`）、`CollectIngestService`（入库锁、配置读取、`Store` 的实现、列值换算）、`ReceiveService`（Receive 的检查、参数整理、分类名映射、JSON 输出） |
 | `collect.infrastructure` | `CollectIngestMapper`（查重；增量 2 另加五个种类的查重、角色的关联视频与评论的关联数据，`mapper/collect/CollectIngestMapper.xml`）、`CollectIngestWriteMapper` + `CollectIngestWrites`（`mac_vod` 与增量 2 的 `mac_art`/`mac_actor`/`mac_role`/`mac_website`/`mac_comment` 的新增与修改，`mapper-write/collect/CollectIngestWriteMapper.xml`，列清单与 install.sql 相同） |
 | `collect.api` | `ReceiveController`：`/api.php/receive/<操作>`，可写数据源打开时注册 |
+| 增量 3 | `collect.application.CollectRunService`（一页入库、断点、重试、完成；经 `CollectIngestService` 入库，与 Receive 同一把锁、同一套规则）、`CollectPreviewService.select`（从预览缓存取要入库的一页）；`collect.infrastructure.FileCollectBreakpointStore`（断点文件）；`admin.web.AdminCollectActions` 的 `collect/api` 入库分支与 `collect/load`；`CollectListView`、`collect/index.jte`、`collect/union.jte` 的断点按钮 |
 | 复用 | content：`LegacyPinyin`、`PhpText`（`strip_tags`、`mac_filter_xss`、`mb_substr`、`urldecode`）、`PhpIntval`、`AdminRowValues`/`AdminTable`（列值规则同 B13）、`VodSearchCache`（主演结果编号与新增视频追加，同 B11/B13）、分类缓存（`type_pid` 与分类名 → 编号）；common：`PhpInput`（按字节解析 GET/POST）、`LegacyJson`、`LegacyLang`；legacyconfig：`maccms.php`、`vodplayer.php`、`voddowner.php` |
 
-- **写入登记**（`WriteRegistry`）：`collect / mac_vod / INSERT、UPDATE / B19`；增量 2 另加 `collect / mac_art、mac_actor、mac_role、mac_website、mac_comment / INSERT、UPDATE / B19`（共 105 项）；不登记 DELETE。搜索缓存的写入沿用 content 已登记的 `mac_vod_search`。五张表都在路线图写入方矩阵的 B19 范围内。
+- **写入登记**（`WriteRegistry`）：`collect / mac_vod / INSERT、UPDATE / B19`；增量 2 另加 `collect / mac_art、mac_actor、mac_role、mac_website、mac_comment / INSERT、UPDATE / B19`（共 105 项）；不登记 DELETE。增量 3 不新增登记：后台入库经同一个 `CollectIngestService` 写这几张表。搜索缓存的写入沿用 content 已登记的 `mac_vod_search`。五张表都在路线图写入方矩阵的 B19 范围内。
 - 依赖方向符合 `ModuleBoundaryTest`：collect 只引用 content、common、legacyconfig 的 `application` 公开类型与 common 的支持类。
 
 ### 3. 入库规则（`VodIngest`，与 `vod_data` 逐步对应）
@@ -116,6 +119,9 @@ B19 的旧代码是 `common/model/Collect.php` 的六个 `{种类}_data`（约 1
 | 增量 2 回滚演练 | `ReceiveGoldenMySqlIT` ⑥：快照 7 张表 → 评论场景的 11 步与文章更新、演员更新、角色新增、网址新增 → `DmlRestore` 只用 DML 恢复 → diff 为空 → 表结构不变 |
 | 增量 2 规则分支 | `KindIngestTest`：数组字段拒绝、演员必填的语言键、文章分页对齐、演员与网址的 NULL 图片被列值规则拒绝、宽松比较与本地图片、锁定、评论不查重时直接新增、未知模块不查库、豆瓣编号只对视频生效、角色的 LIKE 条件与找不到关联视频、`mac_get_ip_long`、随机项范围（评论只有顶踩）、伪原创只改正文、分类为 0 与过滤词在查库前跳过 |
 | 规则分支与旧函数 | `VodIngestTest`：`opt`、`filter` 1/2/3 与 `filter_from` 子串匹配、随机项范围、搜索优化的结果编号与追加、`tag=1`、连载规则与 D-B19-4、数组字段拒绝、旧 PHP 文本函数、`mac_rep_pse_rnd` 的 crc32 选词、Receive 参数整理、分类名映射 |
+| 增量 3 编排 | `CollectRunServiceTest`（12 例，入库用替身、不连库）：逐页走完时断点的写下与删除、跳转参数（下一页、完成回到预览、`cjsel` 去掉 `ids`）、从断点续上只重做那一页、"参数错误"的行不中断本页、排队超时同一页重试到 3 次后照常翻页、`cjsel` 选中的行一次入库、`t`/`wd`/`h`/`rday` 筛选、`h` 的窗口边界（视频与其他种类）、文章走 `KindIngest`、没有载入时不记断点、越界页、`collect_timespan` 的空值规则、断点文件只在 `breakpoints/` 且清除预览缓存不影响。变异检查：去掉"完成时删除断点"，3 例报错。`AdminCollectJumpTest`：跳转地址的本站检查与 `urldecode` |
+| 增量 3 端到端（HTTP 契约 + 真实 MySQL） | `AdminCollectIngestMySqlIT`（6 例，一次性库）：① 45 部视频"采集所有"按 `data-url` 逐页走完 3 页——每页的状态码、Content-Type、内容安全策略头、标题与样式段、`[vod_data]` 页码与文件名、逐行结果（新增、分类未绑定、过滤词）、`progress.js` 跳转与 `collect_timespan` 秒数、完成提示；过程中采集源列表与断点采集页出现"【进入视频断点采集】"、`collect/load` 输出"正在载入断点位置"并跳到断点；完成后断点消失；`collect/load` 没有断点时跳回来源页（`urldecode`）或采集源列表，别站来源 403；库里 43 行、名称不重复。② 同一批再走一遍：全部"无需更新"，全库快照逐行不变（幂等）。③ 50 部做完 2 页后中断，经 `collect/load` 从断点（第 2 页）续上：这一页没有新增、续完后 48 行不重复、断点消失。④ `cjsel` 选中 3 行一次入库并回到来源页，没有来源页回到预览，别站来源 403 且不入库；文章"采集当天"`h=24` 只入库一天内的、分类按绑定。⑤ 没有载入：提示、全库不变、无断点；8 个并发请求入库同一页 20 部：合计只新增 18 次、库里 18 行。⑥ 回滚演练：快照全库 → 25 部视频两页入库 + 改一部的播放地址 → `DmlRestore` 只用 DML 恢复 → 逐行 diff 为空 → 表结构不变；结束时删库并确认不存在 |
+| 增量 3 随改的已有测试 | `AdminCollectPreviewMySqlIT` ⑥：去掉"入库按钮与 `collect/load` 是 501"的预期，改为没有断点时 `collect/load` 只跳转、全库不变 |
 | 护栏 | `WriteGuardTest`、`WriteRegistryTest`（登记 105 项）、`WriteInfrastructureMySqlIT`（B19 只允许 collect 对 mac_vod、mac_art、mac_actor、mac_role、mac_website、mac_comment 的新增与修改）、`ModuleBoundaryTest`、`ReadOnlyGuardrailsTest`、`OutboundNetworkGuardTest`、`SchemaGuardTest`、`CollectPreviewGuardTest` |
 
 ### 9. 风险与遗留
@@ -124,7 +130,10 @@ B19 的旧代码是 `common/model/Collect.php` 的六个 `{种类}_data`（约 1
 |---|---|
 | 入库锁是进程内的 | 多实例部署时各实例的锁互不相干；Receive 与后台入库要落在同一实例（与 B18 的预览缓存相同的部署约束）。需要多实例时改成数据库命名锁，届时在 B21 演练 |
 | 严格模式 | 旧表 `vod_content` 等 TEXT 列没有默认值，严格模式下缺这些列的新增失败（旧版 500，新版"参数错误"）。生产库的 `sql_mode` 未核实（D9-b）；若生产不是严格模式，旧版会写入空值，新版仍拒绝——B21 演练时核对 |
-| 增量 3 | 后台入库按钮与断点续采尚未实现，入口返回 501 |
+| 入库是 GET | 旧版的入库按钮、跳页与断点都是 GET 链接，新版照旧（逐页跳转靠 `location.href`）。后台入口对 GET 也要求同源（D-B12-3），别的站点发起的入库请求在入口处 403（`AdminCollectIngestMySqlIT` ④） |
+| 断点与预览缓存是本机文件 | 断点在 `<cache-dir>/breakpoints/`，与预览缓存同目录；多实例部署时载入、预览、入库与断点续采要落在同一实例（同 B18） |
+| 从断点续上时重做断点那一页 | 与旧版相同：断点是"正在做的那一页"的地址，续采时整页重做；已入库的行按查重走更新一支（同样的数据得到"无需更新"，不新增重复行，IT ②③）。若两次之间改了 `uprule`，重做的行会按新规则更新 |
+| `collect/timing` | 未实施（第 1 节）。它是浏览器端按间隔调用在线采集（不存在的 `collect/apis`）与生成静态页的页面；本地文件源下没有可调用的对象，需队长决定是删除入口还是改成本地版本 |
 | 演员、角色、网址必须带图片 | 旧版没提交图片时整页 500（D-B19-9），新版照旧拒绝（"参数错误"）。资源站数据一般带图片，影响有限；若要改成"没有图片时写空串"属于功能调整，需队长决定 |
 | `mac_get_ip_long` | 新版只认标准点分十进制（每段 0～255、没有前导 0）；PHP `ip2long` 依赖系统 `inet_pton`，个别写法（如前导 0）可能因平台而异 |
 | 图片同步 | 不下载（E02）；`pic=1` 时旧版会下载失败并保留原地址（本机无网络时的结果与新版相同），能下载时旧版换成本地地址，新版不换 |
@@ -142,11 +151,62 @@ B19 的旧代码是 `common/model/Collect.php` 的六个 `{种类}_data`（约 1
 | D-B19-7 | `mac_interface_type` 的第一步结果放在缓存里，改配置后要等缓存失效 | 每次按当前配置计算 | 配置改动立即生效 |
 | D-B19-8 | Receive 正文没有大小上限 | urlencoded 正文上限 2MB（413） | 资源边界 |
 | D-B19-9 | 演员、角色、网址新增时没有提交图片（`$tmp['pic']` 为 null），或更新时没有提交图片而库里的图片是远程地址或为空：把 NULL 写进不允许 NULL 的图片列，整页 500，不写库 | 不写库，`{"code":1001,"msg":"参数错误"}`（同 D-B19-3）；文章照旧转成空串 | 旧版报错时的统一处理 |
+| D-B19-10 | 后台入库时 `t`、`ids`、`wd`、`h`（视频另有 `rday`）交给资源站筛选，每次取资源站的一页 | 从预览缓存本地筛选：`t` 远程分类编号相等、`wd` 名称包含（同 D-B18-2）；`ids` 非空时只取 `<种类>_id` 在逗号列表里的行，并且选中的行一次入库（不按 `limit` 分页，最多 1000 行）；`h` 大于 0 时按旧 Provide 接口的窗口取 `<种类>_time`（视频：大于"现在 − h 小时"；其他种类：大于那一天的零点；都小于明天零点；PRC 时区；`Y-m-d H:i:s` 或时间戳，取不出时不入选）；每页 `limit` 条（按钮里是没替换的占位符，取默认 20）；页码超过总页数时为空页并结束 | 本地文件就是全部数据（E01） |
+| D-B19-11 | 一行在 PHP 里报错时整页 500，后面的行不再入库，也不跳页 | 这一行输出"参数错误"（同 D-B19-3），继续本页；入库锁等待超时的行输出"入库排队超时，请稍后重试"，本页结束后同一页自动重来（`retry` 参数，最多 3 次），仍超时就照常翻页 | 健壮性；入库锁是新版加的（D-B19-2），排队超时只会在新版出现 |
+| D-B19-12 | `mac_jump` 把地址原样写进内联脚本；`cjsel` 完成后跳到 `$_SERVER['HTTP_REFERER']`；`collect/load` 没有断点时跳到 `mac_get_refer()`，没有来源页时跳到空地址（不停地重新载入本页） | 跳转改由 `progress.js` 的 `data-url`（内容安全策略，同 B13 第 8.4 节），地址转义；来源页与断点地址只认站内路径或与后台对外地址同源的 http(s) 地址，否则 `cjsel` 回到预览、`collect/load` 跳到采集源列表 | 安全（脚本注入、开放跳转）；修掉死循环 |
+| D-B19-13 | 断点存在站点缓存（`Cache::set`，与其他缓存一起清除）；进入入库分支就写下断点，资源站请求失败时也写 | 断点是缓存目录下 `breakpoints/collect_break_<种类>.url`（重启后仍在，清除预览缓存不影响）；没有载入的本地文件时提示"没有载入的本地文件（或已过期），请先在资源库页面载入文件"，不写断点、不写库 | 本地文件源；没有数据就没有可续的断点 |
+| D-B19-14 | 逐行输出名称、说明与文件名原样输出；`sync_pic_opt` 打开时附带图片下载结果 | 名称、说明、文件名转义后输出；不下载图片，所以没有下载结果（D-B19-1） | 同 D-B13-19；E02 |
 | — | `mac_substring` 在 PHP 8 把 ASCII 字符换成空格 | 按 PHP 7.3 | 沿用 D-B13-5 |
 | — | Content-Type `text/html;charset=utf-8` 与 `text/html; charset=utf-8` 两种写法 | 一律 `text/html;charset=utf-8`（Tomcat 输出） | 语义相同 |
 
 ### 11. 回滚
 
-- **代码**：每个增量以普通提交进入 main；出问题时 `git revert` 对应提交。撤回增量 2 回到 `5367468` 的行为（`art/actor/role/website/comment` 回到 501；`WriteRegistry` 去掉五张表的十项）；再撤回增量 1 回到 `b673c71` 的行为（`/api.php/receive/*` 404；去掉 collect 对 mac_vod 的两项）。不涉及表结构与配置项。
+- **代码**：每个增量以普通提交进入 main；出问题时 `git revert` 对应提交。撤回增量 3 回到 `a9a036d` 的行为（入库按钮与 `collect/load` 回到 501"由 B19 批次提供"，断点按钮不显示）；另可删除缓存目录下的 `breakpoints/`（只是断点文件，删掉后不再显示断点按钮）。撤回增量 2 回到 `5367468` 的行为（`art/actor/role/website/comment` 回到 501；`WriteRegistry` 去掉五张表的十项）；再撤回增量 1 回到 `b673c71` 的行为（`/api.php/receive/*` 404；去掉 collect 对 mac_vod 的两项）。不涉及表结构与配置项。
 - **数据**：入库只有对现有列的 DML；回滚演练（第 8 节 ③）证明一批入库可以用 `DmlRestore` 只用 DML 恢复。生产切换时按 13 文档在停止写入后取快照。
-- **开关**：Receive 本身受旧配置 `interface.status` 控制，关闭即 3001、不写库。
+- **开关**：Receive 本身受旧配置 `interface.status` 控制，关闭即 3001、不写库。后台入库只在载入了本地文件时写库；清除预览缓存（`ac=localclear`）后入库按钮只提示、不写库。
+
+### 12. 增量 3：后台入库按钮与断点续采
+
+#### 12.1 范围核对（main `a9a036d`）
+
+| 旧代码 | 行为 | 新版 |
+|---|---|---|
+| `admin/controller/Collect.php:140-171` `api` | `pg` 换成 `page`，按 `mid` 分派 | 不变（B18） |
+| `Collect.php:251-283` `vod($param)` 等五个（`:285-333`、`:335-…`） | `ac != 'list'`：`Cache::set(collect_break_<种类>, url('collect/api') . '?' . http_build_query($param))`；向资源站取一页（失败 → `error`）；视频先输出 `<title>{(int)page}/{pagecount} collecting..</title>`；都输出样式段，然后调 `{种类}_data($param, $res)` | `CollectRunService.run` + `AdminCollectActions.ingest`（12.2） |
+| `common/model/Collect.php:420-1049` `vod_data` 等（`show=1`） | 输出 `[{种类}_data] ` + `data_tip1`（页、总页数、地址）；逐行入库并输出 `序号、名称 <font color='…'>说明</font>`（其他种类没有"、"与空格，`color` 不加引号）；之后：`cjsel` → 删除断点、"数据采集完成。"、去掉 `ids`、`ac=list`，有来源页时跳来源页；最后一页 → 删除断点、完成、去掉 `page`/`ids`、`ac=list`；否则 `page + 1`；跳转等待 `collect_timespan` 秒（空时 3） | 相同（12.2）；行的规则就是增量 1、2 的 `VodIngest`/`KindIngest` |
+| `Collect.php:126-137` `load` | 有断点 → 输出 `load_break` 并立即跳到断点；否则跳到 `mac_get_refer()` | 相同；跳转地址只认本站（D-B19-12） |
+| `Collect.php:14-52`、`:101-120` `index`、`union`；`view/collect/index.html`、`union.html` | 五个种类有断点时显示"【进入××断点采集】"按钮（`load?flag=种类`） | 相同（`CollectListView.breakpoints`） |
+| `vod_data` 的 `ENTRANCE == 'api'` 一支 | 定时任务里一直取下一页直到最后一页 | 不在本增量（定时任务的执行属 B16；在线采集 E01 不实施） |
+
+#### 12.2 接口与状态
+
+请求都是 GET（与旧版相同），权限码仍是 `collect/api`、`collect/load`；后台入口的同源检查（D-B12-3）照常生效。
+
+| 请求 | 响应（`text/html;charset=UTF-8`，后台的安全头与内容安全策略） |
+|---|---|
+| `collect/api?ac=<非 list/localload/localclear>&cjflag&mid&type&param&t&ids&wd&h&rday&opt&filter&filter_from&sync_pic_opt&page&limit&retry` | 没有这个来源的预览缓存：`error("没有载入的本地文件（或已过期），请先在资源库页面载入文件")`，不写库、不写断点。否则：写断点 → 取这一页 → 逐行入库 → 输出（视频的 `<title>`、样式段、`[vod_data] 当前采集任务…页 采集地址&nbsp;<文件名>`、逐行结果、重试或完成提示、`progress.js` 跳转与"暂停 N 秒后继续"链接） |
+| `collect/load?flag=vod|art|actor|role|website` | 有断点：`正在载入断点位置，请稍后。。。` + 立即跳到断点；没有：跳到来源页（`urldecode` 后 `trim`）；没有来源页：跳到采集源列表 |
+| `collect/index`、`collect/union` | 有断点的种类显示"【进入××断点采集】" |
+
+**一次入库请求的状态**（`CollectRunService.End`）：
+
+```mermaid
+stateDiagram-v2
+    [*] --> 取页: 有预览缓存
+    [*] --> 提示未载入: 没有缓存（不写断点）
+    取页 --> 写断点
+    写断点 --> 逐行入库: 与 Receive 同一把入库锁、同一套规则
+    逐行入库 --> RETRY: 有排队超时的行且 retry < 3（同一页，retry+1，断点保留）
+    逐行入库 --> SELECTED_DONE: ac = cjsel（删除断点，回到来源页或预览）
+    逐行入库 --> DONE: 本页 >= 总页数（删除断点，回到预览）
+    逐行入库 --> NEXT: 否则（page+1，断点保留到下一页开始时覆盖）
+```
+
+- **断点**：`FileCollectBreakpointStore`，`<maccms.collect.local.cache-dir>/breakpoints/collect_break_<种类>.url`，内容是这一页的后台地址（白名单参数 `http_build_query`），先写临时文件再原子改名；只在这五个文件名上读写。断点在页开始时写下，所以中断后续采会把那一页整页重做。
+- **重试**：只针对入库锁等待超时（`CollectIngestService.Busy`，等锁超过 30 秒）；"参数错误"的行是确定性的，不重试。
+- **幂等**：重做一页时，已入库的行按 `inrule` 查到、走 `uprule` 更新一支；数据相同则"无需更新"、不写库（IT ② 全库快照不变）。查重与写入在入库锁内，并发的入库请求（含 Receive）不会写出重复行（IT ⑤）。
+- **回滚**：只有对现有列的 DML，`DmlRestore` 可以恢复（IT ⑥）；代码回滚见第 11 节。
+
+#### 12.3 验证
+
+见第 8 节"增量 3"三行；与旧版的差异 D-B19-10～14 见第 10 节。旧版这一段需要连资源站，没有做 PHP 影子对比：逐行的入库规则沿用增量 1、2 的黄金（`ReceiveGoldenMySqlIT`），本增量的输出格式、翻页与断点按旧代码逐段对照（12.1），由 `CollectRunServiceTest` 与 `AdminCollectIngestMySqlIT` 断言。

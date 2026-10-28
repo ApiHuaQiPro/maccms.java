@@ -49,7 +49,8 @@ import org.springframework.web.context.WebApplicationContext;
 
 /**
  * B18 资源库预览的端到端验证（26 文档第 8 节），真实 MySQL 一次性库 {@code maccms_it_<时间>_<随机>}：经后台入口完成"打开预览 → 上传载入 →
- * 预览（绑定、入库预检、本地筛选、分页）→ 从本地目录载入 → 拒绝 XXE 与超大文件 → 采集按钮由 B19 提供 → 清除预览缓存"，并证明：
+ * 预览（绑定、入库预检、本地筛选、分页）→ 从本地目录载入 → 拒绝 XXE 与超大文件 → 没有断点时的断点续采只跳转 → 清除预览缓存"
+ * （入库按钮见 {@code AdminCollectIngestMySqlIT}），并证明：
  * <ul>
  * <li>整个过程前后全库逐行相同（{@link DatabaseSnapshot}，登录之后取第一次快照）；表结构指纹与导入时相同；</li>
  * <li>XXE 文件里的外部 DTD 指向本机一个监听端口，整个过程中端口上没有连接；</li>
@@ -257,11 +258,9 @@ class AdminCollectPreviewMySqlIT {
             assertThat(send(sid, "GET", "/admin/collect/api", q("list", "2", "", ""), false).getContentAsString(StandardCharsets.UTF_8))
                     .contains("文章甲", "来源", "tab=art&amp;col=" + FLAG + "_1");
 
-            // ⑥ 采集入库与断点续采在 B19；不认识的 mid、GET 的载入"参数错误"
-            r = send(sid, "GET", "/admin/collect/api", q("cjsel", "1", "2", ""), false);
-            assertThat(r.getStatus()).isEqualTo(501);
-            assertThat(r.getContentAsString(StandardCharsets.UTF_8)).contains("B19");
-            assertThat(send(sid, "GET", "/admin/collect/load", "flag=vod", false).getContentAsString(StandardCharsets.UTF_8)).contains("B19");
+            // ⑥ 入库按钮与断点续采是 B19 增量 3（AdminCollectIngestMySqlIT）；没有断点时 collect/load 只跳转、不写库；不认识的 mid、GET 的载入"参数错误"
+            assertThat(send(sid, "GET", "/admin/collect/load", "flag=vod", false).getContentAsString(StandardCharsets.UTF_8))
+                    .contains("progress.js").doesNotContain("断点位置");
             assertThat(send(sid, "GET", "/admin/collect/api", q("list", "3", "2", ""), true).getContentAsString(StandardCharsets.UTF_8))
                     .contains("参数错误");
             assertThat(send(sid, "GET", "/admin/collect/api", q("localload", "1", "2", ""), true).getContentAsString(StandardCharsets.UTF_8))
