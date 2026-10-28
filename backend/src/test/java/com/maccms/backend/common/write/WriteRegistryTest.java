@@ -71,7 +71,10 @@ class WriteRegistryTest {
         assertThat(WriteRegistry.registered().allows("collect", "mac_collect", WriteOperation.INSERT)).isTrue();
         assertThat(WriteRegistry.registered().allows("collect", "mac_cj_node", WriteOperation.DELETE)).isTrue();
         assertThat(WriteRegistry.registered().allows("collect", "mac_cj_content", WriteOperation.DELETE)).isTrue();
-        assertThat(WriteRegistry.registered().allows("collect", "mac_cj_content", WriteOperation.INSERT)).isFalse();
+        // B20（MACC-44）：规则采集记下采集历史与内容、写入采集结果与发布状态；采集历史不修改
+        assertThat(WriteRegistry.registered().allows("collect", "mac_cj_content", WriteOperation.INSERT)).isTrue();
+        assertThat(WriteRegistry.registered().allows("collect", "mac_cj_content", WriteOperation.UPDATE)).isTrue();
+        assertThat(WriteRegistry.registered().allows("collect", "mac_cj_history", WriteOperation.INSERT)).isTrue();
         assertThat(WriteRegistry.registered().allows("collect", "mac_cj_history", WriteOperation.UPDATE)).isFalse();
         // B19（MACC-43）：采集入库与 Receive 新增、更新视频（不删除）
         assertThat(WriteRegistry.registered().allows("collect", "mac_vod", WriteOperation.INSERT)).isTrue();
@@ -83,7 +86,7 @@ class WriteRegistryTest {
             assertThat(WriteRegistry.registered().allows("collect", t, WriteOperation.UPDATE)).isTrue();
             assertThat(WriteRegistry.registered().allows("collect", t, WriteOperation.DELETE)).isFalse();
         }
-        assertThat(WriteRegistry.registered().permissions()).hasSize(105);
+        assertThat(WriteRegistry.registered().permissions()).hasSize(108);
     }
 
     @Test

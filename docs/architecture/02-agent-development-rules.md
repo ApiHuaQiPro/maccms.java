@@ -69,6 +69,12 @@
 - Provide 文件（JSON/XML）只经 `collect.application.ProvideParser` 解析（`26-b18-collect-preview.md` 第 3 节）：`parse` 得到与绑定无关、可缓存的 `ProvideDocument`，`bind` 按当时的 `bind.php` 换算出与旧方法返回值同构的数组，`precheck` 给出旧 `{type}_data` 的跳过原因；B19 入库沿用这三步，不另写解析。PHP 语义（`json_decode`、SimpleXML 子集、字符串转换、`empty`）只在 `ProvideJson`、`ProvideXml`、`ProvideValues`，由 PHP 黄金（`ProvideParserGoldenTest`）锁定。
 - XML 一律拒绝 DOCTYPE；新增 XML 入口（B19 的 Receive 等）也只经 `ProvideXml`，不要另建解析器或打开 DTD 支持。
 - 预览缓存只经 `collect.infrastructure.FileProvidePreviewStore`，本地文件只经 `DirectoryProvideSourceFiles`（只认目录下直接存放的普通文件）；B18 的类不引用数据访问与网络类型（`CollectPreviewGuardTest`）。
+### 2.7 B20 自定义规则采集
+
+- 规则（`mac_cj_node` 的各项规则）只经 `collect.application.CjRules` 执行（`28-b20-cj-local-html.md` 第 3 节）：文字按字节（ISO-8859-1 字符串）处理，过滤规则的 PCRE 只经 `CjPcre` 转写与替换（带匹配时限），不要另写正则执行；PHP 语义由黄金（`CjRulesGoldenTest`）锁定。
+- 页面只经 `collect.infrastructure.LocalHtmlFiles` 按网址的镜像布局读取本地 HTML 目录（只读、不跟随符号链接），不发起请求。
+- 内容的状态（未采集 → 已采集 → 已发布）只用带前置条件的 UPDATE 推进，采集历史用条件插入；导入只经 B19 的 `CollectIngestService`。
+
 ### 3. 数据库
 
 - **禁止 DDL**（路线图第 1.2 节"零结构变更"，B07 起取代原"DDL 独立评审"）：不建表、不加/改/删列与索引、不转引擎或字符集，不建触发器、存储过程、视图、事件；不执行表维护语句与账号/权限语句；应用代码与资源中不得有 `schema.sql`/`data.sql`、Flyway/Liquibase 或任何初始化器。数据库账号由数据库管理员在获批部署时创建，代码不建、不改账号。没有结构迁移，旧数据不需要迁移；回滚只用 DML（`12-write-infrastructure.md` 第 6 节）。

@@ -115,6 +115,9 @@ maccms:
       cache-ttl: ${MACCMS_COLLECT_CACHE_TTL:PT24H}
       max-file-bytes: ${MACCMS_COLLECT_MAX_FILE_BYTES:10240000}
       max-entries: ${MACCMS_COLLECT_CACHE_MAX_ENTRIES:200}
+      # 自定义规则采集（B20，docs/architecture/28-b20-cj-local-html.md 第 4 节）：规则里的网址不去请求，而是读这个目录里按网址镜像存放的
+      # HTML（http://主机/路径?查询 → html-dir/主机/路径@查询，与 wget --mirror 的布局相同）；留空表示未配置，采集时提示。
+      html-dir: ${MACCMS_COLLECT_HTML_DIR:}
   admin:
     enabled: ${MACCMS_ADMIN_ENABLED:false}
     entry: ${MACCMS_ADMIN_ENTRY:}

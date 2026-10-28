@@ -12,9 +12,11 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @param cacheTtl     预览缓存的有效期，默认 24 小时（{@code PT24H}）
  * @param maxFileBytes 每个文件的大小上限，默认 10,240,000 字节
  * @param maxEntries   预览缓存最多保留的项数，默认 200
+ * @param htmlDir      自定义规则采集的本地 HTML 目录（B20，28 文档第 4 节；按网址的镜像布局存放页面），留空表示未配置
  */
 @ConfigurationProperties(prefix = "maccms.collect.local")
-public record CollectLocalProperties(String sourceDir, String cacheDir, Duration cacheTtl, Long maxFileBytes, Integer maxEntries) {
+public record CollectLocalProperties(String sourceDir, String cacheDir, Duration cacheTtl, Long maxFileBytes, Integer maxEntries,
+                                     String htmlDir) {
 
     public static final long DEFAULT_MAX_FILE_BYTES = 10_240_000L;
 
@@ -32,6 +34,10 @@ public record CollectLocalProperties(String sourceDir, String cacheDir, Duration
 
     Path sourcePath() {
         return sourceDir == null || sourceDir.isBlank() ? null : Path.of(sourceDir.strip());
+    }
+
+    Path htmlPath() {
+        return htmlDir == null || htmlDir.isBlank() ? null : Path.of(htmlDir.strip());
     }
 
     Path cachePath() {

@@ -283,7 +283,7 @@ B02 起每个输出页面的批次（B02、B05、B06、B09～B15、B24～B26）�
 | B17 | 已合并（MACC-41，main `94e5f7b`；`25-b17-collect-config.md`；不发起任何请求，`collect/test` 返回固定提示） | 采集配置管理（先只读，再编辑） | C + K | B13、B15 | — | 是 | 否 |
 | B18 | 已合并（MACC-42，main `39b9902`；`26-b18-collect-preview.md`；候选 `519122d` 合入时主线 `verify` 2726/0、`-Pmysql-it` 103 个 IT 0 失败（跳过 1 个原有项）；回滚点 `714b3ab`；不写库、不发请求，解析结果只存本机预览缓存；`collect/load` 归 B19） | 采集解析与预览（本地文件源） | C + K | B17 | — | 否（只写本地缓存） | 否 |
 | B19 | 已合并（MACC-43，`27-b19-collect-ingest.md`；增量 1 视频入库核心 + Receive `vod` 已合并（main `738352f`，候选 `032ad14`；合入后主线 `verify` 2738/0、`-Pmysql-it` 106 个 IT 0 失败（跳过 1 个原有项）；回滚点 `b673c71`）；增量 2 文章、演员、角色、网址、评论与对应 Receive 入口已合并（main `644b74c`，候选 `3eb9652`；独立验收在 PHP 8.0/7.3 上重新生成黄金与提交版一致（只差时间、随机列与换行），合入后主线 `verify` 2750/0、`-Pmysql-it` 109 个 IT 0 失败（跳过 1 个原有项）；回滚点 `5367468`）；增量 3 后台入库按钮与断点续采、按 2026-10-28 用户决定删除 `collect/timing` 与定时任务的 `collect` 执行文件（D-B19-15）已合并（main `bec5117`，候选 `6b27a49` + `ab15960`；合入前候选 `verify` 2765/0、`-Pmysql-it` 115 个 IT 0 失败（跳过 1 个原有项）；回滚点 `a9a036d`）） | 采集入库与 Receive 接口 | C | B18、B13、B11 | — | 是 | 否 |
-| B20 | 待建 | 自定义规则采集（本地 HTML 源） | C + K | B19 | — | 是 | 否 |
+| B20 | 交付待验收（MACC-44，`28-b20-cj-local-html.md`；起点 main `32b747d`，回滚点 `32b747d`；规则执行对 PHP 7.3/8.0 黄金 55 个用例逐值一致（8.0 的内容采集在旧代码里整页报错，按 7.3）；写入登记新增 collect 对 `mac_cj_history` INSERT、`mac_cj_content` INSERT/UPDATE，导入经 B19） | 自定义规则采集（本地 HTML 源） | C + K | B19 | — | 是 | 否 |
 | B22 | 待建 | 安装向导（旧版完整流程，D8；建库建表由部署方在库外完成，向导只读校验） | C + K | B12、B15 | — | 是（文件 + 库） | 否 |
 | B23 | 待建 | integration 基础：白名单子包登记机制、出站客户端、密钥配置读取与日志脱敏、本机模拟服务测试框架 | C | B02、B07、B15 | — | 否 | 机制（不含任何对外调用） |
 | B24 | 待建 | 在线支付：E04 下单、E05 回调、W3 网关跳转 | C + K | B23、B10、B14 | 支付沙箱商户（第 4.3 节 ②；不阻塞开发，阻塞沙箱联调） | 是 | 是（`integration.pay`；W3） |
@@ -424,7 +424,7 @@ graph LR
 | `mac_vod_search` | B11、B19；后台"清理缓存"删除过期行由 B12 写入（21 文档第 4.6 节） |
 | `mac_admin` | B12 |
 | `mac_annex` | B13 |
-| `mac_collect`、`mac_cj_node` | B17；`mac_cj_content`、`mac_cj_history` 在 B20（B17 只在删除规则节点时照旧连带删除，25 文档第 6 节） |
+| `mac_collect`、`mac_cj_node` | B17；`mac_cj_content`、`mac_cj_history` 在 B20（B17 只在删除规则节点时照旧连带删除，25 文档第 6 节）；B20 写节点的采集时间与发布方案沿用 B17 登记的 `mac_cj_node` UPDATE（28 文档第 5 节） |
 | `application/extra/*.php`、`route.php`、`static/js/playerconfig.js` | B15（`bind.php` 在 B17，`timming.php` 的 runtime 在 B16，安装时的 `maccms.php` 在 B22） |
 | 模板目录中的模板文件与广告文件、`addons/` 插件目录与 `application/extra/addons.php` | B15；插件市场安装/升级 B29 |
 | 数据库工具"批量替换"：管理员手工对任一 `mac_*` 表的一列做 `REPLACE`（单表 UPDATE，表与列按白名单） | B15（`mac_admin` 沿用 B12 的登记；24 文档第 9.4 节） |

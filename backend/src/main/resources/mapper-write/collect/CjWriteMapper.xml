@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- B20 自定义规则采集的写入（28 文档第 5 节；WriteRegistry 登记 collect 的 mac_cj_history INSERT、mac_cj_content INSERT/UPDATE，
+     删除沿用 B17 登记的 mac_cj_content、mac_cj_history DELETE）。 -->
+<mapper namespace="com.maccms.backend.collect.infrastructure.CjWriteMapper">
+
+    <!-- 旧 Cj::col_url（Cj.php:164-165）：采集历史里没有这个网址时记下（条件插入：并发时只有一个请求记下，同一网址只进一次内容表） -->
+    <insert id="insertHistory">
+        INSERT INTO mac_cj_history (md5)
+        SELECT #{md5} FROM DUAL
+        WHERE NOT EXISTS (SELECT 1 FROM mac_cj_history AS h WHERE h.md5 = #{md5})
+    </insert>
+
+    <!-- 旧 Cj::col_url（Cj.php:166）：insert(nodeid, status=1, url, title)；data 列 NOT NULL 且没有默认值，新版写空串（D-B20-7） -->
+    <insert id="insertContent">
+        INSERT INTO mac_cj_content (nodeid, status, url, title, data) VALUES (#{nodeid}, 1, #{url}, #{title}, '')
+    </insert>
+
+    <!-- 旧 Cj::col_content（Cj.php:224）：update(status=2, data)；新版只改仍是"未采集"的这一行（并发时只有一个请求写入） -->
+    <update id="updateCollected">
+        UPDATE mac_cj_content SET status = 2, data = #{data} WHERE id = #{id} AND nodeid = #{nodeid} AND status = 1
+    </update>
+
+    <!-- 旧 Cj::content_into（Cj.php:410-414）：入库成功的行 update(status=3) -->
+    <update id="updatePublished">
+        UPDATE mac_cj_content SET status = 3
+        WHERE id IN <foreach collection="ids" item="x" open="(" separator="," close=")">#{x}</foreach> AND status = 2
+    </update>
+
+    <!-- 旧 Cj::content_del（Cj.php:316）：where id in ids（all=1 时 id > 0，即全部节点的内容，照旧） -->
+    <delete id="deleteContents">
+        DELETE FROM mac_cj_content WHERE id IN <foreach collection="ids" item="x" open="(" separator="," close=")">#{x}</foreach>
+    </delete>
+
+    <delete id="deleteAllContents">
+        DELETE FROM mac_cj_content WHERE id &gt; 0
+    </delete>
+</mapper>
