@@ -147,4 +147,4 @@
 
 ### 12. 回滚
 
-回滚点：开工时的 main HEAD `efa831d`（D-B23-a 的路线图提交 `24289f0` 若先合入，以合入后的 HEAD 为准）。本批没有写库、没有改结构、没有写文件（定时任务的 runtime 回写是 B16 原有的）；推送配置仍由 B15 保存。回滚即在 main 上撤销本批的合并提交；撤销后 `urlsend/push`、`urlsend/data`、`index/check_back_link` 回到"由 B28 批次提供"的提示，定时任务的 `urlsend` 回到"本次未执行"。新增的部署参数 `MACCMS_INTEGRATION_URLSEND_BAIDU_ENDPOINT` 可留可删。
+回滚点：合并前的 main HEAD `111dbfd`（本批开工于 `efa831d`，已合入含 D-B23-a 路线图提交 `24289f0` 的 main `111dbfd`）。本批没有写库、没有改结构、没有写文件（定时任务的 runtime 回写是 B16 原有的）；推送配置仍由 B15 保存。回滚即在 main 上撤销本批的合并提交；撤销后 `urlsend/push`、`urlsend/data`、`index/check_back_link` 回到"由 B28 批次提供"的提示，定时任务的 `urlsend` 回到"本次未执行"。新增的部署参数 `MACCMS_INTEGRATION_URLSEND_BAIDU_ENDPOINT` 可留可删。
