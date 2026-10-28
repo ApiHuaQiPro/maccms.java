@@ -71,10 +71,22 @@ class WriteRegistryTest {
         assertThat(WriteRegistry.registered().allows("collect", "mac_collect", WriteOperation.INSERT)).isTrue();
         assertThat(WriteRegistry.registered().allows("collect", "mac_cj_node", WriteOperation.DELETE)).isTrue();
         assertThat(WriteRegistry.registered().allows("collect", "mac_cj_content", WriteOperation.DELETE)).isTrue();
-        assertThat(WriteRegistry.registered().allows("collect", "mac_cj_content", WriteOperation.INSERT)).isFalse();
+        // B20（MACC-44）：规则采集记下采集历史与内容、写入采集结果与发布状态；采集历史不修改
+        assertThat(WriteRegistry.registered().allows("collect", "mac_cj_content", WriteOperation.INSERT)).isTrue();
+        assertThat(WriteRegistry.registered().allows("collect", "mac_cj_content", WriteOperation.UPDATE)).isTrue();
+        assertThat(WriteRegistry.registered().allows("collect", "mac_cj_history", WriteOperation.INSERT)).isTrue();
         assertThat(WriteRegistry.registered().allows("collect", "mac_cj_history", WriteOperation.UPDATE)).isFalse();
-        assertThat(WriteRegistry.registered().allows("collect", "mac_vod", WriteOperation.INSERT)).isFalse();
-        assertThat(WriteRegistry.registered().permissions()).hasSize(93);
+        // B19（MACC-43）：采集入库与 Receive 新增、更新视频（不删除）
+        assertThat(WriteRegistry.registered().allows("collect", "mac_vod", WriteOperation.INSERT)).isTrue();
+        assertThat(WriteRegistry.registered().allows("collect", "mac_vod", WriteOperation.UPDATE)).isTrue();
+        assertThat(WriteRegistry.registered().allows("collect", "mac_vod", WriteOperation.DELETE)).isFalse();
+        // B19 增量 2：文章、演员、角色、网址、评论的新增与更新（不删除）
+        for (String t : java.util.List.of("mac_art", "mac_actor", "mac_role", "mac_website", "mac_comment")) {
+            assertThat(WriteRegistry.registered().allows("collect", t, WriteOperation.INSERT)).isTrue();
+            assertThat(WriteRegistry.registered().allows("collect", t, WriteOperation.UPDATE)).isTrue();
+            assertThat(WriteRegistry.registered().allows("collect", t, WriteOperation.DELETE)).isFalse();
+        }
+        assertThat(WriteRegistry.registered().permissions()).hasSize(108);
     }
 
     @Test

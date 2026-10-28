@@ -2,12 +2,10 @@ package com.maccms.backend.admin.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.maccms.backend.common.LegacyCheckout;
 import java.io.InputStream;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.security.MessageDigest;
 import java.util.ArrayList;
-import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -33,9 +31,11 @@ class AdminPermissionsGoldenTest {
 
     @Test
     void goldenIsFromTheCurrentAuthPhp() throws Exception {
-        byte[] source = Files.readAllBytes(Path.of("..", "application", "admin", "common", "auth.php"));
-        assertThat(golden().get("sha256").asString())
-                .isEqualTo(HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(source)));
+        String sha = golden().get("sha256").asString();
+        byte[] source = LegacyCheckout.read(Path.of("..", "application", "admin", "common", "auth.php"), sha);
+        assertThat(LegacyCheckout.sha256(source))
+                .as("application/admin/common/auth.php 变了：用 admin_auth_export.php 重新导出" + LegacyCheckout.HINT)
+                .isEqualTo(sha);
     }
 
     @Test

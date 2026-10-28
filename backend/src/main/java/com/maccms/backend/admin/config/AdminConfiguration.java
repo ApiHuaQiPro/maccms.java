@@ -284,6 +284,15 @@ public class AdminConfiguration {
         return s == null ? null : new com.maccms.backend.admin.web.AdminDatabaseActions(endpoint, settings, responses, s, random);
     }
 
+    /** B16 生成静态（25 文档第 8 节）。 */
+    @Bean
+    com.maccms.backend.admin.web.AdminMakeActions adminMakeActions(AdminEndpoint endpoint, AdminSettings settings,
+            AdminResponses responses, ObjectProvider<com.maccms.backend.staticgen.application.MakeService> make,
+            ObjectProvider<com.maccms.backend.content.application.StaticSourceService> sources, ObjectProvider<Clock> clock) {
+        return new com.maccms.backend.admin.web.AdminMakeActions(endpoint, settings, responses, make, sources,
+                clock.getIfAvailable(Clock::systemUTC), com.maccms.backend.staticgen.application.MakeService.LEGACY_ZONE);
+    }
+
     @Bean
     com.maccms.backend.admin.web.AdminTemplateActions adminTemplateActions(AdminEndpoint endpoint, AdminSettings settings,
             AdminResponses responses, LegacySiteFiles files, LegacyConfigService legacy, SiteTemplateService templates,
@@ -299,13 +308,16 @@ public class AdminConfiguration {
     }
 
     /**
-     * B17 采集配置管理的动作（25 文档）。采集服务只在可写数据源打开时注册；单元测试的替身上下文里没有时，B17 的动作按"由后续批次实现"处理（同 B13）。
+     * B17 采集配置管理（25 文档）与 B18 资源库预览（26 文档）的动作。采集服务只在可写数据源打开时注册；单元测试的替身上下文里没有时，
+     * 这些动作按"由后续批次实现"处理（同 B13）。
      */
     @Bean
     com.maccms.backend.admin.web.AdminCollectActions adminCollectActions(AdminEndpoint endpoint, AdminSettings settings,
             AdminResponses responses, ObjectProvider<com.maccms.backend.collect.application.CollectAdminServices> collect,
-            AdminRandom random) {
-        return new com.maccms.backend.admin.web.AdminCollectActions(endpoint, settings, responses, collect.getIfAvailable(), random);
+            AdminRandom random, ObjectProvider<Clock> clock,
+            @Value("${spring.servlet.multipart.max-file-size:1MB}") String maxUpload) {
+        return new com.maccms.backend.admin.web.AdminCollectActions(endpoint, settings, responses, collect.getIfAvailable(), random,
+                clock.getIfAvailable(Clock::systemUTC), maxUpload);
     }
 
     /** 后台控制器的随机源（验证码、表单令牌）：不注册为 RandomGenerator 类型的 Bean。 */
