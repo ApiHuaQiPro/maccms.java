@@ -10,6 +10,7 @@ import com.maccms.backend.admin.web.view.collect.CollectInfoView;
 import com.maccms.backend.admin.web.view.collect.CollectListView;
 import com.maccms.backend.collect.application.CollectAdminServices;
 import com.maccms.backend.collect.application.CollectPreviewService;
+import com.maccms.backend.collect.application.CollectRunService;
 import com.maccms.backend.collect.application.ProvideKind;
 import com.maccms.backend.collect.application.view.CjNodeExport;
 import com.maccms.backend.collect.application.view.CjNodeForm;
@@ -36,7 +37,8 @@ import org.springframework.http.ResponseEntity;
  * {@code del}、{@code union}、{@code bind}、{@code clearbind}、{@code test}，{@code admin/controller/Cj.php} 的 {@code index}、{@code info}、
  * {@code del}、{@code export}、{@code import}；B18 资源库预览的本地文件版本（docs/architecture/26-b18-collect-preview.md 第 5 节）：
  * {@code collect/api} 的 {@code ac=list}（预览）与新增的 {@code ac=localload}、{@code ac=localclear}（载入本地文件、清除预览缓存）。
- * {@code collect/api} 的其他 {@code ac}（采集入库）与断点续采 {@code collect/load} 在 B19，规则的执行在 B20（{@code AdminPermissions} 的批次表）。
+ * {@code collect/api} 的其他 {@code ac}（采集入库）与断点续采 {@code collect/load} 是 B19 增量 3（docs/architecture/27-b19-collect-ingest.md 第 12 节），
+ * 规则的执行在 B20（{@code AdminPermissions} 的批次表）。
  * 不发起任何网络请求：{@code collect/test} 返回固定提示（E01 只做本地版本）。
  */
 public class AdminCollectActions {
@@ -81,6 +83,7 @@ public class AdminCollectActions {
             case "collect/clearbind" -> clearBind(param);
             case "collect/test" -> testRefused();
             case "collect/api" -> api(ctx);
+            case "collect/load" -> load(ctx);
             case "cj/index" -> cjList(ctx);
             case "cj/info" -> ctx.post_() ? result(ctx, s.nodes().save(ctx.params().nested("data"), param)) : cjInfo(ctx);
             case "cj/del" -> result(ctx, s.nodes().delete(param));
@@ -94,15 +97,26 @@ public class AdminCollectActions {
 
     private ResponseEntity<String> collectList(Ctx ctx) {
         CollectListView page = new CollectListView(head("admin/collect/title"), settings.lang(), ctx.url(),
-                s.sources().list(ctx.params().scalar("page"), ctx.params().scalar("limit")));
+                s.sources().list(ctx.params().scalar("page"), ctx.params().scalar("limit")), breakpoints());
         return responses.page(ctx.ajax(), HttpStatus.OK, t -> t.adminPagesCollectIndex(page));
     }
 
-    /** 旧 Collect::union：本生产代码里只剩断点采集的按钮（B19）与一个空的 {@code <script src="">}（新版不输出）。 */
+    /** 旧 Collect::union：本生产代码里只剩断点采集的按钮（B19 增量 3）与一个空的 {@code <script src="">}（新版不输出）。 */
     private ResponseEntity<String> union(Ctx ctx) {
         CollectListView page = new CollectListView(head("admin/collect/title"), settings.lang(), ctx.url(),
-                new com.maccms.backend.content.application.view.AdminRowPage(java.util.List.of(), 0, 1, 1, null));
+                new com.maccms.backend.content.application.view.AdminRowPage(java.util.List.of(), 0, 1, 1, null), breakpoints());
         return responses.page(ctx.ajax(), HttpStatus.OK, t -> t.adminPagesCollectUnion(page));
+    }
+
+    /** 有断点的种类（旧 {@code Cache::get(cache_flag . '_collect_break_' . 种类)} 非空）。 */
+    private List<ProvideKind> breakpoints() {
+        List<ProvideKind> out = new java.util.ArrayList<>();
+        s.runs().breakpoints().forEach((k, has) -> {
+            if (has) {
+                out.add(k);
+            }
+        });
+        return out;
     }
 
     private ResponseEntity<String> collectInfo(Ctx ctx, SessionState session) {
@@ -147,12 +161,12 @@ public class AdminCollectActions {
 
     /** 旧 {@code collect/api} 带到预览页的参数（采集源列表"进入资源库"链接的键，加上分页）。 */
     private static final List<String> API_KEYS = List.of("ac", "cjflag", "cjurl", "h", "t", "ids", "wd", "type", "mid", "opt",
-            "sync_pic_opt", "filter", "filter_from", "param", "page", "limit");
+            "sync_pic_opt", "filter", "filter_from", "param", "page", "limit", "rday", "retry");
 
     /**
      * 旧 {@code Collect::api}（{@code admin/controller/Collect.php:140-171}）：{@code pg} 非空时当作 {@code page}；按 {@code mid} 分派（其他值
      * 旧版没有输出，新版"参数错误"）。{@code ac=list} 显示预览；{@code ac=localload}、{@code ac=localclear}（POST）载入本地文件、清除预览缓存；
-     * 其他 {@code ac} 是采集入库，由 B19 提供。
+     * 其他 {@code ac} 是采集入库（B19 增量 3，{@link #ingest}）。
      */
     private ResponseEntity<String> api(Ctx ctx) {
         Map<String, String> param = new LinkedHashMap<>();
@@ -212,9 +226,179 @@ public class AdminCollectActions {
                 return responses.success(ctx.ajax(), settings.lang().get("clear_ok"), listUrl);
             }
             default -> {
-                return responses.notice(ctx.ajax(), HttpStatus.NOT_IMPLEMENTED, "跳转提示", "该功能尚未在新系统中实现（由 B19 批次提供）");
+                return ingest(ctx, source, param, lang);
             }
         }
+    }
+
+    // ------------------------------------------------------------------ 采集入库与断点续采（B19 增量 3）
+
+    /** 没有载入的本地文件时的提示（旧版这时向资源站请求这一页）。 */
+    static final String NOT_LOADED = "没有载入的本地文件（或已过期），请先在资源库页面载入文件";
+    /** 旧 {@code <style>}（{@code admin/controller/Collect.php:278} 等）。 */
+    private static final String STYLE = "<style type=\"text/css\">body{font-size:12px;color: #333333;line-height:21px;}"
+            + "span{font-weight:bold;color:#FF0000}</style>";
+
+    /**
+     * 旧 {@code Collect::vod/art/actor/role/website($param)} 在 {@code ac != 'list'} 时：记下断点、取这一页、逐行入库并输出（旧 {@code mac_echo}），
+     * 最后跳到下一页、同一页（重试）或回到预览（27 文档第 12 节）。没有载入的本地文件时"没有载入的本地文件"，不记断点、不写库。
+     */
+    private ResponseEntity<String> ingest(Ctx ctx, CollectPreviewService.Source source, Map<String, String> param,
+                                          UnaryOperator<String> lang) {
+        String api = ctx.url().build("api");
+        String here = api + "?" + com.maccms.backend.admin.application.LegacyAdminUrl.httpBuildQuery(param);
+        Optional<CollectRunService.RunPage> run = s.runs().run(source, param, here, lang);
+        if (run.isEmpty()) {
+            return responses.error(ctx.ajax(), NOT_LOADED);
+        }
+        CollectRunService.RunPage r = run.get();
+        StringBuilder sb = new StringBuilder();
+        if (r.kind() == ProvideKind.VOD) {
+            sb.append("<title>").append(r.pageNow()).append('/').append(r.pageCount()).append(" collecting..</title><br>");
+        }
+        sb.append(STYLE).append("<br>");
+        sb.append(escape("[" + r.kind().code() + "_data] ")).append(tip(r)).append("<br>");
+        for (CollectRunService.Line line : r.lines()) {
+            String color = line.green() ? "green" : "red";
+            if (r.kind() == ProvideKind.VOD) {
+                sb.append(line.no()).append("、").append(escape(line.name())).append(" <font color='").append(color).append("'>");
+            } else {
+                sb.append(line.no()).append(escape(line.name())).append("<font color=").append(color).append('>');
+            }
+            sb.append(escape(line.des())).append("</font><br>");
+        }
+        if (r.end() == CollectRunService.End.RETRY) {
+            sb.append(escape("本页有 " + r.busy() + " 条入库排队超时，重新入库本页（第 " + r.jump().get("retry") + " 次重试，最多 "
+                    + CollectRunService.MAX_RETRY + " 次）")).append("<br>");
+        }
+        if (r.end() == CollectRunService.End.DONE || r.end() == CollectRunService.End.SELECTED_DONE) {
+            sb.append(escape(settings.lang().get("model/collect/is_over"))).append("<br>");
+        }
+        String target = api + "?" + com.maccms.backend.admin.application.LegacyAdminUrl.httpBuildQuery(r.jump());
+        if (r.end() == CollectRunService.End.SELECTED_DONE) {
+            // 旧版 $_SERVER["HTTP_REFERER"] 非空时回到来源页
+            String ref = sameSite(ctx, ctx.request().getHeader("Referer"));
+            if (ref != null && !ref.isEmpty()) {
+                target = ref;
+            }
+        }
+        sb.append(jump(target, r.seconds()));
+        return responses.echoed(sb.toString());
+    }
+
+    /** {@code lang('model/collect/data_tip1', [页, 总页数, 地址])}：语言包里的 HTML 原样，三个值转义（地址是载入的文件名）。 */
+    private String tip(CollectRunService.RunPage r) {
+        String t = settings.lang().get("model/collect/data_tip1");
+        String[] args = {Long.toString(r.page()), Long.toString(r.pageCount()), escape(r.sourceName() == null ? "" : r.sourceName())};
+        StringBuilder sb = new StringBuilder();
+        int a = 0;
+        int i = 0;
+        while (i < t.length()) {
+            if (t.startsWith("%s", i) && a < args.length) {
+                sb.append(args[a++]);
+                i += 2;
+            } else {
+                sb.append(t.charAt(i++));
+            }
+        }
+        return sb.toString();
+    }
+
+    /**
+     * 旧 {@code Collect::load}（{@code admin/controller/Collect.php:126-137}）：有断点时输出 {@code lang('admin/collect/load_break')} 并跳到断点地址，
+     * 否则跳回来源页（旧 {@code mac_get_refer()}）；没有来源页或来源页不是本站时跳到采集源列表（旧版跳到空地址，即不停地重新载入本页，D-B19-12）。
+     */
+    private ResponseEntity<String> load(Ctx ctx) {
+        Optional<String> bp = s.runs().breakpoint(str(ctx.params().scalar("flag")));
+        StringBuilder sb = new StringBuilder();
+        String target;
+        if (bp.isPresent() && sameSite(ctx, bp.get()) != null) {
+            sb.append(escape(settings.lang().get("admin/collect/load_break")));
+            target = bp.get();
+        } else {
+            String raw = ctx.request().getHeader("Referer");
+            String ref = raw == null ? null : sameSite(ctx, phpUrldecode(raw).trim());
+            target = ref == null || ref.isEmpty() ? ctx.url().build("index") : ref;
+        }
+        sb.append(jump(target, 0));
+        return responses.echoed(sb.toString());
+    }
+
+    /** 旧 {@code mac_jump($url, $sec)}：内联脚本改为 progress.js 的 data-*（同 B13，22 文档第 8.4 节），地址与文字转义。 */
+    private String jump(String url, long seconds) {
+        String u = escape(url);
+        return "<script src=\"" + escape(endpoint.sitePath()) + "/admin-assets/progress.js\" data-url=\"" + u + "\" data-seconds=\"" + seconds
+                + "\"></script><span>" + escape(settings.lang().get("pause")) + seconds + escape(settings.lang().get("continue_in_second"))
+                + "  >>>  </span><a href=\"" + u + "\" >" + escape(settings.lang().get("browser_jump")) + "</a><br>";
+    }
+
+    /**
+     * 只跳本站：以 {@code /} 开头的路径（不能是 {@code //}），或来源（{@code scheme://host[:port]}）与后台对外地址相同的 http(s) 地址；含反斜杠、
+     * 控制字符或其他协议（如 {@code javascript:}）时为 null（27 文档 D-B19-12）。空串与 null 原样返回。来源不同的 Referer 在入口处已被拒绝
+     * （D-B12-3），这里再挡一次断点文件与来源页里的地址。
+     */
+    private String sameSite(Ctx ctx, String url) {
+        return sameSite(endpoint.origin(), url);
+    }
+
+    static String sameSite(String origin, String url) {
+        if (url == null || url.isEmpty()) {
+            return url;
+        }
+        for (int i = 0; i < url.length(); i++) {
+            char c = url.charAt(i);
+            if (c < 0x20 || c == 0x7f || c == '\\') {
+                return null;
+            }
+        }
+        if (url.startsWith("/")) {
+            return url.startsWith("//") ? null : url;
+        }
+        String lower = url.toLowerCase(Locale.ROOT);
+        if (!lower.startsWith("http://") && !lower.startsWith("https://")) {
+            return null;
+        }
+        int slash = url.indexOf('/', url.indexOf("//") + 2);
+        String o = (slash < 0 ? url : url.substring(0, slash)).toLowerCase(Locale.ROOT);
+        return origin != null && o.equals(origin) && o.indexOf('@') < 0 && o.indexOf('?') < 0 && o.indexOf('#') < 0 ? url : null;
+    }
+
+    /** PHP {@code urldecode}：{@code +} 为空格，{@code %XX} 按字节解码，不完整的 {@code %} 原样；结果按 UTF-8 解释。 */
+    static String phpUrldecode(String s) {
+        byte[] in = s.getBytes(StandardCharsets.UTF_8);
+        java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream(in.length);
+        for (int i = 0; i < in.length; i++) {
+            byte b = in[i];
+            if (b == '+') {
+                out.write(' ');
+            } else if (b == '%' && i + 2 < in.length && hex(in[i + 1]) >= 0 && hex(in[i + 2]) >= 0) {
+                out.write(hex(in[i + 1]) * 16 + hex(in[i + 2]));
+                i += 2;
+            } else {
+                out.write(b);
+            }
+        }
+        return out.toString(StandardCharsets.UTF_8);
+    }
+
+    private static int hex(byte b) {
+        return Character.digit((char) (b & 0xff), 16);
+    }
+
+    private static String escape(String s) {
+        StringBuilder sb = new StringBuilder(s.length() + 16);
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            switch (c) {
+                case '&' -> sb.append("&amp;");
+                case '<' -> sb.append("&lt;");
+                case '>' -> sb.append("&gt;");
+                case '"' -> sb.append("&quot;");
+                case '\'' -> sb.append("&#39;");
+                default -> sb.append(c);
+            }
+        }
+        return sb.toString();
     }
 
     private record Upload(String name, byte[] content, boolean tooLarge) {

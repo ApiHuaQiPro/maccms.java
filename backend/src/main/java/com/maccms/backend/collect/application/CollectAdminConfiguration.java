@@ -6,6 +6,7 @@ import com.maccms.backend.collect.infrastructure.CollectIngestMapper;
 import com.maccms.backend.collect.infrastructure.CollectIngestWrites;
 import com.maccms.backend.collect.infrastructure.CollectLocalProperties;
 import com.maccms.backend.collect.infrastructure.DirectoryProvideSourceFiles;
+import com.maccms.backend.collect.infrastructure.FileCollectBreakpointStore;
 import com.maccms.backend.collect.infrastructure.FileProvidePreviewStore;
 import com.maccms.backend.common.write.ConditionalOnWriteEnabled;
 import com.maccms.backend.content.application.ContentAdminServices;
@@ -25,7 +26,8 @@ import org.springframework.context.annotation.Configuration;
  * B17 后台采集配置管理的服务（25 文档第 2 节）与 B18 本地文件源的解析与预览（26 文档第 2 节，预览缓存与本地目录见
  * {@link CollectLocalProperties}）。后台要求可写数据源打开（21 文档第 7 节），所以只在可写数据源打开时注册。分类绑定读写旧配置
  * {@code extra/bind.php}（经 {@link LegacyConfigService}），取本站分类名用 content 模块的分类表（旧 {@code getCache('type_list')}）。
- * B19 采集入库与 Receive 入站接口（27 文档第 2 节）：{@link CollectIngestService}（入库锁、查重与写入）、{@link ReceiveService}。
+ * B19 采集入库与 Receive 入站接口（27 文档第 2 节）：{@link CollectIngestService}（入库锁、查重与写入）、{@link ReceiveService}；
+ * 增量 3 的后台入库与断点续采 {@link CollectRunService}（与 Receive 共用同一个 {@link CollectIngestService}，断点见 {@link FileCollectBreakpointStore}）。
  */
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnWriteEnabled
@@ -36,7 +38,8 @@ public class CollectAdminConfiguration {
                                               ObjectProvider<LegacyConfigService> legacy,
                                               ObjectProvider<ContentAdminServices> content, ObjectProvider<Clock> clock,
                                               FileProvidePreviewStore previewStore, DirectoryProvideSourceFiles sourceFiles,
-                                              CollectLocalProperties local) {
+                                              CollectLocalProperties local, CollectIngestService ingest,
+                                              FileCollectBreakpointStore breakpoints) {
         TypeNames types = id -> {
             ContentAdminServices c = content.getIfAvailable();
             if (c == null) {
@@ -50,7 +53,7 @@ public class CollectAdminConfiguration {
         CollectPreviewService preview = new CollectPreviewService(previewStore, sourceFiles, binds, types, legacy.getIfAvailable(), c,
                 local.cacheTtl(), local.maxFileBytes(), local.maxEntries());
         return new CollectAdminServices(new CollectSourceAdminService(reader, writer), binds, new CjNodeAdminService(reader, writer, c),
-                preview);
+                preview, new CollectRunService(preview, ingest, breakpoints, c));
     }
 
     @Bean

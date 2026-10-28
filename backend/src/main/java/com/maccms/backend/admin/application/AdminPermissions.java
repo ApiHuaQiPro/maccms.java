@@ -293,6 +293,13 @@ public final class AdminPermissions {
             Map.entry("addon/install", "B29"), Map.entry("addon/upgrade", "B29"));
 
     /**
+     * 新系统不提供的动作（用户决定删除的入口）：权限码与菜单数据照旧保留（与 auth.php 逐项相同），请求时固定返回"该功能未在新系统中提供"，
+     * 不再是批次提示。{@code collect/timing}（浏览器端定时挂机页，按间隔调用在线采集）：2026-10-28 用户决定删除，与本地文件源方针 D1/E01
+     * 冲突（27 文档 D-B19-15）。
+     */
+    static final Set<String> NOT_PROVIDED = Set.of("collect/timing");
+
+    /**
      * 旧控制器中存在、但 auth.php 没有列出的公开动作（小写；Base 的 {@code check_auth}/{@code _cache_clear} 不算动作）。
      * 由 {@code backend/src/test/php/admin_actions_export.php} 从旧控制器源码导出、{@code AdminPermissionsGoldenTest} 核对。
      */
@@ -375,6 +382,11 @@ public final class AdminPermissions {
         }
         String byAction = ACTION_BATCH.get(controller + "/" + action);
         return byAction != null ? byAction : CONTROLLER_BATCH.get(controller);
+    }
+
+    /** 是否是新系统不提供的动作（{@link #NOT_PROVIDED}）。 */
+    public static boolean notProvided(String controller, String action) {
+        return NOT_PROVIDED.contains(controller + "/" + action);
     }
 
     /** 全部已知动作（控制器/动作，小写，按控制器排序），供测试与文档逐项核对实现批次。 */

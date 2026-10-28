@@ -62,6 +62,8 @@ public class AdminController {
 
     static final int MAX_FORM_BYTES = 256 * 1024;
     private static final String PENDING_TITLE = "跳转提示";
+    /** {@link #notProvided} 的固定提示。 */
+    static final String NOT_PROVIDED_MSG = "该功能未在新系统中提供";
 
     private final AdminEndpoint endpoint;
     private final AdminSessions sessions;
@@ -218,6 +220,9 @@ public class AdminController {
                 if (b17 != null) {
                     yield b17;
                 }
+                if (AdminPermissions.notProvided(route.controller(), route.action())) {
+                    yield notProvided(ctx);
+                }
                 String batch = AdminPermissions.batchOf(route.controller(), route.action());
                 yield batch == null ? notFound(ajax) : pending(ctx, batch);
             }
@@ -371,6 +376,11 @@ public class AdminController {
     private ResponseEntity<String> pending(Ctx ctx, String batch) {
         return responses.notice(ctx.ajax(), HttpStatus.NOT_IMPLEMENTED, PENDING_TITLE,
                 "该功能尚未在新系统中实现（由 " + batch + " 批次提供）");
+    }
+
+    /** 用户决定不在新系统中提供的功能（{@link AdminPermissions#NOT_PROVIDED}）：固定提示，不再指向任何批次。 */
+    private ResponseEntity<String> notProvided(Ctx ctx) {
+        return responses.notice(ctx.ajax(), HttpStatus.NOT_IMPLEMENTED, PENDING_TITLE, NOT_PROVIDED_MSG);
     }
 
     private ResponseEntity<String> notFound(boolean ajax) {

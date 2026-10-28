@@ -368,6 +368,13 @@ class AdminMvcTest {
                 continue;
             }
             String b = body(as(sid, ajax(get(E + "/admin/" + ca))));
+            if (AdminPermissions.notProvided(p[0], p[1])) {
+                // 用户决定不提供的入口（collect/timing，27 文档 D-B19-15）：固定提示，不指向任何批次
+                if (!b.equals("{\"code\":0,\"msg\":\"" + AdminController.NOT_PROVIDED_MSG + "\",\"data\":\"\",\"url\":\"\",\"wait\":3}")) {
+                    wrong.add(ca + " " + b);
+                }
+                continue;
+            }
             if (batch.equals("B15")) {
                 // B15 的动作已实现（与 PHP 的对照在 AdminSystemGoldenTest）：这里只确认不再是批次提示。数据库工具要库（本测试没有
                 // DatabaseToolMapper，新版此时仍给批次提示；真实库上的对照在 AdminSystemGoldenMySqlIT）
@@ -385,6 +392,9 @@ class AdminMvcTest {
         MvcResult html = as(sid, get(E + "/admin/vod/data.html"));
         assertThat(html.getResponse().getStatus()).isEqualTo(501);
         assertThat(body(html)).contains("由 B13 批次提供");
+        MvcResult timing = as(sid, get(E + "/admin/collect/timing.html"));
+        assertThat(timing.getResponse().getStatus()).isEqualTo(501);
+        assertThat(body(timing)).contains(AdminController.NOT_PROVIDED_MSG).doesNotContain("批次提供");
         // 不存在的动作（含旧版的空控制器 safety、update）是 404
         for (String p : List.of("/admin/index/nosuch", "/admin/safety/file", "/admin/update/step2", "/admin/index/_cache_clear")) {
             assertThat(as(sid, get(E + p)).getResponse().getStatus()).as(p).isEqualTo(404);

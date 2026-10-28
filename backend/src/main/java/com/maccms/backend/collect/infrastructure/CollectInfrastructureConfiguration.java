@@ -7,7 +7,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * collect 模块的写入（B17、B19 入库）与本地文件源（B18）：可写数据源打开时注册；关闭时没有这些 Bean（后台本身要求可写数据源打开）。
+ * collect 模块的写入（B17、B19 入库）、本地文件源（B18）与入库断点（B19 增量 3）：可写数据源打开时注册；关闭时没有这些 Bean（后台本身要求可写数据源打开）。
  */
 @Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties(CollectLocalProperties.class)
@@ -29,6 +29,12 @@ public class CollectInfrastructureConfiguration {
     @ConditionalOnWriteEnabled
     FileProvidePreviewStore fileProvidePreviewStore(CollectLocalProperties p) {
         return new FileProvidePreviewStore(p.cachePath());
+    }
+
+    @Bean
+    @ConditionalOnWriteEnabled
+    FileCollectBreakpointStore fileCollectBreakpointStore(CollectLocalProperties p) {
+        return new FileCollectBreakpointStore(p.cachePath());
     }
 
     @Bean

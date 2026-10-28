@@ -226,16 +226,7 @@ public class CollectPreviewService {
 
         String filter = filterWords(kind.get());
         List<PreviewRow> all = new ArrayList<>();
-        Map<?, ?> data = (Map<?, ?>) result.get("data");
-        int i = 0;
-        for (Object row : data.values()) {
-            ProvideDocument.Row source = c.doc().rows().get(i++);
-            if (t != null && !t.isEmpty() && (source.remote() == null || !source.remote().equals(t))) {
-                continue;
-            }
-            if (wd != null && !wd.isEmpty() && !ProvideValues.str(ProvideValues.get(row, kind.get().nameField())).contains(wd)) {
-                continue;
-            }
+        for (Object row : filtered(c, result, kind.get(), new Selection(t, wd, null, 0, null))) {
             all.add(new PreviewRow(row, ProvideParser.precheck(kind.get(), row, filter)));
         }
         long lim = PhpIntval.of(limit == null ? "" : limit);
@@ -249,6 +240,111 @@ public class CollectPreviewService {
         int to = (int) Math.min(from + lim, all.size());
         return Optional.of(new Preview(kind.get(), c.sourceName(), c.loadedAt(), c.doc().page(), typeList,
                 List.copyOf(all.subList(from, to)), all.size(), pg, lim, result));
+    }
+
+    /**
+     * 入库时选取的行（B19 增量 3，27 文档第 12 节）。旧版把 {@code t}、{@code ids}、{@code wd}、{@code h} 交给资源站筛选；本地文件由新版筛选：
+     * {@code t} 远程分类编号相等，{@code wd} 名称包含，{@code ids} 非空时只取 {@code <种类>_id} 在逗号列表里的行，{@code hours > 0} 时只取更新时间
+     * 落在旧 Provide 接口同一窗口里的行（{@link #withinHours}）。
+     *
+     * @param ids   旧 {@code ids}（逗号分隔；空串或 null 不筛选）
+     * @param hours 旧 {@code h}（小时；不大于 0 不筛选）
+     * @param now   当前时间（{@code hours > 0} 时用）
+     */
+    public record Selection(String t, String wd, String ids, long hours, Instant now) {
+    }
+
+    /**
+     * 一批入库的数据行（与旧 {@code $res['data']} 的一页同构：已换算绑定）。
+     *
+     * @param page      本页页码（1 起）
+     * @param pageCount 总页数（至少 1）
+     */
+    public record Batch(ProvideKind kind, String sourceName, List<Object> rows, long total, long page, long pageCount) {
+    }
+
+    /**
+     * 读出要入库的一页：没有缓存或已过期时为空。{@code ids} 非空时不分页（选中的行一次入库，最多 {@link #MAX_LIMIT} 行），否则按
+     * {@code page}、{@code limit} 分页（{@code limit} 不在 1～{@link #MAX_LIMIT} 时取 {@link #DEFAULT_LIMIT}，同预览；页码小于 1 时取 1，超过总页数时为空页）。
+     */
+    public Optional<Batch> select(Source s, Selection sel, String page, String limit, UnaryOperator<String> lang) {
+        Optional<ProvideKind> kind = s.kind();
+        if (kind.isEmpty()) {
+            return Optional.empty();
+        }
+        Optional<Cached> cached = read(s, kind.get());
+        if (cached.isEmpty()) {
+            return Optional.empty();
+        }
+        Cached c = cached.get();
+        Map<Object, Object> result = ProvideParser.bind(c.doc(), s.cjflag(), binds.bindings(), c.sourceName(), lang);
+        List<Object> all = filtered(c, result, kind.get(), sel);
+        boolean selected = sel.ids() != null && !sel.ids().isEmpty();
+        long lim = selected ? MAX_LIMIT : PhpIntval.of(limit == null ? "" : limit);
+        if (lim < 1 || lim > MAX_LIMIT) {
+            lim = DEFAULT_LIMIT;
+        }
+        long pages = Math.max(1, (all.size() + lim - 1) / lim);
+        // 页码越界时这一页没有行（不回退到最后一页，免得断点地址指向已不存在的页时把最后一页再入库一遍）
+        long pg = selected ? 1 : Math.min(Math.max(PhpIntval.of(page == null ? "" : page), 1), pages + 1);
+        int from = (int) Math.min((pg - 1) * lim, all.size());
+        int to = (int) Math.min(from + lim, all.size());
+        return Optional.of(new Batch(kind.get(), c.sourceName(), List.copyOf(all.subList(from, to)), all.size(), pg, pages));
+    }
+
+    private static List<Object> filtered(Cached c, Map<Object, Object> result, ProvideKind kind, Selection sel) {
+        java.util.Set<String> ids = null;
+        if (sel.ids() != null && !sel.ids().isEmpty()) {
+            ids = new java.util.HashSet<>(List.of(sel.ids().split(",", -1)));
+        }
+        List<Object> out = new ArrayList<>();
+        Map<?, ?> data = (Map<?, ?>) result.get("data");
+        int i = 0;
+        for (Object row : data.values()) {
+            ProvideDocument.Row source = c.doc().rows().get(i++);
+            if (sel.t() != null && !sel.t().isEmpty() && (source.remote() == null || !source.remote().equals(sel.t()))) {
+                continue;
+            }
+            if (sel.wd() != null && !sel.wd().isEmpty() && !ProvideValues.str(ProvideValues.get(row, kind.nameField())).contains(sel.wd())) {
+                continue;
+            }
+            if (ids != null && !ids.contains(ProvideValues.str(ProvideValues.get(row, kind.code() + "_id")))) {
+                continue;
+            }
+            if (sel.hours() > 0 && !withinHours(kind, ProvideValues.get(row, kind.code() + "_time"), sel.hours(), sel.now())) {
+                continue;
+            }
+            out.add(row);
+        }
+        return out;
+    }
+
+    private static final java.time.ZoneId PRC = java.time.ZoneId.of("Asia/Shanghai");
+    private static final java.time.format.DateTimeFormatter DATE_TIME = java.time.format.DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm:ss")
+            .withResolverStyle(java.time.format.ResolverStyle.STRICT);
+
+    /**
+     * 旧 Provide 接口的 {@code h} 窗口（{@code api/controller/Provide.php:61-68}、{@code :376-383} 等，时区 PRC）：更新时间大于起点、小于明天零点；
+     * 起点视频是 {@code 现在 - h 小时}，其他种类是那一天的零点。时间取行里的 {@code <种类>_time}：{@code Y-m-d H:i:s}（按 PRC）或 10 位以内的
+     * 时间戳；取不出时不入选（27 文档 D-B19-10）。
+     */
+    static boolean withinHours(ProvideKind kind, Object time, long hours, Instant now) {
+        String v = ProvideValues.str(time).trim();
+        long t;
+        try {
+            if (v.matches("[0-9]{1,10}")) {
+                t = Long.parseLong(v);
+            } else {
+                t = java.time.LocalDateTime.parse(v, DATE_TIME).atZone(PRC).toEpochSecond();
+            }
+        } catch (java.time.format.DateTimeParseException e) {
+            return false;
+        }
+        java.time.ZonedDateTime n = now.atZone(PRC);
+        java.time.ZonedDateTime from = n.minusHours(Math.min(hours, 1_000_000L));
+        long start = kind == ProvideKind.VOD ? from.toEpochSecond() : from.toLocalDate().atStartOfDay(PRC).toEpochSecond();
+        long end = n.toLocalDate().plusDays(1).atStartOfDay(PRC).toEpochSecond();
+        return t > start && t < end;
     }
 
     /** {@code maccms.php} 的 {@code collect.<种类>.filter}（没有旧配置时为空）。 */
