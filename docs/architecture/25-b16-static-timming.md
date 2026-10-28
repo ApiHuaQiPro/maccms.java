@@ -14,13 +14,14 @@
 | 起点 | 平台基线 `1f25421`（树与 main `4ad7b83` 相同） |
 | 分支 | `agent/claude/macc-40`，只用普通提交 |
 | 回滚点 | main `4ad7b83` |
+| 第二次合入 main | B17～B20 合入 main 后，分支先后合入 main `e0e7ef6`（`0df7dc8`）与 `2b895db`（`c572bad`），再接上定时任务的 `cj`（B20）与 `collect`（D-B19-15），见第 7.3 节；此时合入的回滚点为 main `2b895db` |
 
 ### 1. 范围
 
 | 旧代码 | 本批实现 |
 |---|---|
 | `application/admin/controller/Make.php` | `opt`（生成静态管理页）、`make`（按 `ac` 分派）、`index`（含 `?ac2=wap`）、`map`、`rss`、`type`、`topic_index`、`topic_info`、`info`、`label` |
-| `application/api/controller/Timming.php` | `index`：部署级鉴权（D2 ③）、时间表判断、runtime 回写、任务分派（`make`、`cache`；`collect`/`cj`/`urlsend` 输出"未执行"） |
+| `application/api/controller/Timming.php` | `index`：部署级鉴权（D2 ③）、时间表判断、runtime 回写、任务分派（`make`、`cache`、`cj`；`collect` 不提供；`urlsend` 输出"未执行"） |
 | `application/common.php` | `mac_url` 静态分支（:1732-2428）、`reset_html_filename`（:2802-2824）、`mac_play_list` 的来源/集数（:1346-1452）、`mac_art_list` 的分页数（:1294-1318） |
 
 | 不在本批（归属） | 说明 |
@@ -112,7 +113,8 @@
 |---|---|
 | `make` | `parse_str(param)` 后交给 `MakeService`（定时任务入口） |
 | `cache` | 同后台"清理缓存"：重写 `playerconfig.js` 的缓存段、清理过期的视频搜索缓存；输出"清理缓存成功" |
-| `collect`、`cj` | 输出"采集任务由后续批次（B17～B20）提供，本次未执行" |
+| `cj` | `parse_str(param)` 后取 `id`、`page`，做旧 `Cj::col_all` 的一轮（B20 的 `CjColAll`，与后台 `cj/col_all` 同一实现，28 文档第 6.2 节）：采集一页网址、一批内容、导入这一批，页面来自本地 HTML 目录，不发请求；没有节点时"获取失败"、未配置本地 HTML 目录时提示，都不写库（D-B16-16）；采集模块未启用（后台关闭）时"规则采集不可用" |
+| `collect` | 不提供（2026-10-28 用户决定，27 文档 D-B19-15）：输出"该功能未在新系统中提供"，不执行任何采集（D-B16-17） |
 | `urlsend` | 输出"推送任务由后续批次（B28）提供，本次未执行" |
 | 其他 | 输出"参数错误"（旧版调用不存在的方法而报错） |
 
@@ -136,6 +138,7 @@
 | `InternalPageRendererTest` | 进程内渲染与浏览器访问逐字节相同；外层请求不受影响；404 报状态 |
 | `MakeServiceTest` | 首页/手机首页；分类页分批与跳转参数（后台）、每个分类前 makesize 页（定时任务）；非静态模式；详情 + 模式 3 播放页与已生成时间回写；页面失败与禁写文件名不写；`nomake` 在不能回写时停下；回滚只删本批文件与空目录；前台未启用 |
 | `SiteLegacyConfigTest` | `view.*=2` 接受、非数字仍拒绝 |
+| `AdminCjMySqlIT.colAllRoundFromAdminAndTimmingTask`（`-Pmysql-it`） | 后台 `cj/col_all` 与定时任务 `cj` 各对一个节点做一轮：输出逐字节相同（只差节点内容），各导入 3 条视频、内容记为已发布、写采集时间；再执行一轮没有待采内容；没有节点时"获取失败"、`collect` 固定"该功能未在新系统中提供"，都不写库 |
 | `StaticTimmingMySqlIT`（`-Pmysql-it`） | 一次性库 + 临时站点根目录 + 真实 HTTP：未鉴权请求不改任何东西；本机触发 4 个 `make` 任务，文件与动态页面逐字节相同，`*_time_make` 只改这一列；回滚后站点根目录回到生成前；表结构不变 |
 
 运行结果见交付评论（`./mvnw verify`、`./mvnw verify -Pmysql-it`）。
@@ -155,14 +158,16 @@
 | D-B16-9 | 输出不转义；`ref=1` 跳回任意来源；`mac_jump` 内联脚本 | 名称与地址转义；只跳回同源；`progress.js` | 后台 CSP 与加固 |
 | D-B16-10 | 定时任务入口无鉴权，`enforce=1` 任何人可用 | 默认关闭；本机或口令（第 7.1 节）；后台定时任务列表的"测试"链接从浏览器打开会被拒绝（除非在本机） | D2 ③ |
 | D-B16-11 | runtime 回写把请求开始时读到的整张表写回 | 锁内基于当前内容只改该任务 | 不覆盖并发修改 |
-| D-B16-12 | `collect`/`cj`/`urlsend` 立即执行；`cache` 输出跳转页；未知任务报错 | 前三者输出"未执行"（runtime 照写）；`cache` 输出一行提示；未知任务"参数错误" | 依赖批次未完成 |
+| D-B16-12 | `urlsend` 立即执行；`cache` 输出跳转页；未知任务报错 | `urlsend` 输出"未执行"（runtime 照写）；`cache` 输出一行提示；未知任务"参数错误" | 推送在 B28 |
 | D-B16-13 | 关站时照样生成 | 关站时前台返回 503，生成失败 | 生成经前台处理链 |
 | D-B16-14 | 手机首页无条件用手机模板目录 | 按 `SiteVariants` 对手机 UA 的选择（`mob_status=0` 时与桌面相同） | 新版的手机模板选择只有这一处 |
 | D-B16-15 | 当天分类按表的物理顺序去重 | 按主键顺序去重 | MyISAM 物理顺序不可依赖；只影响生成顺序 |
+| D-B16-16 | `cj` 任务的节点不存在时 `$this->error()` 输出错误跳转页并结束整个请求 | 只输出一行"获取失败"，runtime 照写；未配置本地 HTML 目录时同样只输出提示 | 一次请求最多执行一个任务（第 7.2 节），结果相同；输出不再是跳转页 |
+| D-B16-17 | `collect` 任务连资源站采集 | 固定输出"该功能未在新系统中提供"，runtime 照写 | 2026-10-28 用户决定删除（D-B19-15，与本地文件源方针 D1/E01 冲突） |
 
 ### 11. 回滚
 
-- **代码**：本批以一个合并提交进入 main；出问题时 `git revert -m 1 <合并提交>`，回到 `4ad7b83`。定时任务入口默认关闭；后台默认关闭（B12）。
+- **代码**：本批以一个合并提交进入 main；出问题时 `git revert -m 1 <合并提交>`，回到合入前的 main（第 0 节）。定时任务入口默认关闭；后台默认关闭（B12）。
 - **文件**：按第 6 节删除本批生成的文件（`StaticFiles.cleanup()` 或按登记文件删除）；`timming.php` 的 runtime 回写与 PHP 格式相同，切回 PHP 后照常读取（不需要恢复）。
 - **数据**：只改 `vod_time_make`、`art_time_make`、`topic_time_make` 三列（旧版同样会改）；回滚不需要恢复，也可按需用 DML 置回生成前的值。没有表结构变化。
 

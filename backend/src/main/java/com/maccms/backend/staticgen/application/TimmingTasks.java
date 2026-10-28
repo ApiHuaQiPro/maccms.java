@@ -13,20 +13,33 @@ import java.util.Map;
  * <ul>
  * <li>{@code make}：静态生成（{@link MakeService}，定时任务入口）。</li>
  * <li>{@code cache}：同后台"清理缓存"（{@code Runnable}，由装配处给出：重写 playerconfig.js 的缓存段、清理过期的视频搜索缓存）。</li>
- * <li>{@code collect}、{@code cj}：采集与规则采集在 B17～B20 实现；本批输出"未执行"的提示（任务已按时间表记为执行过，同旧版"先写 runtime 再执行"）。</li>
- * <li>{@code urlsend}：推送在 B28 接入；同上。</li>
+ * <li>{@code cj}：规则采集的一轮（旧 {@code Cj::col_all}，B20 的 {@code CjColAll}，由装配处给出；页面来自本地 HTML 目录）。</li>
+ * <li>{@code collect}：定时资源站采集不提供（2026-10-28 用户决定，27 文档 D-B19-15），固定输出"该功能未在新系统中提供"，不执行任何采集
+ * （任务已按时间表记为执行过，同旧版"先写 runtime 再执行"）。</li>
+ * <li>{@code urlsend}：推送在 B28 接入；本批输出"未执行"的提示，同上。</li>
  * <li>其他：旧版调用不存在的方法而报错；新版输出"参数错误"。</li>
  * </ul>
  */
 public final class TimmingTasks implements TimmingService.TaskRunner {
 
+    /** 与后台 {@code collect/timing} 相同的固定提示（D-B19-15）。 */
+    static final String NOT_PROVIDED = "该功能未在新系统中提供";
+
+    /** 定时任务 {@code cj}：按 {@code parse_str} 后的参数执行一轮规则采集，返回输出；采集模块未启用时返回 null。 */
+    @FunctionalInterface
+    public interface CjTask {
+        String run(Map<String, String> param);
+    }
+
     private final MakeService make;
     private final Runnable clearCache;
+    private final CjTask cj;
     private final LegacyLang lang;
 
-    public TimmingTasks(MakeService make, Runnable clearCache, LegacyLang lang) {
+    public TimmingTasks(MakeService make, Runnable clearCache, CjTask cj, LegacyLang lang) {
         this.make = make;
         this.clearCache = clearCache;
+        this.cj = cj;
         this.lang = lang;
     }
 
@@ -44,7 +57,11 @@ public final class TimmingTasks implements TimmingService.TaskRunner {
                 clearCache.run();
                 yield line(lang.get("admin/index/clear_ok"));
             }
-            case "collect", "cj" -> line("采集任务由后续批次（B17～B20）提供，本次未执行");
+            case "cj" -> {
+                String out = cj.run(parseStr(param));
+                yield out == null ? line("规则采集不可用") : out;
+            }
+            case "collect" -> line(NOT_PROVIDED);
             case "urlsend" -> line("推送任务由后续批次（B28）提供，本次未执行");
             default -> line(lang.get("param_err"));
         };

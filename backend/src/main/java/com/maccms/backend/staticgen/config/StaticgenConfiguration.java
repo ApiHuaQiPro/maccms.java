@@ -2,6 +2,9 @@ package com.maccms.backend.staticgen.config;
 
 import com.maccms.backend.admin.application.PlayerAdminService;
 import com.maccms.backend.common.clientip.ClientIpResolver;
+import com.maccms.backend.collect.application.CjColAll;
+import com.maccms.backend.collect.application.CjRunService;
+import com.maccms.backend.collect.application.CollectAdminServices;
 import com.maccms.backend.common.lang.LegacyLang;
 import com.maccms.backend.content.application.ContentCacheMaintenance;
 import com.maccms.backend.content.application.StaticSourceService;
@@ -65,11 +68,15 @@ public class StaticgenConfiguration {
         return new TimmingService(legacy, lang(legacy), Clock.systemUTC(), LEGACY_ZONE);
     }
 
-    /** 定时任务里的 {@code cache}：同后台"清理缓存"（重写 playerconfig.js 的缓存段、清理过期的视频搜索缓存，有哪个做哪个）。 */
+    /**
+     * 定时任务里的 {@code cache}：同后台"清理缓存"（重写 playerconfig.js 的缓存段、清理过期的视频搜索缓存，有哪个做哪个）；{@code cj}：B20 规则采集的一轮
+     * （{@link CjColAll#timming}，执行时取采集服务，采集模块未启用时没有）。
+     */
     @Bean
     TimmingTasks staticgenTimmingTasks(MakeService make, ObjectProvider<PlayerAdminService> players,
                                        ObjectProvider<ContentCacheMaintenance> contentCache,
-                                       LegacyConfigService legacy) {
+                                       ObjectProvider<CollectAdminServices> collect, LegacyConfigService legacy) {
+        LegacyLang lang = lang(legacy);
         return new TimmingTasks(make, () -> {
             PlayerAdminService p = players.getIfAvailable();
             if (p != null) {
@@ -79,7 +86,11 @@ public class StaticgenConfiguration {
             if (c != null) {
                 c.clearVodSearchCache();
             }
-        }, lang(legacy));
+        }, param -> {
+            CollectAdminServices c = collect.getIfAvailable();
+            CjRunService cj = c == null ? null : c.cj();
+            return cj == null ? null : CjColAll.timming(cj, param, lang::get);
+        }, lang);
     }
 
     @Bean

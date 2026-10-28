@@ -78,7 +78,7 @@
 
 - `staticgen` 模块（`25-b16-static-timming.md` 第 2 节）：`application`（`StaticPaths`、`MakeService`、`StaticFiles`、`TimmingSchedule`、`TimmingService`、`TimmingTasks`）→ `web`（`TimmingController`、`TimmingAccess`）、`config`。静态页的内容只经 `site.application.StaticPageSource` 取得（前台对动态地址的进程内游客 GET，实现 `site.web.InternalPageRenderer`），不另写页面模板；静态页文件只经 `LegacySiteFiles.replaceStaticPage`（扩展名与目录白名单）写入并登记，回滚按登记删除。
 - 定时任务入口的放行只看部署级参数（`MACCMS_TIMMING_ENABLED`、`MACCMS_TIMMING_TOKEN`，第 4 节的密钥规则同样适用）与 `ClientIpResolver` 的结果；不得新增按请求参数放行的分支。
-- 后续批次接入采集、推送任务时，替换 `TimmingTasks` 里对应的分支，runtime 回写与鉴权不变。
+- 定时任务 `cj` 只经 `collect.application.CjColAll`（与后台 `cj/col_all` 同一实现），`collect` 不提供（D-B19-15），不要再接资源站采集；B28 接入推送时替换 `TimmingTasks` 的 `urlsend` 分支，runtime 回写与鉴权不变。
 
 ### 3. 数据库
 
