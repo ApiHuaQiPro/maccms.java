@@ -28,7 +28,9 @@
                         <label class="layui-form-label">${page.lang().get("admin/timming/exec_file")}：</label>
                         <div class="layui-input-inline w500">
                             <select class="" name="file">
-                                <option value="collect" selected="${page.eq(page.at("info.file"), "collect")}">${page.lang().get("admin/timming/collect")}</option>
+                                @if(page.eq(page.at("info.file"), "collect"))
+                                <option value="collect" selected>${page.lang().get("admin/timming/collect")}（新系统不提供，保存前请改选）</option>
+                                @endif
                                 <option value="make" selected="${page.eq(page.at("info.file"), "make")}">${page.lang().get("admin/timming/make")}</option>
                                 <option value="cj" selected="${page.eq(page.at("info.file"), "cj")}">${page.lang().get("admin/timming/cj")}</option>
                                 <option value="cache" selected="${page.eq(page.at("info.file"), "cache")}">${page.lang().get("admin/timming/cache")}</option>

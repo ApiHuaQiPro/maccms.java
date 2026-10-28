@@ -77,6 +77,11 @@ class AdminSystemGoldenTest {
 
     /** 有意差异：{@code 场景/步骤} → 新版的观察结果（{@link #observe}）。 */
     static final Map<String, String> JAVA = new TreeMap<>();
+    /**
+     * 表单页的有意差异：{@code 场景/步骤} → 旧版表单字段描述里要换成新版结果的行。D-B19-15：新建定时任务的执行文件下拉框没有
+     * {@code collect}（旧版的第一项、也是默认选中项），新版默认是下一项 {@code make}。
+     */
+    static final Map<String, Map<String, String>> JAVA_FORM = Map.of("timming/save", Map.of("file=collect\n", "file=make\n"));
     /** PHP 8 整页 500、PHP 7.3 正常的步骤：两版都按 7.3 的结果比较（24 文档 D-B15-6）。 */
     static final Set<String> USE_73 = Set.of("config-search-rules-none/save");
 
@@ -297,6 +302,51 @@ class AdminSystemGoldenTest {
         assertThat(problems).as("与 PHP 黄金的差异，详见 target/admin-system-golden-problems.txt").isEmpty();
     }
 
+    /**
+     * D-B19-15（27 文档）：定时任务的执行文件 {@code collect}（定时连资源站采集）新系统不提供。新建任务的下拉框里没有这一项；已有的
+     * {@code collect} 任务编辑页仍选中它（标明不提供，避免浏览器悄悄改成第一项），保存时固定拒绝、不写文件；其他执行文件照常保存。
+     */
+    @Test
+    void timmingCollectTaskTypeIsNotProvided() throws Exception {
+        JsonNode scenario = null;
+        for (JsonNode s : G80.get("scenarios")) {
+            if (s.get("label").asString().equals("timming")) {
+                scenario = s;
+            }
+        }
+        assertThat(scenario).isNotNull();
+        reset(SITE, scenario.get("files"));
+        JsonNode login = scenario.get("steps").get(0).get("request");
+        String sid = cookie(send(null, "POST", login.get("path").asString(), login.get("query").asString(),
+                login.get("post").asString(), login.get("ajax").asBoolean(), login.get("headers")), null);
+        assertThat(sid).isNotNull();
+
+        String fresh = send(sid, "GET", "/admin/timming/info", "", null, false, null).getContentAsString(StandardCharsets.UTF_8);
+        org.jsoup.nodes.Document d = org.jsoup.Jsoup.parse(fresh);
+        assertThat(d.select("select[name=file] option").eachAttr("value")).containsExactly("make", "cj", "cache", "urlsend");
+
+        String existing = send(sid, "GET", "/admin/timming/info", "id=aa", null, false, null).getContentAsString(StandardCharsets.UTF_8);
+        org.jsoup.nodes.Element chosen = org.jsoup.Jsoup.parse(existing).selectFirst("select[name=file] option[selected]");
+        assertThat(chosen).isNotNull();
+        assertThat(chosen.attr("value")).isEqualTo("collect");
+        assertThat(chosen.text()).contains("新系统不提供");
+
+        Map<String, byte[]> before = tracked(SITE);
+        String token = token(existing);
+        MockHttpServletResponse refused = send(sid, "POST", "/admin/timming/info", "", "__token__=" + token
+                + "&status=0&name=aa&des=x&file=collect&param=ac%3Dcjday&weeks%5B%5D=1&hours%5B%5D=02", true, null);
+        assertThat(refused.getContentAsString(StandardCharsets.UTF_8)).isEqualTo("{\"code\":0,\"msg\":\""
+                + com.maccms.backend.admin.application.ListConfigService.TIMMING_COLLECT_REFUSED
+                + "\",\"data\":\"\",\"url\":\"\",\"wait\":3}");
+        assertThat(diff(before, tracked(SITE))).isEmpty();
+
+        String token2 = token(send(sid, "GET", "/admin/timming/info", "id=aa", null, false, null).getContentAsString(StandardCharsets.UTF_8));
+        MockHttpServletResponse ok = send(sid, "POST", "/admin/timming/info", "", "__token__=" + token2
+                + "&status=0&name=aa&des=x&file=make&param=ac%3Dindex&weeks%5B%5D=1&hours%5B%5D=02", true, null);
+        assertThat(ok.getContentAsString(StandardCharsets.UTF_8)).contains("\"code\":1");
+        assertThat(diff(before, tracked(SITE))).containsOnlyKeys("application/extra/timming.php");
+    }
+
     private int replay(String tag, JsonNode s, List<String> problems) throws Exception {
         String label = s.get("label").asString();
         reset(SITE, s.get("files"));
@@ -327,6 +377,9 @@ class AdminSystemGoldenTest {
                 token = token(javaPage);
                 String phpPage = new String(Base64.getDecoder().decode(st.get("page").get("body").asString()), StandardCharsets.UTF_8);
                 String a = AdminForm.describe(AdminForm.fields(phpPage, 0));
+                for (Map.Entry<String, String> e : JAVA_FORM.getOrDefault(step, Map.of()).entrySet()) {
+                    a = a.replace(e.getKey(), e.getValue());
+                }
                 String b = AdminForm.describe(AdminForm.fields(javaPage, 0)).replaceAll("(?m)^(fversion|op)=.*\n", "");
                 if (!a.equals(b)) {
                     problems.add(tag + ":" + step + " (表单页)\n" + firstDiff(a, b));

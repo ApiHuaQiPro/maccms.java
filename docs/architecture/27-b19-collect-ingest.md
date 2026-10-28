@@ -29,7 +29,7 @@ B19 的旧代码是 `common/model/Collect.php` 的六个 `{种类}_data`（约 1
 | 远程图片下载（`syncImages` 的 `down_load`） | 不实施（E02）：库内图片地址保持提交的值，相当于 `sync_pic_opt` 关闭 |
 | 在线抓取资源站 | 不实施（E01） |
 | 自定义规则采集 | B20 |
-| `collect/timing`（浏览器端定时页：按间隔在 iframe 里打开 `collect/apis` 与生成静态页） | 未实施，仍是"由 B19 批次提供"：页面依赖的 `collect/apis` 在这份生产代码里不存在（在线采集，E01 不实施），生成静态页属 B16。是否保留需队长决定（第 9 节） |
+| `collect/timing`（浏览器端定时页：按间隔在 iframe 里打开 `collect/apis` 与生成静态页） | **不提供**（2026-10-28 用户决定删除，D-B19-15）：请求固定返回"该功能未在新系统中提供"；定时任务的执行文件 `collect` 一并不提供 |
 | 直接访问 `collect/vod`、`collect/art` 等 | 不实施：旧方法要求参数，直接访问在旧版是 500（ArgumentCountError）；仍是"由 B19 批次提供"的提示 |
 
 ### 2. 模块与依赖
@@ -133,7 +133,7 @@ B19 的旧代码是 `common/model/Collect.php` 的六个 `{种类}_data`（约 1
 | 入库是 GET | 旧版的入库按钮、跳页与断点都是 GET 链接，新版照旧（逐页跳转靠 `location.href`）。后台入口对 GET 也要求同源（D-B12-3），别的站点发起的入库请求在入口处 403（`AdminCollectIngestMySqlIT` ④） |
 | 断点与预览缓存是本机文件 | 断点在 `<cache-dir>/breakpoints/`，与预览缓存同目录；多实例部署时载入、预览、入库与断点续采要落在同一实例（同 B18） |
 | 从断点续上时重做断点那一页 | 与旧版相同：断点是"正在做的那一页"的地址，续采时整页重做；已入库的行按查重走更新一支（同样的数据得到"无需更新"，不新增重复行，IT ②③）。若两次之间改了 `uprule`，重做的行会按新规则更新 |
-| `collect/timing` | 未实施（第 1 节）。它是浏览器端按间隔调用在线采集（不存在的 `collect/apis`）与生成静态页的页面；本地文件源下没有可调用的对象，需队长决定是删除入口还是改成本地版本 |
+| `collect/timing` | 已按用户决定删除（D-B19-15）。权限码 `collect/timing` 与"定时挂机"菜单项（旧版就是 `show=0` 的隐藏项）仍在权限树里，与 auth.php 逐项相同（`AdminPermissionsGoldenTest` 锁定），勾选与否都只会得到固定提示。现有 `timming.php` 里 `file=collect` 的任务照旧列出、可删除、可改状态；B16 实现执行时不执行这类任务（路线图 B16 行） |
 | 演员、角色、网址必须带图片 | 旧版没提交图片时整页 500（D-B19-9），新版照旧拒绝（"参数错误"）。资源站数据一般带图片，影响有限；若要改成"没有图片时写空串"属于功能调整，需队长决定 |
 | `mac_get_ip_long` | 新版只认标准点分十进制（每段 0～255、没有前导 0）；PHP `ip2long` 依赖系统 `inet_pton`，个别写法（如前导 0）可能因平台而异 |
 | 图片同步 | 不下载（E02）；`pic=1` 时旧版会下载失败并保留原地址（本机无网络时的结果与新版相同），能下载时旧版换成本地地址，新版不换 |
@@ -156,8 +156,11 @@ B19 的旧代码是 `common/model/Collect.php` 的六个 `{种类}_data`（约 1
 | D-B19-12 | `mac_jump` 把地址原样写进内联脚本；`cjsel` 完成后跳到 `$_SERVER['HTTP_REFERER']`；`collect/load` 没有断点时跳到 `mac_get_refer()`，没有来源页时跳到空地址（不停地重新载入本页） | 跳转改由 `progress.js` 的 `data-url`（内容安全策略，同 B13 第 8.4 节），地址转义；来源页与断点地址只认站内路径或与后台对外地址同源的 http(s) 地址，否则 `cjsel` 回到预览、`collect/load` 跳到采集源列表 | 安全（脚本注入、开放跳转）；修掉死循环 |
 | D-B19-13 | 断点存在站点缓存（`Cache::set`，与其他缓存一起清除）；进入入库分支就写下断点，资源站请求失败时也写 | 断点是缓存目录下 `breakpoints/collect_break_<种类>.url`（重启后仍在，清除预览缓存不影响）；没有载入的本地文件时提示"没有载入的本地文件（或已过期），请先在资源库页面载入文件"，不写断点、不写库 | 本地文件源；没有数据就没有可续的断点 |
 | D-B19-14 | 逐行输出名称、说明与文件名原样输出；`sync_pic_opt` 打开时附带图片下载结果 | 名称、说明、文件名转义后输出；不下载图片，所以没有下载结果（D-B19-1） | 同 D-B13-19；E02 |
+| D-B19-15 | 后台 `collect/timing`"定时挂机"页（浏览器按间隔调用在线采集 `collect/apis` 与生成静态页）；定时任务（`extra/timming.php`）可选执行文件 `collect`，由 `api.php/timming` 定时连资源站采集（`api/controller/Timming.php:64-70`） | `collect/timing` 固定返回"该功能未在新系统中提供"（501；Ajax 为 `{"code":0,…}`，`AdminPermissions.NOT_PROVIDED`），不再是批次提示；定时任务编辑页新建时的执行文件下拉框没有 `collect`（默认改为 `make`），已有 `collect` 任务的编辑页仍选中它并标明"新系统不提供"；保存执行文件为 `collect` 的任务固定拒绝"定时采集（collect）未在新系统中提供，请改选其他执行文件"，不写文件。其他执行文件（`make`、`cj`、`cache`、`urlsend`）不变 | 2026-10-28 用户决定删除：旧版定时自动连资源站采集与本地文件源方针（D1/E01）冲突 |
 | — | `mac_substring` 在 PHP 8 把 ASCII 字符换成空格 | 按 PHP 7.3 | 沿用 D-B13-5 |
 | — | Content-Type `text/html;charset=utf-8` 与 `text/html; charset=utf-8` 两种写法 | 一律 `text/html;charset=utf-8`（Tomcat 输出） | 语义相同 |
+
+验证（D-B19-15）：`AdminMvcTest`（超级管理员逐个访问已知动作，`collect/timing` 为固定提示、501）、`AdminSystemGoldenTest.timmingCollectTaskTypeIsNotProvided`（新建表单无 `collect`、已有任务仍选中并标明、保存 `collect` 被拒且文件不变、改选 `make` 后正常保存）；B15 黄金复放中新建任务表单的默认执行文件登记为有意差异（`JAVA_FORM`）。
 
 ### 11. 回滚
 

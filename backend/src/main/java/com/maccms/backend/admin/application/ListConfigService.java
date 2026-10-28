@@ -122,14 +122,23 @@ public final class ListConfigService {
     /**
      * 定时任务保存（旧 {@code Timming::info} 的 POST，Timming.php:22-43）：{@code $param = input()}（含表单令牌，旧版没有去掉，照旧写进文件），
      * {@code weeks}、{@code hours} 用逗号连接（没有勾选时同 PHP 7.3 为 NULL），以 {@code name} 为键写进列表（新键追加在末尾）。
+     * 执行文件为 {@code collect}（定时连资源站采集）时不保存，固定返回 {@link #TIMMING_COLLECT_REFUSED}（27 文档 D-B19-15）。
      */
     public Reply saveTimming(PhpArray param, LegacyLang lang) {
+        if (TIMMING_COLLECT.equals(PhpValues.text(param.get("file")))) {
+            return Reply.error(TIMMING_COLLECT_REFUSED);
+        }
         PhpArray p = PhpArrays.put(param, "weeks", joinOrNull(param.get("weeks")));
         p = PhpArrays.put(p, "hours", joinOrNull(p.get("hours")));
         String name = PhpValues.text(p.get("name"));
         PhpArray entry = p;
         return write(LegacyConfigFile.TIMMING, old -> PhpArrays.put(old, name, entry), lang, "write_err_config", "save_ok");
     }
+
+    /** 新系统不提供的定时任务执行文件：定时采集（旧 {@code api/controller/Timming.php} 按 {@code file=collect} 连资源站采集，E01）。 */
+    public static final String TIMMING_COLLECT = "collect";
+    /** 保存执行文件为 {@link #TIMMING_COLLECT} 的定时任务时的固定提示（2026-10-28 用户决定删除，D-B19-15）。 */
+    public static final String TIMMING_COLLECT_REFUSED = "定时采集（collect）未在新系统中提供，请改选其他执行文件";
 
     private static PhpValue joinOrNull(PhpValue v) {
         if (v instanceof PhpArray a) {
