@@ -134,7 +134,7 @@
 
 ### 10. 待确认与待联调
 
-- **百度接口要不要从 http 改成 https（待队长确认）**：本批照旧用 `http://data.zz.baidu.com/urls`，令牌明文经过网络，与旧版相同。百度的接口支持 https；需要时只改部署参数 `MACCMS_INTEGRATION_URLSEND_BAIDU_ENDPOINT=https://data.zz.baidu.com/urls`，不改代码。建议上线时改成 https，但这是与旧版不同的外部行为，由队长定。
+- **百度接口暂按旧版用 http（已定，队长 2026-10-28）**：默认 `http://data.zz.baidu.com/urls`，令牌明文经过网络，与旧版相同；接口地址是部署参数 `MACCMS_INTEGRATION_URLSEND_BAIDU_ENDPOINT`，测试指向本机模拟服务。是否改成 https（只改部署参数，不改代码）列入待联调，随真实站点联调在 B21 复核。
 - **沙箱联调（待联调，转 B21）**：需要用户提供百度站长的测试站点与令牌（路线图第 4.3 节 ②）。联调要核对：普通推送、快速收录的真实回复字段（`success`、`remain`、`success_daily`、`remain_daily` 等）与旧代码读取的字段是否一致；令牌错误、站点未验证时的 `message`。
 - E11 不需要账号，本机模拟页已完成验收。
 - 定时任务里推送方式不存在（`ac` 缺失或错误）时，旧版在 api 入口调用 `$this->error()`，输出没有用黄金核对；新版输出"参数错误"一行。
