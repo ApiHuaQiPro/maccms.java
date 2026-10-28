@@ -136,6 +136,7 @@ class WriteGuardTest {
         // B15（MACC-39）登记数据库工具"批量替换"：后台模块对每张 mac_* 表的 UPDATE（mac_admin 沿用 B12；24 文档第 9.4 节）
         // B17（MACC-41）登记采集配置：采集源与自定义规则节点的增删改，删除节点时连同节点下的内容与采集历史（25 文档第 6 节）
         // B19（MACC-43）登记采集入库与 Receive：新增与更新视频；增量 2 另加文章、演员、角色、网址、评论（27 文档第 4 节）
+        // B20（MACC-44）登记规则采集：采集历史新增、内容的新增与更新（28 文档第 5 节）
         assertThat(WriteRegistry.registered().permissions()).extracting(p -> p.module() + " " + p.table() + " "
                 + p.operation() + " " + p.batch())
                 .containsExactly("member mac_user INSERT B09", "member mac_user UPDATE B09",
@@ -191,7 +192,8 @@ class WriteGuardTest {
                         "collect mac_art INSERT B19", "collect mac_art UPDATE B19", "collect mac_actor INSERT B19",
                         "collect mac_actor UPDATE B19", "collect mac_role INSERT B19", "collect mac_role UPDATE B19",
                         "collect mac_website INSERT B19", "collect mac_website UPDATE B19", "collect mac_comment INSERT B19",
-                        "collect mac_comment UPDATE B19");
+                        "collect mac_comment UPDATE B19",
+                        "collect mac_cj_history INSERT B20", "collect mac_cj_content INSERT B20", "collect mac_cj_content UPDATE B20");
     }
 
     @Test
