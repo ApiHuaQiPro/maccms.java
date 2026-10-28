@@ -65,6 +65,8 @@ import tools.jackson.databind.json.JsonMapper;
  * 随机列按旧版的取值范围比较）；登记差异逐条断言新版行为。</li>
  * <li>入库排队：16 个并发请求提交同一部新视频，只新增一行，其余按更新规则处理。</li>
  * <li>回滚演练：快照 → 一批新增与更新 → {@code DmlRestore} 只用 DML 恢复 → 逐行 diff 为空 → 表结构不变。</li>
+ * <li>增量 2：文章、演员、角色、网址、评论的影子对比（{@code php80/73-kinds-golden.json}，跟踪 7 张表；黄金里与上一步相同的表记为 null）、
+ * 同一篇文章的并发提交只新增一行、五张表的回滚演练。</li>
  * </ol>
  *
  * <p>只用外部提供的管理账号（MACCMS_IT_ADMIN_URL / USERNAME / PASSWORD）；不连接、不读写任何已有库（包括 maccms_dev），不访问网络。
@@ -74,22 +76,46 @@ class ReceiveGoldenMySqlIT {
 
     static final String PHP80 = "collect/receive/php80-golden.json";
     static final String PHP73 = "collect/receive/php73-golden.json";
+    static final String KINDS80 = "collect/receive/php80-kinds-golden.json";
+    static final String KINDS73 = "collect/receive/php73-kinds-golden.json";
     private static final Pattern DB_NAME = Pattern.compile("maccms_it_[0-9]{14}_[0-9a-f]{8}");
     private static final Path INSTALL_SQL = Path.of("..", "application", "install", "sql", "install.sql");
     private static final JsonMapper JSON = JsonMapper.builder().build();
     private static final HttpClient HTTP = HttpClient.newHttpClient();
     private static final List<String> TABLES = List.of("mac_vod", "mac_vod_search");
-    private static final Map<String, String> PK = Map.of("mac_vod", "vod_id", "mac_vod_search", "search_key");
+    private static final List<String> KIND_TABLES = List.of("mac_art", "mac_actor", "mac_role", "mac_website", "mac_comment", "mac_vod",
+            "mac_topic");
+    private static final Map<String, String> PK = Map.of("mac_vod", "vod_id", "mac_vod_search", "search_key", "mac_art", "art_id",
+            "mac_actor", "actor_id", "mac_role", "role_id", "mac_website", "website_id", "mac_comment", "comment_id", "mac_topic",
+            "topic_id");
     /** 写入时刻的列：旧值落在旧版请求的时间窗里时，新值须落在新版请求的时间窗里；否则逐字相同。 */
-    private static final Set<String> TIME_COLUMNS = Set.of("vod_time", "vod_time_add", "search_last_hit_time", "search_update_time");
+    private static final Set<String> TIME_COLUMNS = Set.of("vod_time", "vod_time_add", "search_last_hit_time", "search_update_time",
+            "art_time", "art_time_add", "actor_time", "actor_time_add", "role_time", "role_time_add", "website_time", "website_time_add",
+            "comment_time");
     /** 随机列（随机场景）：旧版 rand 的取值范围。 */
-    private static final Set<String> RANDOM_COLUMNS = Set.of("vod_hits", "vod_hits_day", "vod_hits_week", "vod_hits_month", "vod_up",
-            "vod_down", "vod_score", "vod_score_all", "vod_score_num");
+    private static final Pattern RANDOM_COLUMNS = Pattern.compile(
+            "(vod|art|actor|role|website|comment)_(hits|hits_day|hits_week|hits_month|up|down|score|score_all|score_num)");
+    /** 增量 2 的分类（同 receive_kinds_scenarios.php 的 KINDS_TYPES_SQL）。 */
+    private static final String KINDS_TYPES = "INSERT INTO mac_type (type_id, type_name, type_en, type_sort, type_mid, type_pid, "
+            + "type_status) VALUES (2, '文章', 'wenzhang', 4, 2, 0, 1), (8, '头条', 'toutiao', 5, 2, 2, 1), (3, '明星', 'mingxing', 6, 8, 0, 1), "
+            + "(9, '内地明星', 'neidi', 7, 8, 3, 1), (4, '网址', 'wangzhi', 8, 11, 0, 1), (10, '导航', 'daohang', 9, 11, 4, 1)";
 
-    /** 有意差异（27 文档第 10 节）：键为 场景/步骤，值为新版的状态码与正文。 */
-    static final Map<String, String> JAVA = Map.of(
-            // D-B19-3：旧版缺 vod_content 时 MySQL 严格模式报错、整页 500；新版不写库，返回"参数错误"
-            "require/no-content", "200 text/html; charset=utf-8 {\"code\":1001,\"msg\":\"参数错误\"}");
+    private static final String PARAM_ERR = "200 text/html; charset=utf-8 {\"code\":1001,\"msg\":\"参数错误\"}";
+
+    /**
+     * 有意差异（27 文档第 10 节）：键为 场景/步骤，值为新版的状态码与正文。旧版在这些步骤整页 500（不写库），新版不写库并返回"参数错误"：
+     * 缺正文时 MySQL 严格模式报错（D-B19-3）；演员、角色、网址没有提交图片时旧版把 null 写进不允许 NULL 的图片列（D-B19-9）。
+     */
+    static final Map<String, String> JAVA = Map.ofEntries(
+            Map.entry("require/no-content", PARAM_ERR),
+            Map.entry("actor-insert/no-pic", PARAM_ERR),
+            Map.entry("actor-insert/no-content", PARAM_ERR),
+            Map.entry("actor-update/update-no-pic", PARAM_ERR),
+            Map.entry("role-insert/no-pic", PARAM_ERR),
+            Map.entry("role-insert/no-content", PARAM_ERR),
+            Map.entry("role-insert/update-no-pic", PARAM_ERR),
+            Map.entry("website-insert/no-pic", PARAM_ERR),
+            Map.entry("website-insert/no-content", PARAM_ERR));
 
     private static String adminUrl;
     private static String adminUser;
@@ -130,6 +156,8 @@ class ReceiveGoldenMySqlIT {
                 st.execute("INSERT INTO mac_type (type_id, type_name, type_en, type_sort, type_mid, type_pid, type_status) VALUES "
                         + "(1, '电影', 'dianying', 1, 1, 0, 1), (6, '动作片', 'dongzuopian', 2, 1, 1, 1), "
                         + "(7, '喜剧片', 'xijupian', 3, 1, 1, 1)");
+                // 增量 2 的分类（增量 1 的场景只用 6、7 与上面的分类名映射，不受影响）
+                st.execute(KINDS_TYPES);
             }
             schemaAtImport = SchemaFingerprint.of(c, dbName);
         }
@@ -197,8 +225,23 @@ class ReceiveGoldenMySqlIT {
     @Test
     @Order(1)
     void scenariosMatchPhpGolden() throws Exception {
-        JsonNode g80 = load(PHP80);
-        JsonNode g73 = load(PHP73);
+        assertThat(replay(PHP80, PHP73, TABLES)).isGreaterThanOrEqualTo(40);
+    }
+
+    /** 增量 2：文章、演员、角色、网址、评论。 */
+    @Test
+    @Order(4)
+    void kindScenariosMatchPhpGolden() throws Exception {
+        List<String> tracked = new ArrayList<>();
+        load(KINDS80).get("tables").forEach(t -> tracked.add(t.asString()));
+        assertThat(tracked).isEqualTo(KIND_TABLES);
+        assertThat(replay(KINDS80, KINDS73, KIND_TABLES)).isGreaterThanOrEqualTo(90);
+    }
+
+    /** 复放一份黄金样本的全部场景，返回步数；有与旧版不同的地方时失败。 */
+    private static int replay(String php80, String php73, List<String> tracked) throws Exception {
+        JsonNode g80 = load(php80);
+        JsonNode g73 = load(php73);
         assertThat(g80.get("php").asString()).startsWith("8.0.");
         assertThat(g73.get("php").asString()).startsWith("7.3.");
         List<String> problems = new ArrayList<>();
@@ -210,6 +253,9 @@ class ReceiveGoldenMySqlIT {
             assertThat(s73.get("label").asString()).isEqualTo(label);
             writeMaccms(s80);
             reset(s80.get("seed"));
+            // 黄金里与上一步相同的表记为 null：沿用上一步的期望
+            Map<String, JsonNode> last80 = new LinkedHashMap<>();
+            Map<String, JsonNode> last73 = new LinkedHashMap<>();
             for (int j = 0; j < s80.get("steps").size(); j++) {
                 JsonNode st80 = s80.get("steps").get(j);
                 JsonNode st73 = s73.get("steps").get(j);
@@ -219,8 +265,10 @@ class ReceiveGoldenMySqlIT {
                 long after = Instant.now().getEpochSecond();
                 String actual = r.statusCode() + " " + r.headers().firstValue("Content-Type").orElse("") + " "
                         + new String(r.body(), StandardCharsets.UTF_8);
-                Map<String, List<Map<String, String>>> tables = tables();
+                Map<String, List<Map<String, String>>> tables = tables(tracked);
                 steps++;
+                Map<String, JsonNode> rows80 = expectedRows(st80, last80, tracked);
+                Map<String, JsonNode> rows73 = expectedRows(st73, last73, tracked);
                 for (JsonNode st : List.of(st80, st73)) {
                     String v = st == st80 ? "80" : "73";
                     String expected = JAVA.containsKey(key) ? JAVA.get(key) : st.get("status").asInt() + " "
@@ -230,22 +278,35 @@ class ReceiveGoldenMySqlIT {
                     if (!expected.replace("; charset", ";charset").equals(actual.replace("; charset", ";charset"))) {
                         problems.add(v + ":" + key + " 响应\n  旧 " + expected + "\n  新 " + actual);
                     }
-                    compareTables(v + ":" + key, st, st73, tables, started, after, s80.get("random").asBoolean(), problems);
+                    compareTables(v + ":" + key, st, st == st80 ? rows80 : rows73, rows73, tables, started, after,
+                            s80.get("random").asBoolean(), problems);
                 }
             }
         }
         assertThat(problems).as("与旧版不同的地方").isEmpty();
-        assertThat(steps).isGreaterThanOrEqualTo(40);
+        return steps;
+    }
+
+    /** 一步之后各表的期望行（黄金里为 null 的表沿用上一步）。 */
+    private static Map<String, JsonNode> expectedRows(JsonNode st, Map<String, JsonNode> last, List<String> tracked) {
+        for (String t : tracked) {
+            JsonNode rows = st.get("tables").get(t);
+            if (rows != null && !rows.isNull()) {
+                last.put(t, rows);
+            }
+        }
+        return new LinkedHashMap<>(last);
     }
 
     /**
-     * 两张表逐行逐列比较。PHP 8.0 的 {@code mac_substring} 把 ASCII 字符换成空格（D-B13-5，新版按 7.3），所以 8.0 的 vod_blurb 与新版不同时
-     * 只接受与 7.3 相同的值。
+     * 各表逐行逐列比较。PHP 8.0 的 {@code mac_substring} 把 ASCII 字符换成空格（D-B13-5，新版按 7.3），所以 8.0 的简介列（{@code *_blurb}）
+     * 与新版不同时只接受与 7.3 相同的值。
      */
-    private static void compareTables(String key, JsonNode st, JsonNode st73, Map<String, List<Map<String, String>>> actual,
-                                      long started, long after, boolean random, List<String> problems) {
-        for (String t : TABLES) {
-            JsonNode rows = st.get("tables").get(t);
+    private static void compareTables(String key, JsonNode st, Map<String, JsonNode> expected, Map<String, JsonNode> expected73,
+                                      Map<String, List<Map<String, String>>> actual, long started, long after, boolean random,
+                                      List<String> problems) {
+        for (String t : actual.keySet()) {
+            JsonNode rows = expected.get(t);
             List<Map<String, String>> mine = actual.get(t);
             if (rows.size() != mine.size()) {
                 problems.add(key + " " + t + " 行数 旧 " + rows.size() + " 新 " + mine.size());
@@ -273,11 +334,11 @@ class ReceiveGoldenMySqlIT {
                             continue;
                         }
                     }
-                    if (random && RANDOM_COLUMNS.contains(col) && inRange(col, text(n), row)) {
+                    if (random && RANDOM_COLUMNS.matcher(col).matches() && inRange(col, text(n), row)) {
                         continue;
                     }
-                    if (key.startsWith("80:") && col.equals("vod_blurb")) {
-                        JsonNode r73 = st73.get("tables").get(t).get(i).get(col);
+                    if (key.startsWith("80:") && col.endsWith("_blurb")) {
+                        JsonNode r73 = expected73.get(t).get(i).get(col);
                         if (!r73.isNull() && r73.asString().equals(n)) {
                             continue;
                         }
@@ -295,13 +356,14 @@ class ReceiveGoldenMySqlIT {
     /** 随机列：点击与顶踩 1～1000；评分人数 1～1000、总分 = 人数 × (1～10)、评分 = 总分 / 人数。 */
     private static boolean inRange(String col, String v, Map<String, String> row) {
         double x = Double.parseDouble(v);
-        long num = Long.parseLong(text(row.get("vod_score_num")));
-        long all = Long.parseLong(text(row.get("vod_score_all")));
-        return switch (col) {
-            case "vod_score" -> all % num == 0 && x == all / num && x >= 1 && x <= 10;
-            case "vod_score_all" -> all % num == 0 && all / num >= 1 && all / num <= 10;
-            default -> x >= 1 && x <= 1000;
-        };
+        String prefix = col.substring(0, col.indexOf('_'));
+        if (col.endsWith("_score") || col.endsWith("_score_all")) {
+            long num = Long.parseLong(text(row.get(prefix + "_score_num")));
+            long all = Long.parseLong(text(row.get(prefix + "_score_all")));
+            return col.endsWith("_score") ? all % num == 0 && x == all / num && x >= 1 && x <= 10
+                    : all % num == 0 && all / num >= 1 && all / num <= 10;
+        }
+        return x >= 1 && x <= 1000;
     }
 
     // ------------------------------------------------------------------ ② 入库排队
@@ -336,7 +398,7 @@ class ReceiveGoldenMySqlIT {
         } finally {
             pool.shutdownNow();
         }
-        List<Map<String, String>> vods = tables().get("mac_vod");
+        List<Map<String, String>> vods = tables(TABLES).get("mac_vod");
         assertThat(vods).hasSize(1);
         assertThat(text(vods.get(0).get("vod_name"))).isEqualTo("并发剧");
     }
@@ -369,10 +431,94 @@ class ReceiveGoldenMySqlIT {
         }
     }
 
+    // ------------------------------------------------------------------ 增量 2 的入库排队与回滚演练
+
+    /** 16 个并发请求提交同一篇新文章（正文各不相同）：只新增一次，其余按更新规则改正文。 */
+    @Test
+    @Order(5)
+    void concurrentSubmissionsOfOneArticleInsertOnce() throws Exception {
+        writeMaccms(scenario(KINDS80, "art-update"));
+        reset(JSON.readTree("{}"));
+        int n = 16;
+        ExecutorService pool = Executors.newFixedThreadPool(n);
+        CountDownLatch go = new CountDownLatch(1);
+        List<Future<String>> results = new ArrayList<>();
+        try {
+            for (int i = 0; i < n; i++) {
+                String content = "第" + i + "版正文";
+                results.add(pool.submit(() -> {
+                    go.await();
+                    return new String(post("art", form(Map.of("pass", passOf(), "art_name", "并发文", "type_id", "8", "art_content",
+                            content))).body(), StandardCharsets.UTF_8);
+                }));
+            }
+            go.countDown();
+            List<String> bodies = new ArrayList<>();
+            for (Future<String> f : results) {
+                bodies.add(f.get());
+            }
+            assertThat(bodies.stream().filter(b -> b.contains("新加入库")).count()).as("只新增一次").isEqualTo(1);
+            assertThat(bodies.stream().filter(b -> b.equals("{\"code\":1,\"msg\":\"并发文 \"}")).count()).as("其余按更新规则改正文")
+                    .isEqualTo(n - 1);
+        } finally {
+            pool.shutdownNow();
+        }
+        List<Map<String, String>> arts = tables(KIND_TABLES).get("mac_art");
+        assertThat(arts).hasSize(1);
+        assertThat(text(arts.get(0).get("art_name"))).isEqualTo("并发文");
+    }
+
+    /** 快照 → 五个种类的一批新增与更新 → {@code DmlRestore} 只用 DML 恢复 → 逐行 diff 为空 → 表结构不变。 */
+    @Test
+    @Order(6)
+    void kindRollbackDrillRestoresWithDmlOnly() throws Exception {
+        JsonNode s = scenario(KINDS80, "comment-rel");
+        writeMaccms(s);
+        reset(s.get("seed"));
+        DatabaseSnapshot before;
+        try (Connection c = admin(dbName)) {
+            before = DatabaseSnapshot.take(c, KIND_TABLES);
+        }
+        for (JsonNode st : s.get("steps")) {
+            assertThat(send(st).statusCode()).isEqualTo(200);
+        }
+        String pass = passOf();
+        List<String[]> more = List.of(
+                new String[]{"art", "art_name", "评论文", "type_id", "8", "art_content", "改过的正文"},
+                new String[]{"actor", "actor_name", "评论演员", "actor_sex", "女", "type_id", "9", "actor_content", "改过",
+                    "actor_pic", "http://img.example.test/n.jpg"},
+                new String[]{"role", "role_name", "新角色", "role_actor", "演员甲", "vod_name", "关联剧", "role_content", "c",
+                    "role_pic", "p"},
+                new String[]{"website", "website_name", "新网址", "type_id", "10", "website_content", "c", "website_pic", "p"});
+        for (String[] m : more) {
+            Map<String, String> f = new LinkedHashMap<>();
+            f.put("pass", pass);
+            for (int i = 1; i < m.length; i += 2) {
+                f.put(m[i], m[i + 1]);
+            }
+            HttpResponse<byte[]> r = post(m[0], form(f));
+            assertThat(r.statusCode()).isEqualTo(200);
+            assertThat(new String(r.body(), StandardCharsets.UTF_8)).startsWith("{\"code\":1,");
+        }
+        try (Connection c = admin(dbName)) {
+            DatabaseSnapshot changed = DatabaseSnapshot.take(c, KIND_TABLES);
+            assertThat(SnapshotDiff.between(before, changed).isEmpty()).isFalse();
+            List<DmlRestore.Statement> plan = DmlRestore.plan(before, changed);
+            assertThat(plan).isNotEmpty();
+            DmlRestore.apply(c, plan);
+            assertThat(SnapshotDiff.between(before, DatabaseSnapshot.take(c, KIND_TABLES)).isEmpty()).as("恢复后与快照相同").isTrue();
+            assertThat(SchemaFingerprint.diff(schemaAtImport, SchemaFingerprint.of(c, dbName))).isEmpty();
+        }
+    }
+
     // ------------------------------------------------------------------ 工具
 
     private static JsonNode scenario(String label) throws IOException {
-        for (JsonNode s : load(PHP80).get("scenarios")) {
+        return scenario(PHP80, label);
+    }
+
+    private static JsonNode scenario(String golden, String label) throws IOException {
+        for (JsonNode s : load(golden).get("scenarios")) {
             if (s.get("label").asString().equals(label)) {
                 return s;
             }
@@ -398,7 +544,11 @@ class ReceiveGoldenMySqlIT {
     }
 
     private static HttpResponse<byte[]> post(String body) throws IOException, InterruptedException {
-        return HTTP.send(HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + "/api.php/receive/vod/"))
+        return post("vod", body);
+    }
+
+    private static HttpResponse<byte[]> post(String action, String body) throws IOException, InterruptedException {
+        return HTTP.send(HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + "/api.php/receive/" + action + "/"))
                 .header("Content-Type", "application/x-www-form-urlencoded")
                 .POST(HttpRequest.BodyPublishers.ofString(body)).build(), HttpResponse.BodyHandlers.ofByteArray());
     }
@@ -415,11 +565,14 @@ class ReceiveGoldenMySqlIT {
         Files.setLastModifiedTime(maccmsFile, FileTime.from(Instant.ofEpochSecond(++mtime)));
     }
 
-    /** 与 receive_golden.php 的 reset_tables 相同：清空、自增复位、sql_mode 为空时写种子。 */
+    /**
+     * 与 receive_golden.php 的 reset_tables 相同：清空、自增复位、sql_mode 为空时写种子。两份黄金跟踪的表一律清空（增量 1 的场景不读
+     * 增量 2 的表，反之只读种子里的视频）。
+     */
     private static void reset(JsonNode seed) throws SQLException {
         try (Connection c = admin(dbName); Statement st = c.createStatement()) {
             st.execute("SET SESSION sql_mode = ''");
-            for (String t : TABLES) {
+            for (String t : PK.keySet()) {
                 st.execute("DELETE FROM `" + t + "`");
                 if (!t.equals("mac_vod_search")) {
                     st.execute("ALTER TABLE `" + t + "` AUTO_INCREMENT = 1");
@@ -443,11 +596,11 @@ class ReceiveGoldenMySqlIT {
         }
     }
 
-    /** 两张表的全部行（按主键排序；值为 UTF-8 字节的十六进制，同黄金样本）。 */
-    private static Map<String, List<Map<String, String>>> tables() throws SQLException {
+    /** 跟踪的表的全部行（按主键排序；值为 UTF-8 字节的十六进制，同黄金样本）。 */
+    private static Map<String, List<Map<String, String>>> tables(List<String> tracked) throws SQLException {
         Map<String, List<Map<String, String>>> out = new LinkedHashMap<>();
         try (Connection c = admin(dbName); Statement st = c.createStatement()) {
-            for (String t : TABLES) {
+            for (String t : tracked) {
                 List<Map<String, String>> rows = new ArrayList<>();
                 try (ResultSet rs = st.executeQuery("SELECT * FROM `" + t + "` ORDER BY `" + PK.get(t) + "`")) {
                     ResultSetMetaData md = rs.getMetaData();

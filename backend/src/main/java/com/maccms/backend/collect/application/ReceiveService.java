@@ -20,14 +20,14 @@ import java.util.regex.Pattern;
  *
  * <p>构造函数的三道检查照旧且顺序不变：{@code interface.status != 1} → 3001；{@code interface.pass != 提交的 pass}（宽松比较）→ 3002；
  * {@code strlen(interface.pass) < 16} → 3003。参数是 ThinkPHP {@code input('', '', 'trim,urldecode')}：GET、POST、路径参数合并后每个值
- * 先 {@code trim} 再 {@code urldecode}，与查询表达式同名的值末尾补一个空格（{@code Request::filterExp}）。本增量实现 {@code vod}；
- * {@code index} 照旧输出空白；其他操作返回"由 B19 后续增量提供"（27 文档第 1 节）。
+ * 先 {@code trim} 再 {@code urldecode}，与查询表达式同名的值末尾补一个空格（{@code Request::filterExp}）。{@code vod}（增量 1）与
+ * {@code art}、{@code actor}、{@code role}、{@code website}、{@code comment}（增量 2）各自先做必填检查，再入库一行；{@code index} 照旧输出空白。
  */
 public class ReceiveService {
 
     private static final Pattern EXP = Pattern.compile("(?i)^(EXP|NEQ|GT|EGT|LT|ELT|OR|XOR|LIKE|NOTLIKE|NOT LIKE|NOT BETWEEN|NOTBETWEEN"
             + "|BETWEEN|NOT EXISTS|NOTEXISTS|EXISTS|NOT NULL|NOTNULL|NULL|BETWEEN TIME|NOT BETWEEN TIME|NOTBETWEEN TIME|NOTIN|NOT IN|IN)$");
-    private static final List<String> LATER = List.of("art", "actor", "role", "website", "comment");
+    private static final List<String> ACTIONS = List.of("index", "vod", "art", "actor", "role", "website", "comment");
 
     private final CollectIngestService ingest;
 
@@ -48,7 +48,7 @@ public class ReceiveService {
      * @return 不认识的操作为 empty（404）
      */
     public Optional<Response> handle(String action, Map<String, PhpInput.Value> params) {
-        if (!action.equals("index") && !action.equals("vod") && !LATER.contains(action)) {
+        if (!ACTIONS.contains(action)) {
             return Optional.empty();
         }
         Map<Object, Object> maccms = ingest.maccms();
@@ -73,8 +73,68 @@ public class ReceiveService {
         return switch (action) {
             case "index" -> Optional.of(new Response(200, HTML, ""));
             case "vod" -> vod(info, maccms, lang);
-            default -> Optional.of(new Response(501, "text/plain; charset=utf-8", "由 B19 后续增量提供"));
+            default -> kind(action, info, maccms, lang);
         };
+    }
+
+    /**
+     * 增量 2 的五个入口（旧 {@code Receive::art/actor/role/website/comment}）：必填检查的顺序与编号照旧；有分类的种类在 {@code type_id} 为空时
+     * 按 {@code interface.<种类>type} 映射；入库一行后输出 {@code {"code":…,"msg":"<名称> <说明>"}}（评论的名称位置是内容）。
+     */
+    private Optional<Response> kind(String action, Map<String, Object> info, Map<Object, Object> maccms, UnaryOperator<String> lang) {
+        KindIngest.Kind kind = KindIngest.Kind.valueOf(action.toUpperCase(java.util.Locale.ROOT));
+        Optional<Response> missing = switch (kind) {
+            case ART, WEBSITE -> require(info, lang, new String[][]{{action + "_name", "2001", "api/require_name"}},
+                    "2002");
+            case ACTOR -> require(info, lang, new String[][]{{"actor_name", "2001", "api/require_actor_name"},
+                {"actor_sex", "2002", "api/require_sex"}}, "2003");
+            case ROLE -> {
+                Optional<Response> r = require(info, lang, new String[][]{{"role_name", "2001", "api/require_role_name"},
+                    {"role_actor", "2002", "api/require_actor_name"}}, null);
+                yield r.isPresent() || !IngestPhp.empty(info.get("vod_name")) || !IngestPhp.empty(info.get("douban_id")) ? r
+                        : json(2003, lang.apply("api/require_rel_vod"));
+            }
+            case COMMENT -> {
+                // 旧版 2001 与 2002 都用 'api/require_comment_name'（语言包里同名的键后一个覆盖前一个："评论内容必须err"）
+                Optional<Response> r = require(info, lang, new String[][]{{"comment_name", "2001", "api/require_comment_name"},
+                    {"comment_content", "2002", "api/require_comment_name"}, {"comment_mid", "2004", "api/require_mid"}}, null);
+                yield r.isPresent() || !IngestPhp.empty(info.get("rel_name")) || !IngestPhp.empty(info.get("douban_id")) ? r
+                        : json(2003, lang.apply("api/require_rel_name"));
+            }
+        };
+        if (missing.isPresent()) {
+            return missing;
+        }
+        if (kind != KindIngest.Kind.ROLE && kind != KindIngest.Kind.COMMENT && IngestPhp.empty(info.get("type_id"))) {
+            info.put("type_id", interfaceTypes(maccms, action + "type", ingest.typeIdsByName())
+                    .get(ProvideValues.key(IngestPhp.str(info.get("type_name")))));
+        }
+        Map<Object, Object> row = new LinkedHashMap<>();
+        info.forEach(row::put);
+        try {
+            VodIngest.Outcome o = ingest.kind(kind, row, lang);
+            return json(o.green() ? 1 : 1001, o.name() + " " + o.des());
+        } catch (VodIngest.Rejected e) {
+            return json(1001, lang.apply("param_err"));
+        } catch (CollectIngestService.Busy e) {
+            return Optional.of(new Response(503, HTML, encode(1001, "入库排队超时，请稍后重试")));
+        }
+    }
+
+    /**
+     * 依次检查必填字段（{@code {字段, 编号, 语言键}}，{@code empty()} 时返回该编号）；{@code typeCode} 非 null 时最后检查
+     * {@code type_id} 与 {@code type_name} 至少一项。
+     */
+    private static Optional<Response> require(Map<String, Object> info, UnaryOperator<String> lang, String[][] fields, String typeCode) {
+        for (String[] f : fields) {
+            if (IngestPhp.empty(info.get(f[0]))) {
+                return json(Integer.parseInt(f[1]), lang.apply(f[2]));
+            }
+        }
+        if (typeCode != null && IngestPhp.empty(info.get("type_id")) && IngestPhp.empty(info.get("type_name"))) {
+            return json(Integer.parseInt(typeCode), lang.apply("api/require_type"));
+        }
+        return Optional.empty();
     }
 
     private Optional<Response> vod(Map<String, Object> info, Map<Object, Object> maccms, UnaryOperator<String> lang) {

@@ -91,6 +91,36 @@ public class CollectIngestService {
         VodIngest.Settings settings = new VodIngest.Settings(config == null ? Map.of() : config, players(LegacyConfigFile.VODPLAYER),
                 players(LegacyConfigFile.VODDOWNER), typePid, searchEnabled, lang, random);
         VodIngest ingest = new VodIngest(settings);
+        lock();
+        try {
+            return ingest.process(row, param, new Store(), clock.instant().getEpochSecond());
+        } catch (CollectDataException e) {
+            throw new VodIngest.Rejected("写库时数据错误");
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    /**
+     * 文章、演员、角色、网址、评论入库一行（B19 增量 2）。
+     *
+     * @throws VodIngest.Rejected 旧版在这一行上会报错（PHP 8 类型错误、MySQL 严格模式错误或不允许 NULL 的列写入 null）
+     * @throws Busy               入库锁等待超时
+     */
+    public VodIngest.Outcome kind(KindIngest.Kind kind, Object row, UnaryOperator<String> lang) {
+        Map<Object, Object> config = castMap(ProvideValues.get(ProvideValues.get(maccms(), "collect"), kind.prefix()));
+        KindIngest ingest = new KindIngest(kind, new KindIngest.Settings(config == null ? Map.of() : config, typePid, lang, random));
+        lock();
+        try {
+            return ingest.process(row, new KindStore(), clock.instant().getEpochSecond());
+        } catch (CollectDataException e) {
+            throw new VodIngest.Rejected("写库时数据错误");
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    private void lock() {
         try {
             if (!lock.tryLock(LOCK_WAIT_SECONDS, TimeUnit.SECONDS)) {
                 throw new Busy();
@@ -98,13 +128,6 @@ public class CollectIngestService {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new Busy();
-        }
-        try {
-            return ingest.process(row, param, new Store(), clock.instant().getEpochSecond());
-        } catch (CollectDataException e) {
-            throw new VodIngest.Rejected("写库时数据错误");
-        } finally {
-            lock.unlock();
         }
     }
 
@@ -154,15 +177,76 @@ public class CollectIngestService {
         }
     }
 
-    /**
-     * 写给 MySQL 的列值（旧 ThinkPHP 按表结构过滤后绑定）：表里没有的键丢弃；值按 PHP 字符串转换后经 {@link AdminRowValues#value}
-     * （数值列的空串写 0，超长、非法 UTF-8、4 字节字符拒绝）。
-     */
+    /** 文章、演员、角色、网址、评论的查重、关联查找与写入（在入库锁内调用）。 */
+    private final class KindStore implements KindIngest.Store {
+
+        @Override
+        public Map<String, String> findArt(String name, String typeId) {
+            return reader.findArt(name, typeId);
+        }
+
+        @Override
+        public Map<String, String> findActor(String name, String sex, String typeId) {
+            return reader.findActor(name, sex, typeId);
+        }
+
+        @Override
+        public Map<String, String> findWebsite(String name, String typeId) {
+            return reader.findWebsite(name, typeId);
+        }
+
+        @Override
+        public Map<String, String> findRole(String name, String actor, String rid) {
+            return reader.findRole(name, actor, rid);
+        }
+
+        @Override
+        public Map<String, String> findComment(String rid, String content, String name) {
+            return reader.findComment(rid, content, name);
+        }
+
+        @Override
+        public String findRoleVod(String doubanId, String vodName, List<String> actorLikes, List<String> directorLikes) {
+            return reader.findRoleVod(doubanId, vodName, actorLikes, directorLikes);
+        }
+
+        @Override
+        public String findRelId(int mid, String doubanId, String name) {
+            return reader.findRelId(mid, doubanId, name);
+        }
+
+        @Override
+        public long insert(KindIngest.Kind kind, Map<String, Object> row) {
+            return writer.insert(table(kind), columns(TABLES.get(kind), row));
+        }
+
+        @Override
+        public void update(KindIngest.Kind kind, long id, Map<String, Object> columns) {
+            writer.update(table(kind), columns(TABLES.get(kind), columns), id);
+        }
+
+        private static CollectIngestWrites.Table table(KindIngest.Kind kind) {
+            return CollectIngestWrites.Table.valueOf(kind.name());
+        }
+    }
+
+    private static final Map<KindIngest.Kind, AdminTable> TABLES = Map.of(KindIngest.Kind.ART, AdminTable.ART, KindIngest.Kind.ACTOR,
+            AdminTable.ACTOR, KindIngest.Kind.ROLE, AdminTable.ROLE, KindIngest.Kind.WEBSITE, AdminTable.WEBSITE, KindIngest.Kind.COMMENT,
+            AdminTable.COMMENT);
+
     static Map<String, String> columns(Map<String, Object> row) {
+        return columns(AdminTable.VOD, row);
+    }
+
+    /**
+     * 写给 MySQL 的列值（旧 ThinkPHP 按表结构过滤后绑定）：表里没有的键与主键丢弃；值按 PHP 字符串转换后经 {@link AdminRowValues#value}
+     * （数值列的空串写 0，超长、非法 UTF-8、4 字节字符拒绝）；null（旧版绑定 NULL，不允许 NULL 的列报错）与数组拒绝。
+     */
+    static Map<String, String> columns(AdminTable table, Map<String, Object> row) {
         Map<String, String> out = new LinkedHashMap<>();
         for (Map.Entry<String, Object> e : row.entrySet()) {
-            AdminTable.Column c = AdminTable.VOD.column(e.getKey());
-            if (c == null || e.getKey().equals("vod_id")) {
+            AdminTable.Column c = table.column(e.getKey());
+            if (c == null || e.getKey().equals(table.pk())) {
                 continue;
             }
             Object x = e.getValue();
