@@ -17,7 +17,7 @@
 
 - **扫描对象**：`src/main/java` 全部源文件，去掉注释与字符串后匹配（注释、字符串里提到的类名不算）。
 - **视为出站的 API**：`java.net.http.*`、`java.net.URL/URLConnection/HttpURLConnection/Socket/InetAddress/…`、`java.net.*` 通配导入、`java.nio.channels` 的套接字通道、`javax.net.*`、RMI、JNDI（`javax.naming`）、JavaMail（`jakarta.mail`/`javax.mail`/Angus/Spring Mail）、Spring `web.client`（RestClient、RestTemplate）、WebClient、`http.client`、HTTP Interface、WebSocket 客户端、OpenFeign、`UrlResource`/`ResourceUtils`、Apache HttpClient、commons-net（FTP）、OkHttp、Retrofit、Netty、Jetty 客户端、JSch、`com.sun.net`/`sun.net`，以及 jsoup 的 `Jsoup`、`Connection`、`HttpConnection` 与通配导入。另按方法名拦截不需要导入就能调用的 `.openConnection(`、`.openStream(`、`.toURL(`。
-- **登记表** `OutboundNetworkGuardTest.REGISTERED`：键为 `integration.<子包>`，值为登记批次。B02 交付时为空。只接受 `integration.[a-z][a-z0-9]*`；登记子包的下级包同样允许，名字相似的包（`integration.payx`）不算。B23 起每批只登记本批子包（路线图 4.3 ④），登记改动必须出现在该批的合并提交中。E01/E02/E03/E08 的本地版本、采集链、上传、图片处理永远不登记；E05、E12 是入站，不需要登记。
+- **登记表** `OutboundNetworkGuardTest.REGISTERED`：键为 `integration.<子包>`，值为登记批次。B02 交付时为空。只接受 `integration.[a-z][a-z0-9]*`；登记子包的下级包同样允许，名字相似的包（`integration.payx`）不算。B23 起每批只登记本批子包（路线图 4.3 ④），登记改动必须出现在该批的合并提交中。E01/E02/E03/E08 的本地版本、采集链、上传、图片处理永远不登记；E05、E12 是入站，不需要登记。**B23（MACC-46）改为两级**：登记表移到主代码 `IntegrationPackages`；出站 API 只允许在 `RAW_API`（`integration.http`，出站客户端本身），`REGISTERED` 的子包只能经出站客户端发请求，客户端只能被已登记子包引用，运行期再查调用方。详见 `26-b23-integration-foundation.md` 第 2 节。
 - **pom 检查**：`spring-boot-starter-mail/webflux/webclient/restclient/websocket`、OpenFeign、commons-net、OkHttp、httpclient(5)、Jakarta Mail、Angus Mail、JSch、Netty 等不得出现。B23 引入出站客户端时同步调整。
 - **局限**（静态扫描本身的边界，B23 的"测试期出站护栏"在运行时补上）：反射/动态类加载、第三方库内部发起的请求（例如 XML 解析器解析外部实体）扫描不到。B27 解析公众号 XML 时必须关闭外部实体（路线图 E12 行），这一点不能靠本护栏保证。
 

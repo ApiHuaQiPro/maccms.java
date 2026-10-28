@@ -88,6 +88,15 @@ maccms:
     w1: ${MACCMS_BROWSER_EXTERNAL_W1:true}
     w2: ${MACCMS_BROWSER_EXTERNAL_W2:true}
     w3: ${MACCMS_BROWSER_EXTERNAL_W3:false}
+  # 出站客户端（B23，docs/architecture/26-b23-integration-foundation.md 第 3 节）：integration 已登记子包的 HTTP 请求统一经过它。
+  # mode：open（默认，允许外部主机）或 loopback-only（只允许回环地址，测试配置用这个值）。
+  # 超时与旧 mac_curl_* 一致：连接 15 秒、整体 30 秒；响应体上限 4 MiB。日志只记目标主机，不记路径、查询串与凭证。
+  integration:
+    outbound:
+      mode: ${MACCMS_INTEGRATION_OUTBOUND_MODE:open}
+      connect-timeout: ${MACCMS_INTEGRATION_OUTBOUND_CONNECT_TIMEOUT:15s}
+      read-timeout: ${MACCMS_INTEGRATION_OUTBOUND_READ_TIMEOUT:30s}
+      max-response-bytes: ${MACCMS_INTEGRATION_OUTBOUND_MAX_RESPONSE_BYTES:4194304}
   # 客户端 IP 解析（B06，D2 ④，docs/architecture/16-b06-misc-pages-provide.md 第 2 节）：部署级参数。默认只用连接对端；
   # trusted-proxies 为逗号分隔的 IP/CIDR，只有对端落在其中时才采用 header 指定的转发头（X-Forwarded-For 列表，或单值头
   # X-Real-IP/CF-Connecting-IP/True-Client-IP/Ali-CDN-Real-IP）。部署在 CDN/反向代理后面时必须填写代理出口网段，否则客户端 IP

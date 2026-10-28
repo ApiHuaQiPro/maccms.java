@@ -2,6 +2,7 @@ package com.maccms.backend.architecture;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.maccms.backend.integration.application.IntegrationPackages;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -14,12 +15,16 @@ import java.util.regex.Pattern;
 import org.junit.jupiter.api.Test;
 
 /**
- * 出站护栏（B02，路线图第 1.3、4.3 节；docs/architecture/11-guards-and-legacy-config.md 第 2 节）：
- * 扫描 src/main/java 中的出站网络 API，它们只允许出现在 {@link #REGISTERED} 登记的 {@code integration} 子包里。
- *
- * <p>B02 交付时登记表为空。B23 起每个外部调用批次只登记本批的子包（{@code integration.pay}、{@code integration.sms} 等），
- * 登记改动必须出现在该批的合并提交中。E01/E02/E03/E08 的本地版本、采集链、上传与图片处理永远不登记。
- * E05 支付回调、E12 公众号是入站接口，不需要登记。
+ * 出站护栏（B02 建设，B23 起按子包登记；路线图第 1.3、4.3 节 ④；docs/architecture/11-guards-and-legacy-config.md 第 2 节、
+ * 26-b23-integration-foundation.md 第 2 节）：扫描 src/main/java，登记表取自主代码 {@link IntegrationPackages}（运行期的调用方检查用同一份）。
+ * <ul>
+ * <li>出站网络 API（JDK HTTP/URL/套接字、JavaMail、Spring 各类客户端、FTP、jsoup 联网等）只允许出现在 {@link IntegrationPackages#RAW_API}
+ * 登记的子包；B23 只有出站客户端所在的 {@code integration.http}。已登记的业务子包（{@code integration.pay} 等）也不能直接用，
+ * 必须经出站客户端。</li>
+ * <li>出站客户端（{@code com.maccms.backend.integration.http}）只允许被 {@link IntegrationPackages#REGISTERED} 登记的子包引用。
+ * B23 交付时登记表为空；B24～B29 每批只登记本批的子包，登记改动必须出现在该批的合并提交中。E01/E02/E03/E08 的本地版本、采集链、
+ * 上传与图片处理永远不登记；E05 支付回调、E12 公众号是入站接口，不需要登记。</li>
+ * </ul>
  *
  * <p>扫描的是去掉注释与字符串后的代码，覆盖导入、全限定名与通配导入；另外按方法名拦截不需要导入就能调用的
  * {@code .openConnection(}、{@code .openStream(}、{@code .toURL(}。同时检查 pom.xml 不引入出站客户端依赖。
@@ -27,8 +32,13 @@ import org.junit.jupiter.api.Test;
  */
 class OutboundNetworkGuardTest {
 
-    /** 允许使用出站 API 的子包（相对 com.maccms.backend）→ 登记批次。只能是 integration 的子包。 */
-    static final Map<String, String> REGISTERED = Map.of();
+    /** 可以经出站客户端发请求的子包（相对 com.maccms.backend）→ 登记批次。 */
+    static final Map<String, String> REGISTERED = IntegrationPackages.REGISTERED;
+
+    /** 可以直接使用出站 API 的子包 → 登记批次。 */
+    static final Map<String, String> RAW_API = IntegrationPackages.RAW_API;
+
+    private static final Pattern CLIENT_REF = Pattern.compile("\\bcom\\.maccms\\.backend\\.integration\\.http\\b");
 
     private static final Pattern OUTBOUND_TYPES = Pattern.compile("\\b("
             + "java\\.net\\.http\\."
@@ -64,18 +74,22 @@ class OutboundNetworkGuardTest {
 
     @Test
     void registeredPackagesAreIntegrationSubpackages() {
-        assertThat(REGISTERED.keySet()).allSatisfy(p -> assertThat(p).matches("integration\\.[a-z][a-z0-9]*"));
+        assertThat(REGISTERED.keySet()).allSatisfy(p -> assertThat(p).matches("integration\\.[a-z][a-z0-9]*")
+                .isNotIn(IntegrationPackages.CLIENT, "integration.application", "integration.testing"));
+        assertThat(RAW_API.keySet()).allSatisfy(p -> assertThat(p).matches("integration\\.[a-z][a-z0-9]*"));
+        assertThat(RAW_API).containsEntry(IntegrationPackages.CLIENT, "B23");
+        assertThat(REGISTERED.values()).allSatisfy(b -> assertThat(b).matches("B2[4-9]"));
     }
 
     @Test
     void mainSourcesUseOutboundApisOnlyInRegisteredPackages() throws IOException {
         List<String> all = new ArrayList<>();
         for (Map.Entry<String, String> e : JavaSources.mainJava().entrySet()) {
-            for (String v : violations(e.getValue(), REGISTERED)) {
+            for (String v : violations(e.getValue(), REGISTERED, RAW_API)) {
                 all.add(e.getKey() + ": " + v);
             }
         }
-        assertThat(all).as("出站护栏：出站网络 API 只能出现在已登记的 integration 子包").isEmpty();
+        assertThat(all).as("出站护栏：出站网络 API 只能出现在 integration.http，出站客户端只能由已登记的 integration 子包使用").isEmpty();
     }
 
     @Test
@@ -104,7 +118,7 @@ class OutboundNetworkGuardTest {
                 // 注释里写 java.net.http.HttpClient、new java.net.URL(x).openConnection() 不算
                 class Ok { String s = "java.net.Socket org.springframework.web.client.RestClient .openStream("; }
                 """;
-        assertThat(violations(ok, Map.of())).isEmpty();
+        assertThat(violations(ok, Map.of(), RAW)).isEmpty();
 
         for (String bad : List.of(
                 "import java.net.http.HttpClient;",
@@ -140,44 +154,77 @@ class OutboundNetworkGuardTest {
                 "class X { void f(java.net.URI u) throws Exception { u.toURL().openStream(); } }",
                 "class X { void f(Object u) throws Exception { ((java.net.URL) u).openConnection(); } }",
                 "class X { void f(java.nio.file.Path p) throws Exception { p.toUri().toURL(); } }")) {
-            String src = "package com.maccms.backend.collect.application;\n" + bad;
-            assertThat(violations(src, Map.of())).as(bad).isNotEmpty();
-            // 同一段代码放进已登记的 integration 子包则允许
-            String registered = "package com.maccms.backend.integration.pay;\n" + bad;
-            assertThat(violations(registered, Map.of("integration.pay", "B24"))).as(bad).isEmpty();
-            // 未登记的 integration 子包、或登记子包之外的 integration 包仍不允许
-            assertThat(violations("package com.maccms.backend.integration.sms;\n" + bad,
-                    Map.of("integration.pay", "B24"))).as(bad).isNotEmpty();
-            assertThat(violations("package com.maccms.backend.integration;\n" + bad,
-                    Map.of("integration.pay", "B24"))).as(bad).isNotEmpty();
+            // 任意业务模块：不允许
+            assertThat(violations("package com.maccms.backend.collect.application;\n" + bad, PAY, RAW)).as(bad).isNotEmpty();
+            // 出站客户端所在的 integration.http（及其下级包）：允许
+            assertThat(violations("package com.maccms.backend.integration.http;\n" + bad, PAY, RAW)).as(bad).isEmpty();
+            assertThat(violations("package com.maccms.backend.integration.http.internal;\n" + bad, PAY, RAW)).as(bad).isEmpty();
+            // 已登记的业务子包也不能直接用，必须经出站客户端
+            assertThat(violations("package com.maccms.backend.integration.pay;\n" + bad, PAY, RAW)).as(bad).isNotEmpty();
+            // 未登记的 integration 子包、integration 根包、名字相近的包同样不允许
+            for (String pkg : List.of("integration.sms", "integration", "integration.httpx", "integration.application")) {
+                assertThat(violations("package com.maccms.backend." + pkg + ";\n" + bad, PAY, RAW)).as(pkg + " " + bad)
+                        .isNotEmpty();
+            }
+            // 以后若某批把不走 HTTP 的协议子包登记为 RAW_API（如 SMTP），该子包允许
+            assertThat(violations("package com.maccms.backend.integration.mail;\n" + bad, PAY,
+                    Map.of("integration.http", "B23", "integration.mail", "B25"))).as(bad).isEmpty();
         }
-        // 已登记子包的下级包同样允许（如 integration.pay.alipay）
-        assertThat(violations("package com.maccms.backend.integration.pay.alipay;\nimport java.net.http.HttpClient;",
-                Map.of("integration.pay", "B24"))).isEmpty();
-        // 名字相似的包不算登记（integration.payx）
-        assertThat(violations("package com.maccms.backend.integration.payx;\nimport java.net.http.HttpClient;",
-                Map.of("integration.pay", "B24"))).isNotEmpty();
+
+        // 出站客户端只能由已登记子包引用
+        for (String use : List.of(
+                "import com.maccms.backend.integration.http.OutboundHttpClient;",
+                "import com.maccms.backend.integration.http.*;",
+                "import static com.maccms.backend.integration.http.OutboundRequest.get;",
+                "class X { com.maccms.backend.integration.http.OutboundHttpClient c; }")) {
+            assertThat(violations("package com.maccms.backend.integration.pay;\n" + use, PAY, RAW)).as(use).isEmpty();
+            assertThat(violations("package com.maccms.backend.integration.pay.alipay;\n" + use, PAY, RAW)).as(use).isEmpty();
+            assertThat(violations("package com.maccms.backend.integration.http;\n" + use, PAY, RAW)).as(use).isEmpty();
+            for (String pkg : List.of("integration.sms", "integration.payx", "integration", "integration.application",
+                    "collect.application", "member.application", "admin.web", "common.web", "site.application")) {
+                assertThat(violations("package com.maccms.backend." + pkg + ";\n" + use, PAY, RAW)).as(pkg + " " + use)
+                        .isNotEmpty();
+            }
+            // 登记表为空（B23 交付时）时，除客户端本身外谁都不能用
+            assertThat(violations("package com.maccms.backend.integration.pay;\n" + use, Map.of(), RAW)).as(use).isNotEmpty();
+        }
+        // 注释与字符串里提到客户端不算
+        assertThat(violations("package com.maccms.backend.collect.application;\n"
+                + "// com.maccms.backend.integration.http.OutboundHttpClient\n"
+                + "class X { String s = \"com.maccms.backend.integration.http.OutboundHttpClient\"; }", PAY, RAW)).isEmpty();
+        // integration.application 的公开类型（配置、脱敏）谁都可以用
+        assertThat(violations("package com.maccms.backend.member.application;\n"
+                + "import com.maccms.backend.integration.application.ThirdPartyConfig;\n"
+                + "import com.maccms.backend.integration.application.LogRedactor;", PAY, RAW)).isEmpty();
     }
 
-    /** 返回一个源文件使用出站 API 的位置；所在包已登记时返回空。 */
-    static List<String> violations(String source, Map<String, String> registered) {
+    private static final Map<String, String> PAY = Map.of("integration.pay", "B24");
+    private static final Map<String, String> RAW = Map.of("integration.http", "B23");
+
+    /**
+     * 返回一个源文件的违规：所在包不在 {@code raw} 中却用了出站 API；所在包既不是客户端包、也不在 {@code registered} 中，
+     * 却引用了出站客户端。
+     */
+    static List<String> violations(String source, Map<String, String> registered, Map<String, String> raw) {
         String pkg = JavaSources.modulePackage(source);
-        if (pkg != null) {
-            for (String allowed : registered.keySet()) {
-                if (pkg.equals(allowed) || pkg.startsWith(allowed + ".")) {
-                    return List.of();
-                }
-            }
-        }
         String code = JavaSources.stripCommentsAndStrings(source);
         List<String> out = new ArrayList<>();
-        Matcher t = OUTBOUND_TYPES.matcher(code);
-        while (t.find()) {
-            out.add("出站网络类型 " + t.group(1));
+        if (!IntegrationPackages.isRegistered(pkg, raw.keySet())) {
+            Matcher t = OUTBOUND_TYPES.matcher(code);
+            while (t.find()) {
+                out.add("出站网络类型 " + t.group(1));
+            }
+            Matcher c = OUTBOUND_CALLS.matcher(code);
+            while (c.find()) {
+                out.add("出站调用 ." + c.group(1) + "(");
+            }
         }
-        Matcher c = OUTBOUND_CALLS.matcher(code);
-        while (c.find()) {
-            out.add("出站调用 ." + c.group(1) + "(");
+        if (!IntegrationPackages.isRegistered(pkg, List.of(IntegrationPackages.CLIENT))
+                && !IntegrationPackages.isRegistered(pkg, registered.keySet())) {
+            Matcher r = CLIENT_REF.matcher(code);
+            while (r.find()) {
+                out.add("未登记的包引用出站客户端 " + r.group());
+            }
         }
         return out;
     }
