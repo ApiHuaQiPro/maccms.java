@@ -30,6 +30,11 @@ public final class TimmingService {
     /** 执行一个任务，返回它的输出（HTML）。 */
     public interface TaskRunner {
         String run(String file, String param);
+
+        /** 绑定本次请求的协议（B28：推送任务的地址前缀用旧 {@code $GLOBALS['http_type']}，即本次请求是否为 https）。 */
+        default TaskRunner forRequest(boolean secure) {
+            return this;
+        }
     }
 
     private final LegacyConfigService config;

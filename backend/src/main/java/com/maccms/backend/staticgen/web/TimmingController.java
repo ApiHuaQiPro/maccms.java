@@ -49,7 +49,7 @@ public class TimmingController {
             return respond(HttpStatus.FORBIDDEN, REFUSED);
         }
         Map<String, PhpInput.Value> get = PhpInput.parseQuery(request.getQueryString());
-        String body = service.run(param(get, "name"), param(get, "enforce"), tasks);
+        String body = service.run(param(get, "name"), param(get, "enforce"), tasks.forRequest(request.isSecure()));
         return respond(HttpStatus.OK, body);
     }
 

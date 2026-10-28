@@ -16,7 +16,8 @@ import java.util.Map;
  * <li>{@code cj}：规则采集的一轮（旧 {@code Cj::col_all}，B20 的 {@code CjColAll}，由装配处给出；页面来自本地 HTML 目录）。</li>
  * <li>{@code collect}：定时资源站采集不提供（2026-10-28 用户决定，27 文档 D-B19-15），固定输出"该功能未在新系统中提供"，不执行任何采集
  * （任务已按时间表记为执行过，同旧版"先写 runtime 再执行"）。</li>
- * <li>{@code urlsend}：推送在 B28 接入；本批输出"未执行"的提示，同上。</li>
+ * <li>{@code urlsend}：URL 推送（B28，{@link UrlsendService} 的定时任务入口，同旧 {@code Timming::urlsend} 调后台 {@code Urlsend::push}，
+ * 一次推完所有页）；推送不可用（没有数据源）时输出"参数错误"（同旧版推送方式不存在时）。</li>
  * <li>其他：旧版调用不存在的方法而报错；新版输出"参数错误"。</li>
  * </ul>
  */
@@ -34,13 +35,27 @@ public final class TimmingTasks implements TimmingService.TaskRunner {
     private final MakeService make;
     private final Runnable clearCache;
     private final CjTask cj;
+    private final UrlsendService urlsend;
     private final LegacyLang lang;
+    private final boolean secure;
 
-    public TimmingTasks(MakeService make, Runnable clearCache, CjTask cj, LegacyLang lang) {
+    public TimmingTasks(MakeService make, Runnable clearCache, CjTask cj, UrlsendService urlsend, LegacyLang lang) {
+        this(make, clearCache, cj, urlsend, lang, false);
+    }
+
+    private TimmingTasks(MakeService make, Runnable clearCache, CjTask cj, UrlsendService urlsend, LegacyLang lang,
+                         boolean secure) {
         this.make = make;
         this.clearCache = clearCache;
         this.cj = cj;
+        this.urlsend = urlsend;
         this.lang = lang;
+        this.secure = secure;
+    }
+
+    @Override
+    public TimmingService.TaskRunner forRequest(boolean secure) {
+        return new TimmingTasks(make, clearCache, cj, urlsend, lang, secure);
     }
 
     @Override
@@ -62,7 +77,14 @@ public final class TimmingTasks implements TimmingService.TaskRunner {
                 yield out == null ? line("规则采集不可用") : out;
             }
             case "collect" -> line(NOT_PROVIDED);
-            case "urlsend" -> line("推送任务由后续批次（B28）提供，本次未执行");
+            case "urlsend" -> {
+                if (urlsend == null) {
+                    yield line(lang.get("param_err"));
+                }
+                UrlsendService.Output o = urlsend.push(parseStr(param), secure ? "https://" : "http://",
+                        UrlsendService.Entrance.API);
+                yield o.error() == null ? o.html() : line(o.error());
+            }
             default -> line(lang.get("param_err"));
         };
     }
