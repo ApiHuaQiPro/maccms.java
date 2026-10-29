@@ -91,7 +91,11 @@ class WriteRegistryTest {
         assertThat(WriteRegistry.registered().allows("install", "mac_admin", WriteOperation.INSERT)).isTrue();
         assertThat(WriteRegistry.registered().allows("install", "mac_admin", WriteOperation.UPDATE)).isFalse();
         assertThat(WriteRegistry.registered().allows("install", "mac_group", WriteOperation.INSERT)).isFalse();
-        assertThat(WriteRegistry.registered().permissions()).hasSize(110);
+        // B25（MACC-48）：会员模块只新增验证码记录（不修改、不删除；后台批量替换的 UPDATE 属 B15）
+        assertThat(WriteRegistry.registered().allows("member", "mac_msg", WriteOperation.INSERT)).isTrue();
+        assertThat(WriteRegistry.registered().allows("member", "mac_msg", WriteOperation.UPDATE)).isFalse();
+        assertThat(WriteRegistry.registered().allows("member", "mac_msg", WriteOperation.DELETE)).isFalse();
+        assertThat(WriteRegistry.registered().permissions()).hasSize(111);
     }
 
     @Test

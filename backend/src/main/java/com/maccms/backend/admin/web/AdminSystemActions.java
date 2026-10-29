@@ -1,6 +1,7 @@
 package com.maccms.backend.admin.web;
 
 import com.maccms.backend.admin.application.AdminSettings;
+import com.maccms.backend.admin.application.MailTestService;
 import com.maccms.backend.admin.application.PhpArrays;
 import com.maccms.backend.admin.application.SystemConfigService;
 import com.maccms.backend.admin.application.view.Reply;
@@ -24,8 +25,8 @@ import org.springframework.http.ResponseEntity;
 
 /**
  * B15 后台系统配置的动作（旧 admin/controller/System.php 的 15 个配置页、{@code Urlsend::index} 与快捷菜单的保存；24 文档第 5 节）。
- * 由 {@link AdminController} 在登录与 {@code check_auth} 之后分派。发信测试 {@code system/test_email} 属 E07（B25），由 B12 的分派返回
- * "由 B25 批次提供"；缓存连接测试 {@code system/test_cache} 新版不连接任何缓存服务（新系统没有外部缓存），返回固定提示（D-B15-4）。
+ * 由 {@link AdminController} 在登录与 {@code check_auth} 之后分派。发信测试 {@code system/test_email} 属 E07，B25 接入
+ * {@link MailTestService}（32 文档第 6 节；没有发信服务时仍按"由 B25 批次提供"）；缓存连接测试 {@code system/test_cache} 新版不连接任何缓存服务（新系统没有外部缓存），返回固定提示（D-B15-4）。
  */
 public class AdminSystemActions {
 
@@ -42,14 +43,22 @@ public class AdminSystemActions {
     private final AdminResponses responses;
     private final SystemConfigService system;
     private final RandomGenerator random;
+    private final MailTestService mailTest;
 
     public AdminSystemActions(AdminEndpoint endpoint, AdminSettings settings, AdminResponses responses, SystemConfigService system,
                               AdminRandom random) {
+        this(endpoint, settings, responses, system, random, null);
+    }
+
+    /** @param mailTest 发信测试（B25）；为 null 时 {@code system/test_email} 交回分派（"由 B25 批次提供"） */
+    public AdminSystemActions(AdminEndpoint endpoint, AdminSettings settings, AdminResponses responses, SystemConfigService system,
+                              AdminRandom random, MailTestService mailTest) {
         this.endpoint = endpoint;
         this.settings = settings;
         this.responses = responses;
         this.system = system;
         this.random = random.generator();
+        this.mailTest = mailTest;
     }
 
     /** 处理本类的动作；不是本类的动作时返回 null。 */
@@ -64,6 +73,9 @@ public class AdminSystemActions {
         if (code.equals("system/test_cache")) {
             return responses.error(ctx.ajax(), TEST_CACHE_DISABLED);
         }
+        if (code.equals("system/test_email")) {
+            return mailTest == null ? null : testEmail(ctx);
+        }
         if (!code.startsWith("system/")) {
             return null;
         }
@@ -72,6 +84,20 @@ public class AdminSystemActions {
             return null;
         }
         return ctx.post_() ? save(ctx, session, page) : page(ctx, session, page, "admin/system/" + page + "/title");
+    }
+
+    /** 旧 {@code test_email}：参数取 {@code input()}（GET/POST 都可以），返回 JSON（{@code {"code":…,"msg":"…"}}）。 */
+    private ResponseEntity<String> testEmail(Ctx ctx) {
+        MailTestService.Result r = mailTest.test(text(ctx, "type"), text(ctx, "nick"), text(ctx, "test"));
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("code", r.code());
+        m.put("msg", r.msg());
+        return responses.rawJson(m);
+    }
+
+    private static String text(Ctx ctx, String name) {
+        byte[] v = ctx.params().scalar(name);
+        return v == null ? "" : new String(v, StandardCharsets.UTF_8);
     }
 
     private ResponseEntity<String> save(Ctx ctx, SessionState session, String page) {

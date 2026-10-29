@@ -85,4 +85,70 @@
         SET group_id = 2
         WHERE user_id = #{userId} AND user_status = 1 AND group_id &gt; 2 AND user_end_time &lt; #{now}
     </update>
+
+    <!-- ================================================================ B25 短信/邮件验证码（32 文档第 5 节） -->
+
+    <!-- 发送成功后记一条验证码（旧 common/model/User.php:696-706；登记 member / mac_msg / INSERT）。 -->
+    <insert id="insertMessage">
+        INSERT INTO mac_msg (user_id, msg_type, msg_status, msg_to, msg_code, msg_content, msg_time)
+        VALUES (#{userId}, #{type}, 0, #{to}, #{code}, #{content}, #{now})
+    </insert>
+
+    <!--
+      注册时验证了手机/邮箱（旧 User.php:189-231）：同 register，另写 user_phone 或 user_email；号码/地址已被使用时不插入
+      （旧版先查后插，这里合成一条条件插入，并发时也不会出现两个会员用同一号码注册）。
+    -->
+    <insert id="registerWithContact">
+        INSERT INTO mac_user (user_name, user_pwd, group_id, user_points, user_status, user_reg_time, user_reg_ip,
+                              user_openid_qq, user_openid_weixin, user_phone, user_email)
+        SELECT #{name}, #{pwd}, 2, #{points}, #{status}, #{now}, #{ip}, '', '',
+               <if test="phone != null">#{phone}</if><if test="phone == null">''</if>,
+               <if test="email != null">#{email}</if><if test="email == null">''</if>
+        FROM DUAL
+        WHERE NOT EXISTS (SELECT 1 FROM mac_user AS u WHERE u.user_name = #{name})
+          <if test="phone != null">AND NOT EXISTS (SELECT 1 FROM mac_user AS p WHERE p.user_phone = #{phone})</if>
+          <if test="email != null">AND NOT EXISTS (SELECT 1 FROM mac_user AS e WHERE e.user_email = #{email})</if>
+          AND (#{regNum} &lt;= 0
+               OR (SELECT COUNT(*) FROM mac_user AS r WHERE r.user_reg_ip = #{ip} AND r.user_reg_time &gt; #{since})
+                  &lt; #{regNum})
+    </insert>
+
+    <!-- 绑定（旧 User.php:731-740）：先清掉所有会员上的同一号码/地址，再写到当前会员。 -->
+    <update id="clearPhone">
+        UPDATE mac_user
+        SET user_phone = ''
+        WHERE user_phone = #{phone}
+    </update>
+
+    <update id="clearEmail">
+        UPDATE mac_user
+        SET user_email = ''
+        WHERE user_email = #{email}
+    </update>
+
+    <!-- 绑定与解绑（旧 User.php:737-740、:756-760；解绑写空串）。 -->
+    <update id="setPhone">
+        UPDATE mac_user
+        SET user_phone = #{phone}
+        WHERE user_id = #{userId}
+    </update>
+
+    <update id="setEmail">
+        UPDATE mac_user
+        SET user_email = #{email}
+        WHERE user_id = #{userId}
+    </update>
+
+    <!-- 手机/邮箱找回重置（旧 User.php:836-840）：同号码/地址的会员全部改密，同时轮换 user_random（D2 ⑥）。 -->
+    <update id="resetPasswordByPhone">
+        UPDATE mac_user
+        SET user_pwd = #{pwd}, user_random = #{random}
+        WHERE user_phone = #{phone}
+    </update>
+
+    <update id="resetPasswordByEmail">
+        UPDATE mac_user
+        SET user_pwd = #{pwd}, user_random = #{random}
+        WHERE user_email = #{email}
+    </update>
 </mapper>

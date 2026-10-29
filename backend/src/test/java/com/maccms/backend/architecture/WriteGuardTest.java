@@ -138,6 +138,7 @@ class WriteGuardTest {
         // B19（MACC-43）登记采集入库与 Receive：新增与更新视频；增量 2 另加文章、演员、角色、网址、评论（27 文档第 4 节）
         // B20（MACC-44）登记规则采集：采集历史新增、内容的新增与更新（28 文档第 5 节）
         // B22（MACC-45）登记安装向导：初始分类与第一个管理员的新增（31 文档第 6 节）
+        // B25（MACC-48）登记短信/邮件验证码的记录：会员模块对 mac_msg 的新增（32 文档第 5 节）
         assertThat(WriteRegistry.registered().permissions()).extracting(p -> p.module() + " " + p.table() + " "
                 + p.operation() + " " + p.batch())
                 .containsExactly("member mac_user INSERT B09", "member mac_user UPDATE B09",
@@ -195,7 +196,7 @@ class WriteGuardTest {
                         "collect mac_website INSERT B19", "collect mac_website UPDATE B19", "collect mac_comment INSERT B19",
                         "collect mac_comment UPDATE B19",
                         "collect mac_cj_history INSERT B20", "collect mac_cj_content INSERT B20", "collect mac_cj_content UPDATE B20",
-                        "install mac_type INSERT B22", "install mac_admin INSERT B22");
+                        "install mac_type INSERT B22", "install mac_admin INSERT B22", "member mac_msg INSERT B25");
     }
 
     @Test

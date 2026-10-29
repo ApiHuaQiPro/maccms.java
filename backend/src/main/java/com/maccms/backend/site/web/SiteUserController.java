@@ -31,6 +31,7 @@ import com.maccms.backend.site.web.view.MemberCaptcha;
 import com.maccms.backend.site.web.view.MemberShell;
 import com.maccms.backend.site.web.view.MetadataItem;
 import com.maccms.backend.site.web.view.NavLink;
+import com.maccms.backend.site.web.view.UserBindPage;
 import com.maccms.backend.site.web.view.UserFindpassMsgPage;
 import com.maccms.backend.site.web.view.UserFindpassPage;
 import com.maccms.backend.site.web.view.UserIndexPage;
@@ -43,6 +44,7 @@ import com.maccms.backend.site.web.view.UserLoginPage;
 import com.maccms.backend.site.web.view.UserMessageBlock;
 import com.maccms.backend.site.web.view.UserPortraitPage;
 import com.maccms.backend.site.web.view.UserRegPage;
+import com.maccms.backend.site.web.view.UserUnbindPage;
 import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.InputStream;
@@ -205,17 +207,20 @@ public class SiteUserController {
                     t -> t.siteAjaxUserLogin(new UserLoginFragment(loginForm(account.pageSettings()))));
             case "ajax_info" -> ajaxInfo(account, member.state());
             case "index" -> indexPage(account, member.state());
-            case "reg" -> post ? json(account.register(params, cookies(request), captcha(request, params),
+            case "reg" -> post ? json(account.register(member.state(), params, cookies(request), captcha(request, params),
                     clientIp.resolve(request))) : regPage(params, account.pageSettings());
             case "regcheck" -> regcheck(request, account, params);
-            case "reg_msg" -> json(account.sendMessage(params, 3));
+            case "reg_msg" -> json(account.sendMessage(member.state(), params, 3));
+            case "bindmsg" -> json(account.sendMessage(member.state(), params, 1));
+            case "bind" -> post ? json(account.bind(member.state(), params)) : bindPage(params);
+            case "unbind" -> post ? json(account.unbind(member.state(), params)) : unbindPage(params);
             case "info" -> post ? info(request, account, member.state(), params, ajax)
                     : infoPage(account, member.state());
             case "portrait" -> post ? portrait(request, account, member.state(), params)
                     : portraitPage(account, member.state());
             case "findpass" -> post ? json(account.findpass(params, captcha(request, params))) : findpassPage();
-            case "findpass_msg" -> post ? json(account.sendMessage(params, 2)) : findpassMsgPage(params);
-            case "findpass_reset" -> post ? json(account.findpassReset(params)) : emptyBody();
+            case "findpass_msg" -> post ? json(account.sendMessage(member.state(), params, 2)) : findpassMsgPage(params);
+            case "findpass_reset" -> post ? json(account.findpassReset(member.state(), params)) : emptyBody();
             case "comment", "gbook" -> {
                 if (boards == null) {
                     throw notFound();
@@ -417,6 +422,28 @@ public class SiteUserController {
                 new UserMessageBlock(phone ? "phone" : "email", phone ? "手机" : "邮箱", link("findpass_msg")),
                 link("findpass_reset"), link("login"));
         return renderer.member(HttpStatus.OK, t -> t.sitePagesUserFindpassMsg(page), shell.nonce());
+    }
+
+    /** 旧 {@code bind()} GET（{@code User.php:294-308}）：{@code ac} 为空时按 {@code email}。 */
+    private ResponseEntity<?> bindPage(Map<String, PhpInput.Value> params) {
+        byte[] ac = PhpInput.scalar(params, "ac");
+        boolean phone = ac != null && new String(ac, StandardCharsets.UTF_8).equals("phone");
+        MemberShell shell = shell(phone ? "绑定手机" : "绑定邮箱");
+        UserBindPage page = new UserBindPage(shell,
+                new UserMessageBlock(phone ? "phone" : "email", phone ? "手机" : "邮箱", link("bindmsg")), link("bind"),
+                link("info"), site.publicPath(urls.user("bind", Map.of("ac", phone ? "email" : "phone"))),
+                phone ? "改为绑定邮箱" : "改为绑定手机", link("info"));
+        return renderer.member(HttpStatus.OK, t -> t.sitePagesUserBind(page), shell.nonce());
+    }
+
+    /** 旧 {@code unbind()} GET（{@code User.php:310-319}）。 */
+    private ResponseEntity<?> unbindPage(Map<String, PhpInput.Value> params) {
+        byte[] ac = PhpInput.scalar(params, "ac");
+        boolean phone = ac != null && new String(ac, StandardCharsets.UTF_8).equals("phone");
+        MemberShell shell = shell(phone ? "解除绑定手机" : "解除绑定邮箱");
+        UserUnbindPage page = new UserUnbindPage(shell, phone ? "phone" : "email", phone ? "手机" : "邮箱", link("unbind"),
+                link("info"), link("info"));
+        return renderer.member(HttpStatus.OK, t -> t.sitePagesUserUnbind(page), shell.nonce());
     }
 
     // ------------------------------------------------------------------ 通用响应

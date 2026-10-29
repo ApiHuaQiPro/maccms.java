@@ -44,4 +44,22 @@ public interface MemberMapper {
     /** 密保找回（{@code User.php:504-509}）：三项都按 MySQL 比较规则，不看 {@code user_status}。 */
     Long selectIdByQuestion(@Param("name") String name, @Param("question") String question,
                             @Param("answer") String answer);
+
+    // ------------------------------------------------------------------ 短信/邮件验证码（B25，32 文档第 5 节）
+
+    /** 同手机号会员（旧 {@code where('user_phone', $to)->find()}）。 */
+    Long selectIdByPhone(@Param("phone") String phone);
+
+    /**
+     * 频率限制（旧 {@code send_msg}，{@code common/model/User.php:668-677}）：该会员（游客为 0）在 {@code since} 之后给同一地址发过同类验证码。
+     */
+    Long selectRecentMessage(@Param("userId") long userId, @Param("since") long since, @Param("type") int type,
+                             @Param("to") String to);
+
+    /**
+     * 校验（旧 {@code check_msg}，{@code User.php:617-628}）：该会员在 {@code since} 之后收到的同类、同验证码的记录；新版另要求发送地址与
+     * 本次使用的地址相同（D-B25-4）。
+     */
+    Long selectValidMessage(@Param("userId") long userId, @Param("since") long since, @Param("type") int type,
+                            @Param("code") String code, @Param("to") String to);
 }

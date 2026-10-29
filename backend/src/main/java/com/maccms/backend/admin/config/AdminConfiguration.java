@@ -309,10 +309,15 @@ public class AdminConfiguration {
                 clock.getIfAvailable(Clock::systemUTC));
     }
 
+    /** B15 系统配置；B25 起发信测试接入 E07（32 文档第 6 节，没有发信服务的上下文里仍按"由 B25 批次提供"）。 */
     @Bean
     AdminSystemActions adminSystemActions(AdminEndpoint endpoint, AdminSettings settings, AdminResponses responses,
-                                          SystemConfigService system, AdminRandom random) {
-        return new AdminSystemActions(endpoint, settings, responses, system, random);
+                                          SystemConfigService system, AdminRandom random,
+                                          ObjectProvider<com.maccms.backend.integration.application.MailSender> mail,
+                                          LegacyConfigService legacy) {
+        com.maccms.backend.integration.application.MailSender m = mail.getIfAvailable();
+        return new AdminSystemActions(endpoint, settings, responses, system, random,
+                m == null ? null : new com.maccms.backend.admin.application.MailTestService(m, legacy, new java.security.SecureRandom()));
     }
 
     /**

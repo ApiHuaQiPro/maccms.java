@@ -25,13 +25,18 @@ public final class IntegrationPackages {
     /** 出站客户端所在子包。 */
     public static final String CLIENT = "integration.http";
 
-    /** 可以直接使用出站网络 API 的子包 → 登记批次。 */
-    public static final Map<String, String> RAW_API = Map.of(CLIENT, "B23");
+    /**
+     * 可以直接使用出站网络 API 的子包 → 登记批次。B25：{@code integration.mail}（SMTP 不走 HTTP，用套接字；目标检查见
+     * {@code SmtpMailer}：与出站客户端同一套主机规则与 {@code loopback-only} 模式，32 文档第 4.1 节）。
+     */
+    public static final Map<String, String> RAW_API = Map.of(CLIENT, "B23", "integration.mail", "B25");
 
     /**
-     * 可以经出站客户端发请求的子包 → 登记批次。B28：{@code integration.urlsend}（百度推送 E09）、{@code integration.backlink}（友链回链检测 E11）。
+     * 可以经出站客户端发请求的子包 → 登记批次。B28：{@code integration.urlsend}（百度推送 E09）、{@code integration.backlink}（友链回链检测 E11）；
+     * B25：{@code integration.sms}（短信 E06）、{@code integration.mail}（邮件 E07，只引用出站模式与超时参数，发信走 SMTP）。
      */
-    public static final Map<String, String> REGISTERED = Map.of("integration.urlsend", "B28", "integration.backlink", "B28");
+    public static final Map<String, String> REGISTERED = Map.of("integration.urlsend", "B28", "integration.backlink", "B28",
+            "integration.sms", "B25", "integration.mail", "B25");
 
     private IntegrationPackages() {
     }

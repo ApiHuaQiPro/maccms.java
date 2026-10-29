@@ -81,7 +81,7 @@
 - 定时任务 `cj` 只经 `collect.application.CjColAll`（与后台 `cj/col_all` 同一实现），`collect` 不提供（D-B19-15），不要再接资源站采集；B28 接入推送时替换 `TimmingTasks` 的 `urlsend` 分支，runtime 回写与鉴权不变。
 ### 2.9 B23 integration 基础
 
-- `integration` 模块（`26-b23-integration-foundation.md`）：`integration.application`（登记表 `IntegrationPackages`、第三方配置 `ThirdPartyConfig`/`Secret`、脱敏 `LogRedactor`，其他模块可用）；`integration.http`（出站客户端，唯一可以直接用出站 API 的包）；B24～B29 的业务子包 `integration.pay` 等经客户端发请求，登记写进 `IntegrationPackages.REGISTERED`，与该批的合并提交一起出现。B28 登记了第一批：`integration.urlsend`（百度推送）、`integration.backlink`（回链检测），其他模块只经 `integration.application` 的 `UrlPush`、`BacklinkPages` 接口使用（`30-b28-urlsend-backlink.md` 第 5 节）。
+- `integration` 模块（`26-b23-integration-foundation.md`）：`integration.application`（登记表 `IntegrationPackages`、第三方配置 `ThirdPartyConfig`/`Secret`、脱敏 `LogRedactor`，其他模块可用）；`integration.http`（出站客户端，唯一可以直接用出站 API 的包）；B24～B29 的业务子包 `integration.pay` 等经客户端发请求，登记写进 `IntegrationPackages.REGISTERED`，与该批的合并提交一起出现。B28 登记了第一批：`integration.urlsend`（百度推送）、`integration.backlink`（回链检测），其他模块只经 `integration.application` 的 `UrlPush`、`BacklinkPages` 接口使用（`30-b28-urlsend-backlink.md` 第 5 节）。B25 登记 `integration.sms`（短信，经客户端）与 `integration.mail`（SMTP，同时登记为 `RAW_API`，自行执行同一套目标检查），其他模块只经 `SmsSender`、`MailSender`、`LegacyMailTemplate` 使用；SMTP 测试用 `integration.testing.LoopbackSmtpServer`（TLS 证书测试时现生成，不入库）（`32-b25-sms-mail.md` 第 2 节）。
 - 第三方配置只经 `ThirdPartyConfig` 读取（启动时读一次，修改后重启生效）；密钥字段只能用 `secret()` 取 `Secret`，明文不得写入日志、异常信息或评论。第三方请求与响应要写日志时先经 `LogRedactor`（客户端已对自己的日志这样做）。
 - 第三方接口的测试用 `LoopbackMockServer`（回环地址、随机端口），假值一律形如 `test-only-…`；外部地址的反例只用 TEST-NET（203.0.113.0/24）与 `.invalid`/`.test` 保留名。
 
@@ -120,7 +120,7 @@
 - 数据库等凭证只从环境变量读取，`application.yml` 中不写默认值；缺失时必须启动失败，不能回落到任何默认库或 root。可写数据源（B07）默认关闭，所以 `MACCMS_WRITE_DB_*` 的占位符带空默认值；打开时三项缺一即启动失败，不回落到只读池的配置，错误信息与日志不回显地址、账号、密码。
 - 样例配置只用占位符（`config/*.env.example`）；真实 `*.env` 已被忽略，不提交。
 - 不读取仓库外的线上配置（`D:\Ai\MACCMS\prod-config\`），不连接线上库或服务器。
-- 运行时出站网络 API（HTTP、SMTP、FTP、套接字、DNS 查询等）只允许出现在 `integration.application.IntegrationPackages.RAW_API` 登记的子包（B23 起只有出站客户端 `integration.http`）；第三方 HTTP 请求一律经 `integration.http.OutboundHttpClient`，它只能被 `IntegrationPackages.REGISTERED` 登记的 `integration` 子包使用（B23 交付时为空，B24～B29 每批只登记本批子包，B28 起有 `integration.urlsend`、`integration.backlink`；`OutboundNetworkGuardTest` 静态锁定，客户端运行期再查调用方）。见第 2.9 节与路线图第 4.3 节。
+- 运行时出站网络 API（HTTP、SMTP、FTP、套接字、DNS 查询等）只允许出现在 `integration.application.IntegrationPackages.RAW_API` 登记的子包（B23 起只有出站客户端 `integration.http`；B25 起另有 SMTP 发信的 `integration.mail`）；第三方 HTTP 请求一律经 `integration.http.OutboundHttpClient`，它只能被 `IntegrationPackages.REGISTERED` 登记的 `integration` 子包使用（B23 交付时为空，B24～B29 每批只登记本批子包，B28 起有 `integration.urlsend`、`integration.backlink`，B25 起有 `integration.sms`、`integration.mail`；`OutboundNetworkGuardTest` 静态锁定，客户端运行期再查调用方）。见第 2.9 节与路线图第 4.3 节。
 - 测试不得访问外部主机：测试期出站护栏（B23）对全部测试自动生效，连接非回环地址或解析外部主机名即判测试失败；第三方接口一律用 `integration.testing.LoopbackMockServer` 在回环地址上模拟。
 - 页面不输出让浏览器访问外部主机的地址，除非对应的部署参数 `maccms.browser-external.w1/w2/w3` 已打开（B02；按路线图第五轮 W1/W2 默认打开、W3 默认关闭）；"本站"只按 `maccms.site.base-url` 的主机判定。
 - 日志不记录 cookie、session、会员身份、密码；异常处理只返回错误码与通用说明。
