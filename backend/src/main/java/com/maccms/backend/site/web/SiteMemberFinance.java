@@ -11,11 +11,14 @@ import com.maccms.backend.content.application.view.ContentTitle;
 import com.maccms.backend.member.application.MemberPurchaseService;
 import com.maccms.backend.member.application.MemberRecordService;
 import com.maccms.backend.member.application.MemberReferralService;
+import com.maccms.backend.member.application.MemberPaymentService;
 import com.maccms.backend.member.application.MemberWalletService;
 import com.maccms.backend.member.application.view.FinanceRecords;
 import com.maccms.backend.member.application.view.JsonReply;
 import com.maccms.backend.member.application.view.MemberGroup;
 import com.maccms.backend.member.application.view.MemberState;
+import com.maccms.backend.member.application.view.PaymentContext;
+import com.maccms.backend.member.application.view.PaymentStep;
 import com.maccms.backend.member.application.view.RecordPage;
 import com.maccms.backend.site.application.ImageUrlNormalizer;
 import com.maccms.backend.site.application.LegacyPage;
@@ -37,7 +40,9 @@ import com.maccms.backend.site.web.view.UserCashPage;
 import com.maccms.backend.site.web.view.UserJumpPage;
 import com.maccms.backend.site.web.view.UserListPage;
 import com.maccms.backend.site.web.view.UserOrderPage;
+import com.maccms.backend.site.web.view.UserPayFormPage;
 import com.maccms.backend.site.web.view.UserPayPage;
+import com.maccms.backend.site.web.view.UserPayWeixinPage;
 import com.maccms.backend.site.web.view.UserPopedomPage;
 import com.maccms.backend.site.web.view.UserTable;
 import com.maccms.backend.site.web.view.UserUpgradePage;
@@ -100,10 +105,15 @@ final class SiteMemberFinance {
     private final MemberPurchaseService purchases;
     private final MemberWalletService wallet;
     private final MemberReferralService referral;
+    /** B24 在线支付；没有时（只装配了部分 Bean 的测试）{@code gopay} 按 B10 的"未开启"。 */
+    private final MemberPaymentService payments;
+    /** 部署级 W3（支付网关跳转）。 */
+    private final boolean w3;
 
     SiteMemberFinance(SitePages pages, LegacyUrlBuilder urls, SiteHtmlRenderer renderer, ClientIpResolver clientIp,
                       ImageUrlNormalizer images, ContentLookupService content, MemberRecordService records,
-                      MemberPurchaseService purchases, MemberWalletService wallet, MemberReferralService referral) {
+                      MemberPurchaseService purchases, MemberWalletService wallet, MemberReferralService referral,
+                      MemberPaymentService payments, boolean w3) {
         this.site = pages.site();
         this.pages = pages;
         this.urls = urls;
@@ -115,6 +125,8 @@ final class SiteMemberFinance {
         this.purchases = purchases;
         this.wallet = wallet;
         this.referral = referral;
+        this.payments = payments;
+        this.w3 = w3;
     }
 
     /** 可写数据源已打开、各服务都在。 */
@@ -143,7 +155,7 @@ final class SiteMemberFinance {
             case "buy" -> post ? json(MemberWalletService.isCard(params) ? wallet.useCard(member, params)
                     : wallet.createOrder(member, params)) : buyPage(member);
             case "pay" -> payPage(member, params, ajax);
-            case "gopay" -> error(ajax, MemberWalletService.gopayMessage(params), link("orders"));
+            case "gopay" -> gopay(request, member, params, ajax);
             case "qrcode" -> qrcode(params, ajax);
             case "upgrade" -> post ? json(wallet.upgrade(member, params)) : upgradePage(member);
             case "popedom" -> popedomPage(member);
@@ -495,6 +507,46 @@ final class SiteMemberFinance {
                 List.of(new HiddenField("order_code", o.code()), new HiddenField("order_id", Long.toString(o.id()))),
                 PAY_METHODS, new NavLink("返回我的订单", link("orders"), false));
         return renderer.member(HttpStatus.OK, t -> t.sitePagesUserPay(view), view.shell().nonce());
+    }
+
+    /**
+     * {@code gopay}（B24，33 文档第 6 节）：检查与下单在 {@link MemberPaymentService}；码支付、Zhapay 302 到网关（旧版是
+     * {@code <script>location.href=…}，D-B24-6），支付宝输出 POST 到网关的表单，微信显示本站生成的二维码。
+     */
+    private ResponseEntity<?> gopay(HttpServletRequest request, MemberState member, Map<String, PhpInput.Value> params,
+                                    boolean ajax) {
+        if (payments == null || !payments.available()) {
+            return error(ajax, MemberWalletService.gopayMessage(params), link("orders"));
+        }
+        PaymentStep step = payments.gopay(member, params, new PaymentContext(clientIp.resolve(request),
+                payment -> site.canonical("index.php/payment/notify/pay_type/" + payment).href(), w3));
+        return switch (step) {
+            case PaymentStep.Message m -> error(ajax, m.msg(), link("orders"));
+            case PaymentStep.Blank b -> ResponseEntity.ok().contentType(SiteHtmlRenderer.HTML_UTF8).contentLength(0)
+                    .cacheControl(CacheControl.noStore()).body(new byte[0]);
+            case PaymentStep.Redirect r -> ResponseEntity.status(HttpStatus.FOUND).header(HttpHeaders.LOCATION, r.url())
+                    .cacheControl(CacheControl.noStore()).build();
+            case PaymentStep.AutoPost p -> gatewayForm(p);
+            case PaymentStep.Weixin w -> weixinPage(w);
+        };
+    }
+
+    private ResponseEntity<?> gatewayForm(PaymentStep.AutoPost p) {
+        URI action = URI.create(p.action());
+        String origin = action.getScheme() + "://" + action.getRawAuthority();
+        UserPayFormPage view = new UserPayFormPage(shell("正在跳转到支付页面"),
+                SafeUrl.parse(p.action()).orElseThrow(() -> new IllegalStateException("网关地址不合法")),
+                p.fields().stream().map(f -> new HiddenField(f.name(), f.value())).toList(),
+                new NavLink("返回我的订单", link("orders"), false));
+        return renderer.memberGatewayForm(HttpStatus.OK, t -> t.sitePagesUserPayForm(view), view.shell().nonce(), origin);
+    }
+
+    private ResponseEntity<?> weixinPage(PaymentStep.Weixin w) {
+        Optional<SafeUrl> qr = w.codeUrl().flatMap(code -> SafeUrl.parse(link("qrcode").href() + "?data="
+                + URLEncoder.encode(code, StandardCharsets.UTF_8)));
+        UserPayWeixinPage view = new UserPayWeixinPage(shell("微信支付"), orderDetails(w.order()), qr, link("orders"),
+                new NavLink("返回我的订单", link("orders"), false));
+        return renderer.member(HttpStatus.OK, t -> t.sitePagesUserPayWeixin(view), view.shell().nonce());
     }
 
     private ResponseEntity<?> orderInfo(MemberState member, Map<String, PhpInput.Value> params, boolean ajax) {

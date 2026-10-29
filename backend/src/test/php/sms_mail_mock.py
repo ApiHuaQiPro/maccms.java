@@ -13,7 +13,7 @@ B25（短信与邮件验证码）PHP 黄金样本用的本机模拟服务：由 
   请求体（base64）、是否经 CONNECT 隧道（以及 CONNECT 本身的请求头）、执行的动作。父进程用完即删。
 停止：父进程关闭本进程的 stdin 即退出（不需要按进程名结束任何进程）。
 
-用法：python sms_mail_mock.py --dir <临时目录> --openssl <openssl.exe>   启动后在 stdout 打印一行 "PORT <端口>"。
+用法：python sms_mail_mock.py --dir <临时目录> --openssl <openssl.exe> [--cn <证书主机名>]   启动后在 stdout 打印一行 "PORT <端口>"。
 """
 
 import argparse
@@ -171,7 +171,7 @@ class Server(socketserver.ThreadingTCPServer):
     allow_reuse_address = False
 
 
-def make_cert(directory, openssl):
+def make_cert(directory, openssl, cn):
     cert = os.path.join(directory, 'cert.pem')
     key = os.path.join(directory, 'key.pem')
     env = dict(os.environ)
@@ -179,7 +179,7 @@ def make_cert(directory, openssl):
     env['MSYS2_ARG_CONV_EXCL'] = '*'
     env['MSYS_NO_PATHCONV'] = '1'
     subprocess.run([openssl, 'req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-keyout', key, '-out', cert,
-                    '-days', '2', '-subj', '/CN=yun.tim.qq.com'], check=True, capture_output=True, env=env)
+                    '-days', '2', '-subj', '/CN=' + cn], check=True, capture_output=True, env=env)
     return cert, key
 
 
@@ -188,9 +188,11 @@ def main():
     p = argparse.ArgumentParser()
     p.add_argument('--dir', required=True)
     p.add_argument('--openssl', required=True)
+    # 证书主机名：B25 腾讯云（默认）；B24 微信统一下单传 api.mch.weixin.qq.com（旧 curl 关了证书校验，但 VERIFYHOST=2 仍核对主机名）
+    p.add_argument('--cn', default='yun.tim.qq.com')
     ARGS = p.parse_args()
     os.makedirs(ARGS.dir, exist_ok=True)
-    cert, key = make_cert(ARGS.dir, ARGS.openssl)
+    cert, key = make_cert(ARGS.dir, ARGS.openssl, ARGS.cn)
     SSL_CTX = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
     SSL_CTX.load_cert_chain(cert, key)
     server = Server(('127.0.0.1', 0), Handler)

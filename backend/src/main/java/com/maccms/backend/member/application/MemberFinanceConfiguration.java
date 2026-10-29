@@ -1,6 +1,7 @@
 package com.maccms.backend.member.application;
 
 import com.maccms.backend.content.application.ContentLookupService;
+import com.maccms.backend.integration.application.PaymentGateways;
 import com.maccms.backend.legacyconfig.application.LegacyConfigException;
 import com.maccms.backend.legacyconfig.application.LegacyConfigFile;
 import com.maccms.backend.legacyconfig.application.LegacyConfigService;
@@ -55,6 +56,13 @@ public class MemberFinanceConfiguration {
     MemberWalletService memberWalletService(MemberFinanceMapper reader, ObjectProvider<MemberFinanceWriteMapper> writer,
                                             MemberFinanceSettings settings, ObjectProvider<Clock> clock) {
         return new MemberWalletService(reader, writer.getIfAvailable(), settings, clock(clock), new SecureRandom());
+    }
+
+    /** B24：在线支付（33 文档）；支付方式由 {@code integration.pay} 提供。 */
+    @Bean
+    MemberPaymentService memberPaymentService(MemberFinanceMapper reader, ObjectProvider<MemberFinanceWriteMapper> writer,
+                                              PaymentGateways gateways, ObjectProvider<Clock> clock) {
+        return new MemberPaymentService(reader, writer.getIfAvailable(), gateways, clock(clock));
     }
 
     @Bean

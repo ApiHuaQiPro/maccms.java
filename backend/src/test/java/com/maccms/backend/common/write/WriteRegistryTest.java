@@ -33,7 +33,8 @@ class WriteRegistryTest {
         // B14：生成与删除卡密、删除订单（没有修改订单的后台动作）、会员组增删改、提现审核、删除推广访问
         assertThat(WriteRegistry.registered().allows("member", "mac_card", WriteOperation.INSERT)).isTrue();
         assertThat(WriteRegistry.registered().allows("member", "mac_card", WriteOperation.DELETE)).isTrue();
-        assertThat(WriteRegistry.registered().allows("member", "mac_order", WriteOperation.UPDATE)).isFalse();
+        // B24（MACC-47）：支付回调到账把订单改为已支付（只此一条 UPDATE；后台仍没有改订单的动作）
+        assertThat(WriteRegistry.registered().allows("member", "mac_order", WriteOperation.UPDATE)).isTrue();
         assertThat(WriteRegistry.registered().allows("member", "mac_order", WriteOperation.DELETE)).isTrue();
         assertThat(WriteRegistry.registered().allows("member", "mac_group", WriteOperation.UPDATE)).isTrue();
         assertThat(WriteRegistry.registered().allows("member", "mac_group", WriteOperation.INSERT)).isTrue();
@@ -95,7 +96,8 @@ class WriteRegistryTest {
         assertThat(WriteRegistry.registered().allows("member", "mac_msg", WriteOperation.INSERT)).isTrue();
         assertThat(WriteRegistry.registered().allows("member", "mac_msg", WriteOperation.UPDATE)).isFalse();
         assertThat(WriteRegistry.registered().allows("member", "mac_msg", WriteOperation.DELETE)).isFalse();
-        assertThat(WriteRegistry.registered().permissions()).hasSize(111);
+        // B24（MACC-47）：mac_order UPDATE（见上）
+        assertThat(WriteRegistry.registered().permissions()).hasSize(112);
     }
 
     @Test

@@ -139,13 +139,14 @@ class WriteGuardTest {
         // B20（MACC-44）登记规则采集：采集历史新增、内容的新增与更新（28 文档第 5 节）
         // B22（MACC-45）登记安装向导：初始分类与第一个管理员的新增（31 文档第 6 节）
         // B25（MACC-48）登记短信/邮件验证码的记录：会员模块对 mac_msg 的新增（32 文档第 5 节）
+        // B24（MACC-47）登记支付回调到账：会员模块对 mac_order 的条件更新（33 文档第 5 节）
         assertThat(WriteRegistry.registered().permissions()).extracting(p -> p.module() + " " + p.table() + " "
                 + p.operation() + " " + p.batch())
                 .containsExactly("member mac_user INSERT B09", "member mac_user UPDATE B09",
                         "member mac_ulog INSERT B10", "member mac_ulog UPDATE B10", "member mac_ulog DELETE B10",
                         "member mac_plog INSERT B10", "member mac_plog DELETE B10", "member mac_card UPDATE B10",
                         "member mac_cash INSERT B10", "member mac_cash DELETE B10", "member mac_order INSERT B10",
-                        "member mac_visit INSERT B10", "content mac_vod UPDATE B11", "content mac_art UPDATE B11",
+                        "member mac_order UPDATE B24", "member mac_visit INSERT B10", "content mac_vod UPDATE B11", "content mac_art UPDATE B11",
                         "content mac_topic UPDATE B11", "content mac_actor UPDATE B11", "content mac_role UPDATE B11",
                         "content mac_website UPDATE B11", "content mac_vod_search INSERT B11",
                         "content mac_vod_search UPDATE B11", "comment mac_comment INSERT B11",

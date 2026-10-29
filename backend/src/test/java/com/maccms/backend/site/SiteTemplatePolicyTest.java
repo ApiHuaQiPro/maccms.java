@@ -112,7 +112,10 @@ class SiteTemplatePolicyTest {
             Map.entry("site/pages/userOrder.jte", Set.of("script")),
             // B25（MACC-48，32 文档第 7 节）：绑定、解绑页同样只在末尾引用 member/script.jte
             Map.entry("site/pages/userBind.jte", Set.of("script")),
-            Map.entry("site/pages/userUnbind.jte", Set.of("script")));
+            Map.entry("site/pages/userUnbind.jte", Set.of("script")),
+            // B24（MACC-47，33 文档第 6 节）：支付宝下单表单页、微信扫码页同样只在末尾引用 member/script.jte
+            Map.entry("site/pages/userPayForm.jte", Set.of("script")),
+            Map.entry("site/pages/userPayWeixin.jte", Set.of("script")));
 
     private static TemplateEngine engine(Path sourceDir, String classDir) {
         return engine(sourceDir, classDir, Set.of());

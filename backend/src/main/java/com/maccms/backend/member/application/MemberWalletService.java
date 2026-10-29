@@ -243,7 +243,7 @@ public class MemberWalletService {
         return m;
     }
 
-    private static FinanceRecords.Order toRecord(OrderRow r) {
+    static FinanceRecords.Order toRecord(OrderRow r) {
         return new FinanceRecords.Order(nz(r.orderId()), nz(r.userId()), nz(r.status()), str(r.code()),
                 r.price() == null ? "0.00" : r.price().toPlainString(), nz(r.time()), nz(r.points()),
                 str(r.payType()), nz(r.payTime()), str(r.remarks()));

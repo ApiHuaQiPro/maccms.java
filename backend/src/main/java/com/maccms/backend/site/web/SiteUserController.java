@@ -1,6 +1,7 @@
 package com.maccms.backend.site.web;
 
 import com.maccms.backend.comment.application.CommentService;
+import com.maccms.backend.common.browser.BrowserExternalAccess;
 import com.maccms.backend.common.captcha.Captchas;
 import com.maccms.backend.common.clientip.ClientIpResolver;
 import com.maccms.backend.common.web.ApiException;
@@ -10,6 +11,7 @@ import com.maccms.backend.common.web.PhpCookies;
 import com.maccms.backend.common.web.PhpInput;
 import com.maccms.backend.content.application.ContentLookupService;
 import com.maccms.backend.member.application.MemberAccountService;
+import com.maccms.backend.member.application.MemberPaymentService;
 import com.maccms.backend.member.application.MemberCookies;
 import com.maccms.backend.member.application.MemberPurchaseService;
 import com.maccms.backend.member.application.MemberRecordService;
@@ -120,10 +122,12 @@ public class SiteUserController {
                               ObjectProvider<ImageUrlNormalizer> images, ObjectProvider<ContentLookupService> content,
                               ObjectProvider<MemberRecordService> records, ObjectProvider<MemberPurchaseService> purchases,
                               ObjectProvider<MemberWalletService> wallet, ObjectProvider<MemberReferralService> referral,
-                              ObjectProvider<CommentService> comments) {
+                              ObjectProvider<CommentService> comments, ObjectProvider<MemberPaymentService> payments,
+                              BrowserExternalAccess external) {
         this(pages, urls, renderer, sessions, clientIp, accounts, finance(pages, urls, renderer, clientIp,
                 images.getIfAvailable(), content.getIfAvailable(), records.getIfAvailable(),
-                purchases.getIfAvailable(), wallet.getIfAvailable(), referral.getIfAvailable()));
+                purchases.getIfAvailable(), wallet.getIfAvailable(), referral.getIfAvailable(),
+                payments.getIfAvailable(), external.w3()));
         CommentService c = comments.getIfAvailable();
         this.boards = c == null ? null : new SiteMemberBoards(pages, urls, renderer, c);
     }
@@ -145,13 +149,14 @@ public class SiteUserController {
                                              ClientIpResolver clientIp, ImageUrlNormalizer images,
                                              ContentLookupService content, MemberRecordService records,
                                              MemberPurchaseService purchases, MemberWalletService wallet,
-                                             MemberReferralService referral) {
+                                             MemberReferralService referral, MemberPaymentService payments,
+                                             boolean w3) {
         if (images == null || content == null || records == null || purchases == null || wallet == null
                 || referral == null) {
             return null;
         }
         return new SiteMemberFinance(pages, urls, renderer, clientIp, images, content, records, purchases, wallet,
-                referral);
+                referral, payments, w3);
     }
 
     @RequestMapping(value = {"/index.php/user", "/index.php/user/**", "/user", "/user/**"},

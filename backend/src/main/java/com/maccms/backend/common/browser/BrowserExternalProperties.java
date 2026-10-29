@@ -9,7 +9,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  *
  * @param w1 W1 播放器解析接口、缓冲/预加载页与外部播放器脚本，默认打开
  * @param w2 W2 外链图片与外部播放/下载地址，默认打开
- * @param w3 W3 支付网关跳转，默认关闭（B24 前只能为 false）
+ * @param w3 W3 支付网关跳转，默认打开（B24 起）
  */
 @ConfigurationProperties(prefix = "maccms.browser-external")
 public record BrowserExternalProperties(String w1, String w2, String w3) {

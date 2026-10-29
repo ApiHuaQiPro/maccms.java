@@ -77,6 +77,11 @@ public interface MemberFinanceWriteMapper {
 
     // ---------------------------------------------------------------- mac_order
 
+    int claimOrderPaid(@Param("orderId") long orderId, @Param("now") long now, @Param("payType") String payType);
+
+    int releaseOrderPaid(@Param("orderId") long orderId, @Param("now") long now, @Param("payType") String payType,
+                         @Param("oldPayTime") long oldPayTime, @Param("oldPayType") String oldPayType);
+
     int insertOrder(@Param("userId") long userId, @Param("code") String code, @Param("price") String price,
                     @Param("now") long now, @Param("points") long points);
 

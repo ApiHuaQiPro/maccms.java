@@ -184,7 +184,10 @@ class WriteInfrastructureMySqlIT {
                             && p.operation().name().equals("INSERT")
                             // B25 短信/邮件：验证码记录的新增（32 文档第 5 节）
                             || p.batch().equals("B25") && p.module().equals("member") && p.table().equals("mac_msg")
-                            && p.operation().name().equals("INSERT"));
+                            && p.operation().name().equals("INSERT")
+                            // B24 支付回调到账：订单改为已支付的条件更新（33 文档第 5 节）
+                            || p.batch().equals("B24") && p.module().equals("member") && p.table().equals("mac_order")
+                            && p.operation().name().equals("UPDATE"));
             assertThatThrownBy(() -> db.mapper(DrillWriteMapper.class).hit(1)).isInstanceOf(WriteRejectedException.class)
                     .hasMessageContaining("未登记的写入").hasMessageContaining("mac_vod");
             assertReadPoolRejectsWrites(app);

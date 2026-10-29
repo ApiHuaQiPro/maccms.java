@@ -112,6 +112,20 @@ public class SiteHtmlRenderer {
         return respond(status, body, CacheControl.noStore(), true, null, CONTENT_SECURITY_POLICY);
     }
 
+    /**
+     * 支付宝下单页（B24，W3）：同 {@link #member}，内容安全策略的 {@code form-action} 另外放行网关的源（{@code scheme://host[:port]}），
+     * 表单才能提交到网关。
+     */
+    public ResponseEntity<String> memberGatewayForm(HttpStatus status, Function<Templates, JteModel> page, String nonce,
+                                                    String gatewayOrigin) {
+        if (gatewayOrigin == null || !gatewayOrigin.matches("https?://[A-Za-z0-9.-]+(?::[0-9]{1,5})?")) {
+            throw new IllegalArgumentException("网关源不合法");
+        }
+        String body = render(page);
+        return respond(status, body, CacheControl.noStore(), true, null,
+                memberPolicy(nonce).replace("form-action 'self'", "form-action 'self' " + gatewayOrigin));
+    }
+
     static String memberPolicy(String nonce) {
         if (nonce == null || !nonce.matches("[A-Za-z0-9+/]{22}==")) {
             throw new IllegalArgumentException("nonce 不合法");

@@ -166,6 +166,25 @@
         LIMIT 1
     </select>
 
+    <!-- gopay（User.php:507-511）：order_id、order_code 与会员三者都要相符 -->
+    <select id="selectOrderForPay" resultType="com.maccms.backend.member.infrastructure.OrderRow">
+        SELECT <include refid="orderColumns"/>
+        FROM mac_order
+        WHERE order_id = #{orderId}
+          AND order_code = #{code}
+          AND user_id = #{userId}
+        LIMIT 1
+    </select>
+
+    <!-- 支付回调到账（common/model/Order.php:117-123）：只按单号查（旧 find() 取第一行） -->
+    <select id="selectOrderForNotify" resultType="com.maccms.backend.member.infrastructure.OrderRow">
+        SELECT <include refid="orderColumns"/>
+        FROM mac_order
+        WHERE order_code = #{code}
+        ORDER BY order_id
+        LIMIT 1
+    </select>
+
     <!-- order_info（User.php:858-869）：新版只查本会员的订单（19 文档 D-B10-11） -->
     <select id="selectOrderById" resultType="com.maccms.backend.member.infrastructure.OrderRow">
         SELECT <include refid="orderColumns"/>

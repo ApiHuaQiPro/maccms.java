@@ -53,6 +53,8 @@ public final class WriteRegistry {
      * （install / mac_admin INSERT，旧 {@code install/controller/Index.php:257-262}）。只在安装模式下、对向导校验过的目标库执行。</li>
      * <li>B25（MACC-48，32 文档第 5 节）：短信/邮件验证码发送成功后记录验证码（member / mac_msg INSERT，旧 {@code common/model/User.php:696-706}）；
      * 注册时写入验证过的手机/邮箱、绑定与解绑、手机/邮箱找回改密沿用 B09 已登记的 mac_user INSERT、UPDATE。</li>
+     * <li>B24（MACC-47，33 文档第 5 节）：支付回调到账把订单改为已支付（member / mac_order UPDATE，条件 {@code order_status = 0}，旧
+     * {@code common/model/Order.php:130-137}）；加积分与积分流水沿用 B09 已登记的 mac_user UPDATE、B10 已登记的 mac_plog INSERT。</li>
      * </ul>
      */
     static final List<WritePermission> REGISTERED = List.of(
@@ -67,6 +69,7 @@ public final class WriteRegistry {
             new WritePermission("member", "mac_cash", WriteOperation.INSERT, "B10"),
             new WritePermission("member", "mac_cash", WriteOperation.DELETE, "B10"),
             new WritePermission("member", "mac_order", WriteOperation.INSERT, "B10"),
+            new WritePermission("member", "mac_order", WriteOperation.UPDATE, "B24"),
             new WritePermission("member", "mac_visit", WriteOperation.INSERT, "B10"),
             new WritePermission("content", "mac_vod", WriteOperation.UPDATE, "B11"),
             new WritePermission("content", "mac_art", WriteOperation.UPDATE, "B11"),

@@ -2,7 +2,7 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <!--
   B10 会员权益与财务的写入（docs/architecture/19-b10-member-finance.md 第 6 节；登记 WriteRegistry：member / mac_ulog INSERT、UPDATE、
-  DELETE，mac_plog INSERT、DELETE，mac_card UPDATE，mac_cash INSERT、DELETE，mac_order INSERT，mac_visit INSERT，mac_user UPDATE（B09 已登记））。
+  DELETE，mac_plog INSERT、DELETE，mac_card UPDATE，mac_cash INSERT、DELETE，mac_order INSERT，mac_visit INSERT，mac_user UPDATE（B09 已登记）；B24 支付到账：mac_order UPDATE）。
   全部是单表语句；数值变化用原子表达式，前置条件写进 WHERE，调用方检查匹配行数（可写数据源 useAffectedRows=false）。
   旧表 MyISAM，没有事务：多表一致性由 application 层的 WriteSequence 负责（认领 → 转移 → 记录，失败时按相反顺序条件补偿）。
 -->
@@ -158,6 +158,23 @@
         FROM DUAL
         WHERE NOT EXISTS (SELECT 1 FROM mac_order AS o WHERE o.order_code = #{code})
     </insert>
+
+    <!--
+      支付回调到账的认领（B24，common/model/Order.php:130-137 的 update 改为条件更新）：仍未支付才命中；按 order_id 单行。
+      重复或并发的回调在这里匹配 0 行，什么都不改（33 文档第 5 节）。
+    -->
+    <update id="claimOrderPaid">
+        UPDATE mac_order
+        SET order_status = 1, order_pay_time = #{now}, order_pay_type = #{payType}
+        WHERE order_id = #{orderId} AND order_status = 0
+    </update>
+
+    <!-- 认领的补偿：仍是本次写入的值才命中，恢复为未支付与原来的支付时间、方式 -->
+    <update id="releaseOrderPaid">
+        UPDATE mac_order
+        SET order_status = 0, order_pay_time = #{oldPayTime}, order_pay_type = #{oldPayType}
+        WHERE order_id = #{orderId} AND order_status = 1 AND order_pay_time = #{now} AND order_pay_type = #{payType}
+    </update>
 
     <!--
       推广访问（common/model/User.php:856-876）：今日同一推广人、同一 IP 的访问数未达上限才插入（旧版先数后插，并发可超额）。

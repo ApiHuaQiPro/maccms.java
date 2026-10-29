@@ -120,7 +120,7 @@
 |---|---|---|
 | `maccms.browser-external.w1` / `MACCMS_BROWSER_EXTERNAL_W1` | `true` | `true`/`false`；放行输出在 B05 实现，在此之前取值不影响任何页面 |
 | `maccms.browser-external.w2` / `MACCMS_BROWSER_EXTERNAL_W2` | `true` | `true`/`false`（不区分大小写）；`true` 时图片输出与 MACC-11/14 相同，`false` 时按下文关闭行为 |
-| `maccms.browser-external.w3` / `MACCMS_BROWSER_EXTERNAL_W3` | `false` | 只接受 `false`：放行输出在 B24 实现 |
+| `maccms.browser-external.w3` / `MACCMS_BROWSER_EXTERNAL_W3` | `true`（B24 起；此前 `false`） | `true`/`false`（B24 起）；`false` 时支付宝、码支付、Zhapay 按"该支付选项未开启！"处理，不生成网关地址（`33-b24-payment.md` 第 8 节） |
 
 留空（环境变量设为空串）与未设置相同，取上表默认值。
 
@@ -132,7 +132,7 @@
   - 视频卡片与详情海报显示现有的占位元素（`video-card__placeholder`、`video-detail__placeholder`，与图片为空时相同）；正文（富文本）里的外部图片整张删除（与 MACC-12 对不合格图片的处理相同）。
   - 正文里的外部**链接**（`a[href]`）照常输出：它是导航，不是页面加载的资源。
 - **与路线图的一处出入：占位图**。路线图第 4.2 节写的是"本地占位图（从仓库 `static/` 现有图片中选定）"。本批改用组件里已有的 CSS 占位元素，理由：旧站 `static/` 不由 Java 应用提供，要用图片就得把图片放进 `backend/src/main/resources/static/site/`，并改 `components/videoCard.jte`——这两处归 Kimi（02 规范第 7 节），按任务要求须先协调。现状已满足"不输出外部主机"。如需换成图片（例如旧站的 `static/images/nopic.gif`），请 Kimi 在样式/组件里替换占位元素，后端视图模型不需要改。
-- W1（播放器解析、缓冲/预加载页、`iva` 外部脚本）与外部播放/下载地址（W2 ②）所在页面在 B05 实现，届时接入本参数；W3 在 B24 接入。
+- W1（播放器解析、缓冲/预加载页、`iva` 外部脚本）与外部播放/下载地址（W2 ②）所在页面在 B05 实现，届时接入本参数；W3 在 B24 接入（MACC-47：默认改为打开，见 `33-b24-payment.md` 第 8 节）。
 - `maccms.site.logo-url` 目前没有任何页面输出；以后输出 Logo 时同样要经过 W2 判断（B05 或 Kimi 的外壳改动时处理）。
 
 ### 6. 与旧版的差异

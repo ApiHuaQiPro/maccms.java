@@ -48,6 +48,10 @@ public interface MemberFinanceMapper {
 
     OrderRow selectOrderById(@Param("userId") long userId, @Param("orderId") long orderId);
 
+    OrderRow selectOrderForPay(@Param("userId") long userId, @Param("orderId") long orderId, @Param("code") String code);
+
+    OrderRow selectOrderForNotify(@Param("code") String code);
+
     long countUsedCards(@Param("userId") long userId);
 
     List<CardRow> selectUsedCards(@Param("userId") long userId, @Param("offset") long offset,
