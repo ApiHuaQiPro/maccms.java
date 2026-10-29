@@ -85,6 +85,16 @@ public final class WriteDatabase implements AutoCloseable {
     }
 
     /**
+     * 安装向导（B22，docs/architecture/31-b22-install-wizard.md 第 5 节）对向导校验过的目标库打开的可写数据源：地址、账号、密码来自向导表单，
+     * 不来自 {@code maccms.write.*}；校验与 {@link WriteDataSourceSettings#from} 相同（地址同时作为只读连接池地址，即只能是同一个库；
+     * root 需要 {@code allowRoot}），连接池大小 1，使用正式登记表。静态护栏只允许 {@code install.infrastructure} 调用。
+     */
+    public static WriteDatabase openInstallTarget(String url, String username, String password, boolean allowRoot) {
+        WriteDataSourceProperties p = new WriteDataSourceProperties(true, url, username, password, allowRoot, 1);
+        return open(WriteDataSourceSettings.from(p, url), WriteRegistry.registered());
+    }
+
+    /**
      * 取得写 Mapper：接口必须标 {@link WriteMapper}、不标 MyBatis {@code @Mapper}，且位于 {@code <module>.infrastructure} 下。
      * 被护栏拒绝的语句直接抛 {@link WriteRejectedException}（MyBatis 会把拦截器的异常包两层，这里取出来）。
      */

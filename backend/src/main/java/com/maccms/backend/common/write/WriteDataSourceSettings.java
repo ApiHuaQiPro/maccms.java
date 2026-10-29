@@ -1,6 +1,8 @@
 package com.maccms.backend.common.write;
 
+import java.util.LinkedHashMap;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -69,6 +71,22 @@ public record WriteDataSourceSettings(String url, String username, String passwo
                     + "须指向同一主机、端口与库名");
         }
         return new WriteDataSourceSettings(url, username, password, w.group(3), poolSize);
+    }
+
+    /**
+     * 安装向导写部署配置文件（B22，31 文档第 5.3 节）时可写数据源的各项：键为环境变量名，值原样（由调用方转义）。
+     * root 账号另写 {@code MACCMS_WRITE_DB_ALLOW_ROOT=true}（向导本身已按部署参数允许 root 才会走到这里）。
+     */
+    public static Map<String, String> deploymentEntries(String url, String username, String password, boolean root) {
+        Map<String, String> out = new LinkedHashMap<>();
+        out.put("MACCMS_WRITE_ENABLED", "true");
+        out.put("MACCMS_WRITE_DB_URL", url);
+        out.put("MACCMS_WRITE_DB_USERNAME", username);
+        out.put("MACCMS_WRITE_DB_PASSWORD", password);
+        if (root) {
+            out.put("MACCMS_WRITE_DB_ALLOW_ROOT", "true");
+        }
+        return out;
     }
 
     /** 不输出地址、账号与密码。 */

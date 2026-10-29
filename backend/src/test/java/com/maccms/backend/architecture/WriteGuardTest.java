@@ -137,6 +137,7 @@ class WriteGuardTest {
         // B17（MACC-41）登记采集配置：采集源与自定义规则节点的增删改，删除节点时连同节点下的内容与采集历史（25 文档第 6 节）
         // B19（MACC-43）登记采集入库与 Receive：新增与更新视频；增量 2 另加文章、演员、角色、网址、评论（27 文档第 4 节）
         // B20（MACC-44）登记规则采集：采集历史新增、内容的新增与更新（28 文档第 5 节）
+        // B22（MACC-45）登记安装向导：初始分类与第一个管理员的新增（31 文档第 6 节）
         assertThat(WriteRegistry.registered().permissions()).extracting(p -> p.module() + " " + p.table() + " "
                 + p.operation() + " " + p.batch())
                 .containsExactly("member mac_user INSERT B09", "member mac_user UPDATE B09",
@@ -193,7 +194,8 @@ class WriteGuardTest {
                         "collect mac_actor UPDATE B19", "collect mac_role INSERT B19", "collect mac_role UPDATE B19",
                         "collect mac_website INSERT B19", "collect mac_website UPDATE B19", "collect mac_comment INSERT B19",
                         "collect mac_comment UPDATE B19",
-                        "collect mac_cj_history INSERT B20", "collect mac_cj_content INSERT B20", "collect mac_cj_content UPDATE B20");
+                        "collect mac_cj_history INSERT B20", "collect mac_cj_content INSERT B20", "collect mac_cj_content UPDATE B20",
+                        "install mac_type INSERT B22", "install mac_admin INSERT B22");
     }
 
     @Test
@@ -344,6 +346,7 @@ class WriteGuardTest {
                 "class X { @org.springframework.transaction.annotation.Transactional void f() {} }",
                 "class X { void f(java.sql.Connection c) throws Exception { c.setAutoCommit(false); } }",
                 "class X { Object o = com.maccms.backend.common.write.WriteDatabase.open(null, null); }",
+                "class X { Object o = com.maccms.backend.common.write.WriteDatabase.openInstallTarget(null, null, null, false); }",
                 "class X { Object o = com.maccms.backend.common.write.WriteRegistry.of(java.util.List.of()); }",
                 "import com.zaxxer.hikari.HikariDataSource;",
                 "import org.mybatis.spring.SqlSessionTemplate;",
@@ -352,6 +355,10 @@ class WriteGuardTest {
             String src = "package com.maccms.backend.member.infrastructure;\n" + b;
             assertThat(javaViolations(src)).as(b).isNotEmpty();
         }
+        // B22：openInstallTarget 只在 install.infrastructure 允许
+        assertThat(javaViolations("package com.maccms.backend.install.infrastructure;\n"
+                + "class X { Object o = com.maccms.backend.common.write.WriteDatabase.openInstallTarget(null, null, null, false); }"))
+                .isEmpty();
         // WriteDatabase 只能在 infrastructure 使用；@WriteMapper 只能标在 infrastructure 下的接口上，不能同时标 @Mapper
         assertThat(javaViolations("package com.maccms.backend.member.application;\n"
                 + "class S { com.maccms.backend.common.write.WriteDatabase db; }")).isNotEmpty();
@@ -455,6 +462,10 @@ class WriteGuardTest {
             }
             if (Pattern.compile("\\bWriteDatabase\\b").matcher(code).find() && !INFRASTRUCTURE_PKG.matcher(pkg).matches()) {
                 out.add("只有 <module>.infrastructure 可以使用 WriteDatabase");
+            }
+            // B22：安装向导对向导校验过的目标库打开可写数据源的入口，只给 install.infrastructure（31 文档第 6 节）
+            if (Pattern.compile("\\bopenInstallTarget\\b").matcher(code).find() && !pkg.equals("install.infrastructure")) {
+                out.add("WriteDatabase.openInstallTarget 只能在 install.infrastructure 调用");
             }
         }
         if (WRITE_MAPPER_ANNOTATION.matcher(code).find()) {

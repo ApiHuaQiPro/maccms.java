@@ -177,7 +177,11 @@ class WriteInfrastructureMySqlIT {
                             // B20 规则采集：采集历史新增、内容的新增与更新（28 文档第 5 节）
                             || p.batch().equals("B20") && p.module().equals("collect")
                             && (p.table().equals("mac_cj_history") && p.operation().name().equals("INSERT")
-                            || p.table().equals("mac_cj_content") && !p.operation().name().equals("DELETE")));
+                            || p.table().equals("mac_cj_content") && !p.operation().name().equals("DELETE"))
+                            // B22 安装向导：初始分类与第一个管理员的新增（31 文档第 6 节）
+                            || p.batch().equals("B22") && p.module().equals("install")
+                            && java.util.Set.of("mac_type", "mac_admin").contains(p.table())
+                            && p.operation().name().equals("INSERT"));
             assertThatThrownBy(() -> db.mapper(DrillWriteMapper.class).hit(1)).isInstanceOf(WriteRejectedException.class)
                     .hasMessageContaining("未登记的写入").hasMessageContaining("mac_vod");
             assertReadPoolRejectsWrites(app);

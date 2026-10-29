@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+  B22 安装向导的写入（docs/architecture/31-b22-install-wizard.md 第 6 节；登记 WriteRegistry：install / mac_type、mac_admin / INSERT）。
+  只在安装模式下、对向导已校验结构且全部表为空的目标库执行。旧表 MyISAM，没有事务。
+-->
+<mapper namespace="com.maccms.backend.install.infrastructure.InstallWriteMapper">
+
+    <!--
+      初始分类（旧 install/controller/Index.php:238-251 执行 application/install/sql/initdata.sql）：旧文件每行是
+      INSERT INTO `mac_type` VALUES (…20 个字符串字面量…)，按表定义的列顺序；这里写出列名，值按同样的顺序绑定为字符串
+      （由 MySQL 按列类型转换，同旧版把字面量 '1' 写进 smallint 列）。
+    -->
+    <insert id="insertType">
+        INSERT INTO mac_type (type_id, type_name, type_en, type_sort, type_mid, type_pid, type_status, type_tpl, type_tpl_list,
+            type_tpl_detail, type_tpl_play, type_tpl_down, type_key, type_des, type_title, type_union, type_extend, type_logo,
+            type_pic, type_jumpurl)
+        VALUES (#{v[0]}, #{v[1]}, #{v[2]}, #{v[3]}, #{v[4]}, #{v[5]}, #{v[6]}, #{v[7]}, #{v[8]}, #{v[9]}, #{v[10]}, #{v[11]},
+            #{v[12]}, #{v[13]}, #{v[14]}, #{v[15]}, #{v[16]}, #{v[17]}, #{v[18]}, #{v[19]})
+    </insert>
+
+    <!--
+      第一个管理员（旧 Index.php:257-262 → common/model/Admin.php:71-77 saveData 的新增分支）：admin_name、md5(密码)、admin_status=1、
+      admin_auth 为空串（saveData 把空的 admin_auth 写成 ''），其余列取表默认值；与 B12 后台新增管理员的写入相同。
+    -->
+    <insert id="insertAdmin">
+        INSERT INTO mac_admin (admin_name, admin_pwd, admin_status, admin_auth)
+        VALUES (#{name}, #{pwd}, #{status}, #{auth})
+    </insert>
+</mapper>

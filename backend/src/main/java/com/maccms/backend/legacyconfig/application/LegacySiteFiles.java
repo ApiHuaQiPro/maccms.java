@@ -338,6 +338,60 @@ public class LegacySiteFiles {
         return root;
     }
 
+    /** 安装锁（B22，docs/architecture/31-b22-install-wizard.md 第 4 节）：旧 {@code install.php:30} 判断的同一个文件。 */
+    public static final String INSTALL_LOCK = "application/data/install/install.lock";
+
+    /**
+     * 安装向导"目录权限检查"的位置（旧 {@code install/controller/Index.php:305-315}；去掉新版不读写的 {@code database.php} 与
+     * {@code runtime}，加上安装锁所在的目录，31 文档第 3.2 节）。
+     */
+    public static final List<String> INSTALL_CHECKED = List.of("application/route.php", "application/extra",
+            "application/data/backup", "application/data/update", "application/data/install", "upload");
+
+    /** {@link #installAccess} 的结果。 */
+    public enum Access {
+        WRITABLE, NOT_WRITABLE, NOT_FOUND
+    }
+
+    /** 安装锁是否存在（存在即视为已安装，不论内容）。未配置旧配置目录时抛 {@link FileException}。 */
+    public boolean installLocked() {
+        if (root == null) {
+            throw new FileException(Reason.NOT_CONFIGURED);
+        }
+        try {
+            return java.nio.file.Files.exists(root.resolve(INSTALL_LOCK), java.nio.file.LinkOption.NOFOLLOW_LINKS);
+        } catch (LegacySiteRoot.AccessException e) {
+            throw translate(e);
+        }
+    }
+
+    /** 写安装锁：只新建，已存在时 {@link Reason#CONFLICT}（并发的两次安装只有一次成功）。 */
+    public void writeInstallLock(byte[] content) {
+        if (root == null) {
+            throw new FileException(Reason.NOT_CONFIGURED);
+        }
+        write(root, INSTALL_LOCK, content, AtomicFiles.ABSENT);
+    }
+
+    /** 安装向导检查的位置是否可写（只限 {@link #INSTALL_CHECKED}，同旧版 {@code is_writable}/{@code is_dir}）。 */
+    public Access installAccess(String relative) {
+        if (root == null) {
+            throw new FileException(Reason.NOT_CONFIGURED);
+        }
+        if (!INSTALL_CHECKED.contains(relative)) {
+            throw new FileException(Reason.FORBIDDEN);
+        }
+        try {
+            Path p = root.resolve(relative);
+            if (!java.nio.file.Files.exists(p, java.nio.file.LinkOption.NOFOLLOW_LINKS)) {
+                return Access.NOT_FOUND;
+            }
+            return java.nio.file.Files.isWritable(p) ? Access.WRITABLE : Access.NOT_WRITABLE;
+        } catch (LegacySiteRoot.AccessException e) {
+            return Access.NOT_FOUND;
+        }
+    }
+
     /** 根目录的真实路径（写回之外的用途：运行时模板编译的外部目录）。 */
     public Path resolve(String relative) {
         LegacySiteRoot r = check(relative, Mode.READ);

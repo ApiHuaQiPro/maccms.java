@@ -3,6 +3,10 @@
 spring:
   application:
     name: maccms-backend
+  config:
+    # 部署配置文件（B22 安装向导写入，docs/architecture/31-b22-install-wizard.md 第 5.3 节）：MACCMS_DEPLOY_CONFIG 为它的绝对路径，
+    # 文件里是 MACCMS_DB_URL 等键（同名环境变量优先）。留空或文件不存在时不读。
+    import: optional:file:${MACCMS_DEPLOY_CONFIG:}
   datasource:
     url: ${MACCMS_DB_URL}
     username: ${MACCMS_DB_USERNAME}
