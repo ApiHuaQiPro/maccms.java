@@ -15,7 +15,7 @@ import java.util.Optional;
  * @param oauthLinks  已打开的第三方登录（B26：QQ、微信）；未打开或未装配时为空（与旧版配置关闭时一样不显示）
  */
 public record UserLoginForm(SafeUrl action, SafeUrl successUrl, Optional<MemberCaptcha> captcha,
-                            Optional<SafeUrl> regUrl, SafeUrl findpassUrl, List<NavLink> oauthLinks) {
+                            Optional<SafeUrl> regUrl, SafeUrl findpassUrl, List<OAuthLink> oauthLinks) {
 
     public UserLoginForm {
         oauthLinks = List.copyOf(oauthLinks);

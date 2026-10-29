@@ -34,6 +34,7 @@ import com.maccms.backend.site.web.view.MemberCaptcha;
 import com.maccms.backend.site.web.view.MemberShell;
 import com.maccms.backend.site.web.view.MetadataItem;
 import com.maccms.backend.site.web.view.NavLink;
+import com.maccms.backend.site.web.view.OAuthLink;
 import com.maccms.backend.site.web.view.UserBindPage;
 import com.maccms.backend.site.web.view.UserFindpassMsgPage;
 import com.maccms.backend.site.web.view.UserFindpassPage;
@@ -605,12 +606,12 @@ public class SiteUserController {
                 s.regOpen() ? Optional.of(link("reg")) : Optional.empty(), link("findpass"), oauthLinks());
     }
 
-    private List<NavLink> oauthLinks() {
-        List<NavLink> links = new ArrayList<>();
+    private List<OAuthLink> oauthLinks() {
+        List<OAuthLink> links = new ArrayList<>();
         if (oauth != null) {
             for (String type : oauth.enabledTypes()) {
-                links.add(new NavLink(type.equals("qq") ? "QQ登录" : "微信登录",
-                        site.publicPath(urls.user("oauth", Map.of("type", type))), false));
+                links.add(new OAuthLink(type, site.publicPath(urls.user("oauth", Map.of("type", type))),
+                        site.publicPath("site/oauth-" + type + ".svg")));
             }
         }
         return links;

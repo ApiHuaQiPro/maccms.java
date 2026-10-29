@@ -9,7 +9,7 @@ import java.util.List;
  * 当前密码必填。已打开的第三方平台提供绑定入口；D-B26-10 未决，不提供 openid 解绑操作。
  */
 public record UserInfoPage(MemberShell shell, MemberProfile profile, SafeUrl action, SafeUrl indexUrl,
-                           List<NavLink> oauthLinks) {
+                           List<OAuthLink> oauthLinks) {
 
     public UserInfoPage {
         oauthLinks = List.copyOf(oauthLinks);

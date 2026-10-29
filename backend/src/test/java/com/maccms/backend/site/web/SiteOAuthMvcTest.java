@@ -58,7 +58,7 @@ import org.springframework.test.web.servlet.MvcResult;
         properties = {
                 "maccms.site.enabled=true",
                 "maccms.site.name=合成站",
-                "maccms.site.base-url=https://maccms.local.test/",
+                "maccms.site.base-url=https://maccms.local.test/cms/",
                 "maccms.legacy-config.dir=../application"})
 @Import({SiteConfiguration.class, ClientIpConfiguration.class, SiteOAuthMvcTest.Wiring.class})
 class SiteOAuthMvcTest {
@@ -196,8 +196,9 @@ class SiteOAuthMvcTest {
     @Test
     void loginPageShowsOnlyEnabledProviders() throws Exception {
         String page = body(mvc.perform(get("/index.php/user/login.html")).andReturn());
-        assertThat(page).contains("href=\"/index.php/user/oauth/type/qq.html\"", ">QQ登录<",
-                "href=\"/index.php/user/oauth/type/weixin.html\"", ">微信登录<",
+        assertThat(page).contains("href=\"/cms/index.php/user/oauth/type/qq.html\"", ">QQ登录<",
+                "href=\"/cms/index.php/user/oauth/type/weixin.html\"", ">微信登录<",
+                "src=\"/cms/site/oauth-qq.svg\"", "src=\"/cms/site/oauth-weixin.svg\"",
                 "class=\"oauth-login oauth-login--qq\"", "class=\"oauth-login oauth-login--weixin\"",
                 "aria-label=\"使用 QQ 登录\"", "aria-label=\"使用微信登录\"");
         fake.enabled.remove("weixin");
@@ -216,7 +217,8 @@ class SiteOAuthMvcTest {
                 0, "", "", "", "", "", "", "", "昵称", "", "", ""));
         String page = body(mvc.perform(get("/index.php/user/info.html")).andReturn());
         assertThat(page).contains("第三方账号", "绑定QQ", "绑定微信",
-                "href=\"/index.php/user/oauth/type/qq.html\"", "href=\"/index.php/user/oauth/type/weixin.html\"",
+                "href=\"/cms/index.php/user/oauth/type/qq.html\"", "href=\"/cms/index.php/user/oauth/type/weixin.html\"",
+                "src=\"/cms/site/oauth-qq.svg\"", "src=\"/cms/site/oauth-weixin.svg\"",
                 "class=\"oauth-connect__link oauth-connect__link--qq\"",
                 "class=\"oauth-connect__link oauth-connect__link--weixin\"")
                 .doesNotContain("解绑QQ", "解绑微信");
@@ -253,7 +255,7 @@ class SiteOAuthMvcTest {
         MvcResult r = callback("qq", s.session(), "code=AUTHCODE&state=" + s.state()
                 + "&openid=ATTACKER&col=user_openid_weixin&redirect=https://evil.test/&url=https://evil.test/");
         assertThat(r.getResponse().getStatus()).isEqualTo(302);
-        assertThat(r.getResponse().getHeader("Location")).isEqualTo("/index.php/user/index.html");
+        assertThat(r.getResponse().getHeader("Location")).isEqualTo("/cms/index.php/user/index.html");
         assertThat(r.getResponse().getHeaders("Set-Cookie")).anyMatch(h -> h.startsWith("user_check="));
         assertThat(fake.fetchedCodes).containsExactly("AUTHCODE");
         assertThat(fake.callbacks).containsExactly(CALLBACK + "qq");
