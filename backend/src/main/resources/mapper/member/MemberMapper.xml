@@ -94,4 +94,32 @@
         ORDER BY user_id
         LIMIT 1
     </select>
+
+    <!-- B25 短信/邮件验证码（32 文档第 5 节）。旧版 find() 不排序，这里按编号取第一行。 -->
+    <select id="selectIdByPhone" resultType="java.lang.Long">
+        SELECT user_id FROM mac_user WHERE user_phone = #{phone} ORDER BY user_id LIMIT 1
+    </select>
+
+    <select id="selectRecentMessage" resultType="java.lang.Long">
+        SELECT msg_id
+        FROM mac_msg
+        WHERE user_id = #{userId}
+          AND msg_time &gt; #{since}
+          AND msg_type = #{type}
+          AND msg_to = #{to}
+        ORDER BY msg_id
+        LIMIT 1
+    </select>
+
+    <select id="selectValidMessage" resultType="java.lang.Long">
+        SELECT msg_id
+        FROM mac_msg
+        WHERE user_id = #{userId}
+          AND msg_time &gt; #{since}
+          AND msg_code = #{code}
+          AND msg_type = #{type}
+          AND msg_to = #{to}
+        ORDER BY msg_id
+        LIMIT 1
+    </select>
 </mapper>

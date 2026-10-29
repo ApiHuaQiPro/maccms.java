@@ -55,6 +55,8 @@ public class MemberAccountService {
     static final Pattern EMAIL = Pattern.compile("\\w+([-+.]\\w+)*@\\w+([-.]\\w+)*\\.\\w+([-.]\\w+)*");
     /** 旧 {@code User.php:149}：{@code $} 只认最后一个 {@code \n} 之前（PCRE 默认），用 UNIX_LINES 对齐。 */
     private static final Pattern NAME = Pattern.compile("^[a-zA-Z\\d]*$", Pattern.UNIX_LINES);
+    /** 旧 {@code findpass_reset} 的手机号正则（{@code User.php:826}），{@code $} 同上。 */
+    private static final Pattern FINDPASS_PHONE = Pattern.compile("^1{1}\\d{10}$", Pattern.UNIX_LINES);
     private static final Pattern IPV4 = Pattern.compile("(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})");
     private static final DateTimeFormatter DATE_TIME = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withZone(ZONE);
     private static final String DEFAULT_PORTRAIT = "static/images/touxiang.png";
@@ -70,6 +72,7 @@ public class MemberAccountService {
     private final String sitePath;
     private final LongConsumer invited;
     private final PortraitAnnex annex;
+    private final MemberVerification verification;
 
     /**
      * @param writer   可写数据源关闭时为 null
@@ -96,6 +99,15 @@ public class MemberAccountService {
     public MemberAccountService(MemberMapper mapper, MemberWriteMapper writer, MemberSessionService sessions,
                                 PortraitStore portraits, MemberSettings settings, Clock clock, RandomGenerator random,
                                 String sitePath, LongConsumer invited, PortraitAnnex annex) {
+        this(mapper, writer, sessions, portraits, settings, clock, random, sitePath, invited, annex, null);
+    }
+
+    /**
+     * @param verification 短信/邮件验证码（B25）；为 null 时按 B09 的"未配置"处理（发送固定失败、没有可用的验证码）
+     */
+    public MemberAccountService(MemberMapper mapper, MemberWriteMapper writer, MemberSessionService sessions,
+                                PortraitStore portraits, MemberSettings settings, Clock clock, RandomGenerator random,
+                                String sitePath, LongConsumer invited, PortraitAnnex annex, MemberVerification verification) {
         if (sitePath == null || !sitePath.startsWith("/") || !sitePath.endsWith("/")) {
             throw new IllegalArgumentException("站点根路径须以 / 开头和结尾");
         }
@@ -110,6 +122,7 @@ public class MemberAccountService {
         this.sitePath = sitePath;
         this.invited = invited;
         this.annex = annex;
+        this.verification = verification;
     }
 
     /** 可写数据源已打开。 */
@@ -194,8 +207,14 @@ public class MemberAccountService {
      */
     public AccountReply register(Map<String, PhpInput.Value> params, Map<String, PhpCookies.Value> cookies,
                                  BooleanSupplier captcha, String clientIp) {
+        return register(null, params, cookies, captcha, clientIp);
+    }
+
+    /** @param user 本次请求的登录态（旧 {@code $GLOBALS['user']}：校验手机/邮箱验证码时按它的编号查找，游客或 null 为 0） */
+    public AccountReply register(MemberState user, Map<String, PhpInput.Value> params, Map<String, PhpCookies.Value> cookies,
+                                 BooleanSupplier captcha, String clientIp) {
         requireWriter();
-        AccountReply reg = doRegister(params, cookies, captcha, clientIp);
+        AccountReply reg = doRegister(user, params, cookies, captcha, clientIp);
         if (!reg.ok()) {
             return reg;
         }
@@ -203,8 +222,8 @@ public class MemberAccountService {
         return new AccountReply(login.code(), "注册成功，" + login.msg(), login.setCookies());
     }
 
-    private AccountReply doRegister(Map<String, PhpInput.Value> params, Map<String, PhpCookies.Value> cookies,
-                                    BooleanSupplier captcha, String clientIp) {
+    private AccountReply doRegister(MemberState user, Map<String, PhpInput.Value> params,
+                                    Map<String, PhpCookies.Value> cookies, BooleanSupplier captcha, String clientIp) {
         byte[] rawPwd = raw(params, "user_pwd");
         String name = LegacyText.clean(raw(params, "user_name"));
         String pwd = LegacyText.clean(rawPwd);
@@ -241,14 +260,35 @@ public class MemberAccountService {
         if (settings.regNum() > 0 && mapper.countRegisteredSince(ip, todayStart) >= settings.regNum()) {
             return ipLimit();
         }
+        String phone = null;
+        String email = null;
         if (settings.regPhoneSms() || settings.regEmailSms()) {
-            // 旧 check_msg（User.php:191-228 → :602-632），type=3；B25 前不会有可用的验证码
-            return checkMessage(params, 3);
+            // 旧 check_msg（User.php:191-228 → :602-632），type=3；手机优先（旧版 elseif）
+            String to = LegacyText.clean(raw(params, "to"));
+            AccountReply check = checkMessage(user, params, 3, to);
+            if (check != null) {
+                return check;
+            }
+            if (settings.regPhoneSms()) {
+                if (mapper.selectIdByPhone(to) != null) {
+                    return AccountReply.of(1011, "手机号已被使用，请更换");
+                }
+                phone = to;
+            } else {
+                if (mapper.selectIdByEmail(to) != null) {
+                    return AccountReply.of(1012, "邮箱已被使用，请更换");
+                }
+                email = to;
+            }
         }
         int inserted;
         try {
-            inserted = writer.register(name, LegacyText.md5(LegacyText.trim(rawPwd)), settings.regPoints(),
-                    settings.regStatus(), now, ip, settings.regNum(), todayStart);
+            String pwdHash = LegacyText.md5(LegacyText.trim(rawPwd));
+            inserted = phone == null && email == null
+                    ? writer.register(name, pwdHash, settings.regPoints(), settings.regStatus(), now, ip,
+                            settings.regNum(), todayStart)
+                    : writer.registerWithContact(name, pwdHash, settings.regPoints(), settings.regStatus(), now, ip,
+                            settings.regNum(), todayStart, phone, email);
         } catch (DataAccessException e) {
             log.warn("member register rejected by database: {}", e.getClass().getSimpleName());
             return AccountReply.of(1010, "注册失败，请重试");
@@ -256,6 +296,12 @@ public class MemberAccountService {
         if (inserted != 1) {
             if (mapper.selectIdByName(name) != null) {
                 return AccountReply.of(1005, "用户名已被注册，请更换");
+            }
+            if (phone != null && mapper.selectIdByPhone(phone) != null) {
+                return AccountReply.of(1011, "手机号已被使用，请更换");
+            }
+            if (email != null && mapper.selectIdByEmail(email) != null) {
+                return AccountReply.of(1012, "邮箱已被使用，请更换");
             }
             return settings.regNum() > 0 ? ipLimit() : AccountReply.of(1010, "注册失败，请重试");
         }
@@ -316,15 +362,21 @@ public class MemberAccountService {
         return taken ? str : null;
     }
 
-    // ------------------------------------------------------------------ 短信/邮件（B25 前）
+    // ------------------------------------------------------------------ 短信/邮件验证码（B25，32 文档第 5 节）
+
+    /** 游客身份调用 {@link #sendMessage(MemberState, Map, int)}（B09 的测试沿用）。 */
+    public AccountReply sendMessage(Map<String, PhpInput.Value> params, int type) {
+        return sendMessage(null, params, type);
+    }
 
     /**
-     * {@code reg_msg}、{@code findpass_msg}（旧 {@code send_msg}，{@code User.php:634-712}）：B25 前固定为"未配置"——参数检查与邮箱
-     * 黑白名单同旧版，之后返回 9009。不出站、不读写 {@code mac_msg}。
+     * {@code reg_msg}、{@code findpass_msg}、{@code bindmsg}（旧 {@code send_msg}，{@code User.php:634-712}）：参数检查与邮箱黑白名单同旧版，
+     * 之后交给 {@link MemberVerification}；没有接入（{@code verification} 为 null）时按 B09 固定为"未配置"。
      *
-     * @param type 3 注册、2 找回
+     * @param user 本次请求的登录态（游客或 null 按会员编号 0）
+     * @param type 1 绑定、2 找回、3 注册
      */
-    public AccountReply sendMessage(Map<String, PhpInput.Value> params, int type) {
+    public AccountReply sendMessage(MemberState user, Map<String, PhpInput.Value> params, int type) {
         String to = LegacyText.clean(raw(params, "to"));
         String ac = new String(raw(params, "ac"), StandardCharsets.UTF_8);
         if (!(ac.equals("email") || ac.equals("phone")) || LegacyText.empty(to)) {
@@ -336,12 +388,29 @@ public class MemberAccountService {
                 return host;
             }
         }
-        return AccountReply.of(9009, "验证码发送失败：" + (ac.equals("email") ? "未配置邮箱发送服务" : "未配置短信发送服务"));
+        if (verification == null) {
+            return AccountReply.of(9009, "验证码发送失败：" + (ac.equals("email") ? "未配置邮箱发送服务" : "未配置短信发送服务"));
+        }
+        requireWriter();
+        return verification.send(user, ac, to, type);
     }
 
-    /** {@code findpass_reset}（旧 {@code User.php:785-846}）：B25 前不会有可用的验证码，不改密码。 */
+    /** 游客身份调用 {@link #findpassReset(MemberState, Map)}。 */
     public AccountReply findpassReset(Map<String, PhpInput.Value> params) {
-        String pwd = LegacyText.clean(raw(params, "user_pwd"));
+        return findpassReset(null, params);
+    }
+
+    /**
+     * {@code findpass_reset}（旧 {@code User.php:785-846}）：验证码通过后按手机/邮箱找到会员，改密并轮换 {@code user_random}（D2 ⑥）。
+     * 地址取 {@code user_email}，为空时取 {@code to}；验证码必须是发给这个地址的（D-B25-4）。
+     */
+    public AccountReply findpassReset(MemberState user, Map<String, PhpInput.Value> params) {
+        byte[] rawPwd = raw(params, "user_pwd");
+        String to = LegacyText.clean(raw(params, "user_email"));
+        if (LegacyText.empty(to)) {
+            to = LegacyText.clean(raw(params, "to"));
+        }
+        String pwd = LegacyText.clean(rawPwd);
         String pwd2 = LegacyText.clean(raw(params, "user_pwd2"));
         if (pwd.getBytes(StandardCharsets.UTF_8).length < 6) {
             return AccountReply.of(2002, "密码最少6个字符");
@@ -349,14 +418,95 @@ public class MemberAccountService {
         if (!pwd.equals(pwd2)) {
             return AccountReply.of(2003, "两次输入的新密码不一致");
         }
-        return checkMessage(params, 2);
+        AccountReply check = checkMessage(user, params, 2, to);
+        if (check != null) {
+            return check;
+        }
+        requireWriter();
+        boolean email = new String(raw(params, "ac"), StandardCharsets.UTF_8).equals("email");
+        if (email) {
+            if (!EMAIL.matcher(to).find()) {
+                return AccountReply.of(2005, "邮箱地址格式不正确");
+            }
+            if (mapper.selectIdByEmail(to) == null) {
+                return AccountReply.of(2006, "邮箱地址不正确");
+            }
+        } else {
+            if (!FINDPASS_PHONE.matcher(to).find()) {
+                return AccountReply.of(2007, "手机号码格式不正确");
+            }
+            if (mapper.selectIdByPhone(to) == null) {
+                return AccountReply.of(2008, "手机号码不正确");
+            }
+        }
+        String hash = LegacyText.md5(LegacyText.trim(rawPwd));
+        try {
+            if (email) {
+                writer.resetPasswordByEmail(to, hash, newRandom());
+            } else {
+                writer.resetPasswordByPhone(to, hash, newRandom());
+            }
+        } catch (DataAccessException e) {
+            log.warn("member findpass reset failed: {}", e.getClass().getSimpleName());
+            return AccountReply.of(2009, "密码重置失败，请重试");
+        }
+        return AccountReply.of(1, "密码重置成功");
     }
 
     /**
-     * 旧 {@code check_msg}（{@code User.php:602-632}）在没有任何可用验证码时的结果。{@code findpass_reset} 先把 {@code code} 处理过一次，
-     * 这里再处理一次（旧代码就是两次）。
+     * {@code bind} POST（旧 {@code User.php:714-742}）：验证码（类型 1）通过后，清掉所有会员上的同一号码/地址，再写到当前会员。
+     * 写入的是处理后的地址（旧版写未处理的原值，D-B25-6）。
      */
-    private AccountReply checkMessage(Map<String, PhpInput.Value> params, int type) {
+    public AccountReply bind(MemberState user, Map<String, PhpInput.Value> params) {
+        requireWriter();
+        String to = LegacyText.clean(raw(params, "to"));
+        AccountReply check = checkMessage(user, params, 1, to);
+        if (check != null) {
+            return check;
+        }
+        boolean email = new String(raw(params, "ac"), StandardCharsets.UTF_8).equals("email");
+        try {
+            if (email) {
+                writer.clearEmail(to);
+                writer.setEmail(user.userId(), to);
+            } else {
+                writer.clearPhone(to);
+                writer.setPhone(user.userId(), to);
+            }
+        } catch (DataAccessException e) {
+            log.warn("member bind failed: {}", e.getClass().getSimpleName());
+            return AccountReply.of(2003, "更新用户绑定信息失败");
+        }
+        return AccountReply.of(1, "绑定成功");
+    }
+
+    /** {@code unbind} POST（旧 {@code User.php:744-764}）。 */
+    public AccountReply unbind(MemberState user, Map<String, PhpInput.Value> params) {
+        requireWriter();
+        String ac = new String(raw(params, "ac"), StandardCharsets.UTF_8);
+        if (!(ac.equals("email") || ac.equals("phone"))) {
+            return AccountReply.of(2001, "参数错误");
+        }
+        try {
+            if (ac.equals("email")) {
+                writer.setEmail(user.userId(), "");
+            } else {
+                writer.setPhone(user.userId(), "");
+            }
+        } catch (DataAccessException e) {
+            log.warn("member unbind failed: {}", e.getClass().getSimpleName());
+            return AccountReply.of(2002, "更新用户绑定信息失败");
+        }
+        return AccountReply.of(1, "解除绑定成功");
+    }
+
+    /**
+     * 旧 {@code check_msg}（{@code User.php:602-632}）。{@code findpass_reset} 先把 {@code code} 处理过一次，这里再处理一次（旧代码就是两次）。
+     *
+     * @param target 验证码必须是发给它的（D-B25-4）
+     * @return null 表示通过
+     */
+    private AccountReply checkMessage(MemberState user, Map<String, PhpInput.Value> params, int type, String target) {
         String to = LegacyText.clean(raw(params, "to"));
         byte[] code = raw(params, "code");
         if (type == 2) {
@@ -373,7 +523,13 @@ public class MemberAccountService {
                 return host;
             }
         }
-        return AccountReply.of(9002, "验证信息错误，请重试");
+        // 库是 utf8（3 字节）：含 4 字节字符的值不可能与库里的记录相等，不送进查询
+        if (verification == null || MemberSessionService.hasSupplementary(target)
+                || MemberSessionService.hasSupplementary(codeClean)
+                || !verification.valid(user, ac, codeClean, type, target)) {
+            return AccountReply.of(9002, "验证信息错误，请重试");
+        }
+        return null;
     }
 
     /** 旧 {@code UserValidate::validateEmail}（{@code common/validate/User.php:27-42}）。 */

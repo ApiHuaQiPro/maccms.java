@@ -295,14 +295,14 @@ class SiteUserMvcTest {
 
     @Test
     void sendMessageAndFindpassResetAnswerJson() throws Exception {
-        when(accounts.sendMessage(any(), anyInt())).thenReturn(AccountReply.of(9009, "验证码发送失败：未配置短信发送服务"));
+        when(accounts.sendMessage(any(), any(), anyInt())).thenReturn(AccountReply.of(9009, "验证码发送失败：未配置短信发送服务"));
         assertThat(mvc.perform(post("/index.php/user/reg_msg").contentType(MediaType.APPLICATION_FORM_URLENCODED)
                 .content("ac=phone&to=1")).andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8))
                 .isEqualTo("{\"code\":9009,\"msg\":\"验证码发送失败：未配置短信发送服务\"}");
-        verify(accounts).sendMessage(any(), org.mockito.ArgumentMatchers.eq(3));
+        verify(accounts).sendMessage(any(), any(), org.mockito.ArgumentMatchers.eq(3));
         mvc.perform(post("/index.php/user/findpass_msg").contentType(MediaType.APPLICATION_FORM_URLENCODED)
                 .content("ac=phone&to=1")).andReturn();
-        verify(accounts).sendMessage(any(), org.mockito.ArgumentMatchers.eq(2));
+        verify(accounts).sendMessage(any(), any(), org.mockito.ArgumentMatchers.eq(2));
         MvcResult page = mvc.perform(get("/index.php/user/findpass_msg/ac/phone.html")).andReturn();
         assertThat(page.getResponse().getContentAsString(StandardCharsets.UTF_8))
                 .contains("通过手机找回密码", "data-member-send", "data-send-url=\"/index.php/user/findpass_msg.html\"",
@@ -312,5 +312,44 @@ class SiteUserMvcTest {
                 .contains("href=\"/index.php/user/findpass_msg/ac/email.html\"", "name=\"verify\"");
         assertThat(mvc.perform(get("/index.php/user/findpass_reset")).andReturn().getResponse().getContentAsString())
                 .as("旧版 GET 时没有返回值").isEmpty();
+        when(accounts.findpassReset(any(), any())).thenReturn(AccountReply.of(9002, "验证信息错误，请重试"));
+        assertThat(mvc.perform(post("/index.php/user/findpass_reset").contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                .content("ac=phone&to=1&code=1&user_pwd=123456&user_pwd2=123456")).andReturn().getResponse()
+                .getContentAsString(StandardCharsets.UTF_8)).isEqualTo("{\"code\":9002,\"msg\":\"验证信息错误，请重试\"}");
+    }
+
+    /** B25：绑定、解绑与绑定验证码都要登录（旧白名单里没有它们）；登录后按旧控制器分派，传入本次的登录态。 */
+    @Test
+    void bindUnbindAndBindmsgRequireLoginAndPassTheMember() throws Exception {
+        for (String action : List.of("bind", "unbind", "bindmsg")) {
+            assertThat(mvc.perform(post("/index.php/user/" + action).header("X-Requested-With", "XMLHttpRequest"))
+                    .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8)).as(action).contains("\"msg\":\"未登录\"");
+        }
+        verify(accounts, never()).bind(any(), any());
+        loggedIn();
+        when(accounts.sendMessage(any(), any(), anyInt())).thenReturn(AccountReply.of(1, "验证码发送成功，请前往查看"));
+        when(accounts.bind(any(), any())).thenReturn(AccountReply.of(1, "绑定成功"));
+        when(accounts.unbind(any(), any())).thenReturn(AccountReply.of(1, "解除绑定成功"));
+        assertThat(mvc.perform(get("/index.php/user/bindmsg.html?ac=phone&to=13800000001")).andReturn().getResponse()
+                .getContentAsString(StandardCharsets.UTF_8)).as("旧版 bindmsg 不看请求方法")
+                .isEqualTo("{\"code\":1,\"msg\":\"验证码发送成功，请前往查看\"}");
+        verify(accounts).sendMessage(org.mockito.ArgumentMatchers.eq(MEMBER), any(), org.mockito.ArgumentMatchers.eq(1));
+        assertThat(mvc.perform(post("/index.php/user/bind").contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                .content("ac=phone&to=13800000001&code=123456")).andReturn().getResponse()
+                .getContentAsString(StandardCharsets.UTF_8)).isEqualTo("{\"code\":1,\"msg\":\"绑定成功\"}");
+        verify(accounts).bind(org.mockito.ArgumentMatchers.eq(MEMBER), any());
+        assertThat(mvc.perform(post("/index.php/user/unbind").contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                .content("ac=email")).andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8))
+                .isEqualTo("{\"code\":1,\"msg\":\"解除绑定成功\"}");
+        verify(accounts).unbind(org.mockito.ArgumentMatchers.eq(MEMBER), any());
+        String bindPage = mvc.perform(get("/index.php/user/bind.html")).andReturn().getResponse()
+                .getContentAsString(StandardCharsets.UTF_8);
+        assertThat(bindPage).as("ac 缺省为 email").contains("绑定邮箱", "data-member-form=\"bind\"", "value=\"email\"",
+                "data-send-url=\"/index.php/user/bindmsg.html\"", "href=\"/index.php/user/bind/ac/phone.html\"");
+        assertThat(mvc.perform(get("/index.php/user/bind/ac/phone.html")).andReturn().getResponse()
+                .getContentAsString(StandardCharsets.UTF_8)).contains("绑定手机", "value=\"phone\"");
+        assertThat(mvc.perform(get("/index.php/user/unbind/ac/phone.html")).andReturn().getResponse()
+                .getContentAsString(StandardCharsets.UTF_8)).contains("解除绑定手机", "data-member-form=\"unbind\"",
+                "name=\"ac\" value=\"phone\"");
     }
 }

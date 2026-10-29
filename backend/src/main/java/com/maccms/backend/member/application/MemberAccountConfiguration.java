@@ -10,6 +10,8 @@ import java.net.URI;
 import java.security.SecureRandom;
 import java.time.Clock;
 import com.maccms.backend.content.application.AnnexAdminService;
+import com.maccms.backend.integration.application.MailSender;
+import com.maccms.backend.integration.application.SmsSender;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -37,18 +39,39 @@ public class MemberAccountConfiguration {
         }
     }
 
+    /** B25 短信/邮件验证码用到的旧配置（{@code sms.content}、{@code email.time}、{@code email.tpl}、{@code site}），启动时读一次。 */
+    @Bean
+    VerificationSettings verificationSettings(LegacyConfigService legacy) {
+        if (!legacy.isConfigured()) {
+            return VerificationSettings.from(null);
+        }
+        try {
+            return VerificationSettings.from(legacy.read(LegacyConfigFile.MACCMS));
+        } catch (LegacyConfigException e) {
+            throw new IllegalStateException("会员功能读取旧配置 extra/maccms.php 失败：" + e.getMessage(), null);
+        }
+    }
+
     @Bean
     MemberAccountService memberAccountService(MemberMapper mapper, ObjectProvider<MemberWriteMapper> writer,
                                               MemberSessionService sessions, PortraitStore portraits,
                                               MemberSettings settings, ObjectProvider<MemberReferralService> referral,
                                               ObjectProvider<AnnexAdminService> annexes,
+                                              ObjectProvider<SmsSender> sms, ObjectProvider<MailSender> mail,
+                                              VerificationSettings verificationSettings,
                                               @Value("${maccms.site.base-url:}") String baseUrl) {
         MemberReferralService r = referral.getIfAvailable();
         AnnexAdminService a = annexes.getIfAvailable();
-        return new MemberAccountService(mapper, writer.getIfAvailable(), sessions, portraits, settings,
+        MemberWriteMapper w = writer.getIfAvailable();
+        SmsSender s = sms.getIfAvailable();
+        MailSender m = mail.getIfAvailable();
+        // 验证码要写 mac_msg：可写数据源与两个发送通道都在时才接入（B25），否则按 B09 的"未配置"
+        MemberVerification verification = w == null || s == null || m == null ? null
+                : new MemberVerification(mapper, w, s, m, verificationSettings, Clock.systemUTC(), new SecureRandom());
+        return new MemberAccountService(mapper, w, sessions, portraits, settings,
                 Clock.systemUTC(), new SecureRandom(), sitePath(baseUrl),
                 r == null ? inviterId -> { } : r::invitedRegistration,
-                a == null ? (f, t, z) -> { } : (f, t, z) -> a.register(f, t, z));
+                a == null ? (f, t, z) -> { } : (f, t, z) -> a.register(f, t, z), verification);
     }
 
     /** base-url 的路径部分，以 {@code /} 结尾；解析不了时为 {@code /}（site 自己的校验会让启动失败）。 */

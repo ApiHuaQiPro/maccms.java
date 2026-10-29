@@ -109,7 +109,10 @@ class SiteTemplatePolicyTest {
             Map.entry("site/pages/userUpgrade.jte", Set.of("script")),
             Map.entry("site/pages/userPopedom.jte", Set.of("script")),
             Map.entry("site/pages/userCash.jte", Set.of("script")),
-            Map.entry("site/pages/userOrder.jte", Set.of("script")));
+            Map.entry("site/pages/userOrder.jte", Set.of("script")),
+            // B25（MACC-48，32 文档第 7 节）：绑定、解绑页同样只在末尾引用 member/script.jte
+            Map.entry("site/pages/userBind.jte", Set.of("script")),
+            Map.entry("site/pages/userUnbind.jte", Set.of("script")));
 
     private static TemplateEngine engine(Path sourceDir, String classDir) {
         return engine(sourceDir, classDir, Set.of());

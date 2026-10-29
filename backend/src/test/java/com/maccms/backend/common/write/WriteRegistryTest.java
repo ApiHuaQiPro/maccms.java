@@ -86,7 +86,16 @@ class WriteRegistryTest {
             assertThat(WriteRegistry.registered().allows("collect", t, WriteOperation.UPDATE)).isTrue();
             assertThat(WriteRegistry.registered().allows("collect", t, WriteOperation.DELETE)).isFalse();
         }
-        assertThat(WriteRegistry.registered().permissions()).hasSize(108);
+        // B22（MACC-45）：安装向导只新增初始分类与第一个管理员（不修改、不删除）
+        assertThat(WriteRegistry.registered().allows("install", "mac_type", WriteOperation.INSERT)).isTrue();
+        assertThat(WriteRegistry.registered().allows("install", "mac_admin", WriteOperation.INSERT)).isTrue();
+        assertThat(WriteRegistry.registered().allows("install", "mac_admin", WriteOperation.UPDATE)).isFalse();
+        assertThat(WriteRegistry.registered().allows("install", "mac_group", WriteOperation.INSERT)).isFalse();
+        // B25（MACC-48）：会员模块只新增验证码记录（不修改、不删除；后台批量替换的 UPDATE 属 B15）
+        assertThat(WriteRegistry.registered().allows("member", "mac_msg", WriteOperation.INSERT)).isTrue();
+        assertThat(WriteRegistry.registered().allows("member", "mac_msg", WriteOperation.UPDATE)).isFalse();
+        assertThat(WriteRegistry.registered().allows("member", "mac_msg", WriteOperation.DELETE)).isFalse();
+        assertThat(WriteRegistry.registered().permissions()).hasSize(111);
     }
 
     @Test

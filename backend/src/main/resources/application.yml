@@ -3,6 +3,10 @@
 spring:
   application:
     name: maccms-backend
+  config:
+    # 部署配置文件（B22 安装向导写入，docs/architecture/31-b22-install-wizard.md 第 5.3 节）：MACCMS_DEPLOY_CONFIG 为它的绝对路径，
+    # 文件里是 MACCMS_DB_URL 等键（同名环境变量优先）。留空或文件不存在时不读。
+    import: optional:file:${MACCMS_DEPLOY_CONFIG:}
   datasource:
     url: ${MACCMS_DB_URL}
     username: ${MACCMS_DB_USERNAME}
@@ -100,6 +104,11 @@ maccms:
     # 百度推送（B28，docs/architecture/30-b28-urlsend-backlink.md 第 3 节）的接口地址，默认与旧版相同；令牌仍在旧配置 urlsend.*.token。
     urlsend:
       baidu-endpoint: ${MACCMS_INTEGRATION_URLSEND_BAIDU_ENDPOINT:http://data.zz.baidu.com/urls}
+    # 短信通道（B25，docs/architecture/32-b25-sms-mail.md 第 3 节）的接口地址，默认与旧版相同；账号与密钥仍在旧配置 sms.*。
+    # 邮件（SMTP）没有单独的部署参数：服务器与账号在旧配置 email.*，超时与出站模式沿用上面的 outbound。
+    sms:
+      aliyun-endpoint: ${MACCMS_INTEGRATION_SMS_ALIYUN_ENDPOINT:http://dysmsapi.aliyuncs.com/}
+      qcloud-endpoint: ${MACCMS_INTEGRATION_SMS_QCLOUD_ENDPOINT:https://yun.tim.qq.com/v5/tlssmssvr/sendsms}
   # 客户端 IP 解析（B06，D2 ④，docs/architecture/16-b06-misc-pages-provide.md 第 2 节）：部署级参数。默认只用连接对端；
   # trusted-proxies 为逗号分隔的 IP/CIDR，只有对端落在其中时才采用 header 指定的转发头（X-Forwarded-For 列表，或单值头
   # X-Real-IP/CF-Connecting-IP/True-Client-IP/Ali-CDN-Real-IP）。部署在 CDN/反向代理后面时必须填写代理出口网段，否则客户端 IP

@@ -93,12 +93,17 @@ class OutboundPolicyTest {
         assertThat(p.getProperty("maccms.integration.outbound.mode")).isEqualTo("loopback-only");
     }
 
-    /** B23 交付时没有任何业务子包登记，B28 登记 urlsend 与 backlink；可以直接用出站 API 的只有客户端本身。 */
+    /**
+     * B23 交付时没有任何业务子包登记，B28 登记 urlsend 与 backlink，B25 登记 sms 与 mail；可以直接用出站 API 的只有客户端本身与
+     * SMTP 发信的 mail（32 文档第 4.1 节）。
+     */
     @Test
-    void registryAtB28() {
+    void registryAtB25() {
         assertThat(IntegrationPackages.REGISTERED).containsOnly(java.util.Map.entry("integration.urlsend", "B28"),
-                java.util.Map.entry("integration.backlink", "B28"));
-        assertThat(IntegrationPackages.RAW_API).containsExactly(java.util.Map.entry("integration.http", "B23"));
+                java.util.Map.entry("integration.backlink", "B28"), java.util.Map.entry("integration.sms", "B25"),
+                java.util.Map.entry("integration.mail", "B25"));
+        assertThat(IntegrationPackages.RAW_API).containsOnly(java.util.Map.entry("integration.http", "B23"),
+                java.util.Map.entry("integration.mail", "B25"));
         assertThat(IntegrationPackages.CLIENT).isEqualTo(
                 IntegrationPackages.modulePackage(OutboundHttpClient.class.getPackageName()));
     }

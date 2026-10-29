@@ -49,6 +49,10 @@ public final class WriteRegistry {
      * <li>B20（MACC-44，28 文档第 5 节）：自定义规则采集记下采集历史与内容网址、写入采集结果与发布状态（collect / mac_cj_history INSERT、
      * mac_cj_content INSERT、UPDATE，旧 {@code Cj::col_url/col_content/content_into}）；删除内容沿用 B17 已登记的 DELETE，节点的采集时间与
      * 发布方案沿用 B17 已登记的 mac_cj_node UPDATE，导入内容经 B19 的入库（mac_vod、mac_art）。</li>
+     * <li>B22（MACC-45，31 文档第 6 节）：安装向导导入可选的初始分类（install / mac_type INSERT，旧 {@code initdata.sql}）与创建第一个管理员
+     * （install / mac_admin INSERT，旧 {@code install/controller/Index.php:257-262}）。只在安装模式下、对向导校验过的目标库执行。</li>
+     * <li>B25（MACC-48，32 文档第 5 节）：短信/邮件验证码发送成功后记录验证码（member / mac_msg INSERT，旧 {@code common/model/User.php:696-706}）；
+     * 注册时写入验证过的手机/邮箱、绑定与解绑、手机/邮箱找回改密沿用 B09 已登记的 mac_user INSERT、UPDATE。</li>
      * </ul>
      */
     static final List<WritePermission> REGISTERED = List.of(
@@ -159,7 +163,10 @@ public final class WriteRegistry {
             new WritePermission("collect", "mac_comment", WriteOperation.UPDATE, "B19"),
             new WritePermission("collect", "mac_cj_history", WriteOperation.INSERT, "B20"),
             new WritePermission("collect", "mac_cj_content", WriteOperation.INSERT, "B20"),
-            new WritePermission("collect", "mac_cj_content", WriteOperation.UPDATE, "B20"));
+            new WritePermission("collect", "mac_cj_content", WriteOperation.UPDATE, "B20"),
+            new WritePermission("install", "mac_type", WriteOperation.INSERT, "B22"),
+            new WritePermission("install", "mac_admin", WriteOperation.INSERT, "B22"),
+            new WritePermission("member", "mac_msg", WriteOperation.INSERT, "B25"));
 
     /** 写 Mapper 的全限定名：{@code com.maccms.backend.<module>.infrastructure[.子包].<类型>}。 */
     private static final Pattern MAPPER_TYPE = Pattern.compile(
