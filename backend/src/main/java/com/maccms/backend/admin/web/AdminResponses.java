@@ -125,6 +125,11 @@ public class AdminResponses {
         return jump(ajax, false, msg, ajax ? "" : JumpPage.BACK);
     }
 
+    /** 旧 {@code $this->error($msg, $url)} 带了跳转地址的写法（B29：旧 {@code Addon::install} 把异常代码当成地址传入，结果是当前动作的地址）。 */
+    public ResponseEntity<String> errorTo(boolean ajax, String msg, String url) {
+        return jump(ajax, false, msg, url);
+    }
+
     /** Ajax 的 {@code code=0} 带 data（B15 模板编辑页保存失败时给新的表单令牌，编辑页留在原处）；页面时与 {@link #error} 相同。 */
     public ResponseEntity<String> error(boolean ajax, String msg, Object data) {
         if (ajax) {

@@ -109,7 +109,7 @@ public final class AddonService {
                 && !name.contains("\0") && !name.equals(".");
     }
 
-    private static String ucfirst(String s) {
+    static String ucfirst(String s) {
         return s.isEmpty() ? s : Character.toUpperCase(s.charAt(0)) + s.substring(1);
     }
 
@@ -453,7 +453,7 @@ public final class AddonService {
      * {@code $info = get_addon_info($name); $info['state'] = …; unset($info['url']); set_addon_info($name, $info);}：{@code setInfo} 把缓存里带
      * {@code url} 的信息与新值合并，所以写出去的 info.ini 仍有 {@code url}（值为 {@code addon_url}）；每行 {@code 键 = 值}，以 \n 结尾。
      */
-    private void setState(String name, int state) {
+    void setState(String name, int state) {
         PhpArray info = info(name);
         if (info == null || info.get("name") == null || info.get("title") == null || info.get("version") == null) {
             throw new Failed("插件配置写入失败");

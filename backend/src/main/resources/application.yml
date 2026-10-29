@@ -115,6 +115,11 @@ maccms:
       codepay-gateway: ${MACCMS_INTEGRATION_PAY_CODEPAY_GATEWAY:https://api.xiuxiu888.com/creat_order/}
       zhapay-gateway: ${MACCMS_INTEGRATION_PAY_ZHAPAY_GATEWAY:https://www.zhapay.com/mapay.html}
       weixin-endpoint: ${MACCMS_INTEGRATION_PAY_WEIXIN_ENDPOINT:https://api.mch.weixin.qq.com/pay/unifiedorder}
+    # 插件市场（B29，docs/architecture/35-b29-addon-market.md 第 3 节）：api-url 对应旧 fastadmin.api_url。这份生产代码没有配置它，
+    # 默认留空＝不发请求，后台安装/升级按旧版"无法下载远程文件"失败；填写时为不带查询串与凭证的 http/https 地址。插件包大小上限默认 16 MiB。
+    addonmarket:
+      api-url: ${MACCMS_INTEGRATION_ADDONMARKET_API_URL:}
+      max-package-bytes: ${MACCMS_INTEGRATION_ADDONMARKET_MAX_PACKAGE_BYTES:16777216}
   # 客户端 IP 解析（B06，D2 ④，docs/architecture/16-b06-misc-pages-provide.md 第 2 节）：部署级参数。默认只用连接对端；
   # trusted-proxies 为逗号分隔的 IP/CIDR，只有对端落在其中时才采用 header 指定的转发头（X-Forwarded-For 列表，或单值头
   # X-Real-IP/CF-Connecting-IP/True-Client-IP/Ali-CDN-Real-IP）。部署在 CDN/反向代理后面时必须填写代理出口网段，否则客户端 IP

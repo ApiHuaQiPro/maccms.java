@@ -242,12 +242,25 @@ public class AdminConfiguration {
                 clock.getIfAvailable(Clock::systemUTC), RANDOM);
     }
 
+    /**
+     * B29 插件市场的安装与升级（35 文档第 6 节）：只装配了部分 Bean、没有 {@code AddonMarket} 的测试里不注册（动作按"由 B29 提供"处理）。
+     */
+    @Bean
+    com.maccms.backend.admin.application.AddonMarketService adminAddonMarketService(
+            com.maccms.backend.admin.application.AddonService addons, LegacySiteFiles files,
+            ObjectProvider<com.maccms.backend.integration.application.AddonMarket> market, ObjectProvider<Clock> clock) {
+        com.maccms.backend.integration.application.AddonMarket m = market.getIfAvailable();
+        return m == null ? null : new com.maccms.backend.admin.application.AddonMarketService(addons, files, m,
+                com.maccms.backend.admin.application.AddonPackage.Limits.DEFAULT, clock.getIfAvailable(Clock::systemUTC));
+    }
+
     @Bean
     com.maccms.backend.admin.web.AdminAddonActions adminAddonActions(AdminEndpoint endpoint, AdminSettings settings,
-            AdminResponses responses, com.maccms.backend.admin.application.AddonService addons, AdminRandom random,
+            AdminResponses responses, com.maccms.backend.admin.application.AddonService addons,
+            ObjectProvider<com.maccms.backend.admin.application.AddonMarketService> market, AdminRandom random,
             ObjectProvider<Clock> clock) {
-        return new com.maccms.backend.admin.web.AdminAddonActions(endpoint, settings, responses, addons, random,
-                clock.getIfAvailable(Clock::systemUTC));
+        return new com.maccms.backend.admin.web.AdminAddonActions(endpoint, settings, responses, addons, market.getIfAvailable(),
+                random, clock.getIfAvailable(Clock::systemUTC));
     }
 
     /**

@@ -1,5 +1,6 @@
 package com.maccms.backend.admin.web;
 
+import com.maccms.backend.admin.application.AddonMarketService;
 import com.maccms.backend.admin.application.AddonService;
 import com.maccms.backend.admin.application.AdminSettings;
 import com.maccms.backend.admin.application.LegacyPhp;
@@ -26,8 +27,9 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 
 /**
- * B15 本地插件的动作（旧 admin/controller/Addon.php；路线图第 5.7 节，24 文档第 11 节）。插件市场的 {@code install}、{@code upgrade}（E13）在 B29，
- * 由 B12 的分派返回"由 B29 批次提供"；{@code downloaded} 在这份生产代码里只列本地插件（旧版已去掉市场列表），本批实现。
+ * B15 本地插件的动作（旧 admin/controller/Addon.php；路线图第 5.7 节，24 文档第 11 节）；{@code downloaded} 在这份生产代码里只列本地插件
+ * （旧版已去掉市场列表）。插件市场的 {@code install}、{@code upgrade}（E13）由 B29 实现（35 文档第 6 节），没有装配
+ * {@link AddonMarketService} 时仍按"由 B29 批次提供"处理。
  */
 public class AdminAddonActions {
 
@@ -38,15 +40,17 @@ public class AdminAddonActions {
     private final AdminSettings settings;
     private final AdminResponses responses;
     private final AddonService addons;
+    private final AddonMarketService market;
     private final RandomGenerator random;
     private final Clock clock;
 
     public AdminAddonActions(AdminEndpoint endpoint, AdminSettings settings, AdminResponses responses, AddonService addons,
-                             AdminRandom random, Clock clock) {
+                             AddonMarketService market, AdminRandom random, Clock clock) {
         this.endpoint = endpoint;
         this.settings = settings;
         this.responses = responses;
         this.addons = addons;
+        this.market = market;
         this.random = random.generator();
         this.clock = clock;
     }
@@ -63,6 +67,8 @@ public class AdminAddonActions {
                 case "config" -> config(ctx);
                 case "state" -> state(ctx);
                 case "uninstall" -> uninstall(ctx);
+                case "install" -> market == null ? null : install(ctx);
+                case "upgrade" -> market == null ? null : upgrade(ctx);
                 case "local" -> {
                     AdminForms.TokenCheck t = AdminForms.check(session, ctx.params());
                     // 旧 Addon::local：令牌通过后 echo 'closed'; exit;（本地上传安装已关闭）
@@ -157,6 +163,68 @@ public class AdminAddonActions {
             return failed(ctx, f);
         }
         return responses.success(ctx.ajax(), settings.lang().get("uninstall_ok"), AdminController.successUrl(ctx));
+    }
+
+    /**
+     * 旧 {@code Addon::install}（Addon.php:143-172）：{@code input()} 的 {@code name} 与 {@code (int)force}，POST 的 {@code uid}、{@code token}、
+     * {@code version}、{@code faversion}。成功时旧版的提示是 {@code lang('install_err')}（"安装失败"，旧版的笔误，照旧）。
+     * 新版只接受 POST（旧版 GET 也会安装，D-B29-6）。
+     */
+    private ResponseEntity<String> install(Ctx ctx) {
+        if (!ctx.post_()) {
+            return responses.error(ctx.ajax(), settings.lang().get("param_err"));
+        }
+        String name = scalar(ctx, "name");
+        if (name == null || name.isEmpty() || name.equals("0")) {
+            return responses.error(ctx.ajax(), settings.lang().get("param_err"));
+        }
+        boolean force = PhpIntval.of(text(ctx.params().scalar("force"))) != 0;
+        try {
+            market.install(name, force, extend(ctx));
+        } catch (AddonService.Failed f) {
+            // 旧版 $this->error($e->getMessage(), $e->getCode())：代码 0 被当成跳转地址，Url::build 得到当前动作的地址
+            return f.code() != 0 ? failed(ctx, f) : responses.errorTo(ctx.ajax(), f.getMessage(), ctx.url().build(""));
+        } catch (AddonMarketService.Refused r) {
+            return refused(r);
+        }
+        return responses.success(ctx.ajax(), settings.lang().get("install_err"), AdminController.successUrl(ctx));
+    }
+
+    /** 旧 {@code Addon::upgrade}（Addon.php:314-340）：{@code name} 只取 POST。 */
+    private ResponseEntity<String> upgrade(Ctx ctx) {
+        byte[] raw = ctx.post().scalar("name");
+        String name = raw == null ? null : LegacyPhp.utf8(raw);
+        if (name == null || name.isEmpty() || name.equals("0")) {
+            return responses.error(ctx.ajax(), settings.lang().get("param_err"));
+        }
+        try {
+            market.upgrade(name, extend(ctx));
+        } catch (AddonService.Failed f) {
+            return failed(ctx, f);
+        } catch (AddonMarketService.Refused r) {
+            return refused(r);
+        }
+        return responses.success(ctx.ajax(), settings.lang().get("update_ok"), AdminController.successUrl(ctx));
+    }
+
+    /** 旧 {@code $extend}：POST 的四项，未提交的为 null（下载时不出现在查询串里）。 */
+    private static Map<String, String> extend(Ctx ctx) {
+        Map<String, String> m = new LinkedHashMap<>();
+        for (String k : new String[] {"uid", "token", "version", "faversion"}) {
+            byte[] v = ctx.post().scalar(k);
+            m.put(k, v == null ? null : text(v));
+        }
+        return m;
+    }
+
+    /** 市场拒绝：{@code $this->result($e->getData(), $e->getCode(), $e->getMessage())}。 */
+    private ResponseEntity<String> refused(AddonMarketService.Refused r) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("code", PhpArrays.jsonable(r.code()));
+        m.put("msg", PhpArrays.jsonable(r.msg()));
+        m.put("time", clock.instant().getEpochSecond());
+        m.put("data", PhpArrays.jsonable(r.data()));
+        return responses.rawJson(m);
     }
 
     /**

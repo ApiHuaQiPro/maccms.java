@@ -35,10 +35,12 @@ public final class IntegrationPackages {
      * 可以经出站客户端发请求的子包 → 登记批次。B28：{@code integration.urlsend}（百度推送 E09）、{@code integration.backlink}（友链回链检测 E11）；
      * B25：{@code integration.sms}（短信 E06）、{@code integration.mail}（邮件 E07，只引用出站模式与超时参数，发信走 SMTP）；
      * B24：{@code integration.pay}（在线支付 E04 的微信统一下单；支付宝、码支付、Zhapay 只生成网关地址，回调 E05 是入站）；
-     * B26：{@code integration.oauth}（QQ/微信第三方登录 E10：服务端换取令牌、openid 与用户信息；授权页只给浏览器跳转）。
+     * B26：{@code integration.oauth}（QQ/微信第三方登录 E10：服务端换取令牌、openid 与用户信息；授权页只给浏览器跳转）；
+     * B29：{@code integration.addonmarket}（插件市场 E13：下载插件包，解包与安装在后台模块）。
      */
     public static final Map<String, String> REGISTERED = Map.of("integration.urlsend", "B28", "integration.backlink", "B28",
-            "integration.sms", "B25", "integration.mail", "B25", "integration.pay", "B24", "integration.oauth", "B26");
+            "integration.sms", "B25", "integration.mail", "B25", "integration.pay", "B24", "integration.oauth", "B26",
+            "integration.addonmarket", "B29");
 
     private IntegrationPackages() {
     }

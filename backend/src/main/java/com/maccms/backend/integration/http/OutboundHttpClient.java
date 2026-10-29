@@ -93,6 +93,18 @@ public final class OutboundHttpClient {
      * @throws OutboundException 调用方未登记、目标被拒绝、连接失败、超时、响应过大、跳转失败等
      */
     public OutboundResponse send(OutboundRequest request) {
+        return send(request, maxResponseBytes);
+    }
+
+    /**
+     * 同 {@link #send(OutboundRequest)}，响应体上限按本次请求给出（B29 插件包下载：包的大小上限独立于第三方接口的通用上限）。
+     *
+     * @param maxResponseBytes 本次请求的响应体上限，必须大于 0
+     */
+    public OutboundResponse send(OutboundRequest request, int maxResponseBytes) {
+        if (maxResponseBytes <= 0) {
+            throw new IllegalArgumentException("maxResponseBytes 必须大于 0");
+        }
         String caller = checkCaller();
         long start = System.nanoTime();
         long deadline = start + readTimeout.toNanos();
@@ -102,7 +114,7 @@ public final class OutboundHttpClient {
         Map<String, List<String>> headers = request.headers();
         String host = policy.check(uri);
         for (int hop = 0; ; hop++) {
-            HttpResponse<byte[]> resp = exchange(method, uri, headers, body, host, deadline);
+            HttpResponse<byte[]> resp = exchange(method, uri, headers, body, host, deadline, maxResponseBytes);
             int status = resp.statusCode();
             Optional<String> location = resp.headers().firstValue("location");
             if (isRedirect(status) && location.isPresent()) {
@@ -152,7 +164,7 @@ public final class OutboundHttpClient {
     }
 
     private HttpResponse<byte[]> exchange(String method, URI uri, Map<String, List<String>> headers, byte[] body,
-                                          String host, long deadline) {
+                                          String host, long deadline, int maxResponseBytes) {
         long remaining = deadline - System.nanoTime();
         if (remaining <= 0) {
             throw fail(OutboundException.Reason.TIMEOUT, host, "timeout", null);

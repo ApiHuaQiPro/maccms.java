@@ -166,6 +166,35 @@ public class LegacySiteFiles {
         write(r, relative, content, null);
     }
 
+    /** 读取插件的全局文件（B29 安装前的冲突检查与回滚快照）；不存在时为 null。 */
+    public byte[] readAddonGlobal(String relative, int maxBytes) {
+        LegacySiteRoot r = checkAddonGlobal(relative);
+        try {
+            return r.read(relative, maxBytes);
+        } catch (LegacySiteRoot.AccessException e) {
+            throw translate(e);
+        }
+    }
+
+    /** 插件升级前的备份文件名（旧 {@code Service::backup}：{@code runtime/addons/<名称>-backup-<YmdHis>.zip}）。 */
+    private static final java.util.regex.Pattern ADDON_BACKUP = java.util.regex.Pattern.compile("[A-Za-z0-9_]+-backup-[0-9]{14}\\.zip");
+
+    /**
+     * 写插件升级前的备份（B29）：只能是 {@code runtime/addons/} 下符合 {@link #ADDON_BACKUP} 的文件名，只新建（已存在时
+     * {@link Reason#CONFLICT}）。返回相对根目录的路径。
+     */
+    public String writeAddonBackup(String fileName, byte[] content) {
+        if (root == null) {
+            throw new FileException(Reason.NOT_CONFIGURED);
+        }
+        if (fileName == null || !ADDON_BACKUP.matcher(fileName).matches()) {
+            throw new FileException(Reason.FORBIDDEN);
+        }
+        String relative = "runtime/addons/" + fileName;
+        write(root, relative, content, AtomicFiles.ABSENT);
+        return relative;
+    }
+
     /** 删除插件的全局文件。 */
     public boolean deleteAddonGlobal(String relative) {
         LegacySiteRoot r = checkAddonGlobal(relative);
