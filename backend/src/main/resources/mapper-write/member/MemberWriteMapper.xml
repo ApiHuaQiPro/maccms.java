@@ -151,4 +151,53 @@
         SET user_pwd = #{pwd}, user_random = #{random}
         WHERE user_email = #{email}
     </update>
+
+    <!--
+      ================================================================ B26 第三方登录（34 文档第 4 节）
+      openid 的列名只用 <choose> 在 user_openid_qq、user_openid_weixin 两个固定值之间选择，不拼接请求数据。
+    -->
+
+    <!--
+      未绑定的 openid 自动注册（旧 index/controller/User.php:258-272 → common/model/User.php:178-231）：判重、IP 限额与插入合成一条条件插入，
+      另要求该 openid 尚未绑定任何会员（旧版先查后插，并发的两次回调可能注册两个账号）。
+    -->
+    <insert id="registerOpenid">
+        INSERT INTO mac_user (user_name, user_pwd, group_id, user_points, user_status, user_reg_time, user_reg_ip,
+                              user_openid_qq, user_openid_weixin)
+        SELECT #{name}, #{pwd}, 2, #{points}, #{status}, #{now}, #{ip},
+               <if test="qq">#{openid}</if><if test="!qq">''</if>,
+               <if test="qq">''</if><if test="!qq">#{openid}</if>
+        FROM DUAL
+        WHERE NOT EXISTS (SELECT 1 FROM mac_user AS u WHERE u.user_name = #{name})
+          AND NOT EXISTS (SELECT 1 FROM mac_user AS o WHERE o.<choose><when test="qq">user_openid_qq</when><otherwise>user_openid_weixin</otherwise></choose> = #{openid})
+          AND (#{regNum} &lt;= 0
+               OR (SELECT COUNT(*) FROM mac_user AS r WHERE r.user_reg_ip = #{ip} AND r.user_reg_time &gt; #{since})
+                  &lt; #{regNum})
+    </insert>
+
+    <!-- 凭 openid 登录（旧 User.php:363-376）：同 recordLogin，条件为查到的 user_id、该 openid 与 user_status=1。 -->
+    <update id="recordOpenidLogin">
+        UPDATE mac_user
+        SET user_last_login_time = user_login_time,
+            user_last_login_ip = user_login_ip,
+            user_login_time = #{now},
+            user_login_ip = #{ip},
+            user_login_num = user_login_num + 1,
+            user_random = #{random},
+            group_id = IF(group_id &gt; 2 AND user_end_time &lt; #{now}, 2, group_id)
+        WHERE user_id = #{userId} AND <choose><when test="qq">user_openid_qq</when><otherwise>user_openid_weixin</otherwise></choose> = #{openid} AND user_status = 1
+    </update>
+
+    <!-- 改绑（旧 index/controller/User.php:240-250）：先清掉所有会员上的同一 openid，再写到当前会员。 -->
+    <update id="clearOpenid">
+        UPDATE mac_user
+        SET <choose><when test="qq">user_openid_qq</when><otherwise>user_openid_weixin</otherwise></choose> = ''
+        WHERE <choose><when test="qq">user_openid_qq</when><otherwise>user_openid_weixin</otherwise></choose> = #{openid}
+    </update>
+
+    <update id="setOpenid">
+        UPDATE mac_user
+        SET <choose><when test="qq">user_openid_qq</when><otherwise>user_openid_weixin</otherwise></choose> = #{openid}
+        WHERE user_id = #{userId}
+    </update>
 </mapper>

@@ -122,4 +122,27 @@
         ORDER BY msg_id
         LIMIT 1
     </select>
+
+    <!-- B26 第三方登录（34 文档第 4 节）。列名只在两个固定值之间选择，不拼接请求数据。 -->
+    <sql id="openidColumn"><choose><when test="qq">user_openid_qq</when><otherwise>user_openid_weixin</otherwise></choose></sql>
+
+    <select id="selectIdByOpenid" resultType="java.lang.Long">
+        SELECT user_id FROM mac_user WHERE <include refid="openidColumn"/> = #{openid} ORDER BY user_id LIMIT 1
+    </select>
+
+    <select id="selectOpenidLoginCandidate" resultType="com.maccms.backend.member.infrastructure.MemberLoginCandidate">
+        SELECT user_id       AS userId,
+               group_id      AS groupId,
+               user_name     AS userName,
+               user_end_time AS userEndTime
+        FROM mac_user
+        WHERE <include refid="openidColumn"/> = #{openid}
+          AND user_status = 1
+        ORDER BY user_id
+        LIMIT 1
+    </select>
+
+    <select id="selectOpenid" resultType="java.lang.String">
+        SELECT <include refid="openidColumn"/> FROM mac_user WHERE user_id = #{userId}
+    </select>
 </mapper>

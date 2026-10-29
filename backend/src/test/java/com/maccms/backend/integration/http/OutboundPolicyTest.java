@@ -98,10 +98,11 @@ class OutboundPolicyTest {
      * 客户端本身与 SMTP 发信的 mail（32 文档第 4.1 节）。
      */
     @Test
-    void registryAtB24() {
+    void registryAtB26() {
         assertThat(IntegrationPackages.REGISTERED).containsOnly(java.util.Map.entry("integration.urlsend", "B28"),
                 java.util.Map.entry("integration.backlink", "B28"), java.util.Map.entry("integration.sms", "B25"),
-                java.util.Map.entry("integration.mail", "B25"), java.util.Map.entry("integration.pay", "B24"));
+                java.util.Map.entry("integration.mail", "B25"), java.util.Map.entry("integration.pay", "B24"),
+                java.util.Map.entry("integration.oauth", "B26"));
         assertThat(IntegrationPackages.RAW_API).containsOnly(java.util.Map.entry("integration.http", "B23"),
                 java.util.Map.entry("integration.mail", "B25"));
         assertThat(IntegrationPackages.CLIENT).isEqualTo(

@@ -557,6 +557,106 @@ public class MemberAccountService {
         return out;
     }
 
+    // ------------------------------------------------------------------ 第三方登录（B26，34 文档第 4 节）
+
+    /**
+     * 已登录会员收到第三方回调（旧 {@code index/controller/User.php:232-252}）：该方式已绑定的就是这个 openid → 1001"已经绑定该账号"；
+     * 否则先清掉所有会员上的同一 openid，再绑定到当前会员 → 1"绑定成功"。
+     *
+     * @param openid 服务端换取的 openid（{@code OAuthLogin#fetch}），不是浏览器提交的参数
+     */
+    public AccountReply openidBind(MemberState member, boolean qq, String openid) {
+        requireWriter();
+        if (!member.member()) {
+            throw new IllegalArgumentException("绑定须在会员已登录时进行");
+        }
+        String current = mapper.selectOpenid(member.userId(), qq);
+        if (openid.equals(current)) {
+            return AccountReply.of(1001, "已经绑定该账号");
+        }
+        try {
+            writer.clearOpenid(qq, openid);
+            if (writer.setOpenid(member.userId(), qq, openid) != 1) {
+                return AccountReply.of(1002, "绑定失败");
+            }
+        } catch (DataAccessException e) {
+            log.warn("member openid bind failed: {}", e.getClass().getSimpleName());
+            return AccountReply.of(1002, "绑定失败");
+        }
+        log.info("member openid bound type={}", qq ? "qq" : "weixin");
+        return AccountReply.of(1, "绑定成功");
+    }
+
+    /**
+     * 游客收到第三方回调（旧 {@code index/controller/User.php:254-279}）：openid 未绑定任何会员时先自动注册（用户名取 openid 前 10 位，
+     * 密码是不可猜测的随机值，D-B26-1），再凭 openid 登录并签发与普通登录相同的 cookie。
+     *
+     * @param openid 服务端换取的 openid（{@code OAuthLogin#fetch}），只含 {@code [A-Za-z0-9_-]}
+     * @return 1 登录成功（带 cookie）；1010"同步信息注册失败，请联系管理员"；1003"获取用户信息失败"
+     */
+    public AccountReply openidLogin(boolean qq, String openid, String clientIp) {
+        requireWriter();
+        long ip = legacyIp(clientIp);
+        if (mapper.selectIdByOpenid(qq, openid) == null && !openidRegister(qq, openid, ip)) {
+            return AccountReply.of(1010, "同步信息注册失败，请联系管理员");
+        }
+        MemberLoginCandidate row = mapper.selectOpenidLoginCandidate(qq, openid);
+        if (row == null) {
+            return AccountReply.of(1003, "获取用户信息失败");
+        }
+        long now = now();
+        String userRandom = newRandom();
+        if (writer.recordOpenidLogin(row.userId(), qq, openid, userRandom, now, ip) != 1) {
+            return AccountReply.of(1003, "获取用户信息失败");
+        }
+        int groupId = row.groupId() > MemberState.EXPIRED_GROUP_ID && row.userEndTime() < now
+                ? MemberState.EXPIRED_GROUP_ID : row.groupId();
+        log.info("member openid login type={}", qq ? "qq" : "weixin");
+        return new AccountReply(1, "登录成功", MemberCookies.login(row.userId(), row.userName(), sessions.group(groupId),
+                userRandom, portraitUrl(row.userId()), now));
+    }
+
+    /**
+     * 旧 {@code register()} 在第三方注册时走到的检查（跳过验证码与手机/邮箱验证，{@code common/model/User.php:130-231}）：未开放注册、用户名已存在、
+     * 用户名含字母数字以外的字符、不足 6 个字符、含过滤词、IP 限额，任一不满足即失败。
+     *
+     * @return 已注册（本次插入，或并发的另一次回调已经插入了同一 openid：此时用户名判重等检查也会失败，所以失败后再查一次 openid）
+     */
+    private boolean openidRegister(boolean qq, String openid, long ip) {
+        return tryOpenidRegister(qq, openid, ip) || mapper.selectIdByOpenid(qq, openid) != null;
+    }
+
+    private boolean tryOpenidRegister(boolean qq, String openid, long ip) {
+        String name = LegacyText.clean(openid.substring(0, Math.min(10, openid.length()))
+                .getBytes(StandardCharsets.UTF_8));
+        if (settings.registrationClosed() || LegacyText.empty(name) || mapper.selectIdByName(name) != null
+                || !NAME.matcher(name).find() || name.codePointCount(0, name.length()) < 6 || containsFilterWord(name)) {
+            return false;
+        }
+        long now = now();
+        long todayStart = LocalDate.ofInstant(Instant.ofEpochSecond(now), ZONE).atStartOfDay(ZONE).toEpochSecond();
+        if (settings.regNum() > 0 && mapper.countRegisteredSince(ip, todayStart) >= settings.regNum()) {
+            return false;
+        }
+        // 旧版密码是 time()（可猜测）；新版是 256 位随机数的十六进制再 md5，没有人知道原文（D-B26-1）
+        byte[] secret = new byte[32];
+        random.nextBytes(secret);
+        String pwd = LegacyText.md5(java.util.HexFormat.of().formatHex(secret));
+        int inserted;
+        try {
+            inserted = writer.registerOpenid(name, pwd, settings.regPoints(), settings.regStatus(), now, ip,
+                    settings.regNum(), todayStart, qq, openid);
+        } catch (DataAccessException e) {
+            log.warn("member openid register rejected by database: {}", e.getClass().getSimpleName());
+            return false;
+        }
+        if (inserted == 1) {
+            log.info("member openid registered type={}", qq ? "qq" : "weixin");
+            return true;
+        }
+        return false;
+    }
+
     // ------------------------------------------------------------------ 资料与改密、找回
 
     /**

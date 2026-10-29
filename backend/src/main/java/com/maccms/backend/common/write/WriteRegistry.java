@@ -55,6 +55,8 @@ public final class WriteRegistry {
      * 注册时写入验证过的手机/邮箱、绑定与解绑、手机/邮箱找回改密沿用 B09 已登记的 mac_user INSERT、UPDATE。</li>
      * <li>B24（MACC-47，33 文档第 5 节）：支付回调到账把订单改为已支付（member / mac_order UPDATE，条件 {@code order_status = 0}，旧
      * {@code common/model/Order.php:130-137}）；加积分与积分流水沿用 B09 已登记的 mac_user UPDATE、B10 已登记的 mac_plog INSERT。</li>
+     * <li>B26（MACC-49，34 文档第 4 节）：第三方登录的自动注册、凭 openid 登录、改绑（{@code user_openid_qq}/{@code user_openid_weixin}）
+     * 沿用 B09 已登记的 mac_user INSERT、UPDATE，不新增登记。</li>
      * </ul>
      */
     static final List<WritePermission> REGISTERED = List.of(

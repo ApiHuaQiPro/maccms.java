@@ -50,9 +50,27 @@ public final class SiteSessions {
             return s;
         }
         s = store.create();
-        response.addHeader(HttpHeaders.SET_COOKIE, COOKIE + "=" + s.id() + "; Path=" + path + "; HttpOnly; SameSite=Lax"
-                + (secure ? "; Secure" : ""));
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie(s));
         return s;
+    }
+
+    /**
+     * 同 {@link #currentOrCreate(HttpServletRequest, HttpServletResponse)}，新建时把会话 cookie 追加到 {@code setCookies}
+     * （由调用方放进 {@code ResponseEntity}；B26 发起第三方授权）。
+     */
+    public SessionState currentOrCreate(HttpServletRequest request, java.util.List<String> setCookies) {
+        SessionState s = current(request);
+        if (s != null) {
+            return s;
+        }
+        s = store.create();
+        setCookies.add(cookie(s));
+        return s;
+    }
+
+    private String cookie(SessionState s) {
+        // SameSite=Lax：从 QQ/微信授权页跳回的顶层 GET 导航仍会带上（B26 回调靠它取回 state）
+        return COOKIE + "=" + s.id() + "; Path=" + path + "; HttpOnly; SameSite=Lax" + (secure ? "; Secure" : "");
     }
 
     /** 当前时刻（秒）。 */

@@ -13,6 +13,7 @@ import com.maccms.backend.content.application.ContentLookupService;
 import com.maccms.backend.member.application.MemberAccountService;
 import com.maccms.backend.member.application.MemberPaymentService;
 import com.maccms.backend.member.application.MemberCookies;
+import com.maccms.backend.member.application.MemberOAuthService;
 import com.maccms.backend.member.application.MemberPurchaseService;
 import com.maccms.backend.member.application.MemberRecordService;
 import com.maccms.backend.member.application.MemberReferralService;
@@ -80,8 +81,9 @@ import org.springframework.web.multipart.MultipartHttpServletRequest;
  * 解析、按字节读取参数、验证码会话、页面与 JSON 输出、cookie。
  *
  * <p>地址：{@code /index.php/user/<操作>[.html][/键/值…]}（{@code rewrite} 打开时另认去掉 {@code /index.php} 的形态）。B10 的会员权益与
- * 财务入口在登录态检查之后交给 {@link SiteMemberFinance}（19 文档），B11 的"我的评论/留言"交给 {@link SiteMemberBoards}（20 文档）。
- * 未实现的操作（B25/B26）返回 404；但与旧版一样，先按旧控制器构造函数的
+ * 财务入口在登录态检查之后交给 {@link SiteMemberFinance}（19 文档），B11 的"我的评论/留言"交给 {@link SiteMemberBoards}（20 文档），
+ * B26 的第三方登录 {@code oauth}、{@code logincallback} 交给 {@link MemberOAuthService}（34 文档；未装配时 404）。
+ * 未实现的操作返回 404；但与旧版一样，先按旧控制器构造函数的
  * 白名单检查登录态（{@code User.php:19-25}），未登录时先给"未登录"。
  */
 @Controller
@@ -110,6 +112,8 @@ public class SiteUserController {
     private final SiteMemberFinance finance;
     /** B11 的"我的评论/留言"；没有评论服务时为 null，这两个入口按 404。 */
     private SiteMemberBoards boards;
+    /** B26 的第三方登录；未装配（可写数据源关闭等）时为 null，{@code oauth}、{@code logincallback} 按 404。 */
+    private MemberOAuthService oauth;
 
     public SiteUserController(SitePages pages, LegacyUrlBuilder urls, SiteHtmlRenderer renderer, SiteSessions sessions,
                               ClientIpResolver clientIp, ObjectProvider<MemberAccountService> accounts) {
@@ -123,13 +127,14 @@ public class SiteUserController {
                               ObjectProvider<MemberRecordService> records, ObjectProvider<MemberPurchaseService> purchases,
                               ObjectProvider<MemberWalletService> wallet, ObjectProvider<MemberReferralService> referral,
                               ObjectProvider<CommentService> comments, ObjectProvider<MemberPaymentService> payments,
-                              BrowserExternalAccess external) {
+                              BrowserExternalAccess external, ObjectProvider<MemberOAuthService> oauth) {
         this(pages, urls, renderer, sessions, clientIp, accounts, finance(pages, urls, renderer, clientIp,
                 images.getIfAvailable(), content.getIfAvailable(), records.getIfAvailable(),
                 purchases.getIfAvailable(), wallet.getIfAvailable(), referral.getIfAvailable(),
                 payments.getIfAvailable(), external.w3()));
         CommentService c = comments.getIfAvailable();
         this.boards = c == null ? null : new SiteMemberBoards(pages, urls, renderer, c);
+        this.oauth = oauth.getIfAvailable();
     }
 
     SiteUserController(SitePages pages, LegacyUrlBuilder urls, SiteHtmlRenderer renderer, SiteSessions sessions,
@@ -226,6 +231,18 @@ public class SiteUserController {
             case "findpass" -> post ? json(account.findpass(params, captcha(request, params))) : findpassPage();
             case "findpass_msg" -> post ? json(account.sendMessage(member.state(), params, 2)) : findpassMsgPage(params);
             case "findpass_reset" -> post ? json(account.findpassReset(member.state(), params)) : emptyBody();
+            case "oauth" -> {
+                if (oauth == null) {
+                    throw notFound();
+                }
+                yield oauthStart(request, member.state(), params, ajax);
+            }
+            case "logincallback" -> {
+                if (oauth == null) {
+                    throw notFound();
+                }
+                yield oauthCallback(request, member.state(), params, ajax);
+            }
             case "comment", "gbook" -> {
                 if (boards == null) {
                     throw notFound();
@@ -451,6 +468,66 @@ public class SiteUserController {
         return renderer.member(HttpStatus.OK, t -> t.sitePagesUserUnbind(page), shell.nonce());
     }
 
+    /**
+     * 发起第三方授权（旧 {@code oauth($type)}，{@code User.php:203-210}）：生成 {@code state} 存进会话（没有会话时新建并写出会话 cookie），
+     * 302 到 QQ/微信授权页。方式为空、不支持或未打开 → "参数错误"。
+     */
+    private ResponseEntity<?> oauthStart(HttpServletRequest request, MemberState member,
+                                         Map<String, PhpInput.Value> params, boolean ajax) {
+        String type = text(params, "type");
+        if (type == null || !oauth.enabled(type)) {
+            return error("参数错误", ajax);
+        }
+        List<String> cookies = new ArrayList<>();
+        String target = oauth.start(type, member, sessions.currentOrCreate(request, cookies));
+        return withCookies(ResponseEntity.status(HttpStatus.FOUND), cookies)
+                .header(HttpHeaders.LOCATION, target)
+                .header("X-Robots-Tag", "noindex")
+                .cacheControl(CacheControl.noStore()).build();
+    }
+
+    /**
+     * 授权回调（旧 {@code logincallback}，{@code User.php:212-285}）：{@code type}、{@code code}、{@code state} 取自请求，openid 只来自服务端换取的结果；
+     * 已登录 → 改绑并输出 JSON（同旧版）；游客 → 自动注册/登录后 302 到会员中心。请求里的任何跳转地址参数都不用。
+     */
+    private ResponseEntity<?> oauthCallback(HttpServletRequest request, MemberState member,
+                                            Map<String, PhpInput.Value> params, boolean ajax) {
+        MemberOAuthService.Callback r = oauth.callback(text(params, "type"), PhpInput.scalar(params, "code"),
+                PhpInput.scalar(params, "state"), member, sessions.current(request), clientIp.resolve(request));
+        return switch (r.kind()) {
+            case JSON -> {
+                Map<String, Object> body = new LinkedHashMap<>();
+                body.put("code", r.code());
+                body.put("msg", r.msg());
+                yield jsonBody(body, List.of());
+            }
+            case LOGGED_IN -> withCookies(ResponseEntity.status(HttpStatus.FOUND), r.setCookies())
+                    .location(java.net.URI.create(site.publicPath(urls.user("index")).href()))
+                    .cacheControl(CacheControl.noStore()).build();
+            case ERROR -> error(r.msg(), ajax);
+        };
+    }
+
+    /** 旧 ThinkPHP {@code error($msg)}：ajax 时 JSON，否则提示页；旧版的去处是 {@code javascript:history.back(-1)}，新版不给链接。 */
+    private ResponseEntity<?> error(String msg, boolean ajax) {
+        if (ajax) {
+            Map<String, Object> body = new LinkedHashMap<>();
+            body.put("code", 0);
+            body.put("msg", msg);
+            body.put("data", "");
+            body.put("url", "");
+            body.put("wait", 3);
+            return jsonBody(body, List.of());
+        }
+        UserJumpPage page = new UserJumpPage(pages.member("操作失败"), false, SiteVariants.text(msg), Optional.empty());
+        return renderer.memberPlain(HttpStatus.OK, t -> t.sitePagesUserJump(page));
+    }
+
+    private static String text(Map<String, PhpInput.Value> params, String name) {
+        byte[] v = PhpInput.scalar(params, name);
+        return v == null ? null : new String(v, StandardCharsets.UTF_8);
+    }
+
     // ------------------------------------------------------------------ 通用响应
 
     /** 旧构造函数（User.php:22-25）：先删 6 个会员 cookie，再 error('未登录', url('user/login'))。 */
@@ -523,9 +600,16 @@ public class SiteUserController {
     }
 
     private UserLoginForm loginForm(MemberPageSettings s) {
+        List<NavLink> oauthLinks = new ArrayList<>();
+        if (oauth != null) {
+            for (String type : oauth.enabledTypes()) {
+                oauthLinks.add(new NavLink(type.equals("qq") ? "QQ登录" : "微信登录",
+                        site.publicPath(urls.user("oauth", Map.of("type", type))), false));
+            }
+        }
         return new UserLoginForm(link("login"), link("index"),
                 s.loginVerify() ? Optional.of(captchaView()) : Optional.empty(),
-                s.regOpen() ? Optional.of(link("reg")) : Optional.empty(), link("findpass"));
+                s.regOpen() ? Optional.of(link("reg")) : Optional.empty(), link("findpass"), oauthLinks);
     }
 
     private MemberCaptcha captchaView() {

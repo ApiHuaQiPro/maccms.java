@@ -69,4 +69,28 @@ public interface MemberWriteMapper {
     int resetPasswordByPhone(@Param("phone") String phone, @Param("pwd") String pwd, @Param("random") String random);
 
     int resetPasswordByEmail(@Param("email") String email, @Param("pwd") String pwd, @Param("random") String random);
+
+    // ------------------------------------------------------------------ B26 第三方登录（34 文档第 4 节）
+
+    /**
+     * 未绑定的 openid 自动注册（旧 {@code logincallback} → {@code register()}，{@code index/controller/User.php:258-272}、
+     * {@code common/model/User.php:178-231}）：同 {@link #register}，另写 {@code user_openid_qq} 或 {@code user_openid_weixin}，并在同一条语句里
+     * 要求该 openid 尚未绑定任何会员（并发的两次回调只注册一个）。
+     *
+     * @param qq true 写 {@code user_openid_qq}，false 写 {@code user_openid_weixin}
+     */
+    int registerOpenid(@Param("name") String name, @Param("pwd") String pwd, @Param("points") long points,
+                       @Param("status") int status, @Param("now") long now, @Param("ip") long ip,
+                       @Param("regNum") long regNum, @Param("since") long since, @Param("qq") boolean qq,
+                       @Param("openid") String openid);
+
+    /** 凭 openid 登录（旧 {@code User.php:363-376}）：同 {@link #recordLogin}，条件为查到的编号、该 openid 与 {@code user_status=1}。 */
+    int recordOpenidLogin(@Param("userId") long userId, @Param("qq") boolean qq, @Param("openid") String openid,
+                          @Param("random") String random, @Param("now") long now, @Param("ip") long ip);
+
+    /** 改绑前清掉所有会员上的同一 openid（旧 {@code index/controller/User.php:240-245}）。返回匹配行数，可以为 0。 */
+    int clearOpenid(@Param("qq") boolean qq, @Param("openid") String openid);
+
+    /** 绑定到当前会员（旧 {@code User.php:247-250}）。 */
+    int setOpenid(@Param("userId") long userId, @Param("qq") boolean qq, @Param("openid") String openid);
 }

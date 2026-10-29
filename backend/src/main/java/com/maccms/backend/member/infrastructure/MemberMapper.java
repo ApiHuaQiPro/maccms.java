@@ -62,4 +62,19 @@ public interface MemberMapper {
      */
     Long selectValidMessage(@Param("userId") long userId, @Param("since") long since, @Param("type") int type,
                             @Param("code") String code, @Param("to") String to);
+
+    // ------------------------------------------------------------------ B26 第三方登录（34 文档第 4 节）
+
+    /**
+     * 绑定了该 openid 的会员（旧 {@code infoData([$col => $openid])}，{@code index/controller/User.php:255-257}）：不看状态，按编号取第一行。
+     *
+     * @param qq true 查 {@code user_openid_qq}，false 查 {@code user_openid_weixin}
+     */
+    Long selectIdByOpenid(@Param("qq") boolean qq, @Param("openid") String openid);
+
+    /** 凭 openid 登录要找的会员（旧 {@code login(['col','openid'])}，{@code common/model/User.php:347-357}）：{@code user_status=1}，按编号取第一行。 */
+    MemberLoginCandidate selectOpenidLoginCandidate(@Param("qq") boolean qq, @Param("openid") String openid);
+
+    /** 会员当前绑定的 openid（旧 {@code $check['info'][$col]}）；会员不存在时为 null。 */
+    String selectOpenid(@Param("userId") long userId, @Param("qq") boolean qq);
 }

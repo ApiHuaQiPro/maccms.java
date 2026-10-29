@@ -21,4 +21,7 @@
   <li><a href="${form.regUrl().get().href()}" rel="nofollow">注册</a></li>
   @endif
   <li><a href="${form.findpassUrl().href()}" rel="nofollow">找回密码</a></li>
+  @for(var link : form.oauthLinks())
+  <li><a href="${link.url().href()}" rel="nofollow">${link.label()}</a></li>
+  @endfor
 </ul>

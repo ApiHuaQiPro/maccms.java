@@ -11,6 +11,7 @@ import java.security.SecureRandom;
 import java.time.Clock;
 import com.maccms.backend.content.application.AnnexAdminService;
 import com.maccms.backend.integration.application.MailSender;
+import com.maccms.backend.integration.application.OAuthLogin;
 import com.maccms.backend.integration.application.SmsSender;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
@@ -72,6 +73,22 @@ public class MemberAccountConfiguration {
                 Clock.systemUTC(), new SecureRandom(), sitePath(baseUrl),
                 r == null ? inviterId -> { } : r::invitedRegistration,
                 a == null ? (f, t, z) -> { } : (f, t, z) -> a.register(f, t, z), verification);
+    }
+
+    /**
+     * 第三方登录（B26，34 文档）：可写数据源与第三方登录实现都在时才装配；否则 {@code user/oauth}、{@code user/logincallback} 照 B09 为 404，
+     * 登录页不显示第三方登录。回调地址的前缀取 {@code maccms.site.base-url}（部署配置的固定值）。
+     */
+    @Bean
+    MemberOAuthService memberOAuthService(ObjectProvider<OAuthLogin> oauth, MemberAccountService accounts,
+                                          @Value("${maccms.site.base-url:}") String baseUrl) {
+        OAuthLogin o = oauth.getIfAvailable();
+        if (o == null || !accounts.available()) {
+            return null;
+        }
+        String base = baseUrl == null ? "" : baseUrl.strip();
+        return new MemberOAuthService(o, accounts, base.endsWith("/") ? base : base + "/", Clock.systemUTC(),
+                new SecureRandom());
     }
 
     /** base-url 的路径部分，以 {@code /} 结尾；解析不了时为 {@code /}（site 自己的校验会让启动失败）。 */
