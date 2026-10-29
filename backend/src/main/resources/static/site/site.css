@@ -1108,6 +1108,73 @@ img {
   border-color: var(--site-color-link);
 }
 
+/* B26：QQ/微信登录与绑定，授权入口无需 JavaScript。 */
+.oauth-connect {
+  margin: var(--site-space-3) 0;
+}
+
+.oauth-connect__title {
+  margin: 0 0 var(--site-space-2);
+  font-size: var(--site-font-size-sm);
+  font-weight: normal;
+  color: var(--site-color-muted);
+}
+
+.oauth-connect__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--site-space-2);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.oauth-login,
+.oauth-connect__link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--site-space-2);
+  min-height: 2.5rem;
+  padding: var(--site-space-2) var(--site-space-3);
+  color: var(--site-color-text);
+  background: var(--site-color-surface);
+  border: 1px solid var(--site-color-border);
+  border-radius: var(--site-radius);
+  text-decoration: none;
+}
+
+.oauth-login:focus-visible,
+.oauth-connect__link:focus-visible {
+  outline: var(--site-focus-ring);
+  outline-offset: 2px;
+}
+
+.oauth-connect__icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  flex: 0 0 auto;
+  fill: currentColor;
+}
+
+.oauth-login--qq .oauth-connect__icon,
+.oauth-connect__link--qq .oauth-connect__icon {
+  background: #1677b8;
+  border-radius: 50%;
+}
+
+.oauth-login--weixin .oauth-connect__icon,
+.oauth-connect__link--weixin .oauth-connect__icon {
+  background: #198a43;
+  border-radius: 50%;
+}
+
+.oauth-connect__hint {
+  margin: var(--site-space-2) 0 0;
+  font-size: var(--site-font-size-sm);
+  color: var(--site-color-muted);
+}
+
 /* 提交按钮 */
 .member-form__submit {
   min-height: 2.5rem;

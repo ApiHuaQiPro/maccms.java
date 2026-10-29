@@ -74,10 +74,11 @@
 
 ### 5. 页面与入口
 
-- 登录页、`ajax_login` 片段：已打开的方式显示为登录表单下方 `member-links` 列表里的"QQ登录""微信登录"链接（`user/oauth/type/<方式>.html`），只用已有样式类；都未打开或本批未装配时与之前完全相同（路线图 E10 行"未配置时登录页不显示第三方登录"）。
+- 登录页、`ajax_login` 片段：已打开的方式显示为表单下方的"其他登录方式"，QQ/微信按钮带本地 SVG 图标、平台色与可访问名称，链接仍为 `user/oauth/type/<方式>.html`。都未打开或本批未装配时整个区域不显示（路线图 E10 行"未配置时登录页不显示第三方登录"）。
+- 会员中心资料页：显示同一组已打开平台的"绑定QQ""绑定微信"入口；重复绑定沿用后端的改绑语义。D-B26-10 未决，不显示 openid 解绑操作，也不在前端猜测或展示绑定状态。
 - 回调结果：登录成功 302 到会员中心；改绑输出 JSON（旧版如此）；失败为提示页（ajax 时为 ThinkPHP `error()` 的 JSON），不给"返回"链接（旧版是 `javascript:history.back(-1)`，同 B09 其他提示页）。
 - 装配：可写数据源与 `OAuthLogin` 都在时才装配 `MemberOAuthService`；否则 `oauth`、`logincallback` 与 B09 时一样 404，登录页没有入口。
-- **需要前端配合**：`site/member/loginForm.jte` 是 C/K 共用的模板，本批只在已有的 `member-links` 列表末尾加了两个条件 `<li>`，没有新样式。入口的图标、位置、是否在会员中心显示"已绑定 QQ/微信"与"去绑定"入口，请前端在共享模板上定（旧版模板缺失，没有可照搬的样子）。
+- 登录与绑定共用 `site/member/oauthLinks.jte`，图标是 `site/oauth-qq.svg`、`site/oauth-weixin.svg`，无外部资源或 JavaScript 依赖；模板继续遵守禁用内联 SVG 的安全策略。
 
 ### 6. 测试与验证
 

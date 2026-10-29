@@ -16,12 +16,10 @@
   <p class="member-form__message" role="status" aria-live="polite" data-member-message hidden></p>
   <button class="member-form__submit" type="submit">登录</button>
 </form>
+@template.site.member.oauthLinks(links = form.oauthLinks(), binding = false)
 <ul class="member-links">
   @if(form.regUrl().isPresent())
   <li><a href="${form.regUrl().get().href()}" rel="nofollow">注册</a></li>
   @endif
   <li><a href="${form.findpassUrl().href()}" rel="nofollow">找回密码</a></li>
-  @for(var link : form.oauthLinks())
-  <li><a href="${link.url().href()}" rel="nofollow">${link.label()}</a></li>
-  @endfor
 </ul>

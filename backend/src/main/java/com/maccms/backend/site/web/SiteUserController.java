@@ -378,7 +378,7 @@ public class SiteUserController {
             return notLoggedIn(false);
         }
         MemberShell shell = shell("修改资料");
-        UserInfoPage page = new UserInfoPage(shell, p, link("info"), link("index"));
+        UserInfoPage page = new UserInfoPage(shell, p, link("info"), link("index"), oauthLinks());
         return renderer.member(HttpStatus.OK, t -> t.sitePagesUserInfo(page), shell.nonce());
     }
 
@@ -600,16 +600,20 @@ public class SiteUserController {
     }
 
     private UserLoginForm loginForm(MemberPageSettings s) {
-        List<NavLink> oauthLinks = new ArrayList<>();
+        return new UserLoginForm(link("login"), link("index"),
+                s.loginVerify() ? Optional.of(captchaView()) : Optional.empty(),
+                s.regOpen() ? Optional.of(link("reg")) : Optional.empty(), link("findpass"), oauthLinks());
+    }
+
+    private List<NavLink> oauthLinks() {
+        List<NavLink> links = new ArrayList<>();
         if (oauth != null) {
             for (String type : oauth.enabledTypes()) {
-                oauthLinks.add(new NavLink(type.equals("qq") ? "QQ登录" : "微信登录",
+                links.add(new NavLink(type.equals("qq") ? "QQ登录" : "微信登录",
                         site.publicPath(urls.user("oauth", Map.of("type", type))), false));
             }
         }
-        return new UserLoginForm(link("login"), link("index"),
-                s.loginVerify() ? Optional.of(captchaView()) : Optional.empty(),
-                s.regOpen() ? Optional.of(link("reg")) : Optional.empty(), link("findpass"), oauthLinks);
+        return links;
     }
 
     private MemberCaptcha captchaView() {

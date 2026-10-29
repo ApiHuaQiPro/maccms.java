@@ -41,6 +41,7 @@
     <button class="member-form__submit" type="submit">保存</button>
   </form>
   <noscript><p class="notice member-noscript">本页的表单需要启用 JavaScript。</p></noscript>
+  @template.site.member.oauthLinks(links = page.oauthLinks(), binding = true)
   <ul class="member-links">
     <li><a href="${page.indexUrl().href()}" rel="nofollow">返回会员中心</a></li>
   </ul>

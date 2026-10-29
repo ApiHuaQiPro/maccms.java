@@ -21,6 +21,7 @@ import com.maccms.backend.member.application.MemberSessionService;
 import com.maccms.backend.member.application.view.AccountReply;
 import com.maccms.backend.member.application.view.MemberGroup;
 import com.maccms.backend.member.application.view.MemberPageSettings;
+import com.maccms.backend.member.application.view.MemberProfile;
 import com.maccms.backend.member.application.view.MemberState;
 import com.maccms.backend.member.application.view.PageMember;
 import com.maccms.backend.site.config.SiteConfiguration;
@@ -196,7 +197,9 @@ class SiteOAuthMvcTest {
     void loginPageShowsOnlyEnabledProviders() throws Exception {
         String page = body(mvc.perform(get("/index.php/user/login.html")).andReturn());
         assertThat(page).contains("href=\"/index.php/user/oauth/type/qq.html\"", ">QQ登录<",
-                "href=\"/index.php/user/oauth/type/weixin.html\"", ">微信登录<");
+                "href=\"/index.php/user/oauth/type/weixin.html\"", ">微信登录<",
+                "class=\"oauth-login oauth-login--qq\"", "class=\"oauth-login oauth-login--weixin\"",
+                "aria-label=\"使用 QQ 登录\"", "aria-label=\"使用微信登录\"");
         fake.enabled.remove("weixin");
         page = body(mvc.perform(get("/index.php/user/login.html")).andReturn());
         assertThat(page).contains("QQ登录").doesNotContain("微信登录").doesNotContain("user/oauth/type/weixin");
@@ -204,6 +207,19 @@ class SiteOAuthMvcTest {
         page = body(mvc.perform(get("/index.php/user/login.html")).andReturn());
         assertThat(page).doesNotContain("user/oauth").doesNotContain("QQ登录");
         assertThat(body(mvc.perform(get("/index.php/user/ajax_login.html")).andReturn())).doesNotContain("user/oauth");
+    }
+
+    @Test
+    void memberInfoOffersBindingWithoutUnbindActions() throws Exception {
+        loggedIn();
+        when(accounts.profile(any())).thenReturn(new MemberProfile(7, "member07", "会员", 3, "VIP会员", 0,
+                0, "", "", "", "", "", "", "", "昵称", "", "", ""));
+        String page = body(mvc.perform(get("/index.php/user/info.html")).andReturn());
+        assertThat(page).contains("第三方账号", "绑定QQ", "绑定微信",
+                "href=\"/index.php/user/oauth/type/qq.html\"", "href=\"/index.php/user/oauth/type/weixin.html\"",
+                "class=\"oauth-connect__link oauth-connect__link--qq\"",
+                "class=\"oauth-connect__link oauth-connect__link--weixin\"")
+                .doesNotContain("解绑QQ", "解绑微信");
     }
 
     @Test
