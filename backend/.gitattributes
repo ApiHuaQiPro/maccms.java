@@ -5,3 +5,5 @@ mvnw text eol=lf
 src/test/resources/legacyconfig/cases/*.php -text -whitespace
 # 后台模板原样转写旧后台 HTML，输出字节与 PHP 黄金逐项比对：工作区里也必须是 LF（Windows 的 autocrlf 会改成 CRLF，页面多出 \r）
 src/main/jte-admin/** text eol=lf
+# 安装向导表结构指纹按字节随 jar 发布（B22）：工作区里也固定 LF，autocrlf 检出打出的 jar 才不带 \r
+src/main/resources/install/schema-fingerprint.txt text eol=lf

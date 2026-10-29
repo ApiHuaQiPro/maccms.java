@@ -163,7 +163,7 @@ class InstallWizardMySqlIT {
         String db = newDatabase(true);
         Map<String, String> fp = new InstallDatabaseProbe(new InstallConnections()).inspect(target(db)).fingerprint();
         String actual = InstallSchema.format(fp);
-        String resource = Files.exists(FINGERPRINT_RESOURCE) ? Files.readString(FINGERPRINT_RESOURCE, StandardCharsets.UTF_8) : "";
+        String resource = Files.exists(FINGERPRINT_RESOURCE) ? Files.readString(FINGERPRINT_RESOURCE, StandardCharsets.UTF_8).replace("\r\n", "\n") : "";
         if (!actual.equals(resource)) {
             Path out = Path.of("target", "install-schema-fingerprint.actual.txt");
             Files.writeString(out, actual, StandardCharsets.UTF_8);

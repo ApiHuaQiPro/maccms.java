@@ -62,7 +62,8 @@ public final class InstallSchema {
 
     static Map<String, String> parse(String text) {
         Map<String, String> out = new LinkedHashMap<>();
-        for (String line : text.split("\n")) {
+        // 定义里的回车已转义为 \r，行尾真正的 \r 只能来自 CRLF 检出或打包
+        for (String line : text.split("\r?\n")) {
             if (line.isEmpty()) {
                 continue;
             }
