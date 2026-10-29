@@ -2,6 +2,8 @@ target/
 # 本地环境配置（含凭证），只提交 *.example
 config/*.env
 !config/*.env.example
+# B22 安装向导写的部署配置文件（含数据库密码）
+config/*.properties
 *.log
 .idea/
 *.iml

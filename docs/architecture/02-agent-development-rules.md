@@ -85,6 +85,13 @@
 - 第三方配置只经 `ThirdPartyConfig` 读取（启动时读一次，修改后重启生效）；密钥字段只能用 `secret()` 取 `Secret`，明文不得写入日志、异常信息或评论。第三方请求与响应要写日志时先经 `LogRedactor`（客户端已对自己的日志这样做）。
 - 第三方接口的测试用 `LoopbackMockServer`（回环地址、随机端口），假值一律形如 `test-only-…`；外部地址的反例只用 TEST-NET（203.0.113.0/24）与 `.invalid`/`.test` 保留名。
 
+### 2.10 B22 安装向导
+
+- `install` 模块（`31-b22-install-wizard.md`）只在安装模式（`MACCMS_INSTALL_MODE=true`，`install.InstallApplication`）下装配：`InstallApplication` 与 `install.config.InstallConfiguration` 都不带组件注解，正常模式扫描不到；模块里不要加 `@Component`/`@Configuration`/`@Controller` 等注解（`InstallModeTest` 锁定）。分层 `web → application → infrastructure`，JDBC 只在 `install.infrastructure`。
+- 安装向导不执行任何 DDL：目标库由部署方在库外导入 install.sql，向导只读核对（`InstallDatabaseProbe` 的固定 SELECT；`SELECT 1 FROM mac_vod_search LIMIT 1` 是"不读写旧缓存表"在本批的唯一例外）。表结构基准 `install/schema-fingerprint.txt` 由 `InstallWizardMySqlIT` 锁定，install.sql 有变化时同步更新。
+- 写库只经 `WriteDatabase.openInstallTarget`（只给 `install.infrastructure`，`WriteGuardTest` 锁定）与登记的 `install / mac_type、mac_admin / INSERT`；安装锁只经 `LegacySiteFiles.writeInstallLock`。
+- 页面模板在 `backend/src/main/jte-install/`（生成到 `install.web.jte`），规则同后台模板（`InstallTemplatePolicyTest`）。
+
 ### 3. 数据库
 
 - **禁止 DDL**（路线图第 1.2 节"零结构变更"，B07 起取代原"DDL 独立评审"）：不建表、不加/改/删列与索引、不转引擎或字符集，不建触发器、存储过程、视图、事件；不执行表维护语句与账号/权限语句；应用代码与资源中不得有 `schema.sql`/`data.sql`、Flyway/Liquibase 或任何初始化器。数据库账号由数据库管理员在获批部署时创建，代码不建、不改账号。没有结构迁移，旧数据不需要迁移；回滚只用 DML（`12-write-infrastructure.md` 第 6 节）。

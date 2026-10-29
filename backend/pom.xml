@@ -178,6 +178,8 @@
                     <include>js/jquery.cookie.js</include>
                     <!-- B15：广告位列表"复制调用代码"（旧 template/ads.html 引用 __STATIC__/js/jquery.clipboard.js） -->
                     <include>js/jquery.clipboard.js</include>
+                    <!-- B22：安装向导的样式（旧 application/install/view/index/head.html 引用 __STATIC__/css/install.css） -->
+                    <include>css/install.css</include>
                 </includes>
             </resource>
             <!--
@@ -256,6 +258,22 @@
                             <sourceDirectory>${project.basedir}/src/main/jte-admin</sourceDirectory>
                             <targetDirectory>${project.build.directory}/generated-sources/jte-admin</targetDirectory>
                             <packageName>com.maccms.backend.admin.web.jte</packageName>
+                        </configuration>
+                    </execution>
+                    <!--
+                      B22 安装向导模板（src/main/jte-install，生成到 com.maccms.backend.install.web.jte）：旧 application/install/view/index/*.html
+                      原样转写，与站点、后台模板分开生成；更严格的策略由 InstallTemplatePolicyTest 在 verify 中执行。
+                    -->
+                    <execution>
+                        <id>jte-install</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <configuration>
+                            <sourceDirectory>${project.basedir}/src/main/jte-install</sourceDirectory>
+                            <targetDirectory>${project.build.directory}/generated-sources/jte-install</targetDirectory>
+                            <packageName>com.maccms.backend.install.web.jte</packageName>
                         </configuration>
                     </execution>
                 </executions>

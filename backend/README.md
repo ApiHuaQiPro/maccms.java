@@ -106,6 +106,25 @@ java -jar target/maccms-backend-0.1.0-SNAPSHOT.jar
 - 也可以不打包直接运行：`./mvnw spring-boot:run`（同样需要上面的环境变量）。
 - 本机没有只读账号时，可用开发库 + root，并显式设置 `MACCMS_DB_ALLOW_ROOT=true`；连接仍是只读会话（`SET SESSION TRANSACTION READ ONLY`），应用无法写库。
 
+### 安装向导（B22）
+
+新装站点时以安装模式启动（只有安装向导，不需要也不创建数据库连接池；详见 `docs/architecture/31-b22-install-wizard.md`）：
+
+```bash
+# 1. 部署方先在库外建库并原样导入 install.sql（向导不建库、不建表）
+# 2. 安装模式
+export MACCMS_INSTALL_MODE=true
+export MACCMS_LEGACY_CONFIG_DIR=<旧站 application 目录>
+export MACCMS_DEPLOY_CONFIG=<仓库与网站目录之外的绝对路径>/maccms-deploy.properties
+java -jar target/maccms-backend-0.1.0-SNAPSHOT.jar      # 浏览器打开 http://127.0.0.1:18280/install.php
+# 3. 装完后去掉 MACCMS_INSTALL_MODE，保留 MACCMS_DEPLOY_CONFIG 重启为正常模式（同名环境变量优先于文件里的值）
+```
+
+- 向导第四步核对目标库与 install.sql 完全一致且数据与刚导入时相同，通过后把连接写进 `MACCMS_DEPLOY_CONFIG`；第五步写初始分类（可选）、
+  第一个管理员、`extra/maccms.php` 与安装锁 `application/data/install/install.lock`。安装锁存在时向导拒绝一切请求。
+- 本机开发用 root 时设置 `MACCMS_INSTALL_ALLOW_ROOT=true`；`MACCMS_ADMIN_ENTRY`（如 `/_admin.php`）决定装完后的跳转地址。
+- 部署配置文件含数据库密码，不要放进仓库或网站目录（`backend/config/*.properties` 已被忽略）。
+
 ### 数据库账号
 
 生产/预发应使用**只授予 SELECT 的专用账号**，由数据库管理员创建（本批没有创建或修改任何账号）。参考语句：
