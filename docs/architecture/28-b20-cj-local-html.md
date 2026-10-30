@@ -5,7 +5,7 @@
 > - B17 `25-b17-collect-config.md`（规则节点的读写、删除节点时连带删除）、B19 `27-b19-collect-ingest.md`（入库锁与入库规则，导入走 B19）、B07 `12-write-infrastructure.md`（写入登记、并发测试、回滚演练）；
 > - 用户决定（2026-10-17）：后台复用旧后台 HTML 结构与静态资产，转成 jte，不做新视觉设计。
 >
-> 旧代码位置一律相对仓库根目录；新代码写作 `backend/…`。
+> 旧代码位置一律相对仓库根目录；新代码写作 `…`。
 
 ### 0. 起点与分支
 
@@ -21,7 +21,7 @@
 |---|---|
 | `application/common/util/Collection.php`（`url_list`、`get_url_lists`、`get_content`、`cut_html`、`replace_item`、`replace_sg`、`url_check`、`get_html`） | `collect.application.CjRules` + `CjPcre`，页面来自本地 HTML 目录（第 3、4 节） |
 | `admin/controller/Cj.php` 的 `show_url`、`col_url`、`col_content`、`publish`、`show`、`content_del`、`content_into`、`program`、`col_all` | `collect.application.CjRunService` + `admin.web.AdminCjActions`（第 6 节） |
-| `admin/view/cj/{show_url,col_url,publish,show,program}.html` | `backend/src/main/jte-admin/admin/pages/cj/*.jte`（第 8 节）；`col_content.html` 是没有被使用的空模板，不转写 |
+| `admin/view/cj/{show_url,col_url,publish,show,program}.html` | `src/main/jte-admin/admin/pages/cj/*.jte`（第 8 节）；`col_content.html` 是没有被使用的空模板，不转写 |
 
 | 不在本批 | 归属 |
 |---|---|
@@ -154,7 +154,7 @@ stateDiagram-v2
 
 ### 7. PHP 与 Java 的提取一致（黄金）
 
-- `backend/src/test/php/cj_rules_golden.php` 在 PHP 7.3.33 与 8.0.30 上**直接调用旧 `Collection.php`**，不改旧代码、不连库、不联网：类在命名空间 `app\common\util` 里以非限定名调用 `mac_curl_get()`、`time()`，脚本在同一命名空间定义同名函数（返回用例的页面、记下请求的地址；固定时间）。`get_content` 的 `static $oldurl` 在一个 PHP 进程内累积，所以每个用例在单独的子进程里执行。
+- `src/test/php/cj_rules_golden.php` 在 PHP 7.3.33 与 8.0.30 上**直接调用旧 `Collection.php`**，不改旧代码、不连库、不联网：类在命名空间 `app\common\util` 里以非限定名调用 `mac_curl_get()`、`time()`，脚本在同一命名空间定义同名函数（返回用例的页面、记下请求的地址；固定时间）。`get_content` 的 `static $oldurl` 在一个 PHP 进程内累积，所以每个用例在单独的子进程里执行。
 - **55 个用例、59 个操作**：序列网址（步长、结束页小于开始页、0）、多网址（`\r\n` 与 `\n` 混合、空行、空格）、单一网址、未知类型、数字串类型；列表页（相对、根相对、绝对、单双引号与无引号、大写 `</A>`、名称带标签、以 `a`/`/` 开头的名称、没有 `href`、`#`、`../`、带参数、包含与不包含筛选、`page_base`、列表页在根目录、以 `/` 结尾、没有路径、带账号端口查询与片段、区间找不到、开始标记重复、区间为空、页面缺失、内容为 `0` 与空串、GBK、GBK 当 UTF-8、小写 `utf-8`）；正文（固定值规则、过滤规则的各种替换引用与转义、无效正则、空行、`0`、`/` 与 `<\/a>`、按字节匹配、提前结束分隔符后的修饰符、空模式、27 个 PCRE 语法探针、自定义项（空规则、固定值、覆盖标题与时间、空英文名、数字英文名、`content` 键）、坏 JSON、标量 JSON、没有任何规则、页面缺失、规则找不到、空开始标记、多个 `[内容]`、BIG5、非法 UTF-8）；分页（上下页、不分页连接、下一页缺失、下一页规则为空、全部列出、重复与自身链接、多次采集共享已访问地址、空白开始标记）。
 - `CjRulesGoldenTest`：Java 对同一节点与页面的结果逐值相同（带类型、保持键的顺序、字符串按字节），`json_encode` 的文字相同，按顺序读取的页面地址相同。
 - **PHP 8.0**：内容采集一律 TypeError（第 3 节开头），`explode('')` 为 ValueError；测试核对 8.0 只在这两类错误上与 7.3 不同（33 个操作），其余操作 8.0 与 7.3 的黄金逐字节相同。新版的这部分按 7.3。

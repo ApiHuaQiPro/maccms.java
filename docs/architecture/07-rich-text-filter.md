@@ -7,13 +7,13 @@
 
 | 位置 | 内容 |
 |---|---|
-| `backend/src/main/java/com/maccms/backend/site/application/RichTextSanitizer.java` | 富文本过滤（纯函数），结果 `Result(SafeHtml html, Outcome outcome, Set<Finding> findings)` |
+| `src/main/java/com/maccms/backend/site/application/RichTextSanitizer.java` | 富文本过滤（纯函数），结果 `Result(SafeHtml html, Outcome outcome, Set<Finding> findings)` |
 | `.../site/application/SafeHtml.java` | 过滤结果类型：构造器包内可见，只有过滤器能创建；`toString()` 不输出内容 |
 | `.../site/application/LegacyTextEntities.java` | 普通文本字段的字符引用解码（只解一次、只认带分号的引用） |
-| `backend/src/test/resources/site/rich-text/rich-text-vectors.json` | 富文本黄金向量 99 条 |
-| `backend/src/test/resources/site/rich-text/entity-vectors.json`、`entity_golden.php` | 普通文本实体黄金向量 29 条与 PHP 生成/核对脚本 |
-| `backend/src/test/java/.../site/application/RichTextSanitizerGoldenTest.java`、`RichTextSanitizerTest.java`、`LegacyTextEntitiesTest.java` | 向量、不变量、边界、随机输入、日志 |
-| `backend/src/test/java/.../site/SiteRichTextTemplateTest.java`、`backend/src/test/jte-richtext*/` | 与 jte 严格站点策略的配合 |
+| `src/test/resources/site/rich-text/rich-text-vectors.json` | 富文本黄金向量 99 条 |
+| `src/test/resources/site/rich-text/entity-vectors.json`、`entity_golden.php` | 普通文本实体黄金向量 29 条与 PHP 生成/核对脚本 |
+| `src/test/java/.../site/application/RichTextSanitizerGoldenTest.java`、`RichTextSanitizerTest.java`、`LegacyTextEntitiesTest.java` | 向量、不变量、边界、随机输入、日志 |
+| `src/test/java/.../site/SiteRichTextTemplateTest.java`、`src/test/jte-richtext*/` | 与 jte 严格站点策略的配合 |
 
 依赖：`org.jsoup:jsoup` 1.23.2 从 `test` 改为编译作用域（此前已固定用于测试）。`ModuleBoundaryTest` 新增：site 只能用 jsoup 的 nodes/parser/safety 等包，禁止 `org.jsoup.Jsoup`、`Connection`、`helper.HttpConnection` 与通配导入（它们带网络功能）。
 
@@ -28,7 +28,7 @@
 | 发布节奏【资料：maven-metadata】 | 已在本工程使用并固定 | 2026-09-21～10-11 间发布 5 个版本，最新版发布于本任务当天 |
 | 本工程现状 | 已固定在 pom（测试用），无新增下载 | 新依赖 |
 
-同一组 22 个恶意/边界输入、等价白名单下的对比（`backend/target` 下的一次性程序，未提交）【实测】：
+同一组 22 个恶意/边界输入、等价白名单下的对比（`target` 下的一次性程序，未提交）【实测】：
 
 - 两者都删除 `<script>`、`<style>`、`<iframe>`、svg/math 内容、事件属性、`style` 属性、注释，错误嵌套的修复结果相同。
 - **两者都放行协议相对地址** `<a href="//evil.test/x">`（OWASP 视为相对地址；jsoup Safelist 不设协议时不检查）。所以无论选哪个，链接与图片都必须再经本项目的 `SafeUrl` / `ImageUrlNormalizer`。

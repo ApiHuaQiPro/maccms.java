@@ -1,8 +1,18 @@
-# ThinkPHP runtime cache/logs and user uploads
-runtime/*
-!runtime/.gitkeep
-upload/*
-!upload/.gitkeep
+# Java（Maven）
+target/
+# 本地环境配置（含凭证），只提交 *.example
+config/*.env
+!config/*.env.example
+# B22 安装向导写的部署配置文件（含数据库密码）
+config/*.properties
+*.log
+*.iml
+
+# 旧站 PHP（只读参照，在 php/ 下）：ThinkPHP 运行缓存/日志与用户上传
+php/runtime/*
+!php/runtime/.gitkeep
+php/upload/*
+!php/upload/.gitkeep
 
 # Secrets / local overrides (production config lives outside the repo: D:\Ai\MACCMS\prod-config)
 .env

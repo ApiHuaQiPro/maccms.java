@@ -5,7 +5,7 @@
 > - B02 `11-guards-and-legacy-config.md`（旧配置只读层）、B07 `12-write-infrastructure.md`（写 SQL 规范、登记表、回滚演练工具）、B12 `21-b12-admin-framework.md`（后台入口、会话、权限、页面与脚本策略）、B13/B14（后台表单与黄金对照的做法）；
 > - 用户决定（2026-10-17）：后台复用旧后台 HTML 结构与静态资产，转成 jte，不做新视觉设计。
 >
-> 旧代码位置一律相对仓库根目录；新代码写作 `backend/…`。
+> 旧代码位置一律相对仓库根目录；新代码写作 `…`。
 
 ### 0. 起点与分支
 
@@ -62,7 +62,7 @@
 
 - `VarExportWriter.macArr2File`：`"<?php\nreturn " . var_export($arr, true) . ";"`（旧 `mac_arr2file`，`application/common.php`）；`addonsFile`：`"<?php\n\nreturn …;"`（`Service::refresh` 写 `extra/addons.php`）；`addonConfigFile`：`"<?php\n\nreturn …;\n"`（`set_addon_fullconfig`）。
 - 输出规则与 PHP 7.3/8.0 逐字节相同：键（整数键与数字串键）、字符串转义（`\\` 与 `\'`）、嵌套缩进与 `array (` 后的空格、空数组、布尔与 NULL、浮点（PHP 8 的 `serialize_precision=-1` 最短往返表示；`php_gcvt` 的指数形式与补 `.0`）。不能写的值（含 NUL 的字符串、`Long.MIN_VALUE`、NaN/∞）拒绝写，调用方报"参数错误"（D-B15-7）。
-- 黄金：`backend/src/test/php/b15_php_semantics_golden.php` 在 PHP 8.0.30 与 7.3.33 上各生成 310 个值、242 个浮点、252 项 HTML 实体表、231 个 `htmlentities` 向量、7 个 `mac_txt_replace` 向量（`backend/src/test/resources/legacyconfig/php{80,73}-semantics-golden.json`）；`VarExportWriterGoldenTest` 逐字节比较，并把仓库里每个配置文件"读入 → 写出"与原文件对比（CRLF 规范为 LF 后相同）。
+- 黄金：`src/test/php/b15_php_semantics_golden.php` 在 PHP 8.0.30 与 7.3.33 上各生成 310 个值、242 个浮点、252 项 HTML 实体表、231 个 `htmlentities` 向量、7 个 `mac_txt_replace` 向量（`src/test/resources/legacyconfig/php{80,73}-semantics-golden.json`）；`VarExportWriterGoldenTest` 逐字节比较，并把仓库里每个配置文件"读入 → 写出"与原文件对比（CRLF 规范为 LF 后相同）。
 
 #### 3.2 `input()` 与 `htmlentities`
 
@@ -165,7 +165,7 @@ jte 模板会被编译成 Java 代码在服务器上运行，风险高于旧版�
 
 #### 7.6 现场演示记录（路线图第 5.6 节验收演示 ①–⑥）
 
-2026-10-26 在本机用可执行 jar（`java -jar backend/target/maccms-backend-0.1.0-SNAPSHOT.jar`，Temurin JDK 21.0.11）、一次性库 `maccms_it_20261026174419_3aab1661`（导入 install.sql + 1 个管理员，演示后删除并确认不存在）与临时站点副本（`application/` 复制自仓库，只关闭后台登录验证码）演示，全部经真实 HTTP。驱动脚本在仓库外，完整记录随交付评论附上。
+2026-10-26 在本机用可执行 jar（`java -jar target/maccms-backend-0.1.0-SNAPSHOT.jar`，Temurin JDK 21.0.11）、一次性库 `maccms_it_20261026174419_3aab1661`（导入 install.sql + 1 个管理员，演示后删除并确认不存在）与临时站点副本（`application/` 复制自仓库，只关闭后台登录验证码）演示，全部经真实 HTTP。驱动脚本在仓库外，完整记录随交付评论附上。
 
 | 演示 | 结果 |
 |---|---|
@@ -179,7 +179,7 @@ jte 模板会被编译成 Java 代码在服务器上运行，风险高于旧版�
 
 ### 8. 页面：复用旧后台结构
 
-- 旧 `application/admin/view/{system,vodplayer,vodserver,voddowner,domain,timming,urlsend,template,database,addon}/*.html` 逐个转写为 `backend/src/main/jte-admin/admin/pages/…/*.jte`，统一视图 `ConfigPage` + `LegacyView`（`at`/`each`/`eq`/`macDay` 等对应旧模板写法）；旧内联脚本逐行移到 `src/main/resources/static/admin-assets/*.js`，数据经 `data-*` 属性传入；旧 `static/js/jquery.cookie.js`、`jquery.clipboard.js` 构建时原样打包。
+- 旧 `application/admin/view/{system,vodplayer,vodserver,voddowner,domain,timming,urlsend,template,database,addon}/*.html` 逐个转写为 `src/main/jte-admin/admin/pages/…/*.jte`，统一视图 `ConfigPage` + `LegacyView`（`at`/`each`/`eq`/`macDay` 等对应旧模板写法）；旧内联脚本逐行移到 `src/main/resources/static/admin-assets/*.js`，数据经 `data-*` 属性传入；旧 `static/js/jquery.cookie.js`、`jquery.clipboard.js` 构建时原样打包。
 - 为满足 jte 与 `AdminTemplatePolicyTest` 的最小改动：去掉多出的 `</a>`、`</tbody>`、`</option>`，补上缺的 `</div>`；`checked`/`selected`/`readonly` 改为按条件输出的属性；旧模板里没有调用方的内联函数不再输出；各配置页"去服务商注册/申请"的外链照旧（`AdminTemplatePolicyTest` 登记的导航链接）；layui 不会触发的原生 `onChange` 去掉（D-B15-17）。
 - 新增：模板编辑页的 `fversion`、`op` 隐藏字段，"恢复上一版"按钮，错误显示区；模板管理页表尾一行"前台当前使用的模板"；欢迎页的系统提示一行。
 
@@ -209,7 +209,7 @@ jte 模板会被编译成 Java 代码在服务器上运行，风险高于旧版�
 
 | 内容 | 测试 / 证据 |
 |---|---|
-| PHP 黄金（PHP 8.0.30 与 7.3.33） | `backend/src/test/php/admin_system_golden.php` + `admin_system_child.php`：一次性库、php-cgi 跑完整的 `_admin.php` + ThinkPHP + 控制器，站点是临时副本；每个场景开始前还原会被写的区域。表单步骤先 GET 页面、按 jQuery `serialize()` 取字段再 POST。记录状态码、头、正文与"这一步之后变化的被跟踪文件"（`application/extra/*.php`、`route.php`、`static/js` 的三个文件、`static/player`、`static/addons`、`template/`、`addons/`、`application/data/backup/`）。两版各 **36 个场景、230 步** → `backend/src/test/resources/admin/system/php{80,73}-golden.json` |
+| PHP 黄金（PHP 8.0.30 与 7.3.33） | `src/test/php/admin_system_golden.php` + `admin_system_child.php`：一次性库、php-cgi 跑完整的 `_admin.php` + ThinkPHP + 控制器，站点是临时副本；每个场景开始前还原会被写的区域。表单步骤先 GET 页面、按 jQuery `serialize()` 取字段再 POST。记录状态码、头、正文与"这一步之后变化的被跟踪文件"（`application/extra/*.php`、`route.php`、`static/js` 的三个文件、`static/player`、`static/addons`、`template/`、`addons/`、`application/data/backup/`）。两版各 **36 个场景、230 步** → `src/test/resources/admin/system/php{80,73}-golden.json` |
 | 黄金复放（不连库） | `AdminSystemGoldenTest`：按黄金的初始文件重建临时站点，同样的请求发给新版，逐步比较状态码、JSON/文本正文逐字节、页面的表单字段（`AdminForm`）与模板列表的表格行、变化的文件逐字节。两版共 **418 步**，除 `JAVA`/`USE_73` 登记的有意差异外 0 处不同 |
 | 黄金复放（真实 MySQL） | `AdminSystemGoldenMySqlIT.databaseScenariosMatchPhpGolden`：`database`、`database-plain` 两个场景两版共 **42 步**（表列表、备份导出 gz 与明文逐字节——头部主机/端口/库名与 `mac_admin` 的登录字段归一、备份列表、查看列、批量替换后 `mac_vod` 的行、删除备份） |
 | 数据库工具的 SQL 与结构 | 同一测试类：导出只发出 SHOW/SELECT、前后 26 张表数据不变；四个拒绝的入口不发语句；批量替换只改含查找串的行（区分大小写）；回滚演练：快照 → 替换 → `DmlRestore` 只用 DML 恢复 → diff 为空；结束时表结构指纹与导入 install.sql 时相同，删库并确认不存在 |

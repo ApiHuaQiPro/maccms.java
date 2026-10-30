@@ -1,7 +1,7 @@
 ## 视频搜索/筛选：一次性 MySQL 库性能、EXPLAIN 与表锁测量报告（MACC-19，T2）
 
 > 依据：`docs/architecture/09-content-search-filter-plan.md` 第 6.5 节与第 8 节 T2。被测代码是父任务主线 `ce531c1`（含 MACC-18 的搜索 API/SQL），本任务没有修改任何业务代码、配置默认值、契约、PHP、DDL 或账号。
-> 测量脚本：`backend/src/test/perf/`（`SearchPerf.java`、`run-all.sh`、`summarize.py`，用法见该目录 `README.md`，不进 `./mvnw verify`）。
+> 测量脚本：`src/test/perf/`（`SearchPerf.java`、`run-all.sh`、`summarize.py`，用法见该目录 `README.md`，不进 `./mvnw verify`）。
 > 原始结果：`docs/architecture/09-content-search-filter-perf-raw/`（下文表格由 `summarize.py` 从这些文件生成，可复算；表中"⚠"标出冷态错误码与热态出错次数，HTTP 列只在不全是 200 时给出状态码分布）。
 > 所有数字都是**本机一次运行**的测量值（2026-10-15 18:26–19:40），不是吞吐或延迟承诺。
 
@@ -222,9 +222,9 @@
 | 100 万行基准：`kw-low` hits、`kw-en` hits、`kw-amp` time 各 1 次 HTTP 500，`kw-low+area` time 1 次、hits 2 次 HTTP 500 | `s1m-bench.tsv` 的 `http_status` 列；`run.log` |
 | 100 万行锁实验：4 个 HTTP 读者时 2 次 500 | `s1m-lock.tsv` |
 | 同期直连执行同一语句：`kw-low+area` 冷态分页语句 3 s 后错误 **1028**；锁实验直连读者 1028 共 8 次（10 万行 2 次、100 万行 6 次），其余为 3024 | `s1m-bench.tsv` `cold_error` 列；`s100k-lock.tsv`、`s1m-lock.tsv` |
-| 应用日志：500 对应的 ERROR 为 `GlobalExceptionHandler: database access failed: UncategorizedSQLException`（不是 `ContentReadService` 的 `database statement timeout`），栈在 `ContentReadService.doListVideos`（分页语句） | 应用日志（未提交，`backend/target/perf/s1m-app.log`、`s1m-lock-app.log`） |
+| 应用日志：500 对应的 ERROR 为 `GlobalExceptionHandler: database access failed: UncategorizedSQLException`（不是 `ContentReadService` 的 `database statement timeout`），栈在 `ContentReadService.doListVideos`（分页语句） | 应用日志（未提交，`target/perf/s1m-app.log`、`s1m-lock-app.log`） |
 
-根因：MySQL 5.7 在 filesort 期间被 `MAX_EXECUTION_TIME` 中止时报 1028 `ER_FILSORT_ABORT`（"Sort aborted"），而 `backend/src/main/java/com/maccms/backend/content/infrastructure/StatementTimeouts.java` 只识别 3024。MACC-18 的集成测试用 `LOCK TABLES … WRITE` 制造超时，语句在等锁阶段被中止，只会得到 3024，所以没有覆盖到。应用日志按设计不记录错误码与 message，500 与 1028 的对应是按"同一语句、同一时段、直连得到 1028 + 应用走了非 3024 分支"推断的；在本次未加负载的单独复现中（`s1m-timeout.txt` 末尾，kw-amp 分页语句各 6 次）语句都在 3 s 内完成，没有复现。修复建议（未实施）：`ContentReadService.read` 把 1028 也归为 503（或只在带时限的语句上这样做），并用"排序阶段被中止"的集成测试锁定。
+根因：MySQL 5.7 在 filesort 期间被 `MAX_EXECUTION_TIME` 中止时报 1028 `ER_FILSORT_ABORT`（"Sort aborted"），而 `src/main/java/com/maccms/backend/content/infrastructure/StatementTimeouts.java` 只识别 3024。MACC-18 的集成测试用 `LOCK TABLES … WRITE` 制造超时，语句在等锁阶段被中止，只会得到 3024，所以没有覆盖到。应用日志按设计不记录错误码与 message，500 与 1028 的对应是按"同一语句、同一时段、直连得到 1028 + 应用走了非 3024 分支"推断的；在本次未加负载的单独复现中（`s1m-timeout.txt` 末尾，kw-amp 分页语句各 6 次）语句都在 3 s 内完成，没有复现。修复建议（未实施）：`ContentReadService.read` 把 1028 也归为 503（或只在带时限的语句上这样做），并用"排序阶段被中止"的集成测试锁定。
 
 > **修复状态（MACC-22）**：`StatementTimeouts.isServerTimeout` 现按错误码 3024 或 1028 识别（不限于带时限的语句），1028 与 3024 返回同一 503 响应体、同一日志 `database statement timeout: <类型链>`。回归测试为异常链替身（`StatementTimeoutsTest`、`ContentSearchApiContractTest`、`ContentReadServiceUnavailableTest`）；"排序阶段被中止"的真实 MySQL 集成测试仍未做（本节单独复现未成功，无法稳定触发）。本节以上测量数据是修复前的记录，未重测。
 
@@ -255,7 +255,7 @@
 ### 9. 复现
 
 ```bash
-cd backend
+# 在仓库根目录执行（2026-10-30 前为 cd backend）
 ./mvnw -q package -DskipTests
 export MACCMS_IT_ADMIN_URL='jdbc:mysql://127.0.0.1:3306/?characterEncoding=UTF-8&useSSL=false'
 export MACCMS_IT_ADMIN_USERNAME=<本机管理账号>

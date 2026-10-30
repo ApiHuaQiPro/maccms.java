@@ -5,7 +5,7 @@
 > - B05/B06 前台页面（`15-b05-readonly-pages.md`、`16-b06-misc-pages-provide.md`）、B07 写入基础（`12-write-infrastructure.md`）、B12 后台框架（`21-b12-admin-framework.md`）、B15 配置写回与旧站文件（`24-b15-admin-system.md` 第 3 节，D-B15-18 重启生效）；
 > - 用户决定（2026-10-17）：后台复用旧后台 HTML 结构与静态资产，转成 jte，不做新视觉设计。
 >
-> 旧代码位置一律相对仓库根目录；新代码写作 `backend/…`。
+> 旧代码位置一律相对仓库根目录；新代码写作 `…`。
 
 ### 0. 起点与分支
 
@@ -53,7 +53,7 @@
 - `reset_html_filename`：以 `/` 结尾补 `index`；整串没有 `.` 时补后缀；去掉 `?` 之后；`./` + 路径并两次 `//` → `/`。新版返回去掉 `./` 的相对路径。
 - 固定文件名：`index.html`、`wap_index.html`、`map.html`、`rss/<ac2>[<sp><页>].xml`、`label/<名>`。
 - 只实现静态分支：`view` 不是静态模式（分类/详情/专题须为 2，播放/下载 2～4）或规则为空时，调用方按旧提示"浏览模式非静态，无法生成"停止（旧版 view 为 3 以上时会把动态地址当文件名写出，新版不写）。
-- **黄金向量**：`backend/src/test/php/b16_static_timming_golden.php` 在 PHP 8.0.30 上执行仓库内的 `mac_url_*` 与 `reset_html_filename`，3 组配置（仓库规则 + 模式 2；含全部占位符 + 分页符 `-` + 后缀 `htm` + 模式 3；以 `/` 开头/结尾的规则 + `{page}` + 后缀 `shtml` + 模式 4）× 24 个用例 = 72 条地址与文件名（`backend/src/test/resources/staticgen/b16-php80-golden.json`）；PHP 7.3.33 的结果相同（除说明行外逐字节一致）。`StaticPathsGoldenTest` 逐条比较。
+- **黄金向量**：`src/test/php/b16_static_timming_golden.php` 在 PHP 8.0.30 上执行仓库内的 `mac_url_*` 与 `reset_html_filename`，3 组配置（仓库规则 + 模式 2；含全部占位符 + 分页符 `-` + 后缀 `htm` + 模式 3；以 `/` 开头/结尾的规则 + `{page}` + 后缀 `shtml` + 模式 4）× 24 个用例 = 72 条地址与文件名（`src/test/resources/staticgen/b16-php80-golden.json`）；PHP 7.3.33 的结果相同（除说明行外逐字节一致）。`StaticPathsGoldenTest` 逐条比较。
 
 ### 4. 页面内容（`StaticPageSource` / `InternalPageRenderer`）
 

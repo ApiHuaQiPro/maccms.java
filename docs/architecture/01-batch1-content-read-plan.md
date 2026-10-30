@@ -3,7 +3,7 @@
 ### 1. 授权与范围
 
 - **已确认**（用户 2026-10-10 在 MACC-2 回复"那开始吧"）：Java + Spring Boot + MyBatis，先沿用 MySQL 旧库，模块化单体；采集以后也统一用 Java。今后主要由智能体开发。
-- **本批交付**：可构建、可测试的 Java 工程（`backend/`）；`content` 模块的只读接口（视频分类、视频分页列表、视频公开详情元数据）和健康检查；正式契约 `docs/contracts/content-read.openapi.yaml`；智能体开发规范（`02-agent-development-rules.md`）。
+- **本批交付**：可构建、可测试的 Java 工程（仓库根目录）；`content` 模块的只读接口（视频分类、视频分页列表、视频公开详情元数据）和健康检查；正式契约 `docs/contracts/content-read.openapi.yaml`；智能体开发规范（`02-agent-development-rules.md`）。
 - **本批不包含、也未获批准**：部署、切 nginx 流量、线上核实、任何 PHP 改动、数据库结构或账号变更、播放授权/收费、会员、Provide、采集、后台写入、搜索、模板还原。
 - 本计划沿用已审阅的迁移草稿 `docs/analysis/03-migration-plan-draft.md`（以下简称 03）。本批只落实 03 阶段 1"只读前台"中**数据接口**的一小部分；03 里的模板方案、写入方切换、引擎/字符集迁移、PHP 兼容改动**仍是待定草稿**，本批没有实施。
 
@@ -109,7 +109,7 @@
 
 ### 7. 验收命令
 
-在 `backend/` 下：
+在仓库根目录下：
 
 | 命令 | 内容 | 本批结果 |
 |---|---|---|

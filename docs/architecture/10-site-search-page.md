@@ -71,7 +71,7 @@
 | `SiteSearchHtmlStructureTest` | 唯一 h1、标题层级、label、GET 表单、无正 tabindex/伪按钮/脚本、nav 名称不重复、`aria-current`、错误提示关联、T4 class |
 | `SiteSearchRealHttpTest` | 真实 Tomcat + 原始套接字：完整缓冲、HEAD、非法编码由解析器判 400、交 PHP 与超长 404、503/500、子目录 base-url、连接池从未初始化 |
 | `SiteSearchMySqlIT`（`-Pmysql-it`） | 一次性库 `maccms_it_*`：可见范围、精确筛选、`%` 字面匹配、候选值来自 `type_extend`、分页与越界、400/404、全部表 CHECKSUM/行数前后不变、删除库并确认不存在 |
-| `backend/src/test/browser/site-search-check.mjs` | 无 JS：只用键盘 Tab 到搜索框输入并 Enter 提交、结果页 main 内每个链接都可 Tab 到达且焦点可见、Enter 筛选与下一页、400 提示关联（不在 verify 中运行） |
+| `src/test/browser/site-search-check.mjs` | 无 JS：只用键盘 Tab 到搜索框输入并 Enter 提交、结果页 main 内每个链接都可 Tab 到达且焦点可见、Enter 筛选与下一页、400 提示关联（不在 verify 中运行） |
 
 本地浏览器实测（2026-10-16，Edge 无头，一次性库 `maccms_t3_*` + 候选 jar，结束后删库并确认不存在）：`site-search-check.mjs` 全部通过；`site-pages-check.mjs` 对三个搜索地址在 375/768/1280/1440/1920 px 无横向滚动、Tab 顺序与焦点可见、无脚本；请求前后 26 张表 CHECKSUM 与行数不变。MACC-20 修订（ASCII 十六进制）后于同日按同样方式重跑：一次性库 `maccms_t3_*`，关键字 `合成`/`分页样本`（含 Enter 下一页 → 第 2 / 2 页），三个地址五种视口无横向滚动，26 张表 CHECKSUM 与行数不变，删库后确认不存在。
 

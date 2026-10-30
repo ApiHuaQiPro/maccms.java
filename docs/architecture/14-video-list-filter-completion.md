@@ -3,7 +3,7 @@
 > **状态：已在本地实现并通过自动测试（含真实 MySQL 与 PHP 黄金样本对照），未部署。** 只读批次：不写库、不登记任何业务写入、不改 B02/B07 护栏，零结构变更。
 > **补充（队长裁定 Q1/Q2/Q3，见第 5.2 节）**：`area`、`lang`、`classes` 的逗号多值已补入同一个尚未合并的 1.3.0（第 3.1 节）；`tid` 与 SSR 搜索页的承接归 B05；API 字面 `0`、严格 `categoryId` 与旧 `rnd` 算法不变。
 > 依据：`docs/architecture/09-roadmap.md` 第 5 节 B04 行与 MACC-23 对 B04 的补充范围；`docs/architecture/09-content-search-filter-plan.md`（以下简称"09 方案"）第 3、4、6 节；旧代码 `application/common/model/Vod.php:108-567`（`listCacheData`）、`application/common.php:1560-1606`（`mac_param_url`）、`:2879-2888`（`mac_search_len_check`）、`:637-677`（`mac_substring`）、`:1284-1292`（`mac_like_arr`）、`application/route.php:321-334`。
-> 证据标注沿用 09 方案：**【代码】**仓库代码；**【黄金】**PHP 黄金样本实测（`backend/src/test/resources/content/vodlist/php-golden.json` 为 PHP 8.0.30，`php73-golden.json` 为 PHP 7.3.33）；**【待核实】**依赖线上配置或数据。
+> 证据标注沿用 09 方案：**【代码】**仓库代码；**【黄金】**PHP 黄金样本实测（`src/test/resources/content/vodlist/php-golden.json` 为 PHP 8.0.30，`php73-golden.json` 为 PHP 7.3.33）；**【待核实】**依赖线上配置或数据。
 
 ### 1. 范围
 
@@ -153,7 +153,7 @@
 
 | 文件 / 测试 | 内容 |
 |---|---|
-| `backend/src/test/php/vod_list_golden.php` | 一次性库 `maccms_it_*`（install.sql + `content/vodlist/seed.sql`），以 GET 参数调用旧 `Vod::listCacheData`（`paging=yes`）记录 ID 序列、总数与第 2 页窗口；随机排序先 `mt_srand(固定种子)` 再调用旧代码，并用同一种子与全表 MIN/MAX 重放 `array_rand` 得到旧代码实际使用的候选（核对旧结果全部在候选中）；依次执行 `phase-sparse.sql`、`phase-high.sql`（只有 DML）后再记录；最后打开路由记录位置参数地址与查询串的解析结果和 `mac_substring` 向量。不改旧 PHP、不连任何已有库、结束时删库 |
+| `src/test/php/vod_list_golden.php` | 一次性库 `maccms_it_*`（install.sql + `content/vodlist/seed.sql`），以 GET 参数调用旧 `Vod::listCacheData`（`paging=yes`）记录 ID 序列、总数与第 2 页窗口；随机排序先 `mt_srand(固定种子)` 再调用旧代码，并用同一种子与全表 MIN/MAX 重放 `array_rand` 得到旧代码实际使用的候选（核对旧结果全部在候选中）；依次执行 `phase-sparse.sql`、`phase-high.sql`（只有 DML）后再记录；最后打开路由记录位置参数地址与查询串的解析结果和 `mac_substring` 向量。不改旧 PHP、不连任何已有库、结束时删库 |
 | `content/vodlist/php-golden.json`（PHP 8.0.30）、`php73-golden.json`（PHP 7.3.33） | 各 79 个列表用例（63 个 `equal`、8 个 `legacy-only`、8 个随机排序；其中 15 个 `equal` 为 Q1 补充的 `area/lang/class` 多值用例，种子为此给基础行的 `vod_class` 赋值，原有 64 个用例的结果逐项不变）、33 个 URL 向量、6 个截断向量；两份文件的 `equal` 用例与随机排序结果逐项相同 |
 | `VideoListGoldenMySqlIT`（`-Pmysql-it`） | 同一份数据的一次性库 + 真实 HTTP：两份文件的 `equal` 用例比对 ID 序列、`total`（count 与列表条件一致）、第 2 页（每页 7 条）；`legacy-only` 逐条断言第 5.1 节差异（缺断言即失败）；随机排序把旧代码的随机页 / 候选交给新代码，比对 ID、`total`、`page`，并断言随机源的调用参数（随机页上限 `floor(c/num)+1`；候选范围 `max−min+1`、数量 1000）；2000 行阈值两侧（2000 / 2001）、稀疏 ID、候选全不命中各有用例；可见范围外的哨兵行从不出现；请求前后全部表 CHECKSUM/行数不变；删库前表结构指纹不变 |
 | `LegacyVodUrlMappingTest` | 读两份黄金样本：位置参数地址每一位的映射、`-` 冲突、`0` 的保留；每个旧参数都有新参数；截断只作用于名单中的键（`ids`、`year` 不截断）；`mac_substring` 的 PHP 8 / 7.3 结果；查询串各键的解码差异 |

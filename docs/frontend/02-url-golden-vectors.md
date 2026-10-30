@@ -6,9 +6,9 @@
 
 | 项 | 内容 |
 |---|---|
-| 生成脚本 | `backend/src/test/php/mac_url_golden.php`。只读 `require` 仓库内 `thinkphp/base.php`、`thinkphp/helper.php`、`application/config.php`、`application/common.php`、`application/extra/maccms.php`、`application/route.php`，在内存中覆盖 URL 配置项后**执行旧代码**；不改任何旧 PHP 文件，不连数据库，不读仓库外配置，不访问网络，`RUNTIME_PATH` 指向不存在的临时目录（不读仓库 `runtime/` 下的路由缓存，也不写文件） |
-| 命令（仓库根目录） | `php backend/src/test/php/mac_url_golden.php > backend/src/test/resources/site/url-golden/php-vectors.json` |
-| 结果文件 | `backend/src/test/resources/site/url-golden/php-vectors.json`，每行一条向量，不要手改 |
+| 生成脚本 | `src/test/php/mac_url_golden.php`。只读 `require` 仓库内 `thinkphp/base.php`、`thinkphp/helper.php`、`application/config.php`、`application/common.php`、`application/extra/maccms.php`、`application/route.php`，在内存中覆盖 URL 配置项后**执行旧代码**；不改任何旧 PHP 文件，不连数据库，不读仓库外配置，不访问网络，`RUNTIME_PATH` 指向不存在的临时目录（不读仓库 `runtime/` 下的路由缓存，也不写文件） |
+| 命令（仓库根目录） | `php src/test/php/mac_url_golden.php > src/test/resources/site/url-golden/php-vectors.json` |
+| 结果文件 | `src/test/resources/site/url-golden/php-vectors.json`，每行一条向量，不要手改 |
 | PHP 版本 | 2026-10-11 用本机 7.2.34、7.3.33、8.0.30 生成，三者**逐字节相同**（提交的是 8.0 的输出）。8.2.32 只有一处不同：向量 `search.wd.html` 往返解析出的 `wd` 中单引号为 `&#039;`（PHP 8.1 起 `htmlspecialchars` 默认带 `ENT_QUOTES`，`mac_param_url` 受影响）；Java 不依赖该值 |
 | 合成数据 | 分类 `type_id=1`/`65535`、`type_en=hechengfenlei`；视频 `vod_id=123`/`1`/`4294967295`、`vod_en=hechengshipin`；关键词与筛选值均为合成文本 |
 
@@ -78,7 +78,7 @@
 | `SiteSettingsTest` | 站内路径规则扩展到旧编码形态后，仍拒绝 `%2F`/`%2f`、`%2E`、`%5C`、控制字符、小写或不完整的 `%` |
 | `SearchGoldenVectorsTest`（MACC-20） | 6 × 14 条 `search.q.*` 解析向量（搜索页的固定路径 + 查询串，`query` 为 Web 服务器已解码一次的 GET 值）：Java `parseSearch` 认得的每一条，旧代码都调度到 `vod/search`；值不含 `% + & < > " '` 时 `wd/area/lang/year/level/class/by/order/page` 取值一致（Java 未设置 ⇔ PHP 为 `''`/`'0'`）；`search.q.pct`（`%41` 对 `A`）、`search.q.plus`（`C++` 对 `C  `）、`search.q.amp`（`Tom & Jerry` 对 `Tom &amp; Jerry`）三条差异逐条锁定；`route_status=1`（旧站 404）与 `pathinfo_depr=-` 分支 Java 不承接。`LegacyUrlGoldenVectorsTest` 中这些向量对 `parse()` 的预期是 unsupported。新增向量只记录 `search.q.*` 的额外参数键，2026-10-16 用 PHP 8.0.30 重新生成，原有向量逐字不变 |
 
-运行：`cd backend && ./mvnw verify`（Git Bash）或 `.\mvnw.cmd verify`（PowerShell），不需要数据库环境变量。重新生成向量需要 PHP 7.2～8.0 的 CLI（8.2 的差异见第 1 节），不是构建的一部分。
+运行：`./mvnw verify`（Git Bash）或 `.\mvnw.cmd verify`（PowerShell），不需要数据库环境变量。重新生成向量需要 PHP 7.2～8.0 的 CLI（8.2 的差异见第 1 节），不是构建的一部分。
 
 ### 6. 与旧版的差异
 

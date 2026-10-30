@@ -1,11 +1,11 @@
 ## site 模板引擎兼容验证与模块接口确认（MACC-7）
 
-> **状态：技术验证报告，待用户确认 D2。** 本任务只做可复跑实验与决策建议：不改正式 `backend/pom.xml`、生产配置或正式业务代码，不创建正式首页/分类/详情路由，不连接任何数据库。
+> **状态：技术验证报告，待用户确认 D2。** 本任务只做可复跑实验与决策建议：不改正式 `pom.xml`、生产配置或正式业务代码，不创建正式首页/分类/详情路由，不连接任何数据库。
 >
 > 输入：前台只读方案 `docs/architecture/03-frontend-readonly-plan.md`（"03 方案"，第 1.2 节 D2 标准、第 1.3 节 P2、第 3.1 节 P4、第 7 节）、开发规范 `docs/architecture/02-agent-development-rules.md`（"02 规范"）、契约 `docs/contracts/content-read.openapi.yaml`、兼容清单 `docs/frontend/01-pages-url-compat.md`。基点提交 `5303e8d`（MACC-4～6 已合入：后端只读接口、兼容清单、03 方案）。
 >
 > 证据标注：
-> - **【实测】**：本任务在本机执行过，给出命令与结果；测试代码在 `backend/spikes/site-template/`。
+> - **【实测】**：本任务在本机执行过，给出命令与结果；测试代码在 `spikes/site-template/`。
 > - **【资料】**：来自依赖元数据、源码或官方目录，未做运行实验。
 > - **【未测】**：没有执行，不下结论。
 > - **【建议】**：需要用户或队长确认的方案。
@@ -22,7 +22,7 @@
 
 ### 1. 版本基线与候选范围
 
-- 正式工程：Spring Boot **4.1.1**（`backend/pom.xml:11`），Java 21（`backend/pom.xml:22`），Maven Wrapper 3.3.4 → Maven 3.9.16。本任务没有升级任何版本，两个 spike 子工程都继承同一个 `spring-boot-starter-parent` 4.1.1。【实测】
+- 正式工程：Spring Boot **4.1.1**（`pom.xml:11`），Java 21（`pom.xml:22`），Maven Wrapper 3.3.4 → Maven 3.9.16。本任务没有升级任何版本，两个 spike 子工程都继承同一个 `spring-boot-starter-parent` 4.1.1。【实测】
 - 实测两个候选：
   - **A. Thymeleaf**：`spring-boot-starter-thymeleaf` 4.1.1 → `thymeleaf-spring6` / `thymeleaf` **3.1.5.RELEASE**（版本由 Boot 4.1.1 的 `spring-boot-dependencies` 管理，未覆盖）。【实测，`dependency:tree`】
   - **B. jte**：`gg.jte` **3.2.4**（`jte-maven-plugin`、`jte-models`、`jte-runtime`、`jte-extension-api`；spike 里为了测 Spring 视图集成也引入了 `jte-spring-boot-starter-4`）。【实测，`dependency:tree`】
@@ -49,11 +49,11 @@
 
 #### 3.1 实验工程与复跑命令
 
-- 位置：`backend/spikes/site-template/`（聚合 POM，仅聚合、不继承），子工程 `thymeleaf/`、`jte/`。说明与命令见 `backend/spikes/site-template/README.md`。
+- 位置：`spikes/site-template/`（聚合 POM，仅聚合、不继承），子工程 `thymeleaf/`、`jte/`。说明与命令见 `spikes/site-template/README.md`。
 - 合成数据：`SyntheticPages`（每个子工程一份）给出 `normal`（中文、全角标点、字面 `& < > " '`）、`xss`（文本/属性/标题/URL 恶意串）、`empty`、`boom-small`、`boom-large`（400 张卡片后放一张访问器会抛异常的卡片，异常 message 带合成标记 `SYNTHETIC-LEAK-7f3a` 与伪连接串）。
 - 路由只有 `/spike/view/{fixture}`（Spring MVC 视图解析）与 `/spike/buffered/{fixture}`（Controller 内缓冲渲染）。不配置数据源，不读 `MACCMS_*` 环境变量；执行时本机 shell 中也没有设置任何 `MACCMS_*` / `SPRING_DATASOURCE*` 变量【实测】。
 
-在 `backend/` 下执行（2026-10-10，JDK 21，Maven 3.9.16）：
+在仓库根目录下执行（2026-10-10，JDK 21，Maven 3.9.16）：
 
 | # | 命令 | 结果【实测】 |
 |---|---|---|
@@ -138,10 +138,10 @@
 #### 5.1 现状【已证实】
 
 - 02 规范第 2 节：分层"只能自上而下依赖"（`docs/architecture/02-agent-development-rules.md:16`），模块之间"不能使用对方的 Mapper、行记录或 DTO 内部类型"（`:17`）。
-- `ContentReadService`（application 层）的三个公开方法返回契约 DTO：`listCategories()`（`backend/src/main/java/com/maccms/backend/content/application/ContentReadService.java:48`）、`listVideos(VideoListQuery)`（`:53`）、`getVideo(long)`（`:77`）。这些 record 位于 `content.api.dto`，由 application 层 import（`:6-11`）——**application 已经反向依赖本模块的 api 包**，与第 16 行的分层规则不一致。
-- 错误通过 `common.web.ApiException` + `ErrorCode` 抛出；全局 `@RestControllerAdvice`（`backend/src/main/java/com/maccms/backend/common/web/GlobalExceptionHandler.java:19`）兜底 `Exception.class`（`:59`）输出 JSON。`site` 的页面 Controller 若不自带更高优先级的处理，异常会变成 JSON 错误响应。
-- `VideoListQuery` 的 record 构造器不校验范围（`backend/src/main/java/com/maccms/backend/content/application/VideoListQuery.java:9`），只有 `parse(...)`（`:16`）校验；`site` 直接 `new VideoListQuery(...)` 就能绕过 `pageSize ≤ 100` 等上限。
-- `SafeExceptionLog` 是包内可见类（`backend/src/main/java/com/maccms/backend/common/web/SafeExceptionLog.java:14`），`site` 无法复用。
+- `ContentReadService`（application 层）的三个公开方法返回契约 DTO：`listCategories()`（`src/main/java/com/maccms/backend/content/application/ContentReadService.java:48`）、`listVideos(VideoListQuery)`（`:53`）、`getVideo(long)`（`:77`）。这些 record 位于 `content.api.dto`，由 application 层 import（`:6-11`）——**application 已经反向依赖本模块的 api 包**，与第 16 行的分层规则不一致。
+- 错误通过 `common.web.ApiException` + `ErrorCode` 抛出；全局 `@RestControllerAdvice`（`src/main/java/com/maccms/backend/common/web/GlobalExceptionHandler.java:19`）兜底 `Exception.class`（`:59`）输出 JSON。`site` 的页面 Controller 若不自带更高优先级的处理，异常会变成 JSON 错误响应。
+- `VideoListQuery` 的 record 构造器不校验范围（`src/main/java/com/maccms/backend/content/application/VideoListQuery.java:9`），只有 `parse(...)`（`:16`）校验；`site` 直接 `new VideoListQuery(...)` 就能绕过 `pageSize ≤ 100` 等上限。
+- `SafeExceptionLog` 是包内可见类（`src/main/java/com/maccms/backend/common/web/SafeExceptionLog.java:14`），`site` 无法复用。
 
 #### 5.2 选项
 
@@ -175,13 +175,13 @@
 
 第 7 节追加（见第 7 节文件责任）：
 
-> - `backend/` 内的例外：`backend/src/main/jte/site/components/` 与 `backend/src/main/resources/static/site/` 由前端智能体维护，后端智能体维护其余部分（含页面模板、视图模型、模板参数签名）；组件模板的 `@param` 签名变更需双方在任务中确认。
+> - Java 工程内的例外：`src/main/jte/site/components/` 与 `src/main/resources/static/site/` 由前端智能体维护，后端智能体维护其余部分（含页面模板、视图模型、模板参数签名）；组件模板的 `@param` 签名变更需双方在任务中确认。
 
 ### 6. P4：站点设置
 
 #### 6.1 原则
 
-- **唯一来源**：Java 应用自己的外部化配置 `maccms.site.*`（`@ConfigurationProperties` + `@Validated` 的 record，与现有 `ContentProperties` 同一风格），值从环境变量注入；样例只写在 `backend/config/maccms-backend.env.example`（占位或合成值），真实 `*.env` 不提交（02 规范第 4 节）。
+- **唯一来源**：Java 应用自己的外部化配置 `maccms.site.*`（`@ConfigurationProperties` + `@Validated` 的 record，与现有 `ContentProperties` 同一风格），值从环境变量注入；样例只写在 `config/maccms-backend.env.example`（占位或合成值），真实 `*.env` 不提交（02 规范第 4 节）。
 - **不读 PHP 配置**：Java 不读取 `application/extra/*.php`、不执行 PHP 导出脚本、不读取仓库外的线上配置目录。03 草稿 3.5 节提出的"PHP CLI 只读导出脚本"不在首批范围，需另行批准。并行期内 PHP 与 Java 的站点设置由运维分别维护，存在漂移风险，切流量评审时处理。
 - **默认不启用**：`maccms.site.enabled=false` 时不注册任何页面路由、不校验站点设置，现有"只提供 API"的运行方式不受影响。
 - **不从请求推断站点地址**：canonical、站内绝对链接只用 `base-url`，绝不使用 `Host`、`X-Forwarded-Host` 等请求头（防止 Host 头注入污染 canonical）。
@@ -215,9 +215,9 @@
 
 | 顺序 | 任务 | 负责与文件 | 依赖 | 是否需等 D2 |
 |---|---|---|---|---|
-| 1 | P2 最小改动 + 02 规范修订（第 5.3、5.4 节） | Claude：`backend/src/main/java/com/maccms/backend/content/**`、`common/web/SafeExceptionLog.java`、相关测试、`docs/architecture/02-agent-development-rules.md` | 用户/队长确认 P2 | 否 |
-| 2 | `site` 骨架：引入 jte 依赖与插件、`SiteProperties`（第 6 节）、缓冲渲染器、`site` 异常处理、外壳/404/500/503/关闭页、严格策略与护栏测试、依赖边界测试、访问日志字段 | Claude：`backend/pom.xml`、`backend/src/main/java/com/maccms/backend/site/**`、`backend/src/main/jte/site/layout/**`、`backend/src/main/jte/site/pages/**`、测试；Kimi：`backend/src/main/jte/site/components/**`（按 Claude 定下的 `@param` 签名写标记）、`backend/src/main/resources/static/site/**`（设计 token、组件样式） | 1、D2、P4 确认 | **是** |
-| 3 | URL 生成器/解析器 + PHP 黄金向量（一次性库，03 方案 5.4 节） | Claude：`site.application`、`backend/src/test/resources/` 向量 | 2（包结构） | 否（纯 Java 逻辑） |
+| 1 | P2 最小改动 + 02 规范修订（第 5.3、5.4 节） | Claude：`src/main/java/com/maccms/backend/content/**`、`common/web/SafeExceptionLog.java`、相关测试、`docs/architecture/02-agent-development-rules.md` | 用户/队长确认 P2 | 否 |
+| 2 | `site` 骨架：引入 jte 依赖与插件、`SiteProperties`（第 6 节）、缓冲渲染器、`site` 异常处理、外壳/404/500/503/关闭页、严格策略与护栏测试、依赖边界测试、访问日志字段 | Claude：`pom.xml`、`src/main/java/com/maccms/backend/site/**`、`src/main/jte/site/layout/**`、`src/main/jte/site/pages/**`、测试；Kimi：`src/main/jte/site/components/**`（按 Claude 定下的 `@param` 签名写标记）、`src/main/resources/static/site/**`（设计 token、组件样式） | 1、D2、P4 确认 | **是** |
+| 3 | URL 生成器/解析器 + PHP 黄金向量（一次性库，03 方案 5.4 节） | Claude：`site.application`、`src/test/resources/` 向量 | 2（包结构） | 否（纯 Java 逻辑） |
 | 4 | 图片地址规范化（`mac_url_img` 等价）+ 黄金向量 | Claude | 2 | 否 |
 | 5 | 富文本白名单过滤（`content`）与文本实体处理；过滤库选型在该任务内比较 | Claude；脱敏真实样本【待验证】 | 2 | 过滤逻辑否；输出组件是 |
 | 6 | 三页实现（分类 → 详情 → 首页）与本地验收（03 方案第 8 节 F1～F14，含浏览器自动化截图） | Claude：Controller、视图模型、页面模板；Kimi：组件样式、移动端/键盘验收脚本 | 3、4、5 | **是** |
@@ -228,7 +228,7 @@
 
 **与旧版的差异**：本任务未改动任何正式代码、旧 PHP、数据库或配置，运行行为无差异。方案层面的新差异（待随实现确认）：站点关闭由 200 改为 503（6.3 节）；`javascript:` 等非白名单 URL 不再输出；渲染失败返回完整 500 页（旧 PHP 的模板错误行为未核实）。
 
-**正式工程**：`backend/pom.xml`、`backend/src/**`、`application.yml` 均未改动；`./mvnw clean verify` 63 个测试通过（E7）。正式 API、字段、状态码与只读护栏保持不变。
+**正式工程**：`pom.xml`、`src/**`、`application.yml` 均未改动；`./mvnw clean verify` 63 个测试通过（E7）。正式 API、字段、状态码与只读护栏保持不变。
 
 **未测**：
 
@@ -251,7 +251,7 @@
 - `mvnw.cmd -B -f spikes/site-template/pom.xml clean verify`：最初因 Windows `core.autocrlf=true` 检出 CRLF，而两个真实 HTTP 测试硬编码 LF 结尾，发生一项失败。队长将完整页断言改为 `stripTrailing().endsWith("</html>")`，保留状态码、传输完整性、错误标记、禁止半页/泄漏标记的断言；重跑 Thymeleaf 19 项、jte 22 项全部通过。修复只在隔离实验测试内。
 - 分别用两个子工程的 `-Pmismatch` / `-Pmismatch-branch clean verify` 复跑：Thymeleaf 直接失配 7 个失败、4 个错误；分支失配仍通过 19 项测试；jte 两种失配分别因 `remakrs()` / `picc()` 不存在而编译失败。
 - 真实 Tomcat 测试复现两种直接输出路径的大页面失败为 200、传输不完整；缓冲路径均为完整 500、`no-store`，无合成异常标记。开启 Thymeleaf 禁止部分输出也得到完整 500。响应字节数受 LF/CRLF 影响，不作为跨平台验收常量。
-- 正式 `backend/pom.xml`、`backend/src/`、OpenAPI 均未修改；提交路径、严格 UTF-8 与 `git diff --check` 核验通过。没有复跑 MySQL 集成测试，因本次没有改动任何数据访问。
+- 正式 `pom.xml`、`src/`、OpenAPI 均未修改；提交路径、严格 UTF-8 与 `git diff --check` 核验通过。没有复跑 MySQL 集成测试，因本次没有改动任何数据访问。
 
 队长认可 D2 推荐为 jte 3.2.4，具体引擎仍待用户确认；正式工程暂不引入依赖。第 4 节和第 8 节的“去掉 starter 后未测”边界保留，本轮不把独立启动兼容性宣布为通过。
 

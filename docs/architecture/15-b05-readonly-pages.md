@@ -35,7 +35,7 @@
 | F 模块筛选/搜索页、`ajax_*` 与 `rss` | 各模块 `show`（含 `role/show`）/`search` 页、`ajax_detail/ajax_show/ajax_search` HTML 片段、单条 `rss`（第 7 节） | 已实现（返工补齐 `role/show` 与旧 URL 条件/排序） | C |
 | G 手机模板与语言包 | `mob_status` 手机模板切换、`zh-cn`/`zh-tw` 输出 | 不在本批：D-B05-8 归 B12（MACC-36），本批登记差异；B12 已接线（选择语义、手机 Logo、`Vary: User-Agent`、`lang()` 文字按语言包，`21-b12-admin-framework.md` 第 12 节） | C（B12）；外壳可选的手机样式类由队长与 K 另定 |
 
-共享文件（`backend/src/main/jte/site/components/`、`backend/src/main/resources/static/site/`、`jte/site/layout/` 与组件 `@param` 签名）：后端没有修改；`static/site/` 的变更全部来自 MACC-54 的固定提交（普通 merge）。新页面沿用既有 class（`filter-group`/`filter-chip`、`content-grid`/`content-card`、`pagination`、`search-random-notice`）。
+共享文件（`src/main/jte/site/components/`、`src/main/resources/static/site/`、`jte/site/layout/` 与组件 `@param` 签名）：后端没有修改；`static/site/` 的变更全部来自 MACC-54 的固定提交（普通 merge）。新页面沿用既有 class（`filter-group`/`filter-chip`、`content-grid`/`content-card`、`pagination`、`search-random-notice`）。
 
 ### 2. 内部标签查询能力（已实现）
 
@@ -48,7 +48,7 @@
 
 #### 2.2 旧属性 → Java 内部入口 → 测试
 
-旧代码均为 `application/common/model/Vod.php`（`listCacheData`，:108-567）。"黄金"列是 `backend/src/test/resources/content/vodtag/php-golden.json`（PHP 8.0.30）与 `php73-golden.json`（PHP 7.3.33）中的用例前缀，由 `backend/src/test/php/vod_tag_golden.php` 在一次性库上调用旧 `listCacheData` 生成，`VideoTagGoldenMySqlIT` 在真实 MySQL 上逐条比对 ID 序列与 total（两份共 186 × 2 个用例；旧代码报错的用例断言新版构造时拒绝）。
+旧代码均为 `application/common/model/Vod.php`（`listCacheData`，:108-567）。"黄金"列是 `src/test/resources/content/vodtag/php-golden.json`（PHP 8.0.30）与 `php73-golden.json`（PHP 7.3.33）中的用例前缀，由 `src/test/php/vod_tag_golden.php` 在一次性库上调用旧 `listCacheData` 生成，`VideoTagGoldenMySqlIT` 在真实 MySQL 上逐条比对 ID 序列与 total（两份共 186 × 2 个用例；旧代码报错的用例断言新版构造时拒绝）。
 
 | 旧属性 | 旧代码 | Java 入口 | 语义要点 | 黄金用例 / 单元测试 |
 |---|---|---|---|---|
@@ -269,7 +269,7 @@ W1 与 W2 **互相独立**，各自只消除自己负责的外部地址：
 
 #### 7.3 旧参数 → 归一 → 模型条件/排序 → Java 内部入口 → 黄金测试（返工第 2 项）
 
-逐模块按旧调用链核定，不套用视频或公开 API 1.2.0 的单值规则。读取链：URL → `mac_param_url`（`common.php:1560-1606`）→ 模型 `listCacheData` 的 `paging=yes` 分支（只在非空时覆盖）→ `where`/`order`。"黄金"列是 `backend/src/test/resources/site/module-search/php-golden.json` 的用例 id 前缀（第 7.5 节）。
+逐模块按旧调用链核定，不套用视频或公开 API 1.2.0 的单值规则。读取链：URL → `mac_param_url`（`common.php:1560-1606`）→ 模型 `listCacheData` 的 `paging=yes` 分支（只在非空时覆盖）→ `where`/`order`。"黄金"列是 `src/test/resources/site/module-search/php-golden.json` 的用例 id 前缀（第 7.5 节）。
 
 | 键 | 旧链（逐键） | 适用模块 | 旧条件 | Java 内部入口 | 黄金用例（举例） |
 |---|---|---|---|---|---|
@@ -306,7 +306,7 @@ W1 与 W2 **互相独立**，各自只消除自己负责的外部地址：
 
 #### 7.5 PHP 黄金样本
 
-`backend/src/test/php/module_search_golden.php` 在一次性库（`install.sql` + `site/module-search/seed.sql`，主用例之后再导入 `phase-plot-bulk.sql`）上以 `paging=yes` 调旧 `listCacheData`（条件经 `mac_param_url` 读取，`search_len` 按 Init.php 取 10），记录 ID 序列、total 与新版规范地址；随机用例用 `mt_srand` 固定种子（算法一选出使随机页恰为指定页的种子，算法二重放 `array_rand` 的候选下标）。**124 例，PHP 8.0.30 与 7.3.33 结果逐项相同**。`ModuleSearchGoldenMySqlIT` 以真实 HTTP 请求每例地址：沿"下一页"取完所有页比对 ID 序列，canonical 等于旧逐键归一后的规范地址，"共 N 条"等于旧 total 且与各页合计一致，ajax 片段与第一页相同；随机用例经可替换随机源给出黄金样本的随机页/候选，并核对上限 `floor(c/20)+1` 或候选范围。1 例为登记差异（`art.search.wd=_`：旧版 LIKE 不转义 `_ %`）。
+`src/test/php/module_search_golden.php` 在一次性库（`install.sql` + `site/module-search/seed.sql`，主用例之后再导入 `phase-plot-bulk.sql`）上以 `paging=yes` 调旧 `listCacheData`（条件经 `mac_param_url` 读取，`search_len` 按 Init.php 取 10），记录 ID 序列、total 与新版规范地址；随机用例用 `mt_srand` 固定种子（算法一选出使随机页恰为指定页的种子，算法二重放 `array_rand` 的候选下标）。**124 例，PHP 8.0.30 与 7.3.33 结果逐项相同**。`ModuleSearchGoldenMySqlIT` 以真实 HTTP 请求每例地址：沿"下一页"取完所有页比对 ID 序列，canonical 等于旧逐键归一后的规范地址，"共 N 条"等于旧 total 且与各页合计一致，ajax 片段与第一页相同；随机用例经可替换随机源给出黄金样本的随机页/候选，并核对上限 `floor(c/20)+1` 或候选范围。1 例为登记差异（`art.search.wd=_`：旧版 LIKE 不转义 `_ %`）。
 
 ### 8. 前端（Kimi）配合
 
@@ -334,8 +334,8 @@ K1–K5 由 MACC-54 交付，队长阶段审阅通过后以普通 merge `d4262ea
 | 单元/契约/MockMvc | `./mvnw clean verify` | 交付评论 |
 | MySQL 集成与黄金向量 | `./mvnw verify -Pmysql-it`：`ModuleSearchGoldenMySqlIT`（第 7.5 节，124 例）、`PlaybackGoldenMySqlIT`、`VideoTagGoldenMySqlIT`、`VideoListGoldenMySqlIT`、`SiteSearchMySqlIT`、`LibraryMySqlIT` 等 | 交付评论 |
 | PHP 黄金向量 | `module_search_golden.php`（PHP 8.0.30 与 7.3.33 逐项相同）、`vod_play_golden.php`、`b05_url_golden.php`、`vod_tag_golden.php`、`content/vodlist` 的 `urls[vodsearch.*/vodshow.*]` | 资源文件 + 上列测试 |
-| 前端试看脚本 | `node --test backend/src/test/js/site/trial.test.js`（MACC-54；Node 24 不接受目录参数） | 交付评论 |
-| 真实 HTTP + 浏览器 | `python backend/src/test/browser/b05_site_check.py --out docs/architecture/15-b05-site-check`：已打包应用 × W1/W2 = 00/01/10/11 × 根路径 / 子目录 `/sub/`（本地反向代理）共 8 组；Chromium（Playwright） | `15-b05-site-check/summary.json`、`screenshots/` |
+| 前端试看脚本 | `node --test src/test/js/site/trial.test.js`（MACC-54；Node 24 不接受目录参数） | 交付评论 |
+| 真实 HTTP + 浏览器 | `python src/test/browser/b05_site_check.py --out docs/architecture/15-b05-site-check`：已打包应用 × W1/W2 = 00/01/10/11 × 根路径 / 子目录 `/sub/`（本地反向代理）共 8 组；Chromium（Playwright） | `15-b05-site-check/summary.json`、`screenshots/` |
 | 中规模合成库测量 | `B05SsrPerfRun`（最终树、真实 SSR HTTP 与实际内部标签服务/Mapper，记录生成的 SQL/绑定、EXPLAIN、耗时、状态与清理） | `15-b05-perf-report.md` 第 10 节、`15-b05-perf-raw/ssr-*` |
 
 `b05_site_check.py` 每组检查：页面/入口的状态码、`no-store`、CSP、站名、Logo、站内链接前缀（子目录时以 `/sub/` 开头）、外部主机按 W1/W2 各自出现（第 6.3 节）；播放/下载密码（错误 403 不回显，正确 303 + `HttpOnly; SameSite=Lax` 票据，带票据 200）；播放器内页在专用 CSP 下运行旧 `player.js`、整轮无 CSP 违规；W2 关时外部播放地址显示固定提示；试看到期后挂载区媒体移除并显示 `#trial-message`；根路径 W1/W2=11 另查 320/360/768/1280 横向溢出、键盘 Tab 次序与可见焦点、`prefers-reduced-motion`。返工后另含 `role/show` 与模块随机页。

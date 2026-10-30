@@ -116,7 +116,7 @@ mysql -u <管理账号> -p --default-character-set=utf8 <库名> < application/i
 - 正常模式：`application.yml` 的 `spring.config.import: optional:file:${MACCMS_DEPLOY_CONFIG:}` 读入；未设置或文件不存在时不读；**同名环境变量优先**（部署方可以只用环境变量覆盖其中任何一项，例如换成只授予 SELECT 的只读账号）。`InstallModeTest.normalModeImportsTheDeployConfig` 验证三种情况，`InstallWizardMySqlIT` 用向导写下的文件真实启动正常模式（只读连接池与可写数据源都连上，`/actuator/health` 为 UP）。
 - 写法：同目录临时文件 → 原子改名；POSIX 系统上权限 600；只写 ASCII（值按 properties 规则转义），开头两行英文注释，没有时间戳。只在第四步全部检查通过后才写（旧版在连接成功后、核对库之前就写了 `database.php`）。
 - 第五步读回这份文件得到目标库；文件不存在或不完整时"请先点击测试数据库连接！"（旧版是 `database.php` 的 hostname/database/username 为空）。
-- 不进 git：路径在仓库外由部署方指定；若放在 `backend/config/` 下，`*.properties` 已加入 `backend/.gitignore`。
+- 不进 git：路径在仓库外由部署方指定；若放在 `config/` 下，`*.properties` 已加入 `.gitignore`。
 
 ### 6. 第五步：执行安装
 
@@ -135,7 +135,7 @@ mysql -u <管理账号> -p --default-character-set=utf8 <库名> < application/i
 
 ### 7. 页面与安全适配
 
-页面：`backend/src/main/jte-install/install/`（`layout/page.jte` = 旧 `head.html` + `foot.html`，`pages/index|step2|step3|jump.jte`），生成到 `com.maccms.backend.install.web.jte`，与站点、后台模板分开（pom 的 `jte-install` 执行）。HTML 结构、class、文字逐处与旧版相同（`InstallWizardGoldenTest` 按 7 条规则规范化后逐字比较），只有下面这些最小适配：
+页面：`src/main/jte-install/install/`（`layout/page.jte` = 旧 `head.html` + `foot.html`，`pages/index|step2|step3|jump.jte`），生成到 `com.maccms.backend.install.web.jte`，与站点、后台模板分开（pom 的 `jte-install` 执行）。HTML 结构、class、文字逐处与旧版相同（`InstallWizardGoldenTest` 按 7 条规则规范化后逐字比较），只有下面这些最小适配：
 
 | 适配 | 原因 |
 |---|---|
@@ -171,7 +171,7 @@ mysql -u <管理账号> -p --default-character-set=utf8 <库名> < application/i
 
 ### 9. 测试与验证
 
-黄金样本：`backend/src/test/php/install_golden.php`（+ `install_child.php`）用 php-cgi 跑**未修改**的旧 `install.php` 全流程，每个场景一份新复制的临时站点（`database.php` 为空配置 = 新下载的安装包）和一个新的空一次性库（旧向导在其中照旧执行 `CREATE DATABASE IF NOT EXISTS` 与 install.sql）；表单里的连接参数写成占位符，JSON 里没有任何账号密码。PHP 7.3 与 8.0 各一份（`src/test/resources/install/b22/php{73,80}-golden.json`），4 个场景 47 步：页面（首页、语言切换、繁体下的环境检测与配置页、返回首页、未知步骤、第四步的 GET、未测试就安装、错误的语言参数）、第四步 15 个请求（各项校验、连接失败、繁体下的英文提示、非 Ajax 跳转页）、两次完整安装（初始数据"创建"/"不创建"，"不覆盖"/"覆盖"，第五步的 5 种校验，Ajax 与非 Ajax，中文密码）、安装后的安装锁。两个版本的输出只在第二步表格里的 PHP 版本号与第三步页面里旧版的随机令牌上不同（都不在比较范围内），安装后的库与 `maccms.php`（除随机的 `interface.pass`）相同。
+黄金样本：`src/test/php/install_golden.php`（+ `install_child.php`）用 php-cgi 跑**未修改**的旧 `install.php` 全流程，每个场景一份新复制的临时站点（`database.php` 为空配置 = 新下载的安装包）和一个新的空一次性库（旧向导在其中照旧执行 `CREATE DATABASE IF NOT EXISTS` 与 install.sql）；表单里的连接参数写成占位符，JSON 里没有任何账号密码。PHP 7.3 与 8.0 各一份（`src/test/resources/install/b22/php{73,80}-golden.json`），4 个场景 47 步：页面（首页、语言切换、繁体下的环境检测与配置页、返回首页、未知步骤、第四步的 GET、未测试就安装、错误的语言参数）、第四步 15 个请求（各项校验、连接失败、繁体下的英文提示、非 Ajax 跳转页）、两次完整安装（初始数据"创建"/"不创建"，"不覆盖"/"覆盖"，第五步的 5 种校验，Ajax 与非 Ajax，中文密码）、安装后的安装锁。两个版本的输出只在第二步表格里的 PHP 版本号与第三步页面里旧版的随机令牌上不同（都不在比较范围内），安装后的库与 `maccms.php`（除随机的 `interface.pass`）相同。
 
 | 测试 | 内容 |
 |---|---|
@@ -217,7 +217,7 @@ mysql -u <管理账号> -p --default-character-set=utf8 <库名> < application/i
 - **MySQL 8 未验证**：基准指纹在 MySQL 5.7.44 上生成。MySQL 8.0.19 起 `int(10)` 等显示宽度不再出现在 `COLUMN_TYPE`，8.0.30 起 `utf8` 显示为 `utf8mb3`，向导会判为"结构不一致"而拒绝安装。如需支持，要在 MySQL 8 上另做一份基准或做规范化，需先在一次性库上实测。
 - 部署配置文件含明文密码（旧 `database.php` 同样）；只靠文件位置（不在网站目录）与 600 权限保护，Windows 上没有设置 ACL。
 - 安装模式没有登录，任何能访问端口的人都能完成安装（旧版相同）；默认只监听回环地址，装完前不要对外开放。
-- 只读连接池与可写数据源共用向导里的一个账号；生产应按 `backend/README.md` 换成分开授权的账号（环境变量覆盖文件里的值）。
+- 只读连接池与可写数据源共用向导里的一个账号；生产应按 `README.md` 换成分开授权的账号（环境变量覆盖文件里的值）。
 - `TABLE_ROWS` 依赖 MyISAM 的精确行数；表结构核对已保证 25 张 MyISAM 表与 install.sql 一致后才使用。
 
 ### 13. 回滚

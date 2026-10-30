@@ -1,7 +1,7 @@
 ## 11 出站护栏、表结构护栏、浏览器侧外部地址放行参数与旧配置只读层（B02 / MACC-26）
 
 > **状态：已在本地实现并通过 `./mvnw verify` 与 `./mvnw verify -Pmysql-it`，未部署。** 依据：`docs/architecture/09-roadmap.md`（以下简称"路线图"）第 1.2、1.3、4.2、4.3 节与第 5.3 节 B02 行。
-> 本批不改旧 PHP、不改表结构、不读 `prod-config`、不连线上。新增部署参数：旧配置目录默认未配置；浏览器侧外部地址放行按路线图第五轮 W1/W2 默认打开、W3 默认关闭。路径相对仓库根目录，代码在 `backend/` 下。
+> 本批不改旧 PHP、不改表结构、不读 `prod-config`、不连线上。新增部署参数：旧配置目录默认未配置；浏览器侧外部地址放行按路线图第五轮 W1/W2 默认打开、W3 默认关闭。路径相对仓库根目录，代码在仓库根目录下。
 
 ### 1. 交付物一览
 
@@ -78,7 +78,7 @@
 
 #### 4.3 PHP 黄金向量
 
-- `backend/src/test/resources/legacyconfig/var_export_golden.php` 用 PHP 自己 `include` 每个文件，转成带类型的 JSON（区分整数键/字符串键、整数/浮点，保留顺序）写入 `legacy-config-vectors.json`；`--write` 重写，不带参数时核对。合成文件在 `cases/`：`generated_var_export.php` 由脚本用 `var_export` 写出（转义、Unicode、换行、数值边界、键规范化），`handwritten.php` 是手写的短数组、注释、大小写、省略键、重复键写法。`cases/*.php` 在 `backend/.gitattributes` 中标为 `-text -whitespace`：保持原字节（var_export 的行尾空格与字符串内的 CRLF 都是被测内容），`git diff --check` 不检查它们。
+- `src/test/resources/legacyconfig/var_export_golden.php` 用 PHP 自己 `include` 每个文件，转成带类型的 JSON（区分整数键/字符串键、整数/浮点，保留顺序）写入 `legacy-config-vectors.json`；`--write` 重写，不带参数时核对。合成文件在 `cases/`：`generated_var_export.php` 由脚本用 `var_export` 写出（转义、Unicode、换行、数值边界、键规范化），`handwritten.php` 是手写的短数组、注释、大小写、省略键、重复键写法。`cases/*.php` 在 `.gitattributes` 中标为 `-text -whitespace`：保持原字节（var_export 的行尾空格与字符串内的 CRLF 都是被测内容），`git diff --check` 不检查它们。
 - 本机 PHP 7.2.34、7.3.33、8.0.30、8.2.32 核对结果全部一致（15 个文件）。
 - `LegacyConfigGoldenVectorsTest` 逐项比较 Java 解析结果；浮点按数值比较（含 -0.0）。每个文件记录"CRLF 换成 LF 后"的 SHA-256：仓库按 LF 存储、Windows 检出为 CRLF，两种检出得到同一个值；`maccms.php` 的 `rewrite.route` 值内含换行，所以仓库文件两侧都按 LF 比较。
 
@@ -131,7 +131,7 @@
   - `img_key` 命中时**不拼 `img_api`**（它指向的代理脚本要由服务端去抓外部图片，属于 E02，新系统不提供），按原地址判断：外部图片被拦下，本站图片原样输出。
   - 视频卡片与详情海报显示现有的占位元素（`video-card__placeholder`、`video-detail__placeholder`，与图片为空时相同）；正文（富文本）里的外部图片整张删除（与 MACC-12 对不合格图片的处理相同）。
   - 正文里的外部**链接**（`a[href]`）照常输出：它是导航，不是页面加载的资源。
-- **与路线图的一处出入：占位图**。路线图第 4.2 节写的是"本地占位图（从仓库 `static/` 现有图片中选定）"。本批改用组件里已有的 CSS 占位元素，理由：旧站 `static/` 不由 Java 应用提供，要用图片就得把图片放进 `backend/src/main/resources/static/site/`，并改 `components/videoCard.jte`——这两处归 Kimi（02 规范第 7 节），按任务要求须先协调。现状已满足"不输出外部主机"。如需换成图片（例如旧站的 `static/images/nopic.gif`），请 Kimi 在样式/组件里替换占位元素，后端视图模型不需要改。
+- **与路线图的一处出入：占位图**。路线图第 4.2 节写的是"本地占位图（从仓库 `static/` 现有图片中选定）"。本批改用组件里已有的 CSS 占位元素，理由：旧站 `static/` 不由 Java 应用提供，要用图片就得把图片放进 `src/main/resources/static/site/`，并改 `components/videoCard.jte`——这两处归 Kimi（02 规范第 7 节），按任务要求须先协调。现状已满足"不输出外部主机"。如需换成图片（例如旧站的 `static/images/nopic.gif`），请 Kimi 在样式/组件里替换占位元素，后端视图模型不需要改。
 - W1（播放器解析、缓冲/预加载页、`iva` 外部脚本）与外部播放/下载地址（W2 ②）所在页面在 B05 实现，届时接入本参数；W3 在 B24 接入（MACC-47：默认改为打开，见 `33-b24-payment.md` 第 8 节）。
 - `maccms.site.logo-url` 目前没有任何页面输出；以后输出 Logo 时同样要经过 W2 判断（B05 或 Kimi 的外壳改动时处理）。
 

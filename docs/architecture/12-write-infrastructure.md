@@ -1,7 +1,7 @@
 ## 12 写入基础设施：可写数据源、写入登记与护栏、写 SQL 规范、并发测试与回滚演练工具（B07 / MACC-31）
 
 > **状态：已在本地实现并通过 `./mvnw verify` 与 `./mvnw verify -Pmysql-it`，未部署。** 依据：`docs/architecture/09-roadmap.md`（以下简称"路线图"）第 1.2 节、第 5.3 节 B07 行与写入方矩阵、第 6 节。D3 整体切换方案单独成文：`13-cutover-plan.md`。
-> 本批**不实现任何业务写入**（会员、内容管理、采集都不在本批），正式登记表为空；不改旧 PHP、不改表结构与账号、不读 `prod-config`、不连线上。所有写入与恢复演练只在一次性库 `maccms_it_*` 上进行。路径相对仓库根目录，代码在 `backend/` 下。
+> 本批**不实现任何业务写入**（会员、内容管理、采集都不在本批），正式登记表为空；不改旧 PHP、不改表结构与账号、不读 `prod-config`、不连线上。所有写入与恢复演练只在一次性库 `maccms_it_*` 上进行。路径相对仓库根目录，代码在仓库根目录下。
 
 ### 1. 交付物一览
 
@@ -129,8 +129,8 @@
 #### 4.6 写 Mapper 的用法（供 B08 起参照）
 
 ```text
-backend/src/main/java/com/maccms/backend/<模块>/infrastructure/XxxWriteMapper.java   // @WriteMapper 接口，不标 @Mapper
-backend/src/main/resources/mapper-write/<模块>/XxxWriteMapper.xml                     // 只有 insert/update/delete
+src/main/java/com/maccms/backend/<模块>/infrastructure/XxxWriteMapper.java   // @WriteMapper 接口，不标 @Mapper
+src/main/resources/mapper-write/<模块>/XxxWriteMapper.xml                     // 只有 insert/update/delete
 WriteRegistry.REGISTERED 增加 new WritePermission("<模块>", "mac_xxx", WriteOperation.UPDATE, "B<nn>")
 <模块>.infrastructure 的配置类：@Bean @ConditionalOnBean(WriteDatabase.class) XxxWriteMapper m(WriteDatabase db) { return db.mapper(XxxWriteMapper.class); }
 ```

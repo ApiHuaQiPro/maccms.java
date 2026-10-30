@@ -279,7 +279,7 @@ WHERE vod_id = ?
 
 #### 11.1 黄金样本
 
-- **HTTP 黄金**：`backend/src/test/php/interaction_golden.php` 生成，输出 `resources/interaction/php80-golden.json`、`php73-golden.json`。
+- **HTTP 黄金**：`src/test/php/interaction_golden.php` 生成，输出 `resources/interaction/php80-golden.json`、`php73-golden.json`。
   - 每版 291 个 HTTP 用例：经旧 ThinkPHP 路由与 `Comment`、`Gbook`、`Ajax` 控制器，或 api 入口的 `Provide`。
   - 另有 33 个搜索缓存用例（其中 `wd.long` 超过新版 64 字的关键字上限，不复放）：直接调用 `model('Vod')->listCacheData`，旧搜索页模板里的 `{maccms:vod}` 标签就是这样调用的。仓库缺模板，HTTP 走不到。
   - 每个用例记录状态码、Content-Type、Set-Cookie、正文，以及 `mac_comment/gbook/visit/vod_search/user` 的全部行和 6 张内容表的计数列。
@@ -313,7 +313,7 @@ WHERE vod_id = ?
   - B10 `MemberFinanceGoldenMySqlIT` 两版各 146 例照旧通过。
   - 14 个一次性库都是 `verified absent`，跑完后的数据库列表与跑之前相同；日志里没有 `maccms_dev`。
 - **`./mvnw verify`**（不设 `MACCMS_IT_*`）：BUILD SUCCESS，2419 个测试，0 失败、0 错误、0 跳过。
-- **Node**：`node --test backend/src/test/js/site/member.test.js backend/src/test/js/site/trial.test.js`，24/24（本批没有改脚本）。
+- **Node**：`node --test src/test/js/site/member.test.js src/test/js/site/trial.test.js`，24/24（本批没有改脚本）。
 - **检查**：`git diff --check 6849add HEAD` 通过；改动的 125 个文件都在 `backend/`、`docs/` 下，全部是 UTF-8，无 BOM、无 CR；旧 PHP、`template/`、`static/` 改动数为 0；写 SQL 里没有 DDL。
 
 #### 11.4 打包 jar 实测（本机一次性库，跑完已清理）
@@ -328,7 +328,7 @@ WHERE vod_id = ?
   - 评论顶、举报 → 计数 +1；
   - 留言页带验证码，不填验证码提交 → 1002；
   - `search_verify=1` 时搜索页显示验证码页，表单提交到 `ajax/verify_check`，错码 → 1002。
-- **浏览器**：`backend/src/test/browser/site-pages-check.mjs`（Edge 无头）检查视频详情、文章详情、评论页、留言页、报错页和搜索验证码页。375/768/1280/1440/1920 宽度下都没有横向溢出；键盘顺序与焦点样式正常；禁用 JS 后内容仍在。失败 0 项。
+- **浏览器**：`src/test/browser/site-pages-check.mjs`（Edge 无头）检查视频详情、文章详情、评论页、留言页、报错页和搜索验证码页。375/768/1280/1440/1920 宽度下都没有横向溢出；键盘顺序与焦点样式正常；禁用 JS 后内容仍在。失败 0 项。
 - **收尾**：应用日志 0 行 ERROR；jar 进程已按 PID 结束，端口已关闭；一次性库已删除，全局 `maccms\_it\_%` 为 0；临时目录已删除。
 - **未做**：新旧 jar 对 B05～B10 游客页逐字节对照（B10 做过）。详情页按设计多了互动区，其他页面靠 MockMvc 测试覆盖。
 

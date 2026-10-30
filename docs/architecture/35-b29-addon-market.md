@@ -1,7 +1,7 @@
 ## 35 B29 插件市场联网下载、安装、升级（E13，MACC-52）
 
 > **状态：已在本地实现并通过 `./mvnw verify`，未部署，未与真实插件市场联调。** 依据：`docs/architecture/09-roadmap.md`（以下简称"路线图"）第 3.2 节 B29 行、第 4 节 E13 行、第 4.3 节实施规则、第 5.3 节 B29 验收行、第 5.7 节（本地插件与"没有 Java 实现的插件保持禁用"）、第 1.2 节零结构变更；B23 出站基础（26 文档）；B15 本地插件（24 文档第 11 节）。
-> 不改旧 PHP、不改表结构、不连 `maccms_dev`、不连真实市场；黄金样本只在一次性库 `maccms_it_*` 与临时站点副本上生成。路径相对仓库根目录，代码在 `backend/` 下。
+> 不改旧 PHP、不改表结构、不连 `maccms_dev`、不连真实市场；黄金样本只在一次性库 `maccms_it_*` 与临时站点副本上生成。路径相对仓库根目录，代码在仓库根目录下。
 
 ### 1. 先说结论：旧版插件市场在这份生产代码里不能用
 
@@ -27,7 +27,7 @@
 | 后台动作 `addon/install`、`addon/upgrade` | `AdminAddonActions`（`AdminResponses.errorTo`）；`AdminConfiguration` 装配 | `AddonMarketGoldenTest`（PHP 黄金复放） |
 | 文件区域 | `LegacySiteFiles.readAddonGlobal`、`writeAddonBackup`（只能写 `runtime/addons/<名称>-backup-<14 位数字>.zip`，只新建） | 同上 |
 | 部署参数 | `application.yml` 的 `maccms.integration.addonmarket.*`、`config/maccms-backend.env.example` | `FastadminAddonMarketTest.apiUrlAndSizeConfiguration` |
-| PHP 黄金 | `backend/src/test/php/addon_market_golden.php` → `backend/src/test/resources/admin/addonmarket/php{80,73}-golden.json` | `AddonMarketGoldenTest` |
+| PHP 黄金 | `src/test/php/addon_market_golden.php` → `src/test/resources/admin/addonmarket/php{80,73}-golden.json` | `AddonMarketGoldenTest` |
 
 后台界面：旧后台插件列表里的"安装"按钮本来就是空处理（`application/admin/view/addon/index.html:69-71`，B15 已原样转写），也没有"升级"按钮，所以本批**不改任何后台页面**；`install`/`upgrade` 只是后台接口，与旧版一样。
 
@@ -97,7 +97,7 @@
 
 ### 9. 验证
 
-**PHP 黄金**（`backend/src/test/php/addon_market_golden.php`，PHP 8.0.30 与 7.3.33 各一份，15 个场景、每版 23 步）：一次性库 `maccms_it_<时间>_<随机>`、临时站点副本、本机模拟市场（`php -S 127.0.0.1:随机端口`，插件包由脚本生成并以 base64 写进黄金）。每步记录状态码、正文、模拟市场收到的请求（地址与 `X-REQUESTED-WITH`）、站点里变化的文件（SHA-256）、一次性库里新出现的表与 `mac_link` 行数。场景：生产现状；`adminloginbg` 卸载 → 市场安装（带 `uid/token`）→ 启用中升级 → 禁用 → 升级（配置值保留、备份）；第三方插件（资源、全局文件、`bootstrap.js`、数据语句）与重复安装；JSON 下载地址；JSON 地址下载失败；市场拒绝两种；HTTP 404；连接失败；坏 zip；路径穿越 zip；40 MiB zip 炸弹；结构语句；缺主类；冲突文件；参数缺失与升级不存在的插件。
+**PHP 黄金**（`src/test/php/addon_market_golden.php`，PHP 8.0.30 与 7.3.33 各一份，15 个场景、每版 23 步）：一次性库 `maccms_it_<时间>_<随机>`、临时站点副本、本机模拟市场（`php -S 127.0.0.1:随机端口`，插件包由脚本生成并以 base64 写进黄金）。每步记录状态码、正文、模拟市场收到的请求（地址与 `X-REQUESTED-WITH`）、站点里变化的文件（SHA-256）、一次性库里新出现的表与 `mac_link` 行数。场景：生产现状；`adminloginbg` 卸载 → 市场安装（带 `uid/token`）→ 启用中升级 → 禁用 → 升级（配置值保留、备份）；第三方插件（资源、全局文件、`bootstrap.js`、数据语句）与重复安装；JSON 下载地址；JSON 地址下载失败；市场拒绝两种；HTTP 404；连接失败；坏 zip；路径穿越 zip；40 MiB zip 炸弹；结构语句；缺主类；冲突文件；参数缺失与升级不存在的插件。
 
 **新版复放**（`AddonMarketGoldenTest`，不连库，`./mvnw verify` 里运行）：同样的初始文件、同样字节的插件包、同样的下载计划，两版共 **46 步全部一致**（差异按第 10 节逐条换算后断言）；`adminloginbg` 的安装、禁用、升级在 `info.ini`、`config.php`、`extra/addons.php`、`static/js/addons.js`、`static/addons/…` 上与 PHP **逐字节相同**；另断言系统临时目录没有残留。
 

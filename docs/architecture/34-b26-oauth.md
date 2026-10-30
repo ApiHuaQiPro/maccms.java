@@ -84,7 +84,7 @@
 
 | 内容 | 测试 / 证据 |
 |---|---|
-| PHP 黄金 | `backend/src/test/php/oauth_golden.php` + `oauth_golden_child.php` + `oauth_golden_thinkoauth.php`（缺失的 ThinkOauth 的替身，不发网络请求，按用例计划给出令牌、openid、用户信息）：一次性库 `maccms_it_*`，php-cgi 子进程执行**真实的旧 `logincallback`**（会员用 cookie 经 `checkLogin` 校验），记录返回与 `mac_user` 每行。22 个用例：QQ/微信新用户、已绑定、VIP 过期降级、微信 openid 含 `_`、用户名被占、openid 不足 6 位、未开放注册（未绑定/已绑定）、会员功能关闭、IP 限额、过滤词、注册状态 0、停用会员、改绑抢占他人、重复绑定、微信绑定、换绑、两种用户信息失败、换令牌失败、缺 `code`。PHP 7.3 与 8.0 结果相同（只有生成时写入的 IP 限额种子时间不同）。输出 `backend/src/test/resources/integration/b26/php73-golden.json`、`php80-golden.json` |
+| PHP 黄金 | `src/test/php/oauth_golden.php` + `oauth_golden_child.php` + `oauth_golden_thinkoauth.php`（缺失的 ThinkOauth 的替身，不发网络请求，按用例计划给出令牌、openid、用户信息）：一次性库 `maccms_it_*`，php-cgi 子进程执行**真实的旧 `logincallback`**（会员用 cookie 经 `checkLogin` 校验），记录返回与 `mac_user` 每行。22 个用例：QQ/微信新用户、已绑定、VIP 过期降级、微信 openid 含 `_`、用户名被占、openid 不足 6 位、未开放注册（未绑定/已绑定）、会员功能关闭、IP 限额、过滤词、注册状态 0、停用会员、改绑抢占他人、重复绑定、微信绑定、换绑、两种用户信息失败、换令牌失败、缺 `code`。PHP 7.3 与 8.0 结果相同（只有生成时写入的 IP 限额种子时间不同）。输出 `src/test/resources/integration/b26/php73-golden.json`、`php80-golden.json` |
 | 新版复放 | `OAuthGoldenMySqlIT`（`-Pmysql-it`）：同样的种子与配置，**新版走完整流程**——`start` 取得 `state` → `LoopbackMockServer` 扮演 QQ/微信、真实的 `integration.oauth` 经出站客户端换令牌/openid/用户信息 → `callback`。**两版共 44 个用例全部一致**：返回类别、返回码与提示原文、登录时写出的 cookie 名称与顺序、`mac_user` 每行每列（时间按相对"现在"比较）；新签发的 `user_check` 等于 `md5(user_random-user_name-user_id-)`。有意差异 D-B26-1 另行断言：旧版新账号密码在 `md5(now±5)` 之中，新版是 32 位十六进制且不在其中 |
 | 安全（IT） | 同一 IT：伪造 `state`、伪造后再用真值、无会话、别的会话的 `state` → 拒绝，**模拟服务没有收到任何请求、库不变**；正常一次后重放 → 拒绝、无新请求、库不变；自动注册账号用 `time()` 前后 ±5 秒的值作密码登录都是 1003；`user/login` 带 `openid`+`col` → 1001 且没有 cookie（D2 ②复验）；`user/reg` 带 `user_openid_qq` 不写 openid；同一新 openid 的 8 个并发回调只注册 1 个账号、8 次都登录成功 |
 | 回滚演练 | 同一 IT：本批每条写语句各执行一次（自动注册、同 openid 再注册被拒、凭 openid 登录、绑定、清除）后只用 DML 恢复到 S0，逐行 diff 为空、表结构指纹不变；删库并确认不存在 |
@@ -92,7 +92,7 @@
 | 协议 | `OAuthLoginTest`（10 个，`LoopbackMockServer`）："已打开"的判定；两种授权页地址逐项；QQ 换令牌请求体逐项（密钥只在请求体）、JSON 与查询串两种令牌响应、JSONP/JSON 两种 openid 响应、用户信息请求逐项；QQ 令牌错误、缺 `expires_in`、HTTP 500、非 JSON、**令牌属于别的应用**、openid 超长/含非法字符/为空 → 失败；用户信息 `ret≠0`、非 JSON、缺 `ret` → 失败并带平台说明；微信请求逐项、`errcode`、用户信息 openid 不符 → 失败；连接被拒、`loopback-only` 下默认外部地址、超时 → 按失败返回不抛出；根地址校验；令牌、授权码、密钥、openid 不进日志 |
 | 既有护栏 | `OutboundPolicyTest.registryAtB26`（登记表）；`OutboundNetworkGuardTest`、`ModuleBoundaryTest`、`WriteGuardTest`（写 Mapper 不用 `<sql>/<include>`，列名用 `<choose>` 在两个固定值之间选）、`SqlEntryGuardTest`、`SiteTemplatePolicyTest`、`RepositorySecretFieldsTest` 覆盖新代码；`SiteUserMvcTest` 未改动全部通过 |
 
-命令（`backend/`）：`./mvnw verify`；`MACCMS_IT_ADMIN_URL=… MACCMS_IT_ADMIN_USERNAME=… MACCMS_IT_ADMIN_PASSWORD=… ./mvnw verify -Pmysql-it`（只建一次性库 `maccms_it_*`）。重新生成黄金见 `oauth_golden.php` 文件头（需按 AGENTS.md 恢复 `vendor/`）。
+命令（仓库根目录）：`./mvnw verify`；`MACCMS_IT_ADMIN_URL=… MACCMS_IT_ADMIN_USERNAME=… MACCMS_IT_ADMIN_PASSWORD=… ./mvnw verify -Pmysql-it`（只建一次性库 `maccms_it_*`）。重新生成黄金见 `oauth_golden.php` 文件头（需按 AGENTS.md 恢复 `vendor/`）。
 
 ### 7. 与旧版的差异
 

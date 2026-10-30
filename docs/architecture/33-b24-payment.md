@@ -140,7 +140,7 @@
 
 | 测试 | 覆盖 | 结果 |
 |---|---|---|
-| `backend/src/test/php/pay_golden.php`（+ `_child.php`，复用 B25 的 `sms_mail_mock.py`，新增 `--cn` 参数） | 在一次性库上以 php-cgi 运行旧 `User::gopay` 与 `Payment::notify`，78 个用例（gopay 28、回调 50 + GET 1），记录输出、提示、统一下单请求与三张表 | PHP 7.3、8.0 各一份：`integration/b24/php{73,80}-golden.json` |
+| `src/test/php/pay_golden.php`（+ `_child.php`，复用 B25 的 `sms_mail_mock.py`，新增 `--cn` 参数） | 在一次性库上以 php-cgi 运行旧 `User::gopay` 与 `Payment::notify`，78 个用例（gopay 28、回调 50 + GET 1），记录输出、提示、统一下单请求与三张表 | PHP 7.3、8.0 各一份：`integration/b24/php{73,80}-golden.json` |
 | `integration.pay.PaymentGoldenTest` | 支付宝表单 4 例、码支付/Zhapay 网关地址 8 例与 PHP 7.3 逐字节相同（PHP 8.0 能运行的 7 例同样相同）；微信统一下单 8 例：去掉 nonce 与签名后的请求体逐字节相同、签名可用假密钥复算、头、各种返回下是否得到 code_url；回调 50 例回复与 7.3 相同（8.0 能运行的 27 例同样相同）、到账调用与旧版改动的订单一致 | 通过 |
 | `integration.pay.PaySafetyTest` | DOCTYPE/外部实体与属性被拒绝；SimpleXML 形态与嵌套签名；PHP 7 浮点与 `is_numeric`、`urlencode`；网关参数校验；`loopback-only` 下微信下单发出前失败且日志不含密钥、商户号、单号 | 通过 |
 | `member.PaymentGoldenMySqlIT`（`-Pmysql-it`） | ① 78 例逐条复放：提示/输出与 mac_order、mac_user、mac_plog 的行与 PHP 7.3 相同；② W3 关闭；③ 15 轮 × 16 个并发的重复回调（四种方式混合）只到账一次、只写一条流水；④ 对账；⑤ 回滚演练：加积分被拒绝 → 订单恢复、重发后到账一次；写流水被拒绝 → 先撤积分再恢复订单；写流水时连接中断 → 保留认领、重发不重复加积分；⑥ DML 恢复到 S0、表结构指纹不变、删库确认 | 通过 |
@@ -151,8 +151,8 @@
 
 ```bash
 MACCMS_IT_ADMIN_URL=jdbc:mysql://127.0.0.1:3306/ MACCMS_IT_ADMIN_USERNAME=root MACCMS_IT_ADMIN_PASSWORD=<本机密码> \
-PHP_CGI=D:/Tools/php/7.3/php-cgi.exe D:/Tools/php/7.3/php.exe backend/src/test/php/pay_golden.php \
-    > backend/src/test/resources/integration/b24/php73-golden.json
+PHP_CGI=D:/Tools/php/7.3/php-cgi.exe D:/Tools/php/7.3/php.exe src/test/php/pay_golden.php \
+    > src/test/resources/integration/b24/php73-golden.json
 ```
 
 所有假值形如 `test-only-…`（商户号 `1900000109` 是微信文档的示例号）；外部请求只到 127.0.0.1。

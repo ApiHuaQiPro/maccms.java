@@ -2,8 +2,8 @@
 
 > **返工补充（2026-10-17 11:57–12:15）：第 10 节是在修复后的代码上，经真实 SSR HTTP 与实际内部标签服务/Mapper 的测量（SQL 与绑定值取自实际执行，不是照抄 XML）。第 0–9 节是中断前一次运行的直连测量，数字与结论保留不改；两次的超时/503 结论按第 10.5 节合读。**
 
-> 依据：MACC-29 补充验收"增加一次中规模合成库测量，记录 IN/OR、年份区间和随机候选的耗时/EXPLAIN"。被测 SQL 是分支 `agent/claude/macc-29` 提交 `6f5e2af` 的 `backend/src/main/resources/mapper/content/VodMapper.xml`（`publishedInTypes` + `matchingConditions` + `legacyConditions` + `pageOrderAndLimit`），条件构造照 `VideoFilter`、`VideoLegacyConditions`、`ContentReadService.criteria/randomPage`。本次没有修改任何业务代码、配置默认值、契约、PHP、DDL 或账号。
-> 测量脚本：`backend/src/test/perf/B05Perf.java`（Java 单文件，不进 `./mvnw verify`，用法见文件头注释；风格与约束同 `SearchPerf.java`）。
+> 依据：MACC-29 补充验收"增加一次中规模合成库测量，记录 IN/OR、年份区间和随机候选的耗时/EXPLAIN"。被测 SQL 是分支 `agent/claude/macc-29` 提交 `6f5e2af` 的 `src/main/resources/mapper/content/VodMapper.xml`（`publishedInTypes` + `matchingConditions` + `legacyConditions` + `pageOrderAndLimit`），条件构造照 `VideoFilter`、`VideoLegacyConditions`、`ContentReadService.criteria/randomPage`。本次没有修改任何业务代码、配置默认值、契约、PHP、DDL 或账号。
+> 测量脚本：`src/test/perf/B05Perf.java`（Java 单文件，不进 `./mvnw verify`，用法见文件头注释；风格与约束同 `SearchPerf.java`）。
 > 原始结果：`docs/architecture/15-b05-perf-raw/`（下文数字都可以在那里查到）。
 > 所有数字都是**本机一次运行**的测量值（2026-10-17 01:58–02:49），而且测量期间机器**没有空闲**（见第 2 节），只能当量级和相对比较来看，不是延迟承诺。
 
@@ -34,7 +34,7 @@
 | 默认值 | 包含匹配只在被测应用子进程里经 `MACCMS_CONTENT_SEARCH_ENABLED=true` 打开；仓库默认值没有改 |
 | 数据 | 全部合成（固定种子，只依赖 `vod_id`），没有真实用户、密钥或地址；图片和播放地址都在 `example.invalid` 下 |
 | 进程 | 应用子进程启动两次（PID 14612、23652），都按 PID 结束；没有按进程名结束任何进程 |
-| 被测应用 | 用 `git archive 6f5e2af backend` 解到已被忽略的 `backend/target/b05src/`，离线打包（`./mvnw -o -q package -DskipTests`）；没有切分支，也没有改其他 worktree |
+| 被测应用 | 用 `git archive 6f5e2af backend` 解到已被忽略的 `target/b05src/`，离线打包（`./mvnw -o -q package -DskipTests`）；没有切分支，也没有改其他 worktree |
 
 ### 2. 环境与数据
 
@@ -223,7 +223,7 @@ ICP = Using index condition。utf8 列和 utf8mb4 连接比较时可以用索引
 ### 8. 复现
 
 ```bash
-cd backend
+# 在仓库根目录执行（2026-10-30 前为 cd backend）
 export MACCMS_IT_ADMIN_URL='jdbc:mysql://127.0.0.1:3306/?characterEncoding=UTF-8&useSSL=false'
 export MACCMS_IT_ADMIN_USERNAME=<有建库/删库权限的本机账号>
 export MACCMS_IT_ADMIN_PASSWORD=<密码>
@@ -238,7 +238,7 @@ $P http s300k <B05 分支打包的 maccms-backend-0.1.0-SNAPSHOT.jar> base,a.,b.
 $P drop                      # 失败时也要执行；删除后查 information_schema.schemata 确认不存在
 ```
 
-输出写到 `backend/target/perf-b05/`（已被忽略）。应用日志（`*-app.log`，含 DEBUG SQL，约 1 MB）没有复制到 raw 目录。
+输出写到 `target/perf-b05/`（已被忽略）。应用日志（`*-app.log`，含 DEBUG SQL，约 1 MB）没有复制到 raw 目录。
 
 ### 9. 复核（2026-10-17 恢复运行，交付时）
 
@@ -262,8 +262,8 @@ $P drop                      # 失败时也要执行；删除后查 information_
 
 | 项 | 内容 |
 |---|---|
-| 被测代码 | 分支 `agent/claude/macc-29` 提交 `b628af0`（返工第 1、2 项之后）的 `backend/src/main`；测量期间之后的提交只改验证码开关（`SiteFeatures`）、测试与文档，不改任何查询路径 |
-| 运行器 | `backend/src/test/java/com/maccms/backend/perf/B05SsrPerfRun.java`（类名不匹配 `*Test`/`*IT`，不进 `./mvnw verify`；`./mvnw -o -Pmysql-it verify -Dtest=none -Dit.test=B05SsrPerfRun` 显式运行）。在同一 JVM 中以真实 HTTP 启动应用（端口随机，只听 127.0.0.1），请求 SSR 页面；内部标签条件没有 URL 入口，直接调用应用上下文中的 `ContentReadService.listVideos` |
+| 被测代码 | 分支 `agent/claude/macc-29` 提交 `b628af0`（返工第 1、2 项之后）的 `src/main`；测量期间之后的提交只改验证码开关（`SiteFeatures`）、测试与文档，不改任何查询路径 |
+| 运行器 | `src/test/java/com/maccms/backend/perf/B05SsrPerfRun.java`（类名不匹配 `*Test`/`*IT`，不进 `./mvnw verify`；`./mvnw -o -Pmysql-it verify -Dtest=none -Dit.test=B05SsrPerfRun` 显式运行）。在同一 JVM 中以真实 HTTP 启动应用（端口随机，只听 127.0.0.1），请求 SSR 页面；内部标签条件没有 URL 入口，直接调用应用上下文中的 `ContentReadService.listVideos` |
 | SQL 与绑定 | 测试侧注册的 MyBatis 拦截器（只在本次运行的上下文里）从实际执行的 `MappedStatement`/`BoundSql` 取 SQL 文本与绑定值（与 `DefaultParameterHandler` 相同的取值顺序），逐条计时并记录 MySQL 错误码；EXPLAIN 在另一连接上以**同一组绑定值**执行。全部语句与 EXPLAIN 见 `15-b05-perf-raw/ssr-sql-explain.txt`（长列清单、长 IN 列表在文件中缩写，EXPLAIN 用原文） |
 | 每个形态 | 第 1 次（冷）+ 5 次热态；记录每次的 HTTP 状态与耗时、页面"共 N 条"（或服务返回的 total）；SQL 取热态第 1 次 |
 | 一次性库 | `maccms_it_20261017115756_6b2125e7`：`B05Perf.java create` 校验库名、导入 `install.sql`，`grow 300000`（与第 2 节同一生成器，插入 210 s、`ENABLE KEYS` 186 s）；运行器另在库中补齐模块数据（70.8 s）；`B05Perf.java drop` 删除后查 `information_schema.schemata` 为 0，另用 mysql 客户端复查 `maccms_it_%` 剩余 0（`ssr-run.log` 末行） |
@@ -426,7 +426,7 @@ $P drop                      # 失败时也要执行；删除后查 information_
 #### 10.6 复现
 
 ```bash
-cd backend
+# 在仓库根目录执行（2026-10-30 前为 cd backend）
 export MACCMS_IT_ADMIN_URL='jdbc:mysql://127.0.0.1:3306/?characterEncoding=UTF-8&useSSL=false'
 export MACCMS_IT_ADMIN_USERNAME=<有建库/删库权限的本机账号>
 export MACCMS_IT_ADMIN_PASSWORD=<密码>
@@ -436,4 +436,4 @@ $P create && $P grow 300000
 $P drop          # 失败时也要执行；删除后查 information_schema.schemata 确认不存在
 ```
 
-输出写到 `backend/target/perf-b05-ssr/`（已被忽略），复制到 `docs/architecture/15-b05-perf-raw/ssr-*`（只去掉了行尾空白）。
+输出写到 `target/perf-b05-ssr/`（已被忽略），复制到 `docs/architecture/15-b05-perf-raw/ssr-*`（只去掉了行尾空白）。

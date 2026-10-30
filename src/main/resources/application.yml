@@ -1,0 +1,238 @@
+# 默认配置不含任何数据库地址或凭证：缺少环境变量时启动直接失败，不会回落到任何默认库或 root 账号。
+# 可用的环境变量见 config/maccms-backend.env.example。
+spring:
+  application:
+    name: maccms-backend
+  config:
+    # 部署配置文件（B22 安装向导写入，docs/architecture/31-b22-install-wizard.md 第 5.3 节）：MACCMS_DEPLOY_CONFIG 为它的绝对路径，
+    # 文件里是 MACCMS_DB_URL 等键（同名环境变量优先）。留空或文件不存在时不读。
+    import: optional:file:${MACCMS_DEPLOY_CONFIG:}
+  datasource:
+    url: ${MACCMS_DB_URL}
+    username: ${MACCMS_DB_USERNAME}
+    password: ${MACCMS_DB_PASSWORD}
+    hikari:
+      # 只读连接：Connector/J 会对会话执行 SET SESSION TRANSACTION READ ONLY，写语句会被 MySQL 拒绝
+      read-only: true
+      maximum-pool-size: ${MACCMS_DB_POOL_SIZE:10}
+      connection-timeout: 5000
+      pool-name: maccms-ro
+  sql:
+    init:
+      # 不执行任何 schema/data 初始化脚本
+      mode: never
+  jackson:
+    default-property-inclusion: always
+  # 会员头像上传（B09，18 文档第 3.8 节）：旧版取 PHP upload_max_filesize（默认 2M）。
+  # resolve-lazily：multipart 在处理器第一次取参数时才解析，超限等解析失败由 SiteUserController 按旧版"上传的文件被丢弃"处理
+  # （头像返回"未找到上传的文件…"的 JSON），不在进入处理器前变成 500。
+  servlet:
+    multipart:
+      max-file-size: 2MB
+      max-request-size: 3MB
+      resolve-lazily: true
+
+mybatis:
+  mapper-locations: classpath:mapper/**/*.xml
+  configuration:
+    arg-name-based-constructor-auto-mapping: true
+    map-underscore-to-camel-case: false
+    default-statement-timeout: 10
+
+maccms:
+  datasource:
+    allow-root: ${MACCMS_DB_ALLOW_ROOT:false}
+  # 可写数据源（B07，docs/architecture/12-write-infrastructure.md 第 2 节）：默认关闭，关闭时不创建任何可写连接，应用只读。
+  # 与上面的只读连接池分开（连接池 maccms-rw，不是 DataSource Bean）；打开时地址、账号、密码必须经 MACCMS_WRITE_DB_* 单独提供，
+  # 不沿用只读连接池的配置；地址须与 MACCMS_DB_URL 指向同一主机、端口与库名。只执行 WriteRegistry 登记的"模块 + 表 + 操作"。
+  write:
+    enabled: ${MACCMS_WRITE_ENABLED:false}
+    url: ${MACCMS_WRITE_DB_URL:}
+    username: ${MACCMS_WRITE_DB_USERNAME:}
+    password: ${MACCMS_WRITE_DB_PASSWORD:}
+    allow-root: ${MACCMS_WRITE_DB_ALLOW_ROOT:false}
+    pool-size: ${MACCMS_WRITE_DB_POOL_SIZE:4}
+  content:
+    # 对齐 PHP 配置 user.status：1 时按游客组(group_id=1)的 group_type/group_popedom 判定分类与详情可见性
+    enforce-guest-popedom: ${MACCMS_CONTENT_ENFORCE_GUEST_POPEDOM:true}
+    # 对齐 PHP 配置 app.copyright_status==2（内容页跳转）：vod_copyright=1 的视频详情返回 403
+    copyright-hides-detail: ${MACCMS_CONTENT_COPYRIGHT_HIDES_DETAIL:true}
+    # 对齐 PHP 配置 user.art_points_type（B05）：1 按 art_points（整篇收费），0 按 art_points_detail（按页收费），留空按仓库值 1
+    art-points-type: ${MACCMS_CONTENT_ART_POINTS_TYPE:}
+    # 播放/下载授权（B05，docs/architecture/15-b05-readonly-pages.md 第 6 节），对齐旧 PHP 配置，留空按仓库值：
+    # vod-points-type 对应 user.vod_points_type（1 每数据、0 每集）；trysee 对应 user.trysee（全局试看分钟数，0 关闭）；
+    # copyright-status 对应 app.copyright_status（0..4，留空时按 copyright-hides-detail 取 2 或 1；设置时须与 copyright-hides-detail 一致）
+    playback:
+      vod-points-type: ${MACCMS_CONTENT_VOD_POINTS_TYPE:}
+      trysee: ${MACCMS_CONTENT_TRYSEE:}
+      copyright-status: ${MACCMS_CONTENT_COPYRIGHT_STATUS:}
+    # 视频搜索（契约 1.1.0，docs/architecture/09-content-search-filter-plan.md 第 6.3-6.4 节）。只读本应用环境变量，不读取 PHP 配置。
+    search:
+      # 是否接受包含匹配参数 keyword、classes（true/false），默认关闭；area/lang/year/level 精确筛选不受影响。
+      # 开启前须先完成 09 方案第 6.5 节的一次性合成库测量并经确认。
+      enabled: ${MACCMS_CONTENT_SEARCH_ENABLED:false}
+      # 带 keyword/classes 的请求同时执行的上限（1 到连接池大小减 1），超过即 503，不排队
+      max-concurrent: ${MACCMS_CONTENT_SEARCH_MAX_CONCURRENT:4}
+  # 会员账号（B09，docs/architecture/18-b09-member-account.md 第 7 节）：账号写入需要上面的可写数据源；关闭时会员入口返回 503。
+  # upload-dir 为旧站根目录下 upload/ 的本地路径（头像写到其下 user/<id%10>/<id>.jpg，由部署层的 nginx 直接提供），留空时头像上传不可用。
+  member:
+    upload-dir: ${MACCMS_MEMBER_UPLOAD_DIR:}
+  # 后台上传与附件（B13，docs/architecture/22-b13-admin-content.md 第 7.10 节）：同样是旧站根目录下 upload/ 的本地路径（与上面的头像目录
+  # 指向同一处）；只存本地（E08）。留空时后台上传、附件浏览与内容图片删除不可用。
+  upload:
+    dir: ${MACCMS_UPLOAD_DIR:}
+  # 旧配置只读层（B02，docs/architecture/11-guards-and-legacy-config.md 第 4 节）：旧站 application 目录（含 extra/*.php、route.php），
+  # 可以在仓库之外。留空表示未配置；只读解析 var_export 格式，不执行 PHP，不写回。不要指向线上目录。
+  legacy-config:
+    dir: ${MACCMS_LEGACY_CONFIG_DIR:}
+  # 浏览器侧外部地址放行（B02，路线图第 1.3、4.2 节）：部署级参数，不是站点配置项。W1/W2 按旧版放行、默认打开，可设为 false 关闭
+  # （关闭时页面不输出外部主机地址）；w1 播放器解析与外部脚本（输出在 B05 实现）；w2 外链图片与外部播放/下载地址；
+  # w3 支付网关跳转（B24 起默认打开；false 时支付宝、码支付、Zhapay 按"未开启"处理）。
+  browser-external:
+    w1: ${MACCMS_BROWSER_EXTERNAL_W1:true}
+    w2: ${MACCMS_BROWSER_EXTERNAL_W2:true}
+    w3: ${MACCMS_BROWSER_EXTERNAL_W3:true}
+  # 出站客户端（B23，docs/architecture/26-b23-integration-foundation.md 第 3 节）：integration 已登记子包的 HTTP 请求统一经过它。
+  # mode：open（默认，允许外部主机）或 loopback-only（只允许回环地址，测试配置用这个值）。
+  # 超时与旧 mac_curl_* 一致：连接 15 秒、整体 30 秒；响应体上限 4 MiB。日志只记目标主机，不记路径、查询串与凭证。
+  integration:
+    outbound:
+      mode: ${MACCMS_INTEGRATION_OUTBOUND_MODE:open}
+      connect-timeout: ${MACCMS_INTEGRATION_OUTBOUND_CONNECT_TIMEOUT:15s}
+      read-timeout: ${MACCMS_INTEGRATION_OUTBOUND_READ_TIMEOUT:30s}
+      max-response-bytes: ${MACCMS_INTEGRATION_OUTBOUND_MAX_RESPONSE_BYTES:4194304}
+    # 百度推送（B28，docs/architecture/30-b28-urlsend-backlink.md 第 3 节）的接口地址，默认与旧版相同；令牌仍在旧配置 urlsend.*.token。
+    urlsend:
+      baidu-endpoint: ${MACCMS_INTEGRATION_URLSEND_BAIDU_ENDPOINT:http://data.zz.baidu.com/urls}
+    # 短信通道（B25，docs/architecture/32-b25-sms-mail.md 第 3 节）的接口地址，默认与旧版相同；账号与密钥仍在旧配置 sms.*。
+    # 邮件（SMTP）没有单独的部署参数：服务器与账号在旧配置 email.*，超时与出站模式沿用上面的 outbound。
+    sms:
+      aliyun-endpoint: ${MACCMS_INTEGRATION_SMS_ALIYUN_ENDPOINT:http://dysmsapi.aliyuncs.com/}
+      qcloud-endpoint: ${MACCMS_INTEGRATION_SMS_QCLOUD_ENDPOINT:https://yun.tim.qq.com/v5/tlssmssvr/sendsms}
+    # 在线支付（B24，docs/architecture/33-b24-payment.md 第 4 节）的网关与统一下单地址，默认与旧版相同；商户号、appid 与密钥仍在旧配置 pay.*。
+    pay:
+      alipay-gateway: ${MACCMS_INTEGRATION_PAY_ALIPAY_GATEWAY:https://mapi.alipay.com/gateway.do?_input_charset=utf-8}
+      codepay-gateway: ${MACCMS_INTEGRATION_PAY_CODEPAY_GATEWAY:https://api.xiuxiu888.com/creat_order/}
+      zhapay-gateway: ${MACCMS_INTEGRATION_PAY_ZHAPAY_GATEWAY:https://www.zhapay.com/mapay.html}
+      weixin-endpoint: ${MACCMS_INTEGRATION_PAY_WEIXIN_ENDPOINT:https://api.mch.weixin.qq.com/pay/unifiedorder}
+    # 插件市场（B29，docs/architecture/35-b29-addon-market.md 第 3 节）：api-url 对应旧 fastadmin.api_url。这份生产代码没有配置它，
+    # 默认留空＝不发请求，后台安装/升级按旧版"无法下载远程文件"失败；填写时为不带查询串与凭证的 http/https 地址。插件包大小上限默认 16 MiB。
+    addonmarket:
+      api-url: ${MACCMS_INTEGRATION_ADDONMARKET_API_URL:}
+      max-package-bytes: ${MACCMS_INTEGRATION_ADDONMARKET_MAX_PACKAGE_BYTES:16777216}
+  # 客户端 IP 解析（B06，D2 ④，docs/architecture/16-b06-misc-pages-provide.md 第 2 节）：部署级参数。默认只用连接对端；
+  # trusted-proxies 为逗号分隔的 IP/CIDR，只有对端落在其中时才采用 header 指定的转发头（X-Forwarded-For 列表，或单值头
+  # X-Real-IP/CF-Connecting-IP/True-Client-IP/Ali-CDN-Real-IP）。部署在 CDN/反向代理后面时必须填写代理出口网段，否则客户端 IP
+  # 全部是代理地址；不要填 0.0.0.0/0 之类的宽网段（任何人都能伪造转发头）。
+  client-ip:
+    trusted-proxies: ${MACCMS_TRUSTED_PROXIES:}
+    header: ${MACCMS_CLIENT_IP_HEADER:}
+  # Provide 资源站接口（B06，docs/architecture/16-b06-misc-pages-provide.md 第 3 节）：默认关闭，关闭时不注册 /api.php/provide/**
+  # 路由。打开后各模块再按旧配置 extra/maccms.php 的 api.<模块>.status 判定（仓库值全部关闭），未设置 maccms.legacy-config.dir 时
+  # 全部输出 closed。charge=1 的白名单按 maccms.client-ip 解析客户端 IP。只读：detail_inc_hits 开启时也不写计数（B11）。
+  openapi:
+    enabled: ${MACCMS_OPENAPI_ENABLED:false}
+  # 定时任务入口（B16，docs/architecture/25-b16-static-timming.md 第 7 节，D2 ③）：默认关闭，关闭时不注册 /api.php/timming/**。
+  # 打开后只接受本机请求（客户端地址按上面的 client-ip 规则解析为回环地址；带转发头时连接对端须是可信代理），或请求头
+  # X-Maccms-Timming-Token 与 token 相同的请求（外部 cron 服务用）。token 留空表示不接受口令；设置时至少 32 个可见 ASCII 字符，
+  # 只经环境变量提供，不要写进任何文件或日志。未通过的请求（含 enforce=1）返回 403，不执行任务、不回写 extra/timming.php。
+  timming:
+    enabled: ${MACCMS_TIMMING_ENABLED:false}
+    token: ${MACCMS_TIMMING_TOKEN:}
+  # 后台（B12，docs/architecture/21-b12-admin-framework.md 第 7 节）：默认关闭，关闭时不注册任何后台路由。启用时需要可写数据源
+  # （maccms.write.enabled，登录记录与管理员管理写 mac_admin），entry 与 base-url 必填并校验，缺失或不合法即启动失败（不回显取值）。
+  # entry 是后台入口文件的路径（旧版改名后的 _admin.php，形如 /_admin.php；不能是 /admin.php、/index.php、/api.php、/install.php）；
+  # base-url 是对外地址（同 maccms.site.base-url 的写法），决定页面里的路径前缀、会话 cookie 的 Path/Secure 与表单提交的来源校验。
+  # 登录验证码、每页条数、语言（zh-cn/zh-tw）取旧配置 extra/maccms.php（启动时读一次），没有旧配置目录时用仓库值。
+  # 采集本地文件源（B18，docs/architecture/26-b18-collect-preview.md 第 4 节）：不连接资源站（E01 只做本地版本），Provide 文件由后台上传，
+  # 或放进 source-dir（留空表示只能上传）。解析结果只存进本机的预览缓存 cache-dir（留空时为系统临时目录下的 maccms-collect-preview），
+  # cache-ttl 后失效；不写库。max-file-bytes 为每个文件的上限（默认 10240000），max-entries 为缓存最多保留的项数。
+  collect:
+    local:
+      source-dir: ${MACCMS_COLLECT_SOURCE_DIR:}
+      cache-dir: ${MACCMS_COLLECT_CACHE_DIR:}
+      cache-ttl: ${MACCMS_COLLECT_CACHE_TTL:PT24H}
+      max-file-bytes: ${MACCMS_COLLECT_MAX_FILE_BYTES:10240000}
+      max-entries: ${MACCMS_COLLECT_CACHE_MAX_ENTRIES:200}
+      # 自定义规则采集（B20，docs/architecture/28-b20-cj-local-html.md 第 4 节）：规则里的网址不去请求，而是读这个目录里按网址镜像存放的
+      # HTML（http://主机/路径?查询 → html-dir/主机/路径@查询，与 wget --mirror 的布局相同）；留空表示未配置，采集时提示。
+      html-dir: ${MACCMS_COLLECT_HTML_DIR:}
+  admin:
+    enabled: ${MACCMS_ADMIN_ENABLED:false}
+    entry: ${MACCMS_ADMIN_ENTRY:}
+    base-url: ${MACCMS_ADMIN_BASE_URL:}
+  # site 服务端页面（MACC-9 骨架）：默认关闭，关闭时不注册任何 site 路由。
+  # 启用时 name、base-url 必填并校验，缺失或不合法即启动失败（不回显取值）。规则见 docs/architecture/05-site-skeleton.md。
+  # 设置了 maccms.legacy-config.dir 时，name、keywords、description、icp、logo-url、status、closed-message、url.*、image.* 按字段
+  # 并入旧配置 extra/maccms.php（环境变量非空优先，启动时读一次，改了要重启；11 文档第 4.4 节）。base-url 不取旧配置，仍必填。
+  # canonical 只用 base-url，不从 Host 头推断。
+  site:
+    enabled: ${MACCMS_SITE_ENABLED:false}
+    name: ${MACCMS_SITE_NAME:}
+    base-url: ${MACCMS_SITE_BASE_URL:}
+    keywords: ${MACCMS_SITE_KEYWORDS:}
+    description: ${MACCMS_SITE_DESCRIPTION:}
+    icp: ${MACCMS_SITE_ICP:}
+    logo-url: ${MACCMS_SITE_LOGO_URL:}
+    # open / closed，留空时取旧配置 site_status，没有旧配置按 open
+    status: ${MACCMS_SITE_STATUS:}
+    closed-message: ${MACCMS_SITE_CLOSED_MESSAGE:}
+    # canonical 301（D4）与点击计数（D5）未批准，只接受 false
+    canonical-redirect: ${MACCMS_SITE_CANONICAL_REDIRECT:false}
+    hit-counter-enabled: ${MACCMS_SITE_HIT_COUNTER_ENABLED:false}
+    # SSR 搜索页（MACC-20，09 方案第 7 节）：true 时注册旧 vod/search 固定路径 + 查询串形式的页面，默认关闭（关闭时路由不存在）。
+    # 关键字 wd、扩展分类 class 仍受 maccms.content.search.enabled 控制（关闭时搜索页对它们返回 400）。
+    search:
+      enabled: ${MACCMS_SITE_SEARCH_ENABLED:false}
+    # 访问密码签名票据的部署密钥（B05，D-B05-3）：32～256 个可打印 ASCII 字符，只经环境变量提供、没有内置值；
+    # 留空时播放/下载/文章密码页保持 403 并说明暂不支持在线验证。不要写进任何文件或日志。
+    password-tickets:
+      secret: ${MACCMS_SITE_PASSWORD_SECRET:}
+    # 旧前台页面开关（B05）：ajax-page 对应 app.ajax_page（各模块 ajax_detail/ajax_show/ajax_search），show 对应 app.show
+    # （各模块 show 筛选页）。true/false，留空取旧配置，没有旧配置按关闭（仓库值 0）。
+    features:
+      ajax-page: ${MACCMS_SITE_AJAX_PAGE:}
+      show: ${MACCMS_SITE_SHOW:}
+    # 旧站 URL 形态（MACC-14，对应旧 rewrite.status / rewrite.suffix_hide），只接受 true/false，留空时取旧配置，没有旧配置按 false；
+    # pathinfo_depr 固定 /、不启用路由别名。规则见 docs/architecture/08-site-pages.md。
+    url:
+      rewrite: ${MACCMS_SITE_URL_REWRITE:}
+      suffix-hide: ${MACCMS_SITE_URL_SUFFIX_HIDE:}
+    # 图片地址（MACC-14，对应旧 upload.protocol/mode/remoteurl/img_key/img_api），校验见 06 文档第 4 节；
+    # img-key 只接受字面域名多选一（不含量词、分组、字符类）。
+    image:
+      protocol: ${MACCMS_SITE_IMAGE_PROTOCOL:}
+      mode: ${MACCMS_SITE_IMAGE_MODE:}
+      remote-url: ${MACCMS_SITE_IMAGE_REMOTE_URL:}
+      img-key: ${MACCMS_SITE_IMAGE_IMG_KEY:}
+      img-api: ${MACCMS_SITE_IMAGE_IMG_API:}
+
+server:
+  port: ${MACCMS_SERVER_PORT:18280}
+  address: ${MACCMS_SERVER_ADDRESS:127.0.0.1}
+  error:
+    include-stacktrace: never
+    include-message: never
+    include-exception: false
+    whitelabel:
+      enabled: false
+  shutdown: graceful
+
+management:
+  endpoints:
+    access:
+      default: none
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      access: read-only
+      show-details: never
+      show-components: never
+      # 不在响应中列出 liveness/readiness 分组
+      probes:
+        enabled: false
+  info:
+    env:
+      enabled: false

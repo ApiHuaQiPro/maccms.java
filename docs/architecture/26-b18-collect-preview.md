@@ -5,7 +5,7 @@
 > - B17 `25-b17-collect-config.md`（分类绑定键 `CollectBindings`、`bind.php` 只经 `CollectBindService`、采集批次不发请求）、B12 `21-b12-admin-framework.md`（后台入口、页面与脚本策略）；
 > - 用户决定（2026-10-17）：后台复用旧后台 HTML 结构与静态资产，转成 jte，不做新视觉设计。
 >
-> 旧代码位置一律相对仓库根目录；新代码写作 `backend/…`。
+> 旧代码位置一律相对仓库根目录；新代码写作 `…`。
 
 ### 0. 起点与分支
 
@@ -23,7 +23,7 @@
 | `common/model/Collect.php` 的 `vod`（`:85-102`）、`vod_xml`（`:140-291`，含 `vod_xml_replace` `:125-138`）、`vod_json`（`:293-385`）、`art_json`（`:1051-1124`）、`actor_json`（`:1379-1451`）、`role_json`（`:1671-1723`）、`website_json`（`:1970-2042`）、`comment_json`（`:2260-2312`） | 同样的解析，内容来自本地文件（第 3 节） |
 | 各 `{type}_data` 循环开头的跳过条件（`:452-460`、`:1150-1158`、`:1474-1482`、`:1746-1751`、`:2066-2074`、`:2335-2340`） | 预览时提前给出"入库时会被跳过"的原因（第 3.4 节）；入库本身在 B19 |
 | `admin/controller/Collect.php` 的 `api`（`:140-171`）与 `vod/art/actor/role/website` 的 `ac=list` 分支 | `collect/api?ac=list` 预览页；新增 `ac=localload`、`ac=localclear`（第 5 节） |
-| `admin/view/collect/{vod,art,actor,role,website}.html` | `backend/src/main/jte-admin/admin/pages/collect/api.jte` + `static/admin-assets/collect-api.js`（第 6 节） |
+| `admin/view/collect/{vod,art,actor,role,website}.html` | `src/main/jte-admin/admin/pages/collect/api.jte` + `static/admin-assets/collect-api.js`（第 6 节） |
 
 | 不在本批 | 归属 |
 |---|---|
@@ -109,7 +109,7 @@
 
 ### 7. PHP 与 Java 的字段一致（黄金）
 
-- `backend/src/test/php/collect_provide_golden.php` 在 PHP 8.0.30 与 7.3.33 上**直接调用旧 `Collect.php` 的解析方法**，不改旧代码、不连库、不联网：这些方法在命名空间 `app\common\model` 里以非限定名调用 `mac_curl_get()`、`model()`、`config()`、`lang()`，PHP 先找当前命名空间的函数，所以脚本在同一命名空间定义同名函数——`mac_curl_get()` 返回用例的文件内容、`config('bind')` 返回用例的绑定、`model('Type')` 返回空分类缓存、`lang()` 返回键；模型用 `newInstanceWithoutConstructor()` 创建。路线图说的 `vod_xml($param, $html)` 在这份生产代码里会被 `mac_curl_get` 覆盖掉 `$html`，所以 JSON 与 XML 两条路径都用上面的办法取数。
+- `src/test/php/collect_provide_golden.php` 在 PHP 8.0.30 与 7.3.33 上**直接调用旧 `Collect.php` 的解析方法**，不改旧代码、不连库、不联网：这些方法在命名空间 `app\common\model` 里以非限定名调用 `mac_curl_get()`、`model()`、`config()`、`lang()`，PHP 先找当前命名空间的函数，所以脚本在同一命名空间定义同名函数——`mac_curl_get()` 返回用例的文件内容、`config('bind')` 返回用例的绑定、`model('Type')` 返回空分类缓存、`lang()` 返回键；模型用 `newInstanceWithoutConstructor()` 创建。路线图说的 `vod_xml($param, $html)` 在这份生产代码里会被 `mac_curl_get` 覆盖掉 `$html`，所以 JSON 与 XML 两条路径都用上面的办法取数。
 - 56 个用例（成功 34、空内容 3、解析失败 19；视频 JSON 23、XML 21、空内容 2、自动判断 3、其他种类 7，含 GBK 编码、命名空间、CDATA 与混合内容、`<pic>` 回退、深度边界、键规范化、大整数与各类浮点、`dl` 的各种值）。两版结果相同。
 - `ProvideParserGoldenTest`：新版对同一输入的 `parse` + `bind` 结果逐值相同（带类型、保持顺序的比较），每行的入库预检相同，缓存编码往返后仍相同；失败用例比较 `code` 与语言包键（旧版的 `msg` 里还拼了请求地址）。`page.url` 不比较（旧版是请求地址，新版是文件名）。
 

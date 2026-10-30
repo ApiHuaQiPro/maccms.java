@@ -51,7 +51,7 @@
 5. 组件不记录任何地址；启动时只记录"可信代理项数与头名"。
 6. `0.0.0.0`/`::` 不代表任何客户端：Provide 白名单对它一律拒绝，即使 `auth` 里写了它。B08/B09/B11 复用本组件时，同样不能把"未知"当成某个具体访问者放行。
 
-**无可信代理时的局限（部署说明）**：部署在 CDN/反向代理后面而未配置 `MACCMS_TRUSTED_PROXIES` 时，所有请求的客户端 IP 都是代理地址；Provide 白名单只能按代理地址判断（等于对所有经代理的访问者一起放行或拒绝）。把宽网段（如 `0.0.0.0/0`）设为可信会让任何人伪造 `X-Forwarded-For`，只能填写自己的代理出口网段。环境变量样例与说明见 `backend/config/maccms-backend.env.example`。
+**无可信代理时的局限（部署说明）**：部署在 CDN/反向代理后面而未配置 `MACCMS_TRUSTED_PROXIES` 时，所有请求的客户端 IP 都是代理地址；Provide 白名单只能按代理地址判断（等于对所有经代理的访问者一起放行或拒绝）。把宽网段（如 `0.0.0.0/0`）设为可信会让任何人伪造 `X-Forwarded-For`，只能填写自己的代理出口网段。环境变量样例与说明见 `config/maccms-backend.env.example`。
 
 ### 3. Provide 只读协议（`openapi` 模块）
 
@@ -231,7 +231,7 @@
 | `ajax/data` | 同上 | `SiteAjaxMvcTest`（参数归一、tid 范围、JSON 形态）、`SiteAjaxExternalImagesMvcTest`（W2 关）、`AjaxGoldenMySqlIT`（PHP 7.3 黄金） |
 | `ajax/hits/digg/score/referer/pwd/verify_check` | 不承接（404） | `SiteAjaxMvcTest.otherAjaxActionsAndRewriteFormsAre404` |
 
-PHP 黄金样本：`backend/src/test/php/provide_golden.php` 以 php-cgi 执行 `legacy_http_child.php`，跑**完整的 ThinkPHP 路由与旧控制器**（入口常量与 `api.php`/`index.php` 相同，配置目录指向临时副本与一次性库，不改任何旧 PHP 文件），记录 184 个用例的状态码、响应头与正文字节：`backend/src/test/resources/openapi/provide/php80-golden.json`（PHP 8.0.30）、`php73-golden.json`（PHP 7.3.33）。两版除时钟相关、PNG 压缩与 ajax/data 的 PHP 8 类型错误外逐字节相同（`ProvideGoldenVersionsTest`）。二维码 URL 向量：`backend/src/test/php/qrcode_url_golden.php` → `backend/src/test/resources/site/qrcode/php{80,73}-url-vectors.json`。
+PHP 黄金样本：`src/test/php/provide_golden.php` 以 php-cgi 执行 `legacy_http_child.php`，跑**完整的 ThinkPHP 路由与旧控制器**（入口常量与 `api.php`/`index.php` 相同，配置目录指向临时副本与一次性库，不改任何旧 PHP 文件），记录 184 个用例的状态码、响应头与正文字节：`src/test/resources/openapi/provide/php80-golden.json`（PHP 8.0.30）、`php73-golden.json`（PHP 7.3.33）。两版除时钟相关、PNG 压缩与 ajax/data 的 PHP 8 类型错误外逐字节相同（`ProvideGoldenVersionsTest`）。二维码 URL 向量：`src/test/php/qrcode_url_golden.php` → `src/test/resources/site/qrcode/php{80,73}-url-vectors.json`。
 
 ### 7. 与旧版的差异
 
@@ -294,8 +294,8 @@ B05 及以前登记的差异（可见分类、`type_id=0`、密码字符串 `"0"
 | 单元/契约/MockMvc/真实 HTTP | `./mvnw clean verify` | 交付评论 |
 | MySQL 集成与黄金对照 | `./mvnw verify -Pmysql-it`（含 `ProvideGoldenMySqlIT`、`AjaxGoldenMySqlIT` 与既有 IT） | 交付评论 |
 | PHP 黄金 | `provide_golden.php`（PHP 8.0.30、7.3.33 各一份）、`qrcode_url_golden.php`（两版） | 资源文件 + 上列测试 |
-| 真实 HTTP + 浏览器 | `python backend/src/test/browser/b06_site_check.py --out docs/architecture/16-b06-site-check`：已打包应用 × W1/W2 = 00/01/10/11 × 根路径 / 子目录 `/sub/` 共 8 组；Chromium（Playwright）；根路径 11 另查 320/360/768/1280 横向溢出（另做长文本压力：浏览器内把 `main` 中的标题、链接、提示换成 120 个无空格字符后再量）、键盘 Tab 与可见焦点、reduced-motion（`reduce` 下三页没有任何元素带动画或非零过渡，否则记失败） | `16-b06-site-check/summary.json`、`screenshots/` |
-| 中规模测量 | `python backend/src/test/perf/b06_perf_run.py --out docs/architecture/16-b06-perf-raw`（30 万行，真实 HTTP，实际 SQL + EXPLAIN） | `16-b06-perf-report.md`、`16-b06-perf-raw/` |
+| 真实 HTTP + 浏览器 | `python src/test/browser/b06_site_check.py --out docs/architecture/16-b06-site-check`：已打包应用 × W1/W2 = 00/01/10/11 × 根路径 / 子目录 `/sub/` 共 8 组；Chromium（Playwright）；根路径 11 另查 320/360/768/1280 横向溢出（另做长文本压力：浏览器内把 `main` 中的标题、链接、提示换成 120 个无空格字符后再量）、键盘 Tab 与可见焦点、reduced-motion（`reduce` 下三页没有任何元素带动画或非零过渡，否则记失败） | `16-b06-site-check/summary.json`、`screenshots/` |
+| 中规模测量 | `python src/test/perf/b06_perf_run.py --out docs/architecture/16-b06-perf-raw`（30 万行，真实 HTTP，实际 SQL + EXPLAIN） | `16-b06-perf-report.md`、`16-b06-perf-raw/` |
 
 `b06_site_check.py` 每组检查：地图/帮助/版权页的状态码、MIME、`no-cache`、严格 CSP、`nosniff`、canonical 与站内链接前缀（子目录时以 `/sub/` 开头）、页面无外部主机；7 种 RSS/地图 XML 可解析、MIME、`loc` 为 base-url 下的绝对地址；标签页 404；二维码 PNG 与缓存头、非法 URL 空响应；快捷方式 MIME、`filename*`、正文首行、注入 400；ajax/data 的 JSON、`detail_link` 前缀、外链图片只在 W2 打开时出现、不含密码与播放列；联想词 `url` 前缀与 `no-store`；Provide JSON/XML/`closed`/HEAD、缓存头、Provide 图片地址不受 W2 影响；浏览器无 CSP 违规、无外部请求。
 

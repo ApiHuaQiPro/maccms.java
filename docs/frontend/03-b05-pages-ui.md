@@ -7,9 +7,9 @@
 
 | 文件 | 内容 | 备注 |
 |---|---|---|
-| `backend/src/main/resources/static/site/site.css` | K1–K3 全部样式（追加在文件尾部"B05"注释段） | 前端独占目录 |
-| `backend/src/main/resources/static/site/trial.js` | K4 试看计时脚本 | 同源、无外部依赖 |
-| `backend/src/test/js/site/trial.test.js` | K4 行为测试（Node 内置 `node:test`，无外部依赖） | 前端静态资源测试 |
+| `src/main/resources/static/site/site.css` | K1–K3 全部样式（追加在文件尾部"B05"注释段） | 前端独占目录 |
+| `src/main/resources/static/site/trial.js` | K4 试看计时脚本 | 同源、无外部依赖 |
+| `src/test/js/site/trial.test.js` | K4 行为测试（Node 内置 `node:test`，无外部依赖） | 前端静态资源测试 |
 | 本文档 | 实施说明与 K5 复核记录 | — |
 
 未改动：`jte/site/components/`、`jte/site/layout/`、任何页面 jte、任何 Java、既有组件 `@param`。`content-card` 按队长裁定由后端在页面内联，本文档固定其可用子类样式（见第 3 节）。
@@ -45,7 +45,7 @@
 - 计时以 `Date.now()` 经过时间判定（期限 = 起始 + 分钟数），每秒 `setInterval` 复核；另监听 `visibilitychange`，回到前台立即复核——后台标签页定时器节流不会延长试看。
 - 到期：对挂载区内 `video/audio` 先 `pause()`（不支持则忽略），再移除挂载区中的 `iframe/object/embed/video/audio`，最后在 `#trial-message` 写入固定文案「试看已结束，请登录后继续观看。」并取消 `hidden`（若后端输出时带 `hidden`）。结束幂等；只处理挂载区内部，不碰页面其余媒体。
 - 边界如实声明：脚本不能防止刷新、禁用脚本或提取地址；不访问跨域 iframe 的 DOM（直接移除元素）；不授予任何服务端权限（授权/密码/W1/W2 始终由后端决定）。
-- 测试：`backend/src/test/js/site/trial.test.js`（Node 内置 runner + 最小假 DOM 注入，无外部依赖），覆盖：0 不计时、缺挂点、非法值、到期前不动、到期移除 + 文案逐字 + 清定时器、后台恢复立即结束、幂等、只移除挂载区内媒体。运行：`node --test backend/src/test/js/site/trial.test.js`（8/8 通过，MACC-54 当轮实测）。
+- 测试：`src/test/js/site/trial.test.js`（Node 内置 runner + 最小假 DOM 注入，无外部依赖），覆盖：0 不计时、缺挂点、非法值、到期前不动、到期移除 + 文案逐字 + 清定时器、后台恢复立即结束、幂等、只移除挂载区内媒体。运行：`node --test src/test/js/site/trial.test.js`（8/8 通过，MACC-54 当轮实测）。
 
 ## 6. 验证方式与结果（当轮实测）
 
@@ -62,7 +62,7 @@
 
 - **Logo**：`chrome.logo()` 为 `Optional<SafeUrl>`；模板仅在存在时输出 `<img class="site-brand__logo" alt="">` 并始终带站点名文本，装饰图 alt 为空符合无障碍惯例。✅
   - **更正（B05 整合，MACC-29）**：本节原写"W2 关闭时外链 Logo 不输出由后端保证，属 `SiteExternalImages*Test` 范围"，与固定树 `3100239` 不符：当时 `SiteSettings.from()` 只做 `SafeUrl.parse`，`SitePages.chrome()` 直接输出 `site.logo()`，W2 只传给 `ImageUrlNormalizer`，**并不过滤 Logo**。
-  - 现由后端 `SitePages`（`backend/src/main/java/com/maccms/backend/site/web/SitePages.java`）按 W2 过滤：W2 关时，主机不是 base-url 主机的绝对地址不输出，页眉只显示站名；站内路径（以单个 `/` 开头）与 base-url 同主机的绝对地址照常输出；根路径与子目录部署规则相同；W1 不影响 Logo。`SafeUrl` 防护保留。
+  - 现由后端 `SitePages`（`src/main/java/com/maccms/backend/site/web/SitePages.java`）按 W2 过滤：W2 关时，主机不是 base-url 主机的绝对地址不输出，页眉只显示站名；站内路径（以单个 `/` 开头）与 base-url 同主机的绝对地址照常输出；根路径与子目录部署规则相同；W1 不影响 Logo。`SafeUrl` 防护保留。
   - 测试：`SitePagesLogoTest`（根/子目录 × 外站/仿冒主机/站内 × W2 开关）、`PlaybackSwitchCases.logoFollowsW2`（W1/W2=00/01/10/11 真实 MockMvc 响应），以及 B05 最终真实 HTTP 检查（15 文档第 10 节）。布局签名与前端静态目录未改。
 - **导航**：`chrome.nav()` 为视频分类，无全局"播放"导航项；按裁定不新增。✅
 - **键盘顺序**：skip-link → 品牌 → 分类导航 → 搜索表单 → 登录链接 → 主内容 → 页脚，DOM 顺序即焦点顺序，fixture Tab 遍历验证可达性与焦点可见。✅

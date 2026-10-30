@@ -8,11 +8,11 @@
 
 | 位置 | 内容 |
 |---|---|
-| `backend/src/main/java/com/maccms/backend/site/application/` | `SiteProperties`（`maccms.site.*` 原始字符串绑定）、`SiteSettings`（校验后的站点设置、canonical 生成）、`SafeUrl`（URL 白名单） |
-| `backend/src/main/java/com/maccms/backend/site/config/` | `SiteConfiguration`（装配）、`@ConditionalOnSiteEnabled` / `SiteEnabledCondition`（启用开关） |
-| `backend/src/main/java/com/maccms/backend/site/web/` | `SiteHtmlRenderer`（缓冲渲染）、`SiteExceptionHandler`（site 专用错误页）、`SiteStatusInterceptor`（维护关闭）、`SitePages`（视图模型组装）、`SitePlaceholderController`（骨架占位页）、`view/`（视图模型） |
-| `backend/src/main/jte/site/` | `layout/page.jte`（外壳）、`pages/placeholder.jte`、`pages/error.jte`（404/500/503/维护共用） |
-| `backend/src/main/resources/static/site/site.css` | 最小设计 token 与基础样式（不还原旧站视觉） |
+| `src/main/java/com/maccms/backend/site/application/` | `SiteProperties`（`maccms.site.*` 原始字符串绑定）、`SiteSettings`（校验后的站点设置、canonical 生成）、`SafeUrl`（URL 白名单） |
+| `src/main/java/com/maccms/backend/site/config/` | `SiteConfiguration`（装配）、`@ConditionalOnSiteEnabled` / `SiteEnabledCondition`（启用开关） |
+| `src/main/java/com/maccms/backend/site/web/` | `SiteHtmlRenderer`（缓冲渲染）、`SiteExceptionHandler`（site 专用错误页）、`SiteStatusInterceptor`（维护关闭）、`SitePages`（视图模型组装）、`SitePlaceholderController`（骨架占位页）、`view/`（视图模型） |
+| `src/main/jte/site/` | `layout/page.jte`（外壳）、`pages/placeholder.jte`、`pages/error.jte`（404/500/503/维护共用） |
+| `src/main/resources/static/site/site.css` | 最小设计 token 与基础样式（不还原旧站视觉） |
 
 - 依赖：`gg.jte:jte-runtime`、`gg.jte:jte-models` 3.2.4；构建插件 `jte-maven-plugin` 3.2.4（`contentType=Html`、`OwaspHtmlPolicy`、`ModelExtension`，生成到 `com.maccms.backend.site.web.jte`）。**未引入** `jte-spring-boot-starter-4`，运行时不编译模板、不需要 JDK 编译器。测试另用 `gg.jte:jte`（编译器）与 jsoup 1.23.2（`test` 作用域）。
 - site 不调用 `ContentReadService`（骨架没有内容页面），不访问 Mapper、infrastructure、数据库或旧 PHP。site 的 Java 源码由 `ModuleBoundaryTest` 另禁止读文件/环境变量、启动进程、发起 HTTP 请求；模板由 `SiteGuardrailsTest` 禁止全限定名、静态 API、`new` 与反射（模板表达式只能读取视图模型）。
@@ -41,7 +41,7 @@
   - 现有生成器最长的输出是旧搜索页 `vodSearch`：`wd`/`area`/`lang`/`class` 取公开接口码点上限（64/20/10/32，全为 3 字节汉字），另加 `year`/`level`/`by`/`order` 与第 1000 页，在所有支持的 URL 形态下为 1181～1235 字符，≤1280；拼上 768 字符的 `base-url` 后 canonical ≤ 2003。三页的请求路径由解析器限制在 1024 以内，生成的 canonical 路径更短。以上由 `SiteSettingsTest` 锁定（边界 199/200/201/512/767/768/769，最长 `base-url` + 最长站内路径恰为 2048，最长搜索地址）。
   - 将来新增的站内地址（含 MACC-16 方案中的"路径 + 查询串"）也须在 1280 以内；超出时应调整预算并同步本节，不放宽 `SafeUrl`。
   - 放宽长度不放宽其他规则：协议、主机名、用户信息、查询串、片段、`%`、`//`、`.`/`..` 段、空白与控制字符的检查对任意长度都相同（同一测试类覆盖 200 字符以上的这些非法输入）。
-- 本地合成值见 `backend/config/maccms-backend.env.example`：`MACCMS_SITE_NAME=MacCMS 本地站（合成）`、`MACCMS_SITE_BASE_URL=http://maccms.local.test/`。
+- 本地合成值见 `config/maccms-backend.env.example`：`MACCMS_SITE_NAME=MacCMS 本地站（合成）`、`MACCMS_SITE_BASE_URL=http://maccms.local.test/`。
 - 首批不支持：`site_tj` 统计代码、移动端独立模板、时区设置（暂无使用方）、生产缓存 TTL。
 
 ### 3. 行为
@@ -68,7 +68,7 @@
 |---|---|
 | 模板引用的字段/方法、参数类型在 `compile` 阶段检查（包括测试走不到的分支） | jte 预编译（构建自带） |
 | 未加引号的属性值、在标签名/属性名中输出 | 构建的 `OwaspHtmlPolicy` |
-| 另禁止事件属性、单引号属性、`script`/`style`/`iframe`/`object`/`embed`/`base`/`svg` 等标签、`style`/`srcdoc`/`http-equiv`/`formaction` 属性；每条规则有探针模板 | `SiteTemplatePolicyTest` + `backend/src/test/jte-probe/` |
+| 另禁止事件属性、单引号属性、`script`/`style`/`iframe`/`object`/`embed`/`base`/`svg` 等标签、`style`/`srcdoc`/`http-equiv`/`formaction` 属性；每条规则有探针模板 | `SiteTemplatePolicyTest` + `src/test/jte-probe/` |
 | 模板只在 `src/main/jte/site/`；禁止 `$unsafe{}`、`@raw`、`!{}`、事件属性/脚本/样式中的数据、`vod_content`/`.content()`；URL 属性的动态值只能是 `SafeUrl.href()`；只 import `site.web.view`/`site.application` 类型、`gg.jte.Content` 与 `java.util`；表达式中禁止全限定名、`System`/`Runtime`/文件等静态 API、`new`、`getClass()`；jte 版本固定、无 starter；site 组件都带启用条件 | `SiteGuardrailsTest`（含合成违规样本自检） |
 | site 不依赖 Mapper/infrastructure/数据访问/文件/进程/网络 | `ModuleBoundaryTest` |
 
@@ -77,7 +77,7 @@
 ### 5. 本地运行
 
 ```bash
-cd backend && ./mvnw -q package -DskipTests
+./mvnw -q package -DskipTests
 MACCMS_DB_URL=... MACCMS_DB_USERNAME=... MACCMS_DB_PASSWORD=... \
 MACCMS_SITE_ENABLED=true MACCMS_SITE_NAME='MacCMS 本地站（合成）' MACCMS_SITE_BASE_URL=http://maccms.local.test/ \
 java -jar target/maccms-backend-0.1.0-SNAPSHOT.jar

@@ -25,7 +25,7 @@
 
 ### 2. 模块与依赖
 
-新模块 `admin`（`backend/src/main/java/com/maccms/backend/admin/`）：
+新模块 `admin`（`src/main/java/com/maccms/backend/admin/`）：
 
 | 包 | 内容 |
 |---|---|
@@ -36,7 +36,7 @@
 
 - 依赖：`common`（会话、验证码、cookie、`LegacyJson`、客户端 IP、语言包）、`legacyconfig.application`（旧配置）、`content.application`（`PhpIntval`、`ContentCacheMaintenance`）。**不引用 site**；application/infrastructure 不引用本模块 web/config；web 不直接用 Mapper。`ModuleBoundaryTest.adminRulesOnSyntheticSources` 锁定。
 - 新增公共类：`common.lang.LegacyLang`（第 6 节）；`common.session.SessionStore.invalidate`（作废单个会话）。
-- 后台模板在单独的 `backend/src/main/jte-admin/`，生成到 `com.maccms.backend.admin.web.jte`（pom 中 jte 插件的第二个 execution），与站点模板分开编译与检查。
+- 后台模板在单独的 `src/main/jte-admin/`，生成到 `com.maccms.backend.admin.web.jte`（pom 中 jte 插件的第二个 execution），与站点模板分开编译与检查。
 
 ### 3. 菜单与权限码（auth.php 一次性落地）
 
@@ -142,7 +142,7 @@
 
 ### 6. 语言包
 
-- 旧语言包 `application/lang/zh-cn.php`、`zh-tw.php` 是手写的 PHP 数组（含双引号字符串），新系统不执行 PHP，也不经 `var_export` 解析器；用 `backend/src/test/php/lang_export.php` 原样导出为 jar 内的 `lang/zh-cn.json`、`zh-tw.json`（各 1773 条，键按 `array_change_key_case` 转小写），源文件 SHA-256 写在 JSON 里，`LegacyLangTest` 校验与仓库源文件一致（改了语言包要重新导出）。
+- 旧语言包 `application/lang/zh-cn.php`、`zh-tw.php` 是手写的 PHP 数组（含双引号字符串），新系统不执行 PHP，也不经 `var_export` 解析器；用 `src/test/php/lang_export.php` 原样导出为 jar 内的 `lang/zh-cn.json`、`zh-tw.json`（各 1773 条，键按 `array_change_key_case` 转小写），源文件 SHA-256 写在 JSON 里，`LegacyLangTest` 校验与仓库源文件一致（改了语言包要重新导出）。
 - `common.lang.LegacyLang`：`get(键)` 同 ThinkPHP `Lang::get`（键按 ASCII 转小写，找不到返回键名原文）；`select(app.lang)`：空或缺失为 zh-cn，`zh-cn`/`zh-tw` 原样，其他值回退 zh-cn 并由调用方告警（D-B12-L1）。
 - 后台页面、菜单名、提示语全部取语言包（旧模板的 `{:lang(…)}`）；`app.lang = zh-tw` 时整套后台为繁体（黄金 `frame-zh-tw`：框架页、欢迎页、列表、表单、拒绝提示、解锁失败、登录页逐项相同）。跳转提示页的文字与旧 `dispatch_jump.tpl` 一样写死简体。
 - 部署方若在线上改过语言包文件，新版不会读到（D9-b，未核实线上是否改过）。
@@ -163,7 +163,7 @@
 
 - **结构原样**：`admin/view/public/head.html`、`foot.html`、`index/login.html`、`index/index.html`、`index/welcome.html`、`index/quickmenu.html`、`admin/index.html`、`admin/info.html` 与 ThinkPHP `dispatch_jump.tpl`、`public/msg.html` 逐个转成 `jte-admin/admin/` 下的模板，DOM、类名、`lay-*`、`data-*` 与表单字段不变；`static/layui/**`、`static/css/admin_style.css`、`static/js/admin_common.js`、`static/js/jquery.js` 原样复用（构建时从仓库 `static/` 打进 jar，按旧路径 `/static/…` 提供，不复制、不修改）。没有新的视觉设计。
 - **为安全所做的最小改动**（D-B12-5）：
-  - 旧模板里的内联脚本（head 的全局变量、登录页、框架页、列表分页、权限树、跳转倒计时）逐行移到 `backend/src/main/resources/static/admin-assets/*.js`，服务端写入的地址与语言包文字改由 script 标签的 `data-*` 属性提供；登录页验证码图片的 `onclick` 改成脚本绑定；框架页 `setInterval("checkCache()")` 改为函数引用；框架页打开标签时，菜单名与地址在拼进 layui `tabAdd` 的 HTML 前转义（旧版原样拼接，快捷菜单名称含标签时会注入页面；显示与地址不变）。
+  - 旧模板里的内联脚本（head 的全局变量、登录页、框架页、列表分页、权限树、跳转倒计时）逐行移到 `src/main/resources/static/admin-assets/*.js`，服务端写入的地址与语言包文字改由 script 标签的 `data-*` 属性提供；登录页验证码图片的 `onclick` 改成脚本绑定；框架页 `setInterval("checkCache()")` 改为函数引用；框架页打开标签时，菜单名与地址在拼进 layui `tabAdd` 的 HTML 前转义（旧版原样拼接，快捷菜单名称含标签时会注入页面；显示与地址不变）。
   - 内容安全策略（`AdminResponses.CONTENT_SECURITY_POLICY`）：脚本只来自本站文件；旧 `admin_common.js` 与 layui 用到 `new Function`（锁屏、laytpl），保留 `'unsafe-eval'`；旧模板大量 `href="javascript:;"`、`javascript:void(0);` 空链接和 layer 弹层 iframe 的 `onload="this.className='';"` 用 `'unsafe-hashes'` 只放行这几段固定代码的哈希，其他任何内联事件与 `javascript:` 地址仍被拦截；样式保留 `'unsafe-inline'`（layer 与旧模板的内联样式）；frame 放行 `'self' http: https:`（快捷菜单可以配置外部地址并在标签页中打开，只在用户点击时加载）。另有 `X-Frame-Options: SAMEORIGIN`、`Referrer-Policy: same-origin`、`nosniff`、`no-store`、`noindex`。
   - 模板一律转义输出（旧模板多处原样输出：管理员名称写进 `value="…"` 遇到双引号会截断属性，黄金 `admin-info-view/quote`）。jte 不输出 `a@href` 里以 `javascript:` 开头的动态值，所以旧版固定的 `javascript:void(0);return false;`、`javascript:history.back(-1);` 写成模板里的固定文字；跳转页对 `history.back` 由 `jump.js` 处理。
   - 语言包里自带 `<br>` 的两段文字经 `AdminText.trusted` 原样输出（只能是 `page.lang().get("键")`）。
@@ -174,19 +174,19 @@
 
 | 内容 | 测试 / 证据 |
 |---|---|
-| PHP 黄金（PHP 8.0.30 与 7.3.33 各一份） | `backend/src/test/php/admin_golden.php` + `admin_http_child.php`：一次性库 `maccms_it_*`，php-cgi 跑完整的 `_admin.php` + ThinkPHP 路由 + `Base` 构造函数 + 控制器，同一场景内按浏览器回送 PHP 会话 cookie；验证码直接写进会话文件。73 个场景、504 个请求步骤（含 178 个可访问的权限码逐个被拒——`make/index?ac2=wap` 只是权限码、不是地址——、29 个密码/账号字节向量、7 个 filterExp 向量、验证码、地址写法、会话快照、列表/表单/保存/删除/状态/解锁/布局/退出）。结果 `src/test/resources/admin/php80-golden.json`、`php73-golden.json`。不调用会写仓库文件的 `index/clear` 与快捷菜单保存 |
+| PHP 黄金（PHP 8.0.30 与 7.3.33 各一份） | `src/test/php/admin_golden.php` + `admin_http_child.php`：一次性库 `maccms_it_*`，php-cgi 跑完整的 `_admin.php` + ThinkPHP 路由 + `Base` 构造函数 + 控制器，同一场景内按浏览器回送 PHP 会话 cookie；验证码直接写进会话文件。73 个场景、504 个请求步骤（含 178 个可访问的权限码逐个被拒——`make/index?ac2=wap` 只是权限码、不是地址——、29 个密码/账号字节向量、7 个 filterExp 向量、验证码、地址写法、会话快照、列表/表单/保存/删除/状态/解锁/布局/退出）。结果 `src/test/resources/admin/php80-golden.json`、`php73-golden.json`。不调用会写仓库文件的 `index/clear` 与快捷菜单保存 |
 | 黄金复放（真实 MySQL） | `AdminGoldenMySqlIT.scenariosMatchPhpGolden`：两份黄金共 1008 个请求步骤逐步复放到新版（MockMvc + 完整应用上下文 + 可写数据源），比较状态码、Location、JSON 字节、页面结构（`AdminHtml` 同一套取法）、`is_iframe` cookie 与请求后 `mac_admin` 全部行；有意差异以 `JAVA`/`JAVA_ROWS` 逐条断言新版结果（第 11 节） |
 | 并发、回滚演练 | `AdminGoldenMySqlIT` ②③（第 5 节） |
 | 菜单 | `AdminFrameGoldenTest`：16 个黄金框架页（两版 PHP）与新版渲染结果逐项相同 |
 | 权限码 | `AdminPermissionsGoldenTest`（auth.php 与控制器公开方法全量比对、每个码都有归属）；`AdminMvcTest.everyAuthCodeIsDeniedToAnAdminWithoutPermissions`（非超级管理员逐个访问 178 个可访问的码全部被拒，`index/welcome` 放行）、`superAdminSeesLaterBatchNoticesForEveryNonB12Action` |
 | 入参与鉴权语义 | `LegacyInputTest`、`AdminAuthorizationTest`、`LegacyAdminUrlTest`、`AdminRouteTest` |
-| 行尾可移植 | `backend/.gitattributes` 把 `src/main/jte-admin/**` 固定为 LF（页面字节与 PHP 黄金比对）；`AdminMvcTest.frameActions` 对 Ajax 页面的断言先解开 JSON 字符串、把 CRLF 归一后只看结构，模板以 CRLF 检出时同样通过（本轮把 9 个模板临时改成 CRLF 实测 16/16） |
+| 行尾可移植 | `.gitattributes` 把 `src/main/jte-admin/**` 固定为 LF（页面字节与 PHP 黄金比对）；`AdminMvcTest.frameActions` 对 Ajax 页面的断言先解开 JSON 字符串、把 CRLF 归一后只看结构，模板以 CRLF 检出时同样通过（本轮把 9 个模板临时改成 CRLF 实测 16/16） |
 | HTTP 契约 | `AdminMvcTest`（17 个用例：路由、登录顺序与会话轮换、filterExp、D2 ⑤、权限即时生效、框架页操作、来源校验、令牌与保存、删除与状态、列表结构）；`AdminRealHttpTest`（真实 Tomcat 原始套接字：cookie 字节、子目录 Path、Secure、is_iframe、退出删除 cookie、CSP、403） |
 | 启用条件 | `AdminEndpointTest`、`AdminStartupTest` |
 | 模板与静态资源 | `AdminTemplatePolicyTest` |
 | 语言包与手机模板 | `LegacyLangTest`（含 `localize`）、`SiteTemplateSelectionGoldenTest`、`SiteVariantsTest`、`SiteVariantPagesTest`（第 12 节） |
 | 护栏 | `ModuleBoundaryTest`（新增后台规则）、`WriteGuardTest`/`WriteRegistryTest`（登记表与写入方矩阵）、`SchemaGuardTest`、`OutboundNetworkGuardTest`、`SqlEntryGuardTest` |
-| 浏览器 | `backend/src/test/browser/b12_admin_check.py`（Playwright + 本机 Chromium，对运行中的新后台）：登录（错误提示）→ 框架页菜单 → 管理员标签页（layui 开关与分页渲染）→ 添加管理员弹层（208 个权限复选框渲染、勾选、保存后列表出现）→ 锁屏（错误提示、解锁）→ 退出 → 旧会话无效；全程 0 个内容安全策略违规、0 个脚本错误、0 个控制台错误、0 个对外请求 |
+| 浏览器 | `src/test/browser/b12_admin_check.py`（Playwright + 本机 Chromium，对运行中的新后台）：登录（错误提示）→ 框架页菜单 → 管理员标签页（layui 开关与分页渲染）→ 添加管理员弹层（208 个权限复选框渲染、勾选、保存后列表出现）→ 锁屏（错误提示、解锁）→ 退出 → 旧会话无效；全程 0 个内容安全策略违规、0 个脚本错误、0 个控制台错误、0 个对外请求 |
 
 命令与结果见交付评论。
 
@@ -237,7 +237,7 @@ B05 用响应式单模板与简体固定文案交付，并登记了旧版 `mob_s
 | 输出 | `MAC_MOB`；`{$maccms.path_tpl}` = 安装目录 + `template/模板目录/html目录/`；`{$maccms.path_ads}` 同理；旧版页面缓存键带 `MAC_MOB`（`All.php:27,52`） | `Result(wap, pathTpl, pathAds, site…)` |
 | 语言 | `app.lang` 非空时作为 `default_lang`，否则 `zh-cn`；`lang_switch_on=false`，不按请求切换；加载 `application/lang/<lang>.php` | `LegacyLang.select`（第 6 节），其他值回退简体（D-B12-L1） |
 
-黄金：`backend/src/test/php/template_select_golden.php`（+ `_child.php`，每个用例一个 php 进程执行旧 `Init::run`，不连库），PHP 8.0/7.3 各 93 个用例（21 个 UA 关键字、5 个桌面 UA、无 UA、`mob_status` 8 种取值 × 手机/桌面 × 3 种 Host、整数状态、手机目录为空/no、`site_wapurl` 为空、站群命中/大小写不同/目录回退/不是数组、子目录安装、5 种 `app.lang`）。`SiteTemplateSelectionGoldenTest` 逐项比对 `MAC_MOB`、三个路径、并入后的 site 配置、语言包与 `lang()` 的结果。
+黄金：`src/test/php/template_select_golden.php`（+ `_child.php`，每个用例一个 php 进程执行旧 `Init::run`，不连库），PHP 8.0/7.3 各 93 个用例（21 个 UA 关键字、5 个桌面 UA、无 UA、`mob_status` 8 种取值 × 手机/桌面 × 3 种 Host、整数状态、手机目录为空/no、`site_wapurl` 为空、站群命中/大小写不同/目录回退/不是数组、子目录安装、5 种 `app.lang`）。`SiteTemplateSelectionGoldenTest` 逐项比对 `MAC_MOB`、三个路径、并入后的 site 配置、语言包与 `lang()` 的结果。
 
 #### 12.2 文案资源契约（已实现，接口固定）
 
@@ -271,7 +271,7 @@ B05 用响应式单模板与简体固定文案交付，并登记了旧版 `mob_s
 
 按第 12.3 节的语义，**外壳、组件与 `static/site/` 不需要改动**就已满足：手机 Logo 经 `chrome.logo()` 输出，语言只换 `lang()` 的文字（都在视图模型里），模板固定文案不切换。需要队长另行协调、由前端（Kimi）决定是否做的只有可选项：外壳按 `chrome.variant().wap()` 给 `<body>` 加手机样式类、`site.css` 增加对应样式（不改变 DOM 结构与链接，不能引入脚本或外部资源）。如果以后决定让模板固定文案也随语言切换，需要另开契约：给外壳与组件新增文字参数（组件签名变更须双方在任务中确认，02 规范第 7 节），本批不做。
 
-本轮后端改动的路径（不含共享目录）：`backend/src/main/java/com/maccms/backend/site/web/SiteVariants.java`（新）、`site/web/view/SiteVariant.java`（新）、`site/web/view/PageChrome.java`、`site/web/SitePages.java`、`site/web/SiteHtmlRenderer.java`、`site/web/SiteRequests.java`、`site/web/SiteUserController.java`、`site/web/SiteAjaxController.java`、`site/web/SiteCounterActions.java`、`site/web/SiteInteractionController.java`、`site/web/SiteMemberFinance.java`、`site/config/SiteConfiguration.java`、`site/application/SiteTemplateSelection.java`、`common/lang/LegacyLang.java`；页面模板（`jte/site/pages|fragments|member|interaction|ajax|player`）本轮不需要改。**未改动** `backend/src/main/jte/site/components/`、`backend/src/main/jte/site/layout/`、`backend/src/main/resources/static/site/`。
+本轮后端改动的路径（不含共享目录）：`src/main/java/com/maccms/backend/site/web/SiteVariants.java`（新）、`site/web/view/SiteVariant.java`（新）、`site/web/view/PageChrome.java`、`site/web/SitePages.java`、`site/web/SiteHtmlRenderer.java`、`site/web/SiteRequests.java`、`site/web/SiteUserController.java`、`site/web/SiteAjaxController.java`、`site/web/SiteCounterActions.java`、`site/web/SiteInteractionController.java`、`site/web/SiteMemberFinance.java`、`site/config/SiteConfiguration.java`、`site/application/SiteTemplateSelection.java`、`common/lang/LegacyLang.java`；页面模板（`jte/site/pages|fragments|member|interaction|ajax|player`）本轮不需要改。**未改动** `src/main/jte/site/components/`、`src/main/jte/site/layout/`、`src/main/resources/static/site/`。
 
 #### 12.5 仍未做、需要协调或核实的部分
 

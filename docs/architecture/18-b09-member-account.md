@@ -264,10 +264,10 @@ POST 字段：`user_pwd`（当前密码，必填）、`user_pwd1`、`user_pwd2`�
 
 | 文件 | 负责 | 内容 |
 |---|---|---|
-| `backend/src/main/jte/site/pages/user*.jte`、`ajax/user*.jte`、`site.web.view.User*Page` 视图模型、控制器、CSP | 后端（Claude） | 结构、字段、文案、链接、class 与 `data-*` 钩子（第 8.2 节） |
-| `backend/src/main/resources/static/site/site.css`（追加"B09"注释段） | 前端（Kimi） | 第 8.2 节 class 的样式 |
-| `backend/src/main/resources/static/site/member.js`（新文件） | 前端（Kimi） | 第 8.3 节的行为 |
-| `backend/src/test/js/site/member.test.js` | 前端（Kimi） | `node --test`，无外部依赖 |
+| `src/main/jte/site/pages/user*.jte`、`ajax/user*.jte`、`site.web.view.User*Page` 视图模型、控制器、CSP | 后端（Claude） | 结构、字段、文案、链接、class 与 `data-*` 钩子（第 8.2 节） |
+| `src/main/resources/static/site/site.css`（追加"B09"注释段） | 前端（Kimi） | 第 8.2 节 class 的样式 |
+| `src/main/resources/static/site/member.js`（新文件） | 前端（Kimi） | 第 8.3 节的行为 |
+| `src/test/js/site/member.test.js` | 前端（Kimi） | `node --test`，无外部依赖 |
 | `docs/frontend/04-b09-member-ui.md` | 前端（Kimi） | 前端说明与检查记录 |
 | `jte/site/layout/`、`jte/site/components/` | 不改 | 外壳的"登录 / 会员中心"链接保持不变 |
 
@@ -365,8 +365,8 @@ POST 字段：`user_pwd`（当前密码，必填）、`user_pwd1`、`user_pwd2`�
 
 **护栏调整**（随本批提交）：`ModuleBoundaryTest` 允许 site 引用 `member.application(.view)`、`common.web.PhpInput`、`common.clientip.ClientIpResolver`；`WriteGuardTest`/`WriteRegistryTest` 锁定正式登记表只有两条 B09 条目；`SiteTemplatePolicyTest.EXCEPTIONS` 与 `SiteGuardrailsTest` 允许 `member/script.jte` 一处 nonce 外部脚本（引用它的会员页面按例外编译）；`WriteInfrastructureMySqlIT` ②、`MemberGoldenMySqlIT` ⑤ 原来断言"正式登记表为空"，改为"只有 member 的 mac_user 写入、没有演练模块"。02 规范第 2、3、4 节同步。
 
-**黄金脚本**：`backend/src/test/php/account_golden.php`（父进程，用例定义）+ `account_golden_child.php`（php-cgi 子进程，调用旧 `model('User')` 的各方法与 `Base::check_user_popedom`）；输出 `member/account-php80-golden.json`、`account-php73-golden.json`，各 203 个用例：注册 40、登录 18、资料 11、密保找回 7、regcheck 6、短信/邮件"未配置" 13、页面权限 108（4 种组 × 3 种权限位 × 播放 4 / 下载 2 / 文章 2 / 视频详情 1）。两版 PHP 的返回码与提示逐条相同。命令（仓库根目录，需恢复 `vendor/`，管理账号只经环境变量）：
-`PHP_CGI=D:/Tools/php/8.0/php-cgi.exe D:/Tools/php/8.0/php.exe backend/src/test/php/account_golden.php > backend/src/test/resources/member/account-php80-golden.json`（7.3 同理）。
+**黄金脚本**：`src/test/php/account_golden.php`（父进程，用例定义）+ `account_golden_child.php`（php-cgi 子进程，调用旧 `model('User')` 的各方法与 `Base::check_user_popedom`）；输出 `member/account-php80-golden.json`、`account-php73-golden.json`，各 203 个用例：注册 40、登录 18、资料 11、密保找回 7、regcheck 6、短信/邮件"未配置" 13、页面权限 108（4 种组 × 3 种权限位 × 播放 4 / 下载 2 / 文章 2 / 视频详情 1）。两版 PHP 的返回码与提示逐条相同。命令（仓库根目录，需恢复 `vendor/`，管理账号只经环境变量）：
+`PHP_CGI=D:/Tools/php/8.0/php-cgi.exe D:/Tools/php/8.0/php.exe src/test/php/account_golden.php > src/test/resources/member/account-php80-golden.json`（7.3 同理）。
 
 ### 12. 验证记录与验收对照
 
@@ -507,7 +507,7 @@ POST 字段：`user_pwd`（当前密码，必填）、`user_pwd1`、`user_pwd2`�
   - `common-image` 的 `IndexImage.java` 另带 Apache Software License 1.1（取自 Batik），要求在文档或软件里给出致谢语。
   - `ResampleOp.java`、`LittleEndianDataInputStream/OutputStream.java` 带公有领域说明。
   - 没有发现 GPL、LGPL 等其他许可。
-- **随包声明**：这些 jar 本身不带许可文件。所以把 BSD 全文、Brooss 共同版权、ASF 1.1 全文和致谢语、公有领域说明逐字照录到 `backend/src/main/resources/licenses/twelvemonkeys-imageio-3.12.0.txt`。它打进可执行 jar 的 `BOOT-INF/classes/licenses/`（打包后已核对），不在任何对外 URL 下。
+- **随包声明**：这些 jar 本身不带许可文件。所以把 BSD 全文、Brooss 共同版权、ASF 1.1 全文和致谢语、公有领域说明逐字照录到 `src/main/resources/licenses/twelvemonkeys-imageio-3.12.0.txt`。它打进可执行 jar 的 `BOOT-INF/classes/licenses/`（打包后已核对），不在任何对外 URL 下。
 - **格式范围不扩大**：
   - `PortraitImagesWebPTest.onlyAWebPReaderIsAddedToImageIo`：JDK 之外注册的 `ImageReaderSpi` 恰好只有 WebP 一个，没有新增 `ImageWriterSpi`。
   - 扩展名表 `jpg,jpeg,png,gif,webp` 与 data URL 类型表不变，`.bmp` 仍是"非系统允许的上传格式！"。
@@ -552,7 +552,7 @@ POST 字段：`user_pwd`（当前密码，必填）、`user_pwd1`、`user_pwd2`�
 
 #### 14.5 验证
 
-- **样本**：`backend/src/test/resources/member/webp/` 下 6 个，由同目录的 `generate.py`（Pillow 12.3.0）合成，没有外部素材：
+- **样本**：`src/test/resources/member/webp/` 下 6 个，由同目录的 `generate.py`（Pillow 12.3.0）合成，没有外部素材：
   - 有损 300×200 渐变；
   - 无损带透明、有损带透明各一，300×200，左半透明、右半红；
   - 两帧动图 120×80，第一帧蓝、第二帧绿；
@@ -573,7 +573,7 @@ POST 字段：`user_pwd`（当前密码，必填）、`user_pwd1`、`user_pwd2`�
 - **`SiteUserRealHttpTest.oversizedPortraitUploadsAreDroppedLikeLegacyPhp`**：在真实 Tomcat 上，文件为 2 MiB + 1、2 MiB + 4 KiB、2 995 904 字节时，都得到上面的 JSON，服务收到的文件和 `imgdata` 都是 null。
 - **`ModuleBoundaryTest.twelveMonkeysIsOnlyUsedForThePortraitWebPReader`**：见第 14.1 节。
 - **命令（最终树，串行）**：
-  - `node --test backend/src/test/js/site/*.test.js`：23/23；
+  - `node --test src/test/js/site/*.test.js`：23/23；
   - `./mvnw verify`：2386 个测试，0 失败、0 错误、0 跳过（比整合轮的 2374 多 12 个：WebP 10、边界护栏 1、超限 1）；
   - `./mvnw verify -Pmysql-it`：单元 2386、集成 53，0 跳过。
 

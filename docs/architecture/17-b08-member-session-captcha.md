@@ -82,10 +82,10 @@
 
 ### 3. PHP 黄金向量
 
-- 生成：`backend/src/test/php/member_golden.php`（父进程：一次性库 `maccms_it_*` 导入 `install.sql` + 27 个合成会员，逐用例以 php-cgi 执行 `member_golden_child.php`；子进程只读加载 `thinkphp/`、`application/` 与 `vendor/topthink/think-captcha`，调用旧代码本身：经反射调用 `All::label_user`、`User::login`、ThinkPHP `cookie()`、`Captcha::check/entry`、`mac_get_time_span`、`User::expire`）。PHP 自己解析 `HTTP_COOKIE`，所以 cookie 的拆分与解码也是真实行为。用完删库与临时目录。
-- 输出：`backend/src/test/resources/member/php80-golden.json`（PHP 8.0.30）、`php73-golden.json`（PHP 7.3.33），字符串一律十六进制字节。各 40 个 cookie 解析、18 个写出（含注销、失败回写与 `httponly` 的 `user_check`）、74 个 `label_user`（含 7 个到期边界）、12 个新版签发 cookie 的复放、10 个真实登录及其复放、22 组验证码校验序列（含 8 组中文）、5 组经旧控制器 `Verify::check` 的序列、6 个图片（含 2 个 `useZh`）、8 个 `mac_get_time_span`、1 组 `expire` 边界。修正轮（第 9 节）用同一脚本重新生成两份文件：原有用例除时间戳、随机 `user_random` 与 `mac_get_time_span` 的绝对秒数外与上一版完全相同。
+- 生成：`src/test/php/member_golden.php`（父进程：一次性库 `maccms_it_*` 导入 `install.sql` + 27 个合成会员，逐用例以 php-cgi 执行 `member_golden_child.php`；子进程只读加载 `thinkphp/`、`application/` 与 `vendor/topthink/think-captcha`，调用旧代码本身：经反射调用 `All::label_user`、`User::login`、ThinkPHP `cookie()`、`Captcha::check/entry`、`mac_get_time_span`、`User::expire`）。PHP 自己解析 `HTTP_COOKIE`，所以 cookie 的拆分与解码也是真实行为。用完删库与临时目录。
+- 输出：`src/test/resources/member/php80-golden.json`（PHP 8.0.30）、`php73-golden.json`（PHP 7.3.33），字符串一律十六进制字节。各 40 个 cookie 解析、18 个写出（含注销、失败回写与 `httponly` 的 `user_check`）、74 个 `label_user`（含 7 个到期边界）、12 个新版签发 cookie 的复放、10 个真实登录及其复放、22 组验证码校验序列（含 8 组中文）、5 组经旧控制器 `Verify::check` 的序列、6 个图片（含 2 个 `useZh`）、8 个 `mac_get_time_span`、1 组 `expire` 边界。修正轮（第 9 节）用同一脚本重新生成两份文件：原有用例除时间戳、随机 `user_random` 与 `mac_get_time_span` 的绝对秒数外与上一版完全相同。
 - 命令（仓库根目录；需按 AGENTS.md 恢复 `vendor/`，管理账号只经环境变量）：
-  `PHP_CGI=D:/Tools/php/8.0/php-cgi.exe D:/Tools/php/8.0/php.exe backend/src/test/php/member_golden.php > backend/src/test/resources/member/php80-golden.json`（7.3 同理）。
+  `PHP_CGI=D:/Tools/php/8.0/php-cgi.exe D:/Tools/php/8.0/php.exe src/test/php/member_golden.php > src/test/resources/member/php80-golden.json`（7.3 同理）。
 - **B09（MACC-33）对黄金脚本的修正**：`label_user` 用例为保证"写库与判定同秒"会在同一进程内重试，旧脚本不清除上一轮写出的 `Set-Cookie`，首轮跨秒时会多记一组 `group_id`/`group_name`（`333b73e` 的 7.3 `expiry-5-g3--1` 记了 4 个即此原因）。现在每轮重试前清除，并记录 `attempts`、`request_time`；验证码与计时用例跨秒时换新进程重跑；新增 `expiry_repro` 段复现该现象。两份黄金已重新生成（复现与结论见 18 文档第 9 节）。
 - `member/java-issued.json`：`JavaIssuedCookiesTest` 用 `MemberCookies.login` 为合成会员签发、按浏览器回送形式拼好的 Cookie 头（`MEMBER_GOLDEN_WRITE=1` 时重写）；黄金脚本把它们原样交给旧 `label_user`，结果在 `java_issued` 段。
 

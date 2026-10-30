@@ -14,7 +14,7 @@
 | 只读服务 | `ArticleReadService`、`TopicReadService`、`ActorReadService`、`RoleReadService`、`WebsiteReadService`、`LinkReadService`、`VideoPlotReadService`；参数类型 `ContentListQuery`、`ContentFilter`、`ContentKind` | `content.application` |
 | 已发布只读类型 | 16 个 record（见 02 规范第 2 节） | `content.application.view` |
 | 数据访问 | `ArtMapper`、`TopicMapper`、`ActorMapper`、`RoleMapper`、`WebsiteMapper`、`LinkMapper`、`VodPlotMapper`；`TypeMapper.selectEnabledTypes(mid)`；`VodMapper` 增加 3 条语句（专题关联视频、角色所属视频） | `content.infrastructure`、`resources/mapper/content/` |
-| 黄金样本 | PHP 生成脚本 2 个、向量/样本 2 份、共享合成数据 1 份 | `backend/src/test/php/`、`backend/src/test/resources/content/` |
+| 黄金样本 | PHP 生成脚本 2 个、向量/样本 2 份、共享合成数据 1 份 | `src/test/php/`、`src/test/resources/content/` |
 
 **不在本批**（第 7 节）：播放/下载地址的对外接口与 `player_aaaa`（B05，需要 B02 的旧配置读取与 W2 放行参数）、页面（B05）、
 包含匹配类筛选参数与其余模板参数、编码（写入）方向（B13）。
@@ -44,8 +44,8 @@
 PHP 中取不到的数组元素（null）一律输出为 `""`，取不到的配置项为空 Map。播放器配置由调用方传入（`Map<编码, Map<键, 值>>`，值为 PHP 标量转字符串），
 本批不读取 `application/extra/vodplayer.php` 等文件——那是 B02 的 `legacyconfig` 职责。
 
-**黄金向量**：`backend/src/test/php/content_multivalue_golden.php` 用合成输入调用上述旧函数（MAC_PLAYER_SORT 为 1、0 各一个子进程），
-输出 `backend/src/test/resources/content/multivalue/php-vectors.json`。覆盖 03 草稿第 4.2 节列出的全部边界：空标题、缺少 `$`、server 前缀
+**黄金向量**：`src/test/php/content_multivalue_golden.php` 用合成输入调用上述旧函数（MAC_PLAYER_SORT 为 1、0 各一个子进程），
+输出 `src/test/resources/content/multivalue/php-vectors.json`。覆盖 03 草稿第 4.2 节列出的全部边界：空标题、缺少 `$`、server 前缀
 （三参数调用）、播放器未启用时被过滤、按 sort 排序（含并列、数字/非数字/缺失 sort、整数配置值）、结尾多出 `#`、含 CRLF；另有空段占位、"0" 段与 "0" 地址、
 第三段来源、多余的 `$` 段、组数不齐、下载器配置、HTML 实体与 Unicode。PHP 7.3、8.0、8.2 输出逐字相同。
 `LegacyMultiValueGoldenTest` 逐条比对（86 项）。
@@ -53,7 +53,7 @@ PHP 中取不到的数组元素（null）一律输出为 `""`，取不到的配�
 重新生成（仓库根目录，不需要数据库）：
 
 ```bash
-php backend/src/test/php/content_multivalue_golden.php > backend/src/test/resources/content/multivalue/php-vectors.json
+php src/test/php/content_multivalue_golden.php > src/test/resources/content/multivalue/php-vectors.json
 ```
 
 ### 4. 只读接口（契约 1.2.0）
@@ -141,12 +141,12 @@ php backend/src/test/php/content_multivalue_golden.php > backend/src/test/resour
 
 ### 6. PHP 黄金样本与验证
 
-- **共享数据** `backend/src/test/resources/content/library/seed.sql`：9 个分类（视频/文章/演员/网址）、游客权限、6 条视频（专题关联、角色、剧情）、
+- **共享数据** `src/test/resources/content/library/seed.sql`：9 个分类（视频/文章/演员/网址）、游客权限、6 条视频（专题关联、角色、剧情）、
   文章/专题/演员/角色/网址各 12 行（id 1..10 已审核、每个排序列取值互不相同、level 依次为 0..9；id 11、12 未审核且排序值最大）、8 条友链。
   只用合成数据，不含真实域名或凭证。
-- **PHP 样本** `backend/src/test/php/content_library_golden.php`：新建一次性库 `maccms_it_<时间>_<随机>`，导入 `install.sql` 与 seed.sql，
+- **PHP 样本** `src/test/php/content_library_golden.php`：新建一次性库 `maccms_it_<时间>_<随机>`，导入 `install.sql` 与 seed.sql，
   调用旧模型 `listCacheData`（paging=no，num=999）与 `infoData`，结束后删除该库与临时缓存目录。输出
-  `backend/src/test/resources/content/library/php-golden.json`：174 个列表用例（每类型默认排序、全部排序键 × 两个方向、level、letter 大小写与 0-9、
+  `src/test/resources/content/library/php-golden.json`：174 个列表用例（每类型默认排序、全部排序键 × 两个方向、level、letter 大小写与 0-9、
   各类型专有筛选）、4 个专题的关联内容、文章分页/截图、网址截图、4 个视频的分集剧情。每个用例记录对应的新接口请求。
 - **Java 对照** `LibraryMySqlIT`（`-Pmysql-it`）：在自己的一次性库导入同一份数据，另加只对新版可见范围有影响的行（不可见/停用分类下的文章、演员、网址、视频，
   并让专题 1 引用它们），逐条请求并断言 ID 序列与 total 和旧版逐项相同，每个用例另比对第 2 页（每页 3 条）的切片；全部请求前后所有表 CHECKSUM 不变。
@@ -158,7 +158,7 @@ php backend/src/test/php/content_multivalue_golden.php > backend/src/test/resour
 
 ```bash
 export MACCMS_IT_ADMIN_URL='jdbc:mysql://127.0.0.1:3306/' MACCMS_IT_ADMIN_USERNAME=<本机账号> MACCMS_IT_ADMIN_PASSWORD=<密码>
-php backend/src/test/php/content_library_golden.php > backend/src/test/resources/content/library/php-golden.json
+php src/test/php/content_library_golden.php > src/test/resources/content/library/php-golden.json
 ```
 
 ### 7. 推迟的项目

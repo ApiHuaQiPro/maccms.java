@@ -1,8 +1,8 @@
 ## B06 中规模合成库测量：Provide、ajax/data、ajax/suggest、站点级 RSS 与搜索引擎地图（MACC-30）
 
-> 依据：MACC-30 验收第 6 条"报告……性能限制"。测量经**真实 HTTP** 请求本批最终代码打包的应用（`backend/target/maccms-backend-0.1.0-SNAPSHOT.jar`），
+> 依据：MACC-30 验收第 6 条"报告……性能限制"。测量经**真实 HTTP** 请求本批最终代码打包的应用（`target/maccms-backend-0.1.0-SNAPSHOT.jar`），
 > SQL 与绑定值取自应用的 MyBatis 调试日志（实际执行的语句，不是照抄 XML），EXPLAIN 在同一个一次性库上执行。
-> 脚本：`backend/src/test/perf/b06_perf_run.py`（不进 `./mvnw verify`，用法见文件头）；原始结果：`docs/architecture/16-b06-perf-raw/`
+> 脚本：`src/test/perf/b06_perf_run.py`（不进 `./mvnw verify`，用法见文件头）；原始结果：`docs/architecture/16-b06-perf-raw/`
 > （`bench.json` 每个请求的冷态/热态耗时，`explain.txt` 每条 SQL 与 EXPLAIN，`run.json` 库名、行数、清理结果）。
 > 数字是本机**一次运行**的测量值（2026-10-17 15:19–15:23），机器与 B05 报告是同一台虚拟机，测量期间另有智能体进程在跑（未空闲），只能当量级看，不是延迟承诺。
 

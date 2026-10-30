@@ -4,7 +4,7 @@
 > - 路线图 `09-roadmap.md` 第 3.2 节 B19 行、第 5.3 节 B19 验收行（影子合并对比、并发提交同一条视频不重复、Receive 校验、回滚演练）、E01/E02 行（只做本地版本，不发请求、不下载图片）、第 1.2 节（零结构变更）；
 > - B07 `12-write-infrastructure.md`（可写数据源、写入登记、回滚演练工具）、B13 `22-b13-admin-content.md`（`formatDataBeforeDb`、`mac_substring` 的 D-B13-5、严格模式报错的 D-B13-3）、B11 `20-b11-comment-gbook-counters.md`（视频搜索缓存）、B18 `26-b18-collect-preview.md`（解析结果与值的表示）。
 >
-> 旧代码位置一律相对仓库根目录；新代码写作 `backend/…`。
+> 旧代码位置一律相对仓库根目录；新代码写作 `…`。
 
 ### 0. 起点与分支
 
@@ -101,7 +101,7 @@ B19 的旧代码是 `common/model/Collect.php` 的六个 `{种类}_data`（约 1
 
 ### 7. PHP 与 Java 的影子对比（黄金）
 
-- `backend/src/test/php/receive_golden.php` 在 PHP 8.0.30 与 7.3.33 上，经 `legacy_http_child.php`（api 入口）以 php-cgi 跑**完整的 ThinkPHP 路由、`Receive` 控制器与旧 `Collect::vod_data`**（不改旧代码），对一次性库 `maccms_it_*` 发出真实请求；每个场景先清空 `mac_vod`、`mac_vod_search` 并复位自增、写入种子行，用自己的配置与运行目录。记录每一步的状态码、Content-Type、正文、两张表的全部行（十六进制）与请求前后的时间。
+- `src/test/php/receive_golden.php` 在 PHP 8.0.30 与 7.3.33 上，经 `legacy_http_child.php`（api 入口）以 php-cgi 跑**完整的 ThinkPHP 路由、`Receive` 控制器与旧 `Collect::vod_data`**（不改旧代码），对一次性库 `maccms_it_*` 发出真实请求；每个场景先清空 `mac_vod`、`mac_vod_search` 并复位自增、写入种子行，用自己的配置与运行目录。记录每一步的状态码、Content-Type、正文、两张表的全部行（十六进制）与请求前后的时间。
 - **22 个场景、42 步**：接口关闭、密码错误与缺失、密码数值相等、密码太短与为空、名称与分类必填、分类名映射（已映射、未映射、本站没有该分类、`type_id=0`）、缺 `vod_content`、`index`；整行新增（`strip_tags`、拼音、扩展分类合并、主演分隔符、未知播放器与空类型的组、地址末尾 `#`、下载地址末尾空白、剧情 `$$$`、时间字段、提交的 `vod_status`/`vod_letter`/`vod_id` 被忽略、多余字段）；过滤词；伪原创名称；播放组"地址相同 + 新增组"、同类型替换、同组无需更新、没有播放组；`urlrole=1` 合并去重与下载组新增；`uprule` a～w 全部字段（含连载取较大值、库里是本地图片时不更新图片、扩展分类合并）；锁定；`uprule` 为空；无需更新；`inrule` 主演导演混合匹配的四种情况；`inrule` 分类、年份、地区、语言；路径参数与查询串（双重解码）；`trim` 与查询表达式补空格；`<script>` 名称与 iframe/link 播放器；`vod_search_optimise=collect` 的主演结果编号查重与新增后追加；随机点击顶踩评分。
 - 两份黄金互相比较：除 PHP 8 的 `mac_substring` 把 ASCII 字符换成空格（简介由纯 ASCII 正文生成的 4 行，B13 已登记为 D-B13-5，新版按 7.3）外完全相同。
 - **增量 2**：同一脚本在 `GOLDEN_SET=kinds` 时改跑 `receive_kinds_scenarios.php`，输出 `php80-kinds-golden.json`、`php73-kinds-golden.json`；每步记录 `mac_art`、`mac_actor`、`mac_role`、`mac_website`、`mac_comment`、`mac_vod`、`mac_topic` 七张表（与本场景上一步相同的表记为 null，减小体积）；另加 6 个分类（文章、明星、网址各一个顶级与子分类）。**32 个场景、98 步**：五个入口的必填检查与编号、分类名映射（已映射、未映射、映射到 0、`type_id=0`）、密码错误；整行新增（`strip_tags`、名称 `trim`、拼音、提交的状态/首字母/拼音/主键被忽略、多余字段、文章分页对齐、简介生成含纯 ASCII 正文、子分类的 `type_id_1`）；过滤词（评论按内容）；更新规则全部字段、无需更新、库里是本地图片时不改图片、文章没提交图片时清空图片、锁定、`uprule` 为空、inrule 不含分类时跨分类命中；演员按性别、分类区分；角色的关联视频（名称、豆瓣编号、找不到、inrule c/d 的主演/导演 LIKE 与两者混合、多个演员名）；评论的六种关联模块、未知模块、找不到、直接给 `rel_id`、`comment_mid` 为 `1abc`、IP 三种写法、按内容与昵称查重后更新时间；同义词替换；随机点击顶踩评分；以及旧版整页 500 的 8 步（没提交图片、缺正文、更新时没提交图片）。

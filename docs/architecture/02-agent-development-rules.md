@@ -1,6 +1,6 @@
-## 智能体开发规范（新系统 backend/）
+## 智能体开发规范（新系统 Java 工程）
 
-适用于在 `backend/`、`docs/contracts/`、`docs/architecture/` 中工作的所有智能体与人工开发者。与根目录 `AGENTS.md` 冲突时以 `AGENTS.md` 为准。
+适用于在 Java 工程（仓库根目录的 `pom.xml`、`src/` 等）、`docs/contracts/`、`docs/architecture/` 中工作的所有智能体与人工开发者。与根目录 `AGENTS.md` 冲突时以 `AGENTS.md` 为准。
 
 ### 1. 契约优先
 
@@ -29,7 +29,7 @@
   - `site` 的每个 Spring 组件都带 `@ConditionalOnSiteEnabled`；`maccms.site.enabled` 默认关闭，关闭时不注册任何 site 组件与路由。
 - MyBatis/JDBC 类型只出现在各模块的 `infrastructure` 包（例外只有两个包本身：`common.config` 的数据源检查、`common.write` 的可写数据源与写入护栏（B07））。
 - 旧配置文件（`application/extra/*.php`、`application/route.php`）只经 `legacyconfig.application.LegacyConfigService` 读取（B02，`11-guards-and-legacy-config.md` 第 4 节）：只解析 `var_export` 数据，不执行 PHP，不读 `database.php` 等其他文件；其他模块不自己读这些文件。
-- 以上依赖规则由 `backend/src/test/java/com/maccms/backend/architecture/ModuleBoundaryTest.java` 扫描源码检查（注释和字符串不计），合成源码自检规则本身；`site` 的模板、构建与装配规则由 `backend/src/test/java/com/maccms/backend/site/SiteGuardrailsTest.java` 与 `SiteTemplatePolicyTest.java` 检查。
+- 以上依赖规则由 `src/test/java/com/maccms/backend/architecture/ModuleBoundaryTest.java` 扫描源码检查（注释和字符串不计），合成源码自检规则本身；`site` 的模板、构建与装配规则由 `src/test/java/com/maccms/backend/site/SiteGuardrailsTest.java` 与 `SiteTemplatePolicyTest.java` 检查。
 - `common` 只放与业务无关的支持代码（错误处理、分页、配置检查），不得引用业务模块。
 
 ### 2.1 B11 评论与计数的已实施例外
@@ -43,7 +43,7 @@
 
 - `admin` 模块（`21-b12-admin-framework.md` 第 2 节）：`web`（入口 `AdminController` 与页面）→ `application`（登录、会话核对、`admin_auth` 鉴权、管理员管理、菜单与权限码登记 `AdminPermissions`）→ `infrastructure`（只读 `AdminMapper`，写 `AdminWriteMapper`）；`config` 装配。application/infrastructure 不引用本模块 web/config，web 不直接用 Mapper，不引用 `site`（`ModuleBoundaryTest.adminRulesOnSyntheticSources`）。每个组件带 `@ConditionalOnAdminEnabled`（`maccms.admin.enabled` 默认关闭）。
 - 后续后台批次（B13～B20、B28、B29）在 `AdminController` 的分派里接上自己的动作，**不改** `AdminPermissions` 的菜单与权限码数据（路线图第 5.2 节"同文件冲突"）；权限一律经 `AdminAuthorization`（旧 `check_auth` 的文本语义）。
-- 后台页面模板在 `backend/src/main/jte-admin/`（生成到 `admin.web.jte`，与站点模板分开），按旧后台 HTML 结构原样转写，不做新视觉设计；旧内联脚本外移到 `src/main/resources/static/admin-assets/`，数据经 `data-*` 属性传入；旧 `static/layui`、`admin_style.css`、`admin_common.js` 构建时原样打包。`AdminTemplatePolicyTest` 锁定：无内联脚本与事件属性、`<script>` 只带 `type/src/data-*`、style 无输出、原样 HTML 只能是语言包文字（`AdminText.trusted`）。内容安全策略见 21 文档第 8 节（为复用旧脚本保留 `'unsafe-eval'` 与几段固定代码的 `'unsafe-hashes'`）。
+- 后台页面模板在 `src/main/jte-admin/`（生成到 `admin.web.jte`，与站点模板分开），按旧后台 HTML 结构原样转写，不做新视觉设计；旧内联脚本外移到 `src/main/resources/static/admin-assets/`，数据经 `data-*` 属性传入；旧 `static/layui`、`admin_style.css`、`admin_common.js` 构建时原样打包。`AdminTemplatePolicyTest` 锁定：无内联脚本与事件属性、`<script>` 只带 `type/src/data-*`、style 无输出、原样 HTML 只能是语言包文字（`AdminText.trusted`）。内容安全策略见 21 文档第 8 节（为复用旧脚本保留 `'unsafe-eval'` 与几段固定代码的 `'unsafe-hashes'`）。
 - 旧语言包只经 `common.lang.LegacyLang`（jar 内由 `lang_export.php` 导出的 JSON）；新页面上旧版也有的文字取语言包键，不写死简体（21 文档第 12.2 节）。
 
 ### 2.3 B14 后台会员与财务
@@ -90,7 +90,7 @@
 - `install` 模块（`31-b22-install-wizard.md`）只在安装模式（`MACCMS_INSTALL_MODE=true`，`install.InstallApplication`）下装配：`InstallApplication` 与 `install.config.InstallConfiguration` 都不带组件注解，正常模式扫描不到；模块里不要加 `@Component`/`@Configuration`/`@Controller` 等注解（`InstallModeTest` 锁定）。分层 `web → application → infrastructure`，JDBC 只在 `install.infrastructure`。
 - 安装向导不执行任何 DDL：目标库由部署方在库外导入 install.sql，向导只读核对（`InstallDatabaseProbe` 的固定 SELECT；`SELECT 1 FROM mac_vod_search LIMIT 1` 是"不读写旧缓存表"在本批的唯一例外）。表结构基准 `install/schema-fingerprint.txt` 由 `InstallWizardMySqlIT` 锁定，install.sql 有变化时同步更新。
 - 写库只经 `WriteDatabase.openInstallTarget`（只给 `install.infrastructure`，`WriteGuardTest` 锁定）与登记的 `install / mac_type、mac_admin / INSERT`；安装锁只经 `LegacySiteFiles.writeInstallLock`。
-- 页面模板在 `backend/src/main/jte-install/`（生成到 `install.web.jte`），规则同后台模板（`InstallTemplatePolicyTest`）。
+- 页面模板在 `src/main/jte-install/`（生成到 `install.web.jte`），规则同后台模板（`InstallTemplatePolicyTest`）。
 
 ### 3. 数据库
 
@@ -130,11 +130,11 @@
   - 一律先把整页渲染到缓冲区，成功后再写响应（带 `Content-Length`）；不使用边渲染边输出的视图路径，避免失败时返回 200 + 半页 HTML 被缓存。
   - 渲染或读取失败时由 `site` 自己的异常处理（`@ControllerAdvice(basePackages = "com.maccms.backend.site")`，优先于全局 JSON 处理）输出完整错误页并带 `Cache-Control: no-store`，不依赖 Boot 的 `/error` 转发；日志只用 `SafeExceptionLog` 记录类型链。
   - 模板引擎自身的错误日志不得输出异常 message（引擎会自行记录时须关闭对应 logger 并有测试）。
-  - 模板（jte 3.2.4，只放在 `backend/src/main/jte/site/`）：只通过生成的 `Templates` 接口与 `SiteHtmlRenderer` 渲染；不用 `$unsafe{}`/`@raw`/`!{}`；事件属性、`<script>`、`<style>`、`style` 属性中不放数据（严格策略直接禁止这些标签与属性）；URL 属性（`href`、`src` 等）的动态值只能是 `SafeUrl.href()`，模板不拼接 URL；库内图片字段（`vod_pic` 等）只经 `site.application.ImageUrlNormalizer` 转成 `SafeUrl`（MACC-11，`06-image-url-normalizer.md`），为空时显示占位图；默认转义不是富文本过滤，不得引用 `vod_content`/`content`；富文本只经 `site.application.RichTextSanitizer` 得到 `SafeHtml`，包成 `gg.jte.Content` 放在元素内容位置输出，旧文本字段的字符引用只经 `LegacyTextEntities.decodeOnce` 按字段清单解码一次（MACC-12，`07-rich-text-filter.md`）。`<script>` 只允许出现在两处、只能带 `nonce` 与 `src`：播放器内页 `site/player/player.jte`（B05）与会员页面共用的 `site/member/script.jte`（B09，`member.js`；引用它的 `pages/user*.jte` 随之按例外编译，`SiteTemplatePolicyTest.EXCEPTIONS`、`SiteGuardrailsTest` 锁定），对应响应的 CSP 用每次随机的 nonce。
+  - 模板（jte 3.2.4，只放在 `src/main/jte/site/`）：只通过生成的 `Templates` 接口与 `SiteHtmlRenderer` 渲染；不用 `$unsafe{}`/`@raw`/`!{}`；事件属性、`<script>`、`<style>`、`style` 属性中不放数据（严格策略直接禁止这些标签与属性）；URL 属性（`href`、`src` 等）的动态值只能是 `SafeUrl.href()`，模板不拼接 URL；库内图片字段（`vod_pic` 等）只经 `site.application.ImageUrlNormalizer` 转成 `SafeUrl`（MACC-11，`06-image-url-normalizer.md`），为空时显示占位图；默认转义不是富文本过滤，不得引用 `vod_content`/`content`；富文本只经 `site.application.RichTextSanitizer` 得到 `SafeHtml`，包成 `gg.jte.Content` 放在元素内容位置输出，旧文本字段的字符引用只经 `LegacyTextEntities.decodeOnce` 按字段清单解码一次（MACC-12，`07-rich-text-filter.md`）。`<script>` 只允许出现在两处、只能带 `nonce` 与 `src`：播放器内页 `site/player/player.jte`（B05）与会员页面共用的 `site/member/script.jte`（B09，`member.js`；引用它的 `pages/user*.jte` 随之按例外编译，`SiteTemplatePolicyTest.EXCEPTIONS`、`SiteGuardrailsTest` 锁定），对应响应的 CSP 用每次随机的 nonce。
 
 ### 5. 测试与完成条件
 
-在 `backend/` 下：
+在仓库根目录下：
 
 | 命令 | 何时必须通过 |
 |---|---|
@@ -156,13 +156,13 @@
 
 ### 6. 提交范围
 
-- 只提交本任务涉及的文件。**不提交**：`backend/target/`、`runtime/`、`upload/`、`vendor/`、`application/data/install/install.lock`、本地修改的 `application/database.php`、`*.env`、日志、临时回复文件、`.multica/`、`.agent_context/`、各 worktree 自动生成的 `CLAUDE.md`/`.claude/`。
+- 只提交本任务涉及的文件。**不提交**：`target/`、`runtime/`、`upload/`、`vendor/`、`application/data/install/install.lock`、本地修改的 `application/database.php`、`*.env`、日志、临时回复文件、`.multica/`、`.agent_context/`、各 worktree 自动生成的 `CLAUDE.md`/`.claude/`。
 - 提交前执行 `git status`，逐个确认新增文件。
 - 提交信息格式：`<类型>(<范围>): <说明> (MACC-<编号>)`，如 `feat(content): 视频列表接口 (MACC-4)`。
 
 ### 7. 协作
 
-- 每个目录有明确的负责人：`backend/` 与 `docs/contracts/` 由后端智能体维护；`docs/frontend/` 由前端智能体维护，后端不修改。需要对方配合时在任务评论中提出，不直接改对方目录，不给其他智能体派活。
-- `backend/` 内的例外（MACC-9 起生效；`static/site/` 已建立，`jte/site/components/` 在首个组件出现时建立）：`backend/src/main/jte/site/components/` 与 `backend/src/main/resources/static/site/` 由前端智能体维护，后端智能体维护其余部分（含页面模板、视图模型、模板参数签名）；组件模板的 `@param` 签名变更需双方在任务中确认。
+- 每个目录有明确的负责人：Java 工程（`src/`、`pom.xml` 等）与 `docs/contracts/` 由后端智能体维护；`docs/frontend/` 由前端智能体维护，后端不修改。需要对方配合时在任务评论中提出，不直接改对方目录，不给其他智能体派活。
+- Java 工程内的例外（MACC-9 起生效；`static/site/` 已建立，`jte/site/components/` 在首个组件出现时建立）：`src/main/jte/site/components/` 与 `src/main/resources/static/site/` 由前端智能体维护，后端智能体维护其余部分（含页面模板、视图模型、模板参数签名）；组件模板的 `@param` 签名变更需双方在任务中确认。
 - 同一文件同一时间只由一个任务修改；发现冲突先在任务中说明。
 - 不确定的业务规则先问，不猜；推断出来的规则标注"待核实"。

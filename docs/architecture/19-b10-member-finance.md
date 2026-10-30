@@ -407,14 +407,14 @@ POST：
 
 | 文件 | 原归属 | 本批改动 | 理由 |
 |---|---|---|---|
-| `backend/src/main/jte/site/pages/userIndex.jte` | B09（后端） | 加 B10 导航与推广链接 | 首页入口 |
-| `backend/src/main/jte/site/pages/detail.jte`、`libraryDetail.jte` | B05（后端） | 已登录会员时加"收藏"表单（`@if`，游客不输出） | 第 5.4 节 |
-| `backend/src/main/jte/site/pages/play.jte`、`accessNotice.jte`（或新的确认页模板） | B05（后端） | 试看购买入口、购买确认表单 | 第 5.2、5.3 节 |
-| `backend/src/main/jte/site/player/player.jte` | B05（后端） | 试看结束文字的 `data-trial-end-message` 属性（只在会员时输出） | 第 5.3 节 |
-| `backend/src/main/resources/static/site/trial.js`、`backend/src/test/js/site/trial.test.js` | MACC-54（原前端，本批起由 C 维护） | 有 `data-trial-end-message` 时用它作结束文字（约 3 行）；测试加 1 项 | 第 5.3 节 |
-| `backend/src/main/resources/static/site/site.css` | 前端（Kimi，B09 段）；本批起由 C 维护 | 文件末尾追加"B10"注释段，只加表格、行内删除表单、筛选链接的最少规则，复用现有变量与 `member-*` 组件；不改已有规则 | 新页面的表格与行内表单 |
-| `backend/src/main/resources/static/site/member.js` | 前端（Kimi） | **不改** | 第 8.1 节 |
-| `backend/src/main/jte/site/layout/`、`components/` | 前端/共用 | **不改** | — |
+| `src/main/jte/site/pages/userIndex.jte` | B09（后端） | 加 B10 导航与推广链接 | 首页入口 |
+| `src/main/jte/site/pages/detail.jte`、`libraryDetail.jte` | B05（后端） | 已登录会员时加"收藏"表单（`@if`，游客不输出） | 第 5.4 节 |
+| `src/main/jte/site/pages/play.jte`、`accessNotice.jte`（或新的确认页模板） | B05（后端） | 试看购买入口、购买确认表单 | 第 5.2、5.3 节 |
+| `src/main/jte/site/player/player.jte` | B05（后端） | 试看结束文字的 `data-trial-end-message` 属性（只在会员时输出） | 第 5.3 节 |
+| `src/main/resources/static/site/trial.js`、`src/test/js/site/trial.test.js` | MACC-54（原前端，本批起由 C 维护） | 有 `data-trial-end-message` 时用它作结束文字（约 3 行）；测试加 1 项 | 第 5.3 节 |
+| `src/main/resources/static/site/site.css` | 前端（Kimi，B09 段）；本批起由 C 维护 | 文件末尾追加"B10"注释段，只加表格、行内删除表单、筛选链接的最少规则，复用现有变量与 `member-*` 组件；不改已有规则 | 新页面的表格与行内表单 |
+| `src/main/resources/static/site/member.js` | 前端（Kimi） | **不改** | 第 8.1 节 |
+| `src/main/jte/site/layout/`、`components/` | 前端/共用 | **不改** | — |
 | `SiteUserController`、`SiteMemberInterceptor`、`PlaybackPages`、`LibraryPages`、`ContentPages` | 后端 | 路由、观看者的已购买查询、确认页与记录 | — |
 | `content.application`：`ContentViewer`、`VideoPlaybackService`、`ArticleReadService`、`GroupPermission`（`ArtMapper.xml` 不改，见第 12 节） | 后端（B05/B09） | 已购买判定、积分值（文章积分值经新的 `ContentLookupService`/`ContentLookupMapper` 读取） | 第 5.1 节 |
 | `common.write.WriteRegistry`、`architecture.WriteGuardTest`、`WriteRegistryTest` | B07 | 登记本批条目、断言随之更新 | 第 6.1 节 |
@@ -450,7 +450,7 @@ POST：
 
 #### 10.1 PHP 黄金
 
-`backend/src/test/php/finance_golden.php`：一次性库 `maccms_it_*`（导入 `install.sql` + `openapi/provide/seed.sql` + 第 10 节夹具），经 php-cgi 走旧 ThinkPHP 路由与 `index/controller/User.php` 本身（`legacy_http_child.php`），PHP 8.0.30 与 7.3.33 各一份：`backend/src/test/resources/member/finance-php{80,73}-golden.json`。
+`src/test/php/finance_golden.php`：一次性库 `maccms_it_*`（导入 `install.sql` + `openapi/provide/seed.sql` + 第 10 节夹具），经 php-cgi 走旧 ThinkPHP 路由与 `index/controller/User.php` 本身（`legacy_http_child.php`），PHP 8.0.30 与 7.3.33 各一份：`src/test/resources/member/finance-php{80,73}-golden.json`。
 
 - `cases`：148 个 HTTP 用例（`buy`/`ajax_buy_popedom`、`ajax_ulog` 写入与列表、三种删除、`cash`、`buy` 卡密与建单、`upgrade`、`pay`/`gopay`、`order_info`、`visit`、带 `uid` 的注册），每个记录状态码、正文（≥ 500 时不记）、`Set-Cookie` 与 7 张表的行（`mac_user` 限财务相关列）。
 - `popedom`：16 个 `check_user_popedom` 用例（`account_golden_child.php`，反射调用旧 `Base::check_user_popedom`），会员 99 带一组 `mac_ulog` 购买记录：整片/按集播放、试看内页 5001/5002/已购买、下载组 2/组 1、整篇/按页文章、改价后旧记录失效。返回码 `[1, 3003, 3003, 1, 3003, 1, 5001, 5002, 3002, 1, 4003, 4001, 1, 3003, 1, 3003]`。
@@ -465,13 +465,13 @@ POST：
 | `SiteFinanceContentMvcTest`（5）、`SiteFinanceLibraryMvcTest`（2） | 第 5 节：播放/下载/文章确认页（会员表单 / 游客登录链接、下载组 1 为 4001）、试看 5001/5002 与内页结束文字（文字取自黄金）、会员打开播放/下载页的记录、四类详情的收藏表单、游客没有会员表单 | 通过 |
 | `MemberFinanceUnitTest`（3） | PHP 浮点转字符串（按本机 PHP 实测修正，第 12 节 R6）、`is_numeric`/`floatval`/`intval(abs())`、财务配置读取 | 通过 |
 | `ReadOnlyGuardrailsTest.financeAndLookupMappersNeverSelectSecrets`、`WriteGuardTest`、`WriteRegistryTest`、`WriteInfrastructureMySqlIT`、`SiteTemplatePolicyTest`、`SiteGuardrailsTest` | 新读查询不读密码/地址/正文，卡密只作 WHERE；写入登记 12 条（B10 10 条）；模板策略只为 7 个新会员页加例外（同 B09 的 `member.js` 例外），内容页仍是严格策略 | 通过 |
-| Node `node --test backend/src/test/js/site/*.test.js` | `trial.js` 新增 `data-trial-end-message` 用例（有值用它、空值用默认文字） | 24/24 |
+| Node `node --test src/test/js/site/*.test.js` | `trial.js` 新增 `data-trial-end-message` 用例（有值用它、空值用默认文字） | 24/24 |
 
 命令与结果（最终树，2026-10-25 重跑；代码与测试同 `0052c27`，之后只改本文）：
 
 - `./mvnw clean verify -Pmysql-it`（MySQL 5.7.44，本机管理账号只在 shell 环境变量里；`MACCMS_IT_PHP_CGI` 为 PHP 8.0.30 与 7.3.33 的 php-cgi；仓库根 `vendor/` 从主仓库临时拷入，跑完已删）：BUILD SUCCESS，单元 2410、集成 58，0 失败、0 错误、0 跳过。`MemberFinanceGoldenMySqlIT` 5 个、`MemberAccountGoldenMySqlIT` 6 个、`WriteInfrastructureMySqlIT` 13 个；日志 `B10 finance DML restore statements applied: 51`、`member account … 47`；PHP 8.0 与 7.3 的 `label_user` 都接受新版 cookie。日志中没有 `maccms_dev`；跑完后 `maccms\_it\_%` 为 0。
 - `./mvnw verify`（不设 `MACCMS_IT_*`）：BUILD SUCCESS，2410 个测试，0 失败、0 错误、0 跳过。
-- `node --test backend/src/test/js/site/*.test.js`：24/24。
+- `node --test src/test/js/site/*.test.js`：24/24。
 
 #### 10.3 打包 jar + 浏览器（Playwright 1.60 / Chromium，本机一次性库）
 
@@ -503,7 +503,7 @@ POST：
 | 9 | 并发重复操作、对账、一次性库回滚、未配置支付 | ✅ 第 10.2 节 |
 | 10 | 前端：一次性库上端到端（表单提交、错误提示、未登录跳转）、键盘焦点、320/768/1280、无外部请求、B05～B09 页面不变 | ✅ 第 10.3 节 |
 | 11 | `./mvnw verify`、`-Pmysql-it`（只用 `maccms_it_*`） | ✅ 第 10.2 节 |
-| 12 | `git diff --check`、UTF-8 无 BOM、路径检查 | ✅ `b5f1bbf..` 最终提交：`git diff --check` 无输出；变更文件的 git 对象全部是 UTF-8、无 BOM、LF；全部在 `backend/src`、`docs/architecture` 下，没有旧 PHP、`application/`、`template/`、nginx、`vendor/` 与配置文件 |
+| 12 | `git diff --check`、UTF-8 无 BOM、路径检查 | ✅ `b5f1bbf..` 最终提交：`git diff --check` 无输出；变更文件的 git 对象全部是 UTF-8、无 BOM、LF；全部在 `src`、`docs/architecture` 下，没有旧 PHP、`application/`、`template/`、nginx、`vendor/` 与配置文件 |
 | 13 | 边界：不连生产/共享库、不部署、不改 nginx 与旧 PHP、不做 DDL、不用 `maccms_dev` 做集成测试、外部调用只用本地替身 | ✅ |
 
 ### 11. 风险与待确认

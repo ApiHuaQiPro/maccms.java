@@ -21,7 +21,7 @@
 
 ### 2. 页面与视图模型
 
-组装在 `site.web.ContentPages`，模板在 `backend/src/main/jte/site/pages/`。视图模型都在 `site.web.view`（不可变 record），URL 全部是 `SafeUrl`，由 `LegacyUrlBuilder` 生成后经 `SiteSettings.publicPath`/`canonical` 转换。
+组装在 `site.web.ContentPages`，模板在 `src/main/jte/site/pages/`。视图模型都在 `site.web.view`（不可变 record），URL 全部是 `SafeUrl`，由 `LegacyUrlBuilder` 生成后经 `SiteSettings.publicPath`/`canonical` 转换。
 
 | 页面 | 模板 / 视图模型 | 数据读取（`ContentReadService`） | 内容 |
 |---|---|---|---|
@@ -99,7 +99,7 @@
 | `RichTextCacheTest` | 命中、原文变化重算、按条数/字符数淘汰、并发 |
 | `ContentReadServiceUnavailableTest`、`ContentApiContractTest` | DB 故障归一的范围、日志脱敏、公开 API 503 响应体不变 |
 
-另有浏览器验收脚本 `backend/src/test/browser/site-pages-check.mjs`（不在 `verify` 中，需要本机 Edge/Chrome 与运行中的合成数据服务，见第 9 节）。
+另有浏览器验收脚本 `src/test/browser/site-pages-check.mjs`（不在 `verify` 中，需要本机 Edge/Chrome 与运行中的合成数据服务，见第 9 节）。
 
 ### 8. 与旧版的差异
 
@@ -127,7 +127,7 @@
 ### 9. 本地运行与浏览器验收
 
 ```bash
-cd backend && ./mvnw -q package -DskipTests
+./mvnw -q package -DskipTests
 MACCMS_DB_URL=jdbc:mysql://127.0.0.1:1/x MACCMS_DB_USERNAME=x MACCMS_DB_PASSWORD=x \
 MACCMS_SITE_ENABLED=true MACCMS_SITE_NAME='MacCMS 本地站（合成）' MACCMS_SITE_BASE_URL=http://maccms.local.test/ \
 java -jar target/maccms-backend-0.1.0-SNAPSHOT.jar

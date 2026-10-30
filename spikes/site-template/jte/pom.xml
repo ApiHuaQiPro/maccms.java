@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!-- 与正式 pom.xml 相同的 Boot 版本；jte 不受 Boot 版本管理，固定为 3.2.4 -->
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>4.1.1</version>
+        <relativePath/>
+    </parent>
+
+    <groupId>com.maccms.spike</groupId>
+    <artifactId>site-template-jte</artifactId>
+    <version>0.0.0-SPIKE</version>
+    <name>site-template-jte</name>
+    <description>MACC-7 spike 候选 B：jte（预编译、类型检查；合成数据，不连数据库）</description>
+
+    <properties>
+        <java.version>21</java.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <jte.version>3.2.4</jte.version>
+        <!-- 失配实验的 profile 会把它改成 target 下的副本目录 -->
+        <jte.sourceDir>${project.basedir}/src/main/jte</jte.sourceDir>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webmvc</artifactId>
+        </dependency>
+        <!-- jte 项目维护的 Spring Boot 4 集成（JteViewResolver），非 Spring Boot 官方 starter -->
+        <dependency>
+            <groupId>gg.jte</groupId>
+            <artifactId>jte-spring-boot-starter-4</artifactId>
+            <version>${jte.version}</version>
+        </dependency>
+        <!-- jte-models 运行时：生成的类型安全模板门面（Templates / StaticTemplates）依赖它 -->
+        <dependency>
+            <groupId>gg.jte</groupId>
+            <artifactId>jte-models</artifactId>
+            <version>${jte.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webmvc-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- 仅测试：在测试中动态编译探针模板与故意写错的模板 -->
+        <dependency>
+            <groupId>gg.jte</groupId>
+            <artifactId>jte</artifactId>
+            <version>${jte.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <!-- 仅测试：用真实 HTML 解析器断言输出结构（MIT 许可，Boot 不管理其版本，故固定版本） -->
+        <dependency>
+            <groupId>org.jsoup</groupId>
+            <artifactId>jsoup</artifactId>
+            <version>1.23.2</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+            <!--
+              generate：把 .jte 模板生成 Java 源码，随后由 javac 与业务代码一起编译。
+              模板里引用不存在的方法/字段、参数类型不符，都会让 compile 阶段失败。
+              OwaspHtmlPolicy 在生成阶段额外拒绝不安全的 HTML 写法（如未加引号的属性值）。
+            -->
+            <plugin>
+                <groupId>gg.jte</groupId>
+                <artifactId>jte-maven-plugin</artifactId>
+                <version>${jte.version}</version>
+                <configuration>
+                    <sourceDirectory>${jte.sourceDir}</sourceDirectory>
+                    <contentType>Html</contentType>
+                    <htmlPolicyClass>gg.jte.html.OwaspHtmlPolicy</htmlPolicyClass>
+                    <extensions>
+                        <extension>
+                            <className>gg.jte.models.generator.ModelExtension</className>
+                        </extension>
+                    </extensions>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <dependencies>
+                    <dependency>
+                        <groupId>gg.jte</groupId>
+                        <artifactId>jte-models</artifactId>
+                        <version>${jte.version}</version>
+                    </dependency>
+                </dependencies>
+            </plugin>
+        </plugins>
+    </build>
+
+    <profiles>
+        <!--
+          失配实验（预期构建失败）：复制正式模板到 target/jte-mismatch，再用 src/mismatch/jte 覆盖一个写错字段的片段，
+          让 jte-maven-plugin 从副本生成代码。错字段位于测试数据会走到的分支。
+        -->
+        <profile>
+            <id>mismatch</id>
+            <properties>
+                <jte.sourceDir>${project.build.directory}/jte-mismatch</jte.sourceDir>
+                <jte.overlayDir>src/mismatch/jte</jte.overlayDir>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-resources-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>copy-templates</id>
+                                <phase>initialize</phase>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>${jte.sourceDir}</outputDirectory>
+                                    <overwrite>true</overwrite>
+                                    <resources>
+                                        <resource>
+                                            <directory>src/main/jte</directory>
+                                        </resource>
+                                        <resource>
+                                            <directory>${jte.overlayDir}</directory>
+                                        </resource>
+                                    </resources>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <!-- 失配实验（与 Thymeleaf 对照）：错字段只出现在测试数据从未走到的分支 -->
+        <profile>
+            <id>mismatch-branch</id>
+            <properties>
+                <jte.sourceDir>${project.build.directory}/jte-mismatch</jte.sourceDir>
+                <jte.overlayDir>src/mismatch-branch/jte</jte.overlayDir>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-resources-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>copy-templates</id>
+                                <phase>initialize</phase>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>${jte.sourceDir}</outputDirectory>
+                                    <overwrite>true</overwrite>
+                                    <resources>
+                                        <resource>
+                                            <directory>src/main/jte</directory>
+                                        </resource>
+                                        <resource>
+                                            <directory>${jte.overlayDir}</directory>
+                                        </resource>
+                                    </resources>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+</project>

@@ -8,9 +8,9 @@
 
 | 文件 | 内容 |
 |---|---|
-| `backend/src/main/resources/static/site/site.css`（末尾「B09（MACC-33）」注释段） | 8.2 节全部 class 的样式 |
-| `backend/src/main/resources/static/site/member.js`（新文件） | 8.3 节表单交互 |
-| `backend/src/test/js/site/member.test.js`（新文件） | `node --test`，无外部依赖 |
+| `src/main/resources/static/site/site.css`（末尾「B09（MACC-33）」注释段） | 8.2 节全部 class 的样式 |
+| `src/main/resources/static/site/member.js`（新文件） | 8.3 节表单交互 |
+| `src/test/js/site/member.test.js`（新文件） | `node --test`，无外部依赖 |
 | 本文档 | 说明与检查记录 |
 
 ## 2. 样式设计（K1）
@@ -46,7 +46,7 @@
 在仓库根目录执行（Node v24.18.0）：
 
 ```
-node --test backend/src/test/js/site/*.test.js
+node --test src/test/js/site/*.test.js
 ```
 
 整合后实测输出：`tests 23 / pass 23 / fail 0`（member.test.js 15 项 + trial.test.js 8 项）。前端交付时为 21 项（member 13 项），整合时补了发送验证码的 2 项。

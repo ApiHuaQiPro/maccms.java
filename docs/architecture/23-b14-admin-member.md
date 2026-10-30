@@ -6,7 +6,7 @@
 > - 用户决定（2026-10-17）：后台复用旧后台 HTML 结构与静态资产，转成 jte，不做新视觉设计。
 > - 队长验收意见（2026-10-26，MACC-38 issue 说明"队长独立验收与返工要求"）：补齐后台会员头像上传；订单手工改状态按旧版不新增；积分日志、推广访问的失效复选框按旧行为保留；补同一提现的审核与删除/撤销交错测试；D-B14-4～-9 按已说明边界接受。
 >
-> 旧代码位置一律相对仓库根目录；新代码写作 `backend/…`。
+> 旧代码位置一律相对仓库根目录；新代码写作 `…`。
 
 ### 0. 起点与分支
 
@@ -19,7 +19,7 @@
 
 ### 1. 范围
 
-本批在 B12 的分派里接上 23 个动作：auth.php 中归 B14 的 20 个权限码，加 3 个旧控制器里有、auth.php 没列的公开动作（`user/reward`、`visit/index`、`visit/del`；与 B12 登记的 `EXTRA_ACTIONS` 相同）。分派表见 `backend/src/main/java/com/maccms/backend/admin/web/AdminMemberActions.java` 的 `handle`。
+本批在 B12 的分派里接上 23 个动作：auth.php 中归 B14 的 20 个权限码，加 3 个旧控制器里有、auth.php 没列的公开动作（`user/reward`、`visit/index`、`visit/del`；与 B12 登记的 `EXTRA_ACTIONS` 相同）。分派表见 `src/main/java/com/maccms/backend/admin/web/AdminMemberActions.java` 的 `handle`。
 
 | 控制器（旧 `application/admin/controller/*.php`） | 动作 |
 |---|---|
@@ -63,7 +63,7 @@
 | `mac_annex` | INSERT 沿用 B13（经 content 的 `AnnexAdminService.register`，与 D-B09-9 前台头像同一登记） | 会员头像上传后登记附件（第 7.7 节） |
 | 文件 `upload/user/<id%10>/<id>.jpg` | 不是数据库写入 | 会员头像（第 7.7 节；写入方式同 B09 前台头像：同目录临时文件 + 原子改名） |
 
-- **登记** `WriteRegistry`（`backend/src/main/java/com/maccms/backend/common/write/WriteRegistry.java`）：新增 9 项，登记表共 60 项（`WriteGuardTest` 逐项、`WriteRegistryTest` 允许与不允许项、`WriteInfrastructureMySqlIT` 生产登记表；全部符合写入方矩阵）。
+- **登记** `WriteRegistry`（`src/main/java/com/maccms/backend/common/write/WriteRegistry.java`）：新增 9 项，登记表共 60 项（`WriteGuardTest` 逐项、`WriteRegistryTest` 允许与不允许项、`WriteInfrastructureMySqlIT` 生产登记表；全部符合写入方矩阵）。
 - **列目录** `AdminTable.USER`、`AdminTable.GROUP` 逐列照抄 `install.sql`；`AdminTableSchemaTest` 逐列比对，并检查 `MemberAdminWriteMapper.xml` 的 `insertUser/updateUser/updateUserByIds`、`insertGroup/updateGroup/updateGroupByIds` 列出了全部列。
 - **零结构变更**：没有 DDL、没有新表新列。
 
@@ -218,13 +218,13 @@ HAVING u.user_points_froze <> COALESCE(SUM(c.cash_points), 0);
 
 #### 8.1 jte 页面与脚本
 
-`backend/src/main/jte-admin/admin/pages/` 下 12 个页面，逐个转自旧模板，DOM、类名、`lay-*`、`data-*`、表单字段不变，`static/layui/**`、`admin_style.css`、`admin_common.js` 原样复用：
+`src/main/jte-admin/admin/pages/` 下 12 个页面，逐个转自旧模板，DOM、类名、`lay-*`、`data-*`、表单字段不变，`static/layui/**`、`admin_style.css`、`admin_common.js` 原样复用：
 
 | 新模板 | 旧模板（`application/admin/view/`） |
 |---|---|
 | `user/index、info、reward` `group/index、info` `card/index、info` `order/index` `cash/index` `plog/index` `ulog/index` `visit/index` | 同名 `.html` |
 
-- 内联脚本移到 `backend/src/main/resources/static/admin-assets/`：列表的分页沿用 B12 的 `admin-list.js`；新增 4 个：`user-info`（表单校验、laydate、按会员组显示到期时间、头像上传与回填、悬停预览）、`group-info`（全选、反选、校验）、`card-index`（导出按钮）、`card-info`（校验）；服务端写入的地址与语言包文字改由 script 标签的 `data-*` 提供。
+- 内联脚本移到 `src/main/resources/static/admin-assets/`：列表的分页沿用 B12 的 `admin-list.js`；新增 4 个：`user-info`（表单校验、laydate、按会员组显示到期时间、头像上传与回填、悬停预览）、`group-info`（全选、反选、校验）、`card-index`（导出按钮）、`card-info`（校验）；服务端写入的地址与语言包文字改由 script 标签的 `data-*` 提供。
 - 旧模板原样输出的文字（会员组名、用户名、昵称、订单号、积分日志备注、推广访问来源等）按浏览器看到的值转义输出（D-B13-19 的同一做法，`BrowserText`）：显示与提交的值与旧版相同，文字里的标签不再被当作标签解析，双引号不再截断属性值。语言包里自带 `<br>` 的两段提示（`admin/group/help_tip`、`popedom_tip`）经 `AdminText.trusted` 原样输出。
 - `AdminTemplatePolicyTest` 以 B12 的后台策略重新编译全部模板；本批只放宽一处：卡密列表导出用的隐藏 `<iframe id="if" width="0" height="0"></iframe>`（旧模板原样；模板里不带地址，由 `card-index.js` 写入本站的导出地址），`FRAME_EXCEPTIONS` 只列框架页与卡密列表，卡密列表只能有这一段（测试锁定）。
 
@@ -240,10 +240,10 @@ HAVING u.user_points_froze <> COALESCE(SUM(c.cash_points), 0);
 
 | 内容 | 测试 / 证据 |
 |---|---|
-| PHP 黄金（PHP 8.0.30 与 7.3.33） | `backend/src/test/php/admin_member_golden.php`（子进程入口原样复用 B13 的 `admin_content_child.php`）：一次性库、php-cgi 跑完整的 `_admin.php` + ThinkPHP + 控制器；每个场景写入自己的行；记录每个请求的状态码、头（含 Content-Disposition）、正文与请求后变化的表的全部行。两版各 32 个场景、230 个请求步骤 → `backend/src/test/resources/admin/member/php{80,73}-golden.json` |
+| PHP 黄金（PHP 8.0.30 与 7.3.33） | `src/test/php/admin_member_golden.php`（子进程入口原样复用 B13 的 `admin_content_child.php`）：一次性库、php-cgi 跑完整的 `_admin.php` + ThinkPHP + 控制器；每个场景写入自己的行；记录每个请求的状态码、头（含 Content-Disposition）、正文与请求后变化的表的全部行。两版各 32 个场景、230 个请求步骤 → `src/test/resources/admin/member/php{80,73}-golden.json` |
 | 黄金复放（真实 MySQL） | `AdminMemberGoldenMySqlIT.scenariosMatchPhpGolden`：按场景的旧配置启动打开可写数据源与后台的应用上下文，每步把时钟拨到 PHP 请求开始的秒，比较状态码、Location、JSON 字节、页面结构（`AdminContentHtml`）、CSV 正文与 Content-Disposition、请求后 13 张表的全部行；两版共 **460 步**，除 `JAVA`/`JAVA_NO_WRITE`/`JAVA_RESTORE`/`JAVA_GLOBAL`/`JAVA_REGEX` 逐条断言的有意差异（第 10 节）外 0 处不同。新生成的卡号与卡密两边各自随机，只比较长度（字符集见单元测试） |
 | 并发与对账 ② | 同一测试类 Order 2～7：**资金类对账**——10 个会员各 1000 积分，32 个线程同时做会员中心的提现申请与撤销（B10 `MemberWalletService`）、后台的审核与删除，结束时每个会员"冻结 = 未审核提现合计"（第 6.3 节的对账语句为空）、"可用 + 冻结 + 已审核提现 = 1000"；16 个管理员同时审核同一批提现，每条只审核一次、冻结只扣一次；12 个管理员同时删除同一条未审核提现，冻结只退一次；后台保存会员表单与 15 次并发提现申请（整行覆盖与旧版一致，无出错，"冻结 = 未审核合计"仍成立）；8 个管理员同时各生成 50 张卡（400 行、卡号不重复）；到期时间恰好等于现在的会员在第 1 页降级、第 2 页不触发；删除会员组与把会员改到该组并发时，条件删除不删已有会员的组 |
-| 会员头像上传：PHP 黄金（PHP 8.0.30 与 7.3.33） | `backend/src/test/php/admin_user_portrait_golden.php` + `admin_portrait_child.php`（B13 的子进程入口加上 `VENDOR_PATH`，用仓库外恢复的 `vendor/` 里的 think-image；线上站点根目录下有 `vendor/`）：一次性库、php-cgi 跑完整的 `_admin.php`；每个请求记录状态码、头、正文、请求后 `mac_user`、`mac_annex` 的全部行与 `upload/` 文件清单（大小、sha256、开头字节、`getimagesize`）。两版各 30 个场景、66 个请求步骤：完整流程（打开表单 → 上传 → 保存 → 重新打开）、已有头像、再次上传、PNG/GIF/WebP/imgdata、一个数的尺寸、前台头像开关关闭、已登记过的文件、扩展名属于"文件"类、无权限（`viewer` 没有 `upload/upload`）、`editor`、未登录、会员号缺失/0/不存在/非数字/负数/小数/带字母/前导零/`../../1`、伪装图片、禁止的扩展名、PHP 内容、脚本标记、没有文件、超过 2 MB、失败时原头像不变 → `backend/src/test/resources/admin/member/portrait-php{80,73}-golden.json` |
+| 会员头像上传：PHP 黄金（PHP 8.0.30 与 7.3.33） | `src/test/php/admin_user_portrait_golden.php` + `admin_portrait_child.php`（B13 的子进程入口加上 `VENDOR_PATH`，用仓库外恢复的 `vendor/` 里的 think-image；线上站点根目录下有 `vendor/`）：一次性库、php-cgi 跑完整的 `_admin.php`；每个请求记录状态码、头、正文、请求后 `mac_user`、`mac_annex` 的全部行与 `upload/` 文件清单（大小、sha256、开头字节、`getimagesize`）。两版各 30 个场景、66 个请求步骤：完整流程（打开表单 → 上传 → 保存 → 重新打开）、已有头像、再次上传、PNG/GIF/WebP/imgdata、一个数的尺寸、前台头像开关关闭、已登记过的文件、扩展名属于"文件"类、无权限（`viewer` 没有 `upload/upload`）、`editor`、未登录、会员号缺失/0/不存在/非数字/负数/小数/带字母/前导零/`../../1`、伪装图片、禁止的扩展名、PHP 内容、脚本标记、没有文件、超过 2 MB、失败时原头像不变 → `src/test/resources/admin/member/portrait-php{80,73}-golden.json` |
 | 会员头像上传：黄金复放（真实 MySQL、真实 HTTP） | `AdminUserPortraitGoldenMySqlIT.portraitUploadMatchesPhpGolden`：按场景的旧配置启动内嵌 Tomcat（随机端口），经 HTTP 发出与 PHP 相同字节的请求（multipart 解析与 2 MB 上限与线上相同），比较状态码、Location、JSON 字节或页面结构、`mac_user` 全部行、`mac_annex` 除 `annex_size` 外的全部行（新版 `annex_size` 须等于新版文件的 KB）、`upload/` 文件路径（含临时文件，失败不能留下），新版头像须是配置尺寸的 JPEG、不能写到 `upload/user/` 之外。两版共 **132 步**、新版成功上传 26 次，除 `JAVA` 逐条断言的有意差异（D-B14-10；同 D-B09-14 的 PHP 8 GIF 按 PHP 7.3；伪装图片旧版 500、新版"文件上传失败！"；脚本标记旧版先落盘、新版不落盘）外 0 处不同。变异检查：去掉"会员存在"判断后该测试失败（`id-absent` 写出 `upload/user/9/999.jpg`） |
 | 会员头像上传：回滚演练 | 同一测试类 `rollbackRestoresPortraitFilesAndRowsWithDmlAndTheUploadBackup`：快照 `mac_user`、`mac_annex` 与 `upload/` → 经 HTTP 上传两位会员的头像（一位覆盖已有头像文件）并保存表单 → `DmlRestore` 以 3 条 DML 恢复两张表、按备份恢复 `upload/`（删除新文件、写回被覆盖的文件）→ 逐行、逐文件相同，表结构指纹不变 |
 | 会员头像上传：单元测试 | `AdminPortraitServiceTest`（8 个）：成功时只写重新编码的 JPEG、登记附件、只查会员是否存在而不读写会员行；一个数的尺寸与 data URL 类型；15 种非法或不存在的会员号不写盘、不读库（非法时）；伪装图片、PHP 内容、禁止扩展名、脚本标记、没有文件都不写盘且原头像不变；尺寸配置非法或目录未配置；写盘失败不留临时文件；登记附件失败不影响上传 |
@@ -252,7 +252,7 @@ HAVING u.user_points_froze <> COALESCE(SUM(c.cash_points), 0);
 | 一次性库 | `maccms_it_<yyyyMMddHHmmss>_<8 位十六进制>`（名称先校验），结束时删库并确认不存在；不连 `maccms_dev` |
 | 旧语义单元测试 | `MemberAdminUnitTest`（`strtotime` 子集对照 PHP 实测值、卡号字符集与首位、`group_popedom` 的 `json_encode` 对照 PHP、勾选判断、`reg_group` 宽松比较、推广访问前缀、第 1 页判断、`md5` 字节语义）；`AdminParamsNestedTest`（对照 PHP `parse_str`） |
 | 护栏 | `WriteGuardTest`（登记表 60 项与写入方矩阵）、`WriteRegistryTest`、`ReadOnlyGuardrailsTest`（新的读 Mapper 只有 SELECT、不读会员密码）、`AdminTableSchemaTest`（`USER`、`GROUP`）、`AdminTemplatePolicyTest`（全部后台模板与 `admin-assets`；卡密列表的 iframe 例外）、`ModuleBoundaryTest`、`SchemaGuardTest`、`SqlEntryGuardTest`、`OutboundNetworkGuardTest` |
-| 浏览器走查 | `backend/src/test/browser/b14_admin_member_check.py`（Playwright 本机 Chromium 无头）+ 合成数据 `b14_seed.sql`：一次性库 `maccms_it_*`、临时旧配置、临时站点根 `upload/`、本机 jar 与只服务本次的 nginx（自带前缀与配置，只提供 `/upload/` 与反向代理，不动共用的 `D:/Tools/nginx`）。第二轮 **52 项全部通过**（新增头像 11 项：按钮选图上传、地址带 `flag=user&user_id=1`、回填、文件是 100×100 JPEG、登记附件、上传本身不改 `user_portrait`、悬停预览从 `/upload/` 读到新头像、保存后写库、重新打开是新地址、伪装图片被拒绝且原头像不变、不存在或非法的会员号失败且不落盘）；其余与第一轮相同：登录；会员列表（layui 表格、分页、第 1 页到期降级、状态开关写库）；添加会员弹层（layui 下拉、laydate、选 VIP 组后显示到期时间、保存后库里是 `md5(原值)`、组、到期时间与积分）；编辑会员（密码框为空、留空不改密码、积分写库）；行内删除；推广会员页的三级人数与奖励；会员组添加（全选后的分类串与权限 JSON）、编辑（按 JSON 勾选、价格写库）、状态开关、删除有会员的组得到提示且不删；生成 5 张卡（16 位数字卡号、8 位卡密）、"导出"经隐藏 iframe 下载 CSV（文件名、表头、行数）、清空；订单行内删除；提现行内审核（冻结扣减）、勾选删除未审核提现（冻结退回）、对账语句为空；积分日志、访问日志（所属内容名称、行内删除）、推广访问（清空）；全程内容安全策略违规、页面脚本错误、控制台错误、对外部主机的请求、4xx/5xx 响应均为 0 |
+| 浏览器走查 | `src/test/browser/b14_admin_member_check.py`（Playwright 本机 Chromium 无头）+ 合成数据 `b14_seed.sql`：一次性库 `maccms_it_*`、临时旧配置、临时站点根 `upload/`、本机 jar 与只服务本次的 nginx（自带前缀与配置，只提供 `/upload/` 与反向代理，不动共用的 `D:/Tools/nginx`）。第二轮 **52 项全部通过**（新增头像 11 项：按钮选图上传、地址带 `flag=user&user_id=1`、回填、文件是 100×100 JPEG、登记附件、上传本身不改 `user_portrait`、悬停预览从 `/upload/` 读到新头像、保存后写库、重新打开是新地址、伪装图片被拒绝且原头像不变、不存在或非法的会员号失败且不落盘）；其余与第一轮相同：登录；会员列表（layui 表格、分页、第 1 页到期降级、状态开关写库）；添加会员弹层（layui 下拉、laydate、选 VIP 组后显示到期时间、保存后库里是 `md5(原值)`、组、到期时间与积分）；编辑会员（密码框为空、留空不改密码、积分写库）；行内删除；推广会员页的三级人数与奖励；会员组添加（全选后的分类串与权限 JSON）、编辑（按 JSON 勾选、价格写库）、状态开关、删除有会员的组得到提示且不删；生成 5 张卡（16 位数字卡号、8 位卡密）、"导出"经隐藏 iframe 下载 CSV（文件名、表头、行数）、清空；订单行内删除；提现行内审核（冻结扣减）、勾选删除未审核提现（冻结退回）、对账语句为空；积分日志、访问日志（所属内容名称、行内删除）、推广访问（清空）；全程内容安全策略违规、页面脚本错误、控制台错误、对外部主机的请求、4xx/5xx 响应均为 0 |
 | 测试总数 | 第一轮（`79fa074`）：单元 2659 个、0 失败；MySQL 集成 85 个、0 失败、跳过 1 个。第二轮的数字见交付评论（最终树上重跑） |
 
 ### 10. 与旧版的差异

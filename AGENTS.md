@@ -1,9 +1,14 @@
 # MacCMS 重构
 
+## 仓库目录（2026-10-30 起）
+- **仓库根目录 = 新系统 Java 工程**（`pom.xml`、`mvnw`、`src/`、`config/`、`spikes/`）。2026-10-30 之前它在 `backend/` 下，旧提交、旧单和历史记录里的 `backend/…` 路径对应现在的根目录。
+- **`php/` = 旧系统 MacCMS v10**（PHP + ThinkPHP 5.0.24），只读，只作行为对照、黄金样本来源；构建时从 `php/static/` 打包旧前后台静态资源，测试从 `php/application/` 读旧配置。**文档里写的旧站路径（`application/…`、`static/…`、`thinkphp/…`、`template/…`、`addons/…`、`index.php` 等）都相对 `php/`。**
+- `docs/`：分析、架构、契约与测试文档。
+
 ## 现状
 - MacCMS v10（`application/extra/version.php` `code=2023.1000.3051`），PHP + ThinkPHP **5.0.24**（`thinkphp/base.php:12` 定义 `THINK_VERSION`，入口 `index.php:39` 加载的就是这个目录）。代码来自线上生产备份 `maccms10-prod-20260711.zip`（2026-07-11）。
   - 另有一处不一致：备份 zip 里 `vendor/composer/installed.json` 记录的是 `topthink/framework v5.0.14`，但备份中没有 `vendor/topthink/framework/` 目录，运行时用不到这份元数据。成因待核实。
-- 目录：`application/`（admin 后台、index 前台、api、common、extra 配置）、`template/` 前台模板、`addons/` 插件、
+- 目录（都在 `php/` 下）：`application/`（admin 后台、index 前台、api、common、extra 配置）、`template/` 前台模板、`addons/` 插件、
   `extend/` 扩展类、`static/` 静态资源、`thinkphp/` 框架、`vendor/` 依赖。
 - 详细分析见 `docs/analysis/`（01 现状、02 Go/Java 选型、03 重构方案草稿，均待用户确认）。
 - **仓库不完整**（2026-10-10 核实）：
@@ -23,12 +28,12 @@
 
 ## 重构目标
 - **已确认**（用户 2026-10-10 在 MACC-2 回复"那开始吧"）：新系统用 **Java + Spring Boot + MyBatis**，**先沿用现有 MySQL 库（`mac_*` 表）**，做**模块化单体**；采集以后也统一用 Java。今后主要由智能体开发。
-- **当前批次（MACC-4）**：`backend/` Java 工程骨架 + `content` 模块只读接口（视频分类、视频分页列表、视频公开详情元数据）+ 健康检查。契约 `docs/contracts/content-read.openapi.yaml`，计划与版本选择 `docs/architecture/01-batch1-content-read-plan.md`，开发规范 `docs/architecture/02-agent-development-rules.md`（在 `backend/` 工作前必读）。
+- **当前批次（MACC-4）**：`backend/` Java 工程骨架 + `content` 模块只读接口（视频分类、视频分页列表、视频公开详情元数据）+ 健康检查。契约 `docs/contracts/content-read.openapi.yaml`，计划与版本选择 `docs/architecture/01-batch1-content-read-plan.md`，开发规范 `docs/architecture/02-agent-development-rules.md`（改 Java 工程前必读）。
 - **仍待定、未实施**（见 `docs/analysis/03-migration-plan-draft.md` 第 8 节）：模板方案（改写还是兼容层）、各阶段写入方切换、MyISAM→InnoDB 与 utf8→utf8mb4 转换、PHP 侧兼容改动。03 仍是草稿，不能当成已实施的方案。
 - 未获批准：部署、切 nginx 流量、线上核实、修改旧 PHP、修改数据库结构或账号。新系统对旧库**只读**。
 
 ## 本地运行与测试
-以下步骤由 Claude 后端工程师于 2026-10-10 在本机执行过（另有注明的除外），用 Git Bash 运行，工作目录为仓库根目录。
+以下步骤由 Claude 后端工程师于 2026-10-10 在本机执行过（另有注明的除外），用 Git Bash 运行，工作目录为旧站根目录 `php/`（2026-10-30 之前它就是仓库根目录）。
 
 1. **恢复 `vendor/`**。它不在 git 里，只能从备份 zip 中解压 `vendor/`。下面的脚本只写 `vendor/` 目录内的文件，遇到解析后落在 `vendor/` 之外的路径就中止；解压出来的文件会被 `vendor/.gitignore` 忽略，不会被提交：
    ```bash
@@ -88,15 +93,15 @@
    - 支付、短信、邮件、第三方登录（缺密钥和 `extend/` 依赖）
    - 静态生成
 
-## 新系统（backend/）本地运行与测试
-以下命令由 Claude 后端工程师于 2026-10-10 在本机执行通过，工作目录为 `backend/`（Git Bash 用 `./mvnw`，PowerShell 用 `.\mvnw.cmd`）。详细说明见 `backend/README.md`。
+## 新系统（Java，仓库根目录）本地运行与测试
+以下命令由 Claude 后端工程师于 2026-10-10 在本机执行通过，工作目录为仓库根目录（2026-10-30 之前 Java 工程在 `backend/` 下；Git Bash 用 `./mvnw`，PowerShell 用 `.\mvnw.cmd`）。详细说明见 `README.md`。
 
 1. **环境**：JDK 21（本机已装）；Maven 由仓库内的 Maven Wrapper 自动下载并按 `distributionSha256Sum` 校验，无需预装。
 2. **构建与测试**（不连数据库）：`./mvnw verify` 或 `.\mvnw.cmd verify`——编译、单元测试、HTTP 契约测试、只读/无凭证静态检查、异常日志脱敏检查。
 3. **MySQL 集成测试**：设置环境变量 `MACCMS_IT_ADMIN_URL`（如 `jdbc:mysql://127.0.0.1:3306/?characterEncoding=UTF-8&useSSL=false`，不含库名）、`MACCMS_IT_ADMIN_USERNAME`、`MACCMS_IT_ADMIN_PASSWORD` 后执行 `./mvnw verify -Pmysql-it`。测试自建一次性库 `maccms_it_<时间>_<随机>`、导入 `install.sql` 表结构与合成数据，结束后只删除该库；**不碰 `maccms_dev`**。
-4. **运行**：`./mvnw -q package -DskipTests` 后，设置 `MACCMS_DB_URL`、`MACCMS_DB_USERNAME`、`MACCMS_DB_PASSWORD`（样例见 `backend/config/maccms-backend.env.example`），执行 `java -jar target/maccms-backend-0.1.0-SNAPSHOT.jar`，默认监听 `127.0.0.1:18280`；`curl http://127.0.0.1:18280/actuator/health` 返回 `{"status":"UP"}` 即就绪。
+4. **运行**：`./mvnw -q package -DskipTests` 后，设置 `MACCMS_DB_URL`、`MACCMS_DB_USERNAME`、`MACCMS_DB_PASSWORD`（样例见 `config/maccms-backend.env.example`），执行 `java -jar target/maccms-backend-0.1.0-SNAPSHOT.jar`，默认监听 `127.0.0.1:18280`；`curl http://127.0.0.1:18280/actuator/health` 返回 `{"status":"UP"}` 即就绪。
    - 缺少数据库环境变量时拒绝启动；用 `root` 需显式设置 `MACCMS_DB_ALLOW_ROOT=true`（仅本机开发）。连接池是只读会话，应用无法写库。
    - 生产应使用只授予 SELECT 的专用账号，由管理员创建（本批未创建任何账号）。
    - 可写数据源（B07，`docs/architecture/12-write-infrastructure.md`）默认关闭（`MACCMS_WRITE_ENABLED=false`），开发期只在一次性库 `maccms_it_*` 上打开；不要指向 `maccms_dev` 或任何共享库。
 5. **停止**：前台运行按 Ctrl+C；后台运行时按启动时记录的 PID 结束（PowerShell `Stop-Process -Id <PID>`），不要按进程名批量结束 java。
-6. **不要提交**：`backend/target/`、`backend/config/*.env`、运行日志。
+6. **不要提交**：`target/`、`config/*.env`、运行日志。

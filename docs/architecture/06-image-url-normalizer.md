@@ -6,13 +6,13 @@
 
 | 位置 | 内容 |
 |---|---|
-| `backend/src/main/java/com/maccms/backend/site/application/ImageUrlConfig.java` | 旧 `upload.protocol/mode/remoteurl/img_key/img_api` 的原始字符串 |
-| `backend/src/main/java/com/maccms/backend/site/application/ImageUrlNormalizer.java` | `create(config, SiteSettings)` 校验配置；`normalize(raw)` 返回 `Optional<SafeUrl>`；`resolve(raw)` 另给出命中的旧分支与拒绝原因 |
-| `backend/src/main/java/com/maccms/backend/site/application/HtmlAttributeCharRefs.java` | 按浏览器解析属性值的规则解码字符引用（子集） |
-| `backend/src/test/resources/site/image-url/mac-url-img-vectors.json` | 黄金向量：18 组合成配置、71 条向量 |
-| `backend/src/test/resources/site/image-url/mac_url_img_golden.php` | 生成/复核向量 `php` 字段的脚本（不在 Maven 构建中运行） |
-| `backend/src/test/java/com/maccms/backend/site/application/ImageUrlGoldenVectorsTest.java` | 逐条断言旧语义、新输出与兼容关系 |
-| `backend/src/test/java/com/maccms/backend/site/application/ImageUrlNormalizerTest.java` | 配置校验、边界、解码器与 jsoup 的差分 |
+| `src/main/java/com/maccms/backend/site/application/ImageUrlConfig.java` | 旧 `upload.protocol/mode/remoteurl/img_key/img_api` 的原始字符串 |
+| `src/main/java/com/maccms/backend/site/application/ImageUrlNormalizer.java` | `create(config, SiteSettings)` 校验配置；`normalize(raw)` 返回 `Optional<SafeUrl>`；`resolve(raw)` 另给出命中的旧分支与拒绝原因 |
+| `src/main/java/com/maccms/backend/site/application/HtmlAttributeCharRefs.java` | 按浏览器解析属性值的规则解码字符引用（子集） |
+| `src/test/resources/site/image-url/mac-url-img-vectors.json` | 黄金向量：18 组合成配置、71 条向量 |
+| `src/test/resources/site/image-url/mac_url_img_golden.php` | 生成/复核向量 `php` 字段的脚本（不在 Maven 构建中运行） |
+| `src/test/java/com/maccms/backend/site/application/ImageUrlGoldenVectorsTest.java` | 逐条断言旧语义、新输出与兼容关系 |
+| `src/test/java/com/maccms/backend/site/application/ImageUrlNormalizerTest.java` | 配置校验、边界、解码器与 jsoup 的差分 |
 
 旧版的 `MAC_PATH`（`site.install_dir`，`application/common/behavior/Init.php:48`）用 `SiteSettings.homePath()`（`base-url` 的路径部分）代替；协议相对地址的补全用 `base-url` 的协议。
 
@@ -57,7 +57,7 @@
 ### 5. 黄金向量
 
 - **来源**：向量的 `php` 字段是旧函数的真实输出。`mac_url_img_golden.php` 用 `token_get_all` 从 `application/common.php` 原样取出 `mac_url_img` 与 `mac_filter_xss` 两个函数并 `eval`，不改动旧代码，不加载其余部分；`$GLOBALS['config']['upload']` 只填向量文件里的合成配置；`MAC_PATH` 是常量，每个取值在独立子进程中定义。
-- **复核**：`php backend/src/test/resources/site/image-url/mac_url_img_golden.php`（默认核对，`--print` 打印实际输出）。2026-10-11 在本机 PHP 7.2.34、7.3.33、8.0.30、8.2.32 上 71/71 一致；把一条向量的 `php` 改错后脚本报 `MISMATCH` 并以 1 退出（随后已还原）。
+- **复核**：`php src/test/resources/site/image-url/mac_url_img_golden.php`（默认核对，`--print` 打印实际输出）。2026-10-11 在本机 PHP 7.2.34、7.3.33、8.0.30、8.2.32 上 71/71 一致；把一条向量的 `php` 改错后脚本报 `MISMATCH` 并以 1 退出（随后已还原）。
 - **脱敏**：只用合成值，域名都在保留顶级域 `.test` 下（`vectorFileUsesOnlySyntheticHosts` 检查），用户信息样例为 `user:pass`。线上 `upload` 配置未知，向量不代表生产行为。
 - **覆盖**：旧分支 MAC_PROTOCOL 8、RELATIVE_LOCAL 21、RELATIVE_REMOTE 6、IMG_API 9、UNCHANGED 27；兼容关系 SAME 37、PROTOCOL_RELATIVE_COMPLETED 5、REJECTED 22、CONFIG_REJECTED 7。包括空值/NULL/纯空白、`javascript:`/`data:`/`httpx:`/`mac:javascript:` 等 scheme、协议相对与 `///`、`/\`、反斜线、`img_key` 命中/未命中/大小写/`"0"`、`img_api` 为站内路径/绝对/协议相对/空、HTML 实体与属性逃逸、标签、NUL、制表符、非 ASCII 与空格，以及 7 种不合法配置。
 - **Java 断言**（每条）：① 新版选出的分支等于向量记录的分支；不含 `<` 的输入，把新版分支结果按旧过滤逐步处理（删除 NUL、`htmlspecialchars(ENT_QUOTES)`、PHP trim、两次 `str_replace`）后，必须等于 `php` 字段；② 结果与拒绝原因等于 `expect`；③ SAME / PROTOCOL_RELATIVE_COMPLETED 用 jsoup 按属性规则解码 `php` 字段（独立于被测解码器），求出浏览器地址并与新 `href` 比较。配置错误的向量断言异常含配置项名称、不含取值。

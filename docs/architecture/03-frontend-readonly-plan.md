@@ -33,10 +33,10 @@
 | 做法 | 新增 `site` 模块（03 草稿第 1 节已规划：前台渲染、SEO URL、播放页等），在同一个 jar 内用服务端模板输出 HTML；进程内调用 `content` 的 application 服务 | 独立前端工程（Node 工具链构建），浏览器经公开 API 取数，客户端渲染 | 继续用 ThinkPHP 渲染：要么补回模板，要么让 PHP 控制器改调 Java API；或实现 `{maccms:*}` 标签兼容层（03 草稿 4.7 乙） |
 | SEO / canonical / 真实 404 | 原生支持：首屏即完整 HTML，可返回真正的 404/301 状态码 | SEO 通常需预渲染或 SSR 配合；真实 404 需托管/服务端按资源判定，不能只由客户端路由给出，canonical 也需相应维护 | 与旧站一致（但旧站本身没有 canonical 证据，清单 2.3） |
 | 与旧 URL 共存 | 同一路径由 nginx 分流到 Java 或 PHP，Java 用"交还 PHP"响应处理不归它管的情况（第 4.2 节） | 需要一个 HTML 入口 + 前端路由去匹配旧 URL 形态，旧 URL 解析逻辑落在浏览器里 | 不需要改路由 |
-| 授权边界 | 服务端判定、服务端过滤字段，浏览器拿不到 API 之外的东西 | API 必须对外公开（当前后端默认只监听 127.0.0.1（`backend/src/main/resources/application.yml:41`），源码未配置 CORS），浏览器可直接调用全部公开接口 | 沿用 PHP 授权，但所有旧问题也一并保留 |
+| 授权边界 | 服务端判定、服务端过滤字段，浏览器拿不到 API 之外的东西 | API 必须对外公开（当前后端默认只监听 127.0.0.1（`src/main/resources/application.yml:41`），源码未配置 CORS），浏览器可直接调用全部公开接口 | 沿用 PHP 授权，但所有旧问题也一并保留 |
 | 对智能体开发 | 一种语言、一条构建（`./mvnw verify`）、一套测试（MockMvc 断言 HTML/状态码/头）；字段只经过已有的契约 DTO，护栏测试可复用 | 两种语言、两条构建与依赖链；需额外维护 API 客户端与类型同步；智能体对主流前端框架熟悉，但跨仓库/跨工具链的一致性检查更多 | 在即将退役的 PHP 上继续投入；改 PHP 业务代码需用户另行批准；模板仍然缺失 |
 | 模块化单体契合度 | 高：`site` 是单体内的一个模块，只依赖 `content` 的 application 层 | 中：后端仍是单体，但前台成为单体之外的第二个部署物 | 低：增加 PHP 与 Java 的耦合点 |
-| 隐式写入 | 新进程只读连接（`backend/src/main/resources/application.yml:11-12` `read-only: true`），游客请求不再经过 PHP 的 `label_user` | 同 A（API 只读） | 每个页面仍经过 `index/Base` 构造（`application/index/controller/Base.php:11-18`），会员到期 UPDATE 保留 |
+| 隐式写入 | 新进程只读连接（`src/main/resources/application.yml:11-12` `read-only: true`），游客请求不再经过 PHP 的 `label_user` | 同 A（API 只读） | 每个页面仍经过 `index/Base` 构造（`application/index/controller/Base.php:11-18`），会员到期 UPDATE 保留 |
 | 首批工作量 | 中：模板 + URL 生成/解析 + 图片地址规范化 | 中到高：除页面外还要解决 SEO 与路由 | 低（补模板）到高（标签兼容层，`application/common/taglib/Maccms.php` 体系庞大） |
 | 回滚 | nginx 把路由切回 PHP | 同左，另需处理静态资源缓存 | 无切换，无需回滚，但也没有前进 |
 
@@ -73,7 +73,7 @@ D2 模板引擎的评估标准（候选可包括 Spring Boot 生态中常见的�
 #### 1.3 `site` 模块的边界
 
 - 新包 `com.maccms.backend.site`，分层沿用 02 规范第 2 节：`web`（页面 Controller、视图模型）→ `application`（URL 生成/解析、canonical、图片地址规范化、站点设置）→ 无 `infrastructure`（`site` 不拥有任何表，03 草稿第 1 节）。
-- `site` 只能调用 `content` application 层的公开服务（当前为 `ContentReadService`，`backend/src/main/java/com/maccms/backend/content/application/ContentReadService.java:48,53,77`），**不得**直接使用 `content` 的 Mapper 或行记录。
+- `site` 只能调用 `content` application 层的公开服务（当前为 `ContentReadService`，`src/main/java/com/maccms/backend/content/application/ContentReadService.java:48,53,77`），**不得**直接使用 `content` 的 Mapper 或行记录。
 - 【需求】`ContentReadService` 当前返回的是 `content.api.dto` 下与契约一一对应的 DTO。`site` 直接使用这些 DTO 等于"前台只依据契约字段开发"，与 02 规范第 1 节一致；但 02 规范第 2 节写明"不能使用对方的 DTO 内部类型"。需后端负责人确认：把这些契约 DTO 视为 `content` 的已发布类型供 `site` 使用，或在 `content.application` 暴露专用的只读视图类型。实现任务开始前必须定下来。
 - 不新增 HTTP 回环调用（`site` 不经 `http://127.0.0.1:18280/api/v1` 取数）：同一进程内回环只增加延迟与故障点。公开 API 照常保留给其他客户端。
 
@@ -92,12 +92,12 @@ flowchart LR
 ```
 
 - **Java 只服务游客。**【需求】请求携带旧会员登录 cookie（`user_id`、`user_check`，写入见 `application/common/model/User.php:385-390`，ThinkPHP cookie 前缀为空 `application/config.php:222`）时，nginx 把首批三页也路由给 PHP。原因：契约一律按游客判定（契约 `info.description`"访问者一律按旧系统的游客…判定可见性"），会员能看到的分类/详情范围可能更大（01 计划第 5 节第 7 条）。这样也保证会员请求仍经过 PHP 的 `label_user`，到期降级写入照旧发生（第 6.2 节）。
-- **Java 不写库**：现有连接池配置为只读会话（`backend/src/main/resources/application.yml:11-12`）；账号检查由 `DatabaseAccountGuard` 执行，生产仍须使用管理员配置的仅 SELECT 账号；`site` 模块不新增任何数据源。
+- **Java 不写库**：现有连接池配置为只读会话（`src/main/resources/application.yml:11-12`）；账号检查由 `DatabaseAccountGuard` 执行，生产仍须使用管理员配置的仅 SELECT 账号；`site` 模块不新增任何数据源。
 - **本地阶段没有 nginx 分流**：Java 只在 `127.0.0.1` 上响应白名单路由（第 5.4 节的本地验证策略）。
 
 ### 3. 首批三页
 
-字段名一律用契约中的 JSON 名；"MACC-4 实际字段"指契约已声明且有契约测试的字段（`backend/src/test/java/com/maccms/backend/content/ContentApiContractTest.java`），"未实现"指清单第 3 节中的 A/B 档需求但契约没有。
+字段名一律用契约中的 JSON 名；"MACC-4 实际字段"指契约已声明且有契约测试的字段（`src/test/java/com/maccms/backend/content/ContentApiContractTest.java`），"未实现"指清单第 3 节中的 A/B 档需求但契约没有。
 
 #### 3.1 共用：站点外壳
 
@@ -274,7 +274,7 @@ canonical 规则：
 
 #### 5.4 本地合成验证策略（不访问线上、不碰共享开发库）
 
-1. **URL 黄金向量**：在 PHP 环境里写一个只调用 `mac_url`/`mac_url_type`/`mac_url_vod_detail` 的 CLI 脚本，用**合成的配置组合**（仓库默认；`rewrite.status=1`；`suffix_hide=1`；`route_status=1` + 仓库默认 `route` 文本；`pathinfo_depr='-'`）和合成的 `info` 数组生成期望 URL，输出为 JSON 测试向量提交到 `backend/src/test/resources/`。如果脚本需要数据库（例如分类缓存），只连**一次性库**（与 `-Pmysql-it` 相同的 `maccms_it_*` 方式），不连 `maccms_dev`。该脚本本身是否需要改 PHP 业务代码【待验证】：若需要，改为在测试工程内复制函数逻辑并人工核对，不改旧 PHP。
+1. **URL 黄金向量**：在 PHP 环境里写一个只调用 `mac_url`/`mac_url_type`/`mac_url_vod_detail` 的 CLI 脚本，用**合成的配置组合**（仓库默认；`rewrite.status=1`；`suffix_hide=1`；`route_status=1` + 仓库默认 `route` 文本；`pathinfo_depr='-'`）和合成的 `info` 数组生成期望 URL，输出为 JSON 测试向量提交到 `src/test/resources/`。如果脚本需要数据库（例如分类缓存），只连**一次性库**（与 `-Pmysql-it` 相同的 `maccms_it_*` 方式），不连 `maccms_dev`。该脚本本身是否需要改 PHP 业务代码【待验证】：若需要，改为在测试工程内复制函数逻辑并人工核对，不改旧 PHP。
 2. **生成器/解析器单元测试**：对每组配置逐条比对向量；解析器对每条向量做"解析 → 再生成"往返测试。
 3. **页面 HTTP 测试**（MockMvc）：对白名单路由断言状态码、`<link rel="canonical">`、301 的 `Location`、交还响应头。
 4. **本地 nginx 演练**（可选，实现阶段）：用本机 nginx 起一个**不占用 80/8080/8072/8073/8082** 的独立端口，Java 与 PHP 内置服务器（同样连一次性库）作为两个 upstream，验证"游客 → Java、带会员 cookie → PHP、交还 → PHP 不循环"。缺模板的 PHP 页面可能返回 500，仍须验证 PHP 实际收到的原始 URI、参数、方法；本地可选演练，但使用交还机制切流量前必须完成。

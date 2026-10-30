@@ -5,7 +5,7 @@
 > - B07 `12-write-infrastructure.md`（写 SQL 规范、登记表、回滚演练工具）、B12 `21-b12-admin-framework.md`（后台入口、会话、权限、页面与脚本策略）、B13 `22-b13-admin-content.md`（后台表单取值规则 `AdminTable`/`AdminRowValues`、D-B13-3/4/19 的同一规则）、B15 `24-b15-admin-system.md`（旧配置原子写回 `LegacyConfigService.update`、`var_export` 等价输出、D-B15-18 重启生效的口径）；
 > - 用户决定（2026-10-17）：后台复用旧后台 HTML 结构与静态资产，转成 jte，不做新视觉设计。
 >
-> 旧代码位置一律相对仓库根目录；新代码写作 `backend/…`。
+> 旧代码位置一律相对仓库根目录；新代码写作 `…`。
 
 ### 0. 起点与分支
 
@@ -95,7 +95,7 @@
 
 ### 7. 页面：复用旧后台结构
 
-- 旧 `application/admin/view/collect/{index,info,union}.html`、`cj/{index,info}.html` 逐个转写为 `backend/src/main/jte-admin/admin/pages/{collect,cj}/*.jte`，标签、类名、布局原样；旧内联脚本逐行移到 `src/main/resources/static/admin-assets/{collect-info,cj-index,cj-info}.js`，地址与语言包文字经 `script` 标签的 `data-*` 属性传入（B12 的页面脚本策略）。
+- 旧 `application/admin/view/collect/{index,info,union}.html`、`cj/{index,info}.html` 逐个转写为 `src/main/jte-admin/admin/pages/{collect,cj}/*.jte`，标签、类名、布局原样；旧内联脚本逐行移到 `src/main/resources/static/admin-assets/{collect-info,cj-index,cj-info}.js`，地址与语言包文字经 `script` 标签的 `data-*` 属性传入（B12 的页面脚本策略）。
 - 最小改动：`cj/info` 里的 `onclick` 与 `javascript:` 调用改为 `data-*` 属性，由页面脚本按同样参数调用同样的函数；`collect/union` 不再输出旧模板里的空 `<script src="">`（D-B17-8）；`cj/info` 里旧模板自带的示例文字 `http://www.phpcms.cn/help/rumen/(*).html` 照旧（不是链接，`AdminTemplatePolicyTest` 登记）；断点采集的按钮（按缓存里的断点地址显示）在 B18 接上，本批没有断点，不显示。
 - 输出转义按 D-B13-19 的同一规则（D-B17-4）。
 
@@ -103,7 +103,7 @@
 
 | 内容 | 测试 / 证据 |
 |---|---|
-| PHP 黄金（PHP 8.0.30 与 7.3.33） | `backend/src/test/php/admin_collect_golden.php`：一次性库 `maccms_it_<时间>_<随机>`、php-cgi 跑完整的 `_admin.php` + ThinkPHP + 控制器（复用 B15 的 `admin_system_child.php`），站点是临时副本。每个场景清空四张表并复位自增计数、写入场景的行与预置的 `bind.php`；每步记录状态码、头、正文、`bind.php` 的变化与四张表的全部行。两版各 **22 个场景、97 步** → `backend/src/test/resources/admin/collect/php{80,73}-golden.json`。不调用会联网的动作 |
+| PHP 黄金（PHP 8.0.30 与 7.3.33） | `src/test/php/admin_collect_golden.php`：一次性库 `maccms_it_<时间>_<随机>`、php-cgi 跑完整的 `_admin.php` + ThinkPHP + 控制器（复用 B15 的 `admin_system_child.php`），站点是临时副本。每个场景清空四张表并复位自增计数、写入场景的行与预置的 `bind.php`；每步记录状态码、头、正文、`bind.php` 的变化与四张表的全部行。两版各 **22 个场景、97 步** → `src/test/resources/admin/collect/php{80,73}-golden.json`。不调用会联网的动作 |
 | 黄金复放（真实 MySQL） | `AdminCollectGoldenMySqlIT.scenariosMatchPhpGolden`：同样的请求发给新版（时钟拨到 PHP 请求开始的秒），比较状态码、JSON 字节、页面结构（`AdminContentHtml`）、导出正文与文件名、`bind.php` 逐字节与四张表的全部行；有意差异按第 9 节登记 |
 | 绑定键黄金向量 | `CollectBindingsGoldenTest`：黄金里采集源列表页的 `cjflag` 与 PHP `md5`、绑定键与本地分类取值逐个对照 |
 | 绑定（不连库） | `CollectBindServiceTest`：写出的 `bind.php` 与 `mac_arr2file` 逐字节相同、`data` 各字段、数字串键与整数键、清除的两种方式、文件不存在与读不回、24 线程并发绑定不丢更新 |
