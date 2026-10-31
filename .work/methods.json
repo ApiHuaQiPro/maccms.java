@@ -1,0 +1,574 @@
+{
+ "index/Actor": [
+  "__construct",
+  "index",
+  "type",
+  "show",
+  "ajax_show",
+  "search",
+  "ajax_search",
+  "detail",
+  "ajax_detail",
+  "rss"
+ ],
+ "index/Ajax": [
+  "__construct",
+  "index",
+  "data",
+  "suggest",
+  "desktop",
+  "hits",
+  "referer",
+  "digg",
+  "score",
+  "pwd",
+  "verify_check"
+ ],
+ "index/Art": [
+  "__construct",
+  "index",
+  "type",
+  "show",
+  "ajax_show",
+  "search",
+  "ajax_search",
+  "detail",
+  "ajax_detail",
+  "rss"
+ ],
+ "index/Base": [
+  "__construct",
+  "_empty"
+ ],
+ "index/Comment": [
+  "__construct",
+  "index",
+  "ajax",
+  "saveData",
+  "report",
+  "digg"
+ ],
+ "index/Gbook": [
+  "__construct",
+  "index",
+  "ajax",
+  "report",
+  "saveData"
+ ],
+ "index/Help": [
+  "__construct",
+  "index"
+ ],
+ "index/Index": [
+  "__construct",
+  "index"
+ ],
+ "index/Label": [
+  "__construct",
+  "index"
+ ],
+ "index/Map": [
+  "__construct",
+  "index"
+ ],
+ "index/MyError": [
+  "_empty"
+ ],
+ "index/Note": [
+  "__construct",
+  "index"
+ ],
+ "index/Payment": [
+  "__construct",
+  "notify"
+ ],
+ "index/Plot": [
+  "__construct",
+  "index",
+  "search",
+  "ajax_search",
+  "detail",
+  "ajax_detail",
+  "rss"
+ ],
+ "index/Qrcode": [
+  "__construct",
+  "index"
+ ],
+ "index/Role": [
+  "__construct",
+  "index",
+  "show",
+  "ajax_show",
+  "search",
+  "ajax_search",
+  "detail",
+  "ajax_detail",
+  "rss"
+ ],
+ "index/Rss": [
+  "__construct",
+  "index",
+  "baidu",
+  "google",
+  "so",
+  "sogou",
+  "bing",
+  "sm"
+ ],
+ "index/Search": [
+  "__construct",
+  "index"
+ ],
+ "index/Topic": [
+  "__construct",
+  "index",
+  "search",
+  "ajax_search",
+  "detail",
+  "ajax_detail",
+  "rss"
+ ],
+ "index/User": [
+  "__construct",
+  "ajax_login",
+  "ajax_info",
+  "ajax_ulog",
+  "ajax_buy_popedom",
+  "index",
+  "login",
+  "logout",
+  "oauth",
+  "logincallback",
+  "bindmsg",
+  "bind",
+  "unbind",
+  "info",
+  "regcheck",
+  "reg",
+  "reg_msg",
+  "portrait",
+  "findpass",
+  "findpass_msg",
+  "findpass_reset",
+  "buy",
+  "pay",
+  "gopay",
+  "qrcode",
+  "upgrade",
+  "popedom",
+  "plays",
+  "downs",
+  "favs",
+  "ulog",
+  "ulog_del",
+  "plog",
+  "plog_del",
+  "cash",
+  "cash_del",
+  "reward",
+  "orders",
+  "order_info",
+  "cards",
+  "comment",
+  "gbook",
+  "visit"
+ ],
+ "index/Verify": [
+  "__construct",
+  "index",
+  "check"
+ ],
+ "index/Vod": [
+  "__construct",
+  "index",
+  "type",
+  "show",
+  "ajax_show",
+  "search",
+  "ajax_search",
+  "detail",
+  "ajax_detail",
+  "copyright",
+  "role",
+  "play",
+  "player",
+  "down",
+  "downer",
+  "rss",
+  "plot"
+ ],
+ "index/Website": [
+  "__construct",
+  "index",
+  "type",
+  "show",
+  "ajax_show",
+  "search",
+  "ajax_search",
+  "detail",
+  "ajax_detail",
+  "rss"
+ ],
+ "api/Base": [
+  "__construct"
+ ],
+ "api/Index": [
+  "__construct",
+  "index"
+ ],
+ "api/Provide": [
+  "__construct",
+  "index",
+  "vod",
+  "vod_url_deal",
+  "vod_json",
+  "vod_xml",
+  "art",
+  "actor",
+  "role",
+  "website",
+  "comment"
+ ],
+ "api/Receive": [
+  "__construct",
+  "index",
+  "vod",
+  "art",
+  "actor",
+  "role",
+  "website",
+  "comment"
+ ],
+ "api/Timming": [
+  "__construct",
+  "index"
+ ],
+ "api/Wechat": [
+  "__construct",
+  "index"
+ ],
+ "admin/Actor": [
+  "__construct",
+  "data",
+  "info",
+  "del",
+  "field"
+ ],
+ "admin/Addon": [
+  "__construct",
+  "index",
+  "config",
+  "info",
+  "downloaded",
+  "install",
+  "uninstall",
+  "state",
+  "local",
+  "add",
+  "upgrade"
+ ],
+ "admin/Admin": [
+  "__construct",
+  "index",
+  "info",
+  "del",
+  "field"
+ ],
+ "admin/Annex": [
+  "__construct",
+  "data",
+  "file",
+  "info",
+  "del",
+  "check",
+  "init"
+ ],
+ "admin/Art": [
+  "__construct",
+  "data",
+  "batch",
+  "info",
+  "del",
+  "field",
+  "updateToday"
+ ],
+ "admin/Base": [
+  "__construct",
+  "check_auth",
+  "_cache_clear"
+ ],
+ "admin/Card": [
+  "__construct",
+  "index",
+  "info",
+  "del"
+ ],
+ "admin/Cash": [
+  "__construct",
+  "index",
+  "del",
+  "audit"
+ ],
+ "admin/Cj": [
+  "__construct",
+  "index",
+  "info",
+  "program",
+  "col_all",
+  "col_url",
+  "col_content",
+  "publish",
+  "show",
+  "content_del",
+  "content_into",
+  "show_url",
+  "del",
+  "export",
+  "import"
+ ],
+ "admin/Collect": [
+  "__construct",
+  "index",
+  "test",
+  "info",
+  "del",
+  "union",
+  "load",
+  "api",
+  "timing",
+  "clearbind",
+  "bind",
+  "vod",
+  "art",
+  "actor",
+  "role",
+  "website"
+ ],
+ "admin/Comment": [
+  "__construct",
+  "data",
+  "info",
+  "del",
+  "field"
+ ],
+ "admin/Database": [
+  "__construct",
+  "index",
+  "export",
+  "import",
+  "optimize",
+  "repair",
+  "del",
+  "sql",
+  "columns",
+  "rep"
+ ],
+ "admin/Domain": [
+  "index",
+  "del",
+  "export",
+  "import"
+ ],
+ "admin/Gbook": [
+  "__construct",
+  "data",
+  "info",
+  "del",
+  "field"
+ ],
+ "admin/Group": [
+  "__construct",
+  "index",
+  "info",
+  "del",
+  "field"
+ ],
+ "admin/Images": [
+  "__construct",
+  "data",
+  "opt",
+  "del",
+  "sync"
+ ],
+ "admin/Index": [
+  "__construct",
+  "login",
+  "logout",
+  "index",
+  "welcome",
+  "quickmenu",
+  "checkcache",
+  "clear",
+  "iframe",
+  "unlocked",
+  "check_back_link",
+  "select"
+ ],
+ "admin/Link": [
+  "__construct",
+  "index",
+  "info",
+  "del",
+  "batch"
+ ],
+ "admin/Make": [
+  "__construct",
+  "opt",
+  "make",
+  "index",
+  "map",
+  "rss",
+  "type",
+  "topic_index",
+  "topic_info",
+  "info",
+  "label"
+ ],
+ "admin/Order": [
+  "__construct",
+  "index",
+  "del"
+ ],
+ "admin/Plog": [
+  "__construct",
+  "index",
+  "del"
+ ],
+ "admin/Role": [
+  "__construct",
+  "data",
+  "info",
+  "del",
+  "field"
+ ],
+ "admin/Safety": [],
+ "admin/System": [
+  "test_email",
+  "test_cache",
+  "config",
+  "configurl",
+  "configuser",
+  "configupload",
+  "configcomment",
+  "configweixin",
+  "configpay",
+  "configconnect",
+  "configemail",
+  "configsms",
+  "configapi",
+  "configinterface",
+  "configcollect",
+  "configplay",
+  "configseo"
+ ],
+ "admin/Template": [
+  "__construct",
+  "index",
+  "ads",
+  "info",
+  "del",
+  "wizard"
+ ],
+ "admin/Timming": [
+  "__construct",
+  "index",
+  "info",
+  "del",
+  "field"
+ ],
+ "admin/Topic": [
+  "__construct",
+  "data",
+  "info",
+  "del",
+  "field"
+ ],
+ "admin/Type": [
+  "__construct",
+  "index",
+  "info",
+  "del",
+  "field",
+  "batch",
+  "extend",
+  "move"
+ ],
+ "admin/Ulog": [
+  "__construct",
+  "index",
+  "del"
+ ],
+ "admin/Update": [],
+ "admin/Upload": [
+  "__construct",
+  "index",
+  "test",
+  "upload"
+ ],
+ "admin/Urlsend": [
+  "__construct",
+  "index",
+  "data",
+  "push"
+ ],
+ "admin/User": [
+  "__construct",
+  "data",
+  "reward",
+  "info",
+  "del",
+  "field"
+ ],
+ "admin/Visit": [
+  "__construct",
+  "index",
+  "del"
+ ],
+ "admin/Vod": [
+  "__construct",
+  "data",
+  "batch",
+  "info",
+  "iplot",
+  "del",
+  "field",
+  "updateToday"
+ ],
+ "admin/Voddowner": [
+  "__construct",
+  "index",
+  "info",
+  "del",
+  "field"
+ ],
+ "admin/Vodplayer": [
+  "__construct",
+  "index",
+  "info",
+  "del",
+  "field",
+  "export",
+  "import"
+ ],
+ "admin/Vodserver": [
+  "__construct",
+  "index",
+  "info",
+  "del",
+  "field"
+ ],
+ "admin/Website": [
+  "__construct",
+  "data",
+  "batch",
+  "info",
+  "del",
+  "field",
+  "updateToday"
+ ],
+ "install/Index": [
+  "__construct",
+  "index"
+ ]
+}
