@@ -1,6 +1,6 @@
 # APPK-2 附表 A：原表原结构基线与结构快照定义
 
-> 属于 `docs/prd/APPK-2.md`（v8；A.1、A.2 内容自 v4 起未改动，v8 只改了 A.1 末尾“辅助证据”第②条并新增 A.3 验收数据库与账号）。冲突时以主文件为准。基线来源：`php/application/install/sql/install.sql`（26 条 `CREATE TABLE`，共 503 列；初始数据在同目录 `initdata.sql`：`mac_type` 18 行 INSERT，`install.sql` 内 `mac_group` 3 行 INSERT）。本附表由脚本从该 SQL 解析生成，列顺序、类型、默认值照原文，未做改动。
+> 属于 `docs/prd/APPK-2.md`（v9；v9 只把 DB-1 生命周期里的恢复时点改为“每个请求单元开始前”，其余未改；A.1、A.2 内容自 v4 起未改动，v8 只改了 A.1 末尾“辅助证据”第②条并新增 A.3 验收数据库与账号）。冲突时以主文件为准。基线来源：`php/application/install/sql/install.sql`（26 条 `CREATE TABLE`，共 503 列；初始数据在同目录 `initdata.sql`：`mac_type` 18 行 INSERT，`install.sql` 内 `mac_group` 3 行 INSERT）。本附表由脚本从该 SQL 解析生成，列顺序、类型、默认值照原文，未做改动。
 
 ## A.1 结构快照 SNAP 的固定内容
 
@@ -801,7 +801,7 @@ SNAP 是对**同一个一次性库**用 MySQL 5.7 的 `information_schema` 与 `
 
 | 编号 | 验收库 | 内容 | 使用者 | 生命周期 |
 | --- | --- | --- | --- | --- |
-| DB-1 | `maccms_it_full` | **全量验收库**：`it_admin` 导入 `install.sql` + `initdata.sql`（AC-18 的基线库），再灌入合成数据 | 除 AC-12 外的全部验收用例：AC-3～AC-11、AC-13、AC-15、AC-16、AC-18；PHP 对照进程与 Java 进程都连它 | 整个验收周期存在；数据在样本之间由 `it_admin` 恢复（附表 F 的 CMP-2），结构不恢复也不被允许改 |
+| DB-1 | `maccms_it_full` | **全量验收库**：`it_admin` 导入 `install.sql` + `initdata.sql`（AC-18 的基线库），再灌入合成数据 | 除 AC-12 外的全部验收用例：AC-3～AC-11、AC-13、AC-15、AC-16、AC-18；PHP 对照进程与 Java 进程都连它 | 整个验收周期存在；数据在每个 PHP 请求单元、每个 Java 请求单元开始前由 `it_admin` 恢复并校验（附表 F 的 CMP-2），结构不恢复也不被允许改 |
 | DB-2 | `maccms_it_inst_1` | **空库**（无任何表） | AC-12 用例① | 用例开始前由 `it_admin` 新建；报告写完后由 `it_admin` 删除；不复用 |
 | DB-3 | `maccms_it_inst_2` | **空库**（无任何表） | AC-12 用例③ | 同上 |
 | DB-4 | `maccms_it_inst_3` | **已有 26 张表**：`it_admin` 导入 `install.sql` + `initdata.sql` | AC-12 用例② | 同上 |
