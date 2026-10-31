@@ -1,6 +1,6 @@
 # APPK-2 附表 C：旧控制器方法对齐登记簿（FR-12 的固定分母）
 
-> 属于 `docs/prd/APPK-2.md`（v4）。由脚本按下列规则从源码提取，基线为本仓库 `php/` 目录（提交 `b6cc7d8`）。
+> 属于 `docs/prd/APPK-2.md`（v6；本附表内容自 v4 起未改动）。由脚本按下列规则从源码提取，基线为本仓库 `php/` 目录（提交 `b6cc7d8`）。
 
 **提取规则（固定）**：
 1. **控制器文件口径**：`php/application/{index,api,admin}/controller/*.php` 下的全部 `.php` 文件（index 23 + api 6 + admin 39 = **68 个**，无子目录、无非 `.php` 文件），加安装向导 `php/application/install/controller/Index.php`（1 个），合计 **69 个文件**。**无 public 方法的类也计入文件数**（共 3 个，见第 3 条）；`install/lang/zh-cn.php` 是语言包不是控制器，不计。

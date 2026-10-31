@@ -1,6 +1,6 @@
 # APPK-2 附表 A：原表原结构基线与结构快照定义
 
-> 属于 `docs/prd/APPK-2.md`（v4）。冲突时以主文件为准。基线来源：`php/application/install/sql/install.sql`（26 条 `CREATE TABLE`，共 503 列；初始数据在同目录 `initdata.sql`：`mac_type` 18 行 INSERT，`install.sql` 内 `mac_group` 3 行 INSERT）。本附表由脚本从该 SQL 解析生成，列顺序、类型、默认值照原文，未做改动。
+> 属于 `docs/prd/APPK-2.md`（v6；本附表内容自 v4 起未改动）。冲突时以主文件为准。基线来源：`php/application/install/sql/install.sql`（26 条 `CREATE TABLE`，共 503 列；初始数据在同目录 `initdata.sql`：`mac_type` 18 行 INSERT，`install.sql` 内 `mac_group` 3 行 INSERT）。本附表由脚本从该 SQL 解析生成，列顺序、类型、默认值照原文，未做改动。
 
 ## A.1 结构快照 SNAP 的固定内容
 
