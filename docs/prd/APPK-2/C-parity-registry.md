@@ -1,12 +1,16 @@
 # APPK-2 附表 C：旧控制器方法对齐登记簿（FR-12 的固定分母）
 
-> 属于 `docs/prd/APPK-2.md`（v2）。由脚本按下列规则从源码提取，基线为本仓库 `php/` 目录（提交 `b6cc7d8`）。
+> 属于 `docs/prd/APPK-2.md`（v3）。由脚本按下列规则从源码提取，基线为本仓库 `php/` 目录（提交 `b6cc7d8`）。
 
-**提取规则（固定）**：对 `php/application/{index,api,admin}/controller/*.php` 与 `php/application/install/controller/Index.php` 每个文件，取全部 `public function <名>(`，**排除 `__construct`**（构造函数不是功能入口，其行为由所属方法的行覆盖）；每个方法一行。`install` 控制器的 `index($step)` 内部按步骤拆成 5 行（I-1～I-5）。复现命令：`grep -nE "^\s*public\s+function\s+\w+" <文件>` 并剔除 `__construct`。
+**提取规则（固定）**：
+1. **控制器文件口径**：`php/application/{index,api,admin}/controller/*.php` 下的全部 `.php` 文件（index 23 + api 6 + admin 39 = **68 个**，无子目录、无非 `.php` 文件），加安装向导 `php/application/install/controller/Index.php`（1 个），合计 **69 个文件**。**无 public 方法的类也计入文件数**（共 3 个，见第 3 条）；`install/lang/zh-cn.php` 是语言包不是控制器，不计。
+2. **方法行**：对上述每个文件取全部 `public function <名>(`，**排除 `__construct`**（构造函数不是功能入口，其行为由所属方法的行覆盖）；每个方法一行。三个目录合计 **371 个方法行**（index 143 + api 20 + admin 208）。复现命令：`grep -nE "^\s*public\s+function\s+\w+" <文件>` 并剔除 `__construct`。
+3. **无方法类的占位行**：排除 `__construct` 后 public 方法数为 0 的文件，不丢失，各登记 1 行占位（方法列写“（类体无 public function）”），并预填判定“旧版无功能”。共 **3 个**：`api/controller/Base.php`、`admin/controller/Safety.php`、`admin/controller/Update.php`，对应 R-144、R-294、R-334。
+4. **安装向导行**：`install` 控制器的 `index($step)` 内部按步骤拆成 5 行（I-1～I-5）。
 
 **判定列取值**：初始均为“未判定”。判定后只能写 `✅已对齐`（附 Java 类/方法与测试名）、`旧版无功能`（附 PHP 源码行证据）、`排除-<OP-n 或 D 编号>`、`缺口`。`缺口` 行必须在 `GAP-n` 登记簿（主文件 §9.1）里有一行，并按 AC-19 走到终态。
 
-**分母**：共 **379** 行 = 前台 index 143 + API 21 + 后台 admin 210 + 安装向导 5（其中 2 行“类体无 public 方法”已预填“旧版无功能”，其余 377 行初始为“未判定”）。
+**分母**：共 **379** 行 = 371 个方法行 + 3 个无方法类占位行 + 5 个安装向导行；按端拆分为前台 index 143 + API 21（20 方法 + 1 占位）+ 后台 admin 210（208 方法 + 2 占位）+ 安装向导 5。其中 **3 行预填“旧版无功能”**（R-144、R-294、R-334），其余 **376 行**初始为“未判定”，即 KPI-3a 的分母为 **376**。登记簿行数核对：`未判定` 376 + `旧版无功能` 3 = 379。
 
 | 行号 | 端 | 控制器文件 | 方法 | 判定 | Java 位置与测试 | 证据 / 编号 |
 | --- | --- | --- | --- | --- | --- | --- |
