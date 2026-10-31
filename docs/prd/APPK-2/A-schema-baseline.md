@@ -1,6 +1,6 @@
 # APPK-2 附表 A：原表原结构基线与结构快照定义
 
-> 属于 `docs/prd/APPK-2.md`（v7；本附表内容自 v4 起未改动）。冲突时以主文件为准。基线来源：`php/application/install/sql/install.sql`（26 条 `CREATE TABLE`，共 503 列；初始数据在同目录 `initdata.sql`：`mac_type` 18 行 INSERT，`install.sql` 内 `mac_group` 3 行 INSERT）。本附表由脚本从该 SQL 解析生成，列顺序、类型、默认值照原文，未做改动。
+> 属于 `docs/prd/APPK-2.md`（v8；A.1、A.2 内容自 v4 起未改动，v8 只改了 A.1 末尾“辅助证据”第②条并新增 A.3 验收数据库与账号）。冲突时以主文件为准。基线来源：`php/application/install/sql/install.sql`（26 条 `CREATE TABLE`，共 503 列；初始数据在同目录 `initdata.sql`：`mac_type` 18 行 INSERT，`install.sql` 内 `mac_group` 3 行 INSERT）。本附表由脚本从该 SQL 解析生成，列顺序、类型、默认值照原文，未做改动。
 
 ## A.1 结构快照 SNAP 的固定内容
 
@@ -21,7 +21,7 @@ SNAP 是对**同一个一次性库**用 MySQL 5.7 的 `information_schema` 与 `
 
 **报告判定**：`docs/test/APPK-2/schema-diff-<时点>.md` 逐项列出 SNAP-1～SNAP-7 的差异行数；全部为 0 才算通过，KPI-2 = 7 项差异行数之和。AC-11、AC-12、AC-15 引用同一报告格式。
 
-**辅助证据（不替代 SNAP）**：①`SchemaGuardTest` 静态扫描通过；②验收环境里应用使用的数据库账号只授予 `SELECT, INSERT, UPDATE, DELETE`，跑完验收用例后日志中没有因权限不足被拒绝的 DDL 语句（出现即说明有迁移项在尝试改结构，按 BR-1 判失败）。
+**辅助证据（不替代 SNAP）**：①`SchemaGuardTest` 静态扫描通过；②验收环境里应用运行期使用的数据库账号 `it_app` 只授予 `SELECT, INSERT, UPDATE, DELETE`（A.3 的 DBACC-2），跑完验收用例后日志中没有因权限不足被拒绝的 DDL 语句（出现即说明有迁移项在尝试改结构，按 BR-1 判失败）。**唯一排除项是 AC-12 的安装向导用例**：它使用 A.3 的安装账号 `it_install` 和独立的安装验收库，不在 `it_app` 的范围内，也不与全量验收库共用任何库或账号（见 A.3）。
 
 ## A.2 26 张表的列清单（基线）
 
@@ -792,3 +792,37 @@ SNAP 是对**同一个一次性库**用 MySQL 5.7 的 `information_schema` 与 `
 | 42 | `website_content` | `mediumtext NOT NULL` |
 
 键/索引：`PRIMARY KEY (`website_id`)`；`KEY `type_id` (`type_id`)`；`KEY `type_id_1` (`type_id_1`)`；`KEY `website_name` (`website_name`)`；`KEY `website_en` (`website_en`)`；`KEY `website_letter` (`website_letter`)`；`KEY `website_sort` (`website_sort`)`；`KEY `website_lock` (`website_lock`)`；`KEY `website_time` (`website_time`)`；`KEY `website_time_add` (`website_time_add`)`；`KEY `website_time_referer` (`website_time_referer`)`；`KEY `website_hits` (`website_hits`)`；`KEY `website_hits_day` (`website_hits_day`)`；`KEY `website_hits_week` (`website_hits_week`)`；`KEY `website_hits_month` (`website_hits_month`)`；`KEY `website_time_make` (`website_time_make`)`；`KEY `website_score` (`website_score`)`；`KEY `website_score_all` (`website_score_all`)`；`KEY `website_score_num` (`website_score_num`)`；`KEY `website_up` (`website_up`)`；`KEY `website_down` (`website_down`)`；`KEY `website_level` (`website_level`)`；`KEY `website_tag` (`website_tag`)`；`KEY `website_class` (`website_class`)`；`KEY `website_referer` (`website_referer`)`；`KEY `website_referer_day` (`website_referer_day`)`；`KEY `website_referer_week` (`website_referer_week`)`；`KEY `website_referer_month` (`website_referer_month`)`
+
+## A.3 验收数据库、账号与快照时点（v8 新增；回应评审 Q-001）
+
+**目的**：AC-15 要求应用账号只有 `SELECT, INSERT, UPDATE, DELETE`，AC-12 要求安装向导执行原版 `install.sql`（`DROP TABLE IF EXISTS` + `CREATE TABLE`）。两者必须用不同的账号和不同的库，否则 AC-12 因权限不足必然失败，或 AC-15 的“只有 DML”前提不成立。下面三张表是唯一口径，AC-11、AC-12、AC-15、AC-18、PRE-1、KPI-2 都引用它。
+
+**DBENV-1 公共条件**：MySQL 实例是本机 `MySQL57`（5.7.44）；所有验收库都由 `it_admin` 用 `CREATE DATABASE <库名> DEFAULT CHARACTER SET utf8` 创建（与 PHP 向导 `install/controller/Index.php:162` 的语句相同，排序规则取 MySQL 默认），因此 SNAP-1 的基线值相同；表前缀固定 `mac_`。
+
+| 编号 | 验收库 | 内容 | 使用者 | 生命周期 |
+| --- | --- | --- | --- | --- |
+| DB-1 | `maccms_it_full` | **全量验收库**：`it_admin` 导入 `install.sql` + `initdata.sql`（AC-18 的基线库），再灌入合成数据 | 除 AC-12 外的全部验收用例：AC-3～AC-11、AC-13、AC-15、AC-16、AC-18；PHP 对照进程与 Java 进程都连它 | 整个验收周期存在；数据在样本之间由 `it_admin` 恢复（附表 F 的 CMP-2），结构不恢复也不被允许改 |
+| DB-2 | `maccms_it_inst_1` | **空库**（无任何表） | AC-12 用例① | 用例开始前由 `it_admin` 新建；报告写完后由 `it_admin` 删除；不复用 |
+| DB-3 | `maccms_it_inst_2` | **空库**（无任何表） | AC-12 用例③ | 同上 |
+| DB-4 | `maccms_it_inst_3` | **已有 26 张表**：`it_admin` 导入 `install.sql` + `initdata.sql` | AC-12 用例② | 同上 |
+
+| 编号 | 账号 | 权限（精确到库，库名中的下划线按字面授权，不用通配符） | 用在哪里 | 不得用在哪里 |
+| --- | --- | --- | --- | --- |
+| DBACC-1 | `it_admin` | 对 DB-1～DB-4 的全部权限，以及 `information_schema` 读取 | 测试工具专用：建库、删库、导入基线、样本间恢复数据、采集 SNAP 快照、`CHECKSUM TABLE` | 不得配置给 Java 应用，也不得配置给 PHP 对照进程 |
+| DBACC-2 | `it_app` | 仅对 **DB-1** 授予 `SELECT, INSERT, UPDATE, DELETE`；对 DB-2～DB-4 无任何权限 | Java 应用运行期连接；PHP 对照进程连接 | 不得用于 AC-12 |
+| DBACC-3 | `it_install` | 仅对 **DB-2、DB-3、DB-4** 授予 `SELECT, INSERT, UPDATE, DELETE, CREATE, DROP`（`install.sql` 只含 `DROP TABLE IF EXISTS`、`CREATE TABLE`、`INSERT`）；对 DB-1 无任何权限；没有 `ALTER`、`INDEX`、`TRIGGER`、`CREATE VIEW`、`CREATE ROUTINE`、`EVENT` 等权限 | 仅 AC-12 的安装向导连接 | 不得用于 DB-1，不得用于任何其他验收用例 |
+
+**隔离关系（回答“AC-12 是否排除在 AC-15 的 DML-only 范围之外”）**：是。AC-15 的 DML-only 条件只约束 `it_app` 和 DB-1；AC-12 只使用 `it_install` 和 DB-2～DB-4；两组账号与库互不授权，`SHOW GRANTS` 逐条核对（AC-18）。AC-12 跑过的库不计入 AC-15 的“跑完本期全部验收用例”，反过来也一样。
+
+**账号交给向导的方式**：向导如何拿到 `it_install`（表单输入或安装期配置）、安装完成后应用运行期如何改用 `it_app`，属于设计，本文不假设（FR-10）。验收只看结果：AC-12 中发出 DDL 的数据库连接，登录用户只能是 `it_install`；AC-12 期间和之后，`it_app` 连接发出的 `CREATE/ALTER/DROP/RENAME/TRUNCATE` 语句数为 0。向导**不发 `CREATE DATABASE`**（PHP 向导会发，见 `Index.php:162`；OP-7 只放行 `install.sql` 这一个例外，库由 `it_admin` 预先建好），这一点列入主文件 §16 的待发起人确认事项。
+
+**DBENV-2 快照时点（SNAP-1～SNAP-7，采集者都是 `it_admin`，同一份采集脚本、同一份报告格式）**：
+
+| 编号 | 对比 | 采集时点 |
+| --- | --- | --- |
+| SP-1 | DB-1 的“验收前”与“验收后” | 验收前：AC-18 导入 `install.sql` + `initdata.sql` 并通过逐表比对后立即采集，这份就是基线文件 `schema-baseline.*`；验收后：AC-3～AC-11、AC-13、AC-15、AC-16 的全部用例执行完，且无请求在途时采集 |
+| SP-2 | 附表 A 基线 与 DB-2 的“向导完成后” | 向导第 5 步（提交时 `initdata` 选 1）返回成功后立即采集，其间没有向 DB-2 发出任何其他请求；与 SP-1 的基线文件比较 |
+| SP-3 | DB-4 的“向导运行前”与“向导运行后” | 前：`it_admin` 导入完成后立即采集；后：向导返回（成功或拒绝）后立即采集 |
+| SP-4 | DB-3（用例③） | 不做 SNAP 对比；向导返回拒绝后，`information_schema.TABLES` 中 DB-3 里 `TABLE_NAME LIKE 'mac\_%'` 的行数必须为 0，且数据库侧语句记录里 `it_install` 没有发出任何 `CREATE`、`ALTER`、`DROP`、`RENAME`、`TRUNCATE` |
+
+**KPI-2 的计算**：SP-1、SP-2、SP-3 三次对比的 SNAP-1～SNAP-7 差异行数之和（SP-4 用表数量和语句记录判定，不计入 KPI-2 的和，但 AC-12 ③ 必须通过）。AC-11 在 DB-1 上自己的前后两次快照是 SP-1 区间内的中间点，差异行数在 AC-11 里单独报告，不重复计入 KPI-2。

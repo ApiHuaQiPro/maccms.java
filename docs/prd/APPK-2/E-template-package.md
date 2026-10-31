@@ -1,6 +1,6 @@
 # APPK-2 附表 E：模板包清单（MacCMS 官方 v2020.1000.1035 的 default_pc + default_wap）
 
-> 属于 `docs/prd/APPK-2.md`（v7；本附表内容自 v6 起未改动）。冲突时以主文件为准。本附表固定 FR-1、AC-1、AC-20、附表 B 的模板包范围。清单由 `git ls-tree -r -l` 对官方提交导出，未做任何改动；第 3 列是 git blob SHA-1，验收时用 `git hash-object <文件>` 逐个比对。
+> 属于 `docs/prd/APPK-2.md`（v8；本附表内容自 v6 起未改动）。冲突时以主文件为准。本附表固定 FR-1、AC-1、AC-20、附表 B 的模板包范围。清单由 `git ls-tree -r -l` 对官方提交导出，未做任何改动；第 3 列是 git blob SHA-1，验收时用 `git hash-object <文件>` 逐个比对。
 
 ## E.1 来源
 
