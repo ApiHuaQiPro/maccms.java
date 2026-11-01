@@ -1,0 +1,3 @@
+docs(design): APPK-2 技术设计 v7（REV-9 前台 CSP 单点 C-75 与待决 OP-T6/S3-14h 门禁；REV-10 跨进程 OS 文件锁；REV-11 运行记录状态机与 recover；REV-12 DBT-2 改回 PHP 整段语义）
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
