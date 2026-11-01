@@ -126,7 +126,8 @@ public class AdminController {
     }
 
     @RequestMapping(value = {"${maccms.admin.entry}", "${maccms.admin.entry}/**"},
-            method = {RequestMethod.GET, RequestMethod.HEAD, RequestMethod.POST})
+            method = {RequestMethod.GET, RequestMethod.HEAD, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE,
+                RequestMethod.PATCH})
     public ResponseEntity<?> handle(HttpServletRequest request, HttpServletResponse response) {
         String pathInfo = pathInfo(request);
         if (pathInfo == null) {
@@ -143,6 +144,11 @@ public class AdminController {
         boolean ajax = isAjax(request, params);
         if (!AdminPermissions.knownController(route.controller())) {
             return notFound(ajax);
+        }
+        // ADM-6（APPK-2）：方法不在该路径的方法表内 → 405，先于来源校验与登录检查
+        ResponseEntity<String> methodNotAllowed = AdminMethodPolicy.check(route.code(), request.getMethod());
+        if (methodNotAllowed != null) {
+            return methodNotAllowed;
         }
         if (!sourceExempt(isPost, route.code()) && !sameOrigin(request)) {
             // 不同源的请求（跨站请求伪造，D-B12-3）：SameSite=Strict 只挡别的站点，同站点的其他子域名或端口仍会带上会话 cookie，
