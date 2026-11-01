@@ -170,3 +170,38 @@ git diff --check 6f78400102ed8a1e26a28b88df90a96391a7ac1e HEAD → 无输出
 - 资源：每跳的客户端、连接管理器和定时任务都在 `finally` 里释放；定时器是单个守护线程，空闲自行退出 ✅
 - 日志：只记用途、主机、状态码、字节数、耗时和异常类型链。不记 URL、查询串、地址列表和响应片段（非 2xx 的脱敏摘要沿用基线）✅
 - 已知差异：每跳都新建 TCP/TLS 连接，同一主机的批量请求会比基线多做几次握手（与 PHP 每次新建 curl 句柄相同，RISK-T23 已接受）。TLS 协议和套件取 JDK 默认 `SSLContext`
+
+## REV-BE-1：依赖漏洞审计与修复（后端评审第 1 轮）
+
+- 起因：第 1 轮安全审计 REV-BE-1。OWASP Dependency-Check 和 OSS Index 都没有出报告。
+- 审计报告：`docs/api/APPK-2/dep-audit.md`，原始报告在 `docs/api/APPK-2/dep-audit/`。改用 OSV：CycloneDX SBOM 加 osv-scanner 2.2.4，并直接调用 OSV querybatch 交叉核对。覆盖完整运行时依赖共 83 个构件。
+- 结论：`httpclient5:5.6.4`、`httpcore5:5.4.3`、`httpcore5-h2:5.4.3` 没有已知漏洞。Spring Boot 4.1.1 BOM 自带的 Jackson 3.1.5（7 项）和 Tomcat 11.0.24（4 项）本来就在基线上，有已修复的公开漏洞。本次已修复，复扫 0 项，没有需要人类接受的风险。
+- 修复：`pom.xml` 加 `jackson-bom.version=3.1.7` 和 `tomcat.version=11.0.27`，取 Spring Boot 4.1.2 BOM 的同一组版本。父版本保持 4.1.1，httpcomponents 版本不变，没有新增依赖。
+- 回滚：revert 本修复提交即可，会回到原版本和原漏洞状态。不涉及数据迁移。
+
+### 变更文件
+
+| 文件 | 改动 |
+| --- | --- |
+| `pom.xml` | 覆盖 `jackson-bom.version`、`tomcat.version`，附漏洞编号说明 |
+| `src/test/java/.../architecture/DependencyVulnerabilityBaselineTest.java` | 新增。断言运行时 Jackson core/databind ≥ 3.1.7、Tomcat ≥ 11.0.25，另有 1 条比较函数自检 |
+| `docs/api/APPK-2/dep-audit.md`、`docs/api/APPK-2/dep-audit/*` | 审计报告、修复前后的 SBOM 和 osv-scanner JSON 报告 |
+
+### 实际执行的命令与结果（REV-BE-1）
+
+需先设 `JDK_JAVA_OPTIONS=-Djdk.net.unixdomain.tmpdir=<专用目录>`。
+
+```text
+./mvnw -B test -Dtest=DependencyVulnerabilityBaselineTest      # 改 pom 前
+  → Tests run: 4, Failures: 3（jackson-core 3.1.5、jackson-databind 3.1.5、tomcat 11.0.24 低于修复版本）
+./mvnw -B test -Dtest=DependencyVulnerabilityBaselineTest      # 改 pom 后
+  → Tests run: 4, Failures: 0, Errors: 0
+osv-scanner scan source -L <修复前 SBOM>.cdx.json → 3 个构件 11 项漏洞，退出码 1
+osv-scanner scan source -L <修复后 SBOM>.cdx.json → No issues found，退出码 0
+./mvnw -B dependency:list -DincludeScope=runtime
+  → jackson-core/databind 3.1.7；tomcat-embed-core/-el/-websocket 11.0.27；httpclient5 5.6.4、httpcore5/-h2 5.4.3
+./mvnw -B verify
+  → Tests run: 3025, Failures: 0, Errors: 0, Skipped: 0；BUILD SUCCESS；耗时 07:27（3021 + 新增 4）
+```
+
+完整命令和数据源时间见 `dep-audit.md`。MySQL IT 的边界不变：`OAuthGoldenMySqlIT`、`PaymentGoldenMySqlIT`、`SmsMailGoldenMySqlIT` 仍然没有运行，原因是缺 `MACCMS_IT_ADMIN_*`。Tomcat 和 Jackson 升级以后，这三项更需要在 IT 环境补跑。
