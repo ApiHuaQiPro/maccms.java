@@ -3,20 +3,21 @@
 | 字段 | 值 |
 | --- | --- |
 | 创建者 | @架构师-海外 |
-| 创建时间 | 2026-10-31 19:15（UTC+8）；v3 修订 2026-11-01 08:30（UTC+8）；v4 修订 2026-11-01 08:50（UTC+8）；v5 修订 2026-11-01 09:20（UTC+8）；v6 修订 2026-11-01 10:40（UTC+8）；v7 修订 2026-11-01 11:20（UTC+8）；v8 修订 2026-11-01 12:10（UTC+8）；v9 修订 2026-11-01 18:10（UTC+8）；v10 修订 2026-11-01 18:50（UTC+8） |
-| 版本 | v10 |
+| 创建时间 | 2026-10-31 19:15（UTC+8）；v3 修订 2026-11-01 08:30（UTC+8）；v4 修订 2026-11-01 08:50（UTC+8）；v5 修订 2026-11-01 09:20（UTC+8）；v6 修订 2026-11-01 10:40（UTC+8）；v7 修订 2026-11-01 11:20（UTC+8）；v8 修订 2026-11-01 12:10（UTC+8）；v9 修订 2026-11-01 18:10（UTC+8）；v10 修订 2026-11-01 18:50（UTC+8）；v11 修订 2026-11-02 05:40（UTC+8） |
+| 版本 | v11 |
 | 状态 | 评审中 |
 | Issue | APPK-2 |
-| 上游 PRD | `docs/prd/APPK-2.md` 及附表 `docs/prd/APPK-2/`（A～F）@ `8fa362c25b62b52ed5b16afd9eca7f6ccfcafb9f`（v9）；已经 G0 范围确认 |
+| 上游 PRD | `docs/prd/APPK-2.md` 及附表 `docs/prd/APPK-2/`（A～F）@ `8fa362c25b62b52ed5b16afd9eca7f6ccfcafb9f`（v9）；已经 G0 范围确认。v11 只处理 D-1，已对照 PRD v10 @ `9dd36a73febe8bac4c5d02b2638dd57c3e642a49`（G0 范围确认核验评论 `01a198ee-ce27-73c6-b56e-8827a7fe3d88`）核对：D-1 属 OP-4 已覆盖的“`{php}` 代码逐处做出相同效果”，不改 PRD、不新增 EX- 或 DATA-；PRD v10 新增的 DATA-4 对本设计其他章节的影响不在 v11 范围（§6.21 D1-BND-1） |
 | 上游技术设计 | 本文件 v2 @ `ebd7aa60ae968229997221d3086b45ddb4fa67e1`（OP-15，独立复核与架构复审 PASS，OP-15 已关闭）；v3 在其上续写，v2 的 DEC-1～6、PATH-1～4、ENV-1～8、C-1～C-16、V-1～V-9 内容不变 |
 | 派工依据 | Issue APPK-2 评论 `01a1946f-ec1e-74b8-85d9-42e88f3fe85f`（S0.5 核验 PASS 后派 S1）；deploy 分支 `release/APPK-2-php-template-migration` @ `a57e9cb2b94d3e500bea7dfe2c579daee093d969` |
 | 已关闭决策（v8） | OP-T4=a、OP-T5=a、OP-T6=b：Issue APPK-2 发起人确认评论 `01a194e9-23e8-7682-8ae5-b7c5e19b0040`（调度核验评论 `01a194e9-f7f0-7bf0-a6cc-09af877c86bd`）。本文件以该评论为三项的唯一决策源，实现、验收、门禁与回滚只写所选答案；将来改选须先由发起人在 Issue 另行确认，再出设计修订 |
 | v9 触发 | Issue APPK-2 评论 `01a19682-a499-7066-8e43-a23260dd1d44`（@后端开发-海外 第 1 批回传：契约 OUT-1-5“用已校验地址建连”在 v8 内无法实现，按职责退回架构）。契约 `docs/api/APPK-2/openapi.yaml` v1.3.0 @ `bc612e933aa67abab319b90534c5150c10a51452`（`x-outbound-policy` OUT-1-5）；出站代码现状核对于 feature 分支 `feature/APPK-2-be-php-template-migration` @ `6f78400102ed8a1e26a28b88df90a96391a7ac1e`（`integration/http` 相对基线 `a57e9cb` 只改了 `OutboundPolicy.java` 与其测试） |
 | 已定方向（v9 DEC-14） | 出站客户端内部引擎换 Apache HttpClient 5（§4.14 方案 B）：Issue APPK-2 评论 `01a196b5-a035-71df-bbe3-077cd09512a6`（确认人代理 Mika 代人类转达：“同意 Apache HttpClient 5 方案，先评审后实现”，回复调度的方向请求 `01a1968b-baed-7015-a20c-14e0a1d13835`）；Mika 代为转达的依据是发起人评论 `01a1958e-5c60-7d72-9328-d7a5146e1d99`（“以后允许Mika 代我转达”）；调度核验评论 `01a196b6-9850-74d8-b3e5-22800625b6e6`。该授权只定方向，不是 G1 或实现放行：S3-21e 仍须 v8→v10 增量经架构评审通过、调度复核放行 G1 后才派单；将来改选须先由发起人在 Issue 另行确认，再出设计修订 |
+| v11 触发（D-1） | 缺口来源：Issue APPK-2 评论 `01a19892-026e-7cbe-927d-704a611f0d66` 第 6 节（S3-04 边界确认时查出 `default_pc/html/art/detail.html:38,41` 的 `model('art')->infoData(...)` 不在 v10 的 RT-1/C-28 内）；调度请求 `01a19892-f6a6-78fb-ad88-a17334f14f0d`；授权评论 `01a198ee-19dc-7af1-8ef6-568231831be0`（确认人代理 Mika 代人类转达：“授权技术设计 v11，补齐 Art.infoData 分派、TagModels 接口和 V-13/V-16 样例”）；调度核验与派发评论 `01a198ef-ca4f-7633-a77f-7f1abf0a01cc`。该授权只放行本设计修订，不改产品范围、不放行实现；v11 须经调度独立复核与架构评审后才进入 G1。模板源码按 S3-01 放行提交 `200cffc5d01090faf4f61e153feb472b107b34df` 的 `third_party/maccms-template-v2020.1000.1035/` 核实，PHP 源码按基线 `a57e9cb` 的 `php/` 核实 |
 | UI 设计 | `docs/design/APPK-2/ui-design.md` @ `0910f7b5e12e779ad2b66f70823b16b601533cd2`（设计评审 PASS）；v6 未改变与其相关的页面路径、缺页处理与 JTE 下线边界；页面呈现以模板包原样输出为准（BR-11），本设计只定实现与验证；两者若有冲突由调度裁决 |
 | 涉及仓库 | `ApiHuaQiPro/maccms.java`（单仓） |
 | 基线提交 | `ApiHuaQiPro/maccms.java` @ `a57e9cb2b94d3e500bea7dfe2c579daee093d969`（deploy 分支 `release/APPK-2-php-template-migration` 当前头） |
-| 本版范围 | v3：FR-1～FR-13 的完整技术设计——模块边界与 PHP 模板兼容层（§4.6、§6.3～§6.7）、页面接入与 jte 下线（§6.8～§6.9）、`/template/**` 静态资源（§6.10，关闭 OP-T1）、后台模板管理与静态生成（§6.11～§6.12）、数据库工具四项、安装向导建表、在线功能（§6.13～§6.15）、旧控制器对齐口径（§6.16）、六项安全修复（§6.17）、缓存与 V9-001（§6.18，关闭 OP-T2）、数据表字段（§6.19）、对照数据恢复与会话时区（§6.20，关闭 OP-T3）、实现顺序与子任务（§7.4）。v2 的 OP-15 部分（模板包目录、配置取值、路径量、对照环境）保持不变。v6：数据库工具的失败、并发与恢复契约 DBT-5（§4.12、§6.13）；`SiteHtmlRenderer` 全部调用方与 CSP/HTML `Content-Type` 的新共享边界（§4.11、§6.8、C-70～C-72）；SEC-8 按 PHP 源码更正为无条件行为，OP-T5 只剩 SEC-7。v7：前台 CSP 收敛到单点 C-75，删除与否列为待决 OP-T6，过渡期沿用现有严格策略、新增 S3-14h 门禁（§4.11、§6.8）；数据库工具互斥改为跨进程 OS 文件锁、补运行记录状态机与专用恢复动作（DBT-5、C-73）；DBT-2 改回 PHP 整段执行语义（§4.13、DBT-2）；DBT-3 还原表集合补上只有 `DROP/CREATE` 的空表。v8：按发起人确认收敛 OP-T4=a、OP-T5=a、OP-T6=b 为唯一实现（删除未选列；C-75 自 S3-14a 起即为三项策略，撤销 v7 的过渡值与 S3-14h，§4.11 方案 E）；删备份纳入 `dbtool.lock` 并在锁内保护绑定备份、预检移到取锁之后（DBT-4、DBT-5 ②④）；进程中断后按操作类型与阶段的唯一转移、页面按钮与日志（DBT-5 ⑩），V-31 ⑪～⑲。v9：OUT-1-5 地址固定的实现方式（§4.14 DEC-14、§6.15 NET-7、C-76～C-80、§7.4 S3-21e、V-33、RISK-T23）：出站客户端内部引擎改为 Apache HttpClient 5（版本由 Spring Boot BOM 管理），每一跳用只返回已校验地址的解析器建连；API 契约、对外接口与其他章节不变。v10：只改设计一致性与决策来源（REV-NET-D01）——§12 依赖结论改为准确的依赖清单与例外口径，元数据、§4.14 登记 DEC-14 方向授权来源；选型、契约、改动项与实现均不变 |
+| 本版范围 | v3：FR-1～FR-13 的完整技术设计——模块边界与 PHP 模板兼容层（§4.6、§6.3～§6.7）、页面接入与 jte 下线（§6.8～§6.9）、`/template/**` 静态资源（§6.10，关闭 OP-T1）、后台模板管理与静态生成（§6.11～§6.12）、数据库工具四项、安装向导建表、在线功能（§6.13～§6.15）、旧控制器对齐口径（§6.16）、六项安全修复（§6.17）、缓存与 V9-001（§6.18，关闭 OP-T2）、数据表字段（§6.19）、对照数据恢复与会话时区（§6.20，关闭 OP-T3）、实现顺序与子任务（§7.4）。v2 的 OP-15 部分（模板包目录、配置取值、路径量、对照环境）保持不变。v6：数据库工具的失败、并发与恢复契约 DBT-5（§4.12、§6.13）；`SiteHtmlRenderer` 全部调用方与 CSP/HTML `Content-Type` 的新共享边界（§4.11、§6.8、C-70～C-72）；SEC-8 按 PHP 源码更正为无条件行为，OP-T5 只剩 SEC-7。v7：前台 CSP 收敛到单点 C-75，删除与否列为待决 OP-T6，过渡期沿用现有严格策略、新增 S3-14h 门禁（§4.11、§6.8）；数据库工具互斥改为跨进程 OS 文件锁、补运行记录状态机与专用恢复动作（DBT-5、C-73）；DBT-2 改回 PHP 整段执行语义（§4.13、DBT-2）；DBT-3 还原表集合补上只有 `DROP/CREATE` 的空表。v8：按发起人确认收敛 OP-T4=a、OP-T5=a、OP-T6=b 为唯一实现（删除未选列；C-75 自 S3-14a 起即为三项策略，撤销 v7 的过渡值与 S3-14h，§4.11 方案 E）；删备份纳入 `dbtool.lock` 并在锁内保护绑定备份、预检移到取锁之后（DBT-4、DBT-5 ②④）；进程中断后按操作类型与阶段的唯一转移、页面按钮与日志（DBT-5 ⑩），V-31 ⑪～⑲。v9：OUT-1-5 地址固定的实现方式（§4.14 DEC-14、§6.15 NET-7、C-76～C-80、§7.4 S3-21e、V-33、RISK-T23）：出站客户端内部引擎改为 Apache HttpClient 5（版本由 Spring Boot BOM 管理），每一跳用只返回已校验地址的解析器建连；API 契约、对外接口与其他章节不变。v10：只改设计一致性与决策来源（REV-NET-D01）——§12 依赖结论改为准确的依赖清单与例外口径，元数据、§4.14 登记 DEC-14 方向授权来源；选型、契约、改动项与实现均不变。v11：只补 D-1——模板 `{php}` 内 `model('art')->infoData(...)` 的分派与语义（§4.15 DEC-15、§6.21 MC-1～MC-6、INFO-1～INFO-7、ZDUMP-1、D1-BND-1～4），`TagModels` 接口与调用契约，RT-1 增补（`//` 注释、下标赋值、模型调用节点），C-18/C-19/C-23/C-28/C-29/C-33/C-34 的对应增量，V-13 渲染样例 R-1～R-3 与 V-16 数据样例 IA-1～IA-6，RISK-T24；其余章节、改动项、门禁与实现不变 |
 
 ## 1. 现状与目标
 
@@ -186,8 +187,11 @@
 | 配置 | 新增 `maccms.phptemplate.limits.*`、`maccms.phptemplate.compare.reset-file`；旧配置文件读写不变 | 有默认值 | C-31、C-32 |
 | 依赖 | 删除 `gg.jte:jte`（在线编译器）；不新增依赖 | — | `pom.xml` |
 | 测试 | 新增 `T/phptemplate/**`、对照脚本；修改护栏测试（`ModuleBoundaryTest`、`SiteGuardrailsTest`、`ReadOnlyGuardrailsTest`、`SchemaGuardTest`、`OutboundNetworkGuardTest`、`RegisteredOutboundClientTest`）；约 34 个 jte 页面测试改写或删除：`SiteContentPagesMvcTest`、`SiteLibraryPagesMvcTest`、`SitePlaybackPagesMvcTest`、`SitePlaybackSwitch{00,01,10,11}MvcTest`、`SiteSearch*MvcTest`（4 个）、`SiteVodListPagesMvcTest`、`SiteModuleListPagesMvcTest`、`SiteMiscPagesMvcTest`、`SiteAjax*MvcTest`（4 个）、`SiteUserMvcTest`、`SiteFinance*MvcTest`（3 个）、`SitePaymentMvcTest`、`SiteOAuthMvcTest`、`SiteVerify*MvcTest`（3 个）、`SiteClosedMvcTest`、v6 补 `SiteTestRoutes`（测试路由，改用 `SitePageResponses`）、`SiteConfigurationTest`（Bean 断言）、`PlaybackSwitchCases`（CSP 断言）、`SiteContentClosedMvcTest`、`SiteVodListClosedMvcTest`、`SiteDisabledMvcTest`、`SitePageMvcTest`、`SiteContentHtmlStructureTest`、`SiteSearchHtmlStructureTest`、`SiteVariantPagesTest`、`SitePagesLogoTest`、`SiteLegacyConfigPagesTest`、`SiteComponentsRenderTest`、`SiteRichTextTemplateTest`、`Site{,Content,Search,User,Verify}RealHttpTest` | RISK-T12 | `src/test/java/com/maccms/backend/site/**` |
+| 模块（新增，v11 D-1） | `phptemplate`：`runtime.ModelCallHandler`（解释器调用模型方法的唯一端口）、`application.TagModels.infoData`、`infrastructure.TagReadMapper.selectArtInfo` | 模板 `{php}` 内 `model('art')->infoData(...)` 可执行；新增 1 条只读 `SELECT`（`mac_art`），读取范围归附表 D 的 D-04（文章前台页读 `mac_art`、`mac_type`、`mac_group`），不新增写入 | 调用方检索：`git grep -n "infoData\|model(" 200cffc5d01090faf4f61e153feb472b107b34df -- third_party/maccms-template-v2020.1000.1035` 只命中 `template/default_pc/html/art/detail.html:38`、`:41`；`default_wap` 0 处；`ModelCallHandler` 的调用方只有 `Interpreter`（C-19），实现方只有 `TagModels`（C-28） |
 
 **v3 明确不受影响**：数据库结构；`php/**`；后台其他功能（B12～B15 中除模板管理、数据库工具四项、清理缓存一行之外）；`openapi`（Provide）、`Receive`、公众号、支付、OAuth、短信邮件；`/api/v1/**` JSON 接口；会员与财务的业务规则；六项安全修复的实现类。
+
+**v11 明确不受影响**：PRD v10 与附表（含 DATA-4、EX-1/EX-2、F.5/F.6）；`path_tpl` 映射与模板读取根（PATH-1～PATH-4、OP-15、C-12～C-16 已随 S3-02 放行，v11 不重新解释）；模板资产 `third_party/**`；`php/**`；`openapi.yaml`；T1；`src/main/**`（本次只改设计）；`default_wap` 的全部模板（无 `infoData` 调用）。
 
 ## 4. 方案对比
 
@@ -325,6 +329,19 @@
 
 选 B（方向已获授权，见元数据“已定方向”：Issue APPK-2 评论 `01a196b5-a035-71df-bbe3-077cd09512a6`（确认人代理 Mika 代人类转达：“同意 Apache HttpClient 5 方案，先评审后实现”，回复调度的方向请求 `01a1968b-baed-7015-a20c-14e0a1d13835`）；Mika 代为转达的依据是发起人评论 `01a1958e-5c60-7d72-9328-d7a5146e1d99`（“以后允许Mika 代我转达”）；调度核验评论 `01a196b6-9850-74d8-b3e5-22800625b6e6`；该授权不代替 G1 增量评审）。依赖理由：要满足 OUT-1-5，必须能控制建连时用哪个地址，JDK 自带客户端做不到（C、D 各有进程级副作用）；`org.apache.httpcomponents.client5:httpclient5` 已由 `spring-boot-dependencies` 4.1.1 管理（5.6.4），`pom.xml` 不写版本；只在 `integration.http` 内使用，“只有 `OutboundHttpClient` 能发请求”的护栏不变。每跳一条连接、不复用，与 PHP `mac_curl_get`/`mac_curl_post` 每次新建 curl 句柄一致。
 
+### 4.15 模板 `{php}` 里的 `model('art')->infoData` 怎么执行（v11 新增，D-1，DEC-15）
+
+现状：`default_pc/html/art/detail.html:33-42`（模板包 @ `200cffc5`，blob `5dc275d1d7372daf22609cefb7082d6814189c76`）在 `{php}` 里两次调用 `model('art')->infoData($where,'*',1)` 取上一篇、下一篇，`:44-49` 按 `$pre_info['code'] eq 1` 输出链接。PHP 实现在 `php/application/common/model/Art.php:398-442`。v10 的 RT-1 只允许 `model(...)->listCacheData`，按 v10 实现这页会报“不支持”，违反 OP-4。
+
+| 方案 | 做法 | 改动量 | 风险 | 可回滚 | 沿用现有模式 | 结论 |
+| --- | --- | --- | --- | --- | --- | --- |
+| A 最小改动：保持不支持 | RT-1 不变，`art/detail` 渲染时报 `TemplateUnsupportedException`（500） | 0 | 文章详情页（桌面）全部 500，违反 OP-4、AC-2、AC-5 | 是 | 是 | 不选：不满足已确认的 OP-4 |
+| B 控制器预先算好 | `SiteLibraryController` 查好上一篇/下一篇放进页面变量，解释器跳过这段 `{php}` | 控制器 1 处 + 解释器特判 | 解释器要“认出并跳过”某段源码，属按文件特判；`{php}` 的赋值与 PHP 不再一一对应；以后模板改写这段代码时静默失效 | 是 | 否 | 不选 |
+| C 解释器端口 + `TagModels.infoData`（选） | 解释器把 `model('<字面量>')->方法(实参)` 解析成专门的语法节点，只经注入的 `ModelCallHandler` 分派；`TagModels` 按白名单接 `listCacheData`（v10 已有）与 `Art::infoData`（只接模板登记的调用形态），按 `Art.php:398-442` 移植 | C-18、C-19、C-23、C-28、C-29 各一处增量 + C-33/C-34 样例 | 小：只多一种调用形态；超出形态一律报不支持 | 是（随 S3-07/S3-12b 提交回退） | 是：与 `listCacheData` 同一条分派路径，复用 C-28 行装配 | **选 C** |
+| D 通用 ThinkPHP 查询仿真 | 在 Java 里实现 ThinkPHP `where` 数组表达式与 `Model::find` 的通用版本，支持任意 `infoData` 条件 | 大（表达式全集、缓存键、多表） | 实现面远超模板实际用法，难以全量黄金验证 | 是 | 否 | 不选：PRE-5 只登记了一种形态 |
+
+选 C 的理由：PHP 行为只有一处、形态固定（`art_status eq 1` + `art_id lt/gt`，`field='*'`，`cache=1`）；方案 C 让解释器照原样执行这段 `{php}`，语义由 `TagModels` 按 PHP 源码移植，范围用 MC-3 白名单与 INFO-1 形态限定锁死，超出即报不支持（与 RT-1“子集外一律报不支持”一致）。细则见 §6.21。
+
 ## 5. 改动清单
 
 ### 5.1 OP-15 部分（v2，内容不变）
@@ -359,23 +376,23 @@
 | # | 文件路径 | 动作 | 改什么 | 为什么 | 端 |
 | --- | --- | --- | --- | --- | --- |
 | C-17 | `B/phptemplate/runtime/ZValue.java`、`ZArray.java`、`PhpSemantics.java` | 新增 | RT-2～RT-5：值类型、有序数组（键规范化同 `PhpArray.normalizeKey`）、字符串化（`precision=14`）、PHP 7.3 弱比较、未定义取值 | FR-2、FR-4；RISK-T10 | 后端 |
-| C-18 | `B/phptemplate/runtime/PhpLexer.java`、`PhpParser.java`、`PhpAst.java` | 新增 | RT-1 子集：把编译产物切成字面段/代码段（TPL-5 吃换行），代码段解析成语法树；子集外语法抛 `TemplateUnsupportedException` | FR-2、TPL-5、TPL-10 | 后端 |
-| C-19 | `B/phptemplate/runtime/Interpreter.java`、`ExecutionLimits.java` | 新增 | 执行语法树，输出到字节缓冲；函数只经 `FunctionTable` 分派；RT-8 上限 | FR-2；RT-7、RT-8 | 后端 |
+| C-18 | `B/phptemplate/runtime/PhpLexer.java`、`PhpParser.java`、`PhpAst.java` | 新增 | RT-1 子集：把编译产物切成字面段/代码段（TPL-5 吃换行），代码段解析成语法树；子集外语法抛 `TemplateUnsupportedException`；v11（D-1）：增加 `//` 单行注释（到行尾或 `?>` 为止，不吃掉 `?>`）、数组下标赋值 `$a['k'] = 值`（含先 `$a=[]` 再逐键赋值）、模型调用节点 `ModelCall`（MC-1） | FR-2、TPL-5、TPL-10 | 后端 |
+| C-19 | `B/phptemplate/runtime/Interpreter.java`、`ExecutionLimits.java`、`ModelCallHandler.java`（v11） | 新增 | 执行语法树，输出到字节缓冲；函数只经 `FunctionTable` 分派；RT-8 上限；v11（D-1）：`model(...)->方法(...)` 只经构造时注入的 `ModelCallHandler` 分派（MC-1～MC-6），实参按值传快照 | FR-2；RT-7、RT-8；D-1（OP-4） | 后端 |
 | C-20 | `B/phptemplate/engine/TemplateCompiler.java` | 新增 | 移植 `Template.php` 的 `parse`/`compiler`/`parseInclude`/`parseLiteral`/`parsePhp`/`parseTag`/`parseVar`/`parseVarFunction`/`parseAttr`/`getRegex`（TPL-1～TPL-6、TPL-11），正则逐字移植 | FR-2 | 后端 |
 | C-21 | `B/phptemplate/engine/TagLibSupport.java`、`CxTagLib.java` | 新增 | 移植 `TagLib.php`（标签配对、`parseCondition`、`autoBuildVar`）与 `Cx.php` 全部标签 | FR-2 | 后端 |
 | C-22 | `B/phptemplate/engine/MaccmsTagLib.java` | 新增 | 移植 `Maccms.php` 19 个 `tagXxx`（含 `json_encode` 转义规则：`/`→`\/`、非 ASCII→`\uXXXX`） | FR-3 | 后端 |
-| C-23 | `B/phptemplate/engine/OriginMap.java`、`TemplateUnsupportedException.java` | 新增 | TPL-9 行号表；异常带模板文件、行号、原文片段 | FR-2 异常与边界 | 后端 |
+| C-23 | `B/phptemplate/engine/OriginMap.java`；`B/phptemplate/runtime/TemplateUnsupportedException.java`（v11 定位） | 新增 | TPL-9 行号表；异常带模板文件、行号、原文片段。v11：异常类放 `runtime`——C-18/C-19 在 `runtime` 里抛它，而 §6.3 规定 `runtime` 只依赖 JDK；`runtime` 抛出时只带编译产物偏移与片段，`PhpTemplateRenderer`（C-24）按 TPL-9 用 `OriginMap` 补模板文件与行号 | FR-2 异常与边界 | 后端 |
 | C-24 | `B/phptemplate/application/PhpTemplateRenderer.java`、`TemplateRequest.java`、`RenderedPage.java`、`PageVars.java` | 新增 | §6.3 对外接口；按 `SiteVariant` 选 PATH-1；执行 TPL-7 压缩（TPL-6 的替换在 C-20 编译阶段完成）；“模板文件不存在”转 `TemplateNotFoundPage` | FR-1、FR-2、FR-5、FR-8 | 后端 |
 | C-25 | `B/phptemplate/application/TemplateNotFoundPage.java`；资源 `src/main/resources/phptemplate/think_exception.html` | 新增 | 按 `think_exception.tpl:362-370` 非调试分支生成同字节的页面（HTTP 500，消息“模板文件不存在:<路径>”删去 PATH-3） | AC-1 ③、BR-12、AC-5 缺页样本 | 后端 |
 | C-26 | `B/phptemplate/application/CompiledTemplateCache.java`、`CacheResetHook.java` | 新增 | TPL-8 编译缓存；CACHE-1～CACHE-3 | W-04；V9-001 | 后端 |
 | C-27 | `B/phptemplate/application/FunctionTable.java`、`TemplateFunctions.java` | 新增 | RT-7 白名单：编译产物内部函数 + PRE-5 清单的模板函数；`mac_url_*` 委托 `LegacyUrlBuilder`/`ImageUrlNormalizer`，`lang` 委托 `LegacyLang`，`mac_page_param`、`mac_compress_html` 逐字移植 | FR-4、AC-4 | 后端 |
-| C-28 | `B/phptemplate/application/TagModels.java` 及 `tag/VodTagModel.java`、`ArtTagModel.java`、`TopicTagModel.java`、`ActorTagModel.java`、`RoleTagModel.java`、`WebsiteTagModel.java`、`CommentTagModel.java`、`GbookTagModel.java`、`TypeTagModel.java`、`LinkTagModel.java`、`ExtendTagModel.java` | 新增 | §6.6：各模型 `listCacheData` 的属性解析、条件、排序、分页、派生键；能复用的走 `content.application`（`ContentReadService.listVideos`+`VideoLegacyConditions`、`LegacyTagAttributes`、`LegacyRange`、`LegacyRowReadService`）与 `comment.application.CommentService` | FR-3、AC-3、TAGMAP-1～19 | 后端 |
-| C-29 | `B/phptemplate/infrastructure/TagReadMapper.java`；`src/main/resources/mapper/phptemplate/TagReadMapper.xml` | 新增 | C-28 中现有服务不覆盖的只读查询（只 `SELECT`，表列按 D.6） | FR-3；AC-16 | 后端 |
+| C-28 | `B/phptemplate/application/TagModels.java` 及 `tag/VodTagModel.java`、`ArtTagModel.java`、`TopicTagModel.java`、`ActorTagModel.java`、`RoleTagModel.java`、`WebsiteTagModel.java`、`CommentTagModel.java`、`GbookTagModel.java`、`TypeTagModel.java`、`LinkTagModel.java`、`ExtendTagModel.java` | 新增 | §6.6：各模型 `listCacheData` 的属性解析、条件、排序、分页、派生键；能复用的走 `content.application`（`ContentReadService.listVideos`+`VideoLegacyConditions`、`LegacyTagAttributes`、`LegacyRange`、`LegacyRowReadService`）与 `comment.application.CommentService`；v11（D-1）：`TagModels` 实现 `runtime.ModelCallHandler`（MC-3 白名单）并新增 `infoData(String model, ZValue where, ZValue field, ZValue cache)`，只接 `Art`，语义按 INFO-1～INFO-7；`ArtTagModel` 里的 `type`/`type_1`/`group` 行装配由 `listCacheData` 与 `infoData` 共用一个方法 | FR-3、AC-3、TAGMAP-1～19；D-1（OP-4） | 后端 |
+| C-29 | `B/phptemplate/infrastructure/TagReadMapper.java`；`src/main/resources/mapper/phptemplate/TagReadMapper.xml` | 新增 | C-28 中现有服务不覆盖的只读查询（只 `SELECT`，表列按 D.6）；v11：`selectArtInfo`（INFO-2：`SELECT *`、`LIMIT 1`、无 `ORDER BY`；比较符只用 `<choose>` 写死的两支（XML 中写 `&lt;`、`&gt;`），不用 `${}`） | FR-3；AC-16 | 后端 |
 | C-30 | `B/phptemplate/application/PageVariables.java` | 新增 | `label_maccms`（All.php:58-96）逐键移植，含 PATH-2/4、EX-1 `date`、EX-2 `http_url` | FR-4、FR-8 | 后端 |
 | C-31 | `B/phptemplate/config/PhpTemplateConfiguration.java`、`PhpTemplateProperties.java` | 新增 | 装配；`maccms.phptemplate.limits.*`（RT-8）、`maccms.phptemplate.compare.reset-file`（CACHE-3 ②，默认空=关闭） | RT-8、CACHE-3 | 后端 |
 | C-32 | `src/main/resources/application.yml` | 修改 | 增加 C-31 两组配置项的默认值与注释（不含凭据） | 同上 | 配置 |
-| C-33 | `src/test/php/tpl_compile_golden.php`、`tpl_runtime_golden.php`；`src/test/resources/phptemplate/{compile,runtime}-golden/` | 新增 | 黄金生成脚本（PHP 7.3.33 运行，只读 `php/`）：①对 168 个模板与语法样例输出 ThinkPHP 编译产物；②值语义向量（字符串化、比较、数组键、`json_encode`、`mac_*` 函数返回值） | V-11、V-12；RISK-T10 | 测试 |
-| C-34 | `T/phptemplate/**`（`TemplateCompilerGoldenTest`、`PhpSemanticsGoldenTest`、`InterpreterTest`、`TagLibCompileTest`、`TemplateFunctionsGoldenTest`、`TagModelsMySqlIT`、`PhpTemplateRendererTest`） | 新增 | 黄金对比与单测；`TagModelsMySqlIT` 用一次性库 `maccms_it_*` 对 19 个标签逐属性断言（与 PHP 同库输出对比） | AC-2～AC-4 | 后端 |
+| C-33 | `src/test/php/tpl_compile_golden.php`、`tpl_runtime_golden.php`；`src/test/resources/phptemplate/{compile,runtime}-golden/` | 新增 | 黄金生成脚本（PHP 7.3.33 运行，只读 `php/`）：①对 168 个模板与语法样例输出 ThinkPHP 编译产物；②值语义向量（字符串化、比较、数组键、`json_encode`、`mac_*` 函数返回值）；v11（D-1）：③渲染样例模式 `--render-sample art-detail-prevnext`：取模板包 `default_pc/html/art/detail.html` 第 32～50 行（808 字节，`git hash-object` = `a615d09d955020c6c86924bf3c8a2a88852b308e`）作片段，用 ThinkPHP `think\Template` 编译执行，载入框架前先定义桩函数 `model()`（`helper.php:159` 有 `function_exists` 守卫）与 `mac_url_art_detail()`，输出 R-1 五个情形到 `src/test/resources/phptemplate/render-golden/art-detail-prevnext-{a..e}.html`；④模型调用模式 `--model-calls art-infodata`：用夹具 `src/test/resources/phptemplate/model-fixtures/art-infodata.sql`（ART-FIX-1～4）在一次性库上调 `model('art')->infoData`，按 ZDUMP-1 输出 IA-1～IA-5 到 `src/test/resources/phptemplate/model-golden/art-infodata.json` | V-11、V-12；RISK-T10；D-1 | 测试 |
+| C-34 | `T/phptemplate/**`（`TemplateCompilerGoldenTest`、`PhpSemanticsGoldenTest`、`InterpreterTest`、`TagLibCompileTest`、`TemplateFunctionsGoldenTest`、`TagModelsMySqlIT`、`PhpTemplateRendererTest`） | 新增 | 黄金对比与单测；`TagModelsMySqlIT` 用一次性库 `maccms_it_*` 对 19 个标签逐属性断言（与 PHP 同库输出对比）；v11（D-1）：新增 `TagModelsInfoDataTest`（单测：INFO-1 形态校验、1001 分支、MC-2 名称规范化、MC-3 白名单）；`PhpTemplateRendererTest` 增 R-1～R-3；`TagModelsMySqlIT` 增 IA-1～IA-6；`InterpreterTest` 增 `//` 注释与下标赋值向量 | AC-2～AC-4 | 后端 |
 | C-35 | `T/architecture/ModuleBoundaryTest.java`、`T/site/SiteGuardrailsTest.java`、`T/ReadOnlyGuardrailsTest.java` | 修改 | 登记 `phptemplate` 分层与依赖（§6.3 表）；`site` 允许依赖 `phptemplate.application`；`phptemplate.runtime` 只依赖 JDK；`phptemplate.infrastructure` 只读 | §6.3；02 规范 | 后端 |
 
 **(b) 前台接入与 jte 下线（FR-1、FR-5、FR-8）**
@@ -508,8 +525,8 @@
 | 模块 / 包 | 职责 | 可以依赖 | 不可以 |
 | --- | --- | --- | --- |
 | `phptemplate.engine` | ThinkPHP 编译流水线的 Java 移植：模板文件定位、`literal`/`include`/`php` 预处理、标签库（`Maccms` 预加载、`Cx` 内置）、普通标签 `{$…}`/`{:…}`，产出“编译产物”（与 PHP `runtime/temp/<md5>.php` 同形的 PHP 文本 + 来源行号表） | `phptemplate.runtime`（只用其 PHP 子集解析器类型）、`legacyconfig.application`（`LegacySiteFiles` 的现有方法 `read` 读模板——`template/` 已在 `RW_AREAS`，不用 `readTemplateAsset`；`LegacyConfigService` 读配置） | 访问数据库；执行任何代码 |
-| `phptemplate.runtime` | PHP 子集解释器：把编译产物切成“字面段 + 代码段”，按 RULE-WS 规则处理空白，解析代码段为语法树并执行；PHP 7.3 值语义（`ZValue`：null/bool/int/float/string/有序数组；字符串化、弱类型比较、数组键规范化、`echo` 规则） | 只依赖 JDK | 读文件、访问数据库、反射调用任意 Java 方法（函数只经 FUNC 白名单表分派） |
-| `phptemplate.application` | 对外服务 `PhpTemplateRenderer`；`mac_*` 等模板函数的 Java 实现（`TemplateFunctions`）；19 个标签对应的旧模型方法 `listCacheData`（`TagModels`）；页面变量 `label_maccms` 等（`PageVariables`）；编译缓存（`CompiledTemplateCache`）；“模板文件不存在”页（`TemplateNotFoundPage`） | `content.application`（含 `.view`，复用已实现的旧标签条件 `VideoLegacyConditions`/`LegacyTagAttributes`/`LegacyRange`、URL 生成）、`member.application`、`comment.application`、`common.lang.LegacyLang`、`legacyconfig.application` | 依赖 `site`、`admin`、`staticgen` |
+| `phptemplate.runtime` | PHP 子集解释器：把编译产物切成“字面段 + 代码段”，按 RULE-WS 规则处理空白，解析代码段为语法树并执行；PHP 7.3 值语义（`ZValue`：null/bool/int/float/string/有序数组；字符串化、弱类型比较、数组键规范化、`echo` 规则） | 只依赖 JDK | 读文件、访问数据库、反射调用任意 Java 方法（函数只经 FUNC 白名单表分派；模型方法只经注入的 `ModelCallHandler`，v11） |
+| `phptemplate.application` | 对外服务 `PhpTemplateRenderer`；`mac_*` 等模板函数的 Java 实现（`TemplateFunctions`）；19 个标签对应的旧模型方法 `listCacheData`（`TagModels`），以及模板 `{php}` 内的 `Art::infoData`（`TagModels.infoData`，v11）；页面变量 `label_maccms` 等（`PageVariables`）；编译缓存（`CompiledTemplateCache`）；“模板文件不存在”页（`TemplateNotFoundPage`） | `content.application`（含 `.view`，复用已实现的旧标签条件 `VideoLegacyConditions`/`LegacyTagAttributes`/`LegacyRange`、URL 生成）、`member.application`、`comment.application`、`common.lang.LegacyLang`、`legacyconfig.application` | 依赖 `site`、`admin`、`staticgen` |
 | `phptemplate.infrastructure` | 标签查询中现有 `content.application` 不提供的只读查询（Mapper + XML，只 `SELECT`，表与列按附表 D 的 D.6 TAGMAP） | MyBatis | 写入（不登记 `WriteRegistry`） |
 | `site`（改） | 页面控制器保留现有数据与业务逻辑（BR-4），把“返回 jte 视图”改为“调用 `PhpTemplateRenderer.render(模板名, 页面变量)`”，HTML 响应只经 `SitePageResponses`、跳转提示只经 `JumpPages`（v6，C-70）；`/template/**` 静态资源（DEC-8，文件只经 `LegacySiteFiles.readTemplateAsset`，C-44） | 增加对 `phptemplate.application` 的依赖（护栏同步，C-35） | 读模板文件、编译模板 |
 | `staticgen`（改） | 内容仍只经 `site.application.StaticPageSource`（进程内游客 GET），所以静态页自动改用 PHP 模板；`ac2=wap` 按手机变体请求 | 不变 | 不变 |
@@ -523,6 +540,8 @@
 | `PageVars` | 有序键值（`ZValue`），由页面控制器按 PHP 控制器 `assign()` 的键名与层级装配（FR-4 ②）；`maccms` 键由 `PageVariables.labelMaccms(variant, request)` 生成 | 键名、层级、取值以 PHP 为准（AC-4） |
 | `TemplateFunctions` | 名称 → Java 实现的白名单表；未登记的函数名 → `TemplateUnsupportedException` | 同上 |
 | `TagModels.listCacheData(model, tagParams)` | `model` ∈ `Vod`/`Art`/`Topic`/`Actor`/`Role`/`Website`/`Comment`/`Gbook`/`Type`/`Link`/`Extend`（筛选项 7 个标签）；返回与 PHP 同结构的 `ZValue` 数组（`list`、`page`、`pagecount`、`total`、`pageurl` 等键以 PHP 模型为准） | 属性非法、越界：与 PHP 模型的处理一致（BR-5、AC-3） |
+| `TagModels.infoData(model, where, field, cache)`（v11，D-1） | 只接 `model`=`Art`；实参为解释器传来的 `ZValue` 快照；返回 PHP `Art::infoData` 同结构的 `ZValue` 有序数组：命中 `[code=>1, msg=>lang('obtain_ok'), info=>行]`，未命中 `[code=>1002, msg=>lang('obtain_err')]`，`where` 为空或不是数组 `[code=>1001, msg=>lang('param_err')]`（§6.21 INFO-1～INFO-7） | 实参形态不在 INFO-1 内 → `TemplateUnsupportedException`；数据库异常不吞，按 `PhpTemplateRenderer.render` 的错误语义处理 |
+| `ModelCallHandler.call(model, method, args)`（v11，`phptemplate.runtime` 接口，只依赖 JDK） | 解释器遇到 MC-1 的模型调用节点时调用；`model` 已按 MC-2 规范化（`art`→`Art`）；`args` 为按值快照的 `List<ZValue>`；返回 `ZValue`。唯一实现 `TagModels`，按 MC-3 白名单分派到 `listCacheData`/`infoData` | 白名单外的 (模型, 方法, 实参个数) → `TemplateUnsupportedException`（MC-6） |
 | `LegacySiteFiles.readTemplateAsset(String relative, int maxBytes)`（v5） | 只读；唯一调用方是 `site.web.TemplateAssetController`（C-43）；`relative` 是站点根相对路径，须以 `template/<目录>/` 开头；放行范围为 OP-T5=a 的 SEC-7 白名单（§6.10、C-44），不设运行时开关 | 不放行一律抛 `FileException`（`INVALID_NAME`/`OUTSIDE_ROOT`/`FORBIDDEN`/`NOT_REGULAR_FILE`/`IS_DIRECTORY`/`TOO_LARGE`），消息不含路径与内容；调用方统一返回 404，不区分原因 |
 | `SitePageResponses.page(RenderedPage, CacheMode, boolean noindex)`（v6，`site.web` 包内） | 唯一把渲染结果变成 HTML 响应的地方；调用方：全部页面控制器、`JumpPages`、`SiteExceptionHandler`、`SiteVerifyGate`、`SitePlaceholderController`、测试 `SiteTestRoutes` | 不抛业务异常；`RenderedPage` 为空字节时照常输出 `Content-Length: 0`（`SiteMemberFinance` 的空响应） |
 | `JumpPages.error/success(SiteVariant, String msg, String url, int wait)`（v6，`site.web.legacy`） | PHP `$this->error()/success()` 的唯一入口；调用方：`SearchThrottle`（ALIGN-6）、`SiteCounterActions`（ALIGN-7）、ALIGN-3 的各提示页 | `public/jump` 缺失 → `TemplateNotFoundPage`（同 PHP） |
@@ -542,14 +561,14 @@
 | TPL-7 | `app.compress=1` 时对整页执行 `mac_compress_html`（Java 逐字移植该函数）；基线 `extra/maccms.php:60` 为 `'0'` | `All.php:41-56` |
 | TPL-8 | 编译缓存：键 = 模板绝对路径；缓存项记录本次编译读到的全部文件（主模板 + `include` 链）的修改时间与大小，任何一个变了就重编译（与 PHP `checkCache` 比较 include 文件时间的效果相同），保证 W-04“保存后不重启即生效” | `Template.php:257-290` |
 | TPL-9 | 行号：编译时维护“编译产物偏移 → (模板文件, 行号)”表，`include` 拼接与每次替换都更新偏移；解释器报错时按代码段起点查表，日志写 `模板文件:行号` 与该行原文（不写变量取值） | FR-2、§11 |
-| TPL-10 | `{php}…{/php}`、`<?php … ?>` 原样进入编译产物，由解释器执行；PRE-5 列出的 6 个文件里的代码都在解释器子集内（RT-1）；子集外的语法报 `TemplateUnsupportedException` | 附表 E.4 EF-2；OP-4 |
+| TPL-10 | `{php}…{/php}`、`<?php … ?>` 原样进入编译产物，由解释器执行；PRE-5 列出的 6 个文件里的代码都在解释器子集内（RT-1；v11 起含 `default_pc/html/art/detail.html:33-42` 的 `infoData` 调用与 `//` 注释）；子集外的语法报 `TemplateUnsupportedException` | 附表 E.4 EF-2；OP-4 |
 | TPL-11 | 未知的 `{maccms:xxx}`（`path`、`siteaid`、`sitetid`、`siteid`，EF-4）：`Maccms` 标签库不认识的标签在 ThinkPHP 里**不被替换**，按原文进入编译产物；随后普通标签解析不匹配 `{maccms:` 开头，所以原文输出。Java 按同一规则自然得到相同结果，由 V-12 的编译产物对比与 AC-4 证实 | `TagLib.php` 标签匹配规则 |
 
 ### 6.5 PHP 子集解释器与值语义（v3 新增）
 
 | 编号 | 规则 |
 | --- | --- |
-| RT-1 | 支持的语法 = 编译产物会出现的全部写法 + PRE-5 登记的模板内 PHP 代码：`echo`、赋值（含 `.=`、`++`）、`if/elseif/else`、`foreach ($a as $k=>$v)`、`for`、`switch/case/break/default`、三元与 `?:`、`isset`/`empty`、数组字面量 `[]`/`array()`、数组下标与 `->` 属性取值（对象只出现在 `model(...)->listCacheData` 调用，解释器把它分派给 `TagModels`）、字符串字面量（单/双引号与 `\` 转义、双引号内 `$var` 插值）、`.` 连接、算术与比较、逻辑运算、函数调用。其他语法（类定义、`include`/`require`、`eval`、反引号、可变函数名、`$$`）一律报不支持 |
+| RT-1 | 支持的语法 = 编译产物会出现的全部写法 + PRE-5 登记的模板内 PHP 代码：`echo`、赋值（含 `.=`、`++`、数组下标赋值 `$a['k'] = 值`（v11））、`if/elseif/else`、`foreach ($a as $k=>$v)`、`for`、`switch/case/break/default`、三元与 `?:`、`isset`/`empty`、数组字面量 `[]`/`array()`、数组下标取值、`model('<字符串字面量>')->方法(实参)` 调用（对象只出现在 `model(...)->listCacheData(…)` 与 `model('art')->infoData(…)` 两种调用；解释器只经 `ModelCallHandler` 分派给 `TagModels`，见 §6.21 MC-1～MC-6，v11 补 `infoData`；单独的 `->属性` 取值不支持）、字符串字面量（单/双引号与 `\` 转义、双引号内 `$var` 插值）、`.` 连接、算术与比较、逻辑运算、函数调用、`//` 单行注释（v11：到行尾或 `?>` 为止）。其他语法（类定义、`include`/`require`、`eval`、反引号、可变函数名、`$$`）一律报不支持 |
 | RT-2 | 值类型：`null`、`bool`、`int`（64 位）、`float`（双精度）、`string`（**字节串**，按 UTF-8 字节存，字符串函数按字节操作，与 PHP 一致）、有序数组（键为 int 或 string，`"1"` 规范化为 int 1，规则同 `legacyconfig.application.view.PhpArray.normalizeKey`） |
 | RT-3 | 字符串化：`true`→`"1"`、`false`/`null`→`""`、`int` 十进制、`float` 按 `precision=14`（PHPB-7）的 `%.14G` 规则并去掉多余的 0、`-0` 输出 `-0`、数组→`"Array"`（PHP 同时写 Notice 到日志，不进响应体） |
 | RT-4 | 比较：`==`、`!=`、`<`、`>` 等按 **PHP 7.3** 的弱类型规则（数字串与数字比较按数值；非数字串与 0 比较时 0 先转串——即 7.3 的 `"abc" == 0` 为真）；`===` 类型与值都相同；`in_array` 默认弱比较 |
@@ -562,6 +581,7 @@
 
 - 编译：`Maccms.php` 的 19 个标签逐个移植其 `tagXxx` 方法，产出与 PHP 相同的代码文本（含 `$__TAG__` 参数串、`$__LIST__`、分页变量），由 V-12 逐字比对编译产物。
 - 执行：编译产物里的 `model("Vod")->listCacheData($__TAG__)` 由解释器分派到 `TagModels`，实现按 `php/application/common/model/<模型>.php` 的 `listCacheData`/`listData` 移植：属性解析、`order`/`by` 映射、筛选条件、`num`/`start`、`paging`（`page`、`pageurl`、`half`）、`not`/`ids`/`rel` 等，查询的表、列、排序列、筛选列严格按附表 D 的 D.6 TAGMAP-1～TAGMAP-19（AC-16）。已有的 `content.application.VideoLegacyConditions`、`LegacyTagAttributes`、`LegacyRange`（B05）覆盖的条件直接复用；不覆盖的由 `phptemplate.infrastructure` 的只读 Mapper 补齐（只 `SELECT`）。
+- 模板 `{php}` 内的模型调用（v11，D-1）：`default_pc/html/art/detail.html:38,41` 的 `model('art')->infoData(...)` 不是标签编译产物，同样经 `ModelCallHandler` 分派到 `TagModels`（`infoData`），契约见 §6.21。
 - 行数据装配：每行的派生键（如 `type`、`type_1`、`group`、`vod_play_list` 等，以 PHP 模型代码为准）在 `TagModels` 里补齐，取值类型按 RT-6。
 - `cachetime`：只在 `app.cache_core=1` 时缓存结果（键规则同 PHP：`cache_flag` + 标签参数），对照环境 `cache_core=0`（基线值），所以不缓存（CACHE-1）。
 - 随机排序 `by="rnd"`：沿用 `content.application.VideoRandom` 的旧版算法；对照样本按 F.6 的 DATA-2 构造（匹配行数 ≤ 1），不靠豁免。
@@ -788,6 +808,67 @@ SEC-7、SEC-9 不属于 OP-9 已确认的六项，是本设计提出、发起人
 | SNAPD-4 | MySQL 会话时区 `+08:00`（PHPB-8，关闭 OP-T3 一半）：PHP 侧在 ENV-2 生成的 `database.php` 里加 `'params' => [PDO::MYSQL_ATTR_INIT_COMMAND => "SET time_zone='+08:00'"]`；Java 侧 `MACCMS_DB_URL` 加 `sessionVariables=time_zone='+08:00'`（只在对照环境）；两侧都在基线报告里记录 `@@session.time_zone` |
 | SNAPD-5 | `php/vendor/`（关闭 OP-T3 另一半）：按 `AGENTS.md`「本地运行与测试」从仓库外生产备份解压到 `pristine/vendor/`，基线报告记录 `vendor/` 目录的文件数与按路径排序后的 SHA-256 汇总值；备份文件只在本机，不入库 |
 
+### 6.21 `Art.infoData` 分派与 `TagModels` 调用契约（v11 新增，D-1，DEC-15）
+
+**依据**：模板包 @ `200cffc5d01090faf4f61e153feb472b107b34df`：`template/default_pc/html/art/detail.html`（blob `5dc275d1…`）第 33～42 行 `{php}`、第 44～49 行输出；`template/default_wap/html/art/detail.html`（blob `ce278e49a961c2f1d73ae63573eb2df1d1ea09a8`，34 行）没有 `{php}`，也没有上一篇/下一篇。PHP @ `a57e9cb`：`Art.php:398-442`（`infoData`）、`Art.php:38-73`（`listData` 的行装配）、`common.php:1294-1318`（`mac_art_list`）、`common.php:1415-1432`（`mac_screenshot_list`）、`common.php:2552-2555`（`mac_url_art_detail`）、`thinkphp/library/think/Loader.php:439-461,611-622`（`model()` 与 `parseName`）、`thinkphp/library/think/db/Query.php:2629-2647`（`find` 只设 `limit 1`，不加排序）、`install/sql/install.sql:108-176`（`mac_art` 为 MyISAM，主键 `art_id`，没有 `art_status` 索引）。
+
+**模板里的调用（PHP 原文语义）**：
+
+```text
+$where=[];  $where['art_status']=['eq',1];
+$where['art_id']=['lt',$obj['art_id']];  $pre_info  = model('art')->infoData($where,'*',1);
+$where['art_id']=['gt',$obj['art_id']];  $next_info = model('art')->infoData($where,'*',1);
+{if $pre_info['code'] eq 1} <a href="{:mac_url_art_detail($pre_info['info'])}">上一篇：{$pre_info['info']['art_name']}</a> {/if}
+{if $next_info['code'] eq 1} …下一篇… {/if}
+```
+
+PHP 实际执行的 SQL 等价于 `SELECT * FROM mac_art WHERE art_status = 1 AND art_id < ? LIMIT 1`（下一篇为 `>`），**没有 `ORDER BY`**；返回哪一行由 MySQL 的执行计划决定。`$where['art_en']` 未定义，只产生 Notice（进日志，不进响应体）。`art_id` 的比较符是 `lt`/`gt` 而不是 `eq`，所以 `$data_cache` 恒为假，`cache_core` 取任何值都不读写缓存，每次都查库。
+
+**调用契约（MC-，解释器 ↔ `TagModels`）**
+
+| 编号 | 规则 |
+| --- | --- |
+| MC-1 | 语法：只有 `model(<单/双引号字符串字面量>)->标识符(实参列表)` 解析成 `ModelCall(模型名, 方法名, 实参, 源偏移)` 节点。`model($变量)`、`model(...)` 不接 `->调用`、`->属性` 取值、链式第二次 `->` 都是子集外写法，解析阶段报不支持（C-18） |
+| MC-2 | 模型名规范化同 `Loader::parseName($name, 1)`：`_x` 转 `X`、首字母大写（`art`→`Art`，`Vod`→`Vod`），再交 `ModelCallHandler`；方法名大小写按原文比较（PHP 方法名不分大小写，但模板只出现小写驼峰原文，白名单按原文登记，避免放宽） |
+| MC-3 | 白名单（`TagModels.call` 唯一分派表，固定 `switch`，不用反射）：①(`Vod`/`Art`/`Topic`/`Actor`/`Role`/`Website`/`Comment`/`Gbook`/`Type`/`Link`/`Extend`, `listCacheData`, 1 个实参) → `listCacheData`（v10 已有，§6.6）；②(`Art`, `infoData`, 1～3 个实参，缺省 `field='*'`、`cache=0` 同 PHP 签名) → `infoData`。其他组合（例如 `Vod->infoData`、`Art->delData`）→ MC-6 |
+| MC-4 | 实参按值传递：解释器传入实参的不可变快照。模板在两次调用之间改写 `$where['art_id']`，不影响第一次调用已收到的实参，也不影响已返回的 `$pre_info`（PHP 数组写时复制语义，RT-2） |
+| MC-5 | 返回值是 `ZValue`，原样赋给模板变量；解释器不解读返回结构。`TagModels` 不持有跨请求状态（PHP `model()` 的实例缓存对结果无影响） |
+| MC-6 | 拒绝：抛 `TemplateUnsupportedException`（C-23，`runtime` 包），带编译产物偏移与原文片段；`PhpTemplateRenderer` 按 TPL-9 补 `模板文件:行号`，转 500 页并写日志（FR-2）。数据库访问异常不转换为“不支持”，按 §6.3 `PhpTemplateRenderer.render` 的错误语义处理 |
+
+**`Art::infoData` 的 Java 语义（INFO-，`TagModels.infoData` → `ArtTagModel`）**
+
+| 编号 | 规则 | PHP 出处 |
+| --- | --- | --- |
+| INFO-1 | 接受的实参形态（= PRE-5 登记的唯一形态）：`where` 为非空有序数组且键集合恰为 {`art_status`, `art_id`}（顺序不限）；`art_status` 的值为 `['eq', 整数或数字串]`；`art_id` 的值为 `['lt' 或 'gt', 整数或数字串]`；`field` 为字符串 `*`；`cache` 为任意值（对结果无影响，见 INFO-5）。`where` 为空数组、或不是数组 → 返回 `[code=>1001, msg=>lang('param_err')]`。其他形态（如 `art_id` 用 `eq`、增加 `type_id` 条件、`field` 不是 `*`）→ MC-6 报不支持：`eq` 会进入 PHP 的缓存分支，超出本次登记范围，需要时另出设计修订 | `Art.php:400-402,404-407` |
+| INFO-2 | 查询：C-29 `TagReadMapper.selectArtInfo(status, op, id)`，SQL 为 `SELECT * FROM mac_art WHERE art_status = #{status} AND art_id < #{id} LIMIT 1`（`op=GT` 时为 `>`）。**不加 `ORDER BY`**，不改写成“取最接近的一篇”：PHP 本身就不排序，同库同 SQL 由同一 MySQL 决定返回行，两侧才一致（BR-3、BR-4）。比较符由 Java 枚举 `LT/GT` 选 `<choose>` 分支，`status`、`id` 只走绑定参数 | `Art.php:413`；`Query.php:2647` |
+| INFO-3 | 未命中 → `[code=>1002, msg=>lang('obtain_err')]`，只有这两个键，键序 `code`、`msg`；模板 `{if $pre_info['code'] eq 1}` 为假，不输出链接 | `Art.php:414-416` |
+| INFO-4 | 命中 → `[code=>1, msg=>lang('obtain_ok'), info=>行]`。`行` = 查询结果全部列，键序按结果集列序（`SELECT *` 即表定义顺序），取值类型按 RT-6；然后按 PHP 顺序追加派生键：①`art_content` 非 `empty()`（PHP 7.3 语义，`"0"` 也算空）时追加 `art_page_list`（`mac_art_list` 逐字移植：键从 1 起，元素为 `[page=>int, title, note, content]`，`title`/`note` 缺位为 `null` 而不是空串——与 `LegacyMultiValue.articlePages` 的空串不同，不能直接复用其结果）与 `art_page_total`（int）；②`art_pic_screenshot` 非空时追加 `art_pic_screenshot_list`（`mac_screenshot_list` 逐字移植，键从“原位置+1”起、跳过空段）；③`type_id` 非空时追加 `type`、`type_1`（分类不存在时两者为 `null`）；④`group_id` 非空时追加 `group`。③④与 `listCacheData` 行装配用同一方法（C-28），分类与用户组整行来源同 §6.6 | `Art.php:417-436`；`common.php:1294-1318,1415-1432` |
+| INFO-5 | 不缓存：`art_id` 比较符只能是 `lt`/`gt`（INFO-1），PHP 的 `$data_cache` 恒为假，任何 `cache_core` 下都直接查库；Java 不为 `infoData` 建缓存，也不接 CACHE-1 的标签结果缓存 | `Art.php:404-412,437-439` |
+| INFO-6 | `msg` 取值经 `common.lang.LegacyLang`（按 `app.lang`），键 `obtain_ok`/`obtain_err`/`param_err`（`zh-cn.php:439,440,119`）；模板不输出 `msg`，但 IA 样例逐值比较 | `Art.php:401,415,441` |
+| INFO-7 | PHP 的 Notice（`$where['art_en']` 未定义）不影响响应体（RT-5）；Java 不复现该 Notice。每次文章详情页渲染多 2 次单行查询，与 PHP 相同 | `Art.php:404` |
+
+**比对用的类型化编码（ZDUMP-1）**：PHP 黄金（C-33 ④）与 Java 测试共用。`null`→`{"t":"null"}`；`bool`→`{"t":"bool","v":true|false}`；`int`→`{"t":"int","v":"<十进制>"}`；`float`→`{"t":"float","v":"<var_export 结果>"}`；`string`→`{"t":"string","v":"<字节的 Base64>"}`；数组→`{"t":"array","v":[[<键：int 或 string>, <值的 ZDUMP-1>], …]}`（保持键序）。PHP 侧用 `gettype` 判型；Java 侧由 `ZValue` 直接编码。比较为整份 JSON 逐字节相等。
+
+**边界（D1-BND-）**
+
+| 编号 | 边界 |
+| --- | --- |
+| D1-BND-1 | 与 DATA-4（PRD v10 F.6，登录时间归一）无关：`infoData` 只读 `mac_art`/`mac_type`/`mac_group`，模板只输出 `art_name` 与由 `info` 生成的地址，不输出任何时间或会话值；D-1 不进入 PRE-5 时钟/随机/会话登记表，不改变 DATA-4 的样本与步骤。PRD v10 对本设计其他章节（如对照执行器 C-64 的步骤）的影响不属于 D-1，v11 不处理 |
+| D1-BND-2 | 与 EX-1/EX-2 无关：返回值不含 `$maccms.date` 或 `http_url`，不新增 EX-；F.5 规则 2 的归属表里 D-1 没有行。`mac_url_art_detail` 的输出规则归 C-27/V-15，v11 不改 |
+| D1-BND-3 | 与 OP-15/PATH-1 无关：`infoData` 不读模板文件、不涉及任何路径量；模板读取根仍按 PATH-1（`templateDir`/`htmlDir`），`{$maccms.path_tpl}` 仍按 S3-02 放行的 PATH-2；V-13 的片段测试只从模板包读取第 32～50 行作为输入，不改变读取根 |
+| D1-BND-4 | 不改 PRD：OP-4 已确认“`{php}` 代码逐处用 Java 做出相同效果”，D-1 是技术设计缺口（产品经理在评论 `01a19894-ef9c-7428-b787-596e3e4f31db` 已判定 PRD 不用改）；手机模板没有该调用，Java 手机文章详情页也不得出现上一篇/下一篇 |
+
+**实现责任与未实现边界**
+
+| 部分 | 归属（子任务） | 内容 |
+| --- | --- | --- |
+| 语法与分派 | S3-07（C-18、C-19、C-23） | MC-1、MC-2、MC-4、MC-6；`//` 注释；下标赋值；`ModelCallHandler` 接口 |
+| 渲染接线 | S3-10（C-24） | 构造 `Interpreter` 时注入 `TagModels`；MC-6 的行号补全；V-13 R-1～R-3 |
+| 语义 | S3-12b（C-28、C-29） | MC-3 白名单、INFO-1～INFO-7、与 `listCacheData` 共用行装配；V-16 IA-1～IA-6 |
+| 黄金 | S3-05（C-33 ③④） | 片段渲染黄金、模型调用黄金、夹具 SQL |
+| 页面 | S3-14d（PG-3） | 文章详情页控制器按 PHP `assign()` 提供 `$obj`（含 `art_id`）；不额外计算上一篇/下一篇 |
+| 不实现 | — | `infoData` 的其他条件形态与缓存分支（INFO-1 之外）；其他模型的 `infoData`；`model()` 的其他方法；这些出现时一律报不支持，需要时另出设计修订 |
+
 ## 7. 实现步骤（按端）
 
 ### 7.1 后端（@后端开发-海外）——G1 放行后执行
@@ -829,14 +910,14 @@ SEC-7、SEC-9 不属于 OP-9 已确认的六项，是本设计提出、发起人
 | S3-02 | `path_tpl` 映射修正 | 后端 | C-12～C-16 | G1 | V-9 |
 | S3-03 | 对照环境装配、快照恢复、结构快照脚本 | 测试 | C-6～C-10、C-62、C-63、C-66 | S3-01 | V-2、V-3、V-20、V-21 |
 | S3-04 | PRE-5 模板扫描（脚本 + 逐处实现说明） | 测试 + 架构师 | C-65；`docs/test/APPK-2/template-scan.md` | S3-01 | PRE-5 完成判定 |
-| S3-05 | PHP 黄金脚本：编译产物、值语义、函数 | 测试 | C-33 | S3-03、S3-04 | 黄金文件入库、生成命令可复跑 |
+| S3-05 | PHP 黄金脚本：编译产物、值语义、函数 | 测试 | C-33 | S3-03、S3-04 | 黄金文件入库、生成命令可复跑；v11：含 C-33 ③④（D-1 片段渲染与模型调用黄金、夹具 SQL） |
 | S3-06 | 运行时值语义 | 后端 | C-17 | S3-05 | V-11 |
-| S3-07 | 词法/语法/解释器 | 后端 | C-18、C-19 | S3-06 | V-11、`InterpreterTest` |
+| S3-07 | 词法/语法/解释器 | 后端 | C-18、C-19 | S3-06 | V-11、`InterpreterTest`；v11：MC-1、MC-2、MC-4、MC-6，`//` 注释与下标赋值向量 |
 | S3-08 | 编译流水线（Template + Cx） | 后端 | C-20、C-21、C-23 | S3-07 | V-12（Cx 部分） |
 | S3-09 | Maccms 标签编译 | 后端 | C-22 | S3-08 | V-12（168 个文件编译产物逐字节相同） |
-| S3-10 | 渲染服务、缓存、缺模板页、配置、护栏 | 后端 | C-24～C-26、C-30、C-31、C-32、C-35 | S3-09、S3-02 | V-13、V-14 |
+| S3-10 | 渲染服务、缓存、缺模板页、配置、护栏 | 后端 | C-24～C-26、C-30、C-31、C-32、C-35 | S3-09、S3-02 | V-13、V-14（v11：V-13 含 R-1～R-3） |
 | S3-11 | 模板函数 | 后端 | C-27 | S3-10 | V-15 |
-| S3-12a～e | 标签模型（a：vod；b：art/topic；c：actor/role/website；d：type/link/extend 七个筛选项；e：comment/gbook） | 后端 | C-28、C-29、C-34 | S3-10 | V-16（各自标签的属性样例） |
+| S3-12a～e | 标签模型（a：vod；b：art/topic；c：actor/role/website；d：type/link/extend 七个筛选项；e：comment/gbook）；v11：b 另含 `TagModels.infoData`、`selectArtInfo`、`TagModelsInfoDataTest`（D-1，MC-3、INFO-1～INFO-7） | 后端 | C-28、C-29、C-34 | S3-10 | V-16（各自标签的属性样例）；b 另需 V-16 IA-1～IA-6 与 `TagModelsInfoDataTest` |
 | S3-13a | 内置视图 | 前端 | C-39 | S3-10 | 3 个资源与 `php/application/index/view/` 对应文件逐字节相同（`git diff --no-index --binary` 无输出）；`./mvnw -B verify` |
 | S3-13b | `readTemplateAsset` 放行边界 | 后端 | C-44 | G1（OP-T5=a 已关闭，v8） | V-18 单测部分 |
 | S3-13c | `/template/**` 静态资源控制器 | 前端 | C-43 | S3-13b（OP-T5=a 已关闭，v8） | V-18 接口用例部分 |
@@ -855,6 +936,8 @@ SEC-7、SEC-9 不属于 OP-9 已确认的六项，是本设计提出、发起人
 | T-FR12 | 附表 C 阶段 A 判定（可与 S3 并行，后台/API/安装部分不依赖模板）；阶段 B 按 GAP- 建单 | 测试 | `docs/test/APPK-2/parity-*.md`、`gap-register.md` | G1 | AC-14、AC-19 |
 
 **已关闭决策（v8，REV-13；取代 v4～v7 的条件门禁）**：OP-T4=a、OP-T5=a、OP-T6=b 已由发起人在 Issue 确认（评论 `01a194e9-23e8-7682-8ae5-b7c5e19b0040`，本设计三项的唯一决策源）。S3-13b、S3-13c、S3-14c 不再等待决定，按 G1 与表中依赖派单；S3-14h 撤销（并入 S3-14a），deploy 分支不再有“前台 CSP 未落定不得发布”的门禁。建单时 S3-13b、S3-13c、S3-14a、S3-14c 单内引用该确认评论；实现与用例只有一种写法（C-43/C-44 的 SEC-7 白名单、C-68 保留 `PasswordAttempts`、C-75 三项策略），评审按此核对（V-29）。将来要改选，须先由发起人在 Issue 另行确认、再出设计修订，不在子任务里直接改。S3-14 的 PG 组只依赖 S3-13a（内置视图），不依赖 S3-13b/c：页面渲染只经 `PhpTemplateRenderer` 用现有 `read` 读模板，不经 `/template/**`；S3-14 各组的 V-19 子集只含页面样本，样本清单里若有 `/template/**` 地址，归 S3-13c 收尾时核对；S3-15 也不依赖 S3-13b/c（C-42 不再注册 C-43）。
+
+**D-1 依赖（v11）**：S3-05 的黄金须含 C-33 ③④ 后 S3-07 才开工（RT-1 增补以黄金为准）；S3-07 交付 `ModelCallHandler` 与 MC- 规则；S3-10 的 V-13 R-1～R-3 用桩 `ModelCallHandler`，不依赖 S3-12；S3-12b 落地 `infoData`；S3-14d（PG-3 文章详情）须等 S3-12b 通过。依赖顺序与表中原有的模板线串行关系一致，不新增子任务。
 
 并行关系：S3-19a/b、S3-20、S3-21、T-FR12 与模板线（S3-01～S3-18）互不依赖，可并行；模板线内部按表中依赖串行。PG 组切换顺序按 PRD §13 阶段 2（首页与 vod 先）。
 
@@ -910,10 +993,10 @@ SEC-7、SEC-9 不属于 OP-9 已确认的六项，是本设计提出、发起人
 | V-10 | AC-1 ②③ | 接口用例 | `java-site` 桌面 UA `GET /` → 200，响应体等于 PHP 侧（附表 F）；`template_dir` 改为不存在目录并重启 → 两侧都是 HTTP 500 的“模板文件不存在”页，逐字节相同；后台首页出现模板缺失提示；响应体不含任何 jte 页面特征（`/static/site/site.css`） | G3 前本机对照 |
 | V-11 | FR-2、FR-4（值语义） | 单测（黄金） | `./mvnw -B test -Dtest=PhpSemanticsGoldenTest,InterpreterTest`：C-33 ②的向量逐条相等（字符串化、7.3 弱比较、数组键、`json_encode`、未定义取值） | G2 |
 | V-12 | AC-2（编译） | 单测（黄金） | `./mvnw -B test -Dtest=TemplateCompilerGoldenTest,TagLibCompileTest`：附表 E 的 168 个 `.html` 与 PRE-5 语法样例，Java 编译产物（去掉头代码块里的序列化路径与时间）与 PHP `runtime/temp` 黄金逐字节相同 | G2 |
-| V-13 | AC-2（渲染、PHP 代码、不支持语法） | 单测 + 对照 | `PhpTemplateRendererTest`：每个语法样例渲染结果等于 PHP 黄金；6 个含 PHP 代码的文件渲染等于 PHP；一个子集外写法（如 `{php}eval('1');{/php}`）返回 500，日志含 `模板文件:行号` 与原文 | G2 |
+| V-13 | AC-2（渲染、PHP 代码、不支持语法） | 单测 + 对照 | `PhpTemplateRendererTest`：每个语法样例渲染结果等于 PHP 黄金；6 个含 PHP 代码的文件渲染等于 PHP；一个子集外写法（如 `{php}eval('1');{/php}`）返回 500，日志含 `模板文件:行号` 与原文。v11（D-1）样例：**R-1 桌面片段**——输入为模板包 `default_pc/html/art/detail.html` 第 32～50 行（测试先断言 808 字节、`git hash-object` = `a615d09d955020c6c86924bf3c8a2a88852b308e`，防止样例漂移），页面变量 `$obj=[art_id=>20]`，桩 `ModelCallHandler` 按情形返回，桩函数 `mac_url_art_detail($info)` 两侧都返回 `'/art/'.$info['art_id'].'.html'`；五个情形：a 两次都命中（上一篇 `[art_id=>10, art_name=>'A&B<i>"']`、下一篇 `[art_id=>30, art_name=>'下篇']`）、b 上一篇 1002 下一篇命中、c 上一篇命中下一篇 1002、d 两次都 1002、e 上一篇 `code` 为字符串 `'1'`（7.3 弱比较仍输出链接）。逐项比对：①输出字节与 C-33 ③ 黄金 `art-detail-prevnext-{a..e}.html` 逐字节相同（含原样输出的特殊字符与空白）；②桩记录恰好 2 次调用，顺序为先 `lt` 后 `gt`，模型名为规范化后的 `Art`，实参依次为 `[[art_status=>[eq,1], art_id=>[lt,20]], '*', 1]` 与 `[[art_status=>[eq,1], art_id=>[gt,20]], '*', 1]`（ZDUMP-1 比较），且第一次调用收到的快照在第二次赋值后未变（MC-4）。**R-2 手机**——`default_wap/html/art/detail.html`（blob `ce278e49…`）的 Java 编译产物（与 V-12 黄金同一份）中 `model(` 与 `infoData` 出现次数均为 0，即手机文章详情页渲染不会产生 `infoData` 调用；页面级由 V-19 的手机文章详情样本保证两侧都没有上一篇/下一篇。**R-3 不支持写法**（各自一个临时模板）：`model('art')->delData([])`、`model($m)->infoData($w,'*',1)`、`model('vod')->infoData($w,'*',1)`、`art_id` 用 `eq`、`field` 为 `'art_name'`、`$x = model('art');`、`model('art')->listCacheData`（属性取值）均返回 500，日志含 `模板文件:行号` 与原文。`TagModelsInfoDataTest`：`infoData('Art', [], '*', 1)` 等于 `[code=>1001, msg=>'参数错误']`（同 C-33 ④ 黄金）；`art`/`ART_x` 的 MC-2 规范化。命令：`./mvnw -B test -Dtest=PhpTemplateRendererTest,TagModelsInfoDataTest,InterpreterTest`；黄金生成：`php src/test/php/tpl_runtime_golden.php --render-sample art-detail-prevnext --out src/test/resources/phptemplate/render-golden/`（PHP 7.3.33），连跑两次 `git diff --exit-code -- src/test/resources/phptemplate/render-golden` 无差异 | G2 |
 | V-14 | W-04、V9-001 | 单测 | 改模板文件修改时间后下一次渲染重编译；`CacheResetHook.resetAll()` 后编译缓存与标签缓存为空；`reset-file` 修改时间变化触发清空、未设置时不触发 | G2 |
 | V-15 | AC-4 | 单测（黄金） | `TemplateFunctionsGoldenTest`：PRE-5 清单每个函数的样例返回值等于 PHP 黄金；`{maccms:path}`、`{maccms:siteaid}`、`{maccms:sitetid}`、`{maccms:siteid}` 的渲染等于 PHP | G2 |
-| V-16 | AC-3 | MySQL 集成测试 + 对照 | `./mvnw -B verify -Pmysql-it -Dit.test=TagModelsMySqlIT`：19 个标签每个属性一个样例，与 PHP 同库输出按附表 F 比较；`paging=yes` 首页、中间页、末页、越界页各一次；合成数据每内容表 ≥ 50 行（AC-3 前置） | G2（集成）+ G3 前对照 |
+| V-16 | AC-3 | MySQL 集成测试 + 对照 | `./mvnw -B verify -Pmysql-it -Dit.test=TagModelsMySqlIT`：19 个标签每个属性一个样例，与 PHP 同库输出按附表 F 比较；`paging=yes` 首页、中间页、末页、越界页各一次；合成数据每内容表 ≥ 50 行（AC-3 前置）。v11（D-1）样例 `TagModelsMySqlIT#artInfoData*`：夹具 `art-infodata.sql`（与 C-33 ④ 同一文件，按文件顺序插入）是执行 IA 样例时 `mac_art` 的全部数据（≥ 50 行，同 AC-3 前置），并含所需的 `mac_type`、`mac_group` 行；PHP 黄金加载同一文件。对整张 `mac_art` 满足 ART-FIX-1：启用（`art_status=1`）的编号升序为 a1<a2<…<an（n≥3），a1 的 `art_content`=`p1$$$p2`、`art_title`=`t1`（第 2 页标题为 `null`）、`art_note` 为空、`art_pic_screenshot`=`封面$http://img.test/1.jpg##http://img.test/2.jpg`、`type_id` 指向 `type_pid≠0` 的子分类、`group_id` 指向存在的用户组；ART-FIX-2：an 的 `type_id` 指向不存在的分类、`art_content` 与 `art_pic_screenshot` 为空串、`group_id`=0；ART-FIX-3：编号大于 an 的只有一行且 `art_status=0`；ART-FIX-4：编号小于 a1 的只有一行且 `art_status=0`。样例（`where` 均为 `art_status eq 1`，`field='*'`，`cache=1`）：IA-1 `lt a1` → 1002（较小的一行被状态条件排除）；IA-2 `gt an` → 1002；IA-3 `lt a2` → 命中 a1，`info` 含全部列与 `art_page_list`（2 页）、`art_page_total`=2、`art_pic_screenshot_list`、`type`、`type_1`、`group`；IA-4 `gt a(n-1)` → 命中 an，`info` 无 `art_page_list`/`art_page_total`/`art_pic_screenshot_list`/`group`，`type`、`type_1` 为 `null`；IA-5 多候选 `lt an` 与 `gt a1` → 结果等于 PHP 黄金（不预设是哪一行），并断言 `selectArtInfo` 的 `BoundSql` 不含 `ORDER BY`；IA-6 `app.cache_core=1` 下调 IA-3，随后 `UPDATE mac_art SET art_name=…` 再调一次，第二次返回新值（INFO-5，不缓存）。逐项比对：IA-1～IA-5 的整个返回值按 ZDUMP-1 与 `model-golden/art-infodata.json` 逐字节相等（键、键序、类型、取值）；IA-6 只断言 Java 行为（PHP 依据为 `Art.php:404-412`）。命令：`./mvnw -B verify -Pmysql-it -Dit.test=TagModelsMySqlIT`（环境变量 `MACCMS_IT_ADMIN_URL`、`MACCMS_IT_ADMIN_USERNAME`、`MACCMS_IT_ADMIN_PASSWORD`，只建/删一次性库 `maccms_it_*`）；黄金生成：`php src/test/php/tpl_runtime_golden.php --model-calls art-infodata --fixture src/test/resources/phptemplate/model-fixtures/art-infodata.sql --out src/test/resources/phptemplate/model-golden/art-infodata.json`（PHP 7.3.33，同一 MySQL 5.7 实例、同一夹具，一次性库用完即删） | G2（集成）+ G3 前对照 |
 | V-17 | AC-10（语言键） | 对照脚本 | `run_compare.py --lang`：`zh-cn`、`zh-tw` 各 1773 键，Java `LegacyLang.get` 与 PHP `lang()` 逐字节相同（CMP-5），计入 KPI-5 | G3 前 |
 | V-18 | DEC-8、SEC-7（OP-T5=a） | 单测 + 接口用例 | 单测 `LegacySiteFilesTemplateAssetTest`（C-44，S3-13b）：`template/` 下的目录符号链接与文件符号链接，各自指向站点根内的 `application/extra/maccms.php` 和站点根外的一个文件，均拒绝；最终文件本身是符号链接（即使目标在 `template/` 内）拒绝；`template/default_pc` 目录本身、`template/default_pc/a.php`、`template/default_pc/x.PHP` 拒绝；不存在的文件拒绝且不创建目录；`template/default_pc/html/index/index.html`、`template/default_pc/info.ini`、`template/default_pc/css/x.txt` 抛 `FORBIDDEN`；`template/default_pc/css/style.css` 返回字节等于文件（符号链接用例的写法同现有 `LegacyConfigDirectoryTest`）。评审另核：C-43 不含子目录或扩展名判断，C-44 没有运行时开关。接口用例（C-43，S3-13c）：`/template/default_pc/css/style.css` 200 且字节等于文件；`/template/../application/extra/maccms.php`、`/template/default_pc/css/%2e%2e/%2e%2e/%2e%2e/application/extra/maccms.php` 404（不出站点根）；`/template/default_wap/ads/x.js` 404 且不创建目录；`/template/default_pc/html/index/index.html`、`/template/default_pc/info.ini`、`/template/default_pc/css/%2e%2e/info.ini` 均 404；`template/` 下任一 `.php` 404 | G2 |
 | V-19 | AC-5、AC-6、AC-10（页面）、AC-20 | 对照脚本 | `run_compare.py --desktop docs/test/APPK-2/sample-desktop.md --mobile docs/test/APPK-2/sample-mobile.md`：224 + 120 个页面样本、12 个模板选择样本，按 CMP-1～CMP-3、NORM-1～5、EX-1/2 判定，报告每样本两行恢复记录；通过数 / 356 | G3 前本机对照 |
@@ -955,6 +1038,7 @@ SEC-7、SEC-9 不属于 OP-9 已确认的六项，是本设计提出、发起人
 | 步骤 | 回退方式 | 顺序 |
 | --- | --- | --- |
 | S3-06～S3-12（`phptemplate` 模块） | `git revert` 各提交；模块未被 `site` 使用前回退无可见影响 | 先回退依赖它的 S3-14 |
+| v11 D-1 增量（MC-、INFO-；随 S3-07、S3-10、S3-12b 的提交） | 随所属子任务提交 `git revert`；只回退 `infoData`（S3-12b）时，`art/detail` 按 MC-6 报不支持（500），所以 S3-14d 已合入时须先回退 S3-14d；本身不改数据、不改配置 | 先回退 S3-14d |
 | S3-13a、S3-14（内置视图、页面接入，按 PG 组） | 每组一个提交，`git revert` 该组即恢复该组 jte 页面与测试（jte 文件在同一提交里删除，回退即恢复）；该组迁出的 `SiteHtmlRenderer` 调用方（§6.8 迁移表）随之恢复为注入渲染器——S3-15 之前 `SiteHtmlRenderer` 仍在，所以可编译 | 按组倒序；S3-15 之后须先回退 S3-15；S3-14a 含共享边界 C-70，须在 b～g 全部回退之后才能回退 |
 | C-70～C-72（`SitePageResponses`、`JumpPages`、三个漏列调用方与测试） | 随所属 PG 组提交回退（迁移表“子任务”列）；不单独回退，避免出现既不用渲染器、也没有共享边界的中间状态 | 同上 |
 | C-75（前台 CSP，v8 随 S3-14a） | 随 S3-14a 回退（S3-14h 已撤销，没有单独提交）；只需改策略时（发起人另行改选后），单独提交改 C-75 一处、可单独 `git revert`，不涉及模板与数据 | 随 S3-14a |
@@ -1002,6 +1086,7 @@ SEC-7、SEC-9 不属于 OP-9 已确认的六项，是本设计提出、发起人
 | RISK-T15 | 渲染性能：解释执行比预编译 jte 慢 | 高流量 | 编译产物缓存为语法树（不重复解析）；Q11 只记录指标、不设门槛；PHP 同样是解释执行 | 记录指标 |
 | RISK-T17 | `install.sql` 在 Windows `core.autocrlf=true` 工作区被检出为 CRLF，SHA-256 与常量不符，安装向导拒绝执行（v3 的 `152e5424…` 就是这样算错的） | 在 Windows 上 clone 后直接运行或打包站点根 | C-67 `text eol=lf`；INS-1 常量按 blob 计算；C-57 断言文件不含 `\r`；V-25 覆盖 CRLF 拒绝 | 已有 Windows 工作区在 C-67 合入后须删掉该文件再 `git checkout -- php/application/install/sql/install.sql` 一次（S3-20 交付说明写明） |
 | RISK-T16 | “启动时读一次配置”的站点 Bean 与 PHP 每请求读配置不同，改配置后两侧短暂不一致 | F-D2、后台保存配置后 | 对照按 CACHE-4 重启；是否改为即时生效由 FR-12 判定 | 待 FR-12 |
+| RISK-T24（v11） | `infoData` 的 SQL 没有 `ORDER BY`（同 PHP），多候选时返回哪一行取决于 MySQL 执行计划；PHP 黄金与 Java 集成测试若在不同实例、不同版本或不同插入顺序的数据上运行，IA-5 可能不一致；实现者若“顺手”加排序，会与 PHP 不同 | IA-5；对照环境 | 两侧同 SQL、同库同快照（CMP-2）；IA-5 黄金与 IT 用同一夹具文件、同一 MySQL 5.7 实例生成；IA-1～IA-4 用单候选数据，结果与计划无关；IA-5 断言 `BoundSql` 无 `ORDER BY`；评审按 INFO-2 核对 | 低：IA-5 不一致时以对照环境同库结果为准 |
 
 **技术待决（v3 更新）**
 
@@ -1061,6 +1146,7 @@ SEC-7、SEC-9 不属于 OP-9 已确认的六项，是本设计提出、发起人
 | PRE-2 | ENV-1～10、SNAPD-1～5、CACHE-3 | C-6～C-10、C-62、C-63 | V-2、V-3、V-4、V-20 |
 | PRE-3 / PRE-4 | 样本清单由测试人员按附表 B 编写（本设计不改分母）；F-D2 选 `public/msg`（桌面包内存在） | — | AC-20 行数核对 |
 | PRE-5 | 扫描脚本 + 架构师逐处实现说明；时钟/随机/会话来源归属 EX-1/EX-2/DATA-2 | C-65 | PRE-5 完成判定 |
+| D-1（OP-4：`{php}` 逐处同效，`default_pc/html/art/detail.html:33-42` 的 `Art.infoData`；v11） | §4.15 DEC-15；§6.21 MC-1～MC-6、INFO-1～INFO-7、ZDUMP-1、D1-BND-1～4；RT-1 增补 | C-18、C-19、C-23、C-24（接线）、C-28、C-29、C-33、C-34 | V-11（`//`、下标赋值）、V-13（R-1～R-3、`TagModelsInfoDataTest`）、V-16（IA-1～IA-6）、V-19（PG-3 文章详情样本，回归） |
 | V9-001 | CACHE-1～4、ENV-9 | C-26、C-31、C-52 | V-14 |
 
 ## 12. 源码合理自检
@@ -1092,6 +1178,10 @@ SEC-7、SEC-9 不属于 OP-9 已确认的六项，是本设计提出、发起人
 | 完整设计：常量与哈希按 blob 计算 | 是（v4 修正） | `INSTALL_SQL_SHA256` 按 `git show a57e9cb:php/application/install/sql/install.sql \| sha256sum` = `48dbe0fb…`；v3 的 `152e5424…` 是 `autocrlf` 工作区文件（CRLF）的哈希，已更正并加 C-67、RISK-T17 |
 | 完整设计：PHP 行为描述有源码出处 | 是（v4 修正） | v3 写“PHP 没有观看密码频率限制”不成立：`Ajax.php:416-418` 有按会话 5 秒限制；v4 把它列为 ALIGN-4 ③（按 PHP 恢复），OP-T4 只问是否在其之外保留 `PasswordAttempts` |
 | 与 PRD 无矛盾（完整设计） | 是（v8）：OP-T4、OP-T5、OP-T6 已由发起人确认（评论 `01a194e9-23e8-7682-8ae5-b7c5e19b0040`：a、a、b），设计只保留所选答案，没有未关闭的待决项；DBT-2 v7 改回 PHP 整段语义，不再有未声明的语义差异（REV-12）；ALIGN-1～7 是按“PHP 为准”把 Java 现有差异改回 PHP，不改范围；DBT-5 在 OP-6“只还原数据”之上增加可恢复性保护，不改变成功路径的数据结果，其中“还原前站点须关闭”是新增前置条件（PHP 没有），FR-9 不做页面对照，由 T-FR12 按 DBT-5 判定；前台 CSP 按 OP-T6=b（C-75） | §6.8、§6.13、§10 |
+| v11：D-1 的 PHP 行为有源码出处 | 是 | `Art.php:398-442`（`infoData`）、`Query.php:2647`（`find` 只设 `limit 1`、不排序）、`install.sql:108-176`（MyISAM、无 `art_status` 索引）、`Loader.php:611-622`（`parseName`）、模板 @ `200cffc5` 的 `default_pc/html/art/detail.html:33-49`；`default_wap` 0 处（`git grep`） |
+| v11：沿用现有模式、不扩范围 | 是 | 与 `listCacheData` 同一分派路径与行装配（C-28）；查询进现有只读 Mapper（C-29）；只接 PRE-5 登记的一种形态（INFO-1），其余报不支持；不新增依赖、表、配置项、HTTP 接口；读取范围在附表 D 的 D-04 内 |
+| v11：模块边界一致 | 是（v11 修正） | v10 的 C-18 要求 `runtime` 抛 `TemplateUnsupportedException`，C-23 却把它放在 `engine`，与 §6.3“`runtime` 只依赖 JDK”矛盾；v11 把该异常定位到 `runtime`，`ModelCallHandler` 也在 `runtime`，由 `application.TagModels` 实现，依赖方向 `application → runtime` 不变 |
+| v11：与 PRD v10 无矛盾 | 是 | D-1 不涉及 DATA-4、EX-1/EX-2、F.5/F.6（D1-BND-1、D1-BND-2）；不改 PRD |
 
 ## 13. 评审回应
 
@@ -1171,6 +1261,15 @@ G1 增量独立复核退回（@智能调度-海外，评论 `01a196b6-9850-74d8-
 | --- | --- | --- | --- |
 | REV-NET-D01 §12 同时写“v9：新依赖有理由、范围受控”与“完整设计：无新依赖｜是”，与 C-76 新增 `httpclient5` 矛盾；未登记方向授权来源 | 已修改 | “完整设计：无新依赖”改为“完整设计：依赖清单”：新增 `httpclient5` 一项（唯一例外）、删除 `gg.jte:jte`（C-41），并写明 BOM 管理版本、传递依赖、包边界、护栏与例外口径，与 C-76、C-79、§4.14、V-33 一致；v2 的“无新依赖”行限定为 OP-15 范围；元数据新增“已定方向（v9 DEC-14）”并在 §4.14 引用：授权评论 `01a196b5-a035-71df-bbe3-077cd09512a6`（Mika 代人类转达），代转依据为发起人评论 `01a1958e-5c60-7d72-9328-d7a5146e1d99`，调度核验 `01a196b6-9850-74d8-b3e5-22800625b6e6`，并写明该授权不是 G1 或实现放行；S3-21e 门禁改为 v8→v10 增量评审通过。选型、契约、C-76～C-80、NET-7、V-33 与实现内容不变 | 元数据（版本、创建时间、已定方向、本版范围）；§4.14；§7.4 S3-21e；§12 依赖相关三行；§13；§14 |
 
+D-1 设计缺口（S3-04 边界确认查出，评论 `01a19892-026e-7cbe-927d-704a611f0d66` 第 6 节；授权 `01a198ee-19dc-7af1-8ef6-568231831be0`，派发 `01a198ef-ca4f-7633-a77f-7f1abf0a01cc`；v11 处理，须经调度独立复核与架构评审）：
+
+| 问题 | 处理 | 说明 | 修改位置 |
+| --- | --- | --- | --- |
+| D-1 `default_pc/html/art/detail.html:38,41` 的 `model('art')->infoData(...)` 不在 RT-1/C-28 内，按 v10 实现该页报不支持，违反 OP-4 | 已修改 | 方案对比后选“解释器端口 + `TagModels.infoData`”（DEC-15），只接 PRE-5 登记的一种形态；语义按 `Art.php:398-442` 移植，SQL 保持不排序 | §4.15；§6.3；RT-1、TPL-10；§6.6；§6.21；C-18、C-19、C-23、C-28、C-29 |
+| 派发要求“明确 `TagModels` 接口及调用契约、实现责任、未实现边界、S3-10～S3-12 依赖” | 已修改 | `ModelCallHandler`（runtime 端口）+ `TagModels.call` 白名单 + `infoData` 签名与返回结构；实现责任表与“不实现”行；§7.4 增补 D-1 依赖段 | §6.3；§6.21 MC-、实现责任表；§7.4 |
+| 派发要求“补齐 V-13/V-16 的样例、输入输出、逐项比对口径和验证命令，覆盖桌面/手机” | 已修改 | V-13：R-1 桌面片段五情形（输入固定为模板包第 32～50 行并校验哈希）、R-2 手机（无调用、无输出）、R-3 七种不支持写法；V-16：夹具 ART-FIX-1～4 与 IA-1～IA-6；共用 ZDUMP-1；黄金生成与复跑命令 | §8.2 V-13、V-16；C-33 ③④；C-34 |
+| 派发要求“说明 D-1 与 DATA-4、EX-1/EX-2、OP-15/PATH-1 的边界” | 已修改 | D1-BND-1～4：不改 PRD、不新增 EX-/DATA-，不重新解释 `path_tpl` 与模板读取根 | §6.21；元数据；§3.2“v11 明确不受影响” |
+
 ## 14. 修订记录
 
 | 日期 | 版本 | 作者 | 变更摘要 | 对应 REV- |
@@ -1185,3 +1284,4 @@ G1 增量独立复核退回（@智能调度-海外，评论 `01a196b6-9850-74d8-
 | 2026-11-01 | v8 | @架构师-海外 | 按发起人确认（OP-T4=a、OP-T5=a、OP-T6=b）收敛为唯一实现：删除未选列，C-44 只剩 SEC-7 白名单，C-68 保留 `PasswordAttempts`，C-75 固定为三项策略并随 S3-14a 落地（§4.11 方案 E），撤销 S3-14h、过渡值与发布门禁（RISK-T21 关闭），条件门禁改为“已关闭决策”；删备份纳入 `dbtool.lock`、锁内保护绑定备份、按卷号升序删除，预检移到取锁之后；新增 DBT-5 ⑩ 与“进程中断后的唯一转移”表（`phase`、`export_files`、`backup_lock`、`probe()`、清理规则、页面按钮与日志级别），RISK-T22；V-18、V-29、V-30、V-32 改为单一答案，V-31 新增 ⑪～⑲ | REV-13、REV-14、REV-15、SUG-1 |
 | 2026-11-01 | v9 | @架构师-海外 | 按后端实现回退（评论 `01a19682-a499-7066-8e43-a23260dd1d44`）定 OUT-1-5 实现方式：新增 §4.14 DEC-14（出站客户端内部引擎换 Apache HttpClient 5，每跳固定已校验地址）、§6.15 NET-7、C-76～C-80、§7.4 S3-21e、V-33、RISK-T23，§9/§11/§12/§13 同步；契约、对外接口与 v8 其余内容不变 | 实现回退 OUT-1-5 |
 | 2026-11-01 | v10 | @架构师-海外 | 按 G1 增量独立复核退回（评论 `01a196b6-9850-74d8-b3e5-22800625b6e6`）修设计一致性与决策来源：§12“完整设计：无新依赖”改为准确的依赖清单与例外口径（新增 `httpclient5`、删除 `gg.jte:jte`），v2 行限定 OP-15 范围；元数据与 §4.14 登记 DEC-14 方向授权（评论 `01a196b5-a035-71df-bbe3-077cd09512a6`，代转依据 `01a1958e-5c60-7d72-9328-d7a5146e1d99`）；S3-21e 门禁改为 v8→v10 增量；选型、契约、改动项与实现不变 | REV-NET-D01 |
+| 2026-11-02 | v11 | @架构师-海外 | 按调度派发（评论 `01a198ef-ca4f-7633-a77f-7f1abf0a01cc`，授权 `01a198ee-19dc-7af1-8ef6-568231831be0`）只处理 D-1：新增 §4.15 DEC-15 与 §6.21（MC-1～MC-6 调用契约、INFO-1～INFO-7 `Art::infoData` 语义、ZDUMP-1、D1-BND-1～4、实现责任与未实现边界）；RT-1 补 `//` 注释、下标赋值与模型调用节点；§6.3 补 `TagModels.infoData`、`ModelCallHandler`；C-18/C-19/C-23/C-28/C-29/C-33/C-34 增量（C-23 异常类定位到 `runtime`）；§7.4 D-1 依赖；V-13 R-1～R-3、V-16 IA-1～IA-6；§9 回退行、RISK-T24、§11/§12/§13 对应行；元数据登记授权来源与 PRD v10 核对口径。其余章节不变 | D-1 |
