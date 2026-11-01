@@ -219,6 +219,7 @@ osv-scanner scan source -L <修复后 SBOM>.cdx.json → No issues found，退�
 | `third_party/maccms-template-v2020.1000.1035/template/default_wap/**` | C-2：127 个文件，官方原样；没有 `ads/` | `8fca22d` |
 | `third_party/maccms-template-v2020.1000.1035/LICENSE` | C-3：官方同一提交根目录 Apache License 2.0 原文 | `8fca22d` |
 | `third_party/maccms-template-v2020.1000.1035/SOURCE.md` | C-4：来源仓库、标签、提交号、3 个目录树 SHA-1、取得命令、校验命令、“不得修改，改动须新开目录与 OP-”规则 | `8fca22d` |
+| `docs/api/APPK-2/impl-notes.md` | 本说明：新增「S3-01」一节；REV-1 修订提交范围统计 | `f9df5f5`、REV-1 修订提交 |
 
 ### 取得方式
 
@@ -251,10 +252,14 @@ git ls-tree -r --name-only HEAD third_party/maccms-template-v2020.1000.1035/temp
 git check-attr text whitespace -- …/template/default_pc/info.ini → text: unset；whitespace: unset
 git ls-files --eol third_party/maccms-template-v2020.1000.1035 → i/lf 195、i/-text 77（二进制）、i/none 4
 
-# 提交范围
-git diff --name-only 8dee62e HEAD → 只有 .gitattributes 与 third_party/maccms-template-v2020.1000.1035/**
-git diff --name-only 8dee62e HEAD -- src/main | wc -l → 0
-git diff --check 8dee62e HEAD → 无输出，退出码 0（模板包在 -whitespace 属性下不做空白检查；.gitattributes 本身无空白问题）
+# 提交范围（REV-1 修订：写明对比的目标提交，并列出本说明文件）
+git diff --name-only 8dee62e f9df5f5 | wc -l → 278
+git diff --name-status 8dee62e f9df5f5 → M .gitattributes；M docs/api/APPK-2/impl-notes.md；A third_party/maccms-template-v2020.1000.1035/** 276 个
+#   即 278 = .gitattributes 1 + 模板包 276（274 个模板文件 + LICENSE + SOURCE.md）+ docs/api/APPK-2/impl-notes.md 1
+#   （只到模板包提交 8fca22d 为 277 个，不含本说明文件）
+#   REV-1 修订提交只改 docs/api/APPK-2/impl-notes.md，相对 8dee62e 的路径集合仍是这 278 个
+git diff --name-only 8dee62e f9df5f5 -- src/main | wc -l → 0
+git diff --check 8dee62e f9df5f5 → 无输出，退出码 0（模板包在 -whitespace 属性下不做空白检查；.gitattributes 与本说明无空白问题）
 
 # V-8：构建不受影响
 ./mvnw -B -q package -DskipTests → 退出码 0
