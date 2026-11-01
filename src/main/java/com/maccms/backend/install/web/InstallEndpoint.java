@@ -33,7 +33,8 @@ import org.springframework.web.servlet.function.ServerResponse;
  * {@code /install.php}、{@code /install.php/index/index[.html]} 等，按参数 {@code step} 分派（旧 Index.php:26-77）。
  * <ul>
  * <li>已安装（安装锁存在）时任何请求只输出旧版的提示文字（install.php:30-33）；</li>
- * <li>会话（Servlet 会话）里保存旧版的 {@code lang}、{@code install_error}，以及新版的表单令牌；</li>
+ * <li>会话（Servlet 会话）里保存旧版的 {@code lang}、{@code install_error}，以及新版的表单令牌（第 4 步只校验，
+ * 第 5 步校验通过即作废，APPK-2 INS-SEC-4）；第 5 步只受理 POST 表单（INS-SEC-3）；</li>
  * <li>参数按 PHP 的规则解析（{@link PhpInput}，查询串与表单分开，表单优先）；只取标量，数组按缺失处理。</li>
  * </ul>
  */
@@ -126,13 +127,17 @@ public class InstallEndpoint {
             return reply(ajax, r);
         }
         if (is(step, 5)) {
+            // INS-SEC-3（APPK-2）：只受理 POST 表单，先于环境与连接信息判定
+            if (!"POST".equalsIgnoreCase(req.getMethod()) || !isForm(req)) {
+                return responses.error(ajax, lang.get("install/access_denied"));
+            }
             if (Boolean.TRUE.equals(session.getAttribute(S_ERROR))) {
                 return responses.error(ajax, lang.get("install/init_err"));
             }
             byte[] pwd = PhpInput.scalar(post, "password");
             InstallWizard.Reply r = wizard.install(scalar(post, "account"),
                     pwd == null ? null : new String(pwd, StandardCharsets.UTF_8), pwd, scalar(post, "install_dir"),
-                    scalar(post, "initdata"), tokenOk(session, post), lang);
+                    scalar(post, "initdata"), () -> consumeToken(session, post), lang);
             return reply(ajax, r);
         }
         // 默认：首页（旧 Index.php:62-75）——按参数 lang 选语言包并记进会话，同时清除环境检测的结果
@@ -186,6 +191,17 @@ public class InstallEndpoint {
         String s = HexFormat.of().formatHex(b);
         session.setAttribute(S_TOKEN, s);
         return s;
+    }
+
+    /** 第 5 步（INS-SEC-4）：令牌通过校验的同时从会话删除，同一表单重放或并发重复提交只有第一次能通过。 */
+    private static boolean consumeToken(HttpSession session, Map<String, PhpInput.Value> post) {
+        synchronized (session) {
+            if (!tokenOk(session, post)) {
+                return false;
+            }
+            session.removeAttribute(S_TOKEN);
+            return true;
+        }
     }
 
     private static boolean tokenOk(HttpSession session, Map<String, PhpInput.Value> post) {

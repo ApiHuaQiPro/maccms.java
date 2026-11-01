@@ -325,6 +325,9 @@ class InstallWizardMySqlIT {
             // 通过后：安装目录不是 / 拒绝；正常安装跳到 MACCMS_ADMIN_ENTRY
             assertThat(step4(mvc, s, ok, "mac_", token)).contains("\"code\":1");
             assertThat(step5(mvc, s, "/sub/", token)).contains("只支持安装在网站根目录");
+            // 令牌一次性（APPK-2 INS-SEC-4）：重新打开第 3 步取新令牌
+            mvc.perform(MockMvcRequestBuilders.get("/install.php?step=3").session(s));
+            token = (String) s.getAttribute("install.token");
             assertThat(rows(ok, "mac_admin")).isEmpty();
             assertThat(step5(mvc, s, "/", token)).isEqualTo("{\"code\":1,\"msg\":\"系统安装成功，欢迎您使用苹果CMS建站\",\"data\":\"\","
                     + "\"url\":\"\\/_admin.php\",\"wait\":3}");

@@ -76,6 +76,7 @@ class InstallModeTest {
                     .header("X-Requested-With", "XMLHttpRequest")).andReturn().getResponse()
                     .getContentAsString(StandardCharsets.UTF_8)).contains("\"code\":0", "环境检测未通过");
             assertThat(mvc.perform(MockMvcRequestBuilders.post("/install.php?step=5").session(s)
+                    .contentType("application/x-www-form-urlencoded")
                     .header("X-Requested-With", "XMLHttpRequest")).andReturn().getResponse()
                     .getContentAsString(StandardCharsets.UTF_8)).contains("初始失败！");
             mvc.perform(MockMvcRequestBuilders.get("/install.php").session(s));
@@ -93,6 +94,60 @@ class InstallModeTest {
         } finally {
             site.delete();
         }
+    }
+
+    /** APPK-2 INS-SEC-3/4：第 5 步只受理 POST 表单；令牌一次性，第 4 步只校验不作废；安装会话 cookie 为 SameSite=Strict。 */
+    @Test
+    void step5AcceptsOnlyPostFormsAndConsumesTheTokenOnce() throws Exception {
+        InstallGolden.Site site = InstallGolden.Site.create();
+        try (ConfigurableApplicationContext app = InstallGolden.start(site, false, null, null)) {
+            assertThat(app.getEnvironment().getProperty("server.servlet.session.cookie.same-site")).isEqualTo("strict");
+            assertThat(app.getEnvironment().getProperty("server.servlet.session.cookie.http-only")).isEqualTo("true");
+            MockMvc mvc = InstallGolden.mvc(app);
+            MockHttpSession s = new MockHttpSession();
+            mvc.perform(MockMvcRequestBuilders.get("/install.php").session(s));
+            mvc.perform(MockMvcRequestBuilders.get("/install.php?step=3").session(s));
+            String token = (String) s.getAttribute("install.token");
+            assertThat(token).matches("[0-9a-f]{32}");
+            // 第 4 步测试连接成功时写出的连接信息（这里直接写，免连库）
+            Files.writeString(site.deployConfig(), "MACCMS_DB_URL=jdbc:mysql://127.0.0.1:3306/maccms_x\nMACCMS_DB_USERNAME=it_install\n");
+            String form = "account=admin&password=Example123&install_dir=%2Fsub%2F&initdata=1&__token__=" + token;
+
+            // 非 POST、非表单正文：直接“非法访问”，令牌仍在
+            for (var req : java.util.List.of(MockMvcRequestBuilders.get("/install.php?step=5&" + form),
+                    MockMvcRequestBuilders.head("/install.php?step=5&" + form),
+                    MockMvcRequestBuilders.post("/install.php?step=5").contentType("text/plain").content(form),
+                    MockMvcRequestBuilders.post("/install.php?step=5").contentType("application/json").content("{}"))) {
+                assertThat(mvc.perform(req.session(s).header("X-Requested-With", "XMLHttpRequest")).andReturn().getResponse()
+                        .getContentAsString(StandardCharsets.UTF_8)).contains("\"code\":0", "非法访问");
+            }
+            assertThat(s.getAttribute("install.token")).isEqualTo(token);
+
+            // 账号规则不过：不消耗令牌
+            assertThat(step5(mvc, s, form.replace("account=admin", "account=a-b"))).contains("\"code\":0").doesNotContain("非法访问");
+            assertThat(s.getAttribute("install.token")).isEqualTo(token);
+            // 令牌错误：拒绝，原令牌不变
+            assertThat(step5(mvc, s, form.replace(token, "0".repeat(32)))).contains("非法访问");
+            assertThat(s.getAttribute("install.token")).isEqualTo(token);
+            // 第一次通过令牌（随后 install_dir 不是 / 被拒），令牌随即作废；同一表单重放 → 非法访问
+            assertThat(step5(mvc, s, form)).contains("只支持安装在网站根目录");
+            assertThat(s.getAttribute("install.token")).isNull();
+            assertThat(step5(mvc, s, form)).contains("非法访问");
+            assertThat(step5(mvc, s, form.replace("%2Fsub%2F", "%2F"))).contains("非法访问");
+            // 重新打开第 3 步取得新令牌
+            mvc.perform(MockMvcRequestBuilders.get("/install.php?step=3").session(s));
+            assertThat((String) s.getAttribute("install.token")).isNotNull().isNotEqualTo(token);
+            // 别的会话（跨站请求带不上会话 cookie）没有令牌 → 非法访问
+            assertThat(step5(mvc, new MockHttpSession(), form)).contains("非法访问");
+        } finally {
+            site.delete();
+        }
+    }
+
+    private static String step5(MockMvc mvc, MockHttpSession s, String form) throws Exception {
+        return mvc.perform(MockMvcRequestBuilders.post("/install.php?step=5").session(s)
+                .contentType("application/x-www-form-urlencoded").content(form).header("X-Requested-With", "XMLHttpRequest"))
+                .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
     }
 
     @Test

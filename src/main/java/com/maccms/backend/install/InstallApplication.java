@@ -39,7 +39,11 @@ public class InstallApplication {
     /** 安装模式的应用（测试也用它构造）。 */
     public static SpringApplicationBuilder builder() {
         return new SpringApplicationBuilder(InstallApplication.class)
-                .properties(Map.of("spring.application.name", "maccms-install"));
+                .properties(Map.of("spring.application.name", "maccms-install",
+                        // INS-SEC-4（APPK-2）：安装会话 cookie 不随跨站请求发送
+                        "server.servlet.session.cookie.http-only", "true",
+                        "server.servlet.session.cookie.same-site", "strict",
+                        "server.servlet.session.cookie.path", "/"));
     }
 
     public static void main(String[] args) {
