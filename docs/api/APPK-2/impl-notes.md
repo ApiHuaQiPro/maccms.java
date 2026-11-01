@@ -205,3 +205,74 @@ osv-scanner scan source -L <修复后 SBOM>.cdx.json → No issues found，退�
 ```
 
 完整命令和数据源时间见 `dep-audit.md`。MySQL IT 的边界不变：`OAuthGoldenMySqlIT`、`PaymentGoldenMySqlIT`、`SmsMailGoldenMySqlIT` 仍然没有运行，原因是缺 `MACCMS_IT_ADMIN_*`。Tomcat 和 Jackson 升级以后，这三项更需要在 IT 环境补跑。
+
+## S3-01：官方模板包入库（DEC-1；C-1～C-5；V-1、V-8）
+
+依据：技术设计 v10 `docs/design/APPK-2/tech-design.md` @ `08043003d67209d79a7c2334407def58a58d2d56` §5.2 C-1～C-5、§6 DEC-1、§7.1 第 1～3 步、§8 V-1/V-8；PRD v9 附表 E（`docs/prd/APPK-2/E-template-package.md` @ `8fa362c25b62b52ed5b16afd9eca7f6ccfcafb9f`）。本批不含接口、不改 `src/main/**`，没有 API-ID。
+
+### 变更文件
+
+| 文件 | 改动 | 提交 |
+| --- | --- | --- |
+| `.gitattributes` | C-5：末尾加 `third_party/maccms-template-v2020.1000.1035/** -text -whitespace`（附注释）。按设计先于模板包单独提交 | `3f01ff0` |
+| `third_party/maccms-template-v2020.1000.1035/template/default_pc/**` | C-1：147 个文件，官方原样 | `8fca22d` |
+| `third_party/maccms-template-v2020.1000.1035/template/default_wap/**` | C-2：127 个文件，官方原样；没有 `ads/` | `8fca22d` |
+| `third_party/maccms-template-v2020.1000.1035/LICENSE` | C-3：官方同一提交根目录 Apache License 2.0 原文 | `8fca22d` |
+| `third_party/maccms-template-v2020.1000.1035/SOURCE.md` | C-4：来源仓库、标签、提交号、3 个目录树 SHA-1、取得命令、校验命令、“不得修改，改动须新开目录与 OP-”规则 | `8fca22d` |
+
+### 取得方式
+
+在仓库外的一次性空目录执行，没有运行官方仓库里的任何脚本：
+
+```text
+git clone --filter=blob:none --no-checkout https://github.com/magicblack/maccms10 src
+git -C src rev-parse v2020.1000.1035^{commit}        → 4c418c2703692148a937ad92893ab8a494bff742
+git -C src -c core.autocrlf=false archive --format=tar 4c418c2703692148a937ad92893ab8a494bff742 template LICENSE \
+  | tar -x -C third_party/maccms-template-v2020.1000.1035
+```
+
+### 实际执行的命令与结果（S3-01）
+
+```text
+# V-1：入库后的目录树（HEAD = 模板包提交）
+git rev-parse HEAD:third_party/maccms-template-v2020.1000.1035/template              → 9398a1ed539cc754b7513c76e12134b3b5b49a53
+git rev-parse HEAD:third_party/maccms-template-v2020.1000.1035/template/default_pc   → 4c8d4ce6f8a68c343f94ccb15beda9157d77aea7
+git rev-parse HEAD:third_party/maccms-template-v2020.1000.1035/template/default_wap  → a211f900e060c1d405f2c9d75523e02abac45b80
+git rev-parse HEAD:third_party/maccms-template-v2020.1000.1035/LICENSE              → 261eeb9e9f8b2b4b0d119366dda99c6fd7d35c64（与官方提交内 LICENSE 相同）
+git ls-tree -r --name-only HEAD third_party/maccms-template-v2020.1000.1035/template | wc -l → 274
+
+# 逐文件对附表 E.3：从附表 E.3 取 274 行（路径、字节数、blob SHA-1），分别与
+#   ① git ls-tree -r -l HEAD …/template（库内）
+#   ② 工作区逐个 stat -c %s + git hash-object --no-filters（工作区字节）
+# 排序后 diff → 两者都 0 差异
+# 目录边界：template/ 下只有 default_pc、default_wap；…/template/default_wap/ads 不存在
+# 路径边界：276 个条目全部是 100644 普通文件（无符号链接、无可执行位、无子模块）；
+#   全部位于 template/default_pc/、template/default_wap/、LICENSE、SOURCE.md 之下；无 “..” 段、无反斜杠
+git check-attr text whitespace -- …/template/default_pc/info.ini → text: unset；whitespace: unset
+git ls-files --eol third_party/maccms-template-v2020.1000.1035 → i/lf 195、i/-text 77（二进制）、i/none 4
+
+# 提交范围
+git diff --name-only 8dee62e HEAD → 只有 .gitattributes 与 third_party/maccms-template-v2020.1000.1035/**
+git diff --name-only 8dee62e HEAD -- src/main | wc -l → 0
+git diff --check 8dee62e HEAD → 无输出，退出码 0（模板包在 -whitespace 属性下不做空白检查；.gitattributes 本身无空白问题）
+
+# V-8：构建不受影响
+./mvnw -B -q package -DskipTests → 退出码 0
+jar tf target/maccms-backend-0.1.0-SNAPSHOT.jar | grep -c third_party → 0；grep -ci "default_pc\|default_wap" → 0
+
+# 回归
+./mvnw -B verify → Tests run: 3025, Failures: 0, Errors: 0, Skipped: 0；BUILD SUCCESS；耗时 10:29（与 REV-BE-1 相同的 3025 项，无退步）
+```
+
+### 迁移与回滚
+
+- 无数据迁移、无配置取值变更；模板包是只读资产，不进 jar，运行代码不读取它（读取方在 S3-10 起才接入）。
+- 回滚（设计 §9）：`git revert 8fca22d 3f01ff0`；删掉 `third_party/maccms-template-v2020.1000.1035/` 不影响任何运行代码。
+
+### S3-01 自查（自查不代替审计）
+
+- 内容未改：274 个文件的路径、字节数、blob SHA-1 与附表 E.3 逐行一致；3 个目录树 SHA-1 与附表 E.1、DEC-1 一致（BR-11、AC-1 ① 的仓库内部分，V-1）。
+- 换行：`.gitattributes` 先于模板包提交；库内与工作区字节一致（本机 `core.autocrlf=true` 下工作区 `hash-object --no-filters` 仍与附表相同）。
+- 许可：保留官方 `LICENSE`（Apache-2.0），`SOURCE.md` 写明来源。
+- 范围：只改 `.gitattributes`、`third_party/maccms-template-v2020.1000.1035/**` 与本说明；未改 `src/main/**`、PRD、设计、API、T1、`tests/api/**`、deploy；未发接口请求、未部署。
+- 不含的部分：C-9 `verify_template_package.py`（逐文件校验脚本，测试 S3-03）、C-11 部署样例（流水线）、C-12～C-16（S3-02）不在本批。
