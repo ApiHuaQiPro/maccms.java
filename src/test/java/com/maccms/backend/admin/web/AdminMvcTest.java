@@ -247,6 +247,41 @@ class AdminMvcTest {
         assertThat(AdminMethodPolicy.codes()).hasSize(28);
     }
 
+    /** APPK-2 TRN-1：参数超过 1000 个或表单正文超过 8 MiB → 「参数错误」（HTTP 200，不是 400），在 ADM-6 之后判定；上限之内照常处理。 */
+    @Test
+    void inputLimitsReturnParamErrorInsteadOf400() throws Exception {
+        String fail = "{\"code\":0,\"msg\":\"参数错误\",\"data\":\"\",\"url\":\"\",\"wait\":3}";
+        String many = java.util.stream.IntStream.range(0, 1001).mapToObj(i -> "p" + i + "=1")
+                .collect(java.util.stream.Collectors.joining("&"));
+        String limit = java.util.stream.IntStream.range(0, 1000).mapToObj(i -> "p" + i + "=1")
+                .collect(java.util.stream.Collectors.joining("&"));
+        MvcResult r = mvc.perform(ajax(post(E + "/admin/database/sql").contentType("application/x-www-form-urlencoded")
+                .content(many))).andReturn();
+        assertThat(r.getResponse().getStatus()).isEqualTo(200);
+        assertThat(body(r)).isEqualTo(fail);
+        // 查询串与表单合计
+        String half = java.util.stream.IntStream.range(0, 501).mapToObj(i -> "q" + i + "=1")
+                .collect(java.util.stream.Collectors.joining("&"));
+        assertThat(body(mvc.perform(ajax(post(E + "/admin/database/sql?" + half).contentType("application/x-www-form-urlencoded")
+                .content(half))).andReturn())).isEqualTo(fail);
+        assertThat(body(mvc.perform(ajax(get(E + "/admin/database/index?" + many))).andReturn())).isEqualTo(fail);
+        // 正文超过 8 MiB
+        byte[] big = ("sql=" + "a".repeat(AdminController.MAX_FORM_BYTES)).getBytes(StandardCharsets.US_ASCII);
+        MvcResult b = mvc.perform(ajax(post(E + "/admin/database/sql").contentType("application/x-www-form-urlencoded")
+                .content(big))).andReturn();
+        assertThat(b.getResponse().getStatus()).isEqualTo(200);
+        assertThat(body(b)).isEqualTo(fail);
+        // 方法表先判（405）
+        assertThat(mvc.perform(get(E + "/admin/database/import?" + many)).andReturn().getResponse().getStatus()).isEqualTo(405);
+        // 恰好 1000 个参数、正文恰好 8 MiB：不触发上限（未登录 → 登录页）
+        assertThat(mvc.perform(post(E + "/admin/database/sql").contentType("application/x-www-form-urlencoded").content(limit))
+                .andReturn().getResponse().getStatus()).isEqualTo(302);
+        byte[] exact = ("sql=" + "a".repeat(AdminController.MAX_FORM_BYTES - 4)).getBytes(StandardCharsets.US_ASCII);
+        assertThat(mvc.perform(post(E + "/admin/database/sql").contentType("application/x-www-form-urlencoded").content(exact))
+                .andReturn().getResponse().getStatus()).isEqualTo(302);
+        assertThat(AdminController.segments("a=1&&b=2&".getBytes(StandardCharsets.US_ASCII))).isEqualTo(2);
+    }
+
     @Test
     void loginPageVariantsRender() throws Exception {
         for (String p : List.of("/admin/index/login", "/admin/index/login.html", "/admin/Index/LOGIN.html",

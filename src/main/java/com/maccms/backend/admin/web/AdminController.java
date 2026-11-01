@@ -13,8 +13,6 @@ import com.maccms.backend.admin.config.ConditionalOnAdminEnabled;
 import com.maccms.backend.common.captcha.Captchas;
 import com.maccms.backend.common.clientip.ClientIpResolver;
 import com.maccms.backend.common.session.SessionState;
-import com.maccms.backend.common.web.ApiException;
-import com.maccms.backend.common.web.ErrorCode;
 import com.maccms.backend.common.web.PhpCookies;
 import com.maccms.backend.content.application.ContentCacheMaintenance;
 import jakarta.servlet.http.HttpServletRequest;
@@ -61,7 +59,9 @@ import org.springframework.web.bind.annotation.RequestMethod;
 @ConditionalOnAdminEnabled
 public class AdminController {
 
-    static final int MAX_FORM_BYTES = 256 * 1024;
+    /** TRN-1（APPK-2 SCH-1）：表单正文上限 8 MiB、查询串与表单合计参数个数上限 1000；超出 → 参数错误，不解析、不执行。 */
+    static final int MAX_FORM_BYTES = 8 * 1024 * 1024;
+    static final int MAX_PARAMS = 1000;
     private static final String PENDING_TITLE = "跳转提示";
     /** {@link #notProvided} 的固定提示。 */
     static final String NOT_PROVIDED_MSG = "该功能未在新系统中提供";
@@ -138,9 +138,13 @@ public class AdminController {
             return responses.redirect(endpoint.root() + "/admin/index/index.html");
         }
         boolean isPost = "POST".equalsIgnoreCase(request.getMethod());
-        AdminParams get = AdminParams.parseQuery(request.getQueryString());
-        AdminParams post = isPost ? AdminParams.parse(body(request)) : AdminParams.empty();
-        AdminParams params = AdminParams.merge(get, post, route.vars());
+        byte[] raw = isPost ? body(request) : new byte[0];
+        // TRN-1：正文超过上限（raw 为 null）或参数个数超过上限时不使用任何解析结果
+        boolean overLimit = raw == null || segments(request.getQueryString() == null ? new byte[0]
+                : request.getQueryString().getBytes(StandardCharsets.ISO_8859_1)) + segments(raw) > MAX_PARAMS;
+        AdminParams get = overLimit ? AdminParams.empty() : AdminParams.parseQuery(request.getQueryString());
+        AdminParams post = overLimit || !isPost ? AdminParams.empty() : AdminParams.parse(raw);
+        AdminParams params = AdminParams.merge(get, post, overLimit ? java.util.Map.of() : route.vars());
         boolean ajax = isAjax(request, params);
         if (!AdminPermissions.knownController(route.controller())) {
             return notFound(ajax);
@@ -149,6 +153,10 @@ public class AdminController {
         ResponseEntity<String> methodNotAllowed = AdminMethodPolicy.check(route.code(), request.getMethod());
         if (methodNotAllowed != null) {
             return methodNotAllowed;
+        }
+        if (overLimit) {
+            // INPUT_LIMIT_EXCEEDED：ADM-2 失败体「参数错误」，先于令牌校验与取锁，不消耗令牌
+            return responses.error(ajax, settings.lang().get("param_err"));
         }
         if (!sourceExempt(isPost, route.code()) && !sameOrigin(request)) {
             // 不同源的请求（跨站请求伪造，D-B12-3）：SameSite=Strict 只挡别的站点，同站点的其他子域名或端口仍会带上会话 cookie，
@@ -514,18 +522,33 @@ public class AdminController {
         }
         try (InputStream in = request.getInputStream()) {
             byte[] bytes = in.readNBytes(MAX_FORM_BYTES + 1);
-            if (bytes.length > MAX_FORM_BYTES) {
-                throw new ApiException(ErrorCode.INVALID_PARAMETER, "请求正文过大");
-            }
-            return bytes;
+            return bytes.length > MAX_FORM_BYTES ? null : bytes;
         } catch (IOException e) {
             return new byte[0];
         }
     }
 
+    /** {@code &} 分隔的非空段数（与 {@link AdminParams#parse} 的切分相同）。 */
+    static int segments(byte[] raw) {
+        if (raw == null) {
+            return 0;
+        }
+        int n = 0;
+        int start = 0;
+        for (int i = 0; i <= raw.length; i++) {
+            if (i == raw.length || raw[i] == '&') {
+                if (i > start) {
+                    n++;
+                }
+                start = i + 1;
+            }
+        }
+        return n;
+    }
+
     /**
      * multipart 正文里的普通字段（B13 上传：layui 把 {@code thumb}、{@code thumb_class} 等放在文件旁边），按字节转成 urlencoded 后同样解析
-     * （文件部分由上传动作自己读取）。超出大小等解析失败时没有字段（同旧版上传的数据被丢弃）。
+     * （文件部分由上传动作自己读取）。解析失败时没有字段（同旧版上传的数据被丢弃）；字段合计超过 {@link #MAX_FORM_BYTES} 为 null（TRN-1）。
      */
     private static byte[] multipartFields(HttpServletRequest request) {
         java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
@@ -545,7 +568,7 @@ public class AdminController {
                 out.write('=');
                 percent(out, value);
                 if (out.size() > MAX_FORM_BYTES) {
-                    throw new ApiException(ErrorCode.INVALID_PARAMETER, "请求正文过大");
+                    return null;
                 }
             }
         } catch (IOException | jakarta.servlet.ServletException | IllegalStateException
