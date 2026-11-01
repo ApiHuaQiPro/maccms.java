@@ -9,6 +9,8 @@
 | --- | --- |
 | T1 功能用例 | `docs/test/APPK-2/t1-cases.md` @ `a906fac5031e253a1af9d4bae037e5531d6a5411` |
 | 接口契约 | `docs/api/APPK-2/openapi.yaml` @ `bc612e933aa67abab319b90534c5150c10a51452` |
+| 用例清单 | `docs/test/APPK-2/api-cases.md`（逐条步骤与预期） |
+| 追溯矩阵 | `docs/test/APPK-2/api-cases-matrix.md`（按 API / AC- 汇总） |
 | 凭据变量名 | 产品仓 `MULTICA.md` §5 |
 
 ## 范围
@@ -68,18 +70,37 @@ python -m pytest tests/api/APPK-2 --base-url "<G2.5 判定的测试环境地址>
 
 ## 本阶段的静态自检
 
-- `python -m pytest tests/api/APPK-2 --collect-only`：20 条用例全部可收集，与 20 个文件 1:1；
+- `python -m pytest tests/api/APPK-2 --collect-only -q`：20 条用例全部可收集，与 20 个文件 1:1；
+  `-m install_wizard` 收集 5 条、`-m input_limit` 收集 2 条（标记已注册，`--strict-markers` 通过）；
 - `python -m compileall tests/api`：语法检查通过；
-- 目录内不含任何账号、密码、令牌字面量；安装向导用例的密码/令牌是 `autotest-APPK-2-...` 合成值；
-- `git diff --check`：无空白错误。
+- `git diff --check`：无空白错误；
+- 目录内不含任何账号、密码、令牌字面量；安装向导用例的密码/令牌是 `autotest-APPK-2-...` 合成值，
+  **真实令牌在运行时从被测站第 3 步页面取得**（`INS-003`～`007`），不写死；
+- 去敏判定（`conftest.assert_error_body_redacted`）用脱机样例验证过：对 `192.0.2.1`、`198.18.0.1`、`224.0.0.1`、
+  `93.184.216.34`、`localhost`、`2130706433`、`0x7f000001`、`0177.0.0.1`、`::1`、`::ffff:127.0.0.1` 等输入，
+  只要响应里出现完整 URL / 主机 / 等价 IP 书写 / 端口就判失败；对不泄露的合成错误体判通过。
+
+## 安装向导用例的前置（第 2 轮修订）
+
+`INS-003`～`007` 在用例开头自建前置，任一不成立就 `pytest.skip("BLOCKED：…")`，**不继续断言目标结果**：
+
+1. 安装模式实例（INS-SEC-1）：`/install.php` 返回 404 → BLOCKED；
+2. `install.lock` 不存在（INS-SEC-2）：返回 INSTALL_LOCKED 固定文本 → BLOCKED；
+3. 同一会话第 3 步签发的真实令牌（INS-SEC-4）：取不到或不是 32 位小写十六进制 → BLOCKED，不合成令牌；
+4. 第 4 步连接配置（向导状态）由环境决定，脚本不能建立。因此当目标分支位于 account 校验之前时
+   （`INSTALL_NOT_TESTED`），用例按契约业务结果接受该分支，同时断言「没有被令牌拒绝、没有 400、
+   没有命中其他分支」，避免把更早分支误判成目标分支。
+
+逐条步骤与预期见 `docs/test/APPK-2/api-cases.md`。
 
 ## 已知边界（写在这里，T3 报告要照抄）
 
 1. **OUT-1 连接侧的强证据不在自动化内**。自动化只断言「被拒 + 错误体不含目标信息」。
    「未建立任何连接」需要 `loopback-only` 模式下的 mock 服务连接日志（技术设计 V-26），
    该配置只在本机测试模式启用，生产不得开启，因此不在本脚本的断言范围内。
-2. **安装向导用例依赖实例状态**。`INS-*` 需要安装模式的实例；已安装（`install.lock` 存在）时
-   相关分支不可达，脚本 `pytest.skip("BLOCKED：...")`，T3 记 BLOCKED 而不是 PASS。
-   `INS-005`（令牌一次性）刻意只断言「同一令牌第二次必被拒」这一与库状态无关的行为。
+2. **安装向导用例依赖实例状态**。`INS-003`～`007` 需要「安装模式 + 未安装」的实例，已安装时分支不可达，
+   脚本 `pytest.skip("BLOCKED：...")`，T3 记 BLOCKED 而不是 PASS；`INS-001` 需要正常模式实例，
+   `INS-002` 需要「安装模式 + 已安装」实例。三类前置互斥，T3 至少需要两个实例（或重启切换模式）才能全覆盖。
+   `INS-005`（令牌一次性）的判定与库状态解耦：第一次提交只要不是 `INSTALL_ACCESS_DENIED` 即证明令牌被接受。
 3. **`collect/test` 是 CSRF C 类**（只取数、不入库），不受 SRC-2 约束，所以没有把它放进
    `TC-I-CSRF-001` 的 B 类清单。

@@ -1,6 +1,11 @@
 # CASE: TC-I-COLLECT-001 | 接口: GET /collect/api（API-040） | 追溯: AC-10 / OUT-1-1～OUT-1-4 | 维度: 安全 | 优先级: P1
 # 标题: cjurl 格式合法但目标未通过 OUT-1-1～OUT-1-4（地址类别/主机名/端口/用户信息/片段）一律 COLLECT_URL_REJECTED，
 #       且错误体不含 URL、主机、解析地址、端口（OUT-1-9）
+# 去敏判定（第 2 轮修订）：对每个输入**动态**生成禁止片段——完整 URL、主机名及其子域写法、
+#       该主机的 IPv4 等价书写（点分/整数/十六进制/八进制/简写）与 IPv6 等价书写（原样/去括号/大小写）、
+#       显式端口 ":"+port 与 ":"+port+"/"；原文与 URL 解码后的文本都检查。
+#       这些片段必须由用例从输入算出来，不能用一组固定片段代替（固定片段对 192.0.2.1 / 198.18.0.1 /
+#       224.0.0.1 / 93.184.216.34 等输入不生效，会让回显通过）。
 # 契约: docs/api/APPK-2/openapi.yaml @ bc612e933aa67abab319b90534c5150c10a51452（x-outbound-policy OUT-1-1～OUT-1-4、OUT-1-9）
 # 前置: 默认角色管理员有 collect 权限；出站模式 open（生产同款），无 mock
 # 说明: 本条只断言「拒绝侧 + 错误体不泄露」。服务端不连接被拒目标是 OUT-1 的实现保证；连接侧的强证据（V-26 对照 mock
@@ -8,7 +13,7 @@
 #       注意分层：cjurl 自身格式不合（scheme/用户信息/片段/超长/控制字符）→ COLLECT_PARAM_ERR，由 TC-I-COLLECT-002 覆盖；
 #       本条只放「格式合法、目标被 OUT-1 拒」的样本。
 
-from conftest import assert_json_error
+from conftest import assert_error_body_redacted, assert_json_error
 
 # 这些 URL 均是合法绝对 http(s) URL（能被 URI 解析），拒绝理由来自 OUT-1-3/4 的地址类别或 OUT-1-2 的端口
 REJECTED = [
@@ -47,23 +52,6 @@ REJECTED = [
     ("端口 0", "http://93.184.216.34:0/vod.xml"),
 ]
 
-# OUT-1-9：错误体不得出现的片段
-FORBIDDEN_FRAGMENTS = (
-    "127.0.0.1",
-    "localhost",
-    "169.254",
-    "0.0.0.0",
-    "192.168",
-    "10.0.0.1",
-    "6379",
-    "3306",
-    "11211",
-    "::1",
-    "fc00:",
-    "metadata",
-    "255.255.255.255",
-)
-
 
 def test_TC_I_COLLECT_001(api_as, admin_url):
     api = api_as("default")
@@ -76,6 +64,6 @@ def test_TC_I_COLLECT_001(api_as, admin_url):
             "[%s] 期望 COLLECT_URL_REJECTED（采集链接有误或不能为本地链接），实际 msg=%r"
             % (label, body["msg"])
         )
-        text = resp.text
-        for leaked in FORBIDDEN_FRAGMENTS:
-            assert leaked not in text, "[%s] 错误体泄露了目标信息：%r" % (label, leaked)
+        # OUT-1-9：msg 与整份响应都不得回显该输入的 URL / 主机 / 端口 / 解析地址（按输入动态生成禁止片段）
+        assert_error_body_redacted(body["msg"], cjurl, "%s msg" % label)
+        assert_error_body_redacted(resp.text, cjurl, "%s body" % label)

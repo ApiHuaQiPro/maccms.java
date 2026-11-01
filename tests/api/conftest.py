@@ -71,6 +71,9 @@ def pytest_configure(config):
     config.addinivalue_line(
         "markers", "input_limit: TRN-1 传输上限相关断言（构造大请求）"
     )
+    config.addinivalue_line(
+        "markers", "install_wizard: 安装向导（API-030）用例；缺少安装模式/向导前置实例时整条 BLOCKED"
+    )
 
 
 @pytest.fixture(scope="session")
@@ -208,3 +211,194 @@ MSG_PARAM_ERR = "参数错误"
 MSG_PERMISSION_DENIED = "您没有权限访问此页面"
 MSG_ILLEGAL_REQUEST = "非法请求"
 MSG_COLLECT_URL_REJECTED = "采集链接有误或不能为本地链接"
+
+
+# ───────────────────────────── 共享断言（第 2 轮修订新增） ─────────────────────────────
+# 以下工具都在 tests/api/ 内，供 APPK-2 用例复用；只做断言与参数构造，不发起任何额外请求。
+
+MSG_ACCESS_DENIED = "非法访问"          # INSTALL_ACCESS_DENIED，lang(install/access_denied)
+MSG_PLEASE_TEST = "请先点击测试数据库连接"  # INSTALL_NOT_TESTED，lang(install/please_test_connect)
+MSG_ENV_FAILED = "初始失败"             # INSTALL_ENV_FAILED，lang(install/init_err)
+MSG_ADMIN_REQUIRED = "请填写管理账号和密码"  # INSTALL_ADMIN_REQUIRED
+MSG_TABLES_EXIST = "已存在数据表"          # INSTALL_TABLES_EXIST
+MSG_LOCKED_PATH = "install.lock"        # INSTALL_LOCKED 固定文本的第一段
+
+# 其他 INSTALL_* 的固定文案（用来判定「响应停在哪个分支」，避免把前置分支当目标分支）
+OTHER_INSTALL_MSGS = (MSG_PLEASE_TEST, MSG_ENV_FAILED, MSG_ADMIN_REQUIRED, MSG_TABLES_EXIST)
+
+# 安装向导里已安装的固定文本：出现即说明 install.lock 存在（INS-SEC-2）
+LOCKED_PAGE_MARKERS = (MSG_LOCKED_PATH, "如需重新安装请删除")
+
+# 排除 install.lock 提示后的正文，才用于逐分支判定（INSTALL_LOCKED 页本身就是 "install.lock" 字样）
+def without_locked_page(text):
+    """把 INSTALL_LOCKED 固定文本里的 install.lock 字样屏蔽后返回小写正文。"""
+    return (text or "").replace("install.lock", "<install-lock-path>").lower()
+
+
+def branch_markers(text):
+    """返回该响应命中的 INSTALL_* 固定文案列表（不含 INSTALL_LOCKED 的路径字样）。"""
+    plain = without_locked_page(text)
+    return [m for m in OTHER_INSTALL_MSGS if m in plain]
+
+
+def is_locked_page(resp):
+    """是否为 INSTALL_LOCKED 固定纯文本页（INS-SEC-2）。"""
+    return all(marker in resp.text for marker in LOCKED_PAGE_MARKERS)
+
+
+def is_admin_failure(resp):
+    """是否为后台 ADM-2 动作类失败体（HTTP 200 + application/json + code=0）。"""
+    if resp.status_code != 200:
+        return False
+    if "application/json" not in resp.headers.get("Content-Type", ""):
+        return False
+    try:
+        body = resp.json()
+    except ValueError:
+        return False
+    return isinstance(body, dict) and body.get("code") == 0
+
+
+def assert_no_success(resp, success_markers):
+    """拒绝/失败响应不得含成功标记（防止把成功页当拒绝）。"""
+    for marker in success_markers:
+        assert marker not in resp.text, "拒绝响应里出现了成功标记：%r" % marker
+
+
+# ── OUT-1-9 错误体去敏：按每个输入动态生成禁止片段 ──────────────────────────────
+
+def _ipv6_forms(text):
+    """IPv6 字面量在响应里可能的等价写法（原样、去 []、小写/大写、去掉 :: 展开）。"""
+    forms = set()
+    if not text:
+        return forms
+    for base in (text, text.strip("[]")):
+        forms.add(base)
+        forms.add(base.lower())
+        forms.add(base.upper())
+        forms.add("[" + base.strip("[]") + "]")
+    return {f for f in forms if len(f) >= 3}
+
+
+def _ipv4_forms(dotted):
+    """同一个 IPv4 的等价书写：点分十进制、整数、十六进制、八进制、简写。"""
+    try:
+        parts = [int(p, 10) for p in dotted.split(".")]
+    except ValueError:
+        return set()
+    if len(parts) != 4 or any(p < 0 or p > 255 for p in parts):
+        return set()
+    value = (parts[0] << 24) | (parts[1] << 16) | (parts[2] << 8) | parts[3]
+    forms = {
+        dotted,
+        str(value),
+        "0x%08x" % value,
+        "0x%x" % value,
+        ".".join("%d" % p for p in parts),
+        "%d.%d.%d.%d" % tuple(parts),
+    }
+    # 八进制写法：每段前面加 0（至少第一段非零时成立）
+    if parts[0] < 8:
+        forms.add("0%d.%d.%d.%d" % tuple(parts))
+    # 末段合写的简写（a.b.c.d -> a.b.(c<<8|d)）
+    forms.add("%d.%d.%d" % (parts[0], parts[1], (parts[2] << 8) | parts[3]))
+    return {f for f in forms if f and f not in ("0", "00")}
+
+
+def _ipv4_from_any(host):
+    """把主机名的任意 IPv4 写法（点分/整数/十六进制/八进制/三段简写）还原成点分十进制，取不到则返回 None。"""
+    import socket
+
+    try:
+        return socket.inet_ntoa(socket.inet_aton(host))
+    except OSError:
+        return None
+
+
+def _ipv6_embedded_ipv4(host):
+    """从 ::a.b.c.d / ::ffff:a.b.c.d / 64:ff9b::a.b.c.d 里取出内嵌的 IPv4，取不到返回 None。"""
+    import ipaddress
+
+    try:
+        addr = ipaddress.ip_address(host.strip("[]"))
+    except ValueError:
+        return None
+    mapped = getattr(addr, "ipv4_mapped", None)
+    if mapped:
+        return str(mapped)
+    packed = addr.packed
+    # ::a.b.c.d（IPv4 兼容）
+    if packed[:12] == bytes(12):
+        return str(ipaddress.IPv4Address(packed[12:]))
+    # 64:ff9b::/96（NAT64）
+    if packed[:12] == bytes.fromhex("0064ff9b0000000000000000"):
+        return str(ipaddress.IPv4Address(packed[12:]))
+    return None
+
+
+def assert_error_body_redacted(text, url, label=""):
+    """OUT-1-9：错误体（提示文案）不得含 URL、主机、解析地址、端口。
+
+    - 完整 URL；
+    - 主机名及其任意子域写法；
+    - IP 字面量的等价书写（IPv4 点分/整数/十六进制/八进制/简写，IPv6 原样与去括号）；
+    - 端口号（仅在 URL 显式给出端口时）。
+    受响应格式限制（JSON 转义），只检查原文与 JSON 反转义后的文本，不做跨编码猜测。
+    """
+    from urllib.parse import urlsplit, unquote
+
+    raw = text or ""
+    decoded = unquote(raw)
+    hosts = []
+    port = None
+    try:
+        parts = urlsplit(url)
+        host = parts.hostname or ""
+        port = parts.port
+    except ValueError:
+        host = ""
+    if host:
+        hosts.append(host)
+
+    forbidden = set()
+    forbidden.add(url)
+    forbidden.add(url.rstrip("/"))
+    for suspect_host in hosts:
+        forbidden.add(suspect_host)
+        if ":" in suspect_host:  # IPv6
+            forbidden |= _ipv6_forms(suspect_host)
+            # IPv4 映射/兼容的 IPv6（::ffff:a.b.c.d、64:ff9b::/96）解析结果就是那个 IPv4，
+            # 响应里写成点分十进制同样是「解析地址」泄露
+            embedded = _ipv6_embedded_ipv4(suspect_host)
+            if embedded:
+                forbidden |= _ipv4_forms(embedded)
+                forbidden.add(embedded)
+        else:
+            forbidden |= _ipv4_forms(suspect_host)
+            # 输入是 http://2130706433/ 或 http://0x7f000001/ 这类非常规写法时，
+            # 响应里出现的等价点分地址（127.0.0.1）同样是「解析地址」泄露，必须按等价类一并禁用
+            dotted = _ipv4_from_any(suspect_host)
+            if dotted:
+                forbidden |= _ipv4_forms(dotted)
+                forbidden.add(dotted)
+            # 主机名的后缀写法（example.com 出现在 a.example.com 里）
+            forbidden.add("." + suspect_host)
+    if port is not None:
+        forbidden.add(":%d" % port)
+        forbidden.add(":%d/" % port)
+
+    for _hay in (raw, decoded):
+        lowered = _hay.lower()
+        for frag in forbidden:
+            assert frag.lower() not in lowered, (
+                "[%s] OUT-1-9：错误体泄露了目标信息 %r（输入 %r）" % (label, frag, url)
+            )
+
+
+# ── SCH-1：响应形态判定（不返回 400） ──────────────────────────────────────────
+
+def assert_not_transport_rejected(resp, label=""):
+    """SCH-1：应用不返回 HTTP 400；也不能 5xx（除个别固定页）。"""
+    assert resp.status_code not in (400, 413, 414, 415, 422, 431), (
+        "[%s] SCH-1 要求不返回传输层拒绝，实际 %s" % (label, resp.status_code)
+    )
