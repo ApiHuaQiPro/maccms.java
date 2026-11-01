@@ -1,0 +1,17 @@
+# SYNTHETIC fixture manifest (not PRD appendix E)
+path	bytes	blob_sha1
+template/default_pc/ads/aaa.js	13	639f1ef65d61e35cd87735c8001207324fa56bcc
+template/default_pc/css/style.css	17	cecbc8316cea823047bfdd9b89b4c00c286a5d40
+template/default_pc/html/art/detail.html	38	e0c8a9a92998e31cf1bdd5e9e97065adfd83ccde
+template/default_pc/html/index/index.html	186	3b6a1f59d95a62304a2e1e710c1509b672185357
+template/default_pc/html/public/head.html	38	a7b6b3f70cdb77ca2fb0951f68844cdc6f6dc9a1
+template/default_pc/html/public/jump.html	82	4076e52241549180368cc71498a031395f669cbb
+template/default_pc/html/vod/copyright.html	42	83ed360b09ec31b5f54b394d694044891daf68af
+template/default_pc/html/vod/detail.html	147	ff79b752f9898bdb611ec874dae8e8967cb24e2b
+template/default_pc/info.ini	33	c978183f52210cf0cac121d32838c9c8b4721169
+template/default_pc/js/app.js	58	c01472bbd9e16b1055dd9a719f9fbe2948e77277
+template/default_wap/css/style.css	17	45c633ae0071d6f2d1233e703cc141922b761e66
+template/default_wap/html/public/jump.html	27	bb4a68403d672565482be710e72ff1a996c47e5c
+template/default_wap/html/user/include.html	29	2d3414973daae004752712db7a30b6e1c496a144
+template/default_wap/info.ini	34	ec7e8134cda8e4bd54adbbab08af6873ee7733ff
+template/default_wap/js/app.js	38	c98fd1171a738400c898247ffcabc28736156e16

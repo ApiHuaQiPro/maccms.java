@@ -1,0 +1,7 @@
+{include file="public/head" /}
+<div>{:mac_url_type($type)}</div>
+<a href="{$maccms.path_tpl}css/style.css">css</a>
+{maccms:vod num="8" by="time"}
+  <li>{$vo.vod_name}</li>
+{/maccms:vod}
+X

@@ -1,0 +1,5 @@
+{maccms:vod num="4" by="rnd"}
+  <li>{$vo.vod_name}</li>
+{/maccms:vod}
+{if condition="$obj.vod_id gt 0"}ok{else /}no{/if}
+{:mac_day($obj.vod_time)}

@@ -1,0 +1,557 @@
+{
+  "tool": "tests/compare/APPK-2/scan_templates.py",
+  "root": ".compare/APPK-2/fx1/template",
+  "files": [
+    {
+      "path": "default_pc/ads/aaa.js",
+      "package": "default_pc",
+      "bytes": 13,
+      "sha1": "639f1ef65d61e35cd87735c8001207324fa56bcc",
+      "sha256": "2d2b797db63749a18d8b09944f966ecd510f361f66a9e7490bcf1522d57f67f3",
+      "crlf": false,
+      "is_html": false,
+      "maccms_tags": [],
+      "think_syntax": [],
+      "includes": [],
+      "functions": [],
+      "variables": [],
+      "php_code": [],
+      "nondeterministic": [],
+      "by_rnd": []
+    },
+    {
+      "path": "default_pc/css/style.css",
+      "package": "default_pc",
+      "bytes": 17,
+      "sha1": "cecbc8316cea823047bfdd9b89b4c00c286a5d40",
+      "sha256": "1ae955d9f54e8cd1fa7b5557fb3851464ec465d8867ef3e0555c7c6d24d46be1",
+      "crlf": false,
+      "is_html": false,
+      "maccms_tags": [],
+      "think_syntax": [],
+      "includes": [],
+      "functions": [],
+      "variables": [],
+      "php_code": [],
+      "nondeterministic": [],
+      "by_rnd": []
+    },
+    {
+      "path": "default_pc/html/art/detail.html",
+      "package": "default_pc",
+      "bytes": 38,
+      "sha1": "e0c8a9a92998e31cf1bdd5e9e97065adfd83ccde",
+      "sha256": "1a21936c1b05e999b8e81ae5150967f96c1453b552d4c276c96a749e2350daef",
+      "crlf": false,
+      "is_html": true,
+      "maccms_tags": [],
+      "think_syntax": [
+        {
+          "name": "php",
+          "line": 1,
+          "raw": "{php}"
+        }
+      ],
+      "includes": [],
+      "functions": [],
+      "variables": [],
+      "php_code": [
+        {
+          "kind": "{php}",
+          "line": 1,
+          "raw": "{php}echo date('Y-m-d');{/php}"
+        }
+      ],
+      "nondeterministic": [
+        {
+          "kind": "time",
+          "call": "date",
+          "line": 1,
+          "context": "<p>{php}echo date('Y-m-d');{/php}</p>",
+          "owner": null
+        }
+      ],
+      "by_rnd": []
+    },
+    {
+      "path": "default_pc/html/index/index.html",
+      "package": "default_pc",
+      "bytes": 186,
+      "sha1": "3b6a1f59d95a62304a2e1e710c1509b672185357",
+      "sha256": "6a88486694907760f8ee225cccb23ad132178530b2010807c9acec4b7d4d46c8",
+      "crlf": false,
+      "is_html": true,
+      "maccms_tags": [
+        {
+          "name": "vod",
+          "line": 4,
+          "raw": "{maccms:vod num=\"8\" by=\"time\"}"
+        }
+      ],
+      "think_syntax": [
+        {
+          "name": "include",
+          "line": 1,
+          "raw": "{include file=\"public/head\" /}"
+        }
+      ],
+      "includes": [
+        {
+          "line": 1,
+          "target": "public/head"
+        }
+      ],
+      "functions": [
+        {
+          "name": "mac_url_type",
+          "line": 2
+        }
+      ],
+      "variables": [
+        {
+          "name": "maccms.path_tpl",
+          "line": 3
+        },
+        {
+          "name": "vo.vod_name",
+          "line": 5
+        }
+      ],
+      "php_code": [],
+      "nondeterministic": [],
+      "by_rnd": []
+    },
+    {
+      "path": "default_pc/html/public/head.html",
+      "package": "default_pc",
+      "bytes": 38,
+      "sha1": "a7b6b3f70cdb77ca2fb0951f68844cdc6f6dc9a1",
+      "sha256": "bc39128c2ad28466b24dd57db011e243eaf7ff2013326d246d0708d7c4958079",
+      "crlf": false,
+      "is_html": true,
+      "maccms_tags": [],
+      "think_syntax": [],
+      "includes": [],
+      "functions": [],
+      "variables": [],
+      "php_code": [],
+      "nondeterministic": [],
+      "by_rnd": []
+    },
+    {
+      "path": "default_pc/html/public/jump.html",
+      "package": "default_pc",
+      "bytes": 82,
+      "sha1": "4076e52241549180368cc71498a031395f669cbb",
+      "sha256": "5f56b646f567dcd80a372cd90217ff431a423904f632d1ac37f4a4213066a7df",
+      "crlf": false,
+      "is_html": true,
+      "maccms_tags": [],
+      "think_syntax": [],
+      "includes": [],
+      "functions": [],
+      "variables": [],
+      "php_code": [
+        {
+          "kind": "<?php",
+          "line": 1,
+          "raw": "<?php echo($url);?>"
+        }
+      ],
+      "nondeterministic": [],
+      "by_rnd": []
+    },
+    {
+      "path": "default_pc/html/vod/copyright.html",
+      "package": "default_pc",
+      "bytes": 42,
+      "sha1": "83ed360b09ec31b5f54b394d694044891daf68af",
+      "sha256": "bd7579f955fd7a69852f58ca42870b6d4fa5b7b6a3b735bdd687cd0a2639d164",
+      "crlf": false,
+      "is_html": true,
+      "maccms_tags": [],
+      "think_syntax": [],
+      "includes": [],
+      "functions": [],
+      "variables": [],
+      "php_code": [
+        {
+          "kind": "<?php",
+          "line": 1,
+          "raw": "<?php echo($obj['vod_jumpurl']);?>"
+        }
+      ],
+      "nondeterministic": [],
+      "by_rnd": []
+    },
+    {
+      "path": "default_pc/html/vod/detail.html",
+      "package": "default_pc",
+      "bytes": 147,
+      "sha1": "ff79b752f9898bdb611ec874dae8e8967cb24e2b",
+      "sha256": "633b328540b920e74263dcef553acad366feddeda4ba60a0427ce78664004db6",
+      "crlf": false,
+      "is_html": true,
+      "maccms_tags": [
+        {
+          "name": "vod",
+          "line": 1,
+          "raw": "{maccms:vod num=\"4\" by=\"rnd\"}"
+        }
+      ],
+      "think_syntax": [
+        {
+          "name": "if",
+          "line": 4,
+          "raw": "{if condition=\"$obj.vod_id gt 0\"}"
+        },
+        {
+          "name": "else",
+          "line": 4,
+          "raw": "{else /}"
+        }
+      ],
+      "includes": [],
+      "functions": [
+        {
+          "name": "mac_day",
+          "line": 5
+        }
+      ],
+      "variables": [
+        {
+          "name": "vo.vod_name",
+          "line": 2
+        }
+      ],
+      "php_code": [],
+      "nondeterministic": [
+        {
+          "kind": "time",
+          "call": "mac_day",
+          "line": 5,
+          "context": "{:mac_day($obj.vod_time)}",
+          "owner": null
+        },
+        {
+          "kind": "random",
+          "call": "by=\"rnd\"",
+          "line": 1,
+          "context": "{maccms:vod num=\"4\" by=\"rnd\"}",
+          "owner": "DATA-2"
+        }
+      ],
+      "by_rnd": [
+        {
+          "line": 1,
+          "raw": "by=\"rnd\""
+        }
+      ]
+    },
+    {
+      "path": "default_pc/info.ini",
+      "package": "default_pc",
+      "bytes": 33,
+      "sha1": "c978183f52210cf0cac121d32838c9c8b4721169",
+      "sha256": "a72908e68eefbc6168da84690cd65303761b748e84af79eeabfcd344f57b1860",
+      "crlf": false,
+      "is_html": false,
+      "maccms_tags": [],
+      "think_syntax": [],
+      "includes": [],
+      "functions": [],
+      "variables": [],
+      "php_code": [],
+      "nondeterministic": [],
+      "by_rnd": []
+    },
+    {
+      "path": "default_pc/js/app.js",
+      "package": "default_pc",
+      "bytes": 58,
+      "sha1": "c01472bbd9e16b1055dd9a719f9fbe2948e77277",
+      "sha256": "057262db0977a77089825c51f144b866fedf313478cb5b61c3c74e96c74149c8",
+      "crlf": false,
+      "is_html": false,
+      "maccms_tags": [],
+      "think_syntax": [],
+      "includes": [],
+      "functions": [],
+      "variables": [],
+      "php_code": [],
+      "nondeterministic": [],
+      "by_rnd": []
+    },
+    {
+      "path": "default_wap/css/style.css",
+      "package": "default_wap",
+      "bytes": 17,
+      "sha1": "45c633ae0071d6f2d1233e703cc141922b761e66",
+      "sha256": "2316bb2f8fe4eac031862eba8f144a03bfe50c7848b17ac23e870925ec12d028",
+      "crlf": false,
+      "is_html": false,
+      "maccms_tags": [],
+      "think_syntax": [],
+      "includes": [],
+      "functions": [],
+      "variables": [],
+      "php_code": [],
+      "nondeterministic": [],
+      "by_rnd": []
+    },
+    {
+      "path": "default_wap/html/public/jump.html",
+      "package": "default_wap",
+      "bytes": 27,
+      "sha1": "bb4a68403d672565482be710e72ff1a996c47e5c",
+      "sha256": "0a5a3c0570bf50a1c3fd1c249d9a075efec3b8997da6b04e5f018d54b6d7e526",
+      "crlf": false,
+      "is_html": true,
+      "maccms_tags": [],
+      "think_syntax": [],
+      "includes": [],
+      "functions": [],
+      "variables": [],
+      "php_code": [
+        {
+          "kind": "<?php",
+          "line": 1,
+          "raw": "<?php echo($url);?>"
+        }
+      ],
+      "nondeterministic": [],
+      "by_rnd": []
+    },
+    {
+      "path": "default_wap/html/user/include.html",
+      "package": "default_wap",
+      "bytes": 29,
+      "sha1": "2d3414973daae004752712db7a30b6e1c496a144",
+      "sha256": "55b716a677ce2b10b6a55d981b40de0d98954229f16417bdd45b42c4bd6747b1",
+      "crlf": false,
+      "is_html": true,
+      "maccms_tags": [
+        {
+          "name": "path",
+          "line": 1,
+          "raw": "{maccms:path}"
+        },
+        {
+          "name": "siteid",
+          "line": 1,
+          "raw": "{maccms:siteid}"
+        }
+      ],
+      "think_syntax": [],
+      "includes": [],
+      "functions": [],
+      "variables": [],
+      "php_code": [],
+      "nondeterministic": [],
+      "by_rnd": []
+    },
+    {
+      "path": "default_wap/info.ini",
+      "package": "default_wap",
+      "bytes": 34,
+      "sha1": "ec7e8134cda8e4bd54adbbab08af6873ee7733ff",
+      "sha256": "dfd416fd9b7458759bc7604efb833df5107820d45e9f4282503f3fb8ba149940",
+      "crlf": false,
+      "is_html": false,
+      "maccms_tags": [],
+      "think_syntax": [],
+      "includes": [],
+      "functions": [],
+      "variables": [],
+      "php_code": [],
+      "nondeterministic": [],
+      "by_rnd": []
+    },
+    {
+      "path": "default_wap/js/app.js",
+      "package": "default_wap",
+      "bytes": 38,
+      "sha1": "c98fd1171a738400c898247ffcabc28736156e16",
+      "sha256": "9a9d763e291da6a1be93af2126a19a17dd742c5c21454196ce6a4f8a3a046fea",
+      "crlf": true,
+      "is_html": false,
+      "maccms_tags": [],
+      "think_syntax": [],
+      "includes": [],
+      "functions": [],
+      "variables": [],
+      "php_code": [],
+      "nondeterministic": [],
+      "by_rnd": []
+    }
+  ],
+  "aggregate": {
+    "maccms_tags": {
+      "default_pc": {
+        "vod": 2
+      },
+      "default_wap": {
+        "path": 1,
+        "siteid": 1
+      }
+    },
+    "other_syntax": {
+      "php": 1,
+      "include": 1,
+      "if": 1,
+      "else": 1
+    },
+    "function_calls": {
+      "mac_day": 1,
+      "mac_url_type": 1
+    },
+    "variables": {
+      "vo.vod_name": 2,
+      "maccms.path_tpl": 1
+    },
+    "php_templates": [
+      "default_pc/html/art/detail.html",
+      "default_pc/html/public/jump.html",
+      "default_pc/html/vod/copyright.html",
+      "default_wap/html/public/jump.html"
+    ]
+  },
+  "checks": [
+    {
+      "id": "E.2-总数",
+      "status": "MISMATCH",
+      "detail": "template/ 下文件数 15，期望 274"
+    },
+    {
+      "id": "E.2-default_pc",
+      "status": "MISMATCH",
+      "detail": "default_pc 文件数 10，期望 147"
+    },
+    {
+      "id": "E.2-default_wap",
+      "status": "MISMATCH",
+      "detail": "default_wap 文件数 5，期望 127"
+    },
+    {
+      "id": "E.2-default_pc-html",
+      "status": "MISMATCH",
+      "detail": "default_pc 的 .html 6 个，期望 92"
+    },
+    {
+      "id": "E.2-default_wap-html",
+      "status": "MISMATCH",
+      "detail": "default_wap 的 .html 2 个，期望 76"
+    },
+    {
+      "id": "E.2-目录集合",
+      "status": "OK",
+      "detail": "template/ 下的目录：default_pc, default_wap（期望只有 default_pc, default_wap）"
+    },
+    {
+      "id": "E.2-default_wap/ads",
+      "status": "OK",
+      "detail": "default_wap/ads：不存在"
+    },
+    {
+      "id": "RISK-T1-CRLF",
+      "status": "MISMATCH",
+      "detail": "工作区文件含 CRLF 的：1 个：default_wap/js/app.js"
+    },
+    {
+      "id": "E.4-EF-1-js/css/ads 不含 {maccms",
+      "status": "MISMATCH",
+      "detail": "js/、css/、ads/ 下共 7 个文件，其中命中 {maccms 的 5 个：default_pc/ads/aaa.js, default_pc/css/style.css, default_pc/js/app.js, default_wap/css/style.css, default_wap/js/app.js"
+    },
+    {
+      "id": "E.3-清单条数",
+      "status": "MISMATCH",
+      "detail": "清单 15 行，期望 274 行"
+    },
+    {
+      "id": "E.3-清单缺文件",
+      "status": "OK",
+      "detail": "清单有、包里没有：0 个"
+    },
+    {
+      "id": "E.3-包内多文件",
+      "status": "OK",
+      "detail": "包里有、清单没有：0 个"
+    },
+    {
+      "id": "E.3-字节数",
+      "status": "OK",
+      "detail": "字节数不符：0 个"
+    },
+    {
+      "id": "E.3-blob-SHA-1",
+      "status": "OK",
+      "detail": "SHA-1 不符：0 个"
+    },
+    {
+      "id": "E.4-EF-3-default_pc",
+      "status": "MISMATCH",
+      "detail": "差异 11 处：actor: 实际 0 / 期望 6; art: 实际 0 / 期望 7; comment: 实际 0 / 期望 2; for: 实际 0 / 期望 1; foreach: 实际 0 / 期望 49; gbook: 实际 0 / 期望 1; link: 实际 0 / 期望 6; topic: 实际 0 / 期望 1"
+    },
+    {
+      "id": "E.4-EF-3-default_wap",
+      "status": "MISMATCH",
+      "detail": "差异 11 处：art: 实际 0 / 期望 2; comment: 实际 0 / 期望 2; for: 实际 0 / 期望 1; foreach: 实际 0 / 期望 27; gbook: 实际 0 / 期望 1; link: 实际 0 / 期望 1; siteaid: 实际 0 / 期望 1; sitetid: 实际 0 / 期望 1"
+    },
+    {
+      "id": "E.4-EF-5-include",
+      "status": "MISMATCH",
+      "detail": "include 出现 1 次，期望 234"
+    },
+    {
+      "id": "E.4-EF-5-if",
+      "status": "MISMATCH",
+      "detail": "if 出现 1 次，期望 210"
+    },
+    {
+      "id": "E.4-EF-5-volist",
+      "status": "MISMATCH",
+      "detail": "volist 出现 0 次，期望 35"
+    },
+    {
+      "id": "E.4-EF-5-else",
+      "status": "MISMATCH",
+      "detail": "else 出现 1 次，期望 35"
+    },
+    {
+      "id": "E.4-EF-5-elseif",
+      "status": "MISMATCH",
+      "detail": "elseif 出现 0 次，期望 18"
+    },
+    {
+      "id": "E.4-EF-5-empty",
+      "status": "MISMATCH",
+      "detail": "empty 出现 0 次，期望 10"
+    },
+    {
+      "id": "E.4-EF-5-foreach",
+      "status": "MISMATCH",
+      "detail": "foreach 出现 0 次，期望 4"
+    },
+    {
+      "id": "E.4-EF-5-switch",
+      "status": "MISMATCH",
+      "detail": "switch 出现 0 次，期望 1"
+    },
+    {
+      "id": "E.4-EF-2-已知 6 文件齐全",
+      "status": "MISMATCH",
+      "detail": "扫描未在下列文件里找到 PHP 代码：default_pc/html/vod/plot.html, default_wap/html/vod/copyright.html"
+    },
+    {
+      "id": "E.4-EF-2-无新增 PHP 文件",
+      "status": "OK",
+      "detail": "「无新增」"
+    },
+    {
+      "id": "F.5-规则2-归属",
+      "status": "UNATTRIBUTED",
+      "detail": "归属未定的时钟/随机/会话来源：2 处：default_pc/html/art/detail.html:1（date）; default_pc/html/vod/detail.html:5（mac_day）"
+    }
+  ],
+  "structure_anomalies": []
+}
