@@ -1,4 +1,4 @@
-# CASE: TC-I-COLLECT-001 | 接口: GET /collect/api（API-040） | 追溯: AC-10 / OUT-1-1～OUT-1-4 | 维度: 安全 | 优先级: P1
+# CASE: TC-I-COLLECT-001 | 接口: GET /collect/api（API-040） | 追溯: AC-13 / OUT-1-1～OUT-1-4 | 维度: 安全 | 优先级: P1
 # 标题: cjurl 格式合法但目标未通过 OUT-1-1～OUT-1-4（地址类别/主机名/端口/用户信息/片段）一律 COLLECT_URL_REJECTED，
 #       且错误体不含 URL、主机、解析地址、端口（OUT-1-9）
 # 去敏判定（第 2 轮修订）：对每个输入**动态**生成禁止片段——完整 URL、主机名及其子域写法、

@@ -1,4 +1,4 @@
-# CASE: TC-I-COLLECT-003 | 接口: GET|POST /collect/test（API-041） | 追溯: AC-10 / COLLECT_URL_REJECTED | 维度: 安全 | 优先级: P1
+# CASE: TC-I-COLLECT-003 | 接口: GET|POST /collect/test（API-041） | 追溯: AC-13 / COLLECT_URL_REJECTED | 维度: 安全 | 优先级: P1
 # 标题: API-041 的目标拒绝与 API-040 一致（OUT-1），wire code 为 1001，错误体不含 URL/主机/解析地址/端口
 # 契约: docs/api/APPK-2/openapi.yaml @ bc612e933aa67abab319b90534c5150c10a51452（CollectTestResult.code、x-outbound-policy、OUT-1-9）
 # 前置: 默认角色管理员有 collect 权限

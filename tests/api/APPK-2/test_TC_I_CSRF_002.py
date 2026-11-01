@@ -1,4 +1,4 @@
-# CASE: TC-I-CSRF-002 | 接口: ADM-3 来源校验前置（两侧对照） | 追溯: AC-16 / ADM-3 SRC-1+SRC-2
+# CASE: TC-I-CSRF-002 | 接口: ADM-3 来源校验前置（两侧对照） | 追溯: 无 AC-（ADM-3、SRC-1/SRC-2；T1 §2.14/§4 口径，不计入 AC 分母）
 # 维度: 安全、权限 | 优先级: P1 | T2 补充（来源：契约 v1.3.0 @ bc612e93 ADM-3；后端实现 @ 6f78400）
 # 标题: 同源请求与跨站请求走**不同分支**——同源到达业务层、跨站停在来源拒绝；
 #       来源校验发生在**未登录判定之前**（无凭据的同源请求不能停在来源拒绝，无凭据的跨站请求必须停在来源拒绝）。
@@ -27,10 +27,32 @@
 #      事实上变成「返回什么都可以」。改为 `ac=index`（唯一必然产出进度页样式 + 跳转签名、写入量固定为站点首页的
 #      生成动作），并在步骤 3 里用生成条目与跳转签名证明请求真的到达了生成循环；步骤 5 另用 `{}` 单独断言契约的
 #      「缺 ac 不生成、也不报参数错误」。
-
+#
+# 第 5 轮修订 REV-I-14（回应复核项 1 的后半）：**把 `ac=index` 的写副作用写明并加以约束**。
+#   上一版选了 `ac=index` 做探针，却没有在任何地方声明「它会真的生成站点首页」——契约 API-024 对 make/make
+#   的 x-idempotency 是「非幂等（生成静态文件）」，`ac=index` 是固定为站点首页的生成动作。本用例原来的
+#   「本条不发起任何业务写操作」于是与事实不符。现在明确两件事：
+#   1) **写副作用声明**：`ac=index` 会重写站点首页及其附带文件（模板渲染产物：`index.html` 等）与生成缓存；
+#      重复执行只会覆写为相同内容（页面数据不变），但文件 mtime/大小可能变，在共享测试实例上会干扰
+#      其他用例的静态文件基线。
+#   2) **执行隔离闸门**：写副作用只在授权的、可丢弃的一次性站点根上允许。开头调用 `require_ui_write_isolation`：
+#      `MACCMS_UI_WRITE_AUTH` 必须精确为 `yes`，且 `MACCMS_UI_ONEOFF_ROOT` 必须指向一次性站点根；
+#      缺任一项 → BLOCKED，**且不回退到「只跑 collect/test 就宣称通过」**（那等于漏掉 make/make 的来源校验）。
+#      若确需在共享实例上跑，只能把 PROBES 里的 make_progress 探针去掉并**在报告里记明未覆盖**，不能静默降级。
+#  另：本条不写库、不下载图片、不写断点缓存（collect/test 侧契约 x-idempotency 为「幂等（只读取数）」）；
+#      make/make 侧的写面仅限静态生成产物，已由上面的闸门限定。
+#      collect/api 的 GET 在 ac 缺省时会落到「采集入库」分支，为稳妥起见本条同源业务对照使用 collect/test。
+import os
 import re
+import sys
+
+# 同目录共享模块 install_support.py（只做前置与断言工具，不执行用例）。
+_HERE = os.path.dirname(os.path.abspath(__file__))
+if _HERE not in sys.path:
+    sys.path.insert(0, _HERE)
 
 from conftest import MSG_ILLEGAL_REQUEST, MSG_PARAM_ERR, assert_json_error
+from install_support import require_ui_write_isolation
 
 # 同源 / 跨站的探针入口：(方法, 后台相对路径, 参数, 期望种类)
 #   "collect_test"  → C 类只读，恒返回 {code,msg} 业务体（实现 AdminCollectActions.testRefused）；
@@ -127,6 +149,10 @@ def _assert_not_source_rejection(resp, label):
 
 
 def test_TC_I_CSRF_002(api_as, admin_url):
+    # 前置（REV-I-14）：make_progress 探针会真的生成站点首页（契约 API-024 非幂等），
+    # 因此必须声明写侧隔离：一次性站点根 + 明确授权；缺任一项 → BLOCKED。
+    require_ui_write_isolation("CSRF-002")
+
     for method, rel, params, kind in PROBES:
         path = admin_url(rel)
         # 下面的无凭据探针不注入令牌，所以 collect/test 的 cjurl 永远不会被执行；

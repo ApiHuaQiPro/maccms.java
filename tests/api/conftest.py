@@ -211,6 +211,12 @@ MSG_PARAM_ERR = "参数错误"
 MSG_PERMISSION_DENIED = "您没有权限访问此页面"
 MSG_ILLEGAL_REQUEST = "非法请求"
 MSG_COLLECT_URL_REJECTED = "采集链接有误或不能为本地链接"
+# COLLECT_FETCH_FAILED / COLLECT_PARSE_FAILED 的固定文案（契约 x-error-codes；PHP lang 原文，不附 URL 与响应片段）。
+# 用途：把「环境侧不可达」与「实现拒绝」分开（OUT-002 的控制样本归因）。
+MSG_COLLECT_FETCH_FAILED = "连接API接口失败，通常为服务器网络不稳定、IP被封、禁用相关函数！"  # lang(model/collect/get_html_err)
+MSG_COLLECT_PARSE_FAILED_XML = "XML格式不正确，不支持采集"   # lang(model/collect/xml_err)
+MSG_COLLECT_PARSE_FAILED_JSON = "JSON格式不正确，不支持采集"  # lang(model/collect/json_err)
+MSG_COLLECT_PARSE_FAILED = (MSG_COLLECT_PARSE_FAILED_XML, MSG_COLLECT_PARSE_FAILED_JSON)
 
 
 # ───────────────────────────── 共享断言（第 2 轮修订新增） ─────────────────────────────

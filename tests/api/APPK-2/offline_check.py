@@ -18,6 +18,7 @@
 
 import ast
 import glob
+import io
 import os
 import re
 import sys
@@ -391,6 +392,111 @@ def check_no_weak_asserts():
                 )
 
 
+def check_traceability_and_gates():
+    """REV-I-16/17：追溯矩阵、脚本头部、README 与新写隔离闸门的一致性静态检查。
+
+    这些都是「文档说的」与「脚本做的」会悄悄漂移的地方，评审已经因为这类漂移退过两轮：
+    AC- 追溯写错（AC-10/AC-16 张冠李戴）、API-030 的用例数写成 10（INS-008 不存在）、
+    自拟控制样本、把前置缺失当成被测结果。
+    """
+    here = os.path.dirname(os.path.abspath(__file__))
+    root = os.path.dirname(os.path.dirname(os.path.dirname(here)))  # 仓库根（HERE=<根>/tests/api/APPK-2）
+    matrix_path = os.path.join(root, "docs", "test", "APPK-2", "api-cases-matrix.md")
+    readme_path = os.path.join(here, "README.md")
+
+    # 1) 1 条 CASE = 1 个文件 = 1 个测试函数，且编号集合与矩阵一致
+    files = sorted(f for f in os.listdir(here) if f.startswith("test_TC_I_") and f.endswith(".py"))
+    ids = [f[len("test_"):-len(".py")].replace("_", "-") for f in files]
+    check("用例文件数 = 24", len(files) == 24, "实际 %d：%s" % (len(files), ids))
+    check("不存在 TC-I-INS-008（API-030 只有 9 条）", "TC-I-INS-008" not in ids, "发现的编号：%s" % ids)
+
+    # 2) 每条脚本首行的追溯与该用例在矩阵里的追溯一致（抽查 AC- 层级）
+    ac_by_case = {}
+    if os.path.exists(matrix_path):
+        src = io.open(matrix_path, encoding="utf-8").read()
+        for line in src.splitlines():
+            if not line.startswith("| TC-I-"):
+                continue
+            cells = [c.strip() for c in line.strip("|").split("|")]
+            if len(cells) >= 2:
+                ac_by_case[cells[0]] = cells[1]
+    else:
+        check("追溯矩阵存在", False, matrix_path)
+    for f, cid in zip(files, ids):
+        head = io.open(os.path.join(here, f), encoding="utf-8").readline()
+        if cid in ac_by_case:
+            expect = ac_by_case[cid]
+            # 矩阵里写 AC-13 / 无 AC-（…）；脚本头部必须写出同一分层的前缀
+            head_has = ("追溯: AC-13" in head) if expect.startswith("AC-13") else (
+                ("追溯: AC-7" in head) if expect.startswith("AC-7") else (
+                    ("追溯: AC-8" in head) if expect.startswith("AC-8") else (
+                        ("追溯: AC-12" in head) if expect.startswith("AC-12") else (
+                            ("追溯: 无 AC-" in head) if expect.startswith("无 AC-") else True))))
+            check("%s 首行追溯与矩阵一致（矩阵：%s）" % (cid, expect), head_has)
+        else:
+            check("%s 在矩阵「逐条明细」里有追溯行" % cid, False)
+
+    # 3) 不应再出现张冠李戴的 AC-10 / AC-16 追溯（AC-10=手机模板、AC-16=原表原结构守护）
+    for f in files:
+        head = io.open(os.path.join(here, f), encoding="utf-8").readline()
+        check(
+            "%s 首行没有把在线采集/安全项追溯成 AC-10/AC-16" % os.path.basename(f),
+            "追溯: AC-10" not in head and "追溯: AC-16" not in head,
+            head.strip(),
+        )
+
+    # 4) 自拟控制样本不得回归
+    out002 = os.path.join(here, "test_TC_I_OUT_002.py")
+    src = io.open(out002, encoding="utf-8").read()
+    code_only = "\n".join(l for l in src.splitlines() if not l.lstrip().startswith("#"))
+    check("OUT-002 的代码里不再写死 cv.example.com 作控制样本", "cv.example.com" not in code_only)
+    check("OUT-002 从环境取控制样本", "require_reachable_control" in src)
+    # 8192 样本必须归因：跳转/5xx/200 非 JSON 都要判失败，不能只留 BLOCKED
+    for token, label in (
+        ("pytest.fail(", "OUT-002 对未归因响应必须判失败而不是跳过"),
+        ("in (301, 302, 303, 307, 308)", "OUT-002 对跳转判失败"),
+        (">= 500", "OUT-002 对 5xx 判失败"),
+        ("in (400, 403, 404, 405, 413, 414, 431)", "OUT-002 只对已知容器前置码记 BLOCKED"),
+    ):
+        check(label, token in src)
+
+    # 5) 写隔离闸门必须在会写库/写文件的用例里被调用
+    gate_cases = {
+        "test_TC_I_INS_006.py": "require_install_write_isolation",
+        "test_TC_I_INS_010.py": "require_connection_configured",
+        "test_TC_I_CSRF_002.py": "require_ui_write_isolation",
+    }
+    for fname, fn in gate_cases.items():
+        body = io.open(os.path.join(here, fname), encoding="utf-8").read()
+        check("%s 调用写隔离/前置闸门 %s" % (fname, fn), fn + "(" in body)
+        # BLOCKED 由闸门函数自己抛（pytest.skip），调用点因此不出现字面量；两种写法都接受
+        check(
+            "%s 缺前置时 BLOCKED（闸门内 skip 或在用例内 skip）" % fname,
+            "pytest.skip(" in body or (fn + "(" in body and fn.startswith("require_")),
+        )
+
+    # 6) README 不得再出现已被撤掉的判定口径
+    if os.path.exists(readme_path):
+        r = io.open(readme_path, encoding="utf-8").read()
+        check("README 没有「只要不是 INSTALL_ACCESS_DENIED 即证明令牌被接受」", "即证明令牌被接受\"" not in r)
+        check("README 没有「按契约业务结果接受 INSTALL_NOT_TESTED 分支」",
+              "用例按契约业务结果接受该分支" not in r)
+        check("README 记录了控制样本环境变量", "APP_COLLECT_CONTROL_CJURL" in r)
+        check("README 记录了安装写隔离环境变量", "MACCMS_INSTALL_ONEOFF_DB" in r)
+        check("README 记录了 UI 写隔离环境变量", "MACCMS_UI_WRITE_AUTH" in r)
+    else:
+        check("README 存在", False, readme_path)
+
+    # 7) 文档不得再声称「每条 AC- 至少一正一反」覆盖全部 AC-
+    if os.path.exists(matrix_path):
+        m = io.open(matrix_path, encoding="utf-8").read()
+        check(
+            "矩阵不再声称「每条 AC- 至少一正一反」已由接口用例满足",
+            "每条 AC- 至少一正一反：见下表" not in m,
+        )
+        check("矩阵注明 API-030 为 9 条", "| 9 |" in m and "TC-I-INS-001～007、009、010" in m)
+
+
 def main():
     check_imports()
     check_judgement_simulation()
@@ -398,6 +504,7 @@ def main():
     check_csrf_002_probe_kinds()
     check_collect_test_body_shape()
     check_no_weak_asserts()
+    check_traceability_and_gates()
     if FAILURES:
         print("")
         print("共 %d 项不通过" % len(FAILURES))

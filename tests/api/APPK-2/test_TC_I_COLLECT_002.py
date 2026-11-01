@@ -1,4 +1,4 @@
-# CASE: TC-I-COLLECT-002 | 接口: GET /collect/api（API-040） | 追溯: AC-10 / COLLECT_PARAM_ERR | 维度: 异常、边界 | 优先级: P1
+# CASE: TC-I-COLLECT-002 | 接口: GET /collect/api（API-040） | 追溯: AC-13 / COLLECT_PARAM_ERR | 维度: 异常、边界 | 优先级: P1
 # 标题: cjurl 缺失/为空/数组/超长/格式不合 → COLLECT_PARAM_ERR；其余字段不合 x-business-rule 也一律 COLLECT_PARAM_ERR，不出站
 # 契约: docs/api/APPK-2/openapi.yaml @ bc612e933aa67abab319b90534c5150c10a51452（CollectApiParams 各字段 x-business-rule）
 # 前置: 默认角色管理员有 collect 权限

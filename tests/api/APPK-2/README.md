@@ -91,9 +91,18 @@ python -m pytest tests/api/APPK-2 --base-url "<G2.5 判定的测试环境地址>
 1. 安装模式实例（INS-SEC-1）：`/install.php` 返回 404 → BLOCKED；
 2. `install.lock` 不存在（INS-SEC-2）：返回 INSTALL_LOCKED 固定文本 → BLOCKED；
 3. 同一会话第 3 步签发的真实令牌（INS-SEC-4）：取不到或不是 32 位小写十六进制 → BLOCKED，不合成令牌；
-4. 第 4 步连接配置（向导状态）由环境决定，脚本不能建立。因此当目标分支位于 account 校验之前时
-   （`INSTALL_NOT_TESTED`），用例按契约业务结果接受该分支，同时断言「没有被令牌拒绝、没有 400、
-   没有命中其他分支」，避免把更早分支误判成目标分支。
+4. **第 4 步连接配置已完成**（`require_connection_configured`）。这一项由环境决定，脚本**不会**去建立它：
+   发第 4 步的表单请求本身就是一次**写配置**的操作（PHP `install/index.php` step4 用 `mac_arr2file`
+   落盘数据库配置），在只允许读的实例上是越界。缺该前置时，令牌之后的用例只会停在
+   `INSTALL_NOT_TESTED`（"请先点击测试数据库连接！"）——那是**前置缺失**，不是被测分支。
+   因此用例的判定是：控制请求（有效令牌 + 契约允许的入参）必须**越过** `INSTALL_NOT_TESTED`；
+   越不过 → `pytest.skip("BLOCKED：第 4 步连接配置未完成…")`，绝不把该分支当作目标结果接受。
+
+> **第 5 轮修订 REV-I-17（回应复核项 5）**：上一版第 4 条曾把「停在 `INSTALL_NOT_TESTED`」写成一种
+> 可以接受的业务结果——这句话等于**把前置缺失当成了被测结果**，
+> 只要环境没配连接，`INSTALL_NOT_TESTED` 就能让用例「通过」。现在改为：`INSTALL_NOT_TESTED` 只作为
+> 前置缺失的证据（→ BLOCKED），令牌之后的用例必须拿到**越过该分支**的肯定证据才继续断言。
+> 同时删掉第 2 条里「只要不是 `INSTALL_ACCESS_DENIED` 即证明令牌被接受」这种反证式写法（见下）。
 
 逐条步骤与预期见 `docs/test/APPK-2/api-cases.md`。
 
@@ -102,9 +111,25 @@ python -m pytest tests/api/APPK-2 --base-url "<G2.5 判定的测试环境地址>
 1. **OUT-1 连接侧的强证据不在自动化内**。自动化只断言「被拒 + 错误体不含目标信息」。
    「未建立任何连接」需要 `loopback-only` 模式下的 mock 服务连接日志（技术设计 V-26），
    该配置只在本机测试模式启用，生产不得开启，因此不在本脚本的断言范围内。
-2. **安装向导用例依赖实例状态**。`INS-003`～`007`、`010` 需要「安装模式 + 未安装」的实例，已安装时分支不可达，
-   脚本 `pytest.skip("BLOCKED：...")`，T3 记 BLOCKED 而不是 PASS；`INS-001` 需要正常模式实例，
-   `INS-002`、`INS-009` 需要「安装模式 + 已安装」实例。三类前置互斥，T3 至少需要两个实例（或重启切换模式）才能全覆盖。
-   `INS-005`（令牌一次性）的判定与库状态解耦：第一次提交只要不是 `INSTALL_ACCESS_DENIED` 即证明令牌被接受。
+2. **安装向导用例依赖实例状态**。`INS-003`～`007`、`010` 需要「安装模式 + 未安装 + 第 4 步连接配置已完成」的实例，
+   已安装时分支不可达、未配置连接时到不了令牌之后的分支，两种情况脚本都 `pytest.skip("BLOCKED：...")`，
+   T3 记 BLOCKED 而不是 PASS；`INS-001` 需要正常模式实例，`INS-002`、`INS-009` 需要「安装模式 + 已安装」实例。
+   三类前置互斥，T3 至少需要两个实例（或重启切换模式）才能全覆盖。
+2a. **`INS-006` 第 C/D 步与 `INS-010` 的密码规则证据可能进入写库阶段**，必须有硬隔离：
+   `MACCMS_INSTALL_ONEOFF_DB`（库名须匹配 `^maccms_it_[a-z0-9_]{1,40}$`，指向一次性库）、
+   `MACCMS_INSTALL_ONEOFF_ROOT`（一次性站点根副本）、`MACCMS_INSTALL_WRITE_AUTH=yes`（精确值）。
+   缺任一项 → BLOCKED；**不接受**「预期会失败所以可以写共享库」这类放宽。
+   `TC-I-CSRF-002` 的 `make/make?ac=index` 探针会真的生成站点首页，需要 `MACCMS_UI_WRITE_AUTH=yes` +
+   `MACCMS_UI_ONEOFF_ROOT`，缺则 BLOCKED。
+2c. **`TC-I-OUT-002` 的控制样本必须由环境提供**（`APP_COLLECT_CONTROL_CJURL`，变量名登记在
+   `MULTICA.md` §5）。未配置 → BLOCKED。不得用虚构域名（`cv.example.com` 永远不可达，
+   控制样本只会得到 `COLLECT_FETCH_FAILED`，失去区分力），也不得用「任意 1001 + 非空 msg」顶替。
+2b. **令牌是否被消耗，只能由「令牌之后的分支」证明。** 上一版 `INS-005` 写「第一次提交只要不是
+   `INSTALL_ACCESS_DENIED` 即证明令牌被接受」——这是**反证**，而且方向错误：`INSTALL_ACCESS_DENIED` 是所有
+   **令牌之前**分支的共同输出，`INSTALL_NOT_TESTED` 这类更早的分支同样不是 `INSTALL_ACCESS_DENIED`，
+   于是一个根本没到令牌校验的请求也能"证明令牌被接受"。现在 `INS-004`/`INS-005` 的判定基准是
+   **必须命中 `INSTALL_DIR_UNSUPPORTED`**（契约里位于令牌校验之后、写库之前的唯一可安全触达的分支），
+   并为每个验证点补一次「正确令牌必须再次越过」的对照；重放（原令牌）则必须回到
+   `INSTALL_ACCESS_DENIED`。停更早分支 → 对照失败 → **BLOCKED**；被令牌拒绝 → **FAIL**。
 3. **`collect/test` 是 CSRF C 类**（只取数、不入库），不受 SRC-2 约束，所以没有把它放进
    `TC-I-CSRF-001` 的 B 类清单。

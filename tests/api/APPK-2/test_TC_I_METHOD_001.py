@@ -1,4 +1,4 @@
-# CASE: TC-I-METHOD-001 | 接口: 后台采集/图片路径（API-040/041/042/043、API-014） | 追溯: AC-16 / ADM-6 | 维度: 权限、异常 | 优先级: P1
+# CASE: TC-I-METHOD-001 | 接口: 后台采集/图片路径（API-040/041/042/043、API-014） | 追溯: 无 AC-（ADM-6；T1 §2.14/§4 口径，不计入 AC 分母） | 维度: 权限、异常 | 优先级: P1
 # 标题: x-method-policy 逐行核对：未列出的方法 → 405 + Allow 头；GET-only 的路径（collect/api、collect/timing、database/import）收到 POST → 405
 # 契约: docs/api/APPK-2/openapi.yaml @ bc612e933aa67abab319b90534c5150c10a51452（x-method-policy rows）
 # 前置: 默认角色管理员有对应权限（权限判定在方法判定之后，所以 405 与权限无关）

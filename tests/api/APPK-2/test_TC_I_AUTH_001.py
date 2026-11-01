@@ -1,4 +1,4 @@
-# CASE: TC-I-AUTH-001 | 接口: API-040 / API-041 / API-043 / API-024 | 追溯: AC-16 / ADM-1、ADM-4 | 维度: 权限、安全 | 优先级: P1
+# CASE: TC-I-AUTH-001 | 接口: API-040 / API-041 / API-043 / API-024 | 追溯: 无 AC-（ADM-1、ADM-4；T1 §2.14/§4 口径，不计入 AC 分母） | 维度: 权限、安全 | 优先级: P1
 # 标题: 每个受保护入口的三档鉴权：未登录 → 302 登录页；无对应权限 → HTTP 200「您没有权限访问此页面」；有权限 → 不返回无权限体
 # 契约: docs/api/APPK-2/openapi.yaml @ bc612e933aa67abab319b90534c5150c10a51452（ADM-1、ADM-4、x-permission）
 # 前置: APP_API_TOKEN_READONLY 为无 collect/images/make 权限的管理员会话

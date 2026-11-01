@@ -1,4 +1,4 @@
-# CASE: TC-I-LIMIT-001 | 接口: 后台动作类（API-024、API-040、API-043） | 追溯: AC-16 / TRN-1 | 维度: 边界、异常 | 优先级: P2
+# CASE: TC-I-LIMIT-001 | 接口: 后台动作类（API-024、API-040、API-043） | 追溯: 无 AC-（TRN-1；T1 §2.14/§4 口径，不计入 AC 分母） | 维度: 边界、异常 | 优先级: P2
 # 标题: TRN-1 传输上限：查询串与表单合计超过 1000 个参数 → INPUT_LIMIT_EXCEEDED（HTTP 200、code=0、msg=参数错误），
 #       在 ADM-6 与 ADM-1 之后、令牌校验与取锁之前判定，不解析参数、不执行动作
 # 契约: docs/api/APPK-2/openapi.yaml @ bc612e933aa67abab319b90534c5150c10a51452（SCH-1 TRN-1、INPUT_LIMIT_EXCEEDED）

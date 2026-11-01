@@ -1,4 +1,4 @@
-# CASE: TC-I-COLLECT-004 | 接口: GET|POST /collect/test（API-041） | 追溯: AC-10 / COLLECT_PARAM_ERR | 维度: 异常 | 优先级: P1
+# CASE: TC-I-COLLECT-004 | 接口: GET|POST /collect/test（API-041） | 追溯: AC-13 / COLLECT_PARAM_ERR | 维度: 异常 | 优先级: P1
 # 标题: API-041 入参不合规则 → JSON code=1001 + msg=参数错误；成功体 code 只会是 1/1001/1002，不出现其他 code 与内部细节
 # 契约: docs/api/APPK-2/openapi.yaml @ bc612e933aa67abab319b90534c5150c10a51452（CollectTestParams、CollectTestResult）
 # 前置: 默认角色管理员有 collect 权限

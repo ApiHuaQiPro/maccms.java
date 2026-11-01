@@ -21,9 +21,19 @@
    INSTALL_DIR_UNSUPPORTED。它是令牌之后、root 之前、写库之前的第一个分支，不写库、不写 lock，
    可以重复执行。对照不成立 → 该实例不满足前置 → BLOCKED，绝不改判通过。
 
+**第 5 轮修订（REV-I-09～REV-I-15，回应复核项 1～5）新增的能力**（全部只做判定与前置核验，不执行安装）：
+
+- `require_connection_configured`：第 4 步连接配置（`MACCMS_DEPLOY_CONFIG` 里已有 host/库名/账号）
+  是 INS-004～006、010 的共同硬前置。缺该配置时任何「令牌之后」的分支都到不了，只能 BLOCKED。
+- `require_install_write_isolation`：在**任何**可能到达「写库阶段」（INS-2 ①～⑥，写 `extra/maccms.php`、
+  执行 install.sql、写管理员、写 install.lock）的判定之前，先核验一次性空库 + 文件副本 + 明确授权 +
+  前后快照/锁/配置核验 + 清理闸门是否齐备；缺任一 → BLOCKED，**不得**靠「预期会失败」放行。
+- `require_reachable_control`：合法公网控制样本必须由环境提供，不能用「任意一个 1001 + 非空 msg」当对照。
+
 本模块内所有表单值都是合成测试数据（autotest 前缀 + 纯字母数字），不是任何真实凭据。
 """
 
+import os
 import re
 
 import pytest
@@ -72,10 +82,21 @@ TOKEN_PATTERN = re.compile(r"^[0-9a-f]{32}$")
 TOKEN_FIELD = "__token__"
 # 密码字段名按 character-ref 拼出来，避免在某些扫描里被当成明文口令
 PW_FIELD = "pass" + "word"
-# 合成输入（不是凭据）：account 必须符合契约 ^[A-Za-z0-9]+$、≤30 字符；密码必须 6～20 个字符。
+# 合成输入（不是凭据）：account 必须符合契约 ^[A-Za-z0-9]+$、≤30 字符；密码必须 6～20 个字符，
+# 且按**字符**计数（契约 InstallStep5Form.password 的 x-business-rule 写的是 mb_strlen，不是字节）。
+# REV-I-12：合成密码改用非 ASCII 字符，保证「6～20 个字符」的合法样本在 UTF-8 下是 18～60 字节，
+# 从而区分「按字符校验」与「按字节校验」两种实现；纯 ASCII 样本无法区分。
+# 契约规则本身不限制字符集（只有 length:6,20），因此非 ASCII 合成密码仍是合法输入。
 # 否则会在令牌之前就被 INSTALL_ADMIN_REQUIRED / INSTALL_ADMIN_INVALID 拦住，目标分支不可达。
 ACCOUNT = "autotestappk2admin"
 PASSWORD = "autotestPw2024"
+
+# 密码长度边界样本（REV-I-12）：`mb_strlen` 计的是字符数。
+# 非 ASCII 字符只用于合法/非法长度的构造，不是任何真实凭据。
+PASSWORD_CHAR_5 = "测" * 4 + "a"          # 5 个字符 / 13 字节（下界 -1）
+PASSWORD_CHAR_6 = "测" * 5 + "a"          # 6 个字符 / 16 字节（合法下界，字节数已超 6）
+PASSWORD_CHAR_20 = "测" * 19 + "a"        # 20 个字符 / 58 字节（合法上界，字节数已超 20）
+PASSWORD_CHAR_21 = "测" * 20 + "a"        # 21 个字符 / 61 字节（上界 +1）
 
 # install_dir 的非法值（契约：不等于 / → INSTALL_DIR_UNSUPPORTED，位于令牌之后）
 DIR_NOT_ROOT = "/sub"
@@ -262,6 +283,156 @@ def assert_after_token_evidence(resp, label, case=""):
         "目标分支需要「第 4 步连接配置已完成」的向导前置实例。响应=%r"
         % (case, label, before_token_hits(resp.text), resp.text[:200])
     )
+
+
+def require_reachable_control(label="API-041"):
+    """合法控制样本必须是**可控、有授权**的测试环境分支（REV-I-14）。
+
+    OUT-002 这类「每个样本都期望失败」的用例，必须有一份**必然到达业务成功路径**的对照，否则
+    「全都返回 1001 + 非空 msg」也可能是环境坏了（资源站不可达、权限缺失、地址被全局拦截）。
+    对照不准再自拟：它只能来自环境侧登记的可控资源站地址（环境变量名登记在 MULTICA.md §5，
+    值由人工配置），且该地址必须属于本测试环境可访问的目标。取不到 → BLOCKED。
+
+    返回控制样本 URL；未配置 → `pytest.skip("BLOCKED：…")`，**绝不**用「任意 1001 + 非空 msg」顶替。
+    """
+    value = os.environ.get(CONTROL_CJURL_ENV, "").strip()
+    if not value:
+        pytest.skip(
+            "BLOCKED：[%s] 未配置可控的合法采集对照地址（环境变量 %s，变量名登记在 MULTICA.md §5）。"
+            "没有可控对照时，「每个样本都返回 1001 + 非空 msg」也可能是环境坏了，无法证明失败样本有区分力；"
+            "不得用「任意 1001 + 非空 msg」顶替对照" % (label, CONTROL_CJURL_ENV)
+        )
+    return value
+
+
+def require_connection_configured(base_url, install_entry, label="API-030"):
+    """前置（INS-SEC-5/契约判定顺序的第 4 位）：第 4 步连接配置已完成。
+
+    契约的 step=5 判定顺序里，`MACCMS_DEPLOY_CONFIG` 没有 host/库名/账号 时直接返回 INSTALL_NOT_TESTED，
+    位置在 account/密码规则与令牌**之前**。因此任何「令牌之后」的目标分支（INS-004～006、INS-010 的正向侧）
+    都要求该配置已存在。
+
+    本函数**不发第 4 步请求**（第 4 步会写 MACCMS_DEPLOY_CONFIG，属写库阶段之外的文件写入，不能由用例触发），
+    只用「对照请求」（有效令牌 + install_dir=/sub）观测是否越过了令牌：越过 → 该前置成立。
+    对照不成立 → BLOCKED，不由用例自己造连接配置。
+    """
+    try:
+        sess, token = wizard_session(base_url, install_entry, label + "/连接配置对照")
+    except BaseException:  # noqa: BLE001 - wizard_session 的 BLOCKED 原样上抛
+        raise
+    control_proves_after_token(
+        sess, step5_url(base_url, install_entry), token, "第 4 步连接配置对照", label
+    )
+    return True
+
+
+# ────────────────── 前置 5：向导写库阶段的执行隔离与清理闸门（REV-I-09） ──────────────────
+
+# 环境侧闸门变量名（只列名字，值由人工在运行时环境变量里配置；见 MULTICA.md §5）
+# 一次性空库名（必须匹配一次性库命名 maccms_it_*，与 AGENTS.md 的集成测试约定一致）
+INSTALL_ONEOFF_DB_ENV = "MACCMS_INSTALL_ONEOFF_DB"
+# 明确执行授权（只有值为精确的 yes 才视为授权，避免「填了就不是空」被当成授权）
+INSTALL_WRITE_AUTH_ENV = "MACCMS_INSTALL_WRITE_AUTH"
+# 安装目录文件副本路径（一次性实例的站点根，用于前后快照与清理）
+INSTALL_ONEOFF_ROOT_ENV = "MACCMS_INSTALL_ONEOFF_ROOT"
+# 合法采集对照地址（REV-I-14）
+CONTROL_CJURL_ENV = "APP_COLLECT_CONTROL_CJURL"
+# UI 侧写副作用（静态生成）的执行授权与一次性站点根（REV-I-14）
+UI_WRITE_AUTH_ENV = "MACCMS_UI_WRITE_AUTH"
+UI_ONEOFF_ROOT_ENV = "MACCMS_UI_ONEOFF_ROOT"
+
+ONEOFF_DB_PATTERN = re.compile(r"^maccms_it_[a-z0-9_]{1,40}$")
+
+# 写入面：写库阶段会碰的三类东西（契约 install_dir → root → 互斥区 → ①～⑥）
+INSTALL_WRITE_SURFACES = (
+    "MACCMS_DEPLOY_CONFIG（extra/maccms.php 的连接与站点配置）",
+    "目标库的 mac_* 表（install.sql + initdata.sql + 首个管理员）",
+    "install.lock（application/data/install/install.lock）",
+)
+
+
+def require_install_write_isolation(label="API-030", needs_db_write=True):
+    """写库阶段的执行隔离前置（REV-I-09）。缺任一项 → BLOCKED，不继续。
+
+    为什麽必须有这一层：`install_dir[]`（INS-006 C）与 `initdata` 非 1（INS-006 D）这两个判定一旦
+    越过令牌，契约允许请求继续往写库阶段走——`MACCMS_DEPLOY_CONFIG` 里已经有可连的连接信息时，
+    写库阶段会真的执行 `install.sql`、写管理员、写 install.lock。上一版只写了一句「记录为未覆盖」，
+    没有把「写前快照 / 写后快照 / 清理」变成硬闸门，等于允许在共享实例上跑写库分支。
+
+    现在按**五条前置全要不满足就 BLOCKED** 处理（缺一项就停，不能靠「预期会失败」绕过）：
+      1) 一次性空库：`%s` 存在、匹配 `maccms_it_*`、已核实为空（0 张表）、
+         且不是共享/开发/验证库；
+      2) 一次性站点根副本：`%s` 指向本次新建的文件副本（不是线上站点根）；
+      3) 明确执行授权：`%s` 的值必须精确为 `yes`（含大小写差异视为未授权）；
+      4) 写前快照 / 锁 / 配置核验：三处写入面都要在请求**之前**取回当前值，写后重取比对；
+      5) 清理闸门：用例结束时清理函数必须被调用（pytest 的 finally / fixture 终结），
+         且清理失败不得被吞掉（不得让 BLOCKED/FAIL 变成 PASS）。
+
+    needs_db_write=False 的用例（只到令牌之前的分支）不需要本闸门，但**也不得**因此放宽断言。
+    本函数不发任何请求、不读凭据值，只校验环境变量与命名规则。
+    """
+    if not needs_db_write:
+        return None
+    problems = []
+
+    db = os.environ.get(INSTALL_ONEOFF_DB_ENV, "").strip()
+    if not db:
+        problems.append("未提供一次性空库名（%s）" % INSTALL_ONEOFF_DB_ENV)
+    elif not ONEOFF_DB_PATTERN.match(db):
+        problems.append(
+            "一次性库名 %r 不匹配 %s（不允许指向共享/开发/验证库）" % (db, ONEOFF_DB_PATTERN.pattern)
+        )
+
+    root = os.environ.get(INSTALL_ONEOFF_ROOT_ENV, "").strip()
+    if not root:
+        problems.append("未提供一次性站点根文件副本路径（%s）" % INSTALL_ONEOFF_ROOT_ENV)
+
+    auth = os.environ.get(INSTALL_WRITE_AUTH_ENV, "")
+    if auth != "yes":
+        problems.append(
+            "未给出明确的执行授权（%s 必须精确为 yes，实际 %s）"
+            % (INSTALL_WRITE_AUTH_ENV, "<空>" if not auth else repr(auth))
+        )
+
+    if problems:
+        pytest.skip(
+            "BLOCKED：[%s] 本用例的目标分支可能进入写库阶段（写入面：%s），"
+            "但执行隔离前置不全：%s。缺任一项都不得执行，也不得以「预期会失败」为由放行"
+            % (label, "；".join(INSTALL_WRITE_SURFACES), "；".join(problems))
+        )
+    return {"db": db, "root": root}
+
+
+# ────────────────────── 前置 6：UI 侧写副作用的执行隔离闸门（REV-I-14） ──────────────────────
+
+
+def require_ui_write_isolation(label="CSRF-002"):
+    """能产生静态文件写入的后台动作（`make/*`、`*/make`、缓存清理等）的执行隔离前置。
+
+    典型例子：TC-I-CSRF-002 用 `get:make/make?ac=index` 做「到达业务层」的对照，契约 API-024 对 make/make 的
+    x-idempotency 是「非幂等（生成静态文件）」，`ac=index` 会写出站点首页。上一版只写了「本条不发起任何业务写操作」，
+    与实际相反。
+
+    与写库闸门同理：缺任一项 → BLOCKED，**不得**改成「去掉写副作用大的探针、只跑只读探针就算通过」
+    （那会静默丢掉 make/make 侧的来源校验）。确需降级时必须在报告里记明未覆盖。
+    本函数不发请求、不读凭据值，只校验环境变量与命名规则。
+    """
+    problems = []
+    auth = os.environ.get(UI_WRITE_AUTH_ENV, "")
+    if auth != "yes":
+        problems.append(
+            "%s 必须精确为 yes（实际 %s）" % (UI_WRITE_AUTH_ENV, "<空>" if not auth else repr(auth))
+        )
+    root = os.environ.get(UI_ONEOFF_ROOT_ENV, "").strip()
+    if not root:
+        problems.append("未提供一次性站点根路径（%s）" % UI_ONEOFF_ROOT_ENV)
+    if problems:
+        pytest.skip(
+            "BLOCKED：[%s] 本用例的探针会真的写静态文件（make/make + ac=index 重写站点首页，契约 API-024 非幂等），"
+            "但 UI 侧写隔离前置不全：%s。不得改成「只跑只读探针就算通过」（那会漏掉 make/make 的来源校验），"
+            "也不得以「内容不会变」为由放行" % (label, "；".join(problems))
+        )
+    return {"root": root}
 
 
 # ────────────────────────────── 表单与断言工具 ──────────────────────────────
