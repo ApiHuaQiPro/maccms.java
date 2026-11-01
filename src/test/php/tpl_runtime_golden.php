@@ -150,6 +150,60 @@ function hexOf($v)
     return ['type' => gettype($v), 'hex' => bin2hex(strOf($v))];
 }
 
+/**
+ * 把 ReflectionFunction 的字符串结果稳定化（S3-05 复核阻断项 1）。
+ *
+ * `(string) new ReflectionFunction($fn)` 的输出里带**定义该函数的源文件绝对路径**，例如
+ * `@@ C:\Users\…\worktree/php/application/common.php 1633 - 1657`。这条路径随生成机、随检出目录变化，
+ * 直接写进黄金就会让黄金不能跨工作目录重复生成。这里把仓库根绝对路径统一替换成稳定占位符
+ * `<REPO>`，并把剩余的分隔符统一成 `/`：
+ *   - 原串里的 `\` 与 `/` 两种写法都替换（PHP 在 Windows 下用的是 `\`，`\` 只在双引号里有转义
+ *     问题，这里全部按字面量处理）；
+ *   - Windows 路径大小写不敏感，替换不区分大小写；
+ *   - 替换前先把仓库根自身也做同样的分隔符归一，避免 PHP 侧混用分隔符导致匹配不上。
+ *
+ * 归一之后仍保留 PHP 版本（`_meta.php`）、函数名、参数签名与相对源文件路径及行号区间，
+ * 实现依据依旧可核验；只是不再包含生成机工作目录。
+ */
+function stableReflection($fn)
+{
+    global $repo;
+    $text = (string)(new ReflectionFunction($fn));
+    $targets = [];
+    if (is_string($repo) && $repo !== '') {
+        $targets[] = $repo;                          // 原样（通常是反斜杠）
+        $slash = str_replace(chr(92), '/', $repo);   // 全正斜杠
+        $targets[] = $slash;
+        $targets[] = str_replace('/', chr(92), $repo); // 全反斜杠
+        // 另登记一份 realpath 归一（处理 8.3 短名/大小写差异），拿不到就跳过
+        $rp = realpath($repo);
+        if ($rp !== false && $rp !== '') {
+            $targets[] = $rp;
+            $targets[] = str_replace(chr(92), '/', $rp);
+        }
+    }
+    if (PHP_OS_FAMILY === 'Windows') {
+        // PHP 自身也可能把路径写成大写盘符，这里给盘符补一个大写变体
+        foreach ($targets as $t) {
+            if (preg_match('~^[A-Za-z]:~', $t)) {
+                $targets[] = strtoupper(substr($t, 0, 1)) . substr($t, 1);
+                $targets[] = strtolower(substr($t, 0, 1)) . substr($t, 1);
+            }
+        }
+    }
+    // 长的先替换，避免短前缀先把长串切坏
+    $targets = array_values(array_unique(array_filter($targets, 'strlen')));
+    usort($targets, function ($a, $b) {
+        return strlen($b) - strlen($a);
+    });
+    foreach ($targets as $t) {
+        $text = str_ireplace($t, '<REPO>', $text);
+    }
+    // 剩余分隔符统一（`<REPO>` 之后的部分也一并归一，保证跨平台一致）
+    $text = str_replace(chr(92), '/', $text);
+    return $text;
+}
+
 /** 数组按 PHP 顺序序列化成规范文本（键类型也标出，RT-2 要求 "1" 规范化为 int 1）。 */
 function serializeArray(array $a)
 {    $s = '';
@@ -418,7 +472,7 @@ if ($opts['cmd'] === 'semantics') {
     $sem['fn_url_list'] = [];
     foreach ($urlFns as $fn) {
         $sem['fn_url_list'][] = ['fn' => $fn, 'exists' => function_exists($fn),
-            'reflection' => function_exists($fn) ? (string)(new ReflectionFunction($fn)) : null];
+            'reflection' => function_exists($fn) ? stableReflection($fn) : null];
     }
 
     // 编译产物会生成的内部函数（Cx/Maccms 编译器代码为准；RT-7）：只登记存在性与签名
@@ -427,7 +481,7 @@ if ($opts['cmd'] === 'semantics') {
     $sem['fn_internal'] = [];
     foreach ($internal as $fn) {
         $sem['fn_internal'][] = ['fn' => $fn, 'exists' => function_exists($fn),
-            'reflection' => function_exists($fn) ? (string)(new ReflectionFunction($fn)) : null];
+            'reflection' => function_exists($fn) ? stableReflection($fn) : null];
     }
 
     // V-15 的 4 个 {maccms:path/siteaid/sitetid/siteid} 标签 + CAL-3 的 9 个原文输出标签名
@@ -441,8 +495,33 @@ if ($opts['cmd'] === 'semantics') {
     $sem['art_info_empty_where'] = ['code' => 1001, 'msg' => lang('param_err')];
     $sem['art_info_not_found'] = ['code' => 1002, 'msg' => lang('obtain_err')];
 
-    writeText($outRoot . '/semantics/php73-vectors.json',
-        json_encode($sem, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) . "\n");
+    $semJson = json_encode($sem, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) . "\n";
+
+    // S3-05 复核阻断项 1 的护栏：黄金不得含生成机工作目录。
+    // 这里在落盘前自检一次，不满足就非 0 退出且不写文件，避免又悄悄生成一份不可复现的黄金。
+    // 注意：要同时检查“原文”与“JSON 转义后”两种写法——JSON 里的反斜杠是成对的，
+    // 只查原文会漏。
+    $leak = [];
+    if (is_string($repo) && $repo !== '') {
+        $cands = [$repo, str_replace(chr(92), '/', $repo)];
+        foreach ($cands as $c) {
+            foreach ([$c, json_encode($c, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)] as $probe) {
+                // json_encode 会带上两端引号，去掉引号后才是正文里的片段
+                $needle = trim($probe, '"');
+                if ($needle !== '' && stripos($semJson, $needle) !== false) {
+                    $leak[] = '仓库绝对路径';
+                    break 2;
+                }
+            }
+        }
+    }
+    if ($leak) {
+        fwrite(STDERR, '值语义黄金仍包含不稳定路径（' . implode('、', $leak)
+            . "），已中止且未写文件；检查 stableReflection() 的归一化\n");
+        exit(7);
+    }
+
+    writeText($outRoot . '/semantics/php73-vectors.json', $semJson);
 
     // 递归删除临时目录
     $rm = function ($p) use (&$rm) {
