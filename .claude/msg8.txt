@@ -1,0 +1,3 @@
+docs(design): APPK-2 技术设计 v8（REV-13 OP-T4=a/OP-T5=a/OP-T6=b 收敛为唯一实现；REV-14 删备份纳入 dbtool.lock 并保护绑定备份；REV-15 进程中断按操作类型与阶段的唯一转移）
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
