@@ -42,9 +42,9 @@ class OutboundPolicyTest {
 
     @Test
     void openModeChecksFormatOnly() {
-        assertThat(open.check(URI.create("https://api.provider.test/v1/x?sign=abc"))).isEqualTo("api.provider.test");
-        assertThat(open.check(URI.create("http://93.184.216.34:8080/"))).isEqualTo("93.184.216.34:8080");
-        assertThat(open.check(URI.create("HTTPS://Api.Provider.Test/"))).isEqualTo("Api.Provider.Test");
+        assertThat(open.check(URI.create("https://api.provider.test/v1/x?sign=abc")).logHost()).isEqualTo("api.provider.test");
+        assertThat(open.check(URI.create("http://93.184.216.34:8080/")).logHost()).isEqualTo("93.184.216.34:8080");
+        assertThat(open.check(URI.create("HTTPS://Api.Provider.Test/")).logHost()).isEqualTo("Api.Provider.Test");
         for (String bad : List.of("ftp://api.provider.test/", "file:///etc/passwd", "mailto:a@b.test", "/relative",
                 "http:///nohost", "jar:http://h.test/x.jar!/a")) {
             assertThatThrownBy(() -> open.check(URI.create(bad))).as(bad).isInstanceOfSatisfying(OutboundException.class,
@@ -66,10 +66,10 @@ class OutboundPolicyTest {
         dns.put("meta.provider.test", new String[] {"169.254.169.254"});
         dns.put("v6.provider.test", new String[] {"2606:2800:220:1:248:1893:25c8:1946"});
         dns.put("v6private.provider.test", new String[] {"fd00::1"});
-        assertThat(open.check(URI.create("https://v6.provider.test/x"))).isEqualTo("v6.provider.test");
-        assertThat(open.check(URI.create("http://[2606:2800:220:1:248:1893:25c8:1946]:8080/")))
+        assertThat(open.check(URI.create("https://v6.provider.test/x")).logHost()).isEqualTo("v6.provider.test");
+        assertThat(open.check(URI.create("http://[2606:2800:220:1:248:1893:25c8:1946]:8080/")).logHost())
                 .isEqualTo("[2606:2800:220:1:248:1893:25c8:1946]:8080");
-        assertThat(open.check(URI.create("https://api.provider.test:443/"))).isEqualTo("api.provider.test:443");
+        assertThat(open.check(URI.create("https://api.provider.test:443/")).logHost()).isEqualTo("api.provider.test:443");
         for (String bad : List.of(
                 // OUT-1-1：片段
                 "https://api.provider.test/a#frag",
@@ -102,7 +102,7 @@ class OutboundPolicyTest {
             assertThat(accepted).isEmpty();
         }
         // 公网 IPv4 映射 IPv6、NAT64 内嵌公网地址：按内嵌地址判断
-        assertThat(open.check(URI.create("http://[::ffff:8.8.8.8]/"))).isEqualTo("[::ffff:8.8.8.8]");
+        assertThat(open.check(URI.create("http://[::ffff:8.8.8.8]/")).logHost()).isEqualTo("[::ffff:8.8.8.8]");
         assertThat(OutboundPolicy.forbidden(address("::1"))).isTrue();
         assertThat(OutboundPolicy.forbidden(address("::"))).isTrue();
         assertThat(OutboundPolicy.forbidden(address("64:ff9b::808:808"))).isFalse();
@@ -126,12 +126,34 @@ class OutboundPolicyTest {
     void loopbackOnlyModeAllowsOnlyLoopbackLiterals() {
         for (String ok : List.of("http://127.0.0.1:1/", "http://127.255.0.9/", "http://localhost:8/", "http://[::1]:9/",
                 "https://LOCALHOST/")) {
-            assertThat(loopback.check(URI.create(ok))).as(ok).isNotEmpty();
+            assertThat(loopback.check(URI.create(ok)).logHost()).as(ok).isNotEmpty();
         }
         for (String bad : List.of("https://api.provider.test/", "http://10.0.0.1/", "http://128.0.0.1/", "http://127.0.0.256/",
                 "http://localhost.provider.test/", "http://[::2]/", "http://0.0.0.0/", "http://127.0.0.1/#x")) {
             assertThatThrownBy(() -> loopback.check(URI.create(bad))).as(bad).isInstanceOf(OutboundException.class);
         }
+    }
+
+    /** APPK-2 OUT-1-5（NET-7 ①）：检查结果带着规范化主机与已检查的地址，建连只用这组地址。 */
+    @Test
+    void targetCarriesNormalizedHostAndCheckedAddresses() {
+        dns.put("multi.provider.test", new String[] {PUBLIC_IP, "2606:2800:220:1:248:1893:25c8:1946"});
+        OutboundPolicy.Target t = open.check(URI.create("https://Multi.Provider.Test./x"));
+        assertThat(t.logHost()).isEqualTo("Multi.Provider.Test.");
+        assertThat(t.host()).isEqualTo("multi.provider.test");
+        assertThat(t.addresses()).extracting(java.net.InetAddress::getHostAddress)
+                .containsExactly(PUBLIC_IP, "2606:2800:220:1:248:1893:25c8:1946");
+        assertThat(open.check(URI.create("http://[2606:2800:220:1:248:1893:25c8:1946]:8080/")).host())
+                .isEqualTo("2606:2800:220:1:248:1893:25c8:1946");
+
+        assertThat(loopback.check(URI.create("http://127.255.0.9/")).addresses())
+                .extracting(java.net.InetAddress::getHostAddress).containsExactly("127.255.0.9");
+        assertThat(loopback.check(URI.create("http://[::1]:9/")).addresses())
+                .extracting(java.net.InetAddress::getHostAddress).containsExactly("0:0:0:0:0:0:0:1");
+        OutboundPolicy.Target local = loopback.check(URI.create("https://LOCALHOST/"));
+        assertThat(local.host()).isEqualTo("localhost");
+        assertThat(local.addresses()).extracting(java.net.InetAddress::getHostAddress)
+                .containsExactly("127.0.0.1", "0:0:0:0:0:0:0:1");
     }
 
     @Test

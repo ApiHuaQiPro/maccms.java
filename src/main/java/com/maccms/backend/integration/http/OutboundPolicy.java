@@ -8,6 +8,7 @@ import java.net.UnknownHostException;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
 /**
@@ -22,6 +23,8 @@ import java.util.regex.Pattern;
  * IPv4 映射/NAT64 的 IPv6 按内嵌 IPv4 再判）即整体拒绝，解析失败也拒绝（OUT-1-3、OUT-1-4）；十六进制、八进制、省略段等
  * 非常规 IPv4 写法一律拒绝。</li>
  * </ul>
+ * 每次检查只解析一次，返回的 {@link Target} 带着已检查的地址，出站客户端用这组地址建连、不再按主机名解析
+ * （APPK-2 OUT-1-5，DEC-14 / NET-7）。
  */
 public final class OutboundPolicy {
 
@@ -74,6 +77,21 @@ public final class OutboundPolicy {
             cidr(192, 0, 0, 0, 24), cidr(192, 0, 2, 0, 24), cidr(198, 18, 0, 0, 15), cidr(198, 51, 100, 0, 24),
             cidr(203, 0, 113, 0, 24), cidr(224, 0, 0, 0, 4), cidr(240, 0, 0, 0, 4));
 
+    /**
+     * 一跳的检查结果（NET-7 ①）。
+     *
+     * @param logHost   用于日志的 {@code host[:port]}（不含路径、查询串与凭证）
+     * @param host      规范化的主机：去掉 IPv6 方括号与末尾点，小写
+     * @param addresses 已检查的地址（{@link Mode#OPEN} 为解析结果按原顺序，{@link Mode#LOOPBACK_ONLY} 由回环字面直接得到），
+     *                  建连只用这组地址
+     */
+    public record Target(String logHost, String host, List<InetAddress> addresses) {
+
+        public Target {
+            addresses = List.copyOf(addresses);
+        }
+    }
+
     /** 主机名解析（OUT-1-3），测试可替换。 */
     @FunctionalInterface
     public interface Resolver {
@@ -82,14 +100,21 @@ public final class OutboundPolicy {
 
     private final Mode mode;
     private final Resolver resolver;
+    private final Predicate<InetAddress> forbidden;
 
     public OutboundPolicy(Mode mode) {
         this(mode, InetAddress::getAllByName);
     }
 
     public OutboundPolicy(Mode mode, Resolver resolver) {
+        this(mode, resolver, OutboundPolicy::forbidden);
+    }
+
+    /** 只供 V-33 测试替换 OUT-1-4 的禁止判定（让回环上的模拟服务可以走 {@link Mode#OPEN} 的解析与地址固定）。 */
+    OutboundPolicy(Mode mode, Resolver resolver, Predicate<InetAddress> forbidden) {
         this.mode = mode;
         this.resolver = resolver;
+        this.forbidden = forbidden;
     }
 
     public Mode mode() {
@@ -97,11 +122,12 @@ public final class OutboundPolicy {
     }
 
     /**
-     * 检查目标地址，返回用于日志的 {@code host[:port]}（不含路径、查询串与凭证）。
+     * 检查目标地址，返回日志用的 {@code host[:port]} 与已检查的地址（主机名只解析这一次）。
+     * 模块内部 API：生产代码只有 {@link OutboundHttpClient} 调用（初始请求与每次跳转），调用方经它的 {@code send} 发请求。
      *
      * @throws OutboundException {@link OutboundException.Reason#TARGET_REJECTED}
      */
-    public String check(URI uri) {
+    public Target check(URI uri) {
         String host = uri == null ? null : uri.getHost();
         String scheme = uri == null || uri.getScheme() == null ? "" : uri.getScheme().toLowerCase(Locale.ROOT);
         if (host == null || host.isEmpty() || !(scheme.equals("http") || scheme.equals("https")) || uri.isOpaque()) {
@@ -118,17 +144,57 @@ public final class OutboundPolicy {
             if (!isLoopbackLiteral(host)) {
                 throw new OutboundException(OutboundException.Reason.TARGET_REJECTED, target);
             }
-            return target;
+            return new Target(target, normalizeHost(host), loopbackAddresses(normalizeHost(host)));
         }
         if (uri.getPort() >= 0 && (BLOCKED_PORTS.contains(uri.getPort()) || uri.getPort() > 65535)) {
             throw new OutboundException(OutboundException.Reason.TARGET_REJECTED, target);
         }
-        for (InetAddress a : resolveChecked(host, target)) {
-            if (forbidden(a)) {
+        InetAddress[] all = resolveChecked(host, target);
+        for (InetAddress a : all) {
+            if (forbidden.test(a)) {
                 throw new OutboundException(OutboundException.Reason.TARGET_REJECTED, target);
             }
         }
-        return target;
+        return new Target(target, normalizeHost(host), List.of(all));
+    }
+
+    /** {@link Target#host()} 的规范化：去掉 IPv6 方括号与末尾点，小写（{@link PinnedDnsResolver} 按同一规则比较）。 */
+    static String normalizeHost(String host) {
+        String h = host.toLowerCase(Locale.ROOT);
+        if (h.startsWith("[") && h.endsWith("]")) {
+            h = h.substring(1, h.length() - 1);
+        }
+        while (h.endsWith(".")) {
+            h = h.substring(0, h.length() - 1);
+        }
+        return h;
+    }
+
+    /** 回环字面（已过 {@link #isLoopbackLiteral}）对应的地址，直接由字面构造，不做 DNS 查询。 */
+    private static List<InetAddress> loopbackAddresses(String h) {
+        try {
+            if (h.equals("localhost")) {
+                return List.of(InetAddress.getByAddress(h, new byte[] {127, 0, 0, 1}),
+                        InetAddress.getByAddress(h, ipv6Loopback()));
+            }
+            if (h.equals("::1")) {
+                return List.of(InetAddress.getByAddress(h, ipv6Loopback()));
+            }
+            var m = IPV4_LOOPBACK.matcher(h);
+            if (!m.matches()) {
+                throw new IllegalStateException("not a loopback literal");
+            }
+            return List.of(InetAddress.getByAddress(h, new byte[] {127, (byte) Integer.parseInt(m.group(1)),
+                    (byte) Integer.parseInt(m.group(2)), (byte) Integer.parseInt(m.group(3))}));
+        } catch (UnknownHostException e) {
+            throw new IllegalStateException(e); // 只在地址长度不对时抛出，这里长度固定
+        }
+    }
+
+    private static byte[] ipv6Loopback() {
+        byte[] b = new byte[16];
+        b[15] = 1;
+        return b;
     }
 
     /** OUT-1-3：主机名禁止表、非常规数字写法，然后解析出全部地址（解析失败或无地址 → 拒绝）。 */
