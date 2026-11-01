@@ -2,6 +2,9 @@
 # 标题: SCH-1 传输形态：account 以数组提交 → INSTALL_ADMIN_REQUIRED；install_dir[] 数组按缺失（= /）处理；
 #       install_dir 标量非法 → INSTALL_DIR_UNSUPPORTED；initdata 非 1 与 1 在写库之前的判定一致 ——
 #       都不是传输层 400/415、也不是「参数错误」
+#       第 4 次修订 REV-I-06：上一版把「密码长度边界（6～20）」作为本文件里的第二个 test，
+#       已拆为独立 CASE TC-I-INS-010（test_TC_I_INS_010.py，追溯 AC-12 / SCH-1、INS-SEC-3），
+#       本文件因此恢复「1 条 CASE = 1 个 test = 1 个文件」。
 # 契约: docs/api/APPK-2/openapi.yaml @ bc612e933aa67abab319b90534c5150c10a51452（SCH-1 + InstallStep5Form + 判定顺序）
 #
 # 前置（install_support.wizard_session 建立并逐项核验，任一不成立即 BLOCKED）：
@@ -33,7 +36,6 @@ from install_support import (
     MSG_ADMIN_REQUIRED,
     MSG_DIR_UNSUPPORTED,
     MSG_SUCCESS,
-    PW_FIELD,
     after_token_hits,
     admin_invalid_hits,
     assert_after_token_evidence,
@@ -150,39 +152,4 @@ def test_TC_I_INS_006(base_url, install_entry):
     )
     assert MSG_SUCCESS not in one.text and MSG_SUCCESS not in other.text, (
         "[%s initdata 对照] install_dir=/other 却完成了安装" % CASE
-    )
-
-
-@pytest.mark.install_wizard
-def test_TC_I_INS_006_boundary(base_url, install_entry):
-    """同一传输形态维度的补充：密码长度边界（6～20，mb_strlen）由 account/密码规则分支判定。
-
-    这些分支位于令牌之前，与「第 4 步连接配置」无关，可稳定复核：
-      - 5 个字符 → INSTALL_ADMIN_INVALID（长度不符合要求）；
-      - 21 个字符 → INSTALL_ADMIN_INVALID；
-      - 6 个字符 → 不得命中 INSTALL_ADMIN_INVALID（进入后续分支）。
-    """
-    url = step5_url(base_url, install_entry)
-    probe = require_install_mode(base_url, install_entry)
-    require_not_locked(probe, CASE + "/密码边界")
-
-    sess, token = wizard_session(base_url, install_entry, CASE + "/密码 5 字符")
-    resp = post_step5(sess, url, base_form(token, **{PW_FIELD: "a" * 5}))
-    _no_transport_reject(resp, "%s 密码 5 字符" % CASE)
-    assert admin_invalid_hits(resp.text), (
-        "[%s 密码 5 字符] 未命中 INSTALL_ADMIN_INVALID（长度不符合要求）：%r" % (CASE, resp.text[:200])
-    )
-
-    sess, token = wizard_session(base_url, install_entry, CASE + "/密码 21 字符")
-    resp = post_step5(sess, url, base_form(token, **{PW_FIELD: "a" * 21}))
-    _no_transport_reject(resp, "%s 密码 21 字符" % CASE)
-    assert admin_invalid_hits(resp.text), (
-        "[%s 密码 21 字符] 未命中 INSTALL_ADMIN_INVALID（长度不符合要求）：%r" % (CASE, resp.text[:200])
-    )
-
-    sess, token = wizard_session(base_url, install_entry, CASE + "/密码 6 字符")
-    resp = post_step5(sess, url, base_form(token, **{PW_FIELD: "a" * 6}))
-    _no_transport_reject(resp, "%s 密码 6 字符" % CASE)
-    assert not admin_invalid_hits(resp.text), (
-        "[%s 密码 6 字符] 合法下界被判为 INSTALL_ADMIN_INVALID：%r" % (CASE, resp.text[:200])
     )

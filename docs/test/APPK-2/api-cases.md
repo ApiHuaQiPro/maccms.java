@@ -22,6 +22,8 @@
 | TC-I-INS-005 | API-030 | 安全、权限 | P1 | AC-12 / INS-SEC-4 | `test_TC_I_INS_005.py` |
 | TC-I-INS-006 | API-030 | 边界、异常 | P2 | AC-12 / SCH-1 | `test_TC_I_INS_006.py` |
 | TC-I-INS-007 | API-030 | 边界、异常 | P2 | AC-12 / TRN-1 | `test_TC_I_INS_007.py` |
+| TC-I-INS-009 | API-030 | 权限、页面状态 | P1 | AC-12 / INS-SEC-2 | `test_TC_I_INS_009.py` |
+| TC-I-INS-010 | API-030 | 边界、异常 | P2 | AC-12 / SCH-1、INS-SEC-3 | `test_TC_I_INS_010.py` |
 | TC-I-MAKE-001 | API-024 `/make/{makeAction}` | 权限、异常 | P1 | AC-7 / ADM-6 | `test_TC_I_MAKE_001.py` |
 | TC-I-MAKE-002 | API-024 | 权限、安全 | P1 | AC-8 / ADM-1、ADM-3、ADM-4 | `test_TC_I_MAKE_002.py` |
 | TC-I-MAKE-003 | API-024 | 异常、边界 | P1 | AC-7 / MAKE_PARAM_ERR | `test_TC_I_MAKE_003.py` |
@@ -58,6 +60,8 @@ install.lock（INS-SEC-2）→ 方法（INS-SEC-3）→ 环境（INS-SEC-5）→
 | account 数组按缺失（SCH-1） | INSTALL_ADMIN_REQUIRED 分支 | INS-006 | 安装模式 + 无 lock + 会话令牌 + 第 4 步连接配置 | BLOCKED |
 | install_dir 数组 = `/` 与 initdata 非 1 | install_dir / 写库之前 | INS-006 | 同上（须先命中 INSTALL_DIR_UNSUPPORTED 证明越过了令牌） | BLOCKED |
 | 正文上限（TRN-1） | 读正文时，业务判定之前 | INS-007 | 安装模式 + 无 lock + 会话令牌 | BLOCKED |
+| 锁终态（INS-SEC-2） | install.lock 检查，一切参数之前 | INS-009 | 安装模式 + **已安装**（lock 存在） | BLOCKED |
+| 密码长度边界（INS-SEC-3） | account/密码规则，令牌之前 | INS-010 | 安装模式 + 无 lock + 会话令牌 | BLOCKED |
 
 前置建立方式（统一在 `tests/api/APPK-2/install_support.py`，`TC-I-INS-001`～`007` 共用，不再各写一套）：
 
@@ -166,9 +170,7 @@ install.lock（INS-SEC-2）→ 方法（INS-SEC-3）→ 环境（INS-SEC-5）→
   2. 用**完全相同的表单与 Cookie** 重放 → HTTP 200、「非法访问」；不得再命中任何令牌之后的分支、不得出现安装结果。
   3. 对照：同一会话重新 `GET ?step=3` 取得**新令牌**，再提交「新令牌 + `install_dir=/sub`」→ 必须再次命中
      `INSTALL_DIR_UNSUPPORTED`（证明第 2 步的拒绝来自令牌一次性，不是会话/实例状态变化）。
-- 补充用例（`test_TC_I_INS_005_installed_lock_terminal_state`）：锁终态。实例已安装时
-  `GET ?step=5`、`POST ?step=5`（表单）、`POST ?step=5`（JSON 正文）、`GET ?step=3` 全部只返回 INSTALL_LOCKED 固定文本、
-  不建会话、无安装痕迹；实例未安装 → BLOCKED（同一断言由 INS-002 在已安装实例上覆盖）。
+- 补充用例：已拆为 **TC-I-INS-009**（见下），本用例只留令牌一次性主链。
 - 「安装成功后自动生成 lock」由 INS-002（已安装实例）覆盖，本用例不改写被测实例。
 
 ### TC-I-INS-006（边界、异常 / P2 / AC-12 / SCH-1）
@@ -186,8 +188,34 @@ install.lock（INS-SEC-2）→ 方法（INS-SEC-3）→ 环境（INS-SEC-5）→
   4. `initdata=1` 与 `initdata=unexpected`（都带 `install_dir=/other` 走到令牌之后同一个分支）：
      两次都必须命中 `INSTALL_DIR_UNSUPPORTED`，且命中的令牌之后分支集合**完全相等**
      （initdata 不影响写库之前的判定）。「非 1 不写初始数据」在写库之后才可观测，列入「未覆盖与原因」。
-- 补充用例（`test_TC_I_INS_006_boundary`）：密码长度边界 5 / 21 字符 → `INSTALL_ADMIN_INVALID`（长度不符合要求）；
-  6 字符 → 不得命中 `INSTALL_ADMIN_INVALID`。这些分支在令牌之前，与连接配置无关。
+- 补充用例：密码长度边界已拆为 **TC-I-INS-010**（见下），本用例只留传输形态（数组）维。
+
+### TC-I-INS-009（权限、页面状态 / P1 / AC-12 / INS-SEC-2 锁终态）
+
+- 由来（第 4 次修订 REV-I-06）：上一版作为 `test_TC_I_INS_005_installed_lock_terminal_state` 存在 INS-005 文件里，
+  破坏「1 条 CASE = 1 个 test = 1 个文件」，且与 INS-005 的主前置**互斥**（本用例要求已安装，INS-005 要求未安装）。
+- 前置：相 1 安装模式（`GET /install.php` 不是 404）；相 2 **已安装**（`install.lock` 存在，基准请求命中 INSTALL_LOCKED）。
+  任一不成立 → BLOCKED，不做宽松断言。
+- 步骤与预期（`test_TC_I_INS_009`）：`GET ?step=5`、`POST ?step=5`（表单）、`POST ?step=5`（JSON 正文）、
+  `GET ?step=3`、`GET /install.php` 共 5 组，每组都必须：
+  1. HTTP 200；
+  2. 正文含 INSTALL_LOCKED 固定文本（`install.lock`）；
+  3. 不新发 `JSESSIONID`（锁检查在建会话之前）；
+  4. 无安装执行痕迹（`assert_no_install_execution`），不签发 `__token__` 字段。
+- 与 INS-002 的分工：INS-002 在已安装实例上覆盖「lock 存在 → 恒返回 INSTALL_LOCKED」的自面；
+  本用例覆盖「多方法 / 多 step / 多请求形态都到不了参数与写库阶段」的面。两者前置相同，均要求已安装。
+
+### TC-I-INS-010（边界、异常 / P2 / AC-12 / SCH-1、INS-SEC-3 密码长度边界）
+
+- 由来（第 4 次修订 REV-I-06）：上一版作为 `test_TC_I_INS_006_boundary` 存在 INS-006 文件里。
+  INS-006 断的是「数组形态按缺失处理」，本用例断的是「标量的字符长度边界」，不同判定对象不应共用一个测试名。
+- 前置：安装模式；`install.lock` 不存在；**每个长度各自独立会话 + 该会话第 3 步签发的令牌**。
+  密码规则分支在令牌之前（INS-SEC-3 → INSTALL_ADMIN_*），与第 4 步连接配置无关，可稳定复核。
+- 步骤与预期（按契约 InstallStep5Form.password 的 `x-business-rule`：6～20 个字符，`mb_strlen`）：
+  1. 密码 5 字符（下界 -1）→ `INSTALL_ADMIN_INVALID`（长度不符合要求）；
+  2. 密码 21 字符（上界 +1）→ `INSTALL_ADMIN_INVALID`；
+  3. 密码 6 字符（合法下界）→ **不得**命中 `INSTALL_ADMIN_INVALID`（进入后续分支）；
+  4. 三者都不得是 400/413/414/415/422/431（SCH-1：不返回传输层拒绝）、不得是「参数错误」、不回显密码。
 
 ### TC-I-INS-007（边界、异常 / P2 / AC-12 / TRN-1）
 
@@ -307,14 +335,22 @@ install.lock（INS-SEC-2）→ 方法（INS-SEC-3）→ 环境（INS-SEC-5）→
 > T2 补充用例（第 3 轮复核后追加）：`TC-I-CSRF-001` 的对照请求恒带有效会话，302 在 001 里是被允许的，
 > 因此「来源校验被放到登录之后」或「来源校验全放行」的实现在 001 下仍可能保持绿。本条用**无凭据**会话把两者分开。
 
-- 前置：无（不需要令牌）；探针入口 `collect/test`（C 类只读，实现恒返回 `code`）与 `make/make`（缺 `ac` 即参数错误，不入生成循环）。
+- 前置：无（不需要令牌）；探针入口 `collect/test`（C 类只读，实现恒返回 `code`）与 `make/make` + `ac=index`
+  （合法入参，必然进入生成循环：进度页样式 + 生成条目 + 跳转签名，可当「真的到达业务层」的证据）。
 - 步骤与预期（对每个探针）：
   1. 无凭据 + 同源（`Sec-Fetch-Site: same-origin`，不注入令牌）→ **必须是 302** 且 `Location` 含 `login`/`index`；
      不得是来源拒绝（证明来源已先于登录通过）。
   2. 无凭据 + 跨站（`Sec-Fetch-Site: cross-site`）→ Ajax 形态必为 200 JSON `msg=非法请求`；
      非 Ajax 形态必为 403 + `text/html` + 标题「跳转提示」+ 正文「非法请求」；**不得是 302**。
-  3. 有会话 + 同源 → 200 + `application/json` + 业务体含 `code` 与 `msg`（不是只排除「非法请求」文案）。
+  3. 有会话 + 同源 → **按探针种类断言各自的契约输出**（第 4 次修订 REV-I-07）：
+     `collect/test` → 200 + `application/json` + 业务体必有 `code` 与 `msg`；
+     `make/make` + `ac=index` → 200 + `text/html` + 进度页样式签名（3 项）+ 生成条目（≥ 1）+ `progress.js` 跳转签名（3 项），
+     且**不得**出现「参数错误」。
   4. 有会话 + 跨站 → 仍为来源拒绝，且拒绝体字段不超过 `code/msg/data/url/wait`。
+- 步骤 5（第 4 次修订 REV-I-07 新增，契约反向对照）：`GET make/make`（**不带 `ac`**）→ 按 MakeParams.ac 的
+  「缺失、空、数组或不在枚举 → 同 PHP 只输出进度页样式、不生成（不是错误）」断言：200 + `text/html` + 样式签名，
+  且**无生成条目、无生成失败行、无 `data-url=` 跳转片段、无「参数错误」**。
+  上一版把「缺 ac 即参数错误」当预期，与契约相反，已改正。
 - 失败判据：“同源无凭据请求停在来源拒绝”说明实现过严而非过宽，但同样与 ADM-3 顺序不符，按 FAIL 处理（交实现层确认是顺序问题还是用例假设问题）。
 
 ### TC-I-OUT-002（安全、异常 / P1 / AC-10、AC-16 / OUT-1-9、API-041）
@@ -325,15 +361,34 @@ install.lock（INS-SEC-2）→ 方法（INS-SEC-3）→ 环境（INS-SEC-5）→
 > 另外它的页面提交方式是 POST（`collect-info.js:37` 的 `$.post`），只测 GET 会漏掉「POST 走了另一条返回分支」。
 
 - 前置：默认角色会话；不要求测试环境真有该采集链接（全部样本都期望业务失败）。
-- 样本：14 个 OUT-1 拒绝目标（回环/私网/链路本地/云元数据/元数据主机名/IPv4 映射 IPv6/内部服务端口/端口 0）、
-  3 个协议不合规（`ftp:`、带用户信息、带 `#` 片段）、缺 `cjurl`、9000 字符超长 `cjurl`。
+- 样本（第 4 次修订 REV-I-08 重划）：
+  · 15 个 **OUT-1 拒绝目标**（回环 IPv4 / 十进制回环 / `localhost` 及其子域 / 私网 10、192.168、172.16 /
+    链路本地 / 云元数据 IP 与主机名 / IPv4 映射 IPv6 / 回环 IPv6 / 内部服务端口 3306、6379 / 端口 0）
+    → `COLLECT_URL_REJECTED` = `(1001, 采集链接有误或不能为本地链接)`；
+  · 6 个 **cjurl 格式/协议不合规**（`ftp:` / 带用户信息 / 带 `#` 片段 / 相对地址 / 协议相对地址 /
+    **长度 1025 = 业务上限 1024 + 1**）→ `COLLECT_PARAM_ERR` = `(1001, 参数错误)`；
+  · **cjurl 缺失 / 空串 / 数组** → `(1001, 参数错误)`；
+  · 合法公网控制样本 `http://cv.example.com/...`（仅要求 `code ∈ {1,1001,1002}` 的业务体，用以证明前面的失败样本有区分力）。
+    上一版的「9000 字符 cjurl」已删：按契约 TRN-1，请求行超过容器上限时由容器在进入应用之前拒绝，
+    属**部署层行为、不是业务分支**；且业务上限是 1024，超长走的仍是同一个 `COLLECT_PARAM_ERR`。
 - 步骤与预期：
-  1. 每个拒绝目标先 GET、再 POST → 都是 HTTP 200 + `application/json` + `code≠1` + 非空固定 `msg`；
-  2. GET 与 POST 的 `code`、`msg` 逐字相等（契约：GET 与 POST 等价）；
-  3. 业务体字段限于白名单（`code/msg/data` 与成功体的分页分类字段），**不得出现** `url`/`host`/`response`/`cjurl`；
+  1. 每个样本都断言 HTTP 200 + `application/json` + **逐字 `wire_code` 与 `wire_msg`**
+     （上一版只要求「code≠1、msg 非空」，任何自编文案都能过，等于没验错误契约）；
+  2. **失败体字段集合恰为 `{code, msg}`**（`CollectTestResult` required 与「失败只有 code、msg」）：
+     多出 `url`/`host`/`response`/`cjurl` 或成功体的分页分类字段都判失败；
+  3. GET 与 POST 等价**按实际请求范围**：每个样本都发**同一位置**的 GET 查询串与 POST 表单两份，二者 `code`/`msg` 逐字相等；
+     另加一组「GET 查询串 ↔ POST 表单」的**跨位置**同参数对照（ADM-5 合并后的业务结论相同）。
+     上一版只把样本放 GET 查询串却要求 POST 返回同一结论，等于用一个请求证明另一个请求；
   4. `msg` 与整份响应按 `assert_error_body_redacted(msg, cjurl)` 做 OUT-1-9 去敏（完整 URL、主机及子域、
      IPv4 等价书写、IPv6 等价类、显式端口）——禁止片段按每个输入动态生成，不是固定字符串表；
-  5. 缺 `cjurl` 与超长 `cjurl` → 不得 5xx；JSON 形态按 1～4 断言，非 JSON 形态至少不得回显整段入参。
+  5. 格式不合规的样本额外断言 `msg != COLLECT_URL_REJECTED`（保证「入参校验先于目标检查」的顺序）；
+  6. 8192 字符样本：若应用返回 `COLLECT_PARAM_ERR` → 同上断言；若被容器/网关在应用之前拒绝
+     （非 200 或非 JSON）→ **BLOCKED**（`pytest.skip` 并写明「不是业务分支」），**绝不当作通过**。
+- 已知实现差异（**不阻断本条断言，T3 时按 FAIL 记录待路由**）：当前实现
+  `AdminCollectActions` 的 `collect/test` 不连接资源站，恒返回 `(1001, 新系统不连接资源站（在线采集按 E01 只做本地文件源），未进行连接测试)`
+  （`docs/architecture/25-b17-collect-config.md` 的 D-B17-1）。这与契约 API-041 的固定 `wire_msg`（`COLLECT_PARAM_ERR` /
+  `COLLECT_URL_REJECTED` 等）不一致：本条按契约断言，T3 首次执行预计会在这几条上 FAIL，需由 智能调度 路由给负责该处的人定
+  「实现补齐或契约修订」，测试侧不自行放宽断言。
 
 ### TC-I-LIMIT-001（边界、异常 / P2 / AC-16 / TRN-1）
 

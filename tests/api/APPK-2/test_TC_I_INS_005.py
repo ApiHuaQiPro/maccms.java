@@ -1,7 +1,9 @@
 # CASE: TC-I-INS-005 | 接口: POST /install.php?step=5（API-030） | 追溯: AC-12 / INS-SEC-4 | 维度: 安全、权限 | 优先级: P1
 # 标题: 一次性令牌：同一会话第一次用真实令牌越过令牌检查（令牌在通过时即从会话删除）后，
 #       完全相同的表单重放第二次被 INSTALL_ACCESS_DENIED 拒绝；重新打开第 3 步取新令牌可再次越过。
-#       另含（独立函数）已安装实例的 INSTALL_LOCKED 锁终态。
+#       第 4 次修订 REV-I-06：上一版把「已安装实例的锁终态」作为本文件里的第二个 test，
+#       已拆为独立 CASE TC-I-INS-009（test_TC_I_INS_009.py，追溯 AC-12 / INS-SEC-2），
+#       本文件因此恢复「1 条 CASE = 1 个 test = 1 个文件」，且只追溯 AC-12 / INS-SEC-4。
 # 契约: docs/api/APPK-2/openapi.yaml @ bc612e933aa67abab319b90534c5150c10a51452
 #       （INS-SEC-4「令牌在通过校验的同时从会话删除」、INS-SEC-2 install.lock、x-idempotency「不可重放」）
 #
@@ -24,24 +26,18 @@ if _HERE not in sys.path:
     sys.path.insert(0, _HERE)
 
 import pytest
-import requests
 
 from install_support import (
     DIR_NOT_ROOT,
     MSG_DIR_UNSUPPORTED,
     MSG_SUCCESS,
-    TOKEN_FIELD,
     after_token_hits,
     assert_html_reply,
-    assert_no_install_execution,
     assert_not_echoed,
-    base_form,
     before_token_hits,
-    has_locked_text,
     is_access_denied,
     post_step5,
     renew_token,
-    step3_url,
     step5_url,
     wizard_session,
 )
@@ -103,58 +99,3 @@ def test_TC_I_INS_005(base_url, install_entry):
         % (CASE, before_token_hits(third.text) + after_token_hits(third.text), third.text[:200])
     )
     assert MSG_SUCCESS not in third.text, "[%s 新令牌对照] install_dir 非法却完成了安装" % CASE
-
-
-@pytest.mark.install_wizard
-def test_TC_I_INS_005_installed_lock_terminal_state(base_url, install_entry):
-    """C 部分：已安装实例（install.lock 存在）的锁终态。
-
-    与主用例的前置互斥（主用例要求未安装），所以单独判定：
-      - 任何方法、任何 step 都只返回 INSTALL_LOCKED 固定文本（不读参数、不建会话、不进入写库阶段）；
-      - 未安装实例上本函数 BLOCKED（同一断言在未安装实例上由 TC-I-INS-002 覆盖）。
-    """
-    probe = requests.Session().get(step5_url(base_url, install_entry), timeout=30, allow_redirects=False)
-    if probe.status_code == 404:
-        pytest.skip("BLOCKED：目标实例不是安装模式（/install.php 未装配，返回 404），锁终态不可达")
-    if not has_locked_text(probe.text):
-        pytest.skip(
-            "BLOCKED：目标实例未安装（install.lock 不存在），锁终态分支不可达；"
-            "同一断言在未安装实例上由 TC-I-INS-002 覆盖"
-        )
-
-    url = step5_url(base_url, install_entry)
-    sess = requests.Session()
-    attempts = [
-        ("GET step=5", lambda: sess.get(url, timeout=30, allow_redirects=False)),
-        (
-            "POST step=5 表单",
-            lambda: sess.post(url, data=base_form("0" * 32), timeout=60, allow_redirects=False),
-        ),
-        (
-            "POST step=5 非表单体",
-            lambda: sess.post(
-                url,
-                data='{"account":"autotestappk2admin"}',
-                headers={"Content-Type": "application/json"},
-                timeout=30,
-                allow_redirects=False,
-            ),
-        ),
-        ("GET step=3", lambda: sess.get(step3_url(base_url, install_entry), timeout=30, allow_redirects=False)),
-        ("GET 首页", lambda: sess.get(base_url.rstrip("/") + install_entry, timeout=30, allow_redirects=False)),
-    ]
-    for label, call in attempts:
-        resp = call()
-        assert resp.status_code == 200, "[%s %s] INSTALL_LOCKED 应为 HTTP 200，实际 %s" % (
-            CASE,
-            label,
-            resp.status_code,
-        )
-        assert has_locked_text(resp.text), (
-            "[%s %s] 已安装实例未返回 INSTALL_LOCKED 固定文本，响应=%r" % (CASE, label, resp.text[:200])
-        )
-        assert "JSESSIONID" not in resp.headers.get("Set-Cookie", ""), (
-            "[%s %s] INSTALL_LOCKED 分支不应创建安装会话" % (CASE, label)
-        )
-        assert_no_install_execution(resp, "%s %s" % (CASE, label))
-        assert TOKEN_FIELD not in resp.text, "[%s %s] 锁终态不应签发令牌字段" % (CASE, label)

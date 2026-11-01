@@ -87,6 +87,15 @@ def fake_reply(msg):
     )
 
 
+# 离线运行时 pytest 未启动，`assert` 抛的是 AssertionError；pytest 运行中抛的是 _pytest Failed。
+# 仿真里两者都算「判失败」，否则仿真会对所有负样本假报「没判失败」。
+FAIL_NAMES = ("Failed", "AssertionError")
+
+
+def _is_fail(exc):
+    return exc.__class__.__name__ in FAIL_NAMES
+
+
 def check_judgement_simulation():
     import install_support as S
 
@@ -157,7 +166,7 @@ def check_judgement_simulation():
     try:
         S.control_proves_after_token(sess, url, "0" * 32, "sim", case="SIM")
     except BaseException as exc:  # noqa: BLE001
-        skipped = exc.__class__.__name__ == "Skipped"
+        skipped = exc.__class__.__name__ in ("Skipped", "Skipped")
     check("对照：命中 INSTALL_NOT_TESTED → BLOCKED(skip)", skipped)
 
     # FAIL：令牌被拒
@@ -166,7 +175,7 @@ def check_judgement_simulation():
     try:
         S.control_proves_after_token(sess, url, "0" * 32, "sim", case="SIM")
     except BaseException as exc:  # noqa: BLE001
-        failed = exc.__class__.__name__ == "Failed"
+        failed = _is_fail(exc)
     check("对照：命中 INSTALL_ACCESS_DENIED → FAIL", failed)
 
     # base_form 的合成输入必须符合契约规则
@@ -241,17 +250,123 @@ def check_source_rejection_simulation():
 
 
 def check_collect_test_body_shape():
-    """TC-I-OUT-002 的业务体字段白名单：合法失败体过、透传目标字段的失败体被判失败。"""
-    import importlib.util
+    """TC-I-OUT-002 的判定面：失败体字段集合恰为 {code,msg}、wire_msg 逐字固定、探针种类各自有断言。
 
+    REV-I-08 后本用例不再用「白名单」这种宽松写法：FAILURE_KEYS 必须是恰好 {code,msg}，
+    且 _assert_failure_body 必须把 code 与 msg 都**逐字**比到期望值（不能只判「code≠1 且 msg 非空」）。
+    """
     mod = _load_case_module("tc_out_002", "test_TC_I_OUT_002.py", with_conftest=True)
 
-    allowed = mod.ALLOWED_KEYS
-    check("允许字段含 code/msg", {"code", "msg"} <= allowed)
-    check("允许字段不含 url/host/response", not ({"url", "host", "response"} & allowed))
-    # 契约里的成功体字段不得把入参透传字段带进来
-    for leak in ("cjurl", "response", "url", "host", "error"):
-        check("允许字段不含 %r" % leak, leak not in allowed)
+    # 1) 失败体字段集合：恰好 {code,msg}
+    check("FAILURE_KEYS 恰为 {code,msg}", mod.FAILURE_KEYS == {"code", "msg"})
+    for leak in ("cjurl", "response", "url", "host", "error", "data", "list", "page"):
+        check("失败体不允许字段 %r" % leak, leak not in mod.FAILURE_KEYS)
+
+    # 2) 两类失败分支的固定期望值必须不同且都是契约原文
+    check(
+        "COLLECT_PARAM_ERR = (1001, 参数错误)",
+        mod.WIRE_PARAM_ERR == (1001, "参数错误"),
+    )
+    check(
+        "COLLECT_URL_REJECTED = (1001, 采集链接有误或不能为本地链接)",
+        mod.WIRE_URL_REJECTED == (1001, "采集链接有误或不能为本地链接"),
+    )
+    check(
+        "两类失败分支文案不同（否则一种文案能同时过两种样本）",
+        mod.WIRE_PARAM_ERR[1] != mod.WIRE_URL_REJECTED[1],
+    )
+
+    # 3) 样本分类：格式/协议不合规（含 1025 字符）→ 参数错误；OUT-1 拒绝目标 → 链接有误
+    bad_labels = [label for label, _ in mod.BAD_CJURL]
+    check("协议/格式不合规样本含 1025 字符（业务上限 +1）", any("1025" in x for x in bad_labels))
+    overlong = [u for label, u in mod.BAD_CJURL if "1025" in label]
+    check(
+        "1025 字符样本长度恰为 1025（= cjurl maxLength 1024 + 1）",
+        len(overlong) == 1 and len(overlong[0]) == mod.CJURL_MAX + 1,
+    )
+    check(
+        "不再用 9000 字符查询串当业务分支（TRN-1：容器拒绝不是业务分支）",
+        all(len(u) <= 8192 for _, u in mod.REJECTED + mod.BAD_CJURL),
+    )
+
+    # 4) 判定函数逐字比 code 与 msg（用伪造响应实际跑一遍 _assert_failure_body）
+    def _resp(code, msg, status=200, ctype="application/json; charset=utf-8"):
+        import json as _json
+
+        return FakeResp(_json.dumps({"code": code, "msg": msg}), status, ctype)
+
+    try:
+        mod._assert_failure_body(_resp(1001, "参数错误"), "sim 正确", mod.WIRE_PARAM_ERR)
+        check("逐字正确的失败体通过", True)
+    except BaseException as exc:  # noqa: BLE001
+        check("逐字正确的失败体通过", False, repr(exc))
+
+    for label, resp_obj in (
+        ("code 不符（1002）", _resp(1002, "参数错误")),
+        ("msg 自编文案", _resp(1001, "参数错误: http://127.0.0.1/")),
+        ("带契约外字段", FakeResp('{"code":1001,"msg":"参数错误","url":"http://x/"}')),
+        ("缺 msg", FakeResp('{"code":1001}')),
+        ("HTTP 500", _resp(1001, "参数错误", status=500)),
+    ):
+        failed = False
+        try:
+            mod._assert_failure_body(resp_obj, "sim %s" % label, mod.WIRE_PARAM_ERR)
+        except BaseException as exc:  # noqa: BLE001
+            failed = _is_fail(exc)
+        check("错误体 %s → 判失败" % label, failed)
+
+
+def check_csrf_002_probe_kinds():
+    """TC-I-CSRF-002 每个探针都有自己的期望种类，不再用「都能返回 code」的笼统条件（REV-I-07）。"""
+    mod = _load_case_module("tc_csrf_002", "test_TC_I_CSRF_002.py", with_conftest=True)
+
+    kinds = [probe[3] for probe in mod.PROBES]
+    check("每个探针都声明了期望种类", len(kinds) == len(mod.PROBES) and all(kinds))
+    check(
+        "探针种类限于 {collect_test, make_progress}",
+        set(kinds) <= {"collect_test", "make_progress"},
+    )
+    check(
+        "make/make 探针不再发空参数（必须给 ac=index 才能证明到达生成循环）",
+        all(p[2].get("ac") for p in mod.PROBES if p[1] == "make/make"),
+    )
+
+    # collect_test 业务体：200 JSON {code,msg} 过；HTML 进度页判失败（种类不匹配）
+    try:
+        mod._assert_business_result(
+            FakeResp('{"code":1001,"msg":"x"}', 200, "application/json; charset=utf-8"),
+            "sim collect_test",
+            "collect_test",
+        )
+        check("collect_test 业务体 200 JSON {code,msg} 通过", True)
+    except BaseException as exc:  # noqa: BLE001
+        check("collect_test 业务体 200 JSON {code,msg} 通过", False, repr(exc))
+
+    progress_body = (
+        '<style type="text/css">body{font-size:12px;color: #333333;line-height:21px;}</style>'
+        'span{font-weight:bold;color:#FF0000}'
+        '<a target="_blank" href="/index.html"><font color=>index.html</font></a>'
+        '<script src="/admin-assets/progress.js" data-url="u" data-seconds="3"></script>'
+    )
+    try:
+        mod._assert_business_result(FakeResp(progress_body), "sim make_progress", "make_progress")
+        check("make_progress 进度页签名通过", True)
+    except BaseException as exc:  # noqa: BLE001
+        check("make_progress 进度页签名通过", False, repr(exc))
+
+    for label, body in (
+        ("进度页缺样式签名", '<a target="_blank" href="/i.html"><font color=>i</font></a>'),
+        ("进度页只有样式、无生成条目", '<style type="text/css">'
+         'body{font-size:12px;color: #333333;line-height:21px;}</style>'
+         'span{font-weight:bold;color:#FF0000}'),
+        ("进度页混入参数错误", progress_body + "参数错误"),
+    ):
+        failed = False
+        try:
+            mod._assert_business_result(FakeResp(body), "sim %s" % label, "make_progress")
+        except BaseException as exc:  # noqa: BLE001
+            failed = _is_fail(exc)
+        check("make_progress %s → 判失败" % label, failed)
 
 
 # ── 4. 断言强度自检：确保没有把「前置不成立」写成宽松 assert ────────────────────
@@ -280,6 +395,7 @@ def main():
     check_imports()
     check_judgement_simulation()
     check_source_rejection_simulation()
+    check_csrf_002_probe_kinds()
     check_collect_test_body_shape()
     check_no_weak_asserts()
     if FAILURES:
