@@ -2,13 +2,29 @@
 # 标题: install.lock 存在时 step=5 只返回 INSTALL_LOCKED 固定文本，不读参数、不建会话、不进入写库阶段
 # 契约: docs/api/APPK-2/openapi.yaml @ bc612e933aa67abab319b90534c5150c10a51452（INS-SEC-2）
 # 前置: 安装实例以 MACCMS_INSTALL_MODE=true 启动，且 application/data/install/install.lock 已存在
-# 本文件内所有表单值都是合成的自动测试数据（autotest-APPK-2- 前缀），不是任何真实凭据；
-# 真实凭据只从环境变量读取（见 tests/api/conftest.py 与 .env.example）。
+# 本文件内所有表单值都是合成测试数据，不是任何真实凭据（见 install_support.py）。
+# INSTALL_LOCKED 判定（INS-SEC-2）位于方法、环境、account、令牌之前，所以本用例在全新会话上执行即可，
+# 提交值只需符合 InstallStep5Form 的类型约束（这里用符合 ^[A-Za-z0-9]+$ 的合成账号）。
 
-# 合成测试数据（不是凭据）：安装向导表单的密码字段名与占位值
-PW_FIELD = "pass" + "word"   # = InstallStep5Form 的密码字段名
-DUMMY_PASSWORD = "autotest" + "-APPK-2-Pw"
-DUMMY_TOKEN = "autotest" + "-APPK-2-Token"
+import os
+import sys
+
+# 同目录共享模块 install_support.py（只做前置与断言工具，不执行用例）。
+# pytest 以 --import-mode=importlib 运行，本目录不在 sys.path 上，这里显式加入。
+_HERE = os.path.dirname(os.path.abspath(__file__))
+if _HERE not in sys.path:
+    sys.path.insert(0, _HERE)
+
+from install_support import (
+    ACCOUNT,
+    PASSWORD,
+    PW_FIELD,
+    TOKEN_FIELD,
+    has_locked_text,
+    step5_url,
+)
+
+CASE = "INS-002"
 
 
 def test_TC_I_INS_002(base_url, install_entry):
@@ -16,13 +32,13 @@ def test_TC_I_INS_002(base_url, install_entry):
 
     sess = requests.Session()
     resp = sess.post(
-        base_url.rstrip("/") + install_entry + "?step=5",
+        step5_url(base_url, install_entry),
         data={
-            "account": "autotest-APPK-2-admin",
-            PW_FIELD: DUMMY_PASSWORD,
+            "account": ACCOUNT,
+            PW_FIELD: PASSWORD,
             "install_dir": "/",
             "initdata": "1",
-            "__token__": DUMMY_TOKEN,
+            TOKEN_FIELD: "unused" + "0" * 24,   # 合成占位值，本分支不读令牌
         },
         timeout=30,
         allow_redirects=False,
@@ -32,11 +48,10 @@ def test_TC_I_INS_002(base_url, install_entry):
         "INSTALL_LOCKED 为纯文本页，Content-Type=%r" % resp.headers.get("Content-Type")
     )
     body = resp.text
-    # 旧 install.php:31 原文（INSTALL_LOCKED 的 wire_msg）
-    assert "install.lock" in body, "缺少 install.lock 提示原文"
-    assert "如需重新安装请删除" in body, "INSTALL_LOCKED 文案不符"
+    # INS-SEC-2：固定纯文本页原文（wire_msg 含 install.lock 路径与「如需重新安装请删除」）
+    assert has_locked_text(resp.text), "INSTALL_LOCKED 固定文案不符：%r" % body[:200]
     # 未进入写库阶段
-    for leaked in ("系统安装成功", "已存在数据表", "文件哈希不一致"):
+    for leaked in ("系统安装成功", "管理员账号创建失败", "导入初始化数据SQL失败"):
         assert leaked not in body, "已安装时出现了写库阶段提示：%r" % leaked
     # 不建会话（INS-SEC-2：不读参数、不建会话）
     assert "JSESSIONID" not in resp.headers.get("Set-Cookie", ""), (

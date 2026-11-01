@@ -216,15 +216,16 @@ MSG_COLLECT_URL_REJECTED = "采集链接有误或不能为本地链接"
 # ───────────────────────────── 共享断言（第 2 轮修订新增） ─────────────────────────────
 # 以下工具都在 tests/api/ 内，供 APPK-2 用例复用；只做断言与参数构造，不发起任何额外请求。
 
-MSG_ACCESS_DENIED = "非法访问"          # INSTALL_ACCESS_DENIED，lang(install/access_denied)
-MSG_PLEASE_TEST = "请先点击测试数据库连接"  # INSTALL_NOT_TESTED，lang(install/please_test_connect)
-MSG_ENV_FAILED = "初始失败"             # INSTALL_ENV_FAILED，lang(install/init_err)
-MSG_ADMIN_REQUIRED = "请填写管理账号和密码"  # INSTALL_ADMIN_REQUIRED
-MSG_TABLES_EXIST = "已存在数据表"          # INSTALL_TABLES_EXIST
-MSG_LOCKED_PATH = "install.lock"        # INSTALL_LOCKED 固定文本的第一段
+MSG_ACCESS_DENIED = "非法访问"                        # INSTALL_ACCESS_DENIED，lang(install/access_denied)
+MSG_PLEASE_TEST = "请先点击测试数据库连接！"           # INSTALL_NOT_TESTED，lang(install/please_test_connect)
+MSG_ENV_FAILED = "环境检测未通过，不能进行下一步操作！"  # 第 2/3 步 lang(install/environment_failed)；第 5 步为 MSG_INIT_ERR
+MSG_INIT_ERR = "初始失败！"                            # 第 5 步 lang(install/init_err)
+MSG_ADMIN_REQUIRED = "请填写管理账号和密码！"           # INSTALL_ADMIN_REQUIRED
+MSG_TABLES_EXIST = "已存在数据表"                      # INSTALL_TABLES_EXIST（文案在 openapi 里未逐字给出，仅作辅助识别）
+MSG_LOCKED_PATH = "install.lock"                      # INSTALL_LOCKED 固定文本的第一段
 
 # 其他 INSTALL_* 的固定文案（用来判定「响应停在哪个分支」，避免把前置分支当目标分支）
-OTHER_INSTALL_MSGS = (MSG_PLEASE_TEST, MSG_ENV_FAILED, MSG_ADMIN_REQUIRED, MSG_TABLES_EXIST)
+OTHER_INSTALL_MSGS = (MSG_PLEASE_TEST, MSG_ENV_FAILED, MSG_INIT_ERR, MSG_ADMIN_REQUIRED, MSG_TABLES_EXIST)
 
 # 安装向导里已安装的固定文本：出现即说明 install.lock 存在（INS-SEC-2）
 LOCKED_PAGE_MARKERS = (MSG_LOCKED_PATH, "如需重新安装请删除")
@@ -268,15 +269,51 @@ def assert_no_success(resp, success_markers):
 # ── OUT-1-9 错误体去敏：按每个输入动态生成禁止片段 ──────────────────────────────
 
 def _ipv6_forms(text):
-    """IPv6 字面量在响应里可能的等价写法（原样、去 []、小写/大写、去掉 :: 展开）。"""
+    """IPv6 字面量在响应里可能的等价写法。
+
+    第 2 次复核 REV-I-05：不能只调大小写和方括号。同一个地址在响应里可能被**规范化**成
+    压缩形式（fc00::1）或**完全展开**形式（fc00:0000:...:0001，含前导零），两种都要按等价类禁用。
+    覆盖：原样 / 去 [] / 加 [] / 大小写 / ipaddress 规范化压缩形式）与展开形式 /
+    内嵌 IPv4（::ffff:a.b.c.d）的十六进制与点分写法。纯离线计算，不发请求。
+    """
+    import ipaddress
+
     forms = set()
     if not text:
         return forms
-    for base in (text, text.strip("[]")):
+    bare = text.strip().strip("[]")
+    # 1) 原样与括号、大小写变体
+    for base in (text, bare):
         forms.add(base)
         forms.add(base.lower())
         forms.add(base.upper())
-        forms.add("[" + base.strip("[]") + "]")
+    forms.add("[" + bare + "]")
+    forms.add("[" + bare.lower() + "]")
+    # 2) 解析后的规范形式（压缩写法）与完全展开写法
+    addr = None
+    try:
+        addr = ipaddress.IPv6Address(bare)
+    except ValueError:
+        try:
+            addr = ipaddress.IPv6Address(bare.split("%")[0])  # 去掉 zone id（fe80::1%eth0）
+        except ValueError:
+            addr = None
+    if addr is not None:
+        for rendered in (
+            str(addr),                  # 压缩形式 fc00::1
+            addr.exploded,              # 展开形式 fc00:0000:0000:0000:0000:0000:0000:0001
+            str(addr).upper(),
+            addr.exploded.upper(),
+            "[" + str(addr) + "]",
+            "[" + addr.exploded + "]",
+        ):
+            forms.add(rendered)
+        # 3) 内嵌 IPv4 的两种写法（::ffff:7f00:1 与 ::ffff:127.0.0.1）
+        embedded = _ipv6_embedded_ipv4(str(addr))
+        if embedded:
+            forms |= _ipv4_forms(embedded)
+            forms.add("::ffff:" + embedded)
+            forms.add("[" + "::ffff:" + embedded + "]")
     return {f for f in forms if len(f) >= 3}
 
 

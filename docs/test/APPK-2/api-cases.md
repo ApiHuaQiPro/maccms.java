@@ -36,26 +36,56 @@
 | TC-I-CSRF-001 | B 类后台动作 | 安全、权限 | P1 | AC-16 / SRC-1、SRC-2 | `test_TC_I_CSRF_001.py` |
 | TC-I-LIMIT-001 | 后台动作路径 | 边界、异常 | P2 | AC-16 / TRN-1 | `test_TC_I_LIMIT_001.py` |
 
-## 安装向导用例的前置与判定（第 2 轮修订重点）
+## 安装向导用例的前置与判定（第 3 轮修订：按契约判定顺序设计）
 
-API-030 的判定是一条有序分支链（契约 INS-SEC-1～5 + 判定顺序）。**如果前置不成立，请求会停在更早的分支，
-把「更早分支的固定文案」误当成目标分支，就是假通过。** 因此 `TC-I-INS-003`～`007` 的每条用例开头都自建前置并显式判定：
+API-030 的判定是一条**有序**分支链（契约 `docs/api/APPK-2/openapi.yaml` @ `bc612e93`，INS-SEC-1～5 + 判定顺序）：
+
+```
+install.lock（INS-SEC-2）→ 方法（INS-SEC-3）→ 环境（INS-SEC-5）→ 第 4 步连接配置（INSTALL_NOT_TESTED）
+→ account/密码存在（INSTALL_ADMIN_REQUIRED）→ account/密码规则（INSTALL_ADMIN_INVALID）
+→ 令牌（INS-SEC-4）→ install_dir → root → 互斥区 → 写库阶段（INS-2 ①～⑥）→ 成功
+```
+
+**核心原则：一条用例只能在它目标的那个分支位置验证；命中更早分支不是通过，是 BLOCKED。**
+
+| 目标分支 | 位置 | 用例 | 需要的前置 | 前置不成立时 |
+| --- | --- | --- | --- | --- |
+| 方法拒绝（INS-SEC-3） | install.lock 之后、环境之前 | INS-003 | 安装模式 + 无 lock（全新会话即可） | BLOCKED |
+| 令牌拒绝（INS-SEC-4） | account/密码规则之后、install_dir 之前 | INS-004 | 安装模式 + 无 lock + 会话内第 3 步令牌 + **第 4 步连接配置** | BLOCKED |
+| 令牌一次性（INS-SEC-4） | 令牌通过后（用 install_dir 分支观测） | INS-005 | 同上 | BLOCKED |
+| account 数组按缺失（SCH-1） | INSTALL_ADMIN_REQUIRED 分支 | INS-006 | 安装模式 + 无 lock + 会话令牌 + 第 4 步连接配置 | BLOCKED |
+| install_dir 数组 = `/` 与 initdata 非 1 | install_dir / 写库之前 | INS-006 | 同上（须先命中 INSTALL_DIR_UNSUPPORTED 证明越过了令牌） | BLOCKED |
+| 正文上限（TRN-1） | 读正文时，业务判定之前 | INS-007 | 安装模式 + 无 lock + 会话令牌 | BLOCKED |
+
+前置建立方式（统一在 `tests/api/APPK-2/install_support.py`，`TC-I-INS-001`～`007` 共用，不再各写一套）：
 
 | 前置 | 建立方式 | 不成立时的处理 |
 | --- | --- | --- |
-| 安装模式实例（INS-SEC-1） | 目标实例以 `MACCMS_INSTALL_MODE=true` 启动；`GET /install.php?step=5` 返回 404 即为正常模式 | `pytest.skip("BLOCKED：…不是安装模式…")` |
+| 安装模式（INS-SEC-1） | `GET <install_entry>?step=5`；404 即正常模式 | `pytest.skip("BLOCKED：…不是安装模式…")` |
 | `install.lock` 不存在（INS-SEC-2） | 同一 GET 返回 INSTALL_LOCKED 固定文本（`install.lock` + 「如需重新安装请删除」） | `pytest.skip("BLOCKED：…已安装…")` |
-| 会话令牌（INS-SEC-4） | 同一会话 `GET <install_entry>?step=3`，从隐藏字段 `__token__` 取 32 位小写十六进制 | 取不到 / 格式不符 → `pytest.skip("BLOCKED：…无法取得签发的 __token__")`，**不合成令牌** |
-| 第 4 步连接配置（向导状态，INS-SEC-5） | 环境决定，脚本无法建立 | 目标分支是 `INSTALL_NOT_TESTED` 时按契约业务结果接受（见下） |
+| 会话令牌（INS-SEC-4） | 同一会话 `GET <install_entry>?step=3`，从隐藏字段 `__token__` 取 32 位小写十六进制；第 3 步页面打不开或环境检测失败也在此判定 | `pytest.skip("BLOCKED：…")`，**不合成令牌**、不写成 `assert` |
+| 第 4 步连接配置（向导状态） | 环境决定（`MACCMS_DEPLOY_CONFIG` 里已有连接信息），脚本不发送第 4 步请求（会改部署配置） | 目标分支不可达 → **BLOCKED** |
+| 令牌真的被消费 | 只有命中**令牌之后**的分支才算证据（`INSTALL_DIR_UNSUPPORTED`、root 拒绝、写库阶段各分支、成功） | 命中 `INSTALL_NOT_TESTED` / `INSTALL_ENV_FAILED` / `INSTALL_ADMIN_*` → BLOCKED |
 
-判定顺序相关结论（写进逐条用例，避免误判）：
+固定文案（逐字取自 `src/main/resources/lang/zh-cn.json`，`install_support.py` 里集中定义）：
 
-- `INSTALL_NOT_TESTED` 与 `INSTALL_ENV_FAILED` 位于 account / install_dir / initdata 校验**之前**。因此在没有第 4 步
-  连接配置的会话上，「account 数组按缺失受理」等用例的契约业务结果就是 `INSTALL_NOT_TESTED`；用例据此断言
-  「越过了令牌，且没有出现 `INSTALL_ACCESS_DENIED` / 400」，同时断言没有停在目标分支之外的其他分支。
-- 每个请求用**独立会话 + 该会话第 3 步签发的令牌**（令牌一次性，不能跨请求共用，也不能用合成令牌）。
-- `TC-I-INS-005`（令牌一次性）与库状态解耦：第一次提交只要**不是** `INSTALL_ACCESS_DENIED`，即证明令牌被接受并作废；
-  第二次用**完全相同的表单与 Cookie** 重放，必须停在 `INSTALL_ACCESS_DENIED`，且没有第二次安装结果。
+| 错误码 | 文案 |
+| --- | --- |
+| `INSTALL_ACCESS_DENIED` | `非法访问` |
+| `INSTALL_NOT_TESTED` | `请先点击测试数据库连接！` |
+| 第 2/3 步环境失败 | `环境检测未通过，不能进行下一步操作！` |
+| 第 5 步 `INSTALL_ENV_FAILED` | `初始失败！` |
+| `INSTALL_ADMIN_REQUIRED` | `请填写管理账号和密码！` |
+| `INSTALL_DIR_UNSUPPORTED` | `新版只支持安装在网站根目录（install_dir 为 /）` |
+| `INSTALL_ROOT_REFUSED` | `安装向导默认不接受 root 账号…` |
+| `INSTALL_CONNECT_FAILED` | `数据库连接失败，请检查数据库配置！` |
+| `INSTALL_INIT_DATA_FAILED` | `导入初始化数据SQL失败…` |
+| `INSTALL_ADMIN_FAILED` | `管理员账号创建失败` |
+| 成功 | `系统安装成功，欢迎您使用苹果CMS建站` |
+
+合成输入（不是凭据，`install_support.py` 内定义）：`account=autotestappk2admin`（符合 `^[A-Za-z0-9]+$`、
+≤30 字符）、密码为 6～20 字符的合成串、`install_dir=/`、`initdata=0`。**不再使用带连字符的 `autotest-APPK-2-admin`**
+（会先触发 `INSTALL_ADMIN_INVALID`，到不了令牌分支）。
 
 ## 逐条明细
 
@@ -63,57 +93,78 @@ API-030 的判定是一条有序分支链（契约 INS-SEC-1～5 + 判定顺序�
 
 - 前置：目标实例为**正常模式**（未开启安装模式）。
 - 步骤与预期：
-  1. `POST /install.php?step=5`（表单含 account、密码字段、install_dir、initdata、`__token__`）→ HTTP 404 前台页（API-005）。
+  1. `POST /install.php?step=5`（合规合成表单）→ HTTP 404 前台页（API-005）。
   2. 正文不含安装阶段痕迹（`系统安装成功`、`is_ok`、`install.lock`）。
   3. 正文不含部署配置与连接串（`MACCMS_DEPLOY_CONFIG`、`jdbc:`）。
 
 ### TC-I-INS-002（安全、回归 / P1 / AC-12 / INS-SEC-2）
 
-- 前置：安装模式实例，且 `application/data/install/install.lock` 已存在。
+- 前置：安装模式实例，且 `application/data/install/install.lock` 已存在（与 INS-003～007 所需前置互斥）。
 - 步骤与预期：
   1. `POST /install.php?step=5` → HTTP 200、`text/html`。
   2. 正文含 `install.lock` 与「如需重新安装请删除」（INSTALL_LOCKED 原文）。
-  3. 正文不含写库阶段文案（`系统安装成功`、`已存在数据表`、`文件哈希不一致`）。
+  3. 正文不含写库阶段文案（`系统安装成功`、`管理员账号创建失败`、`导入初始化数据SQL失败`）。
   4. 响应 `Set-Cookie` 不含 `JSESSIONID`（不建会话）。
-- 若实例未安装（无 lock），本条不成立：环境不具备 → T3 记 BLOCKED（由 Ins-002 的镜像用例 INS-003 起在未安装实例上执行）。
+- `INSTALL_LOCKED` 位于方法/环境/account/令牌之前，故本条在全新会话上执行即可，不要求向导状态。
 
 ### TC-I-INS-003（异常、安全 / P1 / AC-12 / INS-SEC-3）
 
-- 前置：安装模式（`GET ?step=5` 非 404）；`install.lock` 不存在（非 INSTALL_LOCKED 页）；全新会话（无向导状态、无令牌）。
-- 步骤与预期（同一会话连续三次，互不依赖令牌）：
-  1. `GET /install.php?step=5` → HTTP 200、`text/html` 跳转提示页，正文含「非法访问」（INSTALL_ACCESS_DENIED）。
-  2. `POST` 且 `Content-Type: application/json` → 同上。
-  3. `POST` 且 `Content-Type: text/plain` → 同上。
-  4. 三个响应都不得命中更早分支文案（`请先点击测试数据库连接`、`初始失败`、`请填写管理账号和密码`、`已存在数据表`），
-     都不得含安装执行痕迹（`系统安装成功`、`is_ok`、`开始安装`、`正在安装`）。
+- 前置：安装模式（`GET ?step=5` 非 404）；`install.lock` 不存在（非 INSTALL_LOCKED 页）；全新会话。
+  **不要求令牌前置**：INS-SEC-3 在环境、account、令牌之前判定，这是它在契约链上的正确位置。
+- 步骤与预期（同一会话）：
+  1. `GET ?step=5` → HTTP 200、`text/html` 跳转提示页（标题「跳转提示」），正文含「非法访问」。
+  2. `POST` + `Content-Type: application/json` → 同上。
+  3. `POST` + `Content-Type: text/plain` → 同上。
+  4. `HEAD ?step=5` → HTTP 200（无正文，只判状态）。
+  5. 三个有正文的拒绝响应都不得命中更早分支文案（`环境检测未通过，不能进行下一步操作！`、`请先点击测试数据库连接！`、
+     `请填写管理账号和密码！`），不得含安装执行痕迹（`系统安装成功`、`is_ok`、`开始安装`、`正在安装`），
+     不得回显 `JSESSIONID` / `install.token` / `jdbc:` / `MACCMS_DEPLOY_CONFIG`。
 
 ### TC-I-INS-004（安全、权限 / P1 / AC-12 / INS-SEC-4）
 
-- 前置：安装模式；`install.lock` 不存在；**从未访问第 3 步的全新会话**（向导状态与令牌都不存在）。
+- 前置：安装模式；`install.lock` 不存在；**每个验证点各自独立会话**，会话内从第 3 步取得真实 32 位小写十六进制令牌；
+  第 4 步连接配置已完成（否则停在 INSTALL_NOT_TESTED）。
+- 前置门槛（REV-I-01 / REV-I-02）：先下发**对照请求**「有效令牌 + `install_dir=/sub`」，
+  只有它命中 `INSTALL_DIR_UNSUPPORTED`（令牌之后、写库之前的第一个分支）才证明「account/密码合法 + 令牌通过」；
+  不成立 → BLOCKED，并把命中的令牌之前/之后文案一起写进 skip 原因。
 - 步骤与预期：
-  1. 该会话 `POST ?step=5`（含合成 `__token__`）→ HTTP 200、`text/html`，正文含「非法访问」。
-  2. 不得命中更早分支文案（同上四项）。
-  3. 正文不回显提交的令牌；不含 `JSESSIONID`；`Set-Cookie` 不新发 `install*` 会话。
+  1. 会话有令牌但表单**省略** `__token__` → HTTP 200、`text/html`、正文「非法访问」；不回显该会话令牌。
+  2. 会话有令牌但提交值与签发值**不符**（32 位 `f`）→ 同上；随后同一会话补上正确令牌 + `install_dir=/sub`
+     必须命中 `INSTALL_DIR_UNSUPPORTED`（证明上一条的拒绝来自令牌不符，而不是会话失效造成的伪拒绝）。
+  3. `__token__[]=<token>`（数组形态）→ 按缺失处理，同样「非法访问」。
+  4. 三条拒绝响应都不新发 `install*` 会话、不回显密码、不回显「账号:密码」。
 
 ### TC-I-INS-005（安全、权限 / P1 / AC-12 / INS-SEC-4 令牌一次性）
 
-- 前置：安装模式；`install.lock` 不存在；同一会话从第 3 步取得真实 32 位小写十六进制 `__token__`（取不到 → BLOCKED）。
-- 步骤与预期：
-  1. 同一会话用该令牌按第 3 步表单字段完整提交 → 不得停在 `INSTALL_ACCESS_DENIED`（证明令牌被接受）。
-  2. 第一次提交必须命中**某个安装阶段分支**（安装结果、`已存在数据表`、`初始失败`、`请先点击测试数据库连接` 之一），
-     否则视为无法证明令牌被接受 → 失败（用例前置/实现问题）。
-  3. 用完全相同的表单与 Cookie 重放 → HTTP 200、正文含「非法访问」，且不命中任何其他分支（令牌已作废）。
-  4. 重放响应不含安装成功痕迹（不重复执行安装）。
-  5. 若第一次真的完成安装：随后任意新会话提交 `?step=5` 必须停在 INSTALL_LOCKED（lock 已生成）。
+- 前置：安装模式；`install.lock` 不存在；同一会话第 3 步真实令牌（取不到 → BLOCKED）；第 4 步连接配置已完成。
+- 主用例步骤与预期（`test_TC_I_INS_005`）：
+  1. 第一次提交：**有效令牌 + `install_dir=/sub`**（令牌之后、写库之前的第一个分支）
+     → 必须命中 `INSTALL_DIR_UNSUPPORTED`；命中 `INSTALL_ACCESS_DENIED` 判失败，
+     命中 `INSTALL_NOT_TESTED` / 环境失败 / account 分支 → **BLOCKED**（证明不了令牌被消费）。
+     该分支不写库、不写 lock，用例可重复执行。
+  2. 用**完全相同的表单与 Cookie** 重放 → HTTP 200、「非法访问」；不得再命中任何令牌之后的分支、不得出现安装结果。
+  3. 对照：同一会话重新 `GET ?step=3` 取得**新令牌**，再提交「新令牌 + `install_dir=/sub`」→ 必须再次命中
+     `INSTALL_DIR_UNSUPPORTED`（证明第 2 步的拒绝来自令牌一次性，不是会话/实例状态变化）。
+- 补充用例（`test_TC_I_INS_005_installed_lock_terminal_state`）：锁终态。实例已安装时
+  `GET ?step=5`、`POST ?step=5`（表单）、`POST ?step=5`（JSON 正文）、`GET ?step=3` 全部只返回 INSTALL_LOCKED 固定文本、
+  不建会话、无安装痕迹；实例未安装 → BLOCKED（同一断言由 INS-002 在已安装实例上覆盖）。
+- 「安装成功后自动生成 lock」由 INS-002（已安装实例）覆盖，本用例不改写被测实例。
 
 ### TC-I-INS-006（边界、异常 / P2 / AC-12 / SCH-1）
 
-- 前置：安装模式；`install.lock` 不存在；**每个请求各自独立会话 + 该会话第 3 步签发的令牌**（取不到 → BLOCKED）。
+- 前置：安装模式；`install.lock` 不存在；**每个分支各自独立会话 + 该会话第 3 步签发的令牌**；第 4 步连接配置已完成。
 - 步骤与预期：
-  1. `account[]=…`（数组）→ 不是 400/413/415/422；不是 `INSTALL_ACCESS_DENIED`；结果为 `请填写管理账号和密码`
-     （INSTALL_ADMIN_REQUIRED），环境无第 4 步连接配置时为 `请先点击测试数据库连接`（INSTALL_NOT_TESTED）。
-  2. `install_dir[]=/other`（数组）→ 按缺失即 `/`；不得出现「新版只支持安装在网站根目录」（INSTALL_DIR_UNSUPPORTED）。
-  3. `initdata=unexpected` → 不是「参数错误」，同样只落在 INSTALL_ADMIN_REQUIRED 之前的 INSTALL_NOT_TESTED 或安装阶段分支。
+  1. `account[]=…`（数组）→ 不是 400/413/414/415/422/431、不是参数错误、不被令牌拒绝、不是 `INSTALL_ADMIN_INVALID`
+     → 必须命中 `请填写管理账号和密码！`（INSTALL_ADMIN_REQUIRED，位于连接配置之后、令牌之前）；
+     命中 `INSTALL_NOT_TESTED` → BLOCKED。
+  2. `install_dir[]=/other` → 必须越过后面的判定：若出现 `INSTALL_DIR_UNSUPPORTED` 判**失败**（数组没有按缺失处理），
+     否则须命中成功的 `系统安装成功` 才算「数组按 `/` 处理」；两者都没有 → BLOCKED。
+  3. 对照：`install_dir=/other`（标量）必须命中 `INSTALL_DIR_UNSUPPORTED`，否则 BLOCKED
+     （保证第 2 步的否定结论有区分力）。
+  4. `initdata=1` 与 `initdata=unexpected` 在写库之前的判定完全一致（命中的令牌前/后分支集合相同、是否成功相同）。
+     「非 1 不写初始数据」在写库之后才可观测，列入「未覆盖与原因」。
+- 补充用例（`test_TC_I_INS_006_boundary`）：密码长度边界 5 / 21 字符 → `INSTALL_ADMIN_INVALID`（长度不符合要求）；
+  6 字符 → 不得命中 `INSTALL_ADMIN_INVALID`。这些分支在令牌之前，与连接配置无关。
 
 ### TC-I-INS-007（边界、异常 / P2 / AC-12 / TRN-1）
 
@@ -122,7 +173,7 @@ API-030 的判定是一条有序分支链（契约 INS-SEC-1～5 + 判定顺序�
   1. `POST ?step=5`，表单正文 > 1 MiB（填充字段 1 MiB + 1 KiB）→ HTTP 500、`text/html` 固定系统错误页。
   2. 正文不含异常细节（`traceback`、`java.lang.`、`org.springframework`、`exception`、`maxuploadsize`、
      `sizeexceeded`、`jdbc:`、`install.sql`、`application/data`）。
-  3. 正文不含安装执行/阶段文案，不回显超限表单内容。
+  3. 正文不含安装执行/阶段文案（令牌前后两组固定文案都检查），不回显超限表单内容，不回显会话令牌。
 
 ### TC-I-MAKE-001（权限、异常 / P1 / AC-7 / ADM-6）
 
@@ -148,13 +199,22 @@ API-030 的判定是一条有序分支链（契约 INS-SEC-1～5 + 判定顺序�
 ### TC-I-MAKE-004（边界 / P2 / AC-7 / SCH-1）
 
 - 前置：默认角色管理员，Ajax 同源会话。
-- 步骤与预期（每步都断言：状态码 200、无 `Location`、`Content-Type` 为 `text/html`、不是 JSON 失败体、无「参数错误」）：
-  1. `ids[]`/`vodtype[]`/`arttype[]`/`topic[]` 数组形态（GET 与 POST）→ 进度页。
-  2. `ac[]=index&ac[]=rss`（数组）→ 只出进度页样式，不生成（无 `生成完毕`/`生成完成`/`成功生成`/`已生成`）。
-  3. 全字段缺失（GET 与 POST）→ 不报错，进度页样式，不生成。
-  4. 未列出的字段（`unexpected_field`）被忽略：与不带该字段的响应类型一致。
+- **进度页签名**（REV-I-04：普通 200 HTML 错误页不能算进度页）。取自已批准实现的稳定特征，与站点数据无关：
+  - `MakeService.STYLE`（`src/main/java/com/maccms/backend/staticgen/application/MakeService.java:48`）：
+    `<style type="text/css">`、`body{font-size:12px;color: #333333;line-height:21px;}`、`span{font-weight:bold;color:#FF0000}`；
+  - `mac_jump` → progress.js（`AdminMakeActions.progressJump`）片段：`/admin-assets/progress.js`、`data-url=`、
+    `data-seconds=`、「如果您的浏览器没有自动跳转，请点击这里」、「暂停…秒后继续」。
+- 步骤与预期（每步都断言：状态码 200、无 `Location`、`Content-Type` 为 `text/html`、不是 JSON 失败体、无「参数错误」、
+  **样式签名 3 项齐全**）：
+  1. `ids[]`/`vodtype[]`/`arttype[]`/`topic[]` 数组形态（GET 与 POST）→ 进度页，且跳转签名 6 项齐全（ac 合法必 `jumpTo`）。
+  2. `ac[]=index&ac[]=rss`（数组）→ 只出进度页样式，不生成：无生成条目（`<a target="_blank" href=…><font color=…>`）、
+     无「生成失败：」行、无跳转片段、无 `生成完毕`/`生成完成`/`成功生成`/`已生成`。
+  3. 全字段缺失（GET 与 POST）→ 不报错，样式签名齐全，同样不生成、不跳转。
+  4. 未列出的字段（`unexpected_field`）被忽略：与不带该字段的请求**业务结果逐项一致** ——
+     `Content-Type`、样式签名、**生成条目集合**、**生成失败行集合**、**跳转地址与秒数**全部相等，
+     且对照组必须真的产出了生成条目（否则判失败，避免空集合相等造成的假通过）。
   5. 反向对照：`ps=1001` → HTTP 200 失败体（JSON 为 `code=0`「参数错误」，非 Ajax 为跳转页含「参数错误」），
-     保证第 1～4 步的正向断言有区分力。
+     且失败体里没有生成条目，保证第 1～4 步的正向断言有区分力。
 
 ### TC-I-COLLECT-001（安全 / P1 / AC-10 / OUT-1-1～4、OUT-1-9）
 
@@ -163,6 +223,9 @@ API-030 的判定是一条有序分支链（契约 INS-SEC-1～5 + 判定顺序�
   → HTTP 200 + `code=0` +「采集链接有误或不能为本地链接」；**msg 与整份响应**都不得含该输入的
   完整 URL、主机名（含子域写法）、该主机的 IPv4/IPv6 等价书写、显式端口。
   禁止片段按**每个输入动态生成**（不是固定清单），原文与 URL 解码后文本都检查。
+  IPv6 按**等价类**禁用（REV-I-05）：原样、去/加方括号、大小写、`ipaddress` 规范化压缩形式、完全展开形式
+  （`fc00::1` ↔ `fc00:0000:0000:0000:0000:0000:0000:0001`）、内嵌 IPv4 的两种写法（`::ffff:7f00:1` / `::ffff:127.0.0.1`）。
+  该函数纯离线计算，T3 执行前已做离线自检（见回复中的静态检查输出）。
 
 ### TC-I-COLLECT-002（异常、边界 / P1 / AC-10 / COLLECT_PARAM_ERR）
 
@@ -202,13 +265,19 @@ API-030 的判定是一条有序分支链（契约 INS-SEC-1～5 + 判定顺序�
 ### TC-I-CSRF-001（安全、权限 / P1 / AC-16 / SRC-1、SRC-2）
 
 - 前置：默认角色管理员；B 类入口 = `make/make`、`collect/api`、`images/sync`（GET 与 POST）。
-- 步骤与预期（逐项，拒绝响应只认契约允许的两种形态）：
-  1. `Sec-Fetch-Site: cross-site`，Ajax → HTTP 200 + `application/json` + `code=0` +「非法请求」；非 Ajax → HTTP 403 +
-     `text/html` + 「非法请求」+ 提示页标题；**302 一律判失败**（未登录跳转不是来源拒绝）。
-  2. 无 `Sec-Fetch-Site`、`Origin` 指向外站 → 同上拒绝。
-  3. 三个来源头（`Sec-Fetch-Site`/`Origin`/`Referer`）全缺失（SRC-2），Ajax 与非 Ajax → 同上拒绝。
-  4. 所有拒绝响应都不得含成功结果（进度页/采集完成/code=1），非 JSON 响应不得是登录页。
-  5. 对照：同源 Ajax 请求不得出现「非法请求」，防止「全都拒绝」的伪通过。
+- 步骤与预期（REV-I-04：**每个请求显式声明形态并断言该形态的契约输出**，不再按响应实际的 Content-Type 反推）：
+  1. `Sec-Fetch-Site: cross-site`：
+     - Ajax 形态 → 只接受 HTTP 200 + `application/json` + `code=0` +「非法请求」+ 字段集合 ⊆ {code,msg,data,url,wait}；
+       收到 403/HTML 判**失败**。
+     - 非 Ajax 形态 → 只接受 HTTP 403 + `text/html` + 标题「跳转提示」+ 正文「非法请求」+ 不是 JSON 体；
+       收到 200 JSON 判**失败**。
+     - 302 一律判失败（未登录跳转不是来源拒绝）。
+  2. 无 `Sec-Fetch-Site`、`Origin` 指向外站（SRC-1 回退分支）：Ajax 与非 Ajax 各一遍，形态要求同上。
+  3. 三个来源头（`Sec-Fetch-Site`/`Origin`/`Referer`）全缺失（SRC-2）：Ajax 与非 Ajax 各一遍，形态要求同上。
+  4. 所有拒绝响应都不得含成功结果（进度页/采集完成/code=1）。
+  5. 同源对照**必须证明请求真的通过了来源校验并到达业务层**（不是「没出现非法请求」就算过）：
+     `collect/api` 同源 Ajax 请求 → 非 302、非 403、无「非法请求」，且 `Content-Type` 为 `application/json`、
+     响应体含业务字段 `code`；同源非 Ajax 请求 → 非 403、无「非法请求」。
 
 ### TC-I-LIMIT-001（边界、异常 / P2 / AC-16 / TRN-1）
 
@@ -225,5 +294,7 @@ API-030 的判定是一条有序分支链（契约 INS-SEC-1～5 + 判定顺序�
 | `TC-I-INS-002` 在未安装实例上 | 需要 `install.lock` 已存在的实例，与 INS-003～007 需要的未安装实例互斥，需两份实例 | 环境 |
 | `TC-I-INS-003`～`007` 在已安装实例上 | `install.lock` 存在时分支不可达，脚本 `skip` → T3 记 BLOCKED | 需要一份未安装的安装模式实例 |
 | 安装向导第 4 步之后的真实安装执行（建表、写配置、写 lock） | 会改动被测实例的库与文件系统，T3 仅在一次性实例上执行且需明确授权 | 环境/授权 |
+| `initdata` 非 1 时「确实没有写入初始数据」 | 只有写库阶段之后才可观测（需空库一次性实例）；脚本只断言「非 1 与 1 在写库之前的判定完全一致」 | 环境/授权 |
+| `TC-I-INS-004`～`007` 的令牌之后分支 | 需要「第 4 步连接配置已完成」但仍未安装的实例；缺该前置 → BLOCKED | 环境 |
 | API-042 / API-044（定时采集、timming） | 不在本轮派发范围 | 后续单独派发 |
 | 会员会话类接口（API-002/007） | 不在本轮派发范围 | 后续单独派发 |

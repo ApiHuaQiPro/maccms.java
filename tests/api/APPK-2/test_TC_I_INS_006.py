@@ -1,173 +1,198 @@
 # CASE: TC-I-INS-006 | 接口: POST /install.php?step=5（API-030） | 追溯: AC-12 / SCH-1 | 维度: 边界、异常 | 优先级: P2
-# 标题: SCH-1 传输形态：account 以数组提交按缺失处理 → INSTALL_ADMIN_REQUIRED；install_dir 数组按缺失（= /）；
-#       initdata 其他值只是不写初始数据；三种形态都不是传输层 400，也不是 INSTALL_ACCESS_DENIED
+# 标题: SCH-1 传输形态：account 以数组提交 → INSTALL_ADMIN_REQUIRED；非法 install_dir → INSTALL_DIR_UNSUPPORTED；
+#       install_dir 数组按缺失（= /）处理；initdata 非 1 只是不写初始数据 —— 都不是传输层 400、不是 INSTALL_ACCESS_DENIED
 # 契约: docs/api/APPK-2/openapi.yaml @ bc612e933aa67abab319b90534c5150c10a51452（SCH-1 + InstallStep5Form + 判定顺序）
-# 前置（本文件自检建立，缺一项即 skip 为 BLOCKED，不继续断言目标结果）：
-#   1) 安装模式实例（INS-SEC-1）：/install.php 返回 404 → BLOCKED
-#   2) install.lock 不存在（INS-SEC-2）：返回 INSTALL_LOCKED → BLOCKED
-#   3) 每个目标分支都用「独立会话 + 该会话第 3 步签发的真实令牌」（INS-SEC-4 令牌一次性，
-#      三个请求不能共用令牌，也不能用合成令牌——否则请求会在令牌校验处结束，伪通过）。
-#      第 3 步取不到合规令牌 → BLOCKED。
-# 判定顺序：INSTALL_NOT_TESTED（会话无连接信息）位于 account 校验之前，因此在没有第 4 步连接配置的会话上，
-#      契约业务结果就是 INSTALL_NOT_TESTED —— 本用例据此断定「account 数组已被按缺失受理并越过校验」，
-#      同时断言没有出现 INSTALL_ACCESS_DENIED（令牌未被拒）与非 400（SCH-1）。
-#      环境若已具备连接配置，则分别断言 INSTALL_ADMIN_REQUIRED / 不判 INSTALL_DIR_UNSUPPORTED / 不判参数错误。
-# 本文件内所有表单值都是合成的自动测试数据（autotest-APPK-2- 前缀），不是任何真实凭据；
-# 真实凭据只从环境变量读取（见 tests/api/conftest.py 与 .env.example）。令牌运行时从被测站取得，不写死。
+# 前置（install_support.wizard_session 建立并逐项核验，任一不成立即 BLOCKED）：
+#   1) 安装模式实例（INS-SEC-1）；2) install.lock 不存在（INS-SEC-2）；
+#   3) 每个分支各自独立会话 + 该会话第 3 步签发的真实令牌（令牌一次性，不能跨请求共用；也不合成令牌）。
+# 通过条件（REV-I-03）：每个分组都必须命中**该分组自己的目标分支**，不再接受「更早分支」：
+#   1) account 数组、密码有效：INSTALL_ADMIN_REQUIRED 位于连接配置之后、令牌之前，
+#      因此该分支可达性与「第 4 步连接配置」无关；命中 INSTALL_NOT_TESTED 说明另有前置缺失 → BLOCKED。
+#   2) install_dir[]=/other（数组按缺失即 /）与 3) initdata=1（唯一会写初始数据的取值）：
+#      只有令牌通过之后才会走到 install_dir 与写库阶段，所以先要求命中 INSTALL_DIR_UNSUPPORTED
+#      （令牌之后的第一个分支）。拿不到这个前置证据 → BLOCKED，不当作通过。
+#   4) 非 1 的 initdata 不写初始数据：在写库阶段之后才可观测（写库阶段需要空库、会改动被测实例），
+#      本用例改为断言「非 1 的 initdata 与 initdata=1 在写库之前的判定完全相同」——
+#      即两者命中同一分支、都不是参数错误；真正的写库观测记在 API 用例文档「未覆盖与原因」。
+# 本文件内所有表单值都是合成测试数据，不是任何真实凭据（见 install_support.py）。
 
-import re
+import os
+import sys
+
+# 同目录共享模块 install_support.py（只做前置与断言工具，不执行用例）。
+# pytest 以 --import-mode=importlib 运行，本目录不在 sys.path 上，这里显式加入。
+_HERE = os.path.dirname(os.path.abspath(__file__))
+if _HERE not in sys.path:
+    sys.path.insert(0, _HERE)
 
 import pytest
-import requests
 
-from conftest import (
+from install_support import (
+    ACCOUNT,
     MSG_ACCESS_DENIED,
     MSG_ADMIN_REQUIRED,
-    MSG_PLEASE_TEST,
-    branch_markers,
-    is_locked_page,
+    MSG_DIR_UNSUPPORTED,
+    MSG_SUCCESS,
+    PW_FIELD,
+    after_token_hits,
+    admin_invalid_hits,
+    assert_after_token_evidence,
+    assert_html_reply,
+    assert_not_echoed,
+    before_token_hits,
+    base_form,
+    post_step5,
+    require_install_mode,
+    require_not_locked,
+    step5_url,
+    wizard_session,
 )
 
-# 合成测试数据（不是凭据）：安装向导表单的密码字段名与占位值
-PW_FIELD = "pass" + "word"        # = InstallStep5Form 的密码字段名
-DUMMY_PASSWORD = "autotest" + "-APPK-2-Pw"
-ACCOUNT = "autotest-APPK-2-admin"
-
-TOKEN_PATTERN = re.compile(r"^[0-9a-f]{32}$")
-
-DIR_UNSUPPORTED = "新版只支持安装在网站根目录"
+CASE = "INS-006"
 PARAM_ERR = "参数错误"
 
 
-def _step_url(base_url, install_entry, step):
-    return base_url.rstrip("/") + install_entry + "?step=%d" % step
-
-
-def _hidden_token(html):
-    match = re.search(
-        r"""name=["']__token__["'][^>]*value=["']([^"']+)["']""", html, re.I
-    ) or re.search(
-        r"""value=["']([^"']*)["'][^>]*name=["']__token__["']""", html, re.I
-    )
-    assert match, (
-        "BLOCKED：第 3 步页面没有找到隐藏字段 __token__（INS-SEC-4 要求第 3 步签发令牌），响应片段=%r"
-        % html[:200]
-    )
-    return match.group(1)
-
-
-def _fresh_session(base_url, install_entry):
-    """新建会话，取该会话第 3 步签发的令牌；取不到即 BLOCKED。"""
-    sess = requests.Session()
-    step3 = sess.get(_step_url(base_url, install_entry, 3), timeout=30, allow_redirects=False)
-    if step3.status_code != 200:
-        pytest.skip(
-            "BLOCKED：第 3 步页面 GET 返回 %s，无法在会话内取得签发的 __token__"
-            % step3.status_code
-        )
-    token = _hidden_token(step3.text)
-    if not TOKEN_PATTERN.match(token):
-        pytest.skip(
-            "BLOCKED：第 3 步签发的 __token__ 不是 32 位小写十六进制（长度 %d）" % len(token)
-        )
-    return sess, token
-
-
-def _assert_branch(resp, label, expected_after_token):
-    """断言请求越过了 INS-SEC-4（不是非法访问），并且停在预期分支或 INSTALL_NOT_TESTED。"""
-    assert resp.status_code not in (400, 413, 415, 422), (
+def _no_transport_reject(resp, label):
+    """SCH-1：应用不返回传输层拒绝，安装向导也不返回 5xx 之外的异常页。"""
+    assert resp.status_code not in (400, 413, 414, 415, 422, 431), (
         "[%s] SCH-1 要求不返回传输层拒绝，实际 %s" % (label, resp.status_code)
     )
-    assert resp.status_code == 200, "[%s] 期望 HTTP 200 业务体，实际 %s" % (
-        label,
-        resp.status_code,
-    )
-    assert MSG_ACCESS_DENIED not in resp.text, (
-        "[%s] 令牌被拒（INSTALL_ACCESS_DENIED），请求没有进入 SCH-1 业务分支：%r"
-        % (label, resp.text[:200])
-    )
-    plain = resp.text
-    if expected_after_token is not None and expected_after_token in plain:
-        return "target"
-    if MSG_PLEASE_TEST in plain:
-        # 判定顺序：INSTALL_NOT_TESTED 在 account/install_dir/initdata 校验之前，属正常业务分支
-        return "not-tested"
-    raise AssertionError(
-        "[%s] 期望 %r 或 %r（INSTALL_NOT_TESTED），实际命中分支=%r，响应=%r"
-        % (label, expected_after_token, MSG_PLEASE_TEST, branch_markers(plain), plain[:200])
+    assert resp.status_code == 200, "[%s] 期望 HTTP 200 业务提示页，实际 %s" % (label, resp.status_code)
+    assert_html_reply(resp, label)
+    assert_not_echoed(resp, label)
+    assert PARAM_ERR not in resp.text, (
+        "[%s] 数组/边界形态不应判为「参数错误」（传输层 schema 必须受理）：%r" % (label, resp.text[:200])
     )
 
 
 @pytest.mark.install_wizard
 def test_TC_I_INS_006(base_url, install_entry):
-    step5 = _step_url(base_url, install_entry, 5)
+    url = step5_url(base_url, install_entry)
 
-    # ── 前置 1：安装模式（INS-SEC-1） ──────────────────────────────────────────
-    probe = requests.Session().get(step5, timeout=30, allow_redirects=False)
-    if probe.status_code == 404:
+    # ── 前置：安装模式（INS-SEC-1）+ install.lock 不存在（INS-SEC-2） ─────────────
+    probe = require_install_mode(base_url, install_entry)
+    require_not_locked(probe, CASE)
+
+    # ── 1) account 作数组提交：按缺失处理 → INSTALL_ADMIN_REQUIRED ────────────────
+    sess, token = wizard_session(base_url, install_entry)
+    data = [(k, v) for k, v in base_form(token).items() if k != "account"]
+    data.insert(0, ("account[]", ACCOUNT))
+    resp = post_step5(sess, url, data)
+    _no_transport_reject(resp, "%s account 数组" % CASE)
+    assert MSG_ACCESS_DENIED not in resp.text, (
+        "[%s account 数组] 令牌被拒（INSTALL_ACCESS_DENIED），请求未进入 account 判定：%r"
+        % (CASE, resp.text[:200])
+    )
+    assert not admin_invalid_hits(resp.text), (
+        "[%s account 数组] 数组形态被当成非法值（INSTALL_ADMIN_INVALID），应按缺失处理：%r"
+        % (CASE, resp.text[:200])
+    )
+    if MSG_ADMIN_REQUIRED not in resp.text:
         pytest.skip(
-            "BLOCKED：目标实例不是安装模式（/install.php 未装配，返回 404），SCH-1 分支不可达"
+            "BLOCKED：[%s account 数组] 未命中 INSTALL_ADMIN_REQUIRED，"
+            "说明更早的向导状态先命中（INSTALL_NOT_TESTED 等）：%r。"
+            "该分支只要求「第 4 步连接配置已完成」，与令牌无关，需要具备该前置的安装模式实例。"
+            % (CASE, {"before_token": before_token_hits(resp.text), "body": resp.text[:200]})
         )
-    assert probe.status_code == 200, (
-        "安装模式的 step=5 GET 应为 HTTP 200 业务体，实际 %s" % probe.status_code
+    assert MSG_SUCCESS not in resp.text, "[%s account 数组缺失却完成了安装" % CASE
+
+    # ── 2) install_dir 作数组提交：按缺失即 /，只能因令牌之后的其它分支结束 ───────
+    sess, token = wizard_session(base_url, install_entry)
+    data = [(k, v) for k, v in base_form(token).items() if k != "install_dir"]
+    data.append(("install_dir[]", "/other"))
+    resp = post_step5(sess, url, data)
+    _no_transport_reject(resp, "%s install_dir 数组" % CASE)
+    assert MSG_ACCESS_DENIED not in resp.text, (
+        "[%s install_dir 数组] 令牌被拒（INSTALL_ACCESS_DENIED）：%r" % (CASE, resp.text[:200])
     )
-    # ── 前置 2：install.lock 不存在（INS-SEC-2） ───────────────────────────────
-    if is_locked_page(probe):
+    if MSG_DIR_UNSUPPORTED in resp.text:
+        pytest.fail(
+            "[%s install_dir 数组] 数组被按值判定为 install_dir=/other（INSTALL_DIR_UNSUPPORTED），"
+            "契约要求数组按缺失处理（= /）：%r" % (CASE, resp.text[:200])
+        )
+    if MSG_SUCCESS not in resp.text:
+        assert_after_token_evidence(resp, "%s install_dir 数组" % CASE)
         pytest.skip(
-            "BLOCKED：目标实例已安装（install.lock 存在，INSTALL_LOCKED），SCH-1 分支不可达"
+            "BLOCKED：[%s install_dir 数组] 越过了令牌但没有命中成功分支（命中=%r），"
+            "无法证明数组按缺失（= /）处理。响应=%r"
+            % (CASE, after_token_hits(resp.text), resp.text[:200])
+        )
+    # 走到成功分支：数组 install_dir 视为 / 已生效（会话在数组形态下未被拒），本用例不改写实例状态以外的东西，
+    # 也不删安装锁；这条分支只在一次性实例上出现，T3 报告需写明。
+
+    # ── 3) 正向对照：真正的非法 install_dir 值必须命中 INSTALL_DIR_UNSUPPORTED ─────
+    # 证明第 2 步的「没有 INSTALL_DIR_UNSUPPORTED」是有区分力的结论，而不是整条断言不生效。
+    sess, token = wizard_session(base_url, install_entry)
+    resp = post_step5(sess, url, base_form(token, install_dir="/other"))
+    _no_transport_reject(resp, "%s install_dir 标量非法（对照）" % CASE)
+    if MSG_DIR_UNSUPPORTED not in resp.text:
+        pytest.skip(
+            "BLOCKED：[%s install_dir 对照] 标量 /other 未返回 INSTALL_DIR_UNSUPPORTED，"
+            "令牌之后的判定链不可达（命中=%r），第 2 步的否定结论没有对照证据。响应=%r"
+            % (CASE, before_token_hits(resp.text) + after_token_hits(resp.text), resp.text[:200])
+        )
+    assert MSG_SUCCESS not in resp.text, "[%s install_dir 对照] install_dir=/other 却完成了安装" % CASE
+
+    # ── 4) initdata 非 1 与 initdata=1 在写库之前的判定完全一致（不是参数错误） ─────
+    sess, token = wizard_session(base_url, install_entry)
+    one = post_step5(sess, url, base_form(token, initdata="1"))
+    _no_transport_reject(one, "%s initdata=1" % CASE)
+    sess, token = wizard_session(base_url, install_entry)
+    other = post_step5(sess, url, base_form(token, initdata="unexpected"))
+    _no_transport_reject(other, "%s initdata 非 1" % CASE)
+    assert (MSG_SUCCESS in one.text) == (MSG_SUCCESS in other.text), (
+        "[%s initdata 非 1] initdata 影响了写库之前的判定：initdata=1 → %r，非 1 → %r"
+        % (CASE, one.text[:120], other.text[:120])
+    )
+    assert after_token_hits(one.text) == after_token_hits(other.text) and (
+        before_token_hits(one.text) == before_token_hits(other.text)
+    ), (
+        "[%s initdata 非 1] initdata 改变了判定分支：initdata=1 命中 %r/%r，非 1 命中 %r/%r"
+        % (
+            CASE,
+            before_token_hits(one.text),
+            after_token_hits(one.text),
+            before_token_hits(other.text),
+            after_token_hits(other.text),
+        )
+    )
+    if not (before_token_hits(one.text) or after_token_hits(one.text)):
+        pytest.skip(
+            "BLOCKED：[%s initdata 对照] 两次请求都没有命中任何安装分支（响应=%r），"
+            "「非 1 不写初始数据」缺少可观测的判定依据" % (CASE, one.text[:200])
         )
 
-    # 1) account 数组形态（name[]=）：schema 受理 → 业务层按缺失处理
-    sess, token = _fresh_session(base_url, install_entry)
-    resp = sess.post(
-        step5,
-        data=[
-            ("account[]", ACCOUNT),
-            (PW_FIELD, DUMMY_PASSWORD),
-            ("install_dir", "/"),
-            ("initdata", "0"),
-            ("__token__", token),
-        ],
-        timeout=60,
-        allow_redirects=False,
-    )
-    _assert_branch(resp, "account 数组", MSG_ADMIN_REQUIRED)
 
-    # 2) install_dir 数组形态 → 按缺失即 "/"，不得判成 INSTALL_DIR_UNSUPPORTED
-    sess, token = _fresh_session(base_url, install_entry)
-    resp = sess.post(
-        step5,
-        data=[
-            ("account", ACCOUNT),
-            (PW_FIELD, DUMMY_PASSWORD),
-            ("install_dir[]", "/other"),
-            ("initdata", "0"),
-            ("__token__", token),
-        ],
-        timeout=60,
-        allow_redirects=False,
-    )
-    outcome = _assert_branch(resp, "install_dir 数组", None)
-    assert DIR_UNSUPPORTED not in resp.text, (
-        "数组形态 install_dir 被按值判定，应视为缺失（/）：%r" % resp.text[:200]
-    )
-    assert outcome in ("target", "not-tested")
+@pytest.mark.install_wizard
+def test_TC_I_INS_006_boundary(base_url, install_entry):
+    """同一传输形态维度的补充：密码长度边界（6～20，mb_strlen）由 account/密码规则分支判定。
 
-    # 3) initdata 为其他值 → 只是不写初始数据，不是参数错误
-    sess, token = _fresh_session(base_url, install_entry)
-    resp = sess.post(
-        step5,
-        data=[
-            ("account", ACCOUNT),
-            (PW_FIELD, DUMMY_PASSWORD),
-            ("install_dir", "/"),
-            ("initdata", "unexpected"),
-            ("__token__", token),
-        ],
-        timeout=60,
-        allow_redirects=False,
+    这些分支位于令牌之前，与连接配置无关，可稳定复核：
+      - 5 个字符 → INSTALL_ADMIN_INVALID（长度不符合要求）；
+      - 21 个字符 → INSTALL_ADMIN_INVALID；
+      - 6 个字符 → 不得命中 INSTALL_ADMIN_INVALID（进入后续分支）。
+    """
+    url = step5_url(base_url, install_entry)
+    probe = require_install_mode(base_url, install_entry)
+    require_not_locked(probe, CASE + "/密码边界")
+
+    sess, token = wizard_session(base_url, install_entry)
+    resp = post_step5(sess, url, base_form(token, **{PW_FIELD: "a" * 5}))
+    _no_transport_reject(resp, "%s 密码 5 字符" % CASE)
+    assert admin_invalid_hits(resp.text), (
+        "[%s 密码 5 字符] 未命中 INSTALL_ADMIN_INVALID（长度不符合要求）：%r" % (CASE, resp.text[:200])
     )
-    _assert_branch(resp, "initdata 非 1", None)
-    assert PARAM_ERR not in resp.text, (
-        "initdata 非 1 不应判为参数错误：%r" % resp.text[:200]
+
+    sess, token = wizard_session(base_url, install_entry)
+    resp = post_step5(sess, url, base_form(token, **{PW_FIELD: "a" * 21}))
+    _no_transport_reject(resp, "%s 密码 21 字符" % CASE)
+    assert admin_invalid_hits(resp.text), (
+        "[%s 密码 21 字符] 未命中 INSTALL_ADMIN_INVALID（长度不符合要求）：%r" % (CASE, resp.text[:200])
+    )
+
+    sess, token = wizard_session(base_url, install_entry)
+    resp = post_step5(sess, url, base_form(token, **{PW_FIELD: "a" * 6}))
+    _no_transport_reject(resp, "%s 密码 6 字符" % CASE)
+    assert not admin_invalid_hits(resp.text), (
+        "[%s 密码 6 字符] 合法下界被判为 INSTALL_ADMIN_INVALID：%r" % (CASE, resp.text[:200])
     )

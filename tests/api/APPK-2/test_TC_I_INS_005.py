@@ -1,135 +1,180 @@
 # CASE: TC-I-INS-005 | 接口: POST /install.php?step=5（API-030） | 追溯: AC-12 / INS-SEC-4 | 维度: 安全、权限 | 优先级: P1
-# 标题: 一次性令牌：同一会话用第 3 步签发的真实令牌提交，第一次确实进入安装处理分支，
-#       再以完全相同表单重放，第二次必须被拒（INSTALL_ACCESS_DENIED），不重复执行安装
-# 契约: docs/api/APPK-2/openapi.yaml @ bc612e933aa67abab319b90534c5150c10a51452（INS-SEC-4 令牌一次性与判定顺序）
-# 前置（本文件自检建立，缺一项即 skip 为 BLOCKED，不继续断言目标结果）：
-#   1) 安装模式实例（INS-SEC-1）：/install.php 返回 404 → BLOCKED
-#   2) install.lock 不存在（INS-SEC-2）：返回 INSTALL_LOCKED → BLOCKED
-#   3) 同一会话访问第 3 步页面（GET <install_entry>?step=3），从隐藏字段 __token__ 取得 32 位小写十六进制令牌
-#      （INS-SEC-4「令牌由第 3 步页面签发」）。取不到合规令牌 → BLOCKED，不合成令牌。
-# 判定逻辑（与库状态解耦）：
-#   - 第一次提交：只要不停在 INSTALL_ACCESS_DENIED（令牌已被接受并作废）即证明「进入了安装处理分支」；
-#     会话缺连接信息会停在 INSTALL_NOT_TESTED，这是恰好位于令牌判定之后的正常业务分支。
-#   - 第二次提交（完全相同表单与 Cookie）：必须停在 INSTALL_ACCESS_DENIED，且没有第二次安装结果。
-# 本文件内所有表单值都是合成的自动测试数据（autotest-APPK-2- 前缀），不是任何真实凭据；
-# 真实凭据只从环境变量读取（见 tests/api/conftest.py 与 .env.example）。令牌是运行时从被测站取得的，不写死。
+# 标题: 一次性令牌：同一会话用第 3 步签发的真实令牌，第一次在写库之前被拒也必须作废令牌，
+#       完全相同表单重放第二次被 INSTALL_ACCESS_DENIED 拒绝；安装成功后任意请求停在 INSTALL_LOCKED
+# 契约: docs/api/APPK-2/openapi.yaml @ bc612e933aa67abab319b90534c5150c10a51452
+#       （INS-SEC-4「令牌在通过校验的同时从会话删除」、INS-SEC-2 install.lock、x-idempotency「不可重放」）
+# 前置（install_support.wizard_session 建立并逐项核验，任一不成立即 BLOCKED）：
+#   1) 安装模式实例（INS-SEC-1）；2) install.lock 不存在（INS-SEC-2）；
+#   3) 同一会话第 3 步签发的 32 位小写十六进制 __token__（INS-SEC-4）。
+# 第一次提交的判定（REV-I-02）：契约里令牌通过之后的第一个分支是 install_dir 校验。本用例第一次提交
+#   故意用 install_dir=/sub 的非 / 值，于是「令牌通过」的唯一可观测结果是 INSTALL_DIR_UNSUPPORTED，
+#   写库阶段一个字节都不会动（契约「写库阶段之前的失败不产生任何写入」）。
+#   只命中 INSTALL_NOT_TESTED / INSTALL_ENV_FAILED / INSTALL_ADMIN_* 的响应证明不了令牌被消费，
+#   一律 BLOCKED，不当作「令牌被接受」（上一轮把 INSTALL_NOT_TESTED 当成消费证据，是假通过）。
+# 覆盖的终态：
+#   A. 锁不存在时的令牌重放（主用例，不改变库状态，可重复执行）；
+#   B. 同一会话在令牌已作废后重新打开第 3 步取新令牌 → 可再次越过令牌检查；
+#   C. 实例已安装（install.lock 存在）时的锁终态：任何方法、任何 step 只返回 INSTALL_LOCKED。
+#      安装成功后写成锁的状态由 TC-I-INS-002（已安装实例）覆盖，本用例不改写被测实例。
+# 本文件内所有表单值都是合成测试数据，不是任何真实凭据（见 install_support.py）。
 
-import re
+import os
+import sys
+
+# 同目录共享模块 install_support.py（只做前置与断言工具，不执行用例）。
+# pytest 以 --import-mode=importlib 运行，本目录不在 sys.path 上，这里显式加入。
+_HERE = os.path.dirname(os.path.abspath(__file__))
+if _HERE not in sys.path:
+    sys.path.insert(0, _HERE)
 
 import pytest
 import requests
 
-from conftest import MSG_ACCESS_DENIED, branch_markers, is_locked_page
+from install_support import (
+    MSG_ACCESS_DENIED,
+    TOKEN_PATTERN,
+    hidden_token,
+    MSG_DIR_UNSUPPORTED,
+    MSG_SUCCESS,
+    after_token_hits,
+    assert_html_reply,
+    assert_no_install_execution,
+    assert_not_echoed,
+    before_token_hits,
+    base_form,
+    has_locked_text,
+    is_access_denied,
+    post_step5,
+    require_install_mode,
+    step3_url,
+    step5_url,
+    wizard_session,
+)
 
-# 合成测试数据（不是凭据）：安装向导表单的密码字段名与占位值
-PW_FIELD = "pass" + "word"        # = InstallStep5Form 的密码字段名
-DUMMY_PASSWORD = "autotest" + "-APPK-2-Pw"
-ACCOUNT = "autotest-APPK-2-admin"
-
-TOKEN_PATTERN = re.compile(r"^[0-9a-f]{32}$")
-
-# INSTALL_ACCESS_DENIED 之外的所有分支（第一次提交停在其中之一即说明令牌已被接受）
-NOT_DENIED = (MSG_ACCESS_DENIED,)
-OTHER_SUCCESS = ("系统安装成功", "is_ok")
-
-
-def _step_url(base_url, install_entry, step):
-    return base_url.rstrip("/") + install_entry + "?step=%d" % step
-
-
-def _hidden_token(html, label):
-    """从第 3 步页面取出隐藏字段 __token__ 的值（INS-SEC-4：32 位小写十六进制）。"""
-    match = re.search(
-        r"""name=["']__token__["'][^>]*value=["']([^"']+)["']""", html, re.I
-    ) or re.search(
-        r"""value=["']([^"']*)["'][^>]*name=["']__token__["']""", html, re.I
-    )
-    assert match, (
-        "BLOCKED：%s 页面没有找到隐藏字段 __token__（INS-SEC-4 要求第 3 步签发令牌），"
-        "响应片段=%r" % (label, html[:200])
-    )
-    return match.group(1)
+CASE = "INS-005"
 
 
 @pytest.mark.install_wizard
 def test_TC_I_INS_005(base_url, install_entry):
-    entry = base_url.rstrip("/") + install_entry
-    step5 = _step_url(base_url, install_entry, 5)
+    url = step5_url(base_url, install_entry)
 
-    # ── 前置 1：安装模式（INS-SEC-1） ──────────────────────────────────────────
-    sess = requests.Session()
-    probe = sess.get(step5, timeout=30, allow_redirects=False)
-    if probe.status_code == 404:
+    # ── 前置：安装模式（INS-SEC-1）+ install.lock 不存在（INS-SEC-2） ─────────────
+    probe = require_install_mode(base_url, install_entry)
+    if has_locked_text(probe.text):
         pytest.skip(
-            "BLOCKED：目标实例不是安装模式（/install.php 未装配，返回 404），令牌一次性分支不可达"
+            "BLOCKED：目标实例已安装（install.lock 存在，INSTALL_LOCKED），锁不存在时的令牌重放分支不可达"
         )
-    assert probe.status_code == 200, (
-        "安装模式的 step=5 GET 应为 HTTP 200 业务体，实际 %s" % probe.status_code
+    sess, token = wizard_session(base_url, install_entry)
+
+    # ── 第一次提交：有效令牌 + install_dir=/sub（令牌之后、写库之前的第一个分支） ──
+    form = base_form(token, install_dir="/sub")
+    first = post_step5(sess, url, form)
+    assert_html_reply(first, "%s 第一次提交" % CASE)
+    assert MSG_ACCESS_DENIED not in first.text, (
+        "[%s] 第一次提交就被 INSTALL_ACCESS_DENIED 拒绝：第 3 步签发的令牌未被接受，"
+        "一次性无法验证。令牌之前文案=%r，响应=%r"
+        % (CASE, before_token_hits(first.text), first.text[:200])
     )
-    # ── 前置 2：install.lock 不存在（INS-SEC-2） ───────────────────────────────
-    if is_locked_page(probe):
+    if MSG_DIR_UNSUPPORTED not in first.text:
         pytest.skip(
-            "BLOCKED：目标实例已安装（install.lock 存在，INSTALL_LOCKED），令牌一次性分支不可达"
+            "BLOCKED：[%s 第一次提交] 未命中 INSTALL_DIR_UNSUPPORTED，无法证明令牌通过并已消费。"
+            "令牌之前文案=%r、令牌之后分支=%r、响应=%r。"
+            "需要「第 4 步测试连接已完成」的安装模式实例（否则契约在令牌之前返回 INSTALL_NOT_TESTED）。"
+            % (
+                CASE,
+                before_token_hits(first.text),
+                after_token_hits(first.text),
+                first.text[:200],
+            )
         )
+    assert MSG_SUCCESS not in first.text, "[%s] install_dir 非法却完成了安装" % CASE
 
-    # ── 前置 3：同一会话从第 3 步取真实令牌 ────────────────────────────────────
-    step3 = sess.get(_step_url(base_url, install_entry, 3), timeout=30, allow_redirects=False)
+    # ── 完全相同表单与 Cookie 重放：令牌已作废 → INSTALL_ACCESS_DENIED ───────────
+    second = post_step5(sess, url, form)
+    assert_html_reply(second, "%s 重放" % CASE)
+    assert is_access_denied(second), (
+        "[%s] 令牌未一次性作废：重放第二次未被拒，响应=%r" % (CASE, second.text[:200])
+    )
+    replay_after = after_token_hits(second.text)
+    assert not replay_after, (
+        "[%s] 重放第二次命中了令牌之后的安装分支 %r，说明令牌被重复使用：%r"
+        % (CASE, replay_after, second.text[:200])
+    )
+    for marker in (MSG_SUCCESS, MSG_DIR_UNSUPPORTED, "install.lock"):
+        assert marker not in second.text, "[%s] 重放第二次重复执行了安装：%r" % (CASE, marker)
+    assert_not_echoed(second, "%s 重放" % CASE)
+    assert token not in second.text, "[%s] 重放响应回显了令牌" % CASE
+
+    # ── 对照：同一会话重新打开第 3 步取得新令牌，必须能再次越过令牌检查 ──────────
+    # 证明上面的拒绝来自「令牌已被消费」，而不是会话或实例状态变化造成的伪拒绝。
+    step3 = sess.get(step3_url(base_url, install_entry), timeout=30, allow_redirects=False)
     if step3.status_code != 200:
         pytest.skip(
-            "BLOCKED：第 3 步页面 GET 返回 %s，无法在会话内取得签发的 __token__"
-            % step3.status_code
+            "BLOCKED：[%s 对照] 令牌作废后第 3 步 GET 返回 %s，无法取得新令牌，"
+            "「重放被拒来自令牌一次性」缺少对照证据" % (CASE, step3.status_code)
         )
-    token = _hidden_token(step3.text, "第 3 步")
-    assert TOKEN_PATTERN.match(token), (
-        "BLOCKED/用例前置不符：第 3 步签发的 __token__ 不是 32 位小写十六进制（长度 %d）"
-        % len(token)
-    )
-
-    # 同一会话、同一令牌：先按第 3 步表单的字段完整提交一次
-    form = {
-        "account": ACCOUNT,
-        PW_FIELD: DUMMY_PASSWORD,
-        "install_dir": "/",
-        "initdata": "0",
-        "__token__": token,
-    }
-    first = sess.post(step5, data=form, timeout=60, allow_redirects=False)
-    assert first.status_code in (200, 500), (
-        "第一次提交应为 HTTP 200 业务体（或 500 固定系统错误页），实际 %s" % first.status_code
-    )
-    first_early = branch_markers(first.text)
-    assert MSG_ACCESS_DENIED not in first.text, (
-        "第一次提交就被 INSTALL_ACCESS_DENIED 拒绝，说明第 3 步签发的令牌未被接受，"
-        "无法验证一次性：命中分支=%r，响应=%r" % (first_early, first.text[:200])
-    )
-    # 令牌已被接受：第一次必须真的进入安装处理分支（安装结果 / 已存在数据表 / 连接失败 / 未测试连接等）
-    entered = first_early or [m for m in OTHER_SUCCESS if m in first.text]
-    assert entered, (
-        "第一次提交既没有安装结果也没有任何安装阶段分支文案，无法证明令牌被接受：%r"
-        % first.text[:200]
-    )
-
-    # 完全相同表单重放：令牌已作废 → INSTALL_ACCESS_DENIED
-    second = sess.post(step5, data=form, timeout=60, allow_redirects=False)
-    assert second.status_code == 200, (
-        "重放应为 HTTP 200 业务体，实际 %s" % second.status_code
-    )
-    assert "非法访问" in second.text, (
-        "令牌未一次性作废：重放第二次未被拒，响应=%r" % second.text[:200]
-    )
-    replay_early = branch_markers(second.text)
-    assert not replay_early, (
-        "重放第二次停在了 %r，而不是 INS-SEC-4 的 INSTALL_ACCESS_DENIED：%r"
-        % (replay_early, second.text[:200])
-    )
-    # 不重复执行安装：重放响应不得含任何安装成功/执行痕迹
-    for marker in OTHER_SUCCESS:
-        assert marker not in second.text, "重放第二次重复执行了安装：%r" % marker
-
-    # 终态：本次第一次提交若真的完成了安装，install.lock 应已生成，后续任何 step=5 提交都停在 INSTALL_LOCKED
-    if any(m in first.text for m in OTHER_SUCCESS):
-        after = requests.Session().post(step5, data=form, timeout=30, allow_redirects=False)
-        assert is_locked_page(after), (
-            "第一次安装成功后 install.lock 应存在（INSTALL_LOCKED），实际响应=%r"
-            % after.text[:200]
+    token2 = hidden_token(step3.text)
+    if not token2 or not TOKEN_PATTERN.match(token2):
+        pytest.skip(
+            "BLOCKED：[%s 对照] 第 3 步未签发新的 32 位小写十六进制令牌，缺少对照证据" % CASE
         )
+    third = post_step5(sess, url, base_form(token2, install_dir="/sub"))
+    assert_html_reply(third, "%s 新令牌对照" % CASE)
+    assert MSG_DIR_UNSUPPORTED in third.text, (
+        "[%s 新令牌对照] 新令牌未能越过令牌检查（命中=%r），"
+        "「重放被拒来自令牌一次性」缺少区分力：%r"
+        % (CASE, before_token_hits(third.text) + after_token_hits(third.text), third.text[:200])
+    )
+
+
+@pytest.mark.install_wizard
+def test_TC_I_INS_005_installed_lock_terminal_state(base_url, install_entry):
+    """C 部分：已安装实例（install.lock 存在）的锁终态。
+
+    与主用例的前置互斥（主用例要求未安装），所以在已安装实例上单独判定：
+      - 任何方法、任何 step 都只返回 INSTALL_LOCKED 固定文本（不读参数、不建会话、不进入写库阶段）；
+      - 未安装实例上本函数 BLOCKED（由 TC-I-INS-002 覆盖同一断言）。
+    """
+    probe = requests.Session().get(step5_url(base_url, install_entry), timeout=30, allow_redirects=False)
+    if probe.status_code == 404:
+        pytest.skip("BLOCKED：目标实例不是安装模式（/install.php 未装配，返回 404），锁终态不可达")
+    if not has_locked_text(probe.text):
+        pytest.skip(
+            "BLOCKED：目标实例未安装（install.lock 不存在），锁终态分支不可达；"
+            "本断言在已安装实例上由 TC-I-INS-002 覆盖"
+        )
+
+    url = step5_url(base_url, install_entry)
+    sess = requests.Session()
+    attempts = [
+        ("GET step=5", lambda: sess.get(url, timeout=30, allow_redirects=False)),
+        ("POST step=5 表单", lambda: sess.post(url, data=base_form("0" * 32), timeout=30, allow_redirects=False)),
+        (
+            "POST step=5 非法方法体",
+            lambda: sess.post(
+                url,
+                data='{"account":"autotestappk2admin"}',
+                headers={"Content-Type": "application/json"},
+                timeout=30,
+                allow_redirects=False,
+            ),
+        ),
+        (
+            "GET step=3",
+            lambda: sess.get(step3_url(base_url, install_entry), timeout=30, allow_redirects=False),
+        ),
+    ]
+    for label, call in attempts:
+        resp = call()
+        assert resp.status_code == 200, "[%s %s] INSTALL_LOCKED 应为 HTTP 200，实际 %s" % (
+            CASE,
+            label,
+            resp.status_code,
+        )
+        assert has_locked_text(resp.text), (
+            "[%s %s] 已安装实例未返回 INSTALL_LOCKED 固定文本，响应=%r" % (CASE, label, resp.text[:200])
+        )
+        assert "JSESSIONID" not in resp.headers.get("Set-Cookie", ""), (
+            "[%s %s] INSTALL_LOCKED 分支不应创建安装会话" % (CASE, label)
+        )
+        assert_no_install_execution(resp, "%s %s" % (CASE, label))
