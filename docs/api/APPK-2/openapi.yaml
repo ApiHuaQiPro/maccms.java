@@ -1,15 +1,15 @@
 openapi: 3.0.3
 info:
   title: APPK-2 PHP 剩余功能迁移 Java —— 本期 HTTP 接口契约
-  version: 1.2.0
+  version: 1.3.0
   description: |
     Issue: APPK-2
     PRD: docs/prd/APPK-2.md（附表 docs/prd/APPK-2/）@ 8fa362c25b62b52ed5b16afd9eca7f6ccfcafb9f（v9）
     技术设计: docs/design/APPK-2/tech-design.md @ 20490951e1a9c880e975caee0c72c5e0e92120ed（v8，G1 PASS）
     UI 设计: docs/design/APPK-2/ @ 0910f7b5e12e779ad2b66f70823b16b601533cd2
     基线: release/APPK-2-php-template-migration @ a57e9cb2b94d3e500bea7dfe2c579daee093d969
-    状态: 可对接（v1.2.0，回应后端契约评审第 2 轮 REV-API-5～8、SEC-BE-1～3；安全修订经发起人确认（Issue 评论 01a19611-9b40-7f00-a1e2-7c11a882f593，
-    调度核验 01a19612-3be4-70c8-8884-27f7f87bdfa2）；待调度独立复核与后端契约复审）
+    状态: 可对接（v1.3.0，回应调度独立复核 01a1962d-7254-7ddf-a81b-af9a38aaa993 的 REV-API-8；v1.2.0 回应后端契约评审第 2 轮 REV-API-5～8、SEC-BE-1～3，
+    安全修订经发起人确认（Issue 评论 01a19611-9b40-7f00-a1e2-7c11a882f593，调度核验 01a19612-3be4-70c8-8884-27f7f87bdfa2）；待调度独立复核与后端契约复审）
 
     ## 上游决策台账（REV-TRACE-1：唯一决策来源与覆盖关系）
     上游三份文件对 OP-15、OP-16 的状态写法不同：PRD v9 的 BR-8、§14 仍写“待确认”（KPI-4=2，关闭前不得 G0/G1/派工）；UI v1 写 OP-16=a 并引用
@@ -81,16 +81,36 @@ info:
           由 `Sec-Fetch-Site`/`Origin`/`Referer` 拒绝，三者都缺失的请求由 SRC-2 拒绝。
       * ADM-5 路由与 `.html` 后缀、参数来源沿用 B12：`input()` = 查询串 + POST 表单 + 路由参数（`/name/value` 段）合并，**后者覆盖前者**
         （路由参数 > POST 表单 > 查询串）。各 operation 只声明本期客户端应使用的位置；其他位置的同名参数按此合并规则生效。
-        数组参数（`name[]=`）只在 schema 写明“单值或数组”的字段受理；其他字段收到数组时按缺失处理（基线 `PhpInput.scalar`）。
+        数组参数（`name[]=`）只在字段说明写明“单值或数组”的字段按数组受理；其他字段收到数组时按缺失处理（基线 `PhpInput.scalar`；传输形态见 SCH-1）。
       * ADM-6 方法集合（REV-API-6）：本文件登记的每个后台路径**只受理该 Path Item 列出的 HTTP 方法**，逐项见 `x-method-policy`
         （本文件未登记的后台路径维持基线，不在本期改动范围）。未列出的方法（含 HEAD、
         PUT、DELETE，以及只列 POST 的 A 类动作收到的 GET）→ HTTP **405**（`ADMIN_METHOD_NOT_ALLOWED`，`components.responses.MethodNotAllowed`：
         `Allow` 头列出受理的方法，固定正文），在 ADM-1 的“控制器不存在 → 404”之后、来源校验与登录检查之前判定，不读会话、不校验令牌、不取锁、
         不执行任何动作。实现影响：基线 `AdminController` 对所有后台地址映射 GET/HEAD/POST，本期改为按动作的方法表分派（HEAD 不再按 GET 执行）。
         与 PHP 的差异（PHP 不区分方法）只在“页面未使用的方法”上，登记为 `METHOD-1`（见 `x-method-policy`）。
-    - SCH-1 输入 schema 与业务错误（REV-API-8）：本文件**不返回 HTTP 400**。各参数 / 表单 schema 描述服务端受理的**传输层形态**（含 PHP 兼容的
-      缺失、空串、数组形态，因此这些字段一律 `required: false`）；值不满足字段说明里的业务条件（为空、不是数字串、超出长度/范围/枚举、数组超上限）时，
-      按该字段 `description` 写明的错误码返回 HTTP 200 的 PHP 失败体（ADM-2 形态），不执行动作。同一字段的错误码在 operation 的 `x-error-codes-ref` 中列出。
+    - SCH-1 输入 schema 与业务错误（REV-API-8，v1.3.0 重写）：应用**不返回 HTTP 400**，也不在业务分支之前做 schema 校验。
+      * 查询参数与表单字段的 `schema` **只描述传输层形态**：一律 `required: false`，取 `PhpValue`（单值字符串或数组，含空串、`"0"`、空数组和任意字符）
+        或 `PhpLongValue`（只用于 `sql`、`fcontent` 两个长文本字段）。字段 schema 里**不写** `enum`、`pattern`、`format`、`minLength`、`minimum`/`maximum`，
+        也不把业务长度写成 `maxLength`；这些业务条件写在字段 `description` 与 `x-business-rule`（只供阅读与生成测试，**不是**传输层校验关键字）中，
+        由服务端在 operation 写明的判定顺序里判定，不满足 → 该字段 `description` 写明的固定业务体（HTTP 200；后台为 ADM-2 失败体），不执行动作。
+        同一字段的错误码在 operation 的 `x-error-codes-ref` 中列出。按 schema 生成客户端或入口校验时，空值、非法值、数组形态都能通过 schema 到达业务分支。
+      * 数组的线上写法为 PHP 的 `name[]=v`。未写明“单值或数组”的字段收到数组时按缺失处理（ADM-5，基线 `PhpInput.scalar`）；
+        数组形态在 schema 中照样受理，以便到达该“按缺失”分支。
+      * TRN-1 传输上限（每一项都**严格大于**本文件任一业务上限，所以每个业务分支都能用满足 schema 的请求触发）：单值 ≤ 8192 个字符（`PhpText`）；
+        `PhpLongValue` 单值 ≤ 8388608 个字符；数组 ≤ 600 项（业务上限最大为 500）；同一请求的查询串与表单合计 ≤ 1000 个参数；表单正文 ≤ 8 MiB
+        （API-030 沿用基线 1 MiB）。超出的处理都是固定的、不是 400：
+        - 单值超过字符上限 → 按该字段的“不合规 / 超长”分支处理（与超过业务长度同一结果）；数组超过 600 项 → 按该字段的“数组超上限”分支处理
+          （只受理单值的字段按缺失处理）。
+        - 参数个数或表单正文超过上限 → 不解析任何参数、不执行动作，返回 `INPUT_LIMIT_EXCEEDED`：后台为 HTTP 200 ADM-2 失败体（`lang(param_err)`「参数错误」，
+          在 ADM-6、ADM-1 之后、令牌校验与取锁之前判定，不消耗令牌）；API-002、API-007 为 HTTP 200 `{"code":1001,"msg":"参数错误"}`；
+          API-030 为 HTTP 500 固定“系统错误”页（同基线 InstallEndpoint）。API-001 不读参数，API-044 只读查询串里的 `name`、`enforce`（基线自行解析），二者不适用。
+        - 请求行与请求头超过容器上限（Spring Boot 默认 `server.max-http-request-header-size` = 8 KB）时由容器在进入应用之前拒绝，属部署层行为，
+          不是本契约的业务分支；本文件所有查询串形态的业务分支都能在该上限内触发，较长的数据走该路径的 POST operation（若有）。
+        实现影响：后台表单正文上限由 Spring Boot 默认 2 MB 提高到 8 MiB，使 `fcontent` 的“超过 2 MiB → TPL_PARAM_ERR”分支可达；
+        参数个数与正文长度在解析前检查，超出时整请求按上面的固定结果返回，不使用部分解析结果。
+      * 路由判别值不属于业务入参：路径参数 `counter`、`makeAction` 的 `enum` 与 API-030 查询参数 `step` 决定请求**是否属于该 operation**；
+        不匹配的请求不进入该 operation，由 API-005（前台 404）、ADM-1（后台控制器或动作不存在 → 404）或基线的其他安装步骤处理，不是本 operation 的错误分支。
+        API-001 的 `dir`、`assetPath` 只声明传输形态，放行条件写在 operation 中，不满足 → 404（该 operation 唯一的失败结果）。
     - OUT-1 出站目标安全边界（SEC-BE-1，SSRF）：API-040、API-041（以及经同一 `OutboundHttpClient` 出站的 API-042、API-043、API-044 collect 任务）
       对任何由请求参数或采集源配置得到的 URL，逐条执行 `x-outbound-policy` 的规则；任一不满足 → 不建立连接（或立即断开），返回该 operation 写明的
       固定错误体（`COLLECT_URL_REJECTED` / `COLLECT_FETCH_FAILED` / `IMAGES_FETCH_FAILED`），提示文字**不含** URL、主机、解析出的地址、端口或响应片段。
@@ -138,6 +158,22 @@ info:
       breaking: false
       breaking-note: 尚无实现与调用方。实现影响：AdminController 改按动作方法表分派（ADM-6）；OutboundPolicy 增加解析后地址检查与地址固定（OUT-1）；
         安装向导令牌改为一次性并要求 POST（INS-SEC-3/4）。均为本期实现前的契约收紧，不改既有调用方式。
+    - version: 1.3.0
+      date: 2026-11-01
+      change: |
+        回应调度独立复核（评论 01a1962d-7254-7ddf-a81b-af9a38aaa993）REV-API-8：SCH-1 重写，输入 schema 只描述传输形态，业务条件移出 schema 关键字。
+        新增 `PhpText`（单值 ≤ 8192 字符）、`PhpValue`（单值或数组 ≤ 600 项，含空串、空数组与任意字符）、`PhpLongValue`（`sql`、`fcontent`）；
+        所有查询参数与表单字段改为引用这三者，原 `enum`、`pattern`、`format: uri`、`minLength`、业务 `maxLength`/`maxItems` 改写为字段 `x-business-rule`
+        与 `description`（含 InstallStep5Form 的 account/password/initdata/__token__、CollectApiParams/CollectTestParams 的 cjurl 等、MakeParams、ImagesSyncParams、
+        RecoverForm/AcknowledgeForm 的 run/target/accepted_as_is、TableIdsForm、PwdForm，以及 API-002、API-007（POST 正文）、API-010、API-011、API-012、API-016、
+        API-020、API-021、API-044 的查询参数）；
+        `IdList`、`CounterInt` 改为 `PhpValue` + 业务规则；`RunId` 只用于响应。新增 TRN-1 传输上限（参数 ≤ 1000 个、表单正文 ≤ 8 MiB、
+        API-030 沿用 1 MiB）与 `INPUT_LIMIT_EXCEEDED`（固定 HTTP 200 业务体，API-030 为 500 系统错误页）；单值超长、数组超项数走字段自身分支。
+        路径参数 `counter`、`makeAction` 与 API-030 `step` 明确为路由判别值；`step` 去掉 `enum: ["5"]`，与“数值等于 5 的写法同样进入”一致；
+        API-001 的 `dir`/`assetPath` 只留传输形态，放行条件不满足仍为 404；`If-Modified-Since` 无法解析时忽略。
+      breaking: false
+      breaking-note: 尚无实现与调用方；只放宽请求 schema（原先被 schema 拒绝的输入现在按已写明的业务分支返回），响应与错误码含义不变。
+        实现影响：后台表单正文上限由 Spring Boot 默认 2 MB 提高到 8 MiB，并在解析前检查参数个数与正文长度（TRN-1）。
 servers:
   - url: /
     description: 站点根（相对路径；前台与安装向导）
@@ -234,8 +270,8 @@ paths:
         - name: If-Modified-Since
           in: header
           required: false
-          schema: { type: string, maxLength: 64 }
-          description: HTTP 日期；文件修改时间不晚于该值 → 304
+          schema: { type: string }
+          description: HTTP 日期；文件修改时间不晚于该值 → 304；无法按 HTTP 日期解析 → 忽略该头，按无条件请求处理（SCH-1，不是错误）
       responses:
         "200":
           description: 文件原始字节
@@ -318,7 +354,7 @@ paths:
                 ok: { value: { code: 1, msg: ok } }
                 frequently: { value: { code: 1003, msg: "<lang index/pwd_frequently>" } }
                 wrong: { value: { code: 1012, msg: "<lang pass_err>" } }
-      x-error-codes-ref: [PWD_PARAM_ERR, PWD_ALREADY_PASSED, PWD_TOO_FREQUENT, PWD_VOD_NOT_FOUND, PWD_VOD_WRONG, PWD_VOD_PLAY_WRONG, PWD_VOD_DOWN_WRONG, PWD_ART_NOT_FOUND, PWD_ART_WRONG]
+      x-error-codes-ref: [PWD_PARAM_ERR, PWD_ALREADY_PASSED, PWD_TOO_FREQUENT, PWD_VOD_NOT_FOUND, PWD_VOD_WRONG, PWD_VOD_PLAY_WRONG, PWD_VOD_DOWN_WRONG, PWD_ART_NOT_FOUND, PWD_ART_WRONG, INPUT_LIMIT_EXCEEDED]
       x-idempotency: 非幂等（刷新 last_pwd、消耗 PasswordAttempts 配额、通过时写会话）；客户端不得自动重试。
     post:
       tags: [site]
@@ -339,7 +375,7 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/PwdResult" }
-      x-error-codes-ref: [PWD_PARAM_ERR, PWD_ALREADY_PASSED, PWD_TOO_FREQUENT, PWD_VOD_NOT_FOUND, PWD_VOD_WRONG, PWD_VOD_PLAY_WRONG, PWD_VOD_DOWN_WRONG, PWD_ART_NOT_FOUND, PWD_ART_WRONG]
+      x-error-codes-ref: [PWD_PARAM_ERR, PWD_ALREADY_PASSED, PWD_TOO_FREQUENT, PWD_VOD_NOT_FOUND, PWD_VOD_WRONG, PWD_VOD_PLAY_WRONG, PWD_VOD_DOWN_WRONG, PWD_ART_NOT_FOUND, PWD_ART_WRONG, INPUT_LIMIT_EXCEEDED]
       x-idempotency: 同 GET
 
   /index.php/ajax/{counter}:
@@ -366,7 +402,7 @@ paths:
       responses:
         "200":
           $ref: "#/components/responses/CounterJson"
-      x-error-codes-ref: [COUNTER_SAVE_FAILED]
+      x-error-codes-ref: [COUNTER_SAVE_FAILED, INPUT_LIMIT_EXCEEDED]
       x-idempotency: 非幂等（计数 +1 等）；去重与频率按基线；客户端不得自动重试。
     head:
       tags: [site]
@@ -385,7 +421,7 @@ paths:
           headers:
             Content-Type:
               schema: { type: string, enum: ["application/json; charset=utf-8"] }
-      x-error-codes-ref: [COUNTER_SAVE_FAILED]
+      x-error-codes-ref: [COUNTER_SAVE_FAILED, INPUT_LIMIT_EXCEEDED]
       x-idempotency: 同 GET（非幂等）
     post:
       tags: [site]
@@ -404,12 +440,12 @@ paths:
           application/x-www-form-urlencoded:
             schema:
               type: object
-              description: 参数名与取值同基线 B11（各计数器不同），与查询串合并
-              additionalProperties: { type: string, maxLength: 255 }
+              description: 参数名与取值规则同基线 B11（各计数器不同，参数不合规 → 1001「参数错误」），与查询串合并；传输形态见 SCH-1（单值或数组，可为空）
+              additionalProperties: { $ref: "#/components/schemas/PhpValue" }
       responses:
         "200":
           $ref: "#/components/responses/CounterJson"
-      x-error-codes-ref: [COUNTER_SAVE_FAILED]
+      x-error-codes-ref: [COUNTER_SAVE_FAILED, INPUT_LIMIT_EXCEEDED]
       x-idempotency: 同 GET
 
   # ───────────────────────────── 后台：数据库工具 ─────────────────────────────
@@ -440,12 +476,14 @@ paths:
         - name: group
           in: query
           required: false
-          schema: { type: string, enum: [import, export] }
+          schema: { $ref: "#/components/schemas/PhpValue" }
+          description: "`import` → 备份列表；缺失、空、数组或其他值 → 表列表（同 B15，SCH-1，不是错误）"
+          x-business-rule: { enum: [import], otherwise: "表列表" }
       responses:
         "200": { $ref: "#/components/responses/AdminPage" }
         "302": { $ref: "#/components/responses/AdminUnauthenticated" }
         "403": { $ref: "#/components/responses/AdminSourceRejected" }
-      x-error-codes-ref: [ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED]
+      x-error-codes-ref: [ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED, INPUT_LIMIT_EXCEEDED]
 
   /database/optimize:
     servers: *adminServers
@@ -473,7 +511,7 @@ paths:
         "200": { $ref: "#/components/responses/AdminAction" }
         "302": { $ref: "#/components/responses/AdminUnauthenticated" }
         "403": { $ref: "#/components/responses/AdminSourceRejected" }
-      x-error-codes-ref: [DBT_SELECT_OPTIMIZE_TABLE, DBT_TABLE_NOT_ALLOWED, DBT_LOCKED, DBT_PENDING, DBT_OPTIMIZE_PARTIAL, ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED]
+      x-error-codes-ref: [DBT_SELECT_OPTIMIZE_TABLE, DBT_TABLE_NOT_ALLOWED, DBT_LOCKED, DBT_PENDING, DBT_OPTIMIZE_PARTIAL, ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED, INPUT_LIMIT_EXCEEDED]
       x-idempotency: 幂等，可直接重试（DBT-5 ⑤）
     post:
       tags: [admin-database]
@@ -496,7 +534,7 @@ paths:
         "200": { $ref: "#/components/responses/AdminAction" }
         "302": { $ref: "#/components/responses/AdminUnauthenticated" }
         "403": { $ref: "#/components/responses/AdminSourceRejected" }
-      x-error-codes-ref: [DBT_SELECT_OPTIMIZE_TABLE, DBT_TABLE_NOT_ALLOWED, DBT_LOCKED, DBT_PENDING, DBT_OPTIMIZE_PARTIAL, ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED]
+      x-error-codes-ref: [DBT_SELECT_OPTIMIZE_TABLE, DBT_TABLE_NOT_ALLOWED, DBT_LOCKED, DBT_PENDING, DBT_OPTIMIZE_PARTIAL, ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED, INPUT_LIMIT_EXCEEDED]
       x-idempotency: 同 GET
 
   /database/repair:
@@ -519,7 +557,7 @@ paths:
         "200": { $ref: "#/components/responses/AdminAction" }
         "302": { $ref: "#/components/responses/AdminUnauthenticated" }
         "403": { $ref: "#/components/responses/AdminSourceRejected" }
-      x-error-codes-ref: [DBT_SELECT_REPAIR_TABLE, DBT_TABLE_NOT_ALLOWED, DBT_LOCKED, DBT_PENDING, DBT_OPTIMIZE_PARTIAL, ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED]
+      x-error-codes-ref: [DBT_SELECT_REPAIR_TABLE, DBT_TABLE_NOT_ALLOWED, DBT_LOCKED, DBT_PENDING, DBT_OPTIMIZE_PARTIAL, ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED, INPUT_LIMIT_EXCEEDED]
       x-idempotency: 幂等，可直接重试
     post:
       tags: [admin-database]
@@ -542,7 +580,7 @@ paths:
         "200": { $ref: "#/components/responses/AdminAction" }
         "302": { $ref: "#/components/responses/AdminUnauthenticated" }
         "403": { $ref: "#/components/responses/AdminSourceRejected" }
-      x-error-codes-ref: [DBT_SELECT_REPAIR_TABLE, DBT_TABLE_NOT_ALLOWED, DBT_LOCKED, DBT_PENDING, DBT_OPTIMIZE_PARTIAL, ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED]
+      x-error-codes-ref: [DBT_SELECT_REPAIR_TABLE, DBT_TABLE_NOT_ALLOWED, DBT_LOCKED, DBT_PENDING, DBT_OPTIMIZE_PARTIAL, ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED, INPUT_LIMIT_EXCEEDED]
       x-idempotency: 同 GET
 
   /database/sql:
@@ -563,7 +601,7 @@ paths:
         "200": { $ref: "#/components/responses/AdminPage" }
         "302": { $ref: "#/components/responses/AdminUnauthenticated" }
         "403": { $ref: "#/components/responses/AdminSourceRejected" }
-      x-error-codes-ref: [ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED]
+      x-error-codes-ref: [ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED, INPUT_LIMIT_EXCEEDED]
     post:
       tags: [admin-database]
       operationId: adminDatabaseSqlExecute
@@ -601,7 +639,7 @@ paths:
         "200": { $ref: "#/components/responses/AdminAction" }
         "302": { $ref: "#/components/responses/AdminUnauthenticated" }
         "403": { $ref: "#/components/responses/AdminSourceRejected" }
-      x-error-codes-ref: [FORM_TOKEN_INVALID, DBT_SQL_MULTI_STATEMENT, DBT_SQL_STRUCTURE_REFUSED, DBT_LOCKED, DBT_PENDING, DBT_SQL_FAILED, DBT_SQL_UNKNOWN, ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED]
+      x-error-codes-ref: [FORM_TOKEN_INVALID, DBT_SQL_MULTI_STATEMENT, DBT_SQL_STRUCTURE_REFUSED, DBT_LOCKED, DBT_PENDING, DBT_SQL_FAILED, DBT_SQL_UNKNOWN, ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED, INPUT_LIMIT_EXCEEDED]
       x-idempotency: 一般不幂等；服务端不重试；“结果不确定”进入待处理，须 acknowledge（API-018）后才能再执行；令牌一次性，重复提交同一表单 → FORM_TOKEN_INVALID
 
   /database/import:
@@ -643,7 +681,7 @@ paths:
         "200": { $ref: "#/components/responses/AdminAction" }
         "302": { $ref: "#/components/responses/AdminUnauthenticated" }
         "403": { $ref: "#/components/responses/AdminSourceRejected" }
-      x-error-codes-ref: [FORM_TOKEN_INVALID, DBT_SELECT_FILE, BAD_BACKUP_PATH, DBT_LOCKED, DBT_PENDING, DBT_FILE_DAMAGE, DBT_TABLE_NOT_ALLOWED, DBT_SITE_NOT_CLOSED, DBT_BACKUP_DIR_NOT_WRITABLE, DBT_BACKUP_LOCK_EXISTS, DBT_AUTO_BACKUP_FAILED, DBT_IMPORT_FAILED, DBT_IMPORT_UNKNOWN, ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED]
+      x-error-codes-ref: [FORM_TOKEN_INVALID, DBT_SELECT_FILE, BAD_BACKUP_PATH, DBT_LOCKED, DBT_PENDING, DBT_FILE_DAMAGE, DBT_TABLE_NOT_ALLOWED, DBT_SITE_NOT_CLOSED, DBT_BACKUP_DIR_NOT_WRITABLE, DBT_BACKUP_LOCK_EXISTS, DBT_AUTO_BACKUP_FAILED, DBT_IMPORT_FAILED, DBT_IMPORT_UNKNOWN, ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED, INPUT_LIMIT_EXCEEDED]
       x-idempotency: 无并发写入时数据结果幂等（每表先清空再插入）；服务端不自动重试；令牌一次性；失败后经 recover（API-017）恢复，不能直接再次还原（DBT_PENDING）
 
   /database/export:
@@ -664,7 +702,7 @@ paths:
         "200": { $ref: "#/components/responses/AdminAction" }
         "302": { $ref: "#/components/responses/AdminUnauthenticated" }
         "403": { $ref: "#/components/responses/AdminSourceRejected" }
-      x-error-codes-ref: [DBT_BACKUP_ERR, ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED]
+      x-error-codes-ref: [DBT_BACKUP_ERR, ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED, INPUT_LIMIT_EXCEEDED]
       x-idempotency: 幂等（无副作用）
     post:
       tags: [admin-database]
@@ -692,7 +730,7 @@ paths:
         "200": { $ref: "#/components/responses/AdminAction" }
         "302": { $ref: "#/components/responses/AdminUnauthenticated" }
         "403": { $ref: "#/components/responses/AdminSourceRejected" }
-      x-error-codes-ref: [DBT_SELECT_EXPORT_TABLE, BAD_BACKUP_PATH, DBT_LOCKED, DBT_PENDING, DBT_BACKUP_LOCK_EXISTS, DBT_BACKUP_ERR, ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED]
+      x-error-codes-ref: [DBT_SELECT_EXPORT_TABLE, BAD_BACKUP_PATH, DBT_LOCKED, DBT_PENDING, DBT_BACKUP_LOCK_EXISTS, DBT_BACKUP_ERR, ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED, INPUT_LIMIT_EXCEEDED]
       x-idempotency: 每次生成新分卷（同秒冲突顺延），重复提交得到多份备份；不自动重试
 
   /database/del:
@@ -726,7 +764,7 @@ paths:
         "200": { $ref: "#/components/responses/AdminAction" }
         "302": { $ref: "#/components/responses/AdminUnauthenticated" }
         "403": { $ref: "#/components/responses/AdminSourceRejected" }
-      x-error-codes-ref: [DBT_SELECT_DEL_FILE, BAD_BACKUP_PATH, DBT_LOCKED, DBT_BACKUP_BOUND, DBT_DEL_ERR, ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED]
+      x-error-codes-ref: [DBT_SELECT_DEL_FILE, BAD_BACKUP_PATH, DBT_LOCKED, DBT_BACKUP_BOUND, DBT_DEL_ERR, ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED, INPUT_LIMIT_EXCEEDED]
       x-idempotency: 幂等（已删除的备份再删：glob 为空 → del_ok，同 B15）
     post:
       tags: [admin-database]
@@ -751,7 +789,7 @@ paths:
         "200": { $ref: "#/components/responses/AdminAction" }
         "302": { $ref: "#/components/responses/AdminUnauthenticated" }
         "403": { $ref: "#/components/responses/AdminSourceRejected" }
-      x-error-codes-ref: [DBT_SELECT_DEL_FILE, BAD_BACKUP_PATH, DBT_LOCKED, DBT_BACKUP_BOUND, DBT_DEL_ERR, ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED]
+      x-error-codes-ref: [DBT_SELECT_DEL_FILE, BAD_BACKUP_PATH, DBT_LOCKED, DBT_BACKUP_BOUND, DBT_DEL_ERR, ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED, INPUT_LIMIT_EXCEEDED]
       x-idempotency: 同 GET
 
   /database/recover:
@@ -792,7 +830,7 @@ paths:
         "200": { $ref: "#/components/responses/AdminAction" }
         "302": { $ref: "#/components/responses/AdminUnauthenticated" }
         "403": { $ref: "#/components/responses/AdminSourceRejected" }
-      x-error-codes-ref: [FORM_TOKEN_INVALID, DBT_PARAM_ERR, DBT_LOCKED, DBT_RUN_MISMATCH, DBT_RECOVER_NOT_ALLOWED, DBT_SITE_NOT_CLOSED, DBT_AUTO_BACKUP_INVALID, DBT_FILE_DAMAGE, DBT_TABLE_NOT_ALLOWED, DBT_RECOVERY_FAILED, DBT_RECOVERY_UNKNOWN, ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED]
+      x-error-codes-ref: [FORM_TOKEN_INVALID, DBT_PARAM_ERR, DBT_LOCKED, DBT_RUN_MISMATCH, DBT_RECOVER_NOT_ALLOWED, DBT_SITE_NOT_CLOSED, DBT_AUTO_BACKUP_INVALID, DBT_FILE_DAMAGE, DBT_TABLE_NOT_ALLOWED, DBT_RECOVERY_FAILED, DBT_RECOVERY_UNKNOWN, ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED, INPUT_LIMIT_EXCEEDED]
       x-idempotency: |
         按记录状态区分（DBT-5 ⑤、V-31 ⑤～⑧），不是“任何时候重复提交结果相同”：
         - 预检拒绝（步骤 1～7）：记录与数据都不变，可修正原因后重新提交。
@@ -831,7 +869,7 @@ paths:
         "200": { $ref: "#/components/responses/AdminAction" }
         "302": { $ref: "#/components/responses/AdminUnauthenticated" }
         "403": { $ref: "#/components/responses/AdminSourceRejected" }
-      x-error-codes-ref: [FORM_TOKEN_INVALID, DBT_PARAM_ERR, DBT_LOCKED, DBT_RUN_MISMATCH, DBT_ACK_CONFIRM_REQUIRED, DBT_ACK_NOT_PENDING, ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED]
+      x-error-codes-ref: [FORM_TOKEN_INVALID, DBT_PARAM_ERR, DBT_LOCKED, DBT_RUN_MISMATCH, DBT_ACK_CONFIRM_REQUIRED, DBT_ACK_NOT_PENDING, ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED, INPUT_LIMIT_EXCEEDED]
       x-idempotency: 第二次调用时记录已是 DONE → DBT_ACK_NOT_PENDING，数据不变；同一表单重复提交 → FORM_TOKEN_INVALID
 
   # ───────────────────────────── 后台：模板管理 ─────────────────────────────
@@ -857,14 +895,16 @@ paths:
         - name: fpath
           in: query
           required: false
-          schema: { type: string, maxLength: 512 }
+          schema: { $ref: "#/components/schemas/PhpValue" }
+          x-business-rule: { empty: "TPL_PARAM_ERR（+1）", maxLength: 512, on-fail: "TPL_PARAM_ERR（+2）" }
           description: |
             模板目录（PHP 原样参数，`@` 分隔）。传输层可缺失（SCH-1）：缺失、空串、`"0"`、数组形态 → TPL_PARAM_ERR（`param_err`+`1`）；
             拼出的路径不以 `./template` 开头、含多于一个 `./`、或长度超过 512 → TPL_PARAM_ERR（`param_err`+`2`）。
         - name: fname
           in: query
           required: false
-          schema: { type: string, maxLength: 512 }
+          schema: { $ref: "#/components/schemas/PhpValue" }
+          x-business-rule: { empty: "新建", ext: [html, htm, js, xml], ext-on-fail: TPL_EXT_NOT_ALLOWED, maxLength: 512, on-fail: "TPL_PARAM_ERR（+2）" }
           description: |
             文件名；缺失或为空 = 新建。非空且扩展名不在 `html,htm,js,xml` → TPL_EXT_NOT_ALLOWED；长度超过 512 或数组形态 → TPL_PARAM_ERR（`param_err`+`2`）。
       responses:
@@ -880,7 +920,7 @@ paths:
                   - { $ref: "#/components/schemas/Error" }
         "302": { $ref: "#/components/responses/AdminUnauthenticated" }
         "403": { $ref: "#/components/responses/AdminSourceRejected" }
-      x-error-codes-ref: [TPL_PARAM_ERR, TPL_EXT_NOT_ALLOWED, ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED]
+      x-error-codes-ref: [TPL_PARAM_ERR, TPL_EXT_NOT_ALLOWED, ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED, INPUT_LIMIT_EXCEEDED]
     post:
       tags: [admin-template]
       operationId: adminTemplateSave
@@ -908,7 +948,7 @@ paths:
         "200": { $ref: "#/components/responses/AdminAction" }
         "302": { $ref: "#/components/responses/AdminUnauthenticated" }
         "403": { $ref: "#/components/responses/AdminSourceRejected" }
-      x-error-codes-ref: [TPL_PARAM_ERR, TPL_EXT_NOT_ALLOWED, FORM_TOKEN_INVALID, TPL_NAME_REQUIRED, TPL_UNSAFE_CONTENT, TPL_VERSION_CONFLICT, ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED]
+      x-error-codes-ref: [TPL_PARAM_ERR, TPL_EXT_NOT_ALLOWED, FORM_TOKEN_INVALID, TPL_NAME_REQUIRED, TPL_UNSAFE_CONTENT, TPL_VERSION_CONFLICT, ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED, INPUT_LIMIT_EXCEEDED]
       x-idempotency: 内容相同的重复保存结果相同；令牌一次性，同一表单重复提交 → FORM_TOKEN_INVALID
   /template/del:
     servers: *adminServers
@@ -939,7 +979,7 @@ paths:
         "200": { $ref: "#/components/responses/AdminAction" }
         "302": { $ref: "#/components/responses/AdminUnauthenticated" }
         "403": { $ref: "#/components/responses/AdminSourceRejected" }
-      x-error-codes-ref: [TPL_DELETE_FAILED, TPL_PARAM_ERR, ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED]
+      x-error-codes-ref: [TPL_DELETE_FAILED, TPL_PARAM_ERR, ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED, INPUT_LIMIT_EXCEEDED]
       x-idempotency: 幂等（已删除的文件再删被静默跳过，仍返回 del_ok）
     post:
       tags: [admin-template]
@@ -963,7 +1003,7 @@ paths:
         "200": { $ref: "#/components/responses/AdminAction" }
         "302": { $ref: "#/components/responses/AdminUnauthenticated" }
         "403": { $ref: "#/components/responses/AdminSourceRejected" }
-      x-error-codes-ref: [TPL_DELETE_FAILED, TPL_PARAM_ERR, ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED]
+      x-error-codes-ref: [TPL_DELETE_FAILED, TPL_PARAM_ERR, ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED, INPUT_LIMIT_EXCEEDED]
       x-idempotency: 同 GET
   /template/wizard:
     servers: *adminServers
@@ -983,7 +1023,7 @@ paths:
         "200": { $ref: "#/components/responses/AdminPage" }
         "302": { $ref: "#/components/responses/AdminUnauthenticated" }
         "403": { $ref: "#/components/responses/AdminSourceRejected" }
-      x-error-codes-ref: [ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED]
+      x-error-codes-ref: [ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED, INPUT_LIMIT_EXCEEDED]
   /template/ads:
     servers: *adminServers
     get:
@@ -1003,7 +1043,7 @@ paths:
         "200": { $ref: "#/components/responses/AdminPage" }
         "302": { $ref: "#/components/responses/AdminUnauthenticated" }
         "403": { $ref: "#/components/responses/AdminSourceRejected" }
-      x-error-codes-ref: [ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED]
+      x-error-codes-ref: [ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED, INPUT_LIMIT_EXCEEDED]
 
   # ───────────────────────────── 后台：静态生成 / 清理缓存 ─────────────────────────────
   /make/{makeAction}:
@@ -1042,7 +1082,7 @@ paths:
         "200": { $ref: "#/components/responses/AdminProgress" }
         "302": { $ref: "#/components/responses/AdminUnauthenticated" }
         "403": { $ref: "#/components/responses/AdminSourceRejected" }
-      x-error-codes-ref: [MAKE_PARAM_ERR, ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED]
+      x-error-codes-ref: [MAKE_PARAM_ERR, ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED, INPUT_LIMIT_EXCEEDED]
       x-idempotency: 同一参数重复执行覆盖写同一批静态文件（结果相同）；不自动重试
     post:
       tags: [admin-make]
@@ -1066,7 +1106,7 @@ paths:
         "200": { $ref: "#/components/responses/AdminProgress" }
         "302": { $ref: "#/components/responses/AdminUnauthenticated" }
         "403": { $ref: "#/components/responses/AdminSourceRejected" }
-      x-error-codes-ref: [MAKE_PARAM_ERR, ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED]
+      x-error-codes-ref: [MAKE_PARAM_ERR, ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED, INPUT_LIMIT_EXCEEDED]
       x-idempotency: 同 GET
 
   /index/clear:
@@ -1088,7 +1128,7 @@ paths:
         "200": { $ref: "#/components/responses/AdminAction" }
         "302": { $ref: "#/components/responses/AdminUnauthenticated" }
         "403": { $ref: "#/components/responses/AdminSourceRejected" }
-      x-error-codes-ref: [ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED]
+      x-error-codes-ref: [ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED, INPUT_LIMIT_EXCEEDED]
       x-idempotency: 幂等
     post:
       tags: [admin-make]
@@ -1104,7 +1144,7 @@ paths:
         "200": { $ref: "#/components/responses/AdminAction" }
         "302": { $ref: "#/components/responses/AdminUnauthenticated" }
         "403": { $ref: "#/components/responses/AdminSourceRejected" }
-      x-error-codes-ref: [ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED]
+      x-error-codes-ref: [ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED, INPUT_LIMIT_EXCEEDED]
       x-idempotency: 幂等
 
   # ───────────────────────────── 安装向导 ─────────────────────────────
@@ -1156,8 +1196,11 @@ paths:
         - name: step
           in: query
           required: true
-          schema: { type: string, enum: ["5"] }
-          description: 固定为 5（PHP 宽松比较下数值等于 5 的写法同样进入本 operation）；其他值不属于本 operation
+          schema: { type: string }
+          description: |
+            路由判别值（SCH-1，不是业务入参）：PHP `switch` 宽松比较数值等于 5（`5`、`05`、`5.0` 等）的请求属于本 operation；缺失或其他值不属于本 operation，
+            按基线 B22 的其他安装步骤处理
+          x-route-value: "数值等于 5（PHP 宽松比较）"
       requestBody:
         required: true
         content:
@@ -1184,7 +1227,7 @@ paths:
           description: 未预期异常或表单超过 1 MiB（同基线 InstallEndpoint）：固定“系统错误”页，不含异常细节
           content:
             text/html: { schema: { type: string } }
-      x-error-codes-ref: [INSTALL_LOCKED, INSTALL_ACCESS_DENIED, INSTALL_ENV_FAILED, INSTALL_NOT_TESTED, INSTALL_ADMIN_REQUIRED, INSTALL_ADMIN_INVALID, INSTALL_DIR_UNSUPPORTED, INSTALL_ROOT_REFUSED, INSTALL_CONNECT_FAILED, INSTALL_TABLES_EXIST, INSTALL_SQL_HASH_MISMATCH, INSTALL_CONFIG_WRITE_FAILED, INSTALL_SQL_FAILED, INSTALL_INIT_DATA_FAILED, INSTALL_ADMIN_FAILED, INSTALL_LOCK_WRITE_FAILED]
+      x-error-codes-ref: [INSTALL_LOCKED, INSTALL_ACCESS_DENIED, INSTALL_ENV_FAILED, INSTALL_NOT_TESTED, INSTALL_ADMIN_REQUIRED, INSTALL_ADMIN_INVALID, INSTALL_DIR_UNSUPPORTED, INSTALL_ROOT_REFUSED, INSTALL_CONNECT_FAILED, INSTALL_TABLES_EXIST, INSTALL_SQL_HASH_MISMATCH, INSTALL_CONFIG_WRITE_FAILED, INSTALL_SQL_FAILED, INSTALL_INIT_DATA_FAILED, INSTALL_ADMIN_FAILED, INSTALL_LOCK_WRITE_FAILED, INPUT_LIMIT_EXCEEDED]
       x-idempotency: 不幂等且不可重放：令牌一次性（INS-SEC-4），成功后 install.lock 关闭入口（INS-SEC-2）；失败后须重新打开第 3 步；客户端不得自动重试
 
   # ───────────────────────────── 在线采集 / 远程图片 / 定时采集 ─────────────────────────────
@@ -1217,7 +1260,7 @@ paths:
         "200": { $ref: "#/components/responses/AdminProgress" }
         "302": { $ref: "#/components/responses/AdminUnauthenticated" }
         "403": { $ref: "#/components/responses/AdminSourceRejected" }
-      x-error-codes-ref: [COLLECT_PARAM_ERR, COLLECT_URL_REJECTED, COLLECT_FETCH_FAILED, COLLECT_PARSE_FAILED, ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED]
+      x-error-codes-ref: [COLLECT_PARAM_ERR, COLLECT_URL_REJECTED, COLLECT_FETCH_FAILED, COLLECT_PARSE_FAILED, ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED, INPUT_LIMIT_EXCEEDED]
       x-idempotency: 同一页重复采集按 B19 入库规则更新/跳过已有数据；不自动重试
   /collect/test:
     servers: *adminServers
@@ -1243,7 +1286,7 @@ paths:
         "200": { $ref: "#/components/responses/CollectTestJson" }
         "302": { $ref: "#/components/responses/AdminUnauthenticated" }
         "403": { $ref: "#/components/responses/AdminSourceRejected" }
-      x-error-codes-ref: [COLLECT_PARAM_ERR, COLLECT_URL_REJECTED, COLLECT_FETCH_FAILED, COLLECT_PARSE_FAILED, ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED]
+      x-error-codes-ref: [COLLECT_PARAM_ERR, COLLECT_URL_REJECTED, COLLECT_FETCH_FAILED, COLLECT_PARSE_FAILED, ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED, INPUT_LIMIT_EXCEEDED]
       x-idempotency: 幂等（只读取数）；不自动重试
     post:
       tags: [admin-collect]
@@ -1266,7 +1309,7 @@ paths:
         "200": { $ref: "#/components/responses/CollectTestJson" }
         "302": { $ref: "#/components/responses/AdminUnauthenticated" }
         "403": { $ref: "#/components/responses/AdminSourceRejected" }
-      x-error-codes-ref: [COLLECT_PARAM_ERR, COLLECT_URL_REJECTED, COLLECT_FETCH_FAILED, COLLECT_PARSE_FAILED, ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED]
+      x-error-codes-ref: [COLLECT_PARAM_ERR, COLLECT_URL_REJECTED, COLLECT_FETCH_FAILED, COLLECT_PARSE_FAILED, ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED, INPUT_LIMIT_EXCEEDED]
       x-idempotency: 同 GET
   /collect/timing:
     servers: *adminServers
@@ -1286,7 +1329,7 @@ paths:
         "200": { $ref: "#/components/responses/AdminProgress" }
         "302": { $ref: "#/components/responses/AdminUnauthenticated" }
         "403": { $ref: "#/components/responses/AdminSourceRejected" }
-      x-error-codes-ref: [ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED]
+      x-error-codes-ref: [ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED, INPUT_LIMIT_EXCEEDED]
   /images/sync:
     servers: *adminServers
     get:
@@ -1314,7 +1357,7 @@ paths:
         "200": { $ref: "#/components/responses/AdminProgress" }
         "302": { $ref: "#/components/responses/AdminUnauthenticated" }
         "403": { $ref: "#/components/responses/AdminSourceRejected" }
-      x-error-codes-ref: [IMAGES_PARAM_ERR, IMAGES_FETCH_FAILED, ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED]
+      x-error-codes-ref: [IMAGES_PARAM_ERR, IMAGES_FETCH_FAILED, ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED, INPUT_LIMIT_EXCEEDED]
       x-idempotency: 已同步为本地地址的记录不再命中条件，重复执行只处理剩余远程图片；不自动重试
     post:
       tags: [admin-collect]
@@ -1337,7 +1380,7 @@ paths:
         "200": { $ref: "#/components/responses/AdminProgress" }
         "302": { $ref: "#/components/responses/AdminUnauthenticated" }
         "403": { $ref: "#/components/responses/AdminSourceRejected" }
-      x-error-codes-ref: [IMAGES_PARAM_ERR, IMAGES_FETCH_FAILED, ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED]
+      x-error-codes-ref: [IMAGES_PARAM_ERR, IMAGES_FETCH_FAILED, ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED, INPUT_LIMIT_EXCEEDED]
       x-idempotency: 同 GET
   /api.php/timming/index:
     get:
@@ -1438,65 +1481,77 @@ components:
       name: dir
       in: path
       required: true
-      description: template/ 下的子目录名（单段）
-      schema: { type: string, minLength: 1, maxLength: 64, pattern: "^[^/\\\\:\\x00-\\x1f]+$" }
+      description: |
+        template/ 下的子目录名（单段）。传输形态只要求非空路径段（SCH-1）；放行条件（`x-business-rule`，另见 operation 放行条件第 1、4 条）不满足 → 404。
+      schema: { type: string, maxLength: 8192 }
+      x-business-rule: { length: "1～64", pattern: "^[^/\\:\x00-\x1f]+$", exists: "template/ 下实际存在的子目录", on-fail: "404 TEMPLATE_ASSET_NOT_FOUND" }
     TemplateAssetPath:
       name: assetPath
       in: path
       required: true
-      description: 子目录（css/js/images/ads）起的相对路径，可含多级 `/`（OpenAPI 无法表达跨段路径参数，按 `/template/{dir}/**` 理解）
-      schema: { type: string, minLength: 3, maxLength: 512 }
+      description: |
+        子目录（css/js/images/ads）起的相对路径，可含多级 `/`（OpenAPI 无法表达跨段路径参数，按 `/template/{dir}/**` 理解）。传输形态不设格式（SCH-1）；
+        长度不在 3～512 或不满足 operation 放行条件第 2～5 条 → 404。
+      schema: { type: string, maxLength: 8192 }
+      x-business-rule: { length: "3～512", first-segment: [css, js, images, ads], on-fail: "404 TEMPLATE_ASSET_NOT_FOUND" }
       example: css/style.css
     PwdMid:
       name: mid
       in: query
       required: false
-      schema: { type: string, enum: ["1", "2"] }
-      description: 1 视频、2 文章；缺失或不在枚举内 → 1001（SCH-1）
+      schema: { $ref: "#/components/schemas/PhpValue" }
+      description: 1 视频、2 文章；缺失、为空、数组或不在枚举内 → 1001 PWD_PARAM_ERR（SCH-1）
+      x-business-rule: { enum: ["1", "2"], on-fail: PWD_PARAM_ERR }
     PwdType:
       name: type
       in: query
       required: false
-      schema: { type: string, enum: ["1", "4", "5"] }
-      description: 1 详情、4 播放、5 下载（mid=2 时只要求在枚举内）；缺失或不在枚举内 → 1001（SCH-1）
+      schema: { $ref: "#/components/schemas/PhpValue" }
+      description: 1 详情、4 播放、5 下载（mid=2 时只要求在枚举内）；缺失、为空、数组或不在枚举内 → 1001 PWD_PARAM_ERR（SCH-1）
+      x-business-rule: { enum: ["1", "4", "5"], on-fail: PWD_PARAM_ERR }
     PwdId:
       name: id
       in: query
       required: false
-      schema: { type: string, maxLength: 20 }
-      description: 内容 ID；缺失、空或 "0" → 1001；超过 20 字符 → 1001（SCH-1）
+      schema: { $ref: "#/components/schemas/PhpValue" }
+      description: 内容 ID；缺失、空、"0" 或数组 → 1001；超过 20 字符 → 1001（SCH-1）
+      x-business-rule: { empty: PWD_PARAM_ERR, maxLength: 20, on-fail: PWD_PARAM_ERR }
     PwdValue:
       name: pwd
       in: query
       required: false
-      schema: { type: string, maxLength: 255 }
-      description: 访问密码；缺失、空或 "0" → 1001；超过 255 字符 → 1001（SCH-1）
+      schema: { $ref: "#/components/schemas/PhpValue" }
+      description: 访问密码；缺失、空、"0" 或数组 → 1001；超过 255 字符 → 1001（SCH-1）
+      x-business-rule: { empty: PWD_PARAM_ERR, maxLength: 255, on-fail: PWD_PARAM_ERR }
     BackupIdQuery:
       name: id
       in: query
       required: false
-      schema: { type: string, maxLength: 20 }
+      schema: { $ref: "#/components/schemas/PhpValue" }
       description: |
-        备份时间戳（Unix 秒，B15 列表中的 id；合法值为 1～20 位十进制数字串）。传输层可缺失（SCH-1，与 PHP 相同）：缺失、空串、`"0"`、数组形态 `id[]`、
-        非数字串、超过 20 字符 → DBT_SELECT_DEL_FILE（不取锁、不删文件）。POST 时表单 `id` 存在则以表单为准（ADM-5）
+        备份时间戳（Unix 秒，B15 列表中的 id）。传输层可缺失（SCH-1，与 PHP 相同）：缺失、空串、`"0"`、数组形态 `id[]`、
+        不是 1～20 位十进制数字串 → DBT_SELECT_DEL_FILE（不取锁、不删文件）。POST 时表单 `id` 存在则以表单为准（ADM-5）
+      x-business-rule: { empty: DBT_SELECT_DEL_FILE, pattern: "^[0-9]{1,20}$", on-fail: DBT_SELECT_DEL_FILE }
     TableIdsQuery:
       name: ids
       in: query
       required: false
       style: form
       explode: true
-      schema:
-        type: string
-        maxLength: 2048
-      description: 单表名（`ids=mac_vod`）或逗号分隔串；也可用 `ids[]=` 数组形式。为空 → DBT_SELECT_OPTIMIZE_TABLE / DBT_SELECT_REPAIR_TABLE；每项须在 26 张白名单内
+      schema: { $ref: "#/components/schemas/PhpValue" }
+      description: |
+        单表名（`ids=mac_vod`）或逗号分隔串；也可用 `ids[]=` 数组形式（单值或数组）。缺失或为空 → DBT_SELECT_OPTIMIZE_TABLE / DBT_SELECT_REPAIR_TABLE；
+        每项须在 26 张白名单内（规则同 `TableIdsForm.ids`）
+      x-business-rule: { empty: "DBT_SELECT_OPTIMIZE_TABLE / DBT_SELECT_REPAIR_TABLE", item-whitelist: "附表 A 26 张表", maxItems: 26 }
     TemplateFnameQuery:
       name: fname
       in: query
       required: false
-      schema: { type: string, maxLength: 512 }
+      schema: { $ref: "#/components/schemas/PhpValue" }
       description: |
         单值形态：template/ 区域内的相对路径，如 `./template/default_pc/html/index/index.html`（PHP 原样参数）。缺失或为空 → 不删任何文件、返回 del_ok
         （SCH-1，同 PHP）；超过 512 字符或不合规 → 该项静默跳过。POST 时表单 `fname` 存在则以表单为准（ADM-5）
+      x-business-rule: { empty: "del_ok（不删）", maxLength: 512, on-fail: "静默跳过该项" }
     TemplateFnameArrayQuery:
       name: "fname[]"
       in: query
@@ -1505,15 +1560,16 @@ components:
       explode: true
       schema:
         type: array
-        maxItems: 200
-        items: { type: string, maxLength: 512 }
-      description: 数组形态（同 PHP `fname[]=`，与单值形态二选一，同时出现时按 PHP 后者覆盖前者）。空数组 → del_ok；超过 200 项 → TPL_PARAM_ERR（不删任何文件）；各项规则同单值
+        maxItems: 600
+        items: { $ref: "#/components/schemas/PhpText" }
+      description: 数组形态（同 PHP `fname[]=`，与单值形态二选一，同时出现时按 PHP 后者覆盖前者）。空数组 → del_ok；超过 200 项 → TPL_PARAM_ERR（不删任何文件）；各项规则同单值（空项、超过 512 字符或不合规 → 静默跳过）
+      x-business-rule: { maxItems: 200, on-fail: TPL_PARAM_ERR, item: "同 TemplateFnameQuery" }
     MakeAction:
       name: makeAction
       in: path
       required: true
       schema: { type: string, enum: [index, map, rss, type, topic_index, topic_info, info, label, make, opt] }
-      description: 生成动作（`make` = 按 `ac` 分派，同 PHP `Make::make`；`opt` = 生成管理页本身，只读页面，忽略 `MakeParams`）
+      description: 路由判别值（SCH-1，不是业务入参）：生成动作（`make` = 按 `ac` 分派，同 PHP `Make::make`；`opt` = 生成管理页本身，只读页面，忽略 `MakeParams`）；其他值不属于本 operation（ADM-1 → 404）
     MakeQuery:
       name: make
       in: query
@@ -1551,19 +1607,21 @@ components:
       in: path
       required: true
       schema: { type: string, enum: [hits, digg, score, referer] }
-      description: 计数器（短地址 `/ajax/{counter}`、`.html` 后缀同样受理）
+      description: 路由判别值（SCH-1，不是业务入参）：计数器（短地址 `/ajax/{counter}`、`.html` 后缀同样受理）；其他值不属于本 operation（基线其他 ajax 动作或 API-005）
     TimmingName:
       name: name
       in: query
       required: false
-      schema: { type: string, maxLength: 64 }
-      description: 只执行该名称的任务（同基线）；不传为全部到期任务
+      schema: { $ref: "#/components/schemas/PhpValue" }
+      description: 只执行同名任务（同基线 `TimmingService.run`：trim + urldecode 后宽松比较）；缺失、空串、`"0"` 或数组 = 全部到期任务；不匹配任何任务名 = 不执行任务（SCH-1，不是错误）
+      x-business-rule: { empty: "全部到期任务", match: "任务名宽松比较" }
     TimmingEnforce:
       name: enforce
       in: query
       required: false
-      schema: { type: string, enum: ["0", "1"] }
-      description: 1 = 无视时间表强制执行（同基线；鉴权未通过时同样 403、不执行）
+      schema: { $ref: "#/components/schemas/PhpValue" }
+      description: 宽松比较等于 1 = 无视时间表强制执行（同基线）；缺失、其他值或数组 = 按时间表（SCH-1，不是错误）。鉴权未通过时同样 403、不执行
+      x-business-rule: { enum: ["1"], otherwise: "按时间表" }
   responses:
     AdminAction:
       description: |
@@ -1689,212 +1747,311 @@ components:
       properties:
         code: { type: integer, enum: [1, 1001, 1002, 1003, 1011, 1012, 1013, 1014, 1021, 1022] }
         msg: { type: string, description: "成功为 ok；其他为 LegacyLang 文本或模型返回消息" }
+    PhpText:
+      type: string
+      maxLength: 8192
+      description: SCH-1 / TRN-1 单值传输形态：任意字符串（含空串、`"0"`、任意字符），只设传输上限 8192 个字符；业务条件见引用处的 `description` / `x-business-rule`
+    PhpValue:
+      description: |
+        SCH-1 输入字段的传输形态：单值（`name=v`）或数组（`name[]=v`，≤ 600 项，可为空数组），值不做任何格式或枚举限制。
+        只受理单值的字段收到数组 → 按缺失处理（ADM-5）；业务条件与失败结果见引用处
+      oneOf:
+        - $ref: "#/components/schemas/PhpText"
+        - type: array
+          maxItems: 600
+          items: { $ref: "#/components/schemas/PhpText" }
+    PhpLongValue:
+      description: SCH-1 长文本字段（`sql`、`fcontent`）的传输形态：单值 ≤ 8388608 个字符（受表单正文 8 MiB 约束），或数组（按缺失处理）
+      oneOf:
+        - { type: string, maxLength: 8388608 }
+        - type: array
+          maxItems: 600
+          items: { $ref: "#/components/schemas/PhpText" }
     PwdForm:
       type: object
+      description: API-002 POST 正文；字段与规则同查询参数 `PwdMid`、`PwdType`、`PwdId`、`PwdValue`（SCH-1，不满足 → 1001）
       properties:
-        mid: { type: string, enum: ["1", "2"] }
-        type: { type: string, enum: ["1", "4", "5"] }
-        id: { type: string, maxLength: 20 }
-        pwd: { type: string, maxLength: 255 }
+        mid:
+          allOf: [{ $ref: "#/components/schemas/PhpValue" }]
+          x-business-rule: { enum: ["1", "2"], on-fail: PWD_PARAM_ERR }
+        type:
+          allOf: [{ $ref: "#/components/schemas/PhpValue" }]
+          x-business-rule: { enum: ["1", "4", "5"], on-fail: PWD_PARAM_ERR }
+        id:
+          allOf: [{ $ref: "#/components/schemas/PhpValue" }]
+          x-business-rule: { empty: PWD_PARAM_ERR, maxLength: 20, on-fail: PWD_PARAM_ERR }
+        pwd:
+          allOf: [{ $ref: "#/components/schemas/PhpValue" }]
+          x-business-rule: { empty: PWD_PARAM_ERR, maxLength: 255, on-fail: PWD_PARAM_ERR }
     TableIdsForm:
       type: object
       description: B 类（无令牌）。`ids` 也可在查询串（ADM-5）
       properties:
         ids:
-          description: 表名数组（`ids[]=`）或逗号分隔串；每项必须在附表 A 的 26 张表白名单内，最多 26 项
-          oneOf:
-            - type: array
-              maxItems: 26
-              items: { type: string, maxLength: 64, pattern: "^[A-Za-z0-9_]+$" }
-            - type: string
-              maxLength: 2048
+          allOf: [{ $ref: "#/components/schemas/PhpValue" }]
+          description: |
+            表名数组（`ids[]=`）或逗号分隔串（单值或数组）。缺失、空串或空数组 → DBT_SELECT_OPTIMIZE_TABLE / DBT_SELECT_REPAIR_TABLE；
+            每项必须是 1～64 个 `[A-Za-z0-9_]` 字符且在附表 A 的 26 张表白名单内，最多 26 项，否则 → DBT_TABLE_NOT_ALLOWED（不执行）
+          x-business-rule: { empty: "DBT_SELECT_OPTIMIZE_TABLE / DBT_SELECT_REPAIR_TABLE", maxItems: 26, item-pattern: "^[A-Za-z0-9_]{1,64}$", item-whitelist: "附表 A 26 张表", on-fail: DBT_TABLE_NOT_ALLOWED }
     SqlForm:
       type: object
-      description: A 类。字段都可缺失（SCH-1）：`__token__` 缺失/为空 → FORM_TOKEN_INVALID；`sql` 缺失或 trim 后为空 → 不执行、返回 `run_ok`
+      description: A 类。字段都可缺失（SCH-1）：`__token__` 缺失/为空/数组 → FORM_TOKEN_INVALID；`sql` 缺失、数组或 trim 后为空 → 不执行、返回 `run_ok`
       properties:
-        __token__: { type: string, maxLength: 64 }
-        sql: { type: string, maxLength: 1048576, description: "整段 SQL；`{pre}` 替换为表前缀；不回显。超过 1 MiB → DBT_SQL_STRUCTURE_REFUSED，不发送" }
+        __token__:
+          allOf: [{ $ref: "#/components/schemas/PhpValue" }]
+          x-business-rule: { empty: FORM_TOKEN_INVALID, match: "会话令牌，一次性", on-fail: FORM_TOKEN_INVALID }
+        sql:
+          allOf: [{ $ref: "#/components/schemas/PhpLongValue" }]
+          description: "整段 SQL；`{pre}` 替换为表前缀；不回显。超过 1 MiB（1048576 字节）→ DBT_SQL_STRUCTURE_REFUSED，不发送"
+          x-business-rule: { empty: "run_ok（不执行）", maxBytes: 1048576, on-fail: DBT_SQL_STRUCTURE_REFUSED }
     BackupIdForm:
       type: object
-      description: A 类（API-014）。字段都可缺失（SCH-1）：`__token__` 缺失/为空 → FORM_TOKEN_INVALID；`id` 见字段说明
+      description: A 类（API-014）。字段都可缺失（SCH-1）：`__token__` 缺失/为空/数组 → FORM_TOKEN_INVALID；`id` 见字段说明
       properties:
-        __token__: { type: string, maxLength: 64 }
+        __token__:
+          allOf: [{ $ref: "#/components/schemas/PhpValue" }]
+          x-business-rule: { empty: FORM_TOKEN_INVALID, match: "会话令牌，一次性", on-fail: FORM_TOKEN_INVALID }
         id:
-          type: string
-          maxLength: 20
-          description: 备份时间戳（Unix 秒，合法值为 1～20 位十进制数字串）；缺失、空串、`"0"`、数组形态、非数字串、超过 20 字符 → DBT_SELECT_FILE
+          allOf: [{ $ref: "#/components/schemas/PhpValue" }]
+          description: 备份时间戳（Unix 秒）；缺失、空串、`"0"`、数组形态、不是 1～20 位十进制数字串 → DBT_SELECT_FILE
+          x-business-rule: { empty: DBT_SELECT_FILE, pattern: "^[0-9]{1,20}$", on-fail: DBT_SELECT_FILE }
     ExportForm:
       type: object
-      description: B 类（同 B15，无令牌；CSRF-EX-1）
+      description: B 类（同 B15，无令牌；CSRF-EX-1）。字段可缺失（SCH-1）
       properties:
         ids:
-          description: 同 B15 导出（表名数组或单值）；缺失或为空 → DBT_SELECT_EXPORT_TABLE；数组超过 26 项或任一项不在白名单 → DBT_TABLE_NOT_ALLOWED
-          oneOf:
-            - type: array
-              maxItems: 26
-              items: { type: string, maxLength: 64 }
-            - type: string
-              maxLength: 2048
-        start: { type: string, maxLength: 20, description: 同 B15 }
+          allOf: [{ $ref: "#/components/schemas/PhpValue" }]
+          description: 同 B15 导出（表名数组或单值）；缺失、空串或空数组 → DBT_SELECT_EXPORT_TABLE；数组超过 26 项或任一项不在白名单 → DBT_TABLE_NOT_ALLOWED
+          x-business-rule: { empty: DBT_SELECT_EXPORT_TABLE, maxItems: 26, item-whitelist: "附表 A 26 张表", on-fail: DBT_TABLE_NOT_ALLOWED }
+        start:
+          allOf: [{ $ref: "#/components/schemas/PhpValue" }]
+          description: 同 B15（分卷游标，取值与容错按 B15）
     BackupDeleteForm:
       type: object
       description: B 类（同 B15，无令牌；CSRF-EX-1）。字段可缺失（SCH-1）
       properties:
         id:
-          type: string
-          maxLength: 20
-          description: 规则同 `BackupIdQuery`（缺失、空串、`"0"`、数组、非数字、超过 20 字符 → DBT_SELECT_DEL_FILE）；与查询串同时出现时以表单为准
+          allOf: [{ $ref: "#/components/schemas/PhpValue" }]
+          description: 规则同 `BackupIdQuery`（缺失、空串、`"0"`、数组、不是 1～20 位十进制数字串 → DBT_SELECT_DEL_FILE）；与查询串同时出现时以表单为准
+          x-business-rule: { empty: DBT_SELECT_DEL_FILE, pattern: "^[0-9]{1,20}$", on-fail: DBT_SELECT_DEL_FILE }
     TemplateDeleteForm:
       type: object
       description: B 类（同 PHP，无令牌；CSRF-EX-1）。字段可缺失（SCH-1）：缺失、空串、空数组 → 不删任何文件、返回 del_ok
       properties:
         fname:
-          description: template/ 区域内的相对路径，单值（`fname=`）或数组（`fname[]=`，最多 200 项，超过 → TPL_PARAM_ERR）；单项超过 512 字符或不合规 → 静默跳过
-          oneOf:
-            - { type: string, maxLength: 512 }
-            - { type: array, maxItems: 200, items: { type: string, maxLength: 512 } }
+          allOf: [{ $ref: "#/components/schemas/PhpValue" }]
+          description: template/ 区域内的相对路径，单值（`fname=`）或数组（`fname[]=`，最多 200 项，超过 → TPL_PARAM_ERR，不删任何文件）；空项、单项超过 512 字符或不合规 → 静默跳过
+          x-business-rule: { empty: "del_ok（不删）", maxItems: 200, maxItems-on-fail: TPL_PARAM_ERR, item-maxLength: 512, item-on-fail: "静默跳过该项" }
     RecoverForm:
       type: object
-      description: A 类（API-017）。字段都可缺失（SCH-1）：`__token__` 缺失/为空 → FORM_TOKEN_INVALID；`run`、`target` 缺失或不合字段规则 → DBT_PARAM_ERR
+      description: A 类（API-017）。字段都可缺失（SCH-1）：`__token__` 缺失/为空/数组 → FORM_TOKEN_INVALID；`run`、`target` 缺失、为空、数组或不合字段规则 → DBT_PARAM_ERR
       properties:
-        __token__: { type: string, maxLength: 64 }
-        run: { $ref: "#/components/schemas/RunId" }
+        __token__:
+          allOf: [{ $ref: "#/components/schemas/PhpValue" }]
+          x-business-rule: { empty: FORM_TOKEN_INVALID, match: "会话令牌，一次性", on-fail: FORM_TOKEN_INVALID }
+        run:
+          allOf: [{ $ref: "#/components/schemas/PhpValue" }]
+          description: 运行记录编号（`RunId` 规则：1～64 个 `[A-Za-z0-9-]` 字符）；不满足 → DBT_PARAM_ERR
+          x-business-rule: { empty: DBT_PARAM_ERR, pattern: "^[A-Za-z0-9-]{1,64}$", on-fail: DBT_PARAM_ERR }
         target:
-          type: string
-          enum: [AUTO_BACKUP, SOURCE]
-          description: AUTO_BACKUP = 还原前自动备份（回到还原前数据）；SOURCE = 重跑原备份（完成这次还原）
+          allOf: [{ $ref: "#/components/schemas/PhpValue" }]
+          description: AUTO_BACKUP = 还原前自动备份（回到还原前数据）；SOURCE = 重跑原备份（完成这次还原）；缺失、为空、数组或其他值 → DBT_PARAM_ERR
+          x-business-rule: { enum: [AUTO_BACKUP, SOURCE], on-fail: DBT_PARAM_ERR }
     AcknowledgeForm:
       type: object
-      description: A 类（API-018）。字段都可缺失（SCH-1）：`__token__` 缺失/为空 → FORM_TOKEN_INVALID；`run` 缺失或不合 `RunId` → DBT_PARAM_ERR
+      description: A 类（API-018）。字段都可缺失（SCH-1）：`__token__` 缺失/为空/数组 → FORM_TOKEN_INVALID；`run` 缺失、为空、数组或不合 `RunId` 规则 → DBT_PARAM_ERR
       properties:
-        __token__: { type: string, maxLength: 64 }
-        run: { $ref: "#/components/schemas/RunId" }
+        __token__:
+          allOf: [{ $ref: "#/components/schemas/PhpValue" }]
+          x-business-rule: { empty: FORM_TOKEN_INVALID, match: "会话令牌，一次性", on-fail: FORM_TOKEN_INVALID }
+        run:
+          allOf: [{ $ref: "#/components/schemas/PhpValue" }]
+          description: 同 `RecoverForm.run`
+          x-business-rule: { empty: DBT_PARAM_ERR, pattern: "^[A-Za-z0-9-]{1,64}$", on-fail: DBT_PARAM_ERR }
         accepted_as_is:
-          type: string
-          enum: ["0", "1"]
-          description: 页面勾选“接受当前数据”= 1；缺失按 0；出现但不在枚举 → DBT_PARAM_ERR；RECOVERED 以外的待处理状态必须为 1（否则 DBT_ACK_CONFIRM_REQUIRED）
+          allOf: [{ $ref: "#/components/schemas/PhpValue" }]
+          description: 页面勾选“接受当前数据”= 1；缺失按 0；出现但不是 `"0"`/`"1"`（含空串、数组）→ DBT_PARAM_ERR；RECOVERED 以外的待处理状态必须为 1（否则 DBT_ACK_CONFIRM_REQUIRED）
+          x-business-rule: { missing: "按 0", enum: ["0", "1"], on-fail: DBT_PARAM_ERR }
     TemplateSaveForm:
       type: object
       description: |
         A 类（API-020 POST）。字段都可缺失（SCH-1），判定顺序见 operation：`fpath` 规则同 GET（TPL_PARAM_ERR）→ `fname` 扩展名（TPL_EXT_NOT_ALLOWED）→
         `__token__`（FORM_TOKEN_INVALID）→ `fname` 缺失或为空（TPL_NAME_REQUIRED）→ 区域 / 内容 / 版本
       properties:
-        __token__: { type: string, maxLength: 64 }
-        fpath: { type: string, maxLength: 512, description: 同 GET `fpath`；缺失、空串、`"0"` → TPL_PARAM_ERR（`param_err`+`1`） }
-        fname: { type: string, maxLength: 512, description: "扩展名须为 html/htm/js/xml；缺失或为空 → TPL_NAME_REQUIRED；超过 512 字符 → TPL_PARAM_ERR" }
-        fcontent: { type: string, maxLength: 2097152, description: 缺失按空串保存（同 PHP）；超过 2 MiB → TPL_PARAM_ERR（`param_err`+`2`），不写文件 }
-        fversion: { type: string, maxLength: 128, description: 编辑页带出的文件版本（B15 冲突检查，基线参数名），不一致 → TPL_VERSION_CONFLICT }
+        __token__:
+          allOf: [{ $ref: "#/components/schemas/PhpValue" }]
+          x-business-rule: { empty: FORM_TOKEN_INVALID, match: "会话令牌，一次性", on-fail: FORM_TOKEN_INVALID }
+        fpath:
+          allOf: [{ $ref: "#/components/schemas/PhpValue" }]
+          description: 同 GET `fpath`；缺失、空串、`"0"`、数组 → TPL_PARAM_ERR（`param_err`+`1`）；路径不合规或超过 512 字符 → TPL_PARAM_ERR（`param_err`+`2`）
+          x-business-rule: { empty: "TPL_PARAM_ERR（+1）", maxLength: 512, on-fail: "TPL_PARAM_ERR（+2）" }
+        fname:
+          allOf: [{ $ref: "#/components/schemas/PhpValue" }]
+          description: "扩展名须为 html/htm/js/xml（不符 → TPL_EXT_NOT_ALLOWED）；缺失或为空 → TPL_NAME_REQUIRED；超过 512 字符或数组 → TPL_PARAM_ERR"
+          x-business-rule: { empty: TPL_NAME_REQUIRED, ext: [html, htm, js, xml], ext-on-fail: TPL_EXT_NOT_ALLOWED, maxLength: 512, on-fail: TPL_PARAM_ERR }
+        fcontent:
+          allOf: [{ $ref: "#/components/schemas/PhpLongValue" }]
+          description: 缺失或数组按空串保存（同 PHP）；超过 2 MiB（2097152 字节）→ TPL_PARAM_ERR（`param_err`+`2`），不写文件
+          x-business-rule: { missing: "按空串", maxBytes: 2097152, on-fail: "TPL_PARAM_ERR（+2）" }
+        fversion:
+          allOf: [{ $ref: "#/components/schemas/PhpValue" }]
+          description: 编辑页带出的文件版本（B15 冲突检查，基线参数名），不一致 → TPL_VERSION_CONFLICT；缺失、数组与超长的处理同基线 B15
     IdList:
-      description: 逗号分隔的正整数 id 串（`1,2,3`），或数组形态（`name[]=1&name[]=2`）；最多 500 项，单项 1～10 位十进制数字，串长不超过 2048
-      oneOf:
-        - { type: string, maxLength: 2048, pattern: "^$|^[0-9]{1,10}(,[0-9]{1,10})*$" }
-        - { type: array, maxItems: 500, items: { type: string, pattern: "^[0-9]{1,10}$" } }
+      allOf: [{ $ref: "#/components/schemas/PhpValue" }]
+      description: |
+        逗号分隔的正整数 id 串（`1,2,3`），或数组形态（`name[]=1&name[]=2`）。业务条件：缺失、空串或空数组 = 不限定；最多 500 项，单项 1～10 位十进制数字，
+        串长不超过 2048；不满足 → 引用处写明的参数错误码（API-024 为 MAKE_PARAM_ERR）
+      x-business-rule: { empty: "不限定", maxItems: 500, maxLength: 2048, item-pattern: "^[0-9]{1,10}$" }
     CounterInt:
-      type: string
-      pattern: "^[0-9]{0,7}$"
-      description: 0～9999999 的十进制数字串（空串按 0）；进度页回传的游标字段
+      allOf: [{ $ref: "#/components/schemas/PhpValue" }]
+      description: 进度页回传的游标字段，业务条件：0～9999999 的十进制数字串（缺失或空串按 0）；非数字、超过 7 位或数组 → 引用处写明的参数错误码（API-024 为 MAKE_PARAM_ERR）
+      x-business-rule: { empty: "按 0", pattern: "^[0-9]{0,7}$" }
     MakeParams:
       type: object
       description: |
         API-024 入参（PHP `Make` 控制器 `$this->_param = input()`，Make.php:13 起；基线 `MakeService` 同名字段）。全部字段可缺失（SCH-1）；
-        除写明的情况外，不满足字段规则 → MAKE_PARAM_ERR（`lang(param_err)`），不生成任何文件。未列出的字段忽略。
+        除写明的情况外，不满足字段 `x-business-rule` → MAKE_PARAM_ERR（`lang(param_err)`），不生成任何文件。未列出的字段忽略。
       properties:
         ac:
-          type: string
-          maxLength: 16
-          enum: ["", index, map, rss, type, topic_index, topic_info, info, label]
-          description: 仅 `/make/make` 使用，按此分派；缺失、空或不在枚举 → 同 PHP 只输出进度页样式、不生成（不是错误）
+          allOf: [{ $ref: "#/components/schemas/PhpValue" }]
+          description: 仅 `/make/make` 使用，按此分派；缺失、空、数组或不在枚举 → 同 PHP 只输出进度页样式、不生成（不是错误）
+          x-business-rule: { enum: [index, map, rss, type, topic_index, topic_info, info, label], otherwise: "只输出进度页样式、不生成" }
         ac2:
-          type: string
-          maxLength: 16
-          enum: ["", day, nomake, wap, index, baidu, google, so, sogou, bing, sm]
+          allOf: [{ $ref: "#/components/schemas/PhpValue" }]
           description: |
             `index`：`wap` = 手机变体（C-45），其他为桌面；`rss`：须为 RSS 集合 index/baidu/google/so/sogou/bing/sm 之一，否则 MAKE_PARAM_ERR（同基线）；
-            `type`/`info`：`day` = 只生成当日更新，`nomake` = 只生成未生成过的（同 PHP）。不在枚举 → MAKE_PARAM_ERR
+            `type`/`info`：`day` = 只生成当日更新，`nomake` = 只生成未生成过的（同 PHP）。缺失或空串按空；数组或不在枚举 → MAKE_PARAM_ERR
+          x-business-rule: { enum: ["", day, nomake, wap, index, baidu, google, so, sogou, bing, sm], on-fail: MAKE_PARAM_ERR }
         tab:
-          type: string
-          enum: ["", vod, art]
-          description: 分类页 / 详情页的模型（`art` 文章，其他为视频，同 PHP）；不在枚举 → MAKE_PARAM_ERR
+          allOf: [{ $ref: "#/components/schemas/PhpValue" }]
+          description: 分类页 / 详情页的模型（`art` 文章，其他为视频，同 PHP）；缺失或空串按视频；数组或不在枚举 → MAKE_PARAM_ERR
+          x-business-rule: { enum: ["", vod, art], on-fail: MAKE_PARAM_ERR }
         ids: { $ref: "#/components/schemas/IdList" }
         vodtype: { $ref: "#/components/schemas/IdList" }
         arttype: { $ref: "#/components/schemas/IdList" }
         topic: { $ref: "#/components/schemas/IdList" }
         label:
-          description: 自定义页面文件名（`label/` 目录下，不含扩展名的部分），逗号串或数组；最多 200 项，单项 1～64 个 `[A-Za-z0-9_-]` 字符；不合规 → MAKE_PARAM_ERR
-          oneOf:
-            - { type: string, maxLength: 2048, pattern: "^$|^[A-Za-z0-9_-]{1,64}(,[A-Za-z0-9_-]{1,64})*$" }
-            - { type: array, maxItems: 200, items: { type: string, pattern: "^[A-Za-z0-9_-]{1,64}$" } }
-        jump: { type: string, enum: ["", "0", "1"], description: "1 = 当前任务完成后自动跳到下一项（同 PHP）" }
-        ref: { type: string, enum: ["", "0", "1"], description: "1 = 完成后返回来源页（同 PHP，跳转地址只取同源 Referer）" }
+          allOf: [{ $ref: "#/components/schemas/PhpValue" }]
+          description: 自定义页面文件名（`label/` 目录下，不含扩展名的部分），逗号串或数组；最多 200 项，串长不超过 2048，单项 1～64 个 `[A-Za-z0-9_-]` 字符；不合规 → MAKE_PARAM_ERR
+          x-business-rule: { empty: "不限定", maxItems: 200, maxLength: 2048, item-pattern: "^[A-Za-z0-9_-]{1,64}$", on-fail: MAKE_PARAM_ERR }
+        jump:
+          allOf: [{ $ref: "#/components/schemas/PhpValue" }]
+          description: "1 = 当前任务完成后自动跳到下一项（同 PHP）；缺失或空串按 0；数组或其他值 → MAKE_PARAM_ERR"
+          x-business-rule: { enum: ["", "0", "1"], on-fail: MAKE_PARAM_ERR }
+        ref:
+          allOf: [{ $ref: "#/components/schemas/PhpValue" }]
+          description: "1 = 完成后返回来源页（同 PHP，跳转地址只取同源 Referer）；缺失或空串按 0；数组或其他值 → MAKE_PARAM_ERR"
+          x-business-rule: { enum: ["", "0", "1"], on-fail: MAKE_PARAM_ERR }
         num: { $ref: "#/components/schemas/CounterInt" }
         start: { $ref: "#/components/schemas/CounterInt" }
         page_count: { $ref: "#/components/schemas/CounterInt" }
         page_size: { $ref: "#/components/schemas/CounterInt" }
         data_count: { $ref: "#/components/schemas/CounterInt" }
         ps:
-          type: string
-          pattern: "^[0-9]{0,4}$"
-          description: RSS 生成页数，0～1000（空或 0 按 1，同 PHP）；超过 1000 或非数字 → MAKE_PARAM_ERR
+          allOf: [{ $ref: "#/components/schemas/PhpValue" }]
+          description: RSS 生成页数，0～1000（缺失、空或 0 按 1，同 PHP）；超过 1000、非数字或数组 → MAKE_PARAM_ERR
+          x-business-rule: { empty: "按 1", pattern: "^[0-9]{0,4}$", maximum: 1000, on-fail: MAKE_PARAM_ERR }
     CollectApiParams:
       type: object
       description: |
-        API-040 入参（PHP `Collect::api` 的 `input()` 与 `Collect` 模型读取的字段）。全部字段可缺失（SCH-1）；不满足字段规则 → COLLECT_PARAM_ERR
-        （`lang(param_err)`），不出站、不写断点缓存与库。未列出的字段忽略（不进入出站 URL）。
+        API-040 入参（PHP `Collect::api` 的 `input()` 与 `Collect` 模型读取的字段）。全部字段可缺失（SCH-1）；不满足字段 `x-business-rule` → COLLECT_PARAM_ERR
+        （`lang(param_err)`），不出站、不写断点缓存与库。数组形态只有 `ids` 受理，其他字段收到数组按缺失处理。未列出的字段忽略（不进入出站 URL）。
       properties:
         cjurl:
-          type: string
-          minLength: 1
-          maxLength: 1024
-          format: uri
-          description: 资源站接口地址。必填（缺失或为空 → COLLECT_PARAM_ERR）；须为绝对 `http://` 或 `https://` URL、无用户信息、无 `#` 片段、无空白与控制字符；目标检查见 OUT-1（不通过 → COLLECT_URL_REJECTED）
+          allOf: [{ $ref: "#/components/schemas/PhpValue" }]
+          description: |
+            资源站接口地址。必填（缺失、为空或数组 → COLLECT_PARAM_ERR）；超过 1024 字符、不是绝对 `http://` / `https://` URL、含用户信息、`#` 片段、
+            空白或控制字符 → COLLECT_PARAM_ERR；格式通过后目标检查见 OUT-1（不通过 → COLLECT_URL_REJECTED）
+          x-business-rule: { empty: COLLECT_PARAM_ERR, maxLength: 1024, scheme: [http, https], forbid: [userinfo, fragment, whitespace, control], on-fail: COLLECT_PARAM_ERR, outbound: "OUT-1 → COLLECT_URL_REJECTED" }
         cjflag:
-          type: string
-          pattern: "^$|^[0-9a-f]{32}$"
-          description: 采集源标识（同 PHP，= md5(cjurl)，用于分类绑定键）；不合规 → COLLECT_PARAM_ERR
+          allOf: [{ $ref: "#/components/schemas/PhpValue" }]
+          description: 采集源标识（同 PHP，= md5(cjurl)，用于分类绑定键）；缺失或空串按空；不是 32 位小写十六进制 → COLLECT_PARAM_ERR
+          x-business-rule: { pattern: "^$|^[0-9a-f]{32}$", on-fail: COLLECT_PARAM_ERR }
         mid:
-          type: string
-          enum: ["", "1", "2", "8", "9", "11"]
-          description: 模型：空或 1 视频、2 文章、8 演员、9 角色、11 网址（同 PHP 分派）；不在枚举 → COLLECT_PARAM_ERR
+          allOf: [{ $ref: "#/components/schemas/PhpValue" }]
+          description: 模型：缺失、空或 1 视频、2 文章、8 演员、9 角色、11 网址（同 PHP 分派）；其他值 → COLLECT_PARAM_ERR
+          x-business-rule: { enum: ["", "1", "2", "8", "9", "11"], on-fail: COLLECT_PARAM_ERR }
         type:
-          type: string
-          enum: ["", "1", "2"]
-          description: 接口协议：1 XML、2 JSON、空 = 先 JSON 后 XML（同 PHP `Collect::vod`）；不在枚举 → COLLECT_PARAM_ERR
+          allOf: [{ $ref: "#/components/schemas/PhpValue" }]
+          description: 接口协议：1 XML、2 JSON、缺失或空 = 先 JSON 后 XML（同 PHP `Collect::vod`）；其他值 → COLLECT_PARAM_ERR
+          x-business-rule: { enum: ["", "1", "2"], on-fail: COLLECT_PARAM_ERR }
         ac:
-          type: string
-          enum: ["", list, cj, cjsel, cjday, cjall, videolist, detail]
-          description: 动作（`list` 取分类列表，其余为采集；拼 URL 时非 list 改写为 `videolist`/`detail`，同 PHP）；不在枚举 → COLLECT_PARAM_ERR
-        t: { type: string, pattern: "^[0-9]{0,10}$", description: 资源站分类 id；不合规 → COLLECT_PARAM_ERR }
-        pg: { type: string, pattern: "^[0-9]{0,6}$", description: 页码（PHP 改名为 `page`），0～999999；不合规 → COLLECT_PARAM_ERR }
-        page: { type: string, pattern: "^[0-9]{0,6}$", description: 同 `pg`（进度页回传） }
-        h: { type: string, pattern: "^[0-9]{0,5}$", description: 最近 N 小时（0～99999）；不合规 → COLLECT_PARAM_ERR }
-        rday: { type: string, pattern: "^[0-9]{0,5}$", description: "`h` 为空时代替 `h`（同 PHP）" }
+          allOf: [{ $ref: "#/components/schemas/PhpValue" }]
+          description: 动作（`list` 取分类列表，其余为采集；拼 URL 时非 list 改写为 `videolist`/`detail`，同 PHP）；其他值 → COLLECT_PARAM_ERR
+          x-business-rule: { enum: ["", list, cj, cjsel, cjday, cjall, videolist, detail], on-fail: COLLECT_PARAM_ERR }
+        t:
+          allOf: [{ $ref: "#/components/schemas/PhpValue" }]
+          description: 资源站分类 id，0～10 位十进制数字；不合规 → COLLECT_PARAM_ERR
+          x-business-rule: { pattern: "^[0-9]{0,10}$", on-fail: COLLECT_PARAM_ERR }
+        pg:
+          allOf: [{ $ref: "#/components/schemas/PhpValue" }]
+          description: 页码（PHP 改名为 `page`），0～999999；不合规 → COLLECT_PARAM_ERR
+          x-business-rule: { pattern: "^[0-9]{0,6}$", on-fail: COLLECT_PARAM_ERR }
+        page:
+          allOf: [{ $ref: "#/components/schemas/PhpValue" }]
+          description: 同 `pg`（进度页回传）
+          x-business-rule: { pattern: "^[0-9]{0,6}$", on-fail: COLLECT_PARAM_ERR }
+        h:
+          allOf: [{ $ref: "#/components/schemas/PhpValue" }]
+          description: 最近 N 小时（0～99999）；不合规 → COLLECT_PARAM_ERR
+          x-business-rule: { pattern: "^[0-9]{0,5}$", on-fail: COLLECT_PARAM_ERR }
+        rday:
+          allOf: [{ $ref: "#/components/schemas/PhpValue" }]
+          description: "`h` 为空时代替 `h`（同 PHP）；规则同 `h`"
+          x-business-rule: { pattern: "^[0-9]{0,5}$", on-fail: COLLECT_PARAM_ERR }
         ids:
-          description: 资源站内容 id，逗号串或数组；最多 500 项、单项 1～32 个 `[A-Za-z0-9_-]` 字符；不合规 → COLLECT_PARAM_ERR
-          oneOf:
-            - { type: string, maxLength: 4096, pattern: "^$|^[A-Za-z0-9_-]{1,32}(,[A-Za-z0-9_-]{1,32})*$" }
-            - { type: array, maxItems: 500, items: { type: string, pattern: "^[A-Za-z0-9_-]{1,32}$" } }
-        wd: { type: string, maxLength: 100, description: 搜索关键字（原样参与 http_build_query 编码）；超过 100 字符 → COLLECT_PARAM_ERR }
+          allOf: [{ $ref: "#/components/schemas/PhpValue" }]
+          description: 资源站内容 id，逗号串或数组（单值或数组）；最多 500 项、串长不超过 4096、单项 1～32 个 `[A-Za-z0-9_-]` 字符；不合规 → COLLECT_PARAM_ERR
+          x-business-rule: { empty: "不限定", maxItems: 500, maxLength: 4096, item-pattern: "^[A-Za-z0-9_-]{1,32}$", on-fail: COLLECT_PARAM_ERR }
+        wd:
+          allOf: [{ $ref: "#/components/schemas/PhpValue" }]
+          description: 搜索关键字（原样参与 http_build_query 编码）；超过 100 字符 → COLLECT_PARAM_ERR
+          x-business-rule: { maxLength: 100, on-fail: COLLECT_PARAM_ERR }
         param:
-          type: string
-          maxLength: 1024
-          pattern: "^[A-Za-z0-9+/=]*$"
-          description: 采集源附加参数（base64，解码后追加到查询串，同 PHP）；非 base64、解码后含 `#`/空白/控制字符或超过 768 字节 → COLLECT_PARAM_ERR
-        opt: { type: string, enum: ["", "0", "1", "2"], description: "入库策略（同 PHP `$param['opt']`）；不在枚举 → COLLECT_PARAM_ERR" }
-        filter: { type: string, enum: ["", "0", "1", "2"], description: 过滤模式（同 PHP）；不在枚举 → COLLECT_PARAM_ERR }
-        filter_from: { type: string, maxLength: 1024, description: 过滤的播放源，逗号串；超过 1024 字符 → COLLECT_PARAM_ERR }
-        sync_pic_opt: { type: string, enum: ["", "0", "1", "2"], description: 图片同步策略（>0 时覆盖配置，同 PHP）；不在枚举 → COLLECT_PARAM_ERR }
+          allOf: [{ $ref: "#/components/schemas/PhpValue" }]
+          description: 采集源附加参数（base64，解码后追加到查询串，同 PHP）；超过 1024 字符、含 base64 字母表以外字符、解码后含 `#`/空白/控制字符或超过 768 字节 → COLLECT_PARAM_ERR
+          x-business-rule: { maxLength: 1024, pattern: "^[A-Za-z0-9+/=]*$", decoded-maxBytes: 768, on-fail: COLLECT_PARAM_ERR }
+        opt:
+          allOf: [{ $ref: "#/components/schemas/PhpValue" }]
+          description: "入库策略（同 PHP `$param['opt']`）；其他值 → COLLECT_PARAM_ERR"
+          x-business-rule: { enum: ["", "0", "1", "2"], on-fail: COLLECT_PARAM_ERR }
+        filter:
+          allOf: [{ $ref: "#/components/schemas/PhpValue" }]
+          description: 过滤模式（同 PHP）；其他值 → COLLECT_PARAM_ERR
+          x-business-rule: { enum: ["", "0", "1", "2"], on-fail: COLLECT_PARAM_ERR }
+        filter_from:
+          allOf: [{ $ref: "#/components/schemas/PhpValue" }]
+          description: 过滤的播放源，逗号串；超过 1024 字符 → COLLECT_PARAM_ERR
+          x-business-rule: { maxLength: 1024, on-fail: COLLECT_PARAM_ERR }
+        sync_pic_opt:
+          allOf: [{ $ref: "#/components/schemas/PhpValue" }]
+          description: 图片同步策略（>0 时覆盖配置，同 PHP）；其他值 → COLLECT_PARAM_ERR
+          x-business-rule: { enum: ["", "0", "1", "2"], on-fail: COLLECT_PARAM_ERR }
     CollectTestParams:
       type: object
       description: |
-        API-041 入参（PHP `Collect::test` 的 `input()`，采集源表单页提交的字段）。字段与规则同 `CollectApiParams` 中的同名字段；只用到下列字段，其他字段忽略。
-        不满足字段规则 → COLLECT_PARAM_ERR（`code=1001`，`msg`=`lang(param_err)`），不出站。
+        API-041 入参（PHP `Collect::test` 的 `input()`，采集源表单页提交的字段）。字段与业务规则同 `CollectApiParams` 中的同名字段（SCH-1，传输层全部可缺失、
+        可为空串或数组）；只用到下列字段，其他字段忽略。不满足字段规则 → COLLECT_PARAM_ERR（`code=1001`，`msg`=`lang(param_err)`），不出站。
       properties:
-        cjurl: { type: string, minLength: 1, maxLength: 1024, format: uri, description: 同 `CollectApiParams.cjurl`（必填；OUT-1 不通过 → COLLECT_URL_REJECTED） }
-        cjflag: { type: string, pattern: "^$|^[0-9a-f]{32}$" }
-        type: { type: string, enum: ["", "1", "2"] }
-        mid: { type: string, enum: ["", "1", "2", "8", "9", "11"] }
-        ac: { type: string, enum: ["", list] }
-        param: { type: string, maxLength: 1024, pattern: "^[A-Za-z0-9+/=]*$" }
+        cjurl:
+          allOf: [{ $ref: "#/components/schemas/PhpValue" }]
+          description: 同 `CollectApiParams.cjurl`（必填：缺失、为空或数组 → COLLECT_PARAM_ERR；格式不合 → COLLECT_PARAM_ERR；OUT-1 不通过 → COLLECT_URL_REJECTED）
+          x-business-rule: { empty: COLLECT_PARAM_ERR, maxLength: 1024, scheme: [http, https], forbid: [userinfo, fragment, whitespace, control], on-fail: COLLECT_PARAM_ERR, outbound: "OUT-1 → COLLECT_URL_REJECTED" }
+        cjflag:
+          allOf: [{ $ref: "#/components/schemas/PhpValue" }]
+          x-business-rule: { pattern: "^$|^[0-9a-f]{32}$", on-fail: COLLECT_PARAM_ERR }
+        type:
+          allOf: [{ $ref: "#/components/schemas/PhpValue" }]
+          x-business-rule: { enum: ["", "1", "2"], on-fail: COLLECT_PARAM_ERR }
+        mid:
+          allOf: [{ $ref: "#/components/schemas/PhpValue" }]
+          x-business-rule: { enum: ["", "1", "2", "8", "9", "11"], on-fail: COLLECT_PARAM_ERR }
+        ac:
+          allOf: [{ $ref: "#/components/schemas/PhpValue" }]
+          x-business-rule: { enum: ["", list], on-fail: COLLECT_PARAM_ERR }
+        param:
+          allOf: [{ $ref: "#/components/schemas/PhpValue" }]
+          x-business-rule: { maxLength: 1024, pattern: "^[A-Za-z0-9+/=]*$", decoded-maxBytes: 768, on-fail: COLLECT_PARAM_ERR }
     CollectTestResult:
       type: object
       description: PHP `json($res)`：成功 `code=1`，其余字段同 PHP `Collect` 模型返回（分页 `page`、分类 `type`、数据 `data`）；失败只有 `code`、`msg`
@@ -1908,51 +2065,63 @@ components:
     ImagesSyncParams:
       type: object
       description: |
-        API-043 入参（PHP `Images::sync` 的 `input()`，Images.php:45 起）。全部字段可缺失（SCH-1）；不满足字段规则 → IMAGES_PARAM_ERR（`lang(param_err)`），
-        不查库、不出站。未列出的字段忽略。
+        API-043 入参（PHP `Images::sync` 的 `input()`，Images.php:45 起）。全部字段可缺失（SCH-1，传输层可为空串或数组，数组按缺失处理）；
+        不满足字段 `x-business-rule` → IMAGES_PARAM_ERR（`lang(param_err)`），不查库、不出站。未列出的字段忽略。
       properties:
         tab:
-          type: string
-          enum: [vod, art, topic, actor, role, website]
-          description: 数据表（同 PHP）；缺失或不在枚举 → IMAGES_PARAM_ERR（PHP 原样行为）
-        col: { type: string, enum: ["", "1", "2"], description: 1 / 空 = 图片字段，2 = 内容字段里的 `<img>`（同 PHP）；不在枚举 → IMAGES_PARAM_ERR }
-        range: { type: string, enum: ["", "1", "2"], description: 2 = 按 `date` 指定日期（同 PHP）；不在枚举 → IMAGES_PARAM_ERR }
+          allOf: [{ $ref: "#/components/schemas/PhpValue" }]
+          description: 数据表（同 PHP）；缺失、为空、数组或不在枚举 → IMAGES_PARAM_ERR（PHP 原样行为）
+          x-business-rule: { enum: [vod, art, topic, actor, role, website], on-fail: IMAGES_PARAM_ERR }
+        col:
+          allOf: [{ $ref: "#/components/schemas/PhpValue" }]
+          description: 1 / 缺失 / 空 = 图片字段，2 = 内容字段里的 `<img>`（同 PHP）；其他值 → IMAGES_PARAM_ERR
+          x-business-rule: { enum: ["", "1", "2"], on-fail: IMAGES_PARAM_ERR }
+        range:
+          allOf: [{ $ref: "#/components/schemas/PhpValue" }]
+          description: 2 = 按 `date` 指定日期（同 PHP）；其他值 → IMAGES_PARAM_ERR
+          x-business-rule: { enum: ["", "1", "2"], on-fail: IMAGES_PARAM_ERR }
         date:
-          type: string
-          pattern: "^$|^[0-9]{4}[-|][0-9]{2}[-|][0-9]{2}$"
+          allOf: [{ $ref: "#/components/schemas/PhpValue" }]
           description: "`range=2` 时的日期 `YYYY-MM-DD`（页面以 `|` 分隔亦可）；不合规 → IMAGES_PARAM_ERR；只以 strtotime 后的整数参与查询条件"
-        opt: { type: string, enum: ["", "0", "1", "2", "3"], description: 同步范围（同 PHP：1/2/3 三种失败标记筛选）；不在枚举 → IMAGES_PARAM_ERR }
-        page: { type: string, pattern: "^[0-9]{0,6}$", description: 页码 1～999999；缺失、空或 <1 → 1（同 PHP）；非数字或超过 6 位 → IMAGES_PARAM_ERR }
-        limit: { type: string, pattern: "^[0-9]{0,3}$", description: 每页条数 1～100；缺失、空或 <1 → 10（同 PHP）；超过 100 或非数字 → IMAGES_PARAM_ERR（SEC-IN-1） }
+          x-business-rule: { pattern: "^$|^[0-9]{4}[-|][0-9]{2}[-|][0-9]{2}$", on-fail: IMAGES_PARAM_ERR }
+        opt:
+          allOf: [{ $ref: "#/components/schemas/PhpValue" }]
+          description: 同步范围（同 PHP：1/2/3 三种失败标记筛选）；其他值 → IMAGES_PARAM_ERR
+          x-business-rule: { enum: ["", "0", "1", "2", "3"], on-fail: IMAGES_PARAM_ERR }
+        page:
+          allOf: [{ $ref: "#/components/schemas/PhpValue" }]
+          description: 页码 1～999999；缺失、空或 <1 → 1（同 PHP）；非数字或超过 6 位 → IMAGES_PARAM_ERR
+          x-business-rule: { empty: "按 1", pattern: "^[0-9]{0,6}$", on-fail: IMAGES_PARAM_ERR }
+        limit:
+          allOf: [{ $ref: "#/components/schemas/PhpValue" }]
+          description: 每页条数 1～100；缺失、空或 <1 → 10（同 PHP）；超过 100 或非数字 → IMAGES_PARAM_ERR（SEC-IN-1）
+          x-business-rule: { empty: "按 10", pattern: "^[0-9]{0,3}$", maximum: 100, on-fail: IMAGES_PARAM_ERR }
     InstallStep5Form:
       type: object
       description: |
-        API-030 正文（PHP step3.html:66-90 的第 5 步表单，`input('post.…')`）。全部字段可缺失（SCH-1），判定顺序见 operation；数组形态按缺失处理。
-        只取下列字段，其他字段忽略；数据库连接字段不在本表单（来自第 4 步写出的 `MACCMS_DEPLOY_CONFIG`）。
+        API-030 正文（PHP step3.html:66-90 的第 5 步表单，`input('post.…')`）。全部字段可缺失、可为空串或数组（SCH-1，数组按缺失处理），
+        业务条件在 operation 判定顺序中判定。只取下列字段，其他字段忽略；数据库连接字段不在本表单（来自第 4 步写出的 `MACCMS_DEPLOY_CONFIG`）。
       properties:
         account:
-          type: string
-          maxLength: 30
-          pattern: "^[A-Za-z0-9]+$"
-          description: 首个管理员账号（`mac_admin.admin_name` varchar(30)）。缺失或为空（PHP `empty`，含 `"0"`）→ INSTALL_ADMIN_REQUIRED；含字母数字以外字符 → INSTALL_ADMIN_INVALID（`alphaNum` 原文）；超过 30 字符 → INSTALL_ADMIN_INVALID（`length:1,30` 同款原文，Java 补定，PHP 会在写库时截断/失败）
+          allOf: [{ $ref: "#/components/schemas/PhpValue" }]
+          description: 首个管理员账号（`mac_admin.admin_name` varchar(30)）。缺失、数组或为空（PHP `empty`，含 `"0"`）→ INSTALL_ADMIN_REQUIRED；含字母数字以外字符 → INSTALL_ADMIN_INVALID（`alphaNum` 原文）；超过 30 字符 → INSTALL_ADMIN_INVALID（`length:1,30` 同款原文，Java 补定，PHP 会在写库时截断/失败）
+          x-business-rule: { empty: INSTALL_ADMIN_REQUIRED, pattern: "^[A-Za-z0-9]+$", maxLength: 30, on-fail: INSTALL_ADMIN_INVALID }
         password:
-          type: string
-          minLength: 6
-          maxLength: 20
-          format: password
-          description: 管理员密码，6～20 个字符（`mb_strlen`）；缺失或为空 → INSTALL_ADMIN_REQUIRED；长度不符 → INSTALL_ADMIN_INVALID（`length:6,20` 原文）。不写日志、不回显
+          allOf: [{ $ref: "#/components/schemas/PhpValue" }]
+          description: 管理员密码，6～20 个字符（`mb_strlen`）；缺失、数组或为空（PHP `empty`）→ INSTALL_ADMIN_REQUIRED；长度不符 → INSTALL_ADMIN_INVALID（`length:6,20` 原文）。不写日志、不回显
+          x-business-rule: { empty: INSTALL_ADMIN_REQUIRED, length: "6～20（mb_strlen）", on-fail: INSTALL_ADMIN_INVALID, sensitive: true }
         install_dir:
-          type: string
-          maxLength: 255
-          description: 安装目录；缺失或为空按 `/`；不等于 `/` → INSTALL_DIR_UNSUPPORTED（新版只支持站点根，基线 B22）
+          allOf: [{ $ref: "#/components/schemas/PhpValue" }]
+          description: 安装目录；缺失、为空或数组按 `/`；不等于 `/` → INSTALL_DIR_UNSUPPORTED（新版只支持站点根，基线 B22）
+          x-business-rule: { empty: "按 /", enum: ["/"], on-fail: INSTALL_DIR_UNSUPPORTED }
         initdata:
-          type: string
-          enum: ["", "0", "1"]
-          description: 1 = 写入演示初始数据（PHP 宽松比较等于 1）；缺失、空、0 或其他值 = 不写
+          allOf: [{ $ref: "#/components/schemas/PhpValue" }]
+          description: 1 = 写入演示初始数据（PHP 宽松比较等于 1）；缺失、空、0、数组或其他值 = 不写（不是错误）
+          x-business-rule: { enum: ["1"], otherwise: "不写初始数据" }
         __token__:
-          type: string
-          pattern: "^[0-9a-f]{32}$"
-          description: 第 3 步页面签发的一次性令牌（INS-SEC-4）；缺失、为空、与会话不符、会话无令牌或已作废 → INSTALL_ACCESS_DENIED
+          allOf: [{ $ref: "#/components/schemas/PhpValue" }]
+          description: 第 3 步页面签发的一次性令牌（INS-SEC-4，签发值为 32 位小写十六进制）；缺失、为空、数组、与会话不符、会话无令牌或已作废 → INSTALL_ACCESS_DENIED
+          x-business-rule: { empty: INSTALL_ACCESS_DENIED, match: "会话 install.token，定长比较，一次性", on-fail: INSTALL_ACCESS_DENIED }
     RunId:
       type: string
       minLength: 1
@@ -2222,6 +2391,7 @@ x-error-codes:
   - { code: DBT_ACK_NOT_PENDING, http: 200, wire_code: 0, wire_msg: "当前没有待处理的数据库操作", meaning: 记录不在待处理, trigger: "acknowledge 时无记录或 DONE", retry: false, caller: 刷新页面 }
   # 后台方法（ADM-6）
   - { code: ADMIN_METHOD_NOT_ALLOWED, http: 405, wire_msg: "text/plain「Method Not Allowed」；Allow 头列出受理的方法", meaning: 请求方法不在该后台路径列出的方法内, trigger: "ADM-6，见 x-method-policy（如 GET database/import、HEAD 任一后台路径）", retry: false, caller: 按 Allow 头的方法从页面提交 }
+  - { code: INPUT_LIMIT_EXCEEDED, http: "200（API-030 为 500）", wire_code: "0（后台 ADM-2 失败体）/ 1001（API-002、API-007 JSON）", wire_msg: "lang(param_err)「参数错误」；API-030 为固定“系统错误”页", meaning: 请求超出 TRN-1 传输上限（查询串与表单合计超过 1000 个参数，或表单正文超过 8 MiB / API-030 超过 1 MiB）, trigger: "SCH-1 TRN-1：后台在 ADM-6、ADM-1 之后、令牌校验与取锁之前判定；不解析任何参数、不执行动作、不消耗令牌。单值超长、数组超项数不走本码，按字段自身的不合规分支", retry: false, caller: 缩小提交内容后从页面重新发起 }
   # 静态生成
   - { code: MAKE_PARAM_ERR, http: 200, wire_code: 0, wire_msg: "lang(param_err)「参数错误」", meaning: 静态生成入参不合 MakeParams 规则, trigger: "API-024 入参校验；rss 的 ac2 不在 RSS 集合（基线）", retry: false, caller: 从生成管理页重新发起 }
   # 在线采集 / 图片同步（OUT-1）
