@@ -1,15 +1,29 @@
 openapi: 3.0.3
 info:
   title: APPK-2 PHP 剩余功能迁移 Java —— 本期 HTTP 接口契约
-  version: 1.0.0
+  version: 1.1.0
   description: |
     Issue: APPK-2
     PRD: docs/prd/APPK-2.md（附表 docs/prd/APPK-2/）@ 8fa362c25b62b52ed5b16afd9eca7f6ccfcafb9f（v9）
     技术设计: docs/design/APPK-2/tech-design.md @ 20490951e1a9c880e975caee0c72c5e0e92120ed（v8，G1 PASS）
     UI 设计: docs/design/APPK-2/ @ 0910f7b5e12e779ad2b66f70823b16b601533cd2
     基线: release/APPK-2-php-template-migration @ a57e9cb2b94d3e500bea7dfe2c579daee093d969
-    已关闭决策: OP-T4=a、OP-T5=a、OP-T6=b（Issue APPK-2 发起人确认评论 01a194e9-23e8-7682-8ae5-b7c5e19b0040），本契约只写所选答案
-    状态: 可对接（待调度独立复核与后端契约评审）
+    状态: 可对接（v1.1.0，回应后端契约评审第 1 轮 REV-API-1～4、REV-DB-1、REV-SEC-1、REV-TRACE-1；待调度独立复核与后端契约复审）
+
+    ## 上游决策台账（REV-TRACE-1：唯一决策来源与覆盖关系）
+    上游三份文件对 OP-15、OP-16 的状态写法不同：PRD v9 的 BR-8、§14 仍写“待确认”（KPI-4=2，关闭前不得 G0/G1/派工）；UI v1 写 OP-16=a 并引用
+    技术设计 v2；技术设计 v8 元数据写 OP-15 已由 v2 关闭、§2 写“不补缺页（OP-16 a）”。本契约**不以 PRD v9 的“待确认”文字为依据**，按下表的
+    Issue 记录取唯一值；覆盖关系由 G0 路由单（下表第 3 行）授权——该评论在范围确认后登记 OP-15、OP-16 均已关闭，并据此放行评审版流程。
+
+    | # | 决策 | 唯一取值 | 生效依据（Issue APPK-2 评论 / 提交） | 覆盖的上游文字 |
+    | --- | --- | --- | --- | --- |
+    | 1 | OP-15 模板目录与配置 | DEC-3、PATH-1～PATH-4（桌面 `template/default_pc/html/`、手机 `template/default_wap/html/`；`path_tpl`=`/template/<template_dir>/`；`path_ads`=`/template/<template_dir>/ads/`） | 技术设计 v2 `ebd7aa60ae968229997221d3086b45ddb4fa67e1` 独立复核 + 架构复审 PASS；v8 元数据声明 v2 的 DEC/PATH 内容不变 | PRD v9 BR-8、§14 OP-15“待确认”；UI v1 对“技术设计 v2”的引用即指同一 PATH 取值 |
+    | 2 | OP-16 缺页补不补 | a：本期不补；模板包缺的页面按 PHP“模板文件不存在”输出（BR-12），不新增模板文件 | 发起人确认评论 `01a193ca-869e-7572-96d8-ce92e22f596b`（“确认 OP-16 a：本期不补”） | PRD v9 BR-8、§14 OP-16“待确认”、KPI-4=2 |
+    | 3 | 范围确认与 OP-15/16 关闭登记 | PRD v9 `8fa362c2` 范围有效；OP-15、OP-16 已关闭 | 发起人范围确认 `01a1945f-4598-7b5f-b46d-e5faf16acdb0`；G0 路由单 `01a1946d-8fa6-7e07-bb97-cf089646614c` | PRD v9 BR-8 的“关闭前不得 G0/G1/派工”门禁（已满足） |
+    | 4 | OP-T4 / OP-T5 / OP-T6 | a / a / b | 发起人确认评论 `01a194e9-23e8-7682-8ae5-b7c5e19b0040`；技术设计 v8 已收敛为唯一实现 | 技术设计 v7 及更早版本的 a/b 双分支 |
+
+    契约内凡涉及上述决策的位置（API-001 目录与放行、API-005 缺页、API-020～API-024 后台模板路径与静态生成目录）均只写上表取值，并在 `x-trace`
+    中标出 OP-15 / OP-16。若今后任一决策改选，须发起人在 Issue 另行确认、上游修订后，本契约再升版本。PRD 正文状态文字的同步属于上游文档维护，不影响本契约口径。
 
     ## 范围
     本文件只登记技术设计里**改变 HTTP 可见行为**的接口（新增、恢复或改变状态码/响应体/响应头的入口）。
@@ -35,14 +49,37 @@ info:
       所以**不使用** `{code: string, message, request_id}` 的通用错误体。`#/components/schemas/Error` 在本文件中定义为
       PHP 的跳转/提示 JSON（`code=0`），业务错误码以 `x-error-codes` 的 `code` 为契约标识，线上可区分的是 `msg` 文本（`wire_msg`）
       与 HTTP 状态；不回显 SQL 原文、文件路径、连接串。
-    - 后台（`/{adminEntry}/…`，`adminEntry` = 配置 `maccms.admin.entry`，例如 `/admin.php`）：
-      * 鉴权：管理员会话 cookie（B12，`AdminController` 每请求重读管理员，SEC-5）+ `admin_auth` 权限码 `<controller>/<action>`；
-        未登录 → 302 到登录页；无权限 → PHP `no_auth` 提示。
-      * 写操作只接受 POST，并校验表单令牌 `__token__`（缺失 → 非法请求；不一致 → 令牌错误，同 B12 `AdminForms.check`）。
-        本期新增的 `database/recover`、`database/acknowledge` 同样要求 POST + `__token__`。
-      * Ajax 判定：请求头 `X-Requested-With: XMLHttpRequest` 或参数 `_ajax` 为真。Ajax → `application/json; charset=utf-8`，
-        正文 `{"code","msg","data","url","wait"}`（`code` 1 成功 / 0 失败，HTTP 200）；非 Ajax → PHP 跳转提示页（HTML，HTTP 200）。
-      * 路由与 `.html` 后缀、参数来源（`input()` = 路由参数 + GET + POST 合并）沿用 B12 现有规则，本期不改。
+    - 后台（`/{adminEntry}/…`，`adminEntry` = 配置 `maccms.admin.entry`，例如 `/admin.php`）。以下 ADM-1～ADM-5 对本文件**每一个**后台
+      operation 生效，各 operation 的 `responses` 用 `$ref` 引用公共响应，不再逐条重复文字：
+      * ADM-1 处理顺序（基线 `AdminController.handle`，本期不改）：控制器不存在 → 404 → 来源校验 SRC-1（不通过 → `ADMIN_SOURCE_REJECTED`）
+        → 未登录或管理员已停用/改密/删除 → **302**，`Location: <adminEntry>/admin/index/login.html`，空正文（`ADMIN_UNAUTHENTICATED`，
+        Ajax 请求同样 302）→ 无 `x-permission` 权限 → HTTP 200 PHP 失败体 `lang(permission_denied)`=“您没有权限访问此页面”
+        （`ADMIN_PERMISSION_DENIED`，Ajax 为 JSON，非 Ajax 为跳转提示页）→ 进入各 operation。
+      * ADM-2 Ajax 判定：请求头 `X-Requested-With: XMLHttpRequest`（不分大小写）或参数 `_ajax` 为 PHP 真值。
+        - 动作类 operation 的 200：Ajax → `application/json; charset=utf-8`，正文 `LegacyJson`（成功 `code=1`；失败 `Error`，`code=0`）；
+          非 Ajax → `text/html; charset=utf-8` 的 PHP 跳转提示页（`AdminJumpPage`：成功/失败图标 + `msg` + 跳转地址 + 3 秒等待；
+          失败时跳转地址为“返回上一页”）。两种形态携带同一 `msg` 文本，状态码都是 200。
+        - 页面类 operation（GET 打开页面）的 200：非 Ajax → 整页 HTML；Ajax → 整页 HTML 的 JSON 字符串（B12 `AdminResponses.page`）。
+      * ADM-3 来源校验（CSRF 第一道，基线 D-B12-3，SRC-1）：除登录页、框架页的 GET 外，所有后台请求（GET 与 POST）都要求
+        `Sec-Fetch-Site` ∈ {same-origin, none}；没有该头时 `Origin`（没有则取 `Referer` 的源）必须等于后台源。不通过 → `ADMIN_SOURCE_REJECTED`：
+        Ajax 为 HTTP 200 JSON `{"code":0,"msg":"非法请求","data":"","url":"","wait":3}`，非 Ajax 为 HTTP 403 提示页（标题“跳转提示”，正文“非法请求”）。
+        SRC-2（本契约补定，只对下面 ADM-4 的 B 类无令牌写操作）：三个来源头都缺失时同样按 `ADMIN_SOURCE_REJECTED` 拒绝，不执行
+        （基线对“三个头都缺失”放行，B 类写操作不再放行）。后台页面自身的请求一定带其中之一：现代浏览器发 `Sec-Fetch-Site`；
+        后台响应头 `Referrer-Policy: same-origin` 保证同源请求带 `Referer`。
+      * ADM-4 写操作的 CSRF 分类（逐项见 `x-csrf-policy`，**无遗漏**：本文件中每个有副作用的后台 operation 都属于 A 或 B 之一）：
+        - **A 类 = 只接受 POST + 必填表单令牌 `__token__`**：`database/sql`（POST）、`database/import`、`database/recover`、`database/acknowledge`、
+          `template/info`（POST 保存）。令牌由对应页面 GET 签发（隐藏字段 `__token__`），按 B12 `AdminForms.check` 校验并**一次性作废**：
+          缺失或为空 → `FORM_TOKEN_INVALID`（`lang(illegal_request)`=“非法请求”）；与会话不一致或已用过 → `FORM_TOKEN_INVALID`
+          （`lang(token_err)`=“请不要重复提交表单”）。令牌校验在取锁、读运行记录、读文件之前，失败时什么都不做。
+          用 GET 访问只接受 POST 的 A 类动作 → 不校验令牌、不执行，返回各 operation 写明的固定失败体。
+        - **B 类 = 方法与入参同 PHP / B15、不带表单令牌**：`database/optimize`、`database/repair`、`database/export`、`database/del`、`template/del`、
+          `index/clear`、`make/*`、`collect/api`、`collect/timing`、`images/sync`。理由：技术设计 v8（G1 PASS）对这些入口规定“入参与 JSON 结构不变 /
+          同 PHP / 同 B15”（C-54、DBT-1、DBT-4、§6.11、§6.12、§6.15），且旧后台公共脚本 `static/js/admin_common.js` 以 `$.get(href)` 无令牌调用
+          （`.j-tr-del` 第 283-297 行、`.j-ajax` 第 304-315 行），加令牌须同时改页面与公共脚本，超出设计边界。B 类的 CSRF 防护 = SRC-1 + SRC-2
+          + 会话 cookie `SameSite=Strict` + `x-permission` 权限码；登记为 `CSRF-EX-1`（见 `x-csrf-policy`），不是对风险的接受：跨站与同站其他子域发起的请求
+          由 `Sec-Fetch-Site`/`Origin`/`Referer` 拒绝，三者都缺失的请求由 SRC-2 拒绝。
+      * ADM-5 路由与 `.html` 后缀、参数来源沿用 B12：`input()` = 查询串 + POST 表单 + 路由参数（`/name/value` 段）合并，**后者覆盖前者**
+        （路由参数 > POST 表单 > 查询串）。各 operation 只声明本期客户端应使用的位置；其他位置的同名参数按此合并规则生效。
     - 前台：路由沿用现有 `site` 控制器（`/index.php/<c>/<a>` 与无 `index.php` 的短地址两种写法）；HTML 页一律
       `text/html; charset=utf-8` 并带 API-003 的 CSP 头；ajax JSON 为 `application/json; charset=utf-8`，
       编码同 PHP `json_encode(…, JSON_UNESCAPED_UNICODE)`。
@@ -54,6 +91,21 @@ info:
       date: 2026-11-01
       change: 首版。依据技术设计 v8 @ 20490951e1a9c880e975caee0c72c5e0e92120ed，覆盖 OP-T4=a、OP-T5=a、OP-T6=b 与数据库工具运行记录/锁/恢复动作。
       breaking: false
+    - version: 1.1.0
+      date: 2026-11-01
+      change: |
+        回应后端契约评审第 1 轮（评论 01a19544-71f2-785c-89ca-77f26f43c728）：
+        REV-API-1 API-007、API-016、API-021 增加 GET operation，API-020 增加 GET（编辑页）operation，方法集合与基线 Java 路由、PHP 一致；
+        REV-API-2 写操作分 A 类（POST + 必填 __token__）/ B 类（同 PHP 无令牌，SRC-1 + 新增 SRC-2 来源校验），`x-csrf-policy` 逐项登记；
+        API-011/012 由 v1.0.0 误写的“POST + __token__”更正为 B 类 GET/POST（旧页面按钮以 GET 无令牌调用，C-54 不改 export 页）；
+        REV-API-3 API-016 的 id 位置按 input() 合并规则写全（GET 查询串；POST 表单或查询串）；
+        REV-API-4 所有后台动作 200 同时声明 JSON 与 HTML 跳转页，公共响应 302 / 403 / 无权限；
+        REV-DB-1 API-017 幂等性改为按状态描述，补处理顺序、锁、run 匹配、GET 结果；
+        REV-SEC-1 API-044 删除匿名空 security 对象，补 403 固定正文，声明 GET/POST；
+        REV-TRACE-1 新增“上游决策台账”，OP-15/OP-16 取 Issue 记录的唯一值并同步 x-trace；
+        另更正 API-021 错误码（同 PHP：不合规路径静默跳过，恒返回 del_ok）、API-014 GET 与空 id 的错误码分离。
+      breaking: false
+      breaking-note: 尚无实现与调用方；变更只放宽请求方法或更正描述，使契约与 PHP / 基线一致。
 servers:
   - url: /
     description: 站点根（相对路径；前台与安装向导）
@@ -104,11 +156,13 @@ x-cross-cutting:
     after: 状态码与页面按 PHP `public/close`（Base.php:77），即 HTTP 200 + 模板包 public/close 原样输出；不再发 Retry-After
   - x-api-id: API-005
     summary: 前台未匹配地址（ALIGN-2）
-    x-trace: [FR-5, AC-5, ALIGN-2, F-D2]
+    x-trace: [FR-5, AC-5, ALIGN-2, F-D2, OP-16, BR-12]
     before: JSON 404「接口不存在」
     after: |
       除 /api/v1/**、/api.php/**、后台入口之外的未匹配站点路径 → PHP `_empty` → `page_error`：HTTP 404 +
       `public/<app.page_404>`（配置为空时 `public/jump`）的模板输出（HTML，带 API-003 头）；模板缺失 → “模板文件不存在”页（TemplateNotFoundPage）。
+      OP-16=a（上游决策台账第 2 行）：模板包缺的页面不补，任何前台页面的模板文件不存在时都输出同一“模板文件不存在”页（BR-12），
+      消息中的目录取 PATH-3（`/template/<template_dir>/<html_dir>/`），与 PHP `think_exception.tpl` 的输出按 PRD 附表 B/F 对照。
       /api/v1/** 的未匹配地址仍返回原 JSON 404，不变。
   - x-api-id: API-006
     summary: 搜索过快（ALIGN-6）
@@ -123,14 +177,16 @@ paths:
       tags: [site]
       operationId: getTemplateAsset
       x-api-id: API-001
-      x-trace: [FR-1, FR-5, AC-5, AC-17, DEC-8, SEC-7, OP-T5, V-18]
+      x-trace: [FR-1, FR-5, AC-5, AC-17, DEC-3, DEC-8, PATH-2, PATH-4, SEC-7, OP-15, OP-T5, V-18]
       summary: 读取模板包静态资源（白名单，OP-T5=a）
       description: |
         PHP 由 Web 服务器直接返回 template/ 下的文件；Java 由 `TemplateAssetController`（C-43）提供，放行规则只在
         `LegacySiteFiles.readTemplateAsset`（C-44）一处实现。
 
         **放行条件（全部满足才 200，否则一律 404，不区分原因、不回显路径）**
-        1. `{dir}` 是站点根 `template/` 下实际存在的子目录（不限 default_pc/default_wap，跟随配置）。
+        1. `{dir}` 是站点根 `template/` 下实际存在的子目录（不限 default_pc/default_wap，跟随配置）。模板引用的 URL 前缀按 OP-15（上游决策台账第 1 行）：
+           `{$maccms.path_tpl}`=`/template/<template_dir>/`（PATH-2），`{$maccms.path_ads}`=`/template/<template_dir>/ads/`（PATH-4），
+           所以官方包的 `{$maccms.path_tpl}css/style.css` 请求的是 `/template/default_pc/css/style.css`；`html/` 子目录下的模板源码不在第 2 条的放行目录内。
         2. `{assetPath}` 的第一段是 `css`、`js`、`images`、`ads` 之一，其后至少还有一段文件名（可有多级子目录）。
         3. 扩展名（按小写比较）在白名单：`css js png jpg jpeg gif ico svg webp woff woff2 ttf eot swf`；
            `php` 及 `html htm ini txt`、无扩展名一律拒绝（SEC-7：与 PHP 的已确认安全差异，PHP 会原样返回 `.html` 模板源码与 `info.ini`）。
@@ -175,7 +231,7 @@ paths:
       tags: [site]
       operationId: headTemplateAsset
       x-api-id: API-001
-      x-trace: [FR-5, AC-5, AC-17, SEC-7, V-18]
+      x-trace: [FR-5, AC-5, AC-17, SEC-7, OP-15, OP-T5, V-18]
       summary: 模板静态资源 HEAD（规则同 GET，无正文）
       security: []
       x-security-note: 同 GET
@@ -255,32 +311,57 @@ paths:
       x-idempotency: 同 GET
 
   /index.php/ajax/{counter}:
+    get:
+      tags: [site]
+      operationId: getCounter
+      x-api-id: API-007
+      x-trace: [FR-5, FR-12, AC-5, AC-14, ALIGN-7]
+      summary: 计数接口 hits/digg/score/referer（GET；一律返回 PHP JSON，ALIGN-7）
+      description: |
+        基线 `SiteAjaxController` 的路由接受 GET、HEAD、POST（`SiteAjaxController.java:106-108`），PHP `Ajax.php:152-460` 不区分方法，所以本接口
+        **GET 与 POST 都受理、行为相同**；短地址 `/ajax/{counter}` 与 `.html` 后缀同样受理（HEAD 由框架按 GET 处理、无正文，不单列）。
+        本期唯一变化（ALIGN-7）：基线对“非 ajax 的 POST”返回 jte 提示页（D-B11-10），jte 表单随页面组删除后，按 PHP 各方法 `return json(...)`
+        **无论是否 ajax、无论 GET/POST 一律返回 JSON**。参数名、取值、判定、去重与频率规则、JSON 字段与基线 B11 相同（`SiteCounterActions`，BR-4），
+        参数按 `mac_param_url` 取值（`LegacyParams`：查询串 + POST 表单 + 路由段合并，与 PHP 相同），本契约不重复列出各计数器的参数表
+        （见 docs/architecture/20-b11-comment-gbook-counters.md 第 5 节）。`verify_check` 非 ajax 的输出按 PRE-2 基线记录的 PHP 实际值，
+        附表 C 对应行由 T-FR12 判定，本契约不预设。
+        CSRF：游客公开接口，不依赖登录会话授权，与 PHP 相同不设令牌；去重靠基线的 cookie/会话规则，伪造请求最多等同于一次游客计数。
+      security: []
+      x-security-note: 游客计数接口，与 PHP 相同公开；频率与去重规则沿用基线实现。
+      parameters:
+        - $ref: "#/components/parameters/CounterName"
+      responses:
+        "200":
+          $ref: "#/components/responses/CounterJson"
+      x-error-codes-ref: [COUNTER_SAVE_FAILED]
+      x-idempotency: 非幂等（计数 +1 等）；去重与频率按基线；客户端不得自动重试。
     post:
       tags: [site]
       operationId: postCounter
       x-api-id: API-007
       x-trace: [FR-5, FR-12, AC-5, AC-14, ALIGN-7]
-      summary: 计数接口 hits/digg/score/referer 一律返回 PHP JSON（ALIGN-7）
-      description: |
-        基线 Java 对非 ajax 的 POST 返回 jte 提示页（D-B11-10）；jte 表单随页面组删除后，按 PHP（Ajax.php:152-460 各方法 `return json(...)`）
-        **无论是否 ajax 一律返回 JSON**，参数、判定与 JSON 字段不变（仍由 `SiteCounterActions` 处理，BR-4）。GET 同样受理（PHP 不区分方法）。
-        `verify_check` 非 ajax 的输出按 PRE-2 基线记录的 PHP 实际值，附表 C 对应行由 T-FR12 判定，本契约不预设。
-        短地址 `/ajax/{counter}` 同样受理。
+      summary: 计数接口（POST，与 GET 等价；非 ajax 也返回 JSON）
+      description: 同 GET。参数可放查询串或 `application/x-www-form-urlencoded` 正文（合并规则同 GET）。
       security: []
-      x-security-note: 游客计数接口，与 PHP 相同公开；频率与去重规则沿用基线实现。
+      x-security-note: 同 GET
       parameters:
-        - name: counter
-          in: path
-          required: true
-          schema: { type: string, enum: [hits, digg, score, referer] }
+        - $ref: "#/components/parameters/CounterName"
+      requestBody:
+        required: false
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              description: 参数名与取值同基线 B11（各计数器不同），与查询串合并
+              additionalProperties: { type: string, maxLength: 255 }
       responses:
         "200":
-          description: PHP JSON（字段同基线 ajax 分支），Content-Type application/json; charset=utf-8
-          content:
-            application/json:
-              schema: { $ref: "#/components/schemas/LegacyJson" }
+          $ref: "#/components/responses/CounterJson"
+      x-error-codes-ref: [COUNTER_SAVE_FAILED]
+      x-idempotency: 同 GET
 
   # ───────────────────────────── 后台：数据库工具 ─────────────────────────────
+  # 公共规则见 info.description「通用约定」ADM-1～ADM-5；CSRF 分类见 x-csrf-policy。
   /database/index:
     servers: *adminServers
     get:
@@ -288,6 +369,7 @@ paths:
       operationId: adminDatabaseIndex
       x-api-id: API-010
       x-trace: [FR-9, AC-11, DBT-5, V-31]
+      x-csrf-class: C
       summary: 数据库工具页（表列表 / group=import 备份列表）加载时做一次不等待的中断判定并显示运行记录提示条
       description: |
         列表内容与 B15 相同（`group=import` → 备份列表，否则表列表）。本期新增：
@@ -295,10 +377,11 @@ paths:
            - 拿不到锁 → 页面显示“执行中”，**不出现任何操作按钮**（含 recover / 我已处理 / 导出 / 还原 / 优化 / 修复 / 删除）。
            - 拿到锁 → 若记录为 `RUNNING`/`RECOVERING`，先按 `x-interrupt-transitions` 唯一改写并按表中日志级别记日志，释放锁；
              记录已不是 `RUNNING`/`RECOVERING` 时不改写记录、不写日志（判定幂等，V-31 ⑲）。
-        2. 按运行记录显示提示条与按钮，取值见 `x-page-banner`。
+        2. 按运行记录显示提示条与按钮，取值见 `x-page-banner`。`group=import` 页签发一次 `__token__`，供本页的“还原”“recover”“我已处理”
+           三种 A 类表单使用（一次性，提交后页面重新加载取得新令牌）。
         3. 处于待处理状态时，普通操作按钮（导出、还原、优化、修复、执行 SQL）仍可点击，但服务端按 API-011～API-016 拒绝；
            页面仅以提示条说明（不在前端隐藏这些按钮，避免与服务端判定不一致）。
-        Ajax 请求按通用约定返回整页 HTML 的 JSON 字符串（B12 `AdminResponses.page`）。
+        CSRF 分类 C（只读页面）：probe 的中断改写只记录已经发生的进程中断，结果由记录本身唯一决定，不受请求参数影响。
       security: [{ adminSession: [] }]
       x-permission: database/index
       parameters:
@@ -307,68 +390,108 @@ paths:
           required: false
           schema: { type: string, enum: [import, export] }
       responses:
-        "200":
-          description: 后台 HTML 页（含提示条）；Ajax 时为页面 HTML 的 JSON 字符串
-          content:
-            text/html: { schema: { type: string } }
-        "302": { description: 未登录，跳转后台登录页 }
+        "200": { $ref: "#/components/responses/AdminPage" }
+        "302": { $ref: "#/components/responses/AdminUnauthenticated" }
+        "403": { $ref: "#/components/responses/AdminSourceRejected" }
+      x-error-codes-ref: [ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED]
 
   /database/optimize:
     servers: *adminServers
-    post:
+    get:
       tags: [admin-database]
       operationId: adminDatabaseOptimize
       x-api-id: API-011
       x-trace: [FR-9, AC-11, DBT-1, DBT-5, V-31]
-      summary: 优化表（DBT-1，基线为入口拒绝，本期按 PHP 执行）
+      x-csrf-class: B
+      summary: 优化表（DBT-1，基线为入口拒绝，本期按 PHP 执行；GET，B 类）
       description: |
-        对每张选中的表各发一条 ``OPTIMIZE TABLE `<表>` ``（表名取自 26 张白名单常量而非请求原文）。
-        顺序：取锁 → 中断判定（⑩）→ 状态检查（待处理/RECOVERED → 拒绝）→ 预检（`ids` 非空且全部在白名单内，任一不在 → 整批拒绝、0 条语句）
-        → 写 `RUNNING`（op=OPTIMIZE）→ 逐表执行（一张失败不影响其他表）→ `DONE`（全部成功 outcome=OK，有表失败 outcome=PARTIAL + `table_results`）。
+        PHP `Database::optimize($ids)` 不区分方法、不验令牌；表列表页单表按钮以 `.j-ajax` → `$.get` 调用（`export.jte:44`），批量按钮以
+        `.j-page-btns` 提交勾选的 `ids`。Java 同样 **GET 与 POST 都受理、行为相同**，不带 `__token__`（B 类，SRC-1 + SRC-2，见 ADM-3/ADM-4）。
+        `ids` 取 `input()` 合并值（ADM-5）。
+        顺序：取锁（拿不到 → DBT_LOCKED）→ 中断判定（⑩）→ 状态检查（待处理/RECOVERED → DBT_PENDING）→ 预检（`ids` 为空 → DBT_SELECT_OPTIMIZE_TABLE；
+        任一表不在 26 张白名单内 → DBT_TABLE_NOT_ALLOWED，整批拒绝、0 条语句、记录不变）→ 写 `RUNNING`（op=OPTIMIZE）→ 对每张表各发一条
+        ``OPTIMIZE TABLE `<表>` ``（表名取自白名单常量而非请求原文；一张失败不影响其他表）→ `DONE`（全部成功 outcome=OK，返回
+        `admin/database/optimize_ok`；有表失败 outcome=PARTIAL + `table_results`，返回 DBT_OPTIMIZE_PARTIAL）。
         DBT-1 总是以 `DONE` 结束、不进入待处理；进程中断 → `DONE` + outcome=INTERRUPTED（WARN）。
-        PHP 成功提示 `admin/database/optimize_ok`；PHP 只接受 `ids` 数组/逗号串，Java 相同。
       security: [{ adminSession: [] }]
       x-permission: database/optimize
+      parameters:
+        - $ref: "#/components/parameters/TableIdsQuery"
+      responses:
+        "200": { $ref: "#/components/responses/AdminAction" }
+        "302": { $ref: "#/components/responses/AdminUnauthenticated" }
+        "403": { $ref: "#/components/responses/AdminSourceRejected" }
+      x-error-codes-ref: [DBT_SELECT_OPTIMIZE_TABLE, DBT_TABLE_NOT_ALLOWED, DBT_LOCKED, DBT_PENDING, DBT_OPTIMIZE_PARTIAL, ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED]
+      x-idempotency: 幂等，可直接重试（DBT-5 ⑤）
+    post:
+      tags: [admin-database]
+      operationId: adminDatabaseOptimizePost
+      x-api-id: API-011
+      x-trace: [FR-9, AC-11, DBT-1, DBT-5, V-31]
+      x-csrf-class: B
+      summary: 优化表（POST，与 GET 等价）
+      description: 同 GET。`ids` 可放表单（批量按钮）或查询串，按 ADM-5 合并。
+      security: [{ adminSession: [] }]
+      x-permission: database/optimize
+      parameters:
+        - $ref: "#/components/parameters/TableIdsQuery"
       requestBody:
-        required: true
+        required: false
         content:
           application/x-www-form-urlencoded:
             schema: { $ref: "#/components/schemas/TableIdsForm" }
       responses:
-        "200":
-          description: Ajax → LegacyJson（成功 code=1 msg=optimize_ok；拒绝/失败 code=0）；非 Ajax → 跳转提示页
-          content:
-            application/json:
-              schema: { oneOf: [ { $ref: "#/components/schemas/LegacyJson" }, { $ref: "#/components/schemas/Error" } ] }
-      x-error-codes-ref: [DBT_SELECT_OPTIMIZE_TABLE, DBT_TABLE_NOT_ALLOWED, DBT_LOCKED, DBT_PENDING, DBT_OPTIMIZE_PARTIAL, FORM_TOKEN_INVALID]
-      x-idempotency: 幂等，可直接重试（DBT-5 ⑤）
+        "200": { $ref: "#/components/responses/AdminAction" }
+        "302": { $ref: "#/components/responses/AdminUnauthenticated" }
+        "403": { $ref: "#/components/responses/AdminSourceRejected" }
+      x-error-codes-ref: [DBT_SELECT_OPTIMIZE_TABLE, DBT_TABLE_NOT_ALLOWED, DBT_LOCKED, DBT_PENDING, DBT_OPTIMIZE_PARTIAL, ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED]
+      x-idempotency: 同 GET
 
   /database/repair:
     servers: *adminServers
-    post:
+    get:
       tags: [admin-database]
       operationId: adminDatabaseRepair
       x-api-id: API-012
       x-trace: [FR-9, AC-11, DBT-1, DBT-5, V-31]
-      summary: 修复表（DBT-1，规则同 API-011，语句为 REPAIR TABLE，op=REPAIR）
+      x-csrf-class: B
+      summary: 修复表（DBT-1，规则同 API-011，语句为 REPAIR TABLE，op=REPAIR；GET，B 类）
       description: |
-        同 API-011，语句 ``REPAIR TABLE `<表>` ``，空选提示 `admin/database/select_repair_table`，成功提示 `admin/database/repair_ok`
-        （PHP 失败分支也误用 `repair_ok`，Java 照搬 PHP 文本，结果状态以 code 区分）。
+        同 API-011（方法、参数来源、顺序、CSRF 分类都相同），语句 ``REPAIR TABLE `<表>` ``，空选 → DBT_SELECT_REPAIR_TABLE，成功提示
+        `admin/database/repair_ok`（PHP 失败分支也误用 `repair_ok`，Java 照搬 PHP 文本，结果以 `code` 区分）。
       security: [{ adminSession: [] }]
       x-permission: database/repair
+      parameters:
+        - $ref: "#/components/parameters/TableIdsQuery"
+      responses:
+        "200": { $ref: "#/components/responses/AdminAction" }
+        "302": { $ref: "#/components/responses/AdminUnauthenticated" }
+        "403": { $ref: "#/components/responses/AdminSourceRejected" }
+      x-error-codes-ref: [DBT_SELECT_REPAIR_TABLE, DBT_TABLE_NOT_ALLOWED, DBT_LOCKED, DBT_PENDING, DBT_OPTIMIZE_PARTIAL, ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED]
+      x-idempotency: 幂等，可直接重试
+    post:
+      tags: [admin-database]
+      operationId: adminDatabaseRepairPost
+      x-api-id: API-012
+      x-trace: [FR-9, AC-11, DBT-1, DBT-5, V-31]
+      x-csrf-class: B
+      summary: 修复表（POST，与 GET 等价）
+      description: 同 GET。
+      security: [{ adminSession: [] }]
+      x-permission: database/repair
+      parameters:
+        - $ref: "#/components/parameters/TableIdsQuery"
       requestBody:
-        required: true
+        required: false
         content:
           application/x-www-form-urlencoded:
             schema: { $ref: "#/components/schemas/TableIdsForm" }
       responses:
-        "200":
-          description: 同 API-011
-          content:
-            application/json:
-              schema: { oneOf: [ { $ref: "#/components/schemas/LegacyJson" }, { $ref: "#/components/schemas/Error" } ] }
-      x-error-codes-ref: [DBT_SELECT_REPAIR_TABLE, DBT_TABLE_NOT_ALLOWED, DBT_LOCKED, DBT_PENDING, DBT_OPTIMIZE_PARTIAL, FORM_TOKEN_INVALID]
-      x-idempotency: 幂等，可直接重试
+        "200": { $ref: "#/components/responses/AdminAction" }
+        "302": { $ref: "#/components/responses/AdminUnauthenticated" }
+        "403": { $ref: "#/components/responses/AdminSourceRejected" }
+      x-error-codes-ref: [DBT_SELECT_REPAIR_TABLE, DBT_TABLE_NOT_ALLOWED, DBT_LOCKED, DBT_PENDING, DBT_OPTIMIZE_PARTIAL, ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED]
+      x-idempotency: 同 GET
 
   /database/sql:
     servers: *adminServers
@@ -377,35 +500,40 @@ paths:
       operationId: adminDatabaseSqlPage
       x-api-id: API-013
       x-trace: [FR-9, AC-11, DBT-2, DBT-5]
+      x-csrf-class: C
       summary: 执行 SQL 页面（按 PHP admin@database/sql 视图移植，含运行记录提示条与“执行前请先导出将被修改的表”提示）
+      description: |
+        页面加载同样先 probe()（同 API-010），提示条按 `x-page-banner`；页面签发一次 `__token__`（表单隐藏字段），供 POST 执行与提示条上的
+        “我已处理”使用。
       security: [{ adminSession: [] }]
       x-permission: database/sql
       responses:
-        "200":
-          description: 后台 HTML 页；页面加载同样先 probe()（同 API-010），提示条按 `x-page-banner`
-          content:
-            text/html: { schema: { type: string } }
+        "200": { $ref: "#/components/responses/AdminPage" }
+        "302": { $ref: "#/components/responses/AdminUnauthenticated" }
+        "403": { $ref: "#/components/responses/AdminSourceRejected" }
+      x-error-codes-ref: [ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED]
     post:
       tags: [admin-database]
       operationId: adminDatabaseSqlExecute
       x-api-id: API-013
       x-trace: [FR-9, AC-11, DBT-2, DBT-5, SEC-8, V-23, V-31]
-      summary: 执行 SQL（DBT-2，PHP 整段语义 + AC-11 结构保护）
+      x-csrf-class: A
+      summary: 执行 SQL（DBT-2，PHP 整段语义 + AC-11 结构保护；POST + __token__，A 类）
       description: |
         输入当作**一整段**处理，不切分、不逐条执行。判定顺序（前一步命中即返回，后续不执行）：
-        0. 校验 `__token__`（同 PHP `validate('Token')`）。
+        0. 校验 `__token__`（同 PHP `validate('Token')`，ADM-4 A 类）→ 失败 FORM_TOKEN_INVALID。
         1. `trim`（PHP 语义）；为空 → 不执行，返回 `run_ok`（code=1）。把 `{pre}` 替换为表前缀。
         2. **PHP 跳过判定（SEC-8，逐字照搬 Database.php:252-263）**：副本转小写、`/\*.*?\*/`（跨行）换空格、`--` 至行尾换空格、压缩空白并 trim；
            以 `select` 开头，或含 `outfile`/`dumpfile`/`load_file` 之一 → 不发送，返回 `run_ok`（code=1，与 PHP 文本相同）。
            例：`SELECT 1; INSERT …` 整段跳过。
         3. **多语句**：词法扫描（单引号/双引号/反引号字符串及其中 `\` 转义，`--`、`#`、`/* */` 注释），第一个不在字符串与注释中的 `;`
-           之后还有非空白非注释内容 → 不发送，code=0「一次只能执行一条语句」。末尾单个 `;` 允许并原样发送。
+           之后还有非空白非注释内容 → 不发送，DBT_SQL_MULTI_STATEMENT。末尾单个 `;` 允许并原样发送。
         4. **AC-11 结构保护**：同一词法去注释（出现 `/*!` 版本注释 → 视为不可识别并拒绝），首个关键字只允许 INSERT/UPDATE/DELETE，
-           其他（REPLACE、WITH、`(`、DROP、TRUNCATE、ALTER、CREATE 等）→ 不发送，code=0「结构类操作请由部署方在库外完成」。
-        5. 取锁 → 中断判定 → 状态检查（待处理/RECOVERED → 拒绝）→ 写 `RUNNING`（op=SQL）→ 整段一次 `Statement.execute`
+           其他（REPLACE、WITH、`(`、DROP、TRUNCATE、ALTER、CREATE 等）→ 不发送，DBT_SQL_STRUCTURE_REFUSED。
+        5. 取锁（DBT_LOCKED）→ 中断判定 → 状态检查（待处理/RECOVERED → DBT_PENDING）→ 写 `RUNNING`（op=SQL）→ 整段一次 `Statement.execute`
            （allowMultiQueries=false、自动提交、不重试）。
-        6. 结果：成功 → `DONE` outcome=OK，返回 `run_ok`（不展示结果集）；确定未生效 → `DONE` outcome=FAILED，code=0「执行失败，数据未改动」
-           并附 SQLState 分类；结果不确定 → 状态 `UNKNOWN`（待处理），code=0「结果不确定」+ 核对步骤。提示不回显 SQL 原文。
+        6. 结果：成功 → `DONE` outcome=OK，返回 `run_ok`（不展示结果集）；确定未生效 → `DONE` outcome=FAILED，DBT_SQL_FAILED（附 SQLState 分类）；
+           结果不确定 → 状态 `UNKNOWN`（待处理），DBT_SQL_UNKNOWN + 核对步骤。提示不回显 SQL 原文。非 Ajax 失败时页面保留输入框原文。
         与 PHP 的差异只有：AC-11 拒绝、多语句与失败时的提示文字、运行记录与锁（DBT-5 ⑧）。
         失败分类（DBT-5 ③）：SQLState `42xxx` 或单值 INSERT 的非连接/非中止类服务端错误 → 确定未生效；
         SQLState `08xxx`、客户端错误码 2000～2999、1028/1053/1317/1927/3024、SQLTimeoutException、非 SQL 异常，
@@ -418,13 +546,11 @@ paths:
           application/x-www-form-urlencoded:
             schema: { $ref: "#/components/schemas/SqlForm" }
       responses:
-        "200":
-          description: Ajax → LegacyJson / Error；非 Ajax → 跳转提示页（失败时页面保留输入框原文）
-          content:
-            application/json:
-              schema: { oneOf: [ { $ref: "#/components/schemas/LegacyJson" }, { $ref: "#/components/schemas/Error" } ] }
-      x-error-codes-ref: [FORM_TOKEN_INVALID, DBT_SQL_MULTI_STATEMENT, DBT_SQL_STRUCTURE_REFUSED, DBT_LOCKED, DBT_PENDING, DBT_SQL_FAILED, DBT_SQL_UNKNOWN]
-      x-idempotency: 一般不幂等；服务端不重试；“结果不确定”进入待处理，须 acknowledge（API-018）后才能再执行
+        "200": { $ref: "#/components/responses/AdminAction" }
+        "302": { $ref: "#/components/responses/AdminUnauthenticated" }
+        "403": { $ref: "#/components/responses/AdminSourceRejected" }
+      x-error-codes-ref: [FORM_TOKEN_INVALID, DBT_SQL_MULTI_STATEMENT, DBT_SQL_STRUCTURE_REFUSED, DBT_LOCKED, DBT_PENDING, DBT_SQL_FAILED, DBT_SQL_UNKNOWN, ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED]
+      x-idempotency: 一般不幂等；服务端不重试；“结果不确定”进入待处理，须 acknowledge（API-018）后才能再执行；令牌一次性，重复提交同一表单 → FORM_TOKEN_INVALID
 
   /database/import:
     servers: *adminServers
@@ -433,22 +559,27 @@ paths:
       operationId: adminDatabaseImport
       x-api-id: API-014
       x-trace: [FR-9, AC-11, AC-16, DBT-3, DBT-5, V-31]
-      summary: 还原备份（DBT-3，只还原数据 + 还原前自动备份 + 运行记录）
+      x-csrf-class: A
+      summary: 还原备份（DBT-3，只还原数据 + 还原前自动备份 + 运行记录；POST + __token__，A 类）
       description: |
-        PHP 为 `import($id)`（GET/POST 均可，无令牌）；Java 本期只接受 POST + `__token__`（写操作统一约定），GET → code=0 `param_err`。
-        一次请求同步完成整次还原，持锁直到写完最终记录（DBT-5 ④）；不使用 PHP 分段续传参数（`part`/`start` 被忽略）。
+        PHP 为 `import($id)`（GET/POST 均可，无令牌）。Java 本期**只接受 POST + `__token__`**（A 类）：备份列表页的“还原”按钮随 C-54 改为带
+        `__token__` 的表单提交（`import.jte` 属 C-54 修改范围）。**GET 请求**（带不带参数都一样）→ 不校验令牌、不取锁、不执行，返回
+        DBT_METHOD_NOT_ALLOWED（`lang(param_err)`，code=0）。一次请求同步完成整次还原，持锁直到写完最终记录（DBT-5 ④）；不使用 PHP 分段续传参数
+        （`part`/`start` 被忽略）。
 
-        **顺序**：取锁（拿不到 → DBT_LOCKED）→ 中断判定（⑩）→ 状态检查（待处理/RECOVERED → DBT_PENDING）→ 预检（任一不通过 → 整批拒绝、0 条语句、记录不变）：
-        (a) 分卷齐全（`count($list) === $last[0]`，否则 `admin/database/file_damage`）；(b) 全部分卷可读、`.gz` 可解压；
-        (c) 全部语句按 `mac_parse_sql` 切分完成，还原表集合（备份中 DROP TABLE/CREATE TABLE/INSERT INTO 出现过的全部表）都在 26 张白名单内；
-        (d) 站点已关闭（`site.site_status=0`）；(e) 自动备份目录存在且可写；另：`backup.lock` 存在 → `admin/database/lock_check`。
+        **顺序**：令牌（FORM_TOKEN_INVALID）→ `id` 为空 → DBT_SELECT_FILE → 备份目录不合法 → BAD_BACKUP_PATH → 取锁（拿不到 → DBT_LOCKED）
+        → 中断判定（⑩）→ 状态检查（待处理/RECOVERED → DBT_PENDING）→ 预检（任一不通过 → 整批拒绝、0 条语句、记录不变）：
+        (a) 分卷齐全（`count($list) === $last[0]`，否则 DBT_FILE_DAMAGE）；(b) 全部分卷可读、`.gz` 可解压（DBT_FILE_DAMAGE）；
+        (c) 全部语句按 `mac_parse_sql` 切分完成，还原表集合（备份中 DROP TABLE/CREATE TABLE/INSERT INTO 出现过的全部表）都在 26 张白名单内
+        （DBT_TABLE_NOT_ALLOWED）；(d) 站点已关闭（`site.site_status=0`，DBT_SITE_NOT_CLOSED）；(e) 自动备份目录存在且可写
+        （DBT_BACKUP_DIR_NOT_WRITABLE）；(f) `backup.lock` 不存在（DBT_BACKUP_LOCK_EXISTS）。
         → 写 `RUNNING`（op=IMPORT，phase=AUTO_BACKUP，source_backup，tables）→ 还原前自动备份（导出还原表集合，记 export_files、backup_lock，
         完成后记 auto_backup 各分卷 SHA-256）→ phase=RESTORE 落盘 → 逐表 `DELETE FROM 表` + 该表全部 INSERT（每条单独一次 JDBC 调用，
         每完成一张表更新 tables_done/table_current/inserted_current）；DROP/CREATE 及其他非 DML 语句跳过并计数。
 
-        **结果**：全部成功 → `DONE` outcome=OK，`admin/database/import_ok`（附总数、已执行、跳过数）；自动备份失败 → `DONE`
-        outcome=FAILED_BEFORE_WRITE（数据未动）；确定未生效 → `FAILED`（待处理）；结果不确定 → `UNKNOWN`（待处理）。
-        第一处失败立即停止。待处理时页面按 `x-page-banner` 提供 recover（API-017）与“我已处理”（API-018）。
+        **结果**：全部成功 → `DONE` outcome=OK，`admin/database/import_ok`（`data` 为 `ImportResult`：总数、已执行、跳过数）；自动备份失败 → `DONE`
+        outcome=FAILED_BEFORE_WRITE（数据未动，DBT_AUTO_BACKUP_FAILED）；确定未生效 → `FAILED`（待处理，DBT_IMPORT_FAILED）；结果不确定 → `UNKNOWN`
+        （待处理，DBT_IMPORT_UNKNOWN）。第一处失败立即停止。待处理时页面按 `x-page-banner` 提供 recover（API-017）与“我已处理”（API-018）。
         确认步骤页面写明“请确认没有其他管理员在编辑内容、api.php/timming 定时任务已停”（RISK-T19，运维约定）。
       security: [{ adminSession: [] }]
       x-permission: database/import
@@ -458,13 +589,11 @@ paths:
           application/x-www-form-urlencoded:
             schema: { $ref: "#/components/schemas/BackupIdForm" }
       responses:
-        "200":
-          description: Ajax → LegacyJson（data 为 `ImportResult`）/ Error；非 Ajax → 跳转提示页
-          content:
-            application/json:
-              schema: { oneOf: [ { $ref: "#/components/schemas/LegacyJson" }, { $ref: "#/components/schemas/Error" } ] }
-      x-error-codes-ref: [FORM_TOKEN_INVALID, DBT_SELECT_FILE, DBT_FILE_DAMAGE, DBT_TABLE_NOT_ALLOWED, DBT_SITE_NOT_CLOSED, DBT_BACKUP_DIR_NOT_WRITABLE, DBT_BACKUP_LOCK_EXISTS, DBT_LOCKED, DBT_PENDING, DBT_AUTO_BACKUP_FAILED, DBT_IMPORT_FAILED, DBT_IMPORT_UNKNOWN, BAD_BACKUP_PATH]
-      x-idempotency: 无并发写入时整体幂等（每表先清空再插入）；服务端不自动重试；失败后经 recover（API-017）恢复
+        "200": { $ref: "#/components/responses/AdminAction" }
+        "302": { $ref: "#/components/responses/AdminUnauthenticated" }
+        "403": { $ref: "#/components/responses/AdminSourceRejected" }
+      x-error-codes-ref: [DBT_METHOD_NOT_ALLOWED, FORM_TOKEN_INVALID, DBT_SELECT_FILE, BAD_BACKUP_PATH, DBT_LOCKED, DBT_PENDING, DBT_FILE_DAMAGE, DBT_TABLE_NOT_ALLOWED, DBT_SITE_NOT_CLOSED, DBT_BACKUP_DIR_NOT_WRITABLE, DBT_BACKUP_LOCK_EXISTS, DBT_AUTO_BACKUP_FAILED, DBT_IMPORT_FAILED, DBT_IMPORT_UNKNOWN, ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED]
+      x-idempotency: 无并发写入时数据结果幂等（每表先清空再插入）；服务端不自动重试；令牌一次性；失败后经 recover（API-017）恢复，不能直接再次还原（DBT_PENDING）
 
   /database/export:
     servers: *adminServers
@@ -473,11 +602,15 @@ paths:
       operationId: adminDatabaseExport
       x-api-id: API-015
       x-trace: [FR-9, DBT-4, DBT-5, V-31]
-      summary: 导出备份（入参与 JSON 同 B15，本期改为在 dbtool.lock 内执行并写运行记录）
+      x-csrf-class: B
+      summary: 导出备份（入参与 JSON 同 B15，POST，B 类无令牌；本期改为在 dbtool.lock 内执行并写运行记录）
       description: |
-        入参、分卷命名、`backup.lock` 规则与成功/失败提示同 B15（`ids`、`start`，只接受 POST，否则 `admin/database/backup_err`）。新增：
-        取锁（拿不到 → DBT_LOCKED，提示同 `lock_check`）→ 中断判定 → 状态检查（待处理/RECOVERED → 拒绝，提示同 `lock_check`）→
-        写 `RUNNING`（op=EXPORT，记 export_files、backup_lock）→ 导出 → `DONE`（outcome=OK / FAILED，B15 原样提示）。
+        入参、分卷命名、`backup.lock` 规则与成功/失败提示同 B15（`AdminDatabaseActions.export`：`ids`、`start`）。方法：**只接受 POST**（B15/PHP 相同）；
+        **GET 请求** → 不取锁、不导出，返回 DBT_BACKUP_ERR（`lang(admin/database/backup_err)`，B15 原样）。不带 `__token__`（B 类：技术设计 DBT-4
+        “导出入参同 B15”；CSRF 由 SRC-1 + SRC-2 防护，见 ADM-3/ADM-4、`x-csrf-policy` CSRF-EX-1）。
+        顺序：`ids` 为空 → DBT_SELECT_EXPORT_TABLE → 备份目录不合法 → BAD_BACKUP_PATH → 取锁（拿不到 → DBT_LOCKED）→ 中断判定 → 状态检查
+        （待处理/RECOVERED → DBT_PENDING，提示同 `lock_check`）→ `backup.lock` 存在 → DBT_BACKUP_LOCK_EXISTS → 写 `RUNNING`（op=EXPORT，记 export_files、backup_lock）
+        → 导出 → `DONE`（outcome=OK 返回 B15 成功提示；outcome=FAILED 返回 DBT_BACKUP_ERR）。
         进程中断 → 下一个持锁者删除 export_files 列出的半成品分卷与内容等于 backup_lock 的 `backup.lock`，`DONE` outcome=INTERRUPTED（WARN）。
       security: [{ adminSession: [] }]
       x-permission: database/export
@@ -487,42 +620,69 @@ paths:
           application/x-www-form-urlencoded:
             schema: { $ref: "#/components/schemas/ExportForm" }
       responses:
-        "200":
-          description: Ajax → LegacyJson / Error；非 Ajax → 跳转提示页
-          content:
-            application/json:
-              schema: { oneOf: [ { $ref: "#/components/schemas/LegacyJson" }, { $ref: "#/components/schemas/Error" } ] }
-      x-error-codes-ref: [DBT_SELECT_EXPORT_TABLE, DBT_BACKUP_LOCK_EXISTS, DBT_LOCKED, DBT_PENDING, DBT_BACKUP_ERR]
+        "200": { $ref: "#/components/responses/AdminAction" }
+        "302": { $ref: "#/components/responses/AdminUnauthenticated" }
+        "403": { $ref: "#/components/responses/AdminSourceRejected" }
+      x-error-codes-ref: [DBT_SELECT_EXPORT_TABLE, BAD_BACKUP_PATH, DBT_LOCKED, DBT_PENDING, DBT_BACKUP_LOCK_EXISTS, DBT_BACKUP_ERR, ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED]
       x-idempotency: 每次生成新分卷（同秒冲突顺延），重复提交得到多份备份；不自动重试
 
   /database/del:
     servers: *adminServers
-    post:
+    get:
       tags: [admin-database]
       operationId: adminDatabaseDeleteBackup
       x-api-id: API-016
       x-trace: [FR-9, DBT-4, DBT-5, REV-14, V-31]
-      summary: 删除备份（入参与 JSON 同 B15；本期纳入 dbtool.lock 并保护待处理还原记录绑定的备份）
+      x-csrf-class: B
+      summary: 删除备份（GET，B 类；入参与 JSON 同 B15；本期纳入 dbtool.lock 并保护待处理还原记录绑定的备份）
       description: |
-        基线 `AdminDatabaseActions` `del` → `DatabaseToolService.delete`，入参与 JSON 结构不变（B15 对方法不设限，GET 同样受理），只新增两种拒绝：
-        ① `id` 为空 → `admin/database/select_del_file`；备份目录不合法 → BAD_BACKUP_PATH（不取锁、不删文件）；
+        **方法**：基线 `AdminDatabaseActions.java:60` 不限方法，PHP `Database::del($id)` 相同，备份列表页以 `.j-tr-del` → `$.get(href)` 调用
+        （`import.jte:37`，href=`del?id=<备份时间戳>`）。Java **GET 与 POST 都受理、行为相同**；不带 `__token__`（B 类，技术设计 C-54/DBT-4
+        “入参与 JSON 结构不变”；CSRF 由 SRC-1 + SRC-2 防护，见 `x-csrf-policy` CSRF-EX-1）。
+        **入参位置**（ADM-5 合并，后者覆盖前者）：`id` = 查询串 `id` → POST 表单 `id` → 路由段 `/id/<值>`；GET 请求用查询串（本 operation）。
+        **顺序**（DBT-4 v8）：
+        ① `id` 为空（缺失、空串、`"0"`）→ DBT_SELECT_DEL_FILE；`id` 不是十进制数字串 → DBT_SELECT_DEL_FILE（不取锁、不删文件）；
+           备份目录不合法 → BAD_BACKUP_PATH（不取锁、不删文件）；
         ② 取锁失败 → DBT_LOCKED，0 个文件被删；
-        ③ 锁内先中断判定、再读运行记录：记录 op=IMPORT 且处于待处理（含 RECOVERED），且要删的前缀（`Ymd-His-`，由 `id` 算出）等于
-           `source_backup` 或 `auto_backup` 的前缀 → DBT_BACKUP_BOUND，0 个文件被删；
-        ④ 否则在锁内按卷号升序删除各分卷，返回 `del_ok`/`del_err`（同 B15）；
+        ③ 锁内先中断判定、再读运行记录：记录 op=IMPORT 且处于待处理（含 RECOVERED），且要删的前缀（`Ymd-His-`，由 `id` 按 B15 `STAMP` 算出）等于
+           `source_backup` 或 `auto_backup.stamp` → DBT_BACKUP_BOUND，0 个文件被删；
+        ④ 否则在锁内按卷号升序删除各分卷，返回 `lang(del_ok)`；删除后仍有残留 → DBT_DEL_ERR（同 B15）；
         ⑤ 不写运行记录，日志一行 INFO（op=DELETE）。
       security: [{ adminSession: [] }]
       x-permission: database/del
       parameters:
         - $ref: "#/components/parameters/BackupIdQuery"
       responses:
-        "200":
-          description: Ajax → LegacyJson / Error；非 Ajax → 跳转提示页
-          content:
-            application/json:
-              schema: { oneOf: [ { $ref: "#/components/schemas/LegacyJson" }, { $ref: "#/components/schemas/Error" } ] }
-      x-error-codes-ref: [DBT_SELECT_DEL_FILE, BAD_BACKUP_PATH, DBT_LOCKED, DBT_BACKUP_BOUND, DBT_DEL_ERR]
-      x-idempotency: 幂等（已删除的备份再删返回 B15 的同一结果）
+        "200": { $ref: "#/components/responses/AdminAction" }
+        "302": { $ref: "#/components/responses/AdminUnauthenticated" }
+        "403": { $ref: "#/components/responses/AdminSourceRejected" }
+      x-error-codes-ref: [DBT_SELECT_DEL_FILE, BAD_BACKUP_PATH, DBT_LOCKED, DBT_BACKUP_BOUND, DBT_DEL_ERR, ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED]
+      x-idempotency: 幂等（已删除的备份再删：glob 为空 → del_ok，同 B15）
+    post:
+      tags: [admin-database]
+      operationId: adminDatabaseDeleteBackupPost
+      x-api-id: API-016
+      x-trace: [FR-9, DBT-4, DBT-5, REV-14, V-31]
+      x-csrf-class: B
+      summary: 删除备份（POST，与 GET 等价）
+      description: |
+        同 GET。`id` 可放表单或查询串；两处都有时表单值生效（ADM-5）。两处都没有（或为空）→ DBT_SELECT_DEL_FILE。
+        错误分支、锁、绑定保护与 GET 完全相同。
+      security: [{ adminSession: [] }]
+      x-permission: database/del
+      parameters:
+        - $ref: "#/components/parameters/BackupIdQueryOptional"
+      requestBody:
+        required: false
+        content:
+          application/x-www-form-urlencoded:
+            schema: { $ref: "#/components/schemas/BackupDeleteForm" }
+      responses:
+        "200": { $ref: "#/components/responses/AdminAction" }
+        "302": { $ref: "#/components/responses/AdminUnauthenticated" }
+        "403": { $ref: "#/components/responses/AdminSourceRejected" }
+      x-error-codes-ref: [DBT_SELECT_DEL_FILE, BAD_BACKUP_PATH, DBT_LOCKED, DBT_BACKUP_BOUND, DBT_DEL_ERR, ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED]
+      x-idempotency: 同 GET
 
   /database/recover:
     servers: *adminServers
@@ -531,17 +691,26 @@ paths:
       operationId: adminDatabaseRecover
       x-api-id: API-017
       x-trace: [FR-9, AC-11, DBT-5, REV-11, V-31]
-      summary: 新增：对 DBT-3 待处理记录执行恢复（只能使用本次运行绑定的自动备份或原备份）
+      x-csrf-class: A
+      summary: 新增：对 DBT-3 待处理记录执行恢复（只能使用本次运行绑定的自动备份或原备份；POST + __token__，A 类）
       description: |
-        PHP 无此动作。只对 op=IMPORT 且状态 ∈ {FAILED, UNKNOWN, INTERRUPTED, RECOVERY_FAILED, RECOVERY_UNKNOWN, RECOVERY_INTERRUPTED} 的记录开放；
-        `RECOVERED`、`DONE`、DBT-2 记录 → DBT_RECOVER_NOT_ALLOWED。入参只有 `run` 与 `target`，**不接受文件名**。
+        PHP 无此动作。只接受 POST；**GET 请求** → 不校验令牌、不取锁、不执行，DBT_METHOD_NOT_ALLOWED。入参只有 `run` 与 `target`，**不接受文件名**。
 
-        **预检**（任一不通过 → 拒绝、记录不变、0 条语句）：持锁（DBT_LOCKED）；中断判定；`run` 等于当前记录（DBT_RUN_MISMATCH）；
-        站点已关闭（DBT_SITE_NOT_CLOSED）；target=AUTO_BACKUP 时 `auto_backup` 存在且各分卷 SHA-256 与记录相符（DBT_AUTO_BACKUP_INVALID）；
-        target=SOURCE 时原备份分卷齐全可读（DBT_FILE_DAMAGE）；DBT-3 预检 (a)～(c)。
-        **执行**：记录改 `RECOVERING`（保留原失败信息，`recovery.attempt` +1），按 DBT-3 同一流程逐表还原，**不再做自动备份**。
-        **结果**：成功 → `RECOVERED`（仍是待处理，须 API-018 确认）；确定未生效 → `RECOVERY_FAILED`；结果不确定 → `RECOVERY_UNKNOWN`；
-        进程中途退出 → 下一个持锁者记 `RECOVERY_INTERRUPTED`（attempt 不变）。均可再次 recover（幂等）。
+        **处理顺序**（前一步不通过即返回，记录不变、0 条语句）：
+        1. 令牌 → FORM_TOKEN_INVALID；`run` 或 `target` 缺失/不合 schema → DBT_METHOD_NOT_ALLOWED 同款 `lang(param_err)`（code=0）。
+        2. 取 `dbtool.lock`（不等待）→ 拿不到 → DBT_LOCKED（另一个 recover、还原、删除、导出或执行 SQL 正在持锁；**并发的两次 recover 只有一个能进入**）。
+        3. 锁内中断判定（⑩）：若记录为 `RECOVERING`（上一次 recover 的进程已死）→ 先唯一改写为 `RECOVERY_INTERRUPTED`（ERROR 日志），再继续。
+        4. `run` 等于当前记录的 `run` → 否则 DBT_RUN_MISMATCH（页面过期；刷新后按最新提示条操作）。
+        5. 状态检查：op=IMPORT 且 state ∈ {FAILED, UNKNOWN, INTERRUPTED, RECOVERY_FAILED, RECOVERY_UNKNOWN, RECOVERY_INTERRUPTED} → 继续；
+           `RECOVERED`、`DONE`、无记录、op≠IMPORT（含 DBT-2 的 UNKNOWN/INTERRUPTED）→ DBT_RECOVER_NOT_ALLOWED。
+        6. 站点已关闭 → 否则 DBT_SITE_NOT_CLOSED。
+        7. target=AUTO_BACKUP：`auto_backup` 存在且各分卷 SHA-256 与记录相符 → 否则 DBT_AUTO_BACKUP_INVALID；
+           target=SOURCE：原备份分卷齐全可读 → 否则 DBT_FILE_DAMAGE；随后 DBT-3 预检 (a)～(c)（DBT_FILE_DAMAGE / DBT_TABLE_NOT_ALLOWED）。
+        **执行**：记录改 `RECOVERING`（保留原失败信息，`recovery.attempt` +1，`recovery.target`=本次目标）并落盘，按 DBT-3 同一流程逐表还原，
+        **不再做自动备份**，全程持锁。
+        **结果**（每种只有一个终态）：成功 → `RECOVERED`（仍是待处理；返回 code=1 `admin/database/import_ok`，`data` 为 `ImportResult`，state=RECOVERED）；
+        确定未生效 → `RECOVERY_FAILED`（DBT_RECOVERY_FAILED）；结果不确定 → `RECOVERY_UNKNOWN`（DBT_RECOVERY_UNKNOWN）；
+        进程中途退出 → 无 HTTP 响应，下一个持锁者记 `RECOVERY_INTERRUPTED`（attempt 不变，`x-interrupt-transitions` 第 6 行，V-31 ⑯）。
       security: [{ adminSession: [] }]
       x-permission: database/import
       requestBody:
@@ -550,13 +719,18 @@ paths:
           application/x-www-form-urlencoded:
             schema: { $ref: "#/components/schemas/RecoverForm" }
       responses:
-        "200":
-          description: Ajax → LegacyJson（data 为 `ImportResult`）/ Error；非 Ajax → 跳转提示页（回到数据库工具页）
-          content:
-            application/json:
-              schema: { oneOf: [ { $ref: "#/components/schemas/LegacyJson" }, { $ref: "#/components/schemas/Error" } ] }
-      x-error-codes-ref: [FORM_TOKEN_INVALID, DBT_LOCKED, DBT_RUN_MISMATCH, DBT_RECOVER_NOT_ALLOWED, DBT_SITE_NOT_CLOSED, DBT_AUTO_BACKUP_INVALID, DBT_FILE_DAMAGE, DBT_TABLE_NOT_ALLOWED, DBT_RECOVERY_FAILED, DBT_RECOVERY_UNKNOWN]
-      x-idempotency: 无并发写入时幂等，可反复执行，结果相同（DBT-5 ⑤、V-31 ⑤）；服务端不自动重试
+        "200": { $ref: "#/components/responses/AdminAction" }
+        "302": { $ref: "#/components/responses/AdminUnauthenticated" }
+        "403": { $ref: "#/components/responses/AdminSourceRejected" }
+      x-error-codes-ref: [DBT_METHOD_NOT_ALLOWED, FORM_TOKEN_INVALID, DBT_LOCKED, DBT_RUN_MISMATCH, DBT_RECOVER_NOT_ALLOWED, DBT_SITE_NOT_CLOSED, DBT_AUTO_BACKUP_INVALID, DBT_FILE_DAMAGE, DBT_TABLE_NOT_ALLOWED, DBT_RECOVERY_FAILED, DBT_RECOVERY_UNKNOWN, ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED]
+      x-idempotency: |
+        按记录状态区分（DBT-5 ⑤、V-31 ⑤～⑧），不是“任何时候重复提交结果相同”：
+        - 预检拒绝（步骤 1～7）：记录与数据都不变，可修正原因后重新提交。
+        - 失败或不确定状态（FAILED、UNKNOWN、INTERRUPTED、RECOVERY_FAILED、RECOVERY_UNKNOWN、RECOVERY_INTERRUPTED）：可再次 recover（用新令牌）；
+          同一 target 在无并发写入时数据结果相同（每表先清空再插入），每次 attempt +1。
+        - 成功进入 `RECOVERED` 后：再次 recover → DBT_RECOVER_NOT_ALLOWED，数据不变；只能 acknowledge（API-018）离开待处理。
+        - 同一表单重复提交：令牌已作废 → FORM_TOKEN_INVALID（在取锁之前），不会重复执行。
+        - 服务端从不自动重试。
 
   /database/acknowledge:
     servers: *adminServers
@@ -565,14 +739,17 @@ paths:
       operationId: adminDatabaseAcknowledge
       x-api-id: API-018
       x-trace: [FR-9, AC-11, DBT-5, REV-11, V-31]
-      summary: 新增：“我已处理”——离开待处理状态的唯一出口
+      x-csrf-class: A
+      summary: 新增：“我已处理”——离开待处理状态的唯一出口（POST + __token__，A 类）
       description: |
-        PHP 无此动作。持锁 → 中断判定 → `run` 等于当前记录 → 按状态：
+        PHP 无此动作。只接受 POST；**GET 请求** → 不校验令牌、不取锁、不执行，DBT_METHOD_NOT_ALLOWED。
+        顺序：令牌（FORM_TOKEN_INVALID）→ `run` 缺失/不合 schema → `lang(param_err)` → 取锁（DBT_LOCKED）→ 中断判定（⑩）→ `run` 等于当前记录
+        （DBT_RUN_MISMATCH）→ 按状态：
         - `RECOVERED`：`accepted_as_is` 可省略，记录改 `DONE`（`ack.accepted_as_is=false`）。
         - 其他待处理状态（DBT-2 的 UNKNOWN/INTERRUPTED；DBT-3 的 FAILED/UNKNOWN/INTERRUPTED/RECOVERY_*）：必须 `accepted_as_is=1`
           （页面勾选“接受当前数据”），否则 DBT_ACK_CONFIRM_REQUIRED；通过 → `DONE`（`ack.accepted_as_is=true`，INFO 日志含 accepted_as_is）。
         - 非待处理状态（无记录、DONE）→ DBT_ACK_NOT_PENDING。
-        只做一次原子替换，被杀不会留下 RUNNING。
+        成功返回 code=1 `lang(save_ok)` 同款成功体，跳转地址为数据库工具页。只做一次原子替换，被杀不会留下 RUNNING。
       security: [{ adminSession: [] }]
       x-permission: database/import
       requestBody:
@@ -581,31 +758,72 @@ paths:
           application/x-www-form-urlencoded:
             schema: { $ref: "#/components/schemas/AcknowledgeForm" }
       responses:
-        "200":
-          description: Ajax → LegacyJson / Error；非 Ajax → 跳转提示页
-          content:
-            application/json:
-              schema: { oneOf: [ { $ref: "#/components/schemas/LegacyJson" }, { $ref: "#/components/schemas/Error" } ] }
-      x-error-codes-ref: [FORM_TOKEN_INVALID, DBT_LOCKED, DBT_RUN_MISMATCH, DBT_ACK_CONFIRM_REQUIRED, DBT_ACK_NOT_PENDING]
-      x-idempotency: 第二次调用时记录已是 DONE → DBT_ACK_NOT_PENDING，数据不变
+        "200": { $ref: "#/components/responses/AdminAction" }
+        "302": { $ref: "#/components/responses/AdminUnauthenticated" }
+        "403": { $ref: "#/components/responses/AdminSourceRejected" }
+      x-error-codes-ref: [DBT_METHOD_NOT_ALLOWED, FORM_TOKEN_INVALID, DBT_LOCKED, DBT_RUN_MISMATCH, DBT_ACK_CONFIRM_REQUIRED, DBT_ACK_NOT_PENDING, ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED]
+      x-idempotency: 第二次调用时记录已是 DONE → DBT_ACK_NOT_PENDING，数据不变；同一表单重复提交 → FORM_TOKEN_INVALID
 
   # ───────────────────────────── 后台：模板管理 ─────────────────────────────
+  # 模板目录取上游决策台账第 1 行（OP-15）：当前模板 = `template/<template_dir>/<html_dir>/`（桌面 default_pc/html、手机 default_wap/html）。
   /template/info:
     servers: *adminServers
+    get:
+      tags: [admin-template]
+      operationId: adminTemplateEditPage
+      x-api-id: API-020
+      x-trace: [FR-7, AC-8, BR-6, W-04, W-05, OP-15, DEC-5]
+      x-csrf-class: C
+      summary: 打开模板编辑页（GET，同 PHP Template::info 的非 POST 分支；签发 __token__）
+      description: |
+        PHP `Template::info`（Template.php:149-212）与基线 `AdminTemplateActions.info` 一个地址两种方法：GET 打开编辑页，POST 保存（见本路径 post）。
+        参数（查询串）：`fpath`（`.@template@<dir>@…` 形式，`@` 换成 `/`）、`fname`（文件名；为空表示新建）。判定顺序（同基线 `AdminTemplateActions.java:214-229`）：
+        `fpath` 为空或 `"0"` → `lang(param_err)`+`1`；拼出的路径不以 `./template` 开头或含多于一个 `./` → `lang(param_err)`+`2`；
+        `fname` 非空且扩展名不在 `html,htm,js,xml` → TPL_EXT_NOT_ALLOWED。以上失败按 ADM-2 动作类形态返回（JSON / 跳转提示页）。
+        通过 → 编辑页（文件内容、`fversion` 版本、隐藏字段 `__token__`）。目录范围按 OP-15（DEC-5、§6.1），本期不改列表与路径规则。
+      security: [{ adminSession: [] }]
+      x-permission: template/info
+      parameters:
+        - name: fpath
+          in: query
+          required: true
+          schema: { type: string, maxLength: 512 }
+          description: 模板目录（PHP 原样参数，`@` 分隔）
+        - name: fname
+          in: query
+          required: false
+          schema: { type: string, maxLength: 512 }
+          description: 文件名；为空 = 新建
+      responses:
+        "200":
+          description: 通过 → 编辑页（ADM-2 页面类：HTML，或 Ajax 时整页 HTML 的 JSON 字符串）；参数不合法 → ADM-2 动作类失败体（JSON / 跳转提示页）
+          content:
+            text/html:
+              schema: { $ref: "#/components/schemas/AdminHtml" }
+            application/json:
+              schema:
+                oneOf:
+                  - { type: string, description: 编辑页 HTML 的 JSON 字符串（Ajax） }
+                  - { $ref: "#/components/schemas/Error" }
+        "302": { $ref: "#/components/responses/AdminUnauthenticated" }
+        "403": { $ref: "#/components/responses/AdminSourceRejected" }
+      x-error-codes-ref: [TPL_PARAM_ERR, TPL_EXT_NOT_ALLOWED, ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED]
     post:
       tags: [admin-template]
       operationId: adminTemplateSave
       x-api-id: API-020
-      x-trace: [FR-7, AC-8, BR-6, W-04, W-05, W-06, W-07]
-      summary: 保存模板文件（扩展名白名单改回 PHP 的 html/htm/js/xml，删除 jte 编译与备份恢复分支）
+      x-trace: [FR-7, AC-8, BR-6, W-04, W-05, W-06, W-07, OP-15]
+      x-csrf-class: A
+      summary: 保存模板文件（POST + __token__，A 类；扩展名白名单改回 PHP 的 html/htm/js/xml，删除 jte 编译与备份恢复分支）
       description: |
-        入参同 PHP `Template::info`（`fpath`、`fname`、`fcontent`、`__token__`，Template.php:149-212），另保留 B15 的 `fversion`（版本冲突检查）。变化：
-        - 扩展名白名单 `html,htm,js,xml`（撤销 D-B15-14：去掉 `jte`、恢复 `htm`），不在白名单 → PHP 同款提示。
-        - 内容过滤 `LEGACY_FILTER` 与 PHP 逐字相同，命中 → `admin/template/php_safe_tip`。
-        - 只能写 `template/` 区域内文件；经 `LegacySiteFiles.replace` 原子写 + 版本冲突检查（B15 约定保留，冲突时提示并不覆盖）。
-        - 删除 jte 专用的覆盖前备份与 `op=restore`/`restore`（PHP 没有），请求里出现这两个参数时按 PHP 忽略。
-        - 保存后下一次前台请求按模板修改时间重编译（TPL-8）。
-        GET（打开编辑页）的列表与路径规则同 §6.1，页面结构按 PHP。
+        入参同 PHP `Template::info` POST 分支（`fpath`、`fname`、`fcontent`、`__token__`），另保留 B15 的 `fversion`（版本冲突检查）。
+        判定顺序：`fpath`/路径/扩展名校验（同 GET，TPL_PARAM_ERR / TPL_EXT_NOT_ALLOWED）→ 令牌（FORM_TOKEN_INVALID）→ `fname` 为空 →
+        `lang(validate/require_name)`（TPL_NAME_REQUIRED）→ 不在 `template/` 区域 → TPL_PARAM_ERR（`param_err2`）→ 内容过滤 `LEGACY_FILTER`
+        （与 PHP 逐字相同，命中 → TPL_UNSAFE_CONTENT）→ `LegacySiteFiles.replace` 原子写 + 版本冲突检查（冲突 → TPL_VERSION_CONFLICT，不覆盖）。
+        变化：扩展名白名单 `html,htm,js,xml`（撤销 D-B15-14：去掉 `jte`、恢复 `htm`）；删除 jte 专用的覆盖前备份与 `op=restore`/`restore`
+        （请求里出现这两个参数时按 PHP 忽略）；保存后下一次前台请求按模板修改时间重编译（TPL-8）。
+        令牌一次性：令牌校验之后的失败（名称为空、区域、内容过滤、版本冲突），Ajax 响应 `data.__token__` 带新令牌，编辑页留在原处可再次提交
+        （B15 `AdminResponses.error(ajax,msg,data)` 现状不变）；令牌校验本身失败时不签发新令牌，须重新打开编辑页。
       security: [{ adminSession: [] }]
       x-permission: template/info
       requestBody:
@@ -614,39 +832,62 @@ paths:
           application/x-www-form-urlencoded:
             schema: { $ref: "#/components/schemas/TemplateSaveForm" }
       responses:
-        "200":
-          description: Ajax → LegacyJson / Error；非 Ajax → 跳转提示页
-          content:
-            application/json:
-              schema: { oneOf: [ { $ref: "#/components/schemas/LegacyJson" }, { $ref: "#/components/schemas/Error" } ] }
-      x-error-codes-ref: [FORM_TOKEN_INVALID, TPL_EXT_NOT_ALLOWED, TPL_UNSAFE_CONTENT, TPL_OUTSIDE_AREA, TPL_VERSION_CONFLICT]
+        "200": { $ref: "#/components/responses/AdminAction" }
+        "302": { $ref: "#/components/responses/AdminUnauthenticated" }
+        "403": { $ref: "#/components/responses/AdminSourceRejected" }
+      x-error-codes-ref: [TPL_PARAM_ERR, TPL_EXT_NOT_ALLOWED, FORM_TOKEN_INVALID, TPL_NAME_REQUIRED, TPL_UNSAFE_CONTENT, TPL_VERSION_CONFLICT, ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED]
+      x-idempotency: 内容相同的重复保存结果相同；令牌一次性，同一表单重复提交 → FORM_TOKEN_INVALID
   /template/del:
     servers: *adminServers
-    post:
+    get:
       tags: [admin-template]
       operationId: adminTemplateDelete
       x-api-id: API-021
-      x-trace: [FR-7, AC-8, W-08]
-      summary: 删除模板文件（同 PHP：只能删 template/ 内文件，路径校验同保存）
-      description: 入参同 PHP `Template::del`（`fname`，Template.php:214-235），返回 `del_ok`/`del_err`。PHP 不限方法，Java 同样受理 GET。
+      x-trace: [FR-7, AC-8, W-08, OP-15]
+      x-csrf-class: B
+      summary: 删除模板文件（GET，B 类；同 PHP：只删 template/ 内的普通文件，不合规路径静默跳过，恒返回 del_ok）
+      description: |
+        **方法**：PHP `Template::del`（Template.php:214-235）与基线 `AdminTemplateActions.del` 都不限方法；模板列表页以 `.j-tr-del` → `$.get(href)` 调用
+        （`template/index.jte:41`，href=`del?fname=<fullname>`）。Java **GET 与 POST 都受理、行为相同**；不带 `__token__`（B 类：技术设计 §6.11
+        “删除 同 PHP”；CSRF 由 SRC-1 + SRC-2 防护，见 `x-csrf-policy` CSRF-EX-1）。
+        **入参**：`fname`，单值或数组（`fname[]=`），位置按 ADM-5 合并；GET 用查询串。
+        **逐项处理（同 PHP）**：反斜杠换 `/`；不以 `./template` 开头或含多于一个 `./` → **静默跳过**；经 `LegacySiteFiles` 解析后不在 `template/` 区域、
+        不存在、是目录 → 静默跳过；否则删除。PHP 不检查扩展名，Java 相同。
+        **结果**：全部处理完 → code=1 `lang(del_ok)`（含“`fname` 为空 / 全部被跳过”的情况，与 PHP 相同）；某个文件删除时 `TemplateFileService.delete`
+        失败 → 立即返回 TPL_DELETE_FAILED（该文件之前的已删除，之后的不处理）。不回显绝对路径。
       security: [{ adminSession: [] }]
       x-permission: template/del
+      parameters:
+        - $ref: "#/components/parameters/TemplateFnameQuery"
+      responses:
+        "200": { $ref: "#/components/responses/AdminAction" }
+        "302": { $ref: "#/components/responses/AdminUnauthenticated" }
+        "403": { $ref: "#/components/responses/AdminSourceRejected" }
+      x-error-codes-ref: [TPL_DELETE_FAILED, ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED]
+      x-idempotency: 幂等（已删除的文件再删被静默跳过，仍返回 del_ok）
+    post:
+      tags: [admin-template]
+      operationId: adminTemplateDeletePost
+      x-api-id: API-021
+      x-trace: [FR-7, AC-8, W-08, OP-15]
+      x-csrf-class: B
+      summary: 删除模板文件（POST，与 GET 等价）
+      description: 同 GET。`fname` 可放表单或查询串；两处都有时表单值生效（ADM-5）。
+      security: [{ adminSession: [] }]
+      x-permission: template/del
+      parameters:
+        - $ref: "#/components/parameters/TemplateFnameQueryOptional"
       requestBody:
-        required: true
+        required: false
         content:
           application/x-www-form-urlencoded:
-            schema:
-              type: object
-              required: [fname]
-              properties:
-                fname: { type: string, maxLength: 512, description: "template/ 区域内的相对路径（PHP 原样参数）" }
+            schema: { $ref: "#/components/schemas/TemplateDeleteForm" }
       responses:
-        "200":
-          description: Ajax → LegacyJson / Error；非 Ajax → 跳转提示页
-          content:
-            application/json:
-              schema: { oneOf: [ { $ref: "#/components/schemas/LegacyJson" }, { $ref: "#/components/schemas/Error" } ] }
-      x-error-codes-ref: [TPL_OUTSIDE_AREA, TPL_EXT_NOT_ALLOWED]
+        "200": { $ref: "#/components/responses/AdminAction" }
+        "302": { $ref: "#/components/responses/AdminUnauthenticated" }
+        "403": { $ref: "#/components/responses/AdminSourceRejected" }
+      x-error-codes-ref: [TPL_DELETE_FAILED, ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED]
+      x-idempotency: 同 GET
   /template/wizard:
     servers: *adminServers
     get:
@@ -654,6 +895,7 @@ paths:
       operationId: adminTemplateWizard
       x-api-id: API-022
       x-trace: [FR-7, AC-9, W-09]
+      x-csrf-class: C
       summary: 标签向导页（改为 PHP admin@template/wizard 的同一表单，浏览器端生成 {maccms:…} 片段）
       description: |
         页面按 PHP 视图移植（C-49），生成逻辑在浏览器端（新增后台静态脚本 `admin-assets/template-wizard.js`），输出
@@ -661,28 +903,30 @@ paths:
       security: [{ adminSession: [] }]
       x-permission: template/wizard
       responses:
-        "200":
-          description: 后台 HTML 页
-          content:
-            text/html: { schema: { type: string } }
+        "200": { $ref: "#/components/responses/AdminPage" }
+        "302": { $ref: "#/components/responses/AdminUnauthenticated" }
+        "403": { $ref: "#/components/responses/AdminSourceRejected" }
+      x-error-codes-ref: [ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED]
   /template/ads:
     servers: *adminServers
     get:
       tags: [admin-template]
       operationId: adminTemplateAds
       x-api-id: API-023
-      x-trace: [FR-7, AC-8, PATH-4]
+      x-trace: [FR-7, AC-8, PATH-4, OP-15]
+      x-csrf-class: C
       summary: 广告脚本列表（目录 template/<template_dir>/ads/*.js；不存在时只创建桌面目录）
       description: |
-        同 PHP（§6.1）：列 `template/default_pc/ads/*.js`，目录不存在时创建（只建桌面目录，不在 default_wap 下建 ads/）；
+        同 PHP（§6.1）：列 `template/default_pc/ads/*.js`，目录不存在时创建（只建桌面目录，不在 default_wap 下建 ads/，PATH-4）；
         页面“调用代码”为字面 `<script src="{$maccms.path_ads}aaa.js"></script>`。本期只确认与 PHP 一致，参数与页面结构不变。
+        CSRF 分类 C：唯一副作用是“目录不存在时建桌面 ads 目录”，与 PHP 相同、结果确定且不受参数影响。
       security: [{ adminSession: [] }]
       x-permission: template/ads
       responses:
-        "200":
-          description: 后台 HTML 页
-          content:
-            text/html: { schema: { type: string } }
+        "200": { $ref: "#/components/responses/AdminPage" }
+        "302": { $ref: "#/components/responses/AdminUnauthenticated" }
+        "403": { $ref: "#/components/responses/AdminSourceRejected" }
+      x-error-codes-ref: [ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED]
 
   # ───────────────────────────── 后台：静态生成 / 清理缓存 ─────────────────────────────
   /make/{makeAction}:
@@ -691,16 +935,18 @@ paths:
       tags: [admin-make]
       operationId: adminMake
       x-api-id: API-024
-      x-trace: [FR-6, FR-8, AC-7, AC-10, BR-6, K-10, K-11, K-12, D-19]
-      summary: 静态生成（入参同 PHP Make.php；本期按 PHP 补齐 label 生成、RSS 分页、ac2=wap 手机变体、失败输出格式）
+      x-trace: [FR-6, FR-8, AC-7, AC-10, BR-6, K-10, K-11, K-12, D-19, OP-15, DEC-6]
+      x-csrf-class: B
+      summary: 静态生成（入参同 PHP Make.php，GET，B 类；本期按 PHP 补齐 label 生成、RSS 分页、ac2=wap 手机变体、失败输出格式）
       description: |
-        入参与输出页面同 PHP `Make` 控制器各方法（`ac`、`ac2`、`tab`、`ids`、`jump` 等，Make.php:57-960）。本期行为变化：
+        入参与输出页面同 PHP `Make` 控制器各方法（`ac`、`ac2`、`tab`、`ids`、`jump` 等，Make.php:57-960），进度页以 GET 逐页跳转，
+        方法与参数不变（B 类，SRC-1 + SRC-2）。读写目录按 OP-15（DEC-6、§6.2）。本期行为变化：
         - `index?ac2=wap`：用手机 `SiteVariant` 渲染（读 `template/default_wap/html/`，`{$maccms.path_tpl}`=`/template/default_wap/`），
           输出 `wap_index.html`；其他 `ac2` 值为桌面（C-45）。
         - `label`：按 `label/` 目录下的文件逐个生成（撤销 D-B16-5）。
         - `rss`：按 PHP 分页生成（撤销 D-B16-6）。
         - 生成 actor/role/website 详情时写 `actor_time_make`/`role_time_make`/`website_time_make`（K-12，WriteRegistry 登记）。
-        - 某页模板报错 → 记入失败输出（格式按 PHP，K-11）并继续下一页。
+        - 某页模板报错 → 记入失败输出（格式按 PHP，K-11）并继续下一页；模板文件不存在按 OP-16=a 记为该页失败（不补模板）。
         写文件经 `StaticFiles`/`LegacySiteFiles` 原子写到站点根相对路径（同 PHP `buildHtml(..., './', ...)`）。
         Java 独有的 `application/data/backup/static-pages/generated.txt` 继续写入（B16 回滚用，不属于生成页）。
       security: [{ adminSession: [] }]
@@ -717,9 +963,15 @@ paths:
           description: "`wap` 时按手机变体生成；其他值或不传为桌面"
       responses:
         "200":
-          description: 后台生成进度/结果页（HTML，结构同 PHP）
+          description: 后台生成进度/结果页（HTML，结构同 PHP；参数错误等按 ADM-2 动作类失败体）
           content:
-            text/html: { schema: { type: string } }
+            text/html:
+              schema: { $ref: "#/components/schemas/AdminHtml" }
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "302": { $ref: "#/components/responses/AdminUnauthenticated" }
+        "403": { $ref: "#/components/responses/AdminSourceRejected" }
+      x-error-codes-ref: [ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED]
 
   /index/clear:
     servers: *adminServers
@@ -728,18 +980,36 @@ paths:
       operationId: adminClearCache
       x-api-id: API-025
       x-trace: [V9-001, CACHE-3]
-      summary: 清理缓存（现有入口末尾追加 CacheResetHook.resetAll()）
+      x-csrf-class: B
+      summary: 清理缓存（GET，B 类；现有入口末尾追加 CacheResetHook.resetAll()）
       description: |
-        入参与提示同基线 `AdminController.clear`（旧 Index::clear）。新增：末尾清空 phptemplate 编译缓存、标签结果缓存、页面缓存与
-        `LegacyConfigService` 派生缓存（CACHE-3 ①）。对照环境专用的 `maccms.phptemplate.compare.reset-file` 不是 HTTP 接口，不在此列。
+        入参与提示同基线 `AdminController.clear`（旧 Index::clear），基线不限方法，GET 与 POST 行为相同（POST 见本路径 post）。新增：末尾清空
+        phptemplate 编译缓存、标签结果缓存、页面缓存与 `LegacyConfigService` 派生缓存（CACHE-3 ①）。成功 `lang(admin/index/clear_ok)`。
+        对照环境专用的 `maccms.phptemplate.compare.reset-file` 不是 HTTP 接口，不在此列。
       security: [{ adminSession: [] }]
       x-permission: index/clear
       responses:
-        "200":
-          description: 同基线（Ajax → LegacyJson；非 Ajax → 跳转提示页）
-          content:
-            application/json:
-              schema: { $ref: "#/components/schemas/LegacyJson" }
+        "200": { $ref: "#/components/responses/AdminAction" }
+        "302": { $ref: "#/components/responses/AdminUnauthenticated" }
+        "403": { $ref: "#/components/responses/AdminSourceRejected" }
+      x-error-codes-ref: [ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED]
+      x-idempotency: 幂等
+    post:
+      tags: [admin-make]
+      operationId: adminClearCachePost
+      x-api-id: API-025
+      x-trace: [V9-001, CACHE-3]
+      x-csrf-class: B
+      summary: 清理缓存（POST，与 GET 等价）
+      description: 同 GET，无请求正文。
+      security: [{ adminSession: [] }]
+      x-permission: index/clear
+      responses:
+        "200": { $ref: "#/components/responses/AdminAction" }
+        "302": { $ref: "#/components/responses/AdminUnauthenticated" }
+        "403": { $ref: "#/components/responses/AdminSourceRejected" }
+      x-error-codes-ref: [ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED]
+      x-idempotency: 幂等
 
   # ───────────────────────────── 安装向导 ─────────────────────────────
   /install.php:
@@ -781,19 +1051,26 @@ paths:
       operationId: adminCollectApi
       x-api-id: API-040
       x-trace: [FR-11, AC-13, NET-1, NET-3, NET-6]
-      summary: 资源站在线采集（基线只支持离线文件，本期按 PHP 经 OutboundHttpClient 在线取数）
+      x-csrf-class: B
+      summary: 资源站在线采集（GET，B 类；基线只支持离线文件，本期按 PHP 经 OutboundHttpClient 在线取数）
       description: |
         入参同 PHP `Collect::api`（`ac`、`t`、`pg`、`h`、`ids`、`wd`、`cjflag`、`cjurl`、`mid`、`opt`、`filter` 等，Collect.php:140-170），
-        页面与进度输出同 PHP。取数经 `integration.collect`（ResourceSiteClient）→ `OutboundHttpClient`，受出站白名单与 `OutboundPolicy` 约束；
-        取回文本交给已有解析与入库（B18/B19）。入库时 `sync_pic_opt` 开启 → 经 `integration.image` 下载远程图片并写 `mac_annex`（NET-3）。
-        出站失败按 PHP 的采集失败提示，不回显内部地址解析细节。
+        页面与进度输出同 PHP（进度页以 GET 逐页跳转，B 类，SRC-1 + SRC-2）。取数经 `integration.collect`（ResourceSiteClient）→ `OutboundHttpClient`，
+        受出站白名单与 `OutboundPolicy` 约束；取回文本交给已有解析与入库（B18/B19）。入库时 `sync_pic_opt` 开启 → 经 `integration.image`
+        下载远程图片并写 `mac_annex`（NET-3）。出站失败按 PHP 的采集失败提示，不回显内部地址解析细节。
       security: [{ adminSession: [] }]
       x-permission: collect/api
       responses:
         "200":
-          description: 采集进度/结果页（HTML，结构同 PHP）
+          description: 采集进度/结果页（HTML，结构同 PHP；参数错误等按 ADM-2 动作类失败体）
           content:
-            text/html: { schema: { type: string } }
+            text/html:
+              schema: { $ref: "#/components/schemas/AdminHtml" }
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "302": { $ref: "#/components/responses/AdminUnauthenticated" }
+        "403": { $ref: "#/components/responses/AdminSourceRejected" }
+      x-error-codes-ref: [ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED]
   /collect/test:
     servers: *adminServers
     get:
@@ -801,16 +1078,20 @@ paths:
       operationId: adminCollectTest
       x-api-id: API-041
       x-trace: [FR-11, AC-13, NET-1]
-      summary: 资源站接口测试（同 PHP Collect::test，经 NET-1 在线取数）
-      description: 入参（`cjurl`、`cjflag` 等）与 JSON 结果同 PHP `Collect::test`（Collect.php:55-60）。
+      x-csrf-class: C
+      summary: 资源站接口测试（同 PHP Collect::test，经 NET-1 在线取数；只读）
+      description: 入参（`cjurl`、`cjflag` 等）与 JSON 结果同 PHP `Collect::test`（Collect.php:55-60）。只取数、不入库（CSRF 分类 C）。
       security: [{ adminSession: [] }]
       x-permission: collect/test
       responses:
         "200":
-          description: PHP 同款 JSON
+          description: PHP 同款 JSON（Ajax 与非 Ajax 相同，PHP 直接 `return json(...)`）
           content:
             application/json:
               schema: { $ref: "#/components/schemas/LegacyJson" }
+        "302": { $ref: "#/components/responses/AdminUnauthenticated" }
+        "403": { $ref: "#/components/responses/AdminSourceRejected" }
+      x-error-codes-ref: [ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED]
   /collect/timing:
     servers: *adminServers
     get:
@@ -818,15 +1099,22 @@ paths:
       operationId: adminCollectTiming
       x-api-id: API-042
       x-trace: [FR-11, AC-13, NET-2]
-      summary: 定时采集（从 NOT_PROVIDED 移除，按 PHP Collect::timing 调用 NET-1）
-      description: 基线返回“未提供”提示（D-B19-15），本期按 PHP `Collect::timing`（Collect.php:172-179）执行；入参与输出同 PHP。
+      x-csrf-class: B
+      summary: 定时采集（GET，B 类；从 NOT_PROVIDED 移除，按 PHP Collect::timing 调用 NET-1）
+      description: 基线返回“未提供”提示（D-B19-15），本期按 PHP `Collect::timing`（Collect.php:172-179）执行；入参与输出同 PHP（B 类，SRC-1 + SRC-2）。
       security: [{ adminSession: [] }]
       x-permission: collect/timing
       responses:
         "200":
-          description: 同 PHP
+          description: 同 PHP（HTML 进度页；参数错误等按 ADM-2 动作类失败体）
           content:
-            text/html: { schema: { type: string } }
+            text/html:
+              schema: { $ref: "#/components/schemas/AdminHtml" }
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "302": { $ref: "#/components/responses/AdminUnauthenticated" }
+        "403": { $ref: "#/components/responses/AdminSourceRejected" }
+      x-error-codes-ref: [ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED]
   /images/sync:
     servers: *adminServers
     get:
@@ -834,17 +1122,24 @@ paths:
       operationId: adminImagesSync
       x-api-id: API-043
       x-trace: [FR-11, AC-13, AC-16, NET-3]
-      summary: 远程图片同步（改调 integration.image，按 PHP Image::down_load 下载、校验并写 mac_annex）
+      x-csrf-class: B
+      summary: 远程图片同步（GET，B 类；改调 integration.image，按 PHP Image::down_load 下载、校验并写 mac_annex）
       description: |
-        入参与输出同 PHP `Images::sync`（Images.php:45 起）。下载经 `OutboundHttpClient`，类型与大小校验、落盘目录按 `upload` 配置，
-        写入经 `LegacySiteFiles` 的 `upload/` 写区域；`mac_annex` 写入须在 WriteRegistry 登记（AC-16）。
+        入参与输出同 PHP `Images::sync`（Images.php:45 起），进度页以 GET 逐页跳转（B 类，SRC-1 + SRC-2）。下载经 `OutboundHttpClient`，
+        类型与大小校验、落盘目录按 `upload` 配置，写入经 `LegacySiteFiles` 的 `upload/` 写区域；`mac_annex` 写入须在 WriteRegistry 登记（AC-16）。
       security: [{ adminSession: [] }]
       x-permission: images/sync
       responses:
         "200":
-          description: 同 PHP
+          description: 同 PHP（HTML 进度页；参数错误等按 ADM-2 动作类失败体）
           content:
-            text/html: { schema: { type: string } }
+            text/html:
+              schema: { $ref: "#/components/schemas/AdminHtml" }
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "302": { $ref: "#/components/responses/AdminUnauthenticated" }
+        "403": { $ref: "#/components/responses/AdminSourceRejected" }
+      x-error-codes-ref: [ADMIN_UNAUTHENTICATED, ADMIN_PERMISSION_DENIED, ADMIN_SOURCE_REJECTED]
   /api.php/timming/index:
     get:
       tags: [api]
@@ -853,15 +1148,47 @@ paths:
       x-trace: [FR-11, AC-13, NET-2, SEC-3]
       summary: 定时任务入口新增 collect 任务类型（鉴权 TimmingAccess 不变）
       description: |
-        入参、鉴权（SEC-3，`TimmingAccess` 不改）与输出同基线；任务类型 `collect` 从 `TimmingTasks` 的拒绝项移除，按 PHP `api/Timming` 的
-        collect 分支调用 NET-1。其他任务类型不变。
-      security: [{ timmingKey: [] }, {}]
-      x-security-note: 二选一放行——口令头，或本机回环来源（空对象表示该分支不带凭据，由 TimmingAccess 判定来源）；其余 403 固定提示
+        入参、鉴权（SEC-3，`TimmingAccess` 不改）与输出同基线 `TimmingController`（`TimmingController.java:44-53`）；任务类型 `collect` 从 `TimmingTasks`
+        的拒绝项移除，按 PHP `api/Timming` 的 collect 分支调用 NET-1。其他任务类型不变。
+        **地址与方法**：基线同时映射 `/api.php/timming`、`/api.php/timming/`、`/api.php/timming/index`、`/api.php/timming/index/`、`/api.php/timming/index.html`，
+        方法 GET、HEAD、POST，行为相同；参数**只取查询串**（`name`、`enforce`），POST 正文忽略。HEAD 由框架按 GET 处理、无正文，不单列。
+        **鉴权（服务端 `TimmingAccess.allowed` 判定，先于任何任务读取）**，满足其一即放行：
+        1. OpenAPI `timmingKey`：部署方配置了 `MACCMS_TIMMING_TOKEN`（≥32 个可见 ASCII 字符），请求头 `X-Maccms-Timming-Token` 与之相同（SHA-256 摘要定长比较）；
+        2. 本机回环来源：`ClientIpResolver`（B06 可信代理规则）解析出的客户端地址是回环地址，且请求带任一转发头时连接对端必须是已登记的可信代理。
+           这是服务端对来源地址的判定，**不是匿名放行**：公网或局域网来源不带有效口令一律 403。OpenAPI 无法表达来源地址条件，故 `security` 只声明
+           `timmingKey`；不带口令的本机调用（如本机 cron `curl http://127.0.0.1/...`）由第 2 条放行。
+        两条都不满足 → HTTP 403，`TIMMING_FORBIDDEN` 固定正文，不读任务表、不执行任何任务、不回写 `timming.php`（含 `enforce=1`）。
+      security: [{ timmingKey: [] }]
+      x-security-note: 口令头鉴权；本机回环来源由服务端 TimmingAccess 另行放行（见 description 第 2 条），其余 403。
+      parameters:
+        - $ref: "#/components/parameters/TimmingName"
+        - $ref: "#/components/parameters/TimmingEnforce"
       responses:
         "200":
-          description: 同基线
+          description: 任务执行输出（同基线，HTML）
           content:
             text/html: { schema: { type: string } }
+        "403": { $ref: "#/components/responses/TimmingForbidden" }
+      x-error-codes-ref: [TIMMING_FORBIDDEN]
+    post:
+      tags: [api]
+      operationId: apiTimmingPost
+      x-api-id: API-044
+      x-trace: [FR-11, AC-13, NET-2, SEC-3]
+      summary: 定时任务入口（POST，与 GET 等价；参数只取查询串，正文忽略）
+      description: 同 GET（鉴权、403、任务行为完全相同）。
+      security: [{ timmingKey: [] }]
+      x-security-note: 同 GET
+      parameters:
+        - $ref: "#/components/parameters/TimmingName"
+        - $ref: "#/components/parameters/TimmingEnforce"
+      responses:
+        "200":
+          description: 同 GET
+          content:
+            text/html: { schema: { type: string } }
+        "403": { $ref: "#/components/responses/TimmingForbidden" }
+      x-error-codes-ref: [TIMMING_FORBIDDEN]
 
 components:
   x-template-asset-content-types:
@@ -884,12 +1211,12 @@ components:
       type: apiKey
       in: cookie
       name: mac_admin_sid
-      description: 后台管理员会话 cookie（B12 AdminSessions.COOKIE，Path=后台入口、HttpOnly、SameSite=Strict）；另按 admin_auth 校验 `x-permission`，写操作另校验表单令牌 `__token__`
+      description: 后台管理员会话 cookie（B12 AdminSessions.COOKIE，Path=后台入口、HttpOnly、SameSite=Strict）；另按 admin_auth 校验 `x-permission`，所有请求另做来源校验 SRC-1（B 类写操作再加 SRC-2），A 类写操作另校验表单令牌 `__token__`（见 info.description ADM-1～ADM-5 与 `x-csrf-policy`）
     timmingKey:
       type: apiKey
       in: header
       name: X-Maccms-Timming-Token
-      description: 基线 TimmingAccess（SEC-3）：请求头口令等于 MACCMS_TIMMING_TOKEN，或客户端为本机回环（可信代理规则同 B06）；本期不改
+      description: 基线 TimmingAccess（SEC-3）口令分支：请求头值等于部署配置 MACCMS_TIMMING_TOKEN（SHA-256 摘要定长比较）。本机回环来源是服务端另一条判定（API-044 description），不在 OpenAPI security 中表示；本期不改
   parameters:
     TemplateDir:
       name: dir
@@ -932,9 +1259,123 @@ components:
       name: id
       in: query
       required: true
-      schema: { type: string, maxLength: 20, pattern: "^[0-9]*$" }
-      description: 备份时间戳（Unix 秒，B15 列表中的 id）；POST 表单字段同名同义
+      schema: { type: string, maxLength: 20, pattern: "^[0-9]+$" }
+      description: 备份时间戳（Unix 秒，B15 列表中的 id）。服务端对缺失、空串、"0"、非数字串一律返回 DBT_SELECT_DEL_FILE（不取锁、不删文件）
+    BackupIdQueryOptional:
+      name: id
+      in: query
+      required: false
+      schema: { type: string, maxLength: 20, pattern: "^[0-9]+$" }
+      description: POST 时可选；表单 `id` 存在时以表单为准（ADM-5）。表单与查询串都没有有效值 → DBT_SELECT_DEL_FILE
+    TableIdsQuery:
+      name: ids
+      in: query
+      required: false
+      style: form
+      explode: true
+      schema:
+        type: string
+        maxLength: 2048
+      description: 单表名（`ids=mac_vod`）或逗号分隔串；也可用 `ids[]=` 数组形式。为空 → DBT_SELECT_OPTIMIZE_TABLE / DBT_SELECT_REPAIR_TABLE；每项须在 26 张白名单内
+    TemplateFnameQuery:
+      name: fname
+      in: query
+      required: true
+      schema: { type: string, maxLength: 512 }
+      description: template/ 区域内的相对路径，如 `./template/default_pc/html/index/index.html`（PHP 原样参数）；也可 `fname[]=` 多值。为空时按 PHP 返回 del_ok、不删任何文件
+    TemplateFnameQueryOptional:
+      name: fname
+      in: query
+      required: false
+      schema: { type: string, maxLength: 512 }
+      description: POST 时可选；表单 `fname` 存在时以表单为准（ADM-5）
+    CounterName:
+      name: counter
+      in: path
+      required: true
+      schema: { type: string, enum: [hits, digg, score, referer] }
+      description: 计数器（短地址 `/ajax/{counter}`、`.html` 后缀同样受理）
+    TimmingName:
+      name: name
+      in: query
+      required: false
+      schema: { type: string, maxLength: 64 }
+      description: 只执行该名称的任务（同基线）；不传为全部到期任务
+    TimmingEnforce:
+      name: enforce
+      in: query
+      required: false
+      schema: { type: string, enum: ["0", "1"] }
+      description: 1 = 无视时间表强制执行（同基线；鉴权未通过时同样 403、不执行）
+  responses:
+    AdminAction:
+      description: |
+        后台动作类 operation 的 200（ADM-2）。Ajax → JSON：成功 `LegacyJson`（code=1），失败 `Error`（code=0，含 `ADMIN_PERMISSION_DENIED`、
+        Ajax 下的 `ADMIN_SOURCE_REJECTED` 及各 operation 的 `x-error-codes-ref`）；非 Ajax → HTML 跳转提示页 `AdminJumpPage`，`msg` 文本与 JSON 相同。
+      content:
+        application/json:
+          schema:
+            oneOf:
+              - $ref: "#/components/schemas/LegacyJson"
+              - $ref: "#/components/schemas/Error"
+          examples:
+            ok: { value: { code: 1, msg: "删除成功", data: "", url: "/admin.php/admin/database/index.html?group=import", wait: 3 } }
+            locked: { value: { code: 0, msg: "已有数据库操作在执行", data: "", url: "", wait: 3 } }
+            token: { value: { code: 0, msg: "请不要重复提交表单", data: "", url: "", wait: 3 } }
+        text/html:
+          schema: { $ref: "#/components/schemas/AdminJumpPage" }
+    AdminPage:
+      description: 后台页面类 operation 的 200（ADM-2）：非 Ajax → 整页 HTML；Ajax → 整页 HTML 的 JSON 字符串；无权限时为 `AdminAction` 同款失败体
+      content:
+        text/html:
+          schema: { $ref: "#/components/schemas/AdminHtml" }
+        application/json:
+          schema:
+            oneOf:
+              - { type: string, description: 整页 HTML 的 JSON 字符串（Ajax） }
+              - $ref: "#/components/schemas/Error"
+    AdminUnauthenticated:
+      description: 未登录，或会话里的管理员已停用/改密/删除（会话随之作废）；Ajax 请求同样 302（ADM-1，`ADMIN_UNAUTHENTICATED`）
+      headers:
+        Location:
+          description: "`<adminEntry>/admin/index/login.html`"
+          schema: { type: string }
+        Cache-Control:
+          schema: { type: string, enum: [no-store] }
+    AdminSourceRejected:
+      description: 非 Ajax 请求未通过来源校验 SRC-1/SRC-2（ADM-3，`ADMIN_SOURCE_REJECTED`）：HTTP 403 提示页（标题“跳转提示”，正文“非法请求”），不执行任何动作。Ajax 请求为 200 JSON，见 `AdminAction`
+      content:
+        text/html:
+          schema: { $ref: "#/components/schemas/AdminHtml" }
+    CounterJson:
+      description: PHP JSON（字段同基线 B11 ajax 分支），`application/json; charset=utf-8`；GET/POST、ajax/非 ajax 都相同
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [code, msg]
+            properties:
+              code: { type: integer, description: "1 成功；其他值同基线 B11（如 1002 保存失败）" }
+              msg: { type: string }
+              data: { description: 计数结果等（同基线） }
+    TimmingForbidden:
+      description: TimmingAccess 未通过（`TIMMING_FORBIDDEN`）
+      headers:
+        Cache-Control:
+          schema: { type: string, enum: [no-store] }
+      content:
+        text/html:
+          schema: { type: string, enum: ["定时任务入口只接受本机请求或携带部署口令的请求，未执行任何任务"] }
+          example: 定时任务入口只接受本机请求或携带部署口令的请求，未执行任何任务
   schemas:
+    AdminHtml:
+      type: string
+      description: "后台 HTML（text/html; charset=utf-8；B12 后台响应头 no-store、nosniff、noindex、Referrer-Policy=same-origin）"
+    AdminJumpPage:
+      type: string
+      description: |
+        PHP `$this->success()/error()` 的非 Ajax 形态（B12 `AdminResponses.jump` → `admin/pages/jump`）：HTTP 200，HTML 内含成功/失败标识、`msg`、
+        跳转地址（成功为 `url`，失败为“返回上一页”）与 3 秒自动跳转；不回显 SQL、文件路径、连接串
     LegacyJson:
       type: object
       description: PHP `$this->success()/error()` 的 Ajax JSON（`json_encode(…, JSON_UNESCAPED_UNICODE)`），HTTP 200
@@ -968,9 +1409,8 @@ components:
         pwd: { type: string, maxLength: 255 }
     TableIdsForm:
       type: object
-      required: [__token__]
+      description: B 类（无令牌）。`ids` 也可在查询串（ADM-5）
       properties:
-        __token__: { type: string, maxLength: 64 }
         ids:
           description: 表名数组（`ids[]=`）或逗号分隔串；每项必须在附表 A 的 26 张表白名单内，最多 26 项
           oneOf:
@@ -993,6 +1433,7 @@ components:
         id: { type: string, maxLength: 20, pattern: "^[0-9]+$", description: 备份时间戳（Unix 秒） }
     ExportForm:
       type: object
+      description: B 类（同 B15，无令牌；CSRF-EX-1）
       properties:
         ids:
           description: 同 B15 导出（表名数组或单值）
@@ -1003,6 +1444,20 @@ components:
             - type: string
               maxLength: 2048
         start: { type: string, maxLength: 20, description: 同 B15 }
+    BackupDeleteForm:
+      type: object
+      description: B 类（同 B15，无令牌；CSRF-EX-1）
+      properties:
+        id: { type: string, maxLength: 20, pattern: "^[0-9]+$", description: 备份时间戳（Unix 秒）；与查询串同时出现时以表单为准 }
+    TemplateDeleteForm:
+      type: object
+      description: B 类（同 PHP，无令牌；CSRF-EX-1）
+      properties:
+        fname:
+          description: template/ 区域内的相对路径，单值或数组（`fname[]=`）
+          oneOf:
+            - { type: string, maxLength: 512 }
+            - { type: array, maxItems: 200, items: { type: string, maxLength: 512 } }
     RecoverForm:
       type: object
       required: [__token__, run, target]
@@ -1134,6 +1589,48 @@ components:
             admin_id: { type: integer }
             accepted_as_is: { type: boolean }
 
+x-csrf-policy:
+  description: |
+    REV-API-2 / SEC-1、SEC-3、SEC-4：本文件全部后台 operation 的 CSRF 分类（ADM-3、ADM-4）。每个有副作用的后台 operation 恰好属于 A 或 B；
+    C 为只读或副作用确定且不受参数影响的页面。所有后台请求都先过 SRC-1；B 类另过 SRC-2。各 operation 的 `x-csrf-class` 与本表一致。
+  classes:
+    A: "只接受 POST + 必填 __token__（一次性），失败 FORM_TOKEN_INVALID；GET → 各 operation 写明的固定失败体，不执行"
+    B: "方法与入参同 PHP/B15、无令牌；SRC-1 + SRC-2 + SameSite=Strict + x-permission（CSRF-EX-1）"
+    C: "只读页面 / 只读取数；SRC-1"
+  operations:
+    - { api: API-010, op: "GET database/index", class: C }
+    - { api: API-011, op: "GET|POST database/optimize", class: B, basis: "PHP optimize($ids) 不验令牌；export.jte:44 .j-ajax $.get；C-54 不改 export 页" }
+    - { api: API-012, op: "GET|POST database/repair", class: B, basis: "同 API-011（export.jte:45）" }
+    - { api: API-013, op: "GET database/sql", class: C }
+    - { api: API-013, op: "POST database/sql", class: A, basis: "PHP Database::sql 校验 Token" }
+    - { api: API-014, op: "POST database/import", class: A, basis: "本契约补定（v1.0.0 起）：还原为最高影响写操作；import.jte 属 C-54 修改范围，按钮改为带令牌表单" }
+    - { api: API-015, op: "POST database/export", class: B, basis: "DBT-4“导出入参同 B15”；B15 只收 POST、无令牌" }
+    - { api: API-016, op: "GET|POST database/del", class: B, basis: "C-54/DBT-4“入参与 JSON 结构不变”；import.jte:37 .j-tr-del $.get" }
+    - { api: API-017, op: "POST database/recover", class: A, basis: "C-54“POST + 表单令牌”" }
+    - { api: API-018, op: "POST database/acknowledge", class: A, basis: "C-54“POST + 表单令牌”" }
+    - { api: API-020, op: "GET template/info", class: C }
+    - { api: API-020, op: "POST template/info", class: A, basis: "PHP Template::info 与 B15 均校验令牌" }
+    - { api: API-021, op: "GET|POST template/del", class: B, basis: "§6.11“删除 同 PHP”；template/index.jte:41 .j-tr-del $.get" }
+    - { api: API-022, op: "GET template/wizard", class: C }
+    - { api: API-023, op: "GET template/ads", class: C, note: "目录不存在时建桌面 ads 目录（同 PHP，确定性）" }
+    - { api: API-024, op: "GET make/*", class: B, basis: "§6.12 入参同 PHP Make；进度页 GET 逐页跳转" }
+    - { api: API-025, op: "GET|POST index/clear", class: B, basis: "基线 AdminController.clear 不限方法" }
+    - { api: API-040, op: "GET collect/api", class: B, basis: "§6.15 入参同 PHP Collect::api" }
+    - { api: API-041, op: "GET collect/test", class: C }
+    - { api: API-042, op: "GET collect/timing", class: B, basis: "§6.15 同 PHP Collect::timing" }
+    - { api: API-043, op: "GET images/sync", class: B, basis: "§6.15 同 PHP Images::sync" }
+  exceptions:
+    - id: CSRF-EX-1
+      scope: B 类全部 operation
+      statement: 与 PHP 相同不带表单令牌（沿用 PHP 的无令牌入参），由来源校验替代令牌作为 CSRF 防护
+      upstream: 技术设计 v8（G1 PASS，Issue G1 放行评论 01a1950e-30b9-7799-a09c-53ef45eff652）对这些入口规定“入参与 JSON 结构不变 / 同 PHP / 同 B15”；来源校验为基线 D-B12-3 已有设计
+      controls: ["SRC-1：Sec-Fetch-Site / Origin / Referer 必须同源（基线）", "SRC-2：B 类三个来源头都缺失也拒绝（本契约补定）", "会话 cookie SameSite=Strict、HttpOnly、Path=后台入口", "x-permission 权限码", "后台响应 Referrer-Policy: same-origin（保证自身请求带 Referer）"]
+      residual: 不依赖令牌；跨站与同站其他子域发起的请求都被拒绝。已知限制：既不发 Sec-Fetch-Site、又被用户设置为完全不发 Referer 的旧浏览器无法使用 B 类动作（返回“非法请求”，不执行）
+      change-path: 若评审或发起人要求 B 类也加令牌，须先修订技术设计（页面与 static/js/admin_common.js 的调用方式），再升本契约版本
+    - id: CSRF-NA-1
+      scope: API-001、API-002、API-007（前台公开接口）
+      statement: 不依赖登录会话授权，CSRF 不适用（与 PHP 相同）；API-002 的频率由会话 5 秒与 PasswordAttempts 限制
+
 x-interrupt-transitions:
   description: DBT-5 ⑩：任一取锁入口（optimize、repair、sql、import、recover、acknowledge、export、del 与页面 probe）读到 RUNNING/RECOVERING 时的唯一改写，完成后才继续本次动作
   rows:
@@ -1167,7 +1664,10 @@ x-error-codes:
   - { code: PWD_ART_NOT_FOUND, http: 200, wire_code: 1021, wire_msg: "Art::infoData 返回的 msg", meaning: 文章不存在或不可见, trigger: "mid=2 取数失败", retry: false, caller: 提示用户 }
   - { code: PWD_ART_WRONG, http: 200, wire_code: 1022, wire_msg: "lang(pass_err)", meaning: 文章密码错误, trigger: "mid=2 与 art_pwd 不符", retry: false, caller: 提示用户重新输入 }
   # 后台通用
-  - { code: FORM_TOKEN_INVALID, http: 200, wire_code: 0, wire_msg: "非法请求 / 令牌错误（同 B12）", meaning: 表单令牌缺失或不一致, trigger: "POST 写操作 __token__ 校验失败", retry: false, caller: 刷新页面重新提交 }
+  - { code: FORM_TOKEN_INVALID, http: 200, wire_code: 0, wire_msg: "缺失或为空 → lang(illegal_request)「非法请求」；与会话不一致或已用过 → lang(token_err)「请不要重复提交表单」（B12 AdminForms.check）", meaning: A 类写操作的表单令牌无效, trigger: "x-csrf-policy A 类的 POST，在取锁/读记录/读文件之前校验", retry: false, caller: 重新打开页面取得新令牌后再提交；不自动重试 }
+  - { code: ADMIN_UNAUTHENTICATED, http: 302, wire_msg: "空正文；Location: <adminEntry>/admin/index/login.html", meaning: 未登录或管理员已停用/改密/删除, trigger: "ADM-1，所有后台 operation（Ajax 同样 302）", retry: false, caller: 跳到登录页重新登录 }
+  - { code: ADMIN_PERMISSION_DENIED, http: 200, wire_code: 0, wire_msg: "lang(permission_denied)「您没有权限访问此页面」", meaning: 管理员没有该 operation 的 x-permission, trigger: "ADM-1 权限检查", retry: false, caller: 联系超级管理员授权 }
+  - { code: ADMIN_SOURCE_REJECTED, http: "403（非 Ajax 提示页）/ 200（Ajax JSON）", wire_code: 0, wire_msg: "非法请求", meaning: 请求来源不是后台自身页面, trigger: "ADM-3 SRC-1（所有后台请求）或 SRC-2（B 类写操作三个来源头都缺失）", retry: false, caller: 从后台页面内重新操作；不得绕过 }
   - { code: BAD_BACKUP_PATH, http: 200, wire_code: 0, wire_msg: "DatabaseToolService.BAD_BACKUP_PATH（B15 原文）", meaning: 备份目录配置不合法, trigger: "db.backup_path 不在允许区域", retry: false, caller: 部署方修正配置 }
   # 数据库工具
   - { code: DBT_LOCKED, http: 200, wire_code: 0, wire_msg: "已有数据库操作在执行", meaning: dbtool.lock 被占用, trigger: "任一数据库工具动作 tryExclusiveLock 失败", retry: true, caller: 等当前操作结束后由管理员重新提交；不自动重试 }
@@ -1180,7 +1680,8 @@ x-error-codes:
   - { code: DBT_SQL_STRUCTURE_REFUSED, http: 200, wire_code: 0, wire_msg: "结构类操作请由部署方在库外完成", meaning: 非 INSERT/UPDATE/DELETE 或含 /*! 版本注释, trigger: "DBT-2 ④（AC-11）", retry: false, caller: 由部署方在库外执行 }
   - { code: DBT_SQL_FAILED, http: 200, wire_code: 0, wire_msg: "执行失败，数据未改动（附 SQLState 分类，不回显 SQL）", meaning: 确定未生效, trigger: "DBT-2 SQLState 42xxx 或单值 INSERT 的服务端拒绝", retry: false, caller: 修正后重新提交 }
   - { code: DBT_SQL_UNKNOWN, http: 200, wire_code: 0, wire_msg: "结果不确定，请核对后点“我已处理”", meaning: 结果不确定，进入待处理, trigger: "DBT-2 连接类/超时/多行语句出错", retry: false, caller: 核对数据后 acknowledge（API-018） }
-  - { code: DBT_SELECT_FILE, http: 200, wire_code: 0, wire_msg: "lang(admin/database/select_file)", meaning: 未选备份, trigger: "import 的 id 为空或非 POST", retry: false, caller: 选择备份 }
+  - { code: DBT_METHOD_NOT_ALLOWED, http: 200, wire_code: 0, wire_msg: "lang(param_err)「参数错误」", meaning: 只接受 POST 的 A 类动作收到 GET，或必填参数缺失/不合 schema, trigger: "import/recover/acknowledge 的 GET；recover/acknowledge 的 run、target 不合法", retry: false, caller: 从页面表单提交 }
+  - { code: DBT_SELECT_FILE, http: 200, wire_code: 0, wire_msg: "lang(admin/database/select_file)", meaning: 未选备份, trigger: "import（POST）的 id 为空或为 0", retry: false, caller: 选择备份 }
   - { code: DBT_FILE_DAMAGE, http: 200, wire_code: 0, wire_msg: "lang(admin/database/file_damage)", meaning: 分卷不齐、不可读或无法解压, trigger: "DBT-3 预检 (a)(b)，或 recover target=SOURCE 时", retry: false, caller: 换用完整备份 }
   - { code: DBT_SITE_NOT_CLOSED, http: 200, wire_code: 0, wire_msg: "还原数据前请先在系统设置中关闭站点", meaning: 站点未关闭, trigger: "DBT-3 预检 (d)、recover 预检", retry: false, caller: 关闭站点后重新提交 }
   - { code: DBT_BACKUP_DIR_NOT_WRITABLE, http: 200, wire_code: 0, wire_msg: "备份目录不可写", meaning: 自动备份目录不存在或不可写, trigger: "DBT-3 预检 (e)", retry: false, caller: 部署方修正目录权限 }
@@ -1189,8 +1690,8 @@ x-error-codes:
   - { code: DBT_IMPORT_FAILED, http: 200, wire_code: 0, wire_msg: "lang(admin/database/import_err) + 失败表与序号、SQLState", meaning: 确定未生效，记录 FAILED（待处理）, trigger: "DBT-3 第 n 条确定未生效", retry: false, caller: 按提示条 recover }
   - { code: DBT_IMPORT_UNKNOWN, http: 200, wire_code: 0, wire_msg: "lang(admin/database/import_err) + 结果不确定", meaning: 记录 UNKNOWN（待处理）, trigger: "DBT-3 结果不确定", retry: false, caller: 按提示条 recover }
   - { code: DBT_SELECT_EXPORT_TABLE, http: 200, wire_code: 0, wire_msg: "lang(admin/database/select_export_table)", meaning: 未选表, trigger: "export 的 ids 为空（B15）", retry: false, caller: 选择表 }
-  - { code: DBT_BACKUP_ERR, http: 200, wire_code: 0, wire_msg: "lang(admin/database/backup_err)", meaning: 导出失败或非 POST, trigger: "B15 原样", retry: true, caller: 重新导出 }
-  - { code: DBT_SELECT_DEL_FILE, http: 200, wire_code: 0, wire_msg: "lang(admin/database/select_del_file)", meaning: 未选备份, trigger: "del 的 id 为空", retry: false, caller: 选择备份 }
+  - { code: DBT_BACKUP_ERR, http: 200, wire_code: 0, wire_msg: "lang(admin/database/backup_err)", meaning: 导出失败或 GET 请求, trigger: "B15 原样（GET → 不导出直接返回此提示）", retry: true, caller: 重新导出 }
+  - { code: DBT_SELECT_DEL_FILE, http: 200, wire_code: 0, wire_msg: "lang(admin/database/select_del_file)", meaning: 未选备份, trigger: "del 的 id 缺失、为空、为 0 或不是十进制数字串（GET/POST 相同）", retry: false, caller: 选择备份 }
   - { code: DBT_BACKUP_BOUND, http: 200, wire_code: 0, wire_msg: "该备份是未处理数据库操作的恢复点", meaning: 要删的备份被待处理还原记录绑定, trigger: "del 前缀等于 source_backup 或 auto_backup", retry: false, caller: 先处理（recover/我已处理）再删 }
   - { code: DBT_DEL_ERR, http: 200, wire_code: 0, wire_msg: "lang(del_err)", meaning: 删除失败, trigger: "B15 原样", retry: true, caller: 重试或部署方检查文件权限 }
   - { code: DBT_RUN_MISMATCH, http: 200, wire_code: 0, wire_msg: "运行记录已变化，请刷新页面", meaning: run 不等于当前记录, trigger: "recover/acknowledge 的 run 与当前记录不符", retry: false, caller: 刷新页面后按最新提示条操作 }
@@ -1200,10 +1701,16 @@ x-error-codes:
   - { code: DBT_RECOVERY_UNKNOWN, http: 200, wire_code: 0, wire_msg: "恢复结果不确定", meaning: RECOVERY_UNKNOWN（仍待处理）, trigger: "recover 结果不确定", retry: true, caller: 排除原因后再次 recover }
   - { code: DBT_ACK_CONFIRM_REQUIRED, http: 200, wire_code: 0, wire_msg: "请勾选“接受当前数据”", meaning: 未恢复的待处理记录确认时未勾选, trigger: "acknowledge 且状态非 RECOVERED、accepted_as_is≠1", retry: false, caller: 勾选后再提交 }
   - { code: DBT_ACK_NOT_PENDING, http: 200, wire_code: 0, wire_msg: "当前没有待处理的数据库操作", meaning: 记录不在待处理, trigger: "acknowledge 时无记录或 DONE", retry: false, caller: 刷新页面 }
+  # 计数
+  - { code: COUNTER_SAVE_FAILED, http: 200, wire_code: 1002, wire_msg: "保存失败!：", meaning: 计数写入被数据库拒绝（如已到列上限）, trigger: "API-007（基线 D-B11-5）", retry: false, caller: 不重试 }
+  # 定时任务
+  - { code: TIMMING_FORBIDDEN, http: 403, wire_msg: "定时任务入口只接受本机请求或携带部署口令的请求，未执行任何任务（text/html，no-store）", meaning: 既无有效口令头也不是本机回环来源, trigger: "API-044 TimmingAccess.allowed 为假", retry: false, caller: 部署方配置口令或改由本机调用 }
   # 模板管理
-  - { code: TPL_EXT_NOT_ALLOWED, http: 200, wire_code: 0, wire_msg: "PHP Template.php:170 同款提示", meaning: 扩展名不在 html/htm/js/xml, trigger: "template/info 保存、template/del", retry: false, caller: 改用允许的扩展名 }
+  - { code: TPL_PARAM_ERR, http: 200, wire_code: 0, wire_msg: "lang(param_err) 后接 1 或 2（PHP 原样：1 = fpath 为空，2 = 路径不在 ./template 或越界）", meaning: 模板路径参数不合法, trigger: "template/info 打开或保存", retry: false, caller: 从模板列表重新进入 }
+  - { code: TPL_EXT_NOT_ALLOWED, http: 200, wire_code: 0, wire_msg: "PHP Template.php:170 同款提示", meaning: 扩展名不在 html/htm/js/xml, trigger: "template/info 打开或保存（template/del 不检查扩展名，同 PHP）", retry: false, caller: 改用允许的扩展名 }
+  - { code: TPL_NAME_REQUIRED, http: 200, wire_code: 0, wire_msg: "lang(validate/require_name)", meaning: 保存时文件名为空, trigger: "template/info POST 且 fname 为空", retry: false, caller: 填写文件名（Ajax data.__token__ 带新令牌） }
+  - { code: TPL_DELETE_FAILED, http: 200, wire_code: 0, wire_msg: "TemplateFileService.delete 返回的提示（不含绝对路径）", meaning: 某个文件删除失败, trigger: "template/del 删除合规文件时出错", retry: true, caller: 检查文件权限后重试（幂等） }
   - { code: TPL_UNSAFE_CONTENT, http: 200, wire_code: 0, wire_msg: "lang(admin/template/php_safe_tip)", meaning: 内容命中 LEGACY_FILTER, trigger: "template/info 保存", retry: false, caller: 去掉被过滤的内容 }
-  - { code: TPL_OUTSIDE_AREA, http: 200, wire_code: 0, wire_msg: "PHP 同款非法路径提示", meaning: 路径不在 template/ 区域, trigger: "template/info、template/del", retry: false, caller: 修正路径 }
   - { code: TPL_VERSION_CONFLICT, http: 200, wire_code: 0, wire_msg: "B15 版本冲突提示（原文不变）", meaning: 文件已被他人修改, trigger: "保存时 fversion 与当前文件不一致", retry: false, caller: 重新打开后合并修改 }
   # 安装
   - { code: INSTALL_TABLES_EXIST, http: 200, wire_code: 0, wire_msg: "已存在数据表", meaning: 目标库已有 mac_ 表, trigger: "INS-2 ②", retry: false, caller: 换空库 }
