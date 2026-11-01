@@ -1,0 +1,23 @@
+<?php echo '<?'; ?>
+xml version="1.0" encoding="UTF-8" ?>
+<rss version="2.0">
+<channel>
+<title><?php echo $art_name; ?></title> 
+<link><?php echo $site_url; ?><?php echo mac_url_art_detail(['id'=>$art_id]); ?></link>
+<description><![CDATA["<?php echo mac_substring(str_replace('$$$','',$art_content),200); ?>"]]></description>
+<language>zh-cn</language> 
+<generator><?php echo $site_url; ?></generator> 
+<webmaster><?php echo $site_email; ?></webmaster>
+{maccms:foreach name="art_page_list"}
+<item>
+<title><?php echo htmlspecialchars($art_name); ?><?php echo htmlspecialchars($vo['title']); ?></title>
+<link><?php echo $site_url; ?><?php echo mac_url_art_detail(['id'=>$art_id,'page'=>$i]); ?></link>
+<description><![CDATA["<?php echo htmlspecialchars($vo['title']); ?>详情地址<?php echo $site_url; ?><?php echo mac_url_art_detail(['id'=>$art_id,'page'=>$i]); ?>"]]></description>
+<pubDate><?php echo date('Y-m-d H:i:s',$art_time); ?></pubDate>
+<category><?php echo $type_name; ?></category>
+<author><?php echo htmlspecialchars($art_author); ?></author>
+<comments><?php echo $site_name; ?></comments>
+</item>
+{/maccms:foreach}
+</channel>
+</rss>

@@ -1,0 +1,20 @@
+
+
+<div id="rating" class="fn-left" data-mid="<?php echo $maccms['mid']; ?>" data-id="<?php echo $obj['vod_id']; ?>" data-score="<?php echo ceil($obj['vod_score']/2); ?>">
+    <span class="label">我也要给这影片打分：</span>
+    <ul class="rating" id="fenshu">
+        <li class="one  <?php if($obj['vod_score'] > 0): ?>current active<?php endif; ?>" title="很差" val="1">很差</li>
+        <li class="two  <?php if($obj['vod_score'] > 2): ?>current active<?php endif; ?>" title="较差" val="2">较差</li>
+        <li class="three <?php if($obj['vod_score'] > 4): ?> current active<?php endif; ?>" title="还行" val="3">还行</li>
+        <li class="four <?php if($obj['vod_score'] > 6): ?>active<?php endif; ?>" title="推荐" val="4">推荐</li>
+        <li class="five <?php if($obj['vod_score'] > 8): ?>active<?php endif; ?>" title="力荐" val="5">力荐</li>
+    </ul>
+    <span id="ratewords"><?php if($obj['vod_score'] > 8): ?>力荐
+<?php elseif($obj['vod_score'] > 6): ?>推荐
+<?php elseif($obj['vod_score'] > 4): ?>还行
+<?php elseif($obj['vod_score'] > 2): ?>较差
+<?php else: ?>很差
+<?php endif; ?></span>
+</div>
+<script type="text/javascript" src="<?php echo $maccms['path_tpl']; ?>js/qireobj.js"></script>
+<script type="text/javascript" src="<?php echo $maccms['path_tpl']; ?>js/gold.js"></script>

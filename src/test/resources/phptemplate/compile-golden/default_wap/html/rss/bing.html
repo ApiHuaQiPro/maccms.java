@@ -1,0 +1,12 @@
+<?php echo '<?'; ?>
+xml version="1.0" encoding="UTF-8"?>
+<urlset>
+{maccms:vod num="30" paging="yes" order="desc" by="time"}
+<url>
+<loc>http://<?php echo $maccms['site_url']; ?><?php echo mac_url_vod_detail($vo); ?></loc>
+<lastmod><?php echo date('Y-m-d',$vo['vod_time']); ?></lastmod>
+<changefreq>always</changefreq>
+<priority>0.8</priority>
+</url>
+{/maccms:vod}
+</urlset>

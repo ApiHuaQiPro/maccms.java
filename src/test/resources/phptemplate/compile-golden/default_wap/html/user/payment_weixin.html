@@ -1,0 +1,52 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width = device-width ,initial-scale = 1,minimum-scale = 1,maximum-scale = 1,user-scalable =no,"/>
+	<title>微信在线支付 - <?php echo $maccms['site_name']; ?></title>
+	<link href="<?php echo $maccms['path_tpl']; ?>css/user.css" type="text/css" rel="stylesheet"/>
+<script>var SitePath='{maccms:path}',SiteAid='{maccms:siteaid}',SiteTid='{maccms:sitetid}',SiteId='{maccms:siteid}';</script>
+<script src="__STATIC__/js/jquery.js"></script>
+</head>
+
+<body class="bg-fff">
+<!--子页顶部-->
+<div class="zy-search zy-tit">
+	<div class="sch-w clearfix">
+		<a class="go-back" href="#"><img src="<?php echo $maccms['path_tpl']; ?>images/user/go-back.png"></a>
+		<div class="tit">
+			确认付款
+		</div>
+	</div>
+</div>
+
+<div class="wrap mb80">
+	<div class="payment line">
+		<p><span class="xiang">订单编号：</span><?php echo $order['order_code']; ?></p>
+		<p><span class="xiang">订单金额：</span><?php echo $order['order_price']; ?>元</p>
+		<p><img src="<?php echo url('user/qrcode'); ?>?data=<?php echo urlencode($payment['code_url']); ?>" width="150" height="150"/></p>
+		<p>打开微信，扫码支付</p>
+	</div>
+</div>
+
+
+<!--loading start-->
+<div class="loading_box"></div>
+<!--loading end-->
+
+<script>
+	function check(){
+		$.get("<?php echo url('user/order_info'); ?>" + '?order_id=<?php echo $order['order_id']; ?>', function(data){
+			if(data.info.order_status == 1){
+				alert('支付完成，即将跳转到会员中心');
+				window.location.href = "<?php echo url('user/index'); ?>";
+			}
+		});
+	}
+	$(function(){
+		setInterval(function(){check()}, 5000);  //5秒查询一次支付是否成功
+	})
+</script>
+</body>
+</html>
