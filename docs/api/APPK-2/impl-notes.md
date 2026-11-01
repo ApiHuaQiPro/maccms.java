@@ -281,3 +281,72 @@ jar tf target/maccms-backend-0.1.0-SNAPSHOT.jar | grep -c third_party → 0；gr
 - 许可：保留官方 `LICENSE`（Apache-2.0），`SOURCE.md` 写明来源。
 - 范围：只改 `.gitattributes`、`third_party/maccms-template-v2020.1000.1035/**` 与本说明；未改 `src/main/**`、PRD、设计、API、T1、`tests/api/**`、deploy；未发接口请求、未部署。
 - 不含的部分：C-9 `verify_template_package.py`（逐文件校验脚本，测试 S3-03）、C-11 部署样例（流水线）、C-12～C-16（S3-02）不在本批。
+
+## S3-02：`{$maccms.path_tpl}` 映射修正（REV-1；PATH-2～PATH-4；C-12～C-16；V-9）
+
+依据：技术设计 v10 `docs/design/APPK-2/tech-design.md` @ `08043003d67209d79a7c2334407def58a58d2d56` §1.1（PHP 四个路径量、`All.php:58-63`）、§3.1、§5.1 C-12～C-16、§6 DEC-3 推出的 PATH-1～PATH-4、§7.1 第 4 步、§8 V-9、§9；OP-15 已关闭（设计 v2 @ `ebd7aa60ae968229997221d3086b45ddb4fa67e1`）。本批不含接口，契约：N/A（只改站点选择结果到 `SiteVariant` 的映射与注释，没有 API-ID）。基于已放行的 S3-01 `200cffc5d01090faf4f61e153feb472b107b34df`。
+
+### 变更文件
+
+| # | 文件 | 改动 | 提交 |
+| --- | --- | --- | --- |
+| C-12 | `src/main/java/com/maccms/backend/site/web/SiteVariants.java` | `resolve` 第 95 行：`r.pathTpl()` → `r.pathTemplate()`，`SiteVariant.pathTpl` 改取 PATH-2 `MAC_PATH_TEMPLATE`；没有旧配置时仍为 `""` | `05ffd11` |
+| C-13 | `src/main/java/com/maccms/backend/site/web/view/SiteVariant.java` | 只改注释：`@param pathTpl` = `MAC_PATH_TEMPLATE`（`All.php:62`），不含 `html_dir`；`@param pathAds` = `MAC_PATH_ADS`（`All.php:63`）。记录字段名与顺序不变 | `05ffd11` |
+| C-14 | `src/main/java/com/maccms/backend/site/application/SiteTemplateSelection.java` | 只改类注释（原第 23 行）：三个路径量与 PHP 常量的对应，模板变量取 `pathTemplate`/`pathAds`，`pathTpl` 供“模板文件不存在”消息（`think_exception.tpl:366`）。`resolve` 与 `Result` 不改 | `05ffd11` |
+| C-15 | `src/test/java/com/maccms/backend/site/web/SiteVariantsTest.java` | `filterResolvesEachRequestFromUserAgentAndHost` 第 75 行期望 `/template/wapt/`、第 82 行 `/template/default/`（第 76 行 `pathAds` 不变）；新增 `pathVariablesFollowLabelMaccms`（DEC-3 取值，`mob_status='2'`、`install_dir='/'`） | `05ffd11` |
+| C-16 | `src/test/java/com/maccms/backend/site/application/SiteTemplateSelectionGoldenTest.java` | 比较处（原第 61 行）加注释“黄金键 path_tpl 记录的是 MAC_PATH_TPL，模板变量见 SiteVariant.pathTpl”；新增 `dec3ValuesSplitThePathConstants`。比较逻辑与黄金 JSON 不改 | `05ffd11` |
+| — | `docs/api/APPK-2/impl-notes.md` | 本说明：新增「S3-02」一节 | 本节所在提交 |
+
+按 §7.1 第 4 步，C-12～C-16 单独一个提交 `05ffd11`，只含这 5 个文件；说明另起提交。
+
+### AC- / PATH- → 测试（V-9）
+
+| 对象 | 测试 | 断言 |
+| --- | --- | --- |
+| PATH-2 `{$maccms.path_tpl}` = `MAC_PATH_TEMPLATE`（FR-1、FR-8、AC-1、AC-10） | `SiteVariantsTest.pathVariablesFollowLabelMaccms` | DEC-3 取值经过滤器：桌面 UA `pathTpl=/template/default_pc/`、`pathAds=/template/default_pc/ads/`；手机 UA `wap=true`、`pathTpl=/template/default_wap/`、`pathAds=/template/default_wap/ads/` |
+| PATH-2 接线（原错值修正） | `SiteVariantsTest.filterResolvesEachRequestFromUserAgentAndHost` | 手机 `/template/wapt/`、无 UA 桌面 `/template/default/`；手机标志、语言、`pathAds`、`Vary`、手机 Logo 断言不变 |
+| PATH-2～PATH-4 与 PHP 常量一一对应（RISK-T8） | `SiteTemplateSelectionGoldenTest.dec3ValuesSplitThePathConstants` | 桌面 `pathTemplate=/template/default_pc/`、`pathTpl=/template/default_pc/html/`、`pathAds=/template/default_pc/ads/`、`templateDir=default_pc`、`htmlDir=html`；手机对应 `default_wap` |
+| `Result` 未变（黄金锁定） | `SiteTemplateSelectionGoldenTest.selectionMatchesLegacyInit`（php80、php73 两份，未改） | 92 个用例与 PHP `Init.php` 相同 |
+
+### 实际执行的命令与结果（S3-02）
+
+```text
+# 工作目录：仓库根（Git Bash）
+# Red：先改 C-15/C-16 测试，未改 C-12
+./mvnw -B -q test -Dtest=SiteVariantsTest,SiteTemplateSelectionGoldenTest -Dsurefire.failIfNoSpecifiedTests=false
+→ Tests run: 8, Failures: 2
+  SiteVariantsTest.filterResolvesEachRequestFromUserAgentAndHost:75  expected "/template/wapt/"       but was "/template/wapt/html/"
+  SiteVariantsTest.pathVariablesFollowLabelMaccms                     expected "/template/default_pc/" but was "/template/default_pc/html/"
+  （SiteTemplateSelectionGoldenTest 3 项通过：dec3ValuesSplitThePathConstants 锁定的是不改的 Result，本就应通过）
+
+# Green：改 C-12～C-14 后，V-9
+./mvnw -B -q test -Dtest=SiteVariantsTest,SiteTemplateSelectionGoldenTest -Dsurefire.failIfNoSpecifiedTests=false
+→ 退出码 0；SiteTemplateSelectionGoldenTest Tests run: 3, Failures: 0；SiteVariantsTest Tests run: 5, Failures: 0
+
+# 产品代码里 pathTpl/pathAds/pathTemplate 的读取方（提交 05ffd11）
+git grep -n -E "pathTpl\(\)|pathAds\(\)|pathTemplate\(\)" 05ffd11 -- src/main
+→ 只有 SiteVariants.java:95（本次改的这一行）；仍没有产品代码读取 SiteVariant.pathTpl()，页面输出无可见变化
+
+# 提交范围
+git diff --name-only 200cffc 05ffd11 → 上表 C-12～C-16 的 5 个文件
+git --attr-source=05ffd11 diff --check 200cffc 05ffd11 → 无输出，退出码 0
+git rev-parse 05ffd11:third_party/maccms-template-v2020.1000.1035 → 75038ae7f8e05e4fb42fea6e72920507f6255d33（与 200cffc 相同，模板包未动）
+
+# 全量回归（提交 05ffd11）
+./mvnw -B verify → Tests run: 3027, Failures: 0, Errors: 0, Skipped: 0；BUILD SUCCESS；耗时 08:06
+  （S3-01 的 3025 项 + 本批新增 2 项：pathVariablesFollowLabelMaccms、dec3ValuesSplitThePathConstants；无退步）
+```
+
+### 迁移与回滚
+
+- 无数据库或数据迁移，不读写任何表；不改配置取值（DEC-3 的取值只在对照环境与部署方站点里设，C-7/C-11 不归本批）。
+- 回滚（设计 §9）：`git revert 05ffd11`。FR-1 接入前没有产品代码读取 `SiteVariant.pathTpl`，回退无可见影响；FR-1（S3-10 起）接入后若要回退，须先回退 FR-1 再回退本项。
+
+### S3-02 自查（自查不代替审计）
+
+- 与设计一致：C-12 只换一个取值；C-13、C-14 只改注释；`SiteTemplateSelection.resolve`、`Result` 字段与 PHP 黄金未改，`selectionMatchesLegacyInit` 两份黄金仍通过。
+- 测试先红后绿：Red 的 2 处失败原因都是多出 `html/`（即本次要修的错误），不是测试写错。断言是具体路径值，没有 mock 被测逻辑。
+- 路径边界（OP-15）：模板读取根仍是 PATH-1 `template/<templateDir>/<htmlDir>/`，由 `Result.templateDir()`/`htmlDir()` 算，与 `path_tpl` 分开；后续渲染链通过 `Result.pathTemplate()`（经 `SiteVariant.pathTpl`）取模板变量，本批不实现 S3-10～S3-12。
+- 范围：只改上表 5 个文件与本说明；未改模板原件（包目录树不变）、PRD、设计、API、T1、`tests/api/**`、deploy；未发接口请求，未部署。
+- 安全：本批不新增路由、输入、查询、文件读写或出站请求；`pathTpl` 的值来自旧配置 `install_dir`/`template_dir`，与改前同源，只是不再拼 `html_dir`。没有凭据或个人数据。
+- 不含的部分：C-11 部署说明（流水线）、V-4/V-5 接口对照（测试线，FR-1 实现之后）。
