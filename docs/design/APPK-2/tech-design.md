@@ -3,8 +3,8 @@
 | 字段 | 值 |
 | --- | --- |
 | 创建者 | @架构师-海外 |
-| 创建时间 | 2026-10-31 19:15（UTC+8）；v3 修订 2026-11-01 08:30（UTC+8）；v4 修订 2026-11-01 08:50（UTC+8） |
-| 版本 | v4 |
+| 创建时间 | 2026-10-31 19:15（UTC+8）；v3 修订 2026-11-01 08:30（UTC+8）；v4 修订 2026-11-01 08:50（UTC+8）；v5 修订 2026-11-01 09:20（UTC+8） |
+| 版本 | v5 |
 | 状态 | 评审中 |
 | Issue | APPK-2 |
 | 上游 PRD | `docs/prd/APPK-2.md` 及附表 `docs/prd/APPK-2/`（A～F）@ `8fa362c25b62b52ed5b16afd9eca7f6ccfcafb9f`（v9）；已经 G0 范围确认 |
@@ -139,7 +139,7 @@
 - 修改 `php/` 下任何文件（`php/` 只读，`AGENTS.md:5`）；修改线上配置。
 - 产品范围、业务规则、样本分母：不改。附表 B 的 120 个固定模板名、桌面 79 有/41 缺、手机 63 有/57 缺在本设计的目录下保持不变（目录名不改变包内相对路径）。
 
-**v3 范围（完整设计）**：FR-1～FR-13 全部；改动清单 C-17～C-66（v4 增 C-67、C-68）；验证 V-10～V-29（v4 增 V-30）；实现顺序 §7.4。
+**v3 范围（完整设计）**：FR-1～FR-13 全部；改动清单 C-17～C-66（v4 增 C-67、C-68；v5 增 C-69）；验证 V-10～V-29（v4 增 V-30）；实现顺序 §7.4。
 
 **v3 仍不做**：
 - 不新增、不修改任何表结构（BR-1）；不做 App（Q8）；不做 CI、测试环境部署、发布（Q7）；不做外部沙箱联调（Q6），在线功能只用本机模拟验收（OP-5）。
@@ -252,7 +252,7 @@
 | 方案 | 做法 | 结论 |
 | --- | --- | --- |
 | A 交给部署层 nginx（同 `/upload/`） | Java 不提供，部署方配置 nginx | 不选：本期不做部署（Q7），本机对照与验收没有 nginx，`java-site` 上的页面资源全部 404，人工核对页面时无法判断样式；PHP 内置服务（PHPB-2）对存在的文件直接返回，两侧不对称 |
-| B **Java 从站点根提供，带白名单** | 新增资源处理：只映射 `/template/<目录>/{css,js,images,ads}/**`，扩展名限 `css js png jpg jpeg gif ico svg webp woff woff2 ttf eot swf`，经 `LegacySiteFiles` 读文件（路径不出站点根、不跟随出根符号链接）；`html/`、`info.ini`、`.html`、`.php` 一律 404 | **选**：Java 自带即可用；不泄露模板源码（PHP+nginx 默认会把 `.html` 模板当静态文件返回，这一点不照搬，属于安全收紧，不进比较样本，见 SEC-7；**条件生效**：OP-T5 选 a 才这样做，选 b 按 §6.10 的 b 列放开）；生产仍可在 nginx 层直出同一目录，两者 URL 相同（PATH-2、PATH-4） |
+| B **Java 从站点根提供，带白名单** | 新增资源处理：只映射 `/template/<目录>/{css,js,images,ads}/**`，扩展名限 `css js png jpg jpeg gif ico svg webp woff woff2 ttf eot swf`，经 `LegacySiteFiles.readTemplateAsset`（C-44）读文件（路径不出 `template/`、不跟随符号链接）；`html/`、`info.ini`、`.html`、`.php` 一律 404 | **选**：Java 自带即可用；不泄露模板源码（PHP+nginx 默认会把 `.html` 模板当静态文件返回，这一点不照搬，属于安全收紧，不进比较样本，见 SEC-7；**条件生效**：OP-T5 选 a 才这样做，选 b 按 §6.10 的 b 列放开）；生产仍可在 nginx 层直出同一目录，两者 URL 相同（PATH-2、PATH-4） |
 
 ### 4.9 应用层缓存在对照时怎么隔离（关闭 OP-T2 / V9-001，v3 新增）
 
@@ -332,9 +332,9 @@
 | C-39 | `src/main/resources/phptemplate/builtin/index/view/{index/index.html,public/jump.html,public/msg.html}` | 新增 | 从 `php/application/index/view/` 按字节复制的 3 个内置视图（`.gitattributes` 同 C-5 加 `-text`） | ALIGN-3；B.1.2 | 前端 |
 | C-40 | `src/main/jte/site/**`（76 个）、`B/sitetemplate/**`、`src/main/resources/static/site/**`、`src/main/resources/static/site-player/player-boot.js`、`src/test/jte-probe/**`、`T/site/SiteTemplatePolicyTest.java`、`T/sitetemplate/**`、`B/site/web/SiteHtmlRenderer.java`、`B/site/web/view/` 中只为 jte 服务的 record | 删除 | §6.9：按 PG 组逐批删，全部 PG 完成后删 `sitetemplate` 与 `SiteHtmlRenderer` | OP-3；RISK-7 | 前端 |
 | C-41 | `pom.xml` | 修改 | 删 site 的 `jte-maven-plugin` execution 与 `site-jte` 资源拷贝；删只供在线编辑的 `gg.jte:jte` 编译器依赖（后台、安装的 jte 预编译保留）；不新增依赖 | OP-3 | 前端 |
-| C-42 | `B/site/config/SiteConfiguration.java` | 修改 | 删 `siteHtmlRenderer`/`OnlineTemplates`，装配 `PhpTemplateRenderer` 依赖；注册 C-43 | OP-3、DEC-8 | 前端 |
-| C-43 | `B/site/web/TemplateAssetController.java` | 新增 | §6.10 `/template/**` 静态资源（只读、经 `LegacySiteFiles`）；子目录与扩展名范围按 OP-T5：a = SEC-7 白名单，b = 同 PHP 放开（§6.10 b 列） | DEC-8；OP-T1；OP-T5 | 前端 |
-| C-44 | `B/legacyconfig/application/LegacySiteFiles.java` | 修改 | 增加只读方法 `readTemplateAsset`（`template/` 区域、扩展名白名单）与 `readInstallSql`（只允许 `application/install/sql/install.sql` 一个路径）；不扩大写区域 | DEC-8、INS-1 | 后端 |
+| C-42 | `B/site/config/SiteConfiguration.java` | 修改 | 删 `siteHtmlRenderer`/`OnlineTemplates`，装配 `PhpTemplateRenderer` 依赖（C-43 自带 `@Controller` + `@ConditionalOnSiteEnabled`，同现有 `site/web` 控制器自动装配，不在此注册） | OP-3 | 前端 |
+| C-43 | `B/site/web/TemplateAssetController.java` | 新增 | §6.10 `/template/**` 静态资源控制器（`@Controller` + `@ConditionalOnSiteEnabled`）：只做 URL → 站点根相对路径 `template/…`、`GET/HEAD`、`Content-Type`（按 §6.10 固定表，b 时含补充的三行）与 `Last-Modified` 条件请求；**放行范围不在本类判断**，子目录与扩展名全部由 C-44 `readTemplateAsset` 决定（避免两处规则不一致），收到任何 `FileException` 一律 404、不回显路径 | DEC-8；OP-T1；OP-T5 | 前端 |
+| C-44 | `B/legacyconfig/application/LegacySiteFiles.java` | 修改 | 增加只读方法 `readTemplateAsset(String relative, int maxBytes)`，是 `/template/**` 唯一的放行边界。**两种答案共同的约束**：① `relative` 经 `LegacySiteRoot.validRelative`（拒绝 `..`、`.`、空段、反斜杠、`:`、空字节、控制字符），且以 `template/<目录>/` 开头、其后至少一段；② 经 `LegacySiteRoot.resolve` 规范化，真实路径须在 `<站点根>/template/` 内（比现有 `read` 只校验站点根更严：中间目录是符号链接时，解析后出 `template/` 或出站点根都拒绝）；③ 最终文件按 `NOFOLLOW_LINKS` 打开，本身是符号链接、目录或非普通文件都拒绝；④ 扩展名 `php`（按小写比较）一律拒绝；⑤ 只读：不建目录、不写、不改时间；超 `maxBytes` 拒绝（`TOO_LARGE`）。**按 OP-T5 所选答案（只实现所选那一列）**：a（SEC-7）= 另要求 `<目录>` 后的第一段是 `css`/`js`/`images`/`ads` 之一，且扩展名（按小写）在 `css js png jpg jpeg gif ico svg webp woff woff2 ttf eot swf` 内，否则 `FORBIDDEN`；b（同 PHP）= 不加子目录与扩展名限制，`template/<目录>/` 下任意子目录、任意扩展名（含 `.html`、`.htm`、`.ini`、无扩展名）放行，仍受①～⑤约束。不扩大写区域，不改现有 `read`。OP-T5 关闭前不实现（属 S3-13b） | DEC-8；SEC-7；OP-T5 | 后端 |
 | C-45 | `B/site/web/InternalPageRenderer.java` | 修改 | `ac2=wap` 时设置手机 `SiteVariant`（替代 UA 推断） | FR-6、§6.2 | 前端 |
 | C-46 | `T/site/**` 约 34 个页面测试类（§3.2 列出） | 修改 / 删除 | 按 §6.9 逐类改为断言 PHP 模板输出，或被 AC-5 对照覆盖后删除 | RISK-7 | 前端 |
 
@@ -360,6 +360,7 @@
 | C-57 | `T/install/InstallSqlFileTest.java`（新增）、`T/install/InstallWizardMySqlIT.java`（修改） | 新增 / 修改 | 常量 = 仓库文件（git blob 字节）的哈希，且断言工作区文件不含 `\r`（`autocrlf` 检出会让哈希变成 `152e5424…`，测试须直接失败并提示 C-67）；空库执行、已有表拒绝、哈希不同拒绝（1 字节差异、整文件改为 CRLF 两种）三种情况，各断言发出的语句集合 | AC-12 | 后端 |
 | C-67 | `.gitattributes` | 修改 | 末尾加 `php/application/install/sql/install.sql text eol=lf`（附注释：安装向导按 SHA-256 校验该文件，工作区必须与 blob 同为 LF；写法同已有的 `schema-fingerprint.txt text eol=lf`）。只改检出规则，不改 `php/` 下文件内容（blob 本来就是 LF，无需 renormalize） | INS-1；RISK-T17 | 后端 |
 | C-68 | `B/site/application/PasswordAttempts.java`；`B/site/config/SiteConfiguration.java`（装配）；`T/site/application/PlaybackPrimitivesTest.java`（`PasswordAttempts` 用例） | 按 OP-T4：a 修改 / b 删除 | a：保留类与测试，调用点从 `SiteLibraryController`/`SitePlaybackController` 的密码表单移到 `ajax/pwd`（ALIGN-4 ⑤），超限返回 PHP 已有的 1003 JSON；b：删除类、装配与其用例，`ajax/pwd` 只有 PHP 的按会话 5 秒限制 | ALIGN-4；OP-T4 | 前端 |
+| C-69 | `B/legacyconfig/application/LegacySiteFiles.java` | 修改 | 增加只读方法 `readInstallSql(int maxBytes)`：只读 `application/install/sql/install.sql` 这一个固定路径（不收调用方传入的路径），经 `LegacySiteRoot.resolve` 校验在站点根内，最终文件按 `NOFOLLOW_LINKS` 打开；返回原始字节，不做换行转换（INS-2 ③ 按原始字节算哈希）；不扩大写区域。v4 及以前与 `readTemplateAsset` 同列在 C-44，v5 拆出，因为它属于 S3-20，与 OP-T5 无关 | INS-1 | 后端 |
 | C-58 | `B/integration/collect/`（新增包）、`B/integration/application/ResourceSiteClient.java`（新增）、`B/collect/application/CollectRunService.java`、`CjRunService.java`、`B/admin/web/AdminCollectActions.java`、`B/admin/application/AdminPermissions.java`、`B/staticgen/application/TimmingTasks.java` | 新增 / 修改 | NET-1、NET-2、NET-4 | FR-11；AC-13 | 后端 |
 | C-59 | `B/integration/image/`（新增包）、`B/integration/application/RemoteImages.java`（新增）、`B/collect/application/VodIngest.java`、`B/admin/web/AdminContentActions.java`（L516 `images/sync`） | 新增 / 修改 | NET-3 | FR-11；AC-13 | 后端 |
 | C-60 | `B/integration/storage/`（新增包：`UpyunUploader`、`QiniuUploader`、`FtpUploader`、`WeiboUploader`、`AlibabaUploader`、`UomgUploader`）、`B/integration/application/RemoteStorage.java`（新增）、`B/content/application/AdminUploadService.java` | 新增 / 修改 | NET-5 | FR-11；AC-13 | 后端 |
@@ -439,11 +440,11 @@
 
 | 模块 / 包 | 职责 | 可以依赖 | 不可以 |
 | --- | --- | --- | --- |
-| `phptemplate.engine` | ThinkPHP 编译流水线的 Java 移植：模板文件定位、`literal`/`include`/`php` 预处理、标签库（`Maccms` 预加载、`Cx` 内置）、普通标签 `{$…}`/`{:…}`，产出“编译产物”（与 PHP `runtime/temp/<md5>.php` 同形的 PHP 文本 + 来源行号表） | `phptemplate.runtime`（只用其 PHP 子集解析器类型）、`legacyconfig.application`（`LegacySiteFiles` 读模板、`LegacyConfigService` 读配置） | 访问数据库；执行任何代码 |
+| `phptemplate.engine` | ThinkPHP 编译流水线的 Java 移植：模板文件定位、`literal`/`include`/`php` 预处理、标签库（`Maccms` 预加载、`Cx` 内置）、普通标签 `{$…}`/`{:…}`，产出“编译产物”（与 PHP `runtime/temp/<md5>.php` 同形的 PHP 文本 + 来源行号表） | `phptemplate.runtime`（只用其 PHP 子集解析器类型）、`legacyconfig.application`（`LegacySiteFiles` 的现有方法 `read` 读模板——`template/` 已在 `RW_AREAS`，不用 `readTemplateAsset`；`LegacyConfigService` 读配置） | 访问数据库；执行任何代码 |
 | `phptemplate.runtime` | PHP 子集解释器：把编译产物切成“字面段 + 代码段”，按 RULE-WS 规则处理空白，解析代码段为语法树并执行；PHP 7.3 值语义（`ZValue`：null/bool/int/float/string/有序数组；字符串化、弱类型比较、数组键规范化、`echo` 规则） | 只依赖 JDK | 读文件、访问数据库、反射调用任意 Java 方法（函数只经 FUNC 白名单表分派） |
 | `phptemplate.application` | 对外服务 `PhpTemplateRenderer`；`mac_*` 等模板函数的 Java 实现（`TemplateFunctions`）；19 个标签对应的旧模型方法 `listCacheData`（`TagModels`）；页面变量 `label_maccms` 等（`PageVariables`）；编译缓存（`CompiledTemplateCache`）；“模板文件不存在”页（`TemplateNotFoundPage`） | `content.application`（含 `.view`，复用已实现的旧标签条件 `VideoLegacyConditions`/`LegacyTagAttributes`/`LegacyRange`、URL 生成）、`member.application`、`comment.application`、`common.lang.LegacyLang`、`legacyconfig.application` | 依赖 `site`、`admin`、`staticgen` |
 | `phptemplate.infrastructure` | 标签查询中现有 `content.application` 不提供的只读查询（Mapper + XML，只 `SELECT`，表与列按附表 D 的 D.6 TAGMAP） | MyBatis | 写入（不登记 `WriteRegistry`） |
-| `site`（改） | 页面控制器保留现有数据与业务逻辑（BR-4），把“返回 jte 视图”改为“调用 `PhpTemplateRenderer.render(模板名, 页面变量)`”；`/template/**` 静态资源（DEC-8） | 增加对 `phptemplate.application` 的依赖（护栏同步，C-35） | 读模板文件、编译模板 |
+| `site`（改） | 页面控制器保留现有数据与业务逻辑（BR-4），把“返回 jte 视图”改为“调用 `PhpTemplateRenderer.render(模板名, 页面变量)`”；`/template/**` 静态资源（DEC-8，文件只经 `LegacySiteFiles.readTemplateAsset`，C-44） | 增加对 `phptemplate.application` 的依赖（护栏同步，C-35） | 读模板文件、编译模板 |
 | `staticgen`（改） | 内容仍只经 `site.application.StaticPageSource`（进程内游客 GET），所以静态页自动改用 PHP 模板；`ac2=wap` 按手机变体请求 | 不变 | 不变 |
 | `admin`（改） | 模板管理：扩展名白名单回到 `html/htm/js/xml`，过滤规则回到 PHP，标签向导生成 `{maccms:…}`；数据库工具四项；系统配置不变 | 不变 | 不变 |
 
@@ -455,6 +456,7 @@
 | `PageVars` | 有序键值（`ZValue`），由页面控制器按 PHP 控制器 `assign()` 的键名与层级装配（FR-4 ②）；`maccms` 键由 `PageVariables.labelMaccms(variant, request)` 生成 | 键名、层级、取值以 PHP 为准（AC-4） |
 | `TemplateFunctions` | 名称 → Java 实现的白名单表；未登记的函数名 → `TemplateUnsupportedException` | 同上 |
 | `TagModels.listCacheData(model, tagParams)` | `model` ∈ `Vod`/`Art`/`Topic`/`Actor`/`Role`/`Website`/`Comment`/`Gbook`/`Type`/`Link`/`Extend`（筛选项 7 个标签）；返回与 PHP 同结构的 `ZValue` 数组（`list`、`page`、`pagecount`、`total`、`pageurl` 等键以 PHP 模型为准） | 属性非法、越界：与 PHP 模型的处理一致（BR-5、AC-3） |
+| `LegacySiteFiles.readTemplateAsset(String relative, int maxBytes)`（v5） | 只读；唯一调用方是 `site.web.TemplateAssetController`（C-43）；`relative` 是站点根相对路径，须以 `template/<目录>/` 开头；放行范围按 OP-T5 所选答案（§6.10、C-44），只实现所选那一列，不设运行时开关 | 不放行一律抛 `FileException`（`INVALID_NAME`/`OUTSIDE_ROOT`/`FORBIDDEN`/`NOT_REGULAR_FILE`/`IS_DIRECTORY`/`TOO_LARGE`），消息不含路径与内容；调用方统一返回 404，不区分原因 |
 | `CacheResetHook.resetAll()` | 清空 `phptemplate` 的编译缓存、标签结果缓存、页面缓存，以及 `LegacyConfigService` 的派生缓存 | 只由后台“清理缓存”入口和对照开关（CACHE-3）调用 |
 
 ### 6.4 编译与空白规则（逐字节一致的关键，v3 新增）
@@ -539,9 +541,9 @@
 
 | 项 | 取值 |
 | --- | --- |
-| URL | `GET/HEAD /template/<目录>/<css|js|images|ads>/<相对路径>`；`<目录>` 必须是 `template/` 下实际存在的子目录（不限于 `default_pc`/`default_wap`，与 PHP+nginx 一样跟随配置） |
-| 文件 | 站点根 `template/<目录>/<子目录>/<相对路径>`，只经 `LegacySiteFiles` 读取（只读区域，路径规范化后仍在 `template/` 内，拒绝 `..`、反斜杠、空字节、出根符号链接） |
-| 子目录与扩展名（**按 OP-T5 条件生效**） | a（SEC-7）：只映射 `css`、`js`、`images`、`ads` 四个子目录，扩展名白名单 `css js png jpg jpeg gif ico svg webp woff woff2 ttf eot swf`，其他（含 `html htm ini php txt`）返回 404。b（同 PHP）：`template/<目录>/` 下任意子目录与扩展名都按文件原样返回（PHP 内置服务与 nginx 对存在的静态文件直接返回，`.html` 模板源码、`info.ini` 也能取到）；只有 `.php` 返回 404（PHP 会执行而不是返回源码，Java 不执行，也不返回源码）。两种答案下路径规范化、不出站点根、只读三条都不变 |
+| URL | `GET/HEAD /template/<目录>/<相对路径>`（OP-T5 a 时 `<相对路径>` 的第一段限 `css`/`js`/`images`/`ads`，见下行）；`<目录>` 必须是 `template/` 下实际存在的子目录（不限于 `default_pc`/`default_wap`，与 PHP+nginx 一样跟随配置） |
+| 文件 | 站点根 `template/<目录>/<相对路径>`，只经 `LegacySiteFiles.readTemplateAsset`（C-44）读取：只读；路径规范化后真实路径仍在 `template/` 内；拒绝 `..`、反斜杠、空字节、控制字符；中间目录符号链接解析后出 `template/` 拒绝，最终文件是符号链接拒绝 |
+| 子目录与扩展名（**按 OP-T5 条件生效**） | a（SEC-7）：只映射 `css`、`js`、`images`、`ads` 四个子目录，扩展名白名单 `css js png jpg jpeg gif ico svg webp woff woff2 ttf eot swf`，其他（含 `html htm ini php txt`）返回 404。b（同 PHP）：`template/<目录>/` 下任意子目录与扩展名都按文件原样返回（PHP 内置服务与 nginx 对存在的静态文件直接返回，`.html` 模板源码、`info.ini` 也能取到）；只有 `.php` 返回 404（PHP 会执行而不是返回源码，Java 不执行，也不返回源码）。两种答案下路径规范化、不出 `template/`（因而不出站点根）、拒绝符号链接出根、只读四条都不变。a/b 两列的放行规则只在 C-44 一处实现，C-43 不另设白名单 |
 | 响应 | `Content-Type` 按扩展名固定表（b 时补 `html htm`→`text/html`、`ini txt`→`text/plain`、其他未知→`application/octet-stream`）；`Last-Modified` + 条件请求；不设缓存控制以外的额外头 |
 | 位置 | `site/web/TemplateAssetController`（新增），只在 `maccms.site.enabled=true` 时装配 |
 
@@ -578,7 +580,7 @@
 
 | 编号 | 规则 |
 | --- | --- |
-| INS-1 | 待执行文件 = 站点根 `application/install/sql/install.sql`（经 `LegacySiteFiles` 只读，区域白名单增加该一个文件）；Java 内置常量 `INSTALL_SQL_SHA256 = 48dbe0fbd138f670919208d8bcc0ffe28d09b507c527d2a6a1a8f7b77ffa3aa4`（= 基线提交 `a57e9cb` 里 blob `php/application/install/sql/install.sql` 的 SHA-256，45049 字节、全部 LF、不含 `\r`；核对命令 `git show a57e9cb2b94d3e500bea7dfe2c579daee093d969:php/application/install/sql/install.sql \| sha256sum`）。`core.autocrlf=true` 的 Windows 工作区里该文件被检出为 CRLF（45950 字节，SHA-256 `152e5424…`，v3 误用了这个值），所以 C-67 用 `.gitattributes` 固定 LF；单测断言常量等于仓库文件的哈希且文件不含 `\r`，防漂移 |
+| INS-1 | 待执行文件 = 站点根 `application/install/sql/install.sql`（经 `LegacySiteFiles.readInstallSql` 只读，C-69，只允许这一个固定路径）；Java 内置常量 `INSTALL_SQL_SHA256 = 48dbe0fbd138f670919208d8bcc0ffe28d09b507c527d2a6a1a8f7b77ffa3aa4`（= 基线提交 `a57e9cb` 里 blob `php/application/install/sql/install.sql` 的 SHA-256，45049 字节、全部 LF、不含 `\r`；核对命令 `git show a57e9cb2b94d3e500bea7dfe2c579daee093d969:php/application/install/sql/install.sql \| sha256sum`）。`core.autocrlf=true` 的 Windows 工作区里该文件被检出为 CRLF（45950 字节，SHA-256 `152e5424…`，v3 误用了这个值），所以 C-67 用 `.gitattributes` 固定 LF；单测断言常量等于仓库文件的哈希且文件不含 `\r`，防漂移 |
 | INS-2 | 第 5 步顺序：①用第 3 步填写、存于 `MACCMS_DEPLOY_CONFIG` 的账号开连接（AC-12 为 `it_install`）；②查 `information_schema.TABLES` 中该库 `mac_` 开头的表数，>0 → 提示“已存在数据表”，不执行；③读文件按字节算 SHA-256（不做换行归一化），≠ 常量 → 提示“文件哈希不一致”，不执行（CRLF 检出的同一文件也走这一支）；④按 `mac_parse_sql` 切分后逐条执行（前缀固定 `mac_`，Java 已要求前缀为 `mac_`，所以不做替换，“一字不改”）；⑤按 PHP 写初始数据（`initdata` 选 1 时执行 `initdata.sql` 的 INSERT，现有 `InstallWrites`）、写首个管理员、写 `extra/maccms.php`；⑥写 `install.lock` |
 | INS-3 | 不发 `CREATE DATABASE`（库由部署方或验收脚本预建，A.3）；不执行除该文件外的任何 DDL；删除 `InstallSchema` 指纹校验分支（改为 INS-2 ②③），指纹资源保留给 `InstallWizardMySqlIT` 做结果核对 |
 | INS-4 | 账号分离：建表连接只在第 5 步请求内使用，用后关闭；正常模式运行期只读 `MACCMS_DB_*`（AC-15 的 `it_app`），不读 `MACCMS_DEPLOY_CONFIG`、不读 `database.php`（RISK-15 的交接方式）。PHP 第 5 步写 `application/database.php`（D-23 文件栏）；Java 现状写部署配置文件，是否另写 `database.php` 由 FR-12 对 install 行（附表 C 安装向导 5 行）判定，本设计不预设 |
@@ -610,7 +612,7 @@
 | SEC-4 | 可信代理才信转发头 | FR-11（在线采集记录来源 IP）、评论 | 一律经 `ClientIpResolver` |
 | SEC-5 | 管理员每请求重读 | FR-7、FR-9 后台 | `AdminController` 不改 |
 | SEC-6 | 注销/改密/重置轮换 `user_random` | PG-5 | 不改 |
-| SEC-7（本设计，条件：OP-T5 a） | `/template/**` 只给静态资源，不给 `.html`/`.ini` | DEC-8、§6.10 | a：不进比较样本，FR-12 相关行按“已确认的安全差异”判 `排除-SEC-7`；b：不存在本项，按 PHP 返回 |
+| SEC-7（本设计，条件：OP-T5 a） | `/template/**` 只给静态资源，不给 `.html`/`.ini` | DEC-8、§6.10、C-44 | a：不进比较样本，FR-12 相关行按“已确认的安全差异”判 `排除-SEC-7`；b：不存在本项，按 PHP 返回 |
 | SEC-8（本设计，条件：OP-T5 a） | 执行 SQL 拒绝 `INTO OUTFILE/DUMPFILE`、`LOAD_FILE` | DBT-2 | a：`排除-SEC-8`；b：不存在本项，语句照常执行 |
 | SEC-9（本设计，条件：OP-T4 a） | 观看密码在 PHP 按会话 5 秒限制之外，再按内容/全站限流（`PasswordAttempts`），超限返回 PHP 已有的 1003 | ALIGN-4 ⑤ | a：只有“超限”样本与 PHP 不同，判 `排除-SEC-9`；b：不存在本项 |
 
@@ -689,22 +691,24 @@ SEC-7～SEC-9 不属于 OP-9 已确认的六项，是本设计提出、待发起
 | S3-07 | 词法/语法/解释器 | 后端 | C-18、C-19 | S3-06 | V-11、`InterpreterTest` |
 | S3-08 | 编译流水线（Template + Cx） | 后端 | C-20、C-21、C-23 | S3-07 | V-12（Cx 部分） |
 | S3-09 | Maccms 标签编译 | 后端 | C-22 | S3-08 | V-12（168 个文件编译产物逐字节相同） |
-| S3-10 | 渲染服务、缓存、缺模板页、配置、护栏 | 后端 | C-24～C-26、C-30、C-31、C-32、C-35、C-44 | S3-09、S3-02 | V-13、V-14 |
+| S3-10 | 渲染服务、缓存、缺模板页、配置、护栏 | 后端 | C-24～C-26、C-30、C-31、C-32、C-35 | S3-09、S3-02 | V-13、V-14 |
 | S3-11 | 模板函数 | 后端 | C-27 | S3-10 | V-15 |
 | S3-12a～e | 标签模型（a：vod；b：art/topic；c：actor/role/website；d：type/link/extend 七个筛选项；e：comment/gbook） | 后端 | C-28、C-29、C-34 | S3-10 | V-16（各自标签的属性样例） |
-| S3-13 | `/template/**` 静态资源 + 内置视图 | 前端 | C-39、C-43 | S3-10；**OP-T5 已关闭** | V-18（按 OP-T5 所选列） |
-| S3-14a～g | 页面接入（a：PG-1 首页 + PG-7 公共页 + ALIGN-1～3；b：PG-2 vod 列表/搜索/筛选；c：PG-2 vod 详情/播放/下载/播放器/版权 + ALIGN-4 + C-68（**须 OP-T4 已关闭**）；d：PG-3；e：PG-4；f：PG-5（分两次运行：账号类、财务与记录类）；g：PG-6） | 前端 | C-36～C-38、C-45、C-46，并删除该组 jte（C-40 的对应部分） | S3-11、S3-12 对应标签、S3-13；c 另需 OP-T4 已关闭 | 本组样本 V-19 子集通过；c 另需 V-30 |
+| S3-13a | 内置视图 | 前端 | C-39 | S3-10 | 3 个资源与 `php/application/index/view/` 对应文件逐字节相同（`git diff --no-index --binary` 无输出）；`./mvnw -B verify` |
+| S3-13b | `readTemplateAsset` 放行边界 | 后端 | C-44 | G1；**OP-T5 已关闭** | V-18 单测部分（按 OP-T5 所选列） |
+| S3-13c | `/template/**` 静态资源控制器 | 前端 | C-43 | S3-13b；**OP-T5 已关闭** | V-18 接口用例部分（按 OP-T5 所选列） |
+| S3-14a～g | 页面接入（a：PG-1 首页 + PG-7 公共页 + ALIGN-1～3；b：PG-2 vod 列表/搜索/筛选；c：PG-2 vod 详情/播放/下载/播放器/版权 + ALIGN-4 + C-68（**须 OP-T4 已关闭**）；d：PG-3；e：PG-4；f：PG-5（分两次运行：账号类、财务与记录类）；g：PG-6） | 前端 | C-36～C-38、C-45、C-46，并删除该组 jte（C-40 的对应部分） | S3-11、S3-12 对应标签、S3-13a；c 另需 OP-T4 已关闭 | 本组样本 V-19 子集通过；c 另需 V-30 |
 | S3-15 | jte 前台与 D4 收尾删除 | 前端 | C-40 剩余部分、C-41、C-42 | S3-14 全部 | V-8、`./mvnw -B verify` |
 | S3-16 | 后台模板管理 + 标签向导 | 后端 | C-47～C-49 | S3-10 | V-7、V-22 |
 | S3-17 | 静态生成差异补齐 | 后端 | C-45、C-50、C-51 | S3-14 全部 | V-6 |
 | S3-18 | 缓存清理钩子接入后台 | 后端 | C-52 | S3-10 | V-14 |
 | S3-19 | 数据库工具四项 | 后端 | C-53～C-55 | G1（不依赖模板）；**OP-T5 已关闭** | V-23（按 OP-T5 所选列） |
-| S3-20 | 安装向导建表 | 后端 | C-56、C-57、C-67 | G1 | V-25 |
+| S3-20 | 安装向导建表 | 后端 | C-56、C-57、C-67、C-69 | G1 | V-25 |
 | S3-21a～d | 在线功能（a：资源站在线采集 + 定时采集；b：远程图片；c：规则在线抓取；d：远程存储六种） | 后端 | C-58～C-61 | G1 | V-26 |
 | S3-22 | 对照执行器与报告 | 测试 | C-64 | S3-03 | 对 PHP 两次运行结果自比一致（V-19 前置） |
 | T-FR12 | 附表 C 阶段 A 判定（可与 S3 并行，后台/API/安装部分不依赖模板）；阶段 B 按 GAP- 建单 | 测试 | `docs/test/APPK-2/parity-*.md`、`gap-register.md` | G1 | AC-14、AC-19 |
 
-**条件门禁（OP-T4、OP-T5）**：S3-13、S3-19 依赖 OP-T5，S3-14c 依赖 OP-T4。对应 OP 未关闭时调度不建单、不派单，已开工的也不得合入；建单时在单内写明所选答案与关闭该 OP 的 Issue 评论，实现者只实现所选那一列，评审按该列核对（V-29）。选 b 时改回 PHP 的改动只在 C-43、C-53、C-68 三处，不影响其他子任务；S3-14c 之外的 PG 组、S3-10 之前的模板线都不受这两项影响。
+**条件门禁（OP-T4、OP-T5）**：S3-13b、S3-13c、S3-19 依赖 OP-T5，S3-14c 依赖 OP-T4。对应 OP 未关闭时调度不建单、不派单，已开工的也不得合入；建单时在单内写明所选答案与关闭该 OP 的 Issue 评论，实现者只实现所选那一列，评审按该列核对（V-29）。a/b 两列的差别只在 C-43（`Content-Type` 补充三行）、C-44（放行范围）、C-53（SEC-8 一条规则）、C-68（`PasswordAttempts`）四处，不影响其他子任务。S3-14 的 PG 组只依赖 S3-13a（内置视图），不依赖 S3-13b/c：页面渲染只经 `PhpTemplateRenderer` 用现有 `read` 读模板，不经 `/template/**`；S3-14 各组的 V-19 子集只含页面样本，样本清单里若有 `/template/**` 地址，归 S3-13c 收尾时核对；S3-15 也不依赖 S3-13b/c（C-42 不再注册 C-43）。所以 S3-14c 之外的 PG 组、S3-15 与 S3-10 之前的模板线都不受这两项影响。
 
 并行关系：S3-19、S3-20、S3-21、T-FR12 与模板线（S3-01～S3-18）互不依赖，可并行；模板线内部按表中依赖串行。PG 组切换顺序按 PRD §13 阶段 2（首页与 vod 先）。
 
@@ -765,7 +769,7 @@ SEC-7～SEC-9 不属于 OP-9 已确认的六项，是本设计提出、待发起
 | V-15 | AC-4 | 单测（黄金） | `TemplateFunctionsGoldenTest`：PRE-5 清单每个函数的样例返回值等于 PHP 黄金；`{maccms:path}`、`{maccms:siteaid}`、`{maccms:sitetid}`、`{maccms:siteid}` 的渲染等于 PHP | G2 |
 | V-16 | AC-3 | MySQL 集成测试 + 对照 | `./mvnw -B verify -Pmysql-it -Dit.test=TagModelsMySqlIT`：19 个标签每个属性一个样例，与 PHP 同库输出按附表 F 比较；`paging=yes` 首页、中间页、末页、越界页各一次；合成数据每内容表 ≥ 50 行（AC-3 前置） | G2（集成）+ G3 前对照 |
 | V-17 | AC-10（语言键） | 对照脚本 | `run_compare.py --lang`：`zh-cn`、`zh-tw` 各 1773 键，Java `LegacyLang.get` 与 PHP `lang()` 逐字节相同（CMP-5），计入 KPI-5 | G3 前 |
-| V-18 | DEC-8、SEC-7（OP-T5） | 接口用例 | 两种答案都要：`/template/default_pc/css/style.css` 200 且字节等于文件；`/template/../application/extra/maccms.php`、`/template/default_pc/css/%2e%2e/%2e%2e/%2e%2e/application/extra/maccms.php` 404（不出站点根）；`/template/default_wap/ads/x.js` 404 且不创建目录。OP-T5 a：`/template/default_pc/html/index/index.html`、`/template/default_pc/info.ini`、`/template/default_pc/css/%2e%2e/info.ini` 均 404。OP-T5 b：这三个地址 200 且字节等于文件；`template/` 下任一 `.php` 404 | G2 |
+| V-18 | DEC-8、SEC-7（OP-T5） | 单测 + 接口用例 | 单测 `LegacySiteFilesTemplateAssetTest`（C-44，S3-13b），两种答案都要：`template/` 下的目录符号链接与文件符号链接，各自指向站点根内的 `application/extra/maccms.php` 和站点根外的一个文件，均拒绝；最终文件本身是符号链接（即使目标在 `template/` 内）拒绝；`template/default_pc` 目录本身、`template/default_pc/a.php`、`template/default_pc/x.PHP` 拒绝；不存在的文件拒绝且不创建目录；读成功时返回字节等于文件（符号链接用例的写法同现有 `LegacyConfigDirectoryTest`）。OP-T5 a：`template/default_pc/html/index/index.html`、`template/default_pc/info.ini`、`template/default_pc/css/x.txt` 抛 `FORBIDDEN`；OP-T5 b：这三个返回文件字节。评审另核：C-43 不含子目录或扩展名判断。接口用例（C-43，S3-13c），两种答案都要：`/template/default_pc/css/style.css` 200 且字节等于文件；`/template/../application/extra/maccms.php`、`/template/default_pc/css/%2e%2e/%2e%2e/%2e%2e/application/extra/maccms.php` 404（不出站点根）；`/template/default_wap/ads/x.js` 404 且不创建目录。OP-T5 a：`/template/default_pc/html/index/index.html`、`/template/default_pc/info.ini`、`/template/default_pc/css/%2e%2e/info.ini` 均 404。OP-T5 b：这三个地址 200 且字节等于文件；`template/` 下任一 `.php` 404 | G2 |
 | V-19 | AC-5、AC-6、AC-10（页面）、AC-20 | 对照脚本 | `run_compare.py --desktop docs/test/APPK-2/sample-desktop.md --mobile docs/test/APPK-2/sample-mobile.md`：224 + 120 个页面样本、12 个模板选择样本，按 CMP-1～CMP-3、NORM-1～5、EX-1/2 判定，报告每样本两行恢复记录；通过数 / 356 | G3 前本机对照 |
 | V-20 | PRE-2、CMP-2 | 脚本 | `data_snapshot.py restore` 连续两次后 26 张表 `CHECKSUM TABLE` 与 `AUTO_INCREMENT` 都等于记录值 | PRE-2 |
 | V-21 | AC-15、AC-18、KPI-2 | 脚本 | `schema_snapshot.py` 在 SP-1 前后采集，差异行数 0；`./mvnw -B test -Dtest=SchemaGuardTest` 通过；仓库无 `schema.sql`/Flyway/Liquibase | G2 + 验收 |
@@ -776,7 +780,7 @@ SEC-7～SEC-9 不属于 OP-9 已确认的六项，是本设计提出、待发起
 | V-26 | AC-13 | 集成测试（本机模拟） | `OutboundPolicy.LOOPBACK_ONLY` 下，五项各对本机模拟资源站/存储执行，结果与 PHP 对同一模拟数据一致；`OutboundNetworkGuardTest`、`RegisteredOutboundClientTest` 通过；抓包或连接日志无本机以外地址 | G2 + 验收 |
 | V-27 | AC-14、AC-19 | 人工核对 | `parity-*.md` 379 行无“未判定”；`gap-register.md` 无非终态 GAP- | 本期完成检查 |
 | V-28 | AC-16 | 人工核对 | 评审每个 S3 子任务的“读写的表与字段”按附表 D 四步判定，无越界；`WriteRegistry` 新增登记与附表 D 一致 | G2（后端评审） |
-| V-29 | AC-17 | 人工核对 | 每个子任务派单前与收尾时，单内引用的 OP-/OP-T 均已关闭；S3-13、S3-19 单内写明 OP-T5 所选答案，S3-14c 写明 OP-T4 所选答案，并附关闭该 OP 的 Issue 评论；实现与用例只含所选那一列 | 派单前 + 每单收尾 |
+| V-29 | AC-17 | 人工核对 | 每个子任务派单前与收尾时，单内引用的 OP-/OP-T 均已关闭；S3-13b、S3-13c、S3-19 单内写明 OP-T5 所选答案，S3-14c 写明 OP-T4 所选答案，并附关闭该 OP 的 Issue 评论；实现与用例只含所选那一列 | 派单前 + 每单收尾 |
 | V-30 | AC-5（`ajax/pwd`）、ALIGN-4、SEC-9（OP-T4） | 接口用例 + 对照 | 两种答案都要：1001（缺参）、1002（本会话已通过后再验）、1003（同一会话 5 秒内第二次，含第一次被拒的情况）、1012/1013/1014/1022（密码错）、1（通过）与 PHP 同请求序列的 JSON 逐字节相同。OP-T4 a：每次换新会话、对同一内容在 60 秒内第 11 次请求得到 1003 且不查库（`general_log` 无该内容的 `SELECT`），HTTP 200；OP-T4 b：同一序列每次都与 PHP 相同，仓库无 `PasswordAttempts` | G2 + 对照 |
 
 构建验证命令（`MULTICA.md` §3）：开发中 `./mvnw -B test -Dtest=<类名>`；交付前 `./mvnw -B verify`；MySQL 集成 `./mvnw -B verify -Pmysql-it`（`MACCMS_IT_ADMIN_URL`/`_USERNAME`/`_PASSWORD`）；打包 `./mvnw -B -q package -DskipTests`。
@@ -800,11 +804,11 @@ SEC-7～SEC-9 不属于 OP-9 已确认的六项，是本设计提出、待发起
 | 步骤 | 回退方式 | 顺序 |
 | --- | --- | --- |
 | S3-06～S3-12（`phptemplate` 模块） | `git revert` 各提交；模块未被 `site` 使用前回退无可见影响 | 先回退依赖它的 S3-14 |
-| S3-13、S3-14（页面接入，按 PG 组） | 每组一个提交，`git revert` 该组即恢复该组 jte 页面与测试（jte 文件在同一提交里删除，回退即恢复） | 按组倒序；S3-15 之后须先回退 S3-15 |
+| S3-13a、S3-14（内置视图、页面接入，按 PG 组） | 每组一个提交，`git revert` 该组即恢复该组 jte 页面与测试（jte 文件在同一提交里删除，回退即恢复） | 按组倒序；S3-15 之后须先回退 S3-15 |
 | S3-15（jte 与 D4 删除） | `git revert`，恢复 `sitetemplate`、插件 execution、依赖 | 最先回退 |
 | S3-16～S3-18 | `git revert`；模板管理回到 jte 版（依赖 `sitetemplate`，所以 S3-15 已合入时须先回退 S3-15） | S3-15 之后 |
 | S3-19（数据库工具） | `git revert` 即恢复“四项拒绝” | 独立 |
-| OP-T4 / OP-T5 的答案事后改变 | 只改 C-43（静态资源范围）、C-53（SEC-8 一条规则）、C-68（`PasswordAttempts` 一个调用点）各自一处，单独提交，可单独 `git revert`；不涉及数据 | 独立 |
+| OP-T4 / OP-T5 的答案事后改变 | 只改 C-44（静态资源放行范围）与 C-43（`Content-Type` 补充三行）、C-53（SEC-8 一条规则）、C-68（`PasswordAttempts` 一个调用点），单独提交，可单独 `git revert`；不涉及数据 | 独立 |
 | S3-20（安装） | `git revert` 即恢复“只读校验” | 独立 |
 | S3-21（在线功能） | `git revert`；`IntegrationPackages` 登记随之撤销 | 独立 |
 | 数据 | 本期不改结构；新增写入只是 DML（`*_time_make`、`mac_annex`、还原的 `DELETE/INSERT`），代码回退后不需反向迁移 | — |
@@ -847,7 +851,7 @@ SEC-7～SEC-9 不属于 OP-9 已确认的六项，是本设计提出、待发起
 | OP-T2 | 应用层缓存隔离（V9-001） | **v3 已决**：CACHE-1～CACHE-4 + ENV-9 | 否 | — | — |
 | OP-T3 | `php/vendor/` 恢复、PHP 侧会话时区 | **v3 已决**：SNAPD-4、SNAPD-5 | 否 | — | — |
 | OP-T4 | 观看密码在 PHP 已有的“按会话 5 秒一次”限制（`Ajax.php:416-418`，1003）之外，是否再保留 Java 的按内容/全站限流 `PasswordAttempts`（SEC-9）。PHP 的 5 秒限制换一个会话就能绕过；`PasswordAttempts` 能限住换会话的爆破，代价是同一内容被大量试错时其他访客 60 秒内也会收到 1003 | **待发起人确认**。a（设计建议）：保留，超限返回 PHP 已有的 1003，按 SEC-9 记为已确认的安全差异；b：删除 `PasswordAttempts`，只保留 PHP 的 5 秒限制，与 PHP 完全相同（C-68）。两种答案下 ALIGN-4 ①～④⑥ 都按 PHP 恢复 | **是**：阻塞 S3-14c 的派单与合入；不阻塞其他子任务 | 发起人（经调度） | S3-14c 派单前 |
-| OP-T5 | SEC-7（`/template/**` 不返回 `.html`/`.ini` 等模板源码与配置）、SEC-8（执行 SQL 拒绝 `INTO OUTFILE/DUMPFILE`、`LOAD_FILE`）是六项安全修复之外的安全收紧，与“PHP 怎么做 Java 就怎么做”不同 | **待发起人确认**。a（设计建议）：接受两项收紧，按 SEC-7、SEC-8 记为已确认的安全差异，相关地址与语句不进页面比较样本；b：改回 PHP，`/template/**` 按文件原样返回（`.php` 除外），执行 SQL 不加文件读写规则（§6.10、§6.13 的 b 列；改动只在 C-43、C-53）。两项一起答；若要分开答，按 SEC-7、SEC-8 各自选 a/b，设计两列互不依赖 | **是**：阻塞 S3-13、S3-19 的派单与合入；不阻塞其他子任务 | 发起人（经调度） | S3-13、S3-19 派单前 |
+| OP-T5 | SEC-7（`/template/**` 不返回 `.html`/`.ini` 等模板源码与配置）、SEC-8（执行 SQL 拒绝 `INTO OUTFILE/DUMPFILE`、`LOAD_FILE`）是六项安全修复之外的安全收紧，与“PHP 怎么做 Java 就怎么做”不同 | **待发起人确认**。a（设计建议）：接受两项收紧，按 SEC-7、SEC-8 记为已确认的安全差异，相关地址与语句不进页面比较样本；b：改回 PHP，`/template/**` 按文件原样返回（`.php` 除外），执行 SQL 不加文件读写规则（§6.10、§6.13 的 b 列；改动只在 C-43、C-44、C-53）。两项一起答；若要分开答，按 SEC-7、SEC-8 各自选 a/b，设计两列互不依赖 | **是**：阻塞 S3-13b、S3-13c、S3-19 的派单与合入；不阻塞其他子任务（S3-13a 内置视图不受影响） | 发起人（经调度） | S3-13b、S3-19 派单前 |
 
 ## 11. 需求追溯
 
@@ -874,17 +878,17 @@ SEC-7～SEC-9 不属于 OP-9 已确认的六项，是本设计提出、待发起
 | FR-2 / AC-2 / PRE-5 | §4.6 方案 C；TPL-1～11；RT-1～8 | C-17～C-23、C-33、C-34、C-65 | V-11、V-12、V-13 |
 | FR-3 / AC-3 / BR-5 | §6.6；TAGMAP-1～19；CACHE-1 | C-22、C-28、C-29、C-34 | V-12、V-16 |
 | FR-4 / AC-4 | §6.7；RT-7；`label_maccms` | C-27、C-30、C-36 | V-15、V-19 |
-| FR-5 / AC-5 / AC-6 / AC-20 / BR-12 | §6.8 PG-1～7、ALIGN-1～5；F-D1～F-D3 由 `mac_tpl_fetch` 与 PG-6/PG-7 实现 | C-36～C-40、C-43、C-46、C-68 | V-10、V-19、V-30 |
+| FR-5 / AC-5 / AC-6 / AC-20 / BR-12 | §6.8 PG-1～7、ALIGN-1～5；F-D1～F-D3 由 `mac_tpl_fetch` 与 PG-6/PG-7 实现 | C-36～C-40、C-43、C-44、C-46、C-68 | V-10、V-19、V-30 |
 | FR-6 / AC-7 / BR-6 | §6.2、§6.12；ENV-6/7 | C-45、C-50、C-51 | V-6 |
 | FR-7 / AC-8 / AC-9 | §6.1、§6.11 | C-47～C-49 | V-7、V-22 |
 | FR-8 / AC-10 / KPI-5 | §6.8 手机；PATH-1～4 手机列；`LegacyLang` | C-12～C-16、C-24、C-37 | V-4、V-5、V-17、V-19 |
 | FR-9 / AC-11 | DBT-1～DBT-4；DBT-2 的 SEC-8 按 OP-T5 | C-53～C-55 | V-23 |
-| FR-10 / AC-12 / RISK-15 | INS-1～INS-4（常量 `48dbe0fb…`）；§4.10；RISK-T17 | C-44、C-56、C-57、C-67 | V-25 |
+| FR-10 / AC-12 / RISK-15 | INS-1～INS-4（常量 `48dbe0fb…`）；§4.10；RISK-T17 | C-56、C-57、C-67、C-69 | V-25 |
 | FR-11 / AC-13 | NET-1～NET-6 | C-58～C-61 | V-26 |
 | FR-12 / AC-14 / AC-19 / BR-9 | §6.16（判定口径，测试人员执行） | `docs/test/APPK-2/parity-*.md`、`gap-register.md`（测试产物） | V-27 |
 | FR-13 / AC-15 / AC-18 / BR-1 / BR-10 | §6.19；不新增结构；SchemaGuard 登记例外仅 AC-11 所需 | C-55、C-66 | V-21 |
 | AC-16 | §6.19；新增写入先登记、按附表 D 判定 | C-29、C-51、C-54、C-59 | V-28 |
-| AC-17 | 每个 S3 子任务引用的 OP-T 在派单前已关闭：OP-T4 → S3-14c；OP-T5 → S3-13、S3-19；未关闭不派单、不合入（§7.4 条件门禁） | — | V-29 |
+| AC-17 | 每个 S3 子任务引用的 OP-T 在派单前已关闭：OP-T4 → S3-14c；OP-T5 → S3-13b、S3-13c、S3-19；未关闭不派单、不合入（§7.4 条件门禁） | — | V-29 |
 | BR-2 | 配置只经 `LegacyConfigService`/`VarExportWriter` 写；密码 md5 不加盐不变 | 不改 | V-24 |
 | BR-3 | 以 PHP 7.3.33 输出为准；编译与值语义以黄金为准 | C-33 | V-11～V-13、V-19 |
 | BR-4 / OP-9 | §6.17 SEC-1～6 不改；ALIGN 只改呈现；SEC-7～9 是待确认的条件差异，不计入六项 | — | V-24；SEC-7～9 见 V-18、V-23、V-30 |
@@ -922,7 +926,7 @@ SEC-7～SEC-9 不属于 OP-9 已确认的六项，是本设计提出、待发起
 | 完整设计：可回滚 | 是 | §9 v3 表，每个子任务一个可 `revert` 的提交 |
 | 完整设计：常量与哈希按 blob 计算 | 是（v4 修正） | `INSTALL_SQL_SHA256` 按 `git show a57e9cb:php/application/install/sql/install.sql \| sha256sum` = `48dbe0fb…`；v3 的 `152e5424…` 是 `autocrlf` 工作区文件（CRLF）的哈希，已更正并加 C-67、RISK-T17 |
 | 完整设计：PHP 行为描述有源码出处 | 是（v4 修正） | v3 写“PHP 没有观看密码频率限制”不成立：`Ajax.php:416-418` 有按会话 5 秒限制；v4 把它列为 ALIGN-4 ③（按 PHP 恢复），OP-T4 只问是否在其之外保留 `PasswordAttempts` |
-| 与 PRD 无矛盾（完整设计） | 有两项待发起人确认，已列 OP-T4、OP-T5，各自阻塞 S3-14c、S3-13/S3-19 的派单与合入（§7.4 条件门禁），其余子任务不受影响；ALIGN-1～5 是按“PHP 为准”把 Java 现有差异改回 PHP，不改范围 | §6.8、§10 |
+| 与 PRD 无矛盾（完整设计） | 有两项待发起人确认，已列 OP-T4、OP-T5，各自阻塞 S3-14c、S3-13b/S3-13c/S3-19 的派单与合入（§7.4 条件门禁），其余子任务不受影响；ALIGN-1～5 是按“PHP 为准”把 Java 现有差异改回 PHP，不改范围 | §6.8、§10 |
 
 ## 13. 评审回应
 
@@ -946,6 +950,14 @@ S1 完整设计独立复核（智能调度，对象 v3 `0dd59f5f72b67e286a93a60c
 | REV-3-002 OP-T4/OP-T5 状态与门禁矛盾 | 已修改 | 两项改为“待发起人确认、阻塞对应子任务”；实现与验证都写成 a/b 两列：OP-T4 → ALIGN-4 ⑤、C-68、V-30、S3-14c；OP-T5 → §6.10、DBT-2、C-43、C-53、V-18、V-23、S3-13、S3-19。§7.4 新增条件门禁：OP 未关闭不派单、不合入，单内写明所选答案；选 b 改回 PHP。SEC-7～9 从“与六项同列的修复”改为条件差异，V-24 只对 SEC-1～6 无条件适用；FR-12 判定口径改为“OP 关闭且选 a 才判排除，否则按 PHP 比较” | §4.8；§5.2 C-37、C-43、C-53、C-68；§6.8；§6.10；§6.13；§6.16；§6.17；§7.4；§8.2 V-18、V-23、V-29、V-30；§9；§10 OP-T4/T5；§11 FR-5、FR-9、AC-17、BR-4；§12 |
 | （自查）OP-T4 前提写错 | 已修改 | 修 REV-3-002 时核对 `Ajax.php:400-456`：PHP **有**按会话 5 秒的观看密码限制（`:416-418`，返回 1003），v3“PHP 没有频率限制”不成立。v4 把这条限制列入 ALIGN-4 ③，两种答案下都按 PHP 恢复；OP-T4 改问“是否在其之外再保留 `PasswordAttempts`”，a 时超限也返回 PHP 已有的 1003，不再用 429 | §1.3；§6.8 ALIGN-4；§10 OP-T4 |
 
+S1 完整设计独立复核（智能调度，对象 v4 `9f6782d20fddb21f2d69a9492b01ae8dfbf090af`，评论 `01a19490-1c01-7407-a950-8c21a1af29d9`）：
+
+| REV- | 处理 | 说明 | 修改位置 |
+| --- | --- | --- | --- |
+| REV-4-001 C-44 `readTemplateAsset` 契约没有跟随 OP-T5 | 已修改 | 复核结论正确：v4 的 C-44 写死了扩展名白名单，选 b 时会继续拒绝 `.html`、`info.ini`。C-44 改写为两层：两种答案共同的约束①～⑤（路径校验与规范化、真实路径在 `template/` 内、最终文件不跟随符号链接、拒绝 `.php`、只读），加上按 OP-T5 只实现所选那一列的放行范围（a = 四类子目录加扩展名白名单；b = 任意非 `.php` 文件）。放行规则只在 C-44 一处，C-43 只做 URL 映射与响应，不另设白名单。§6.3 新增 `readTemplateAsset` 的接口与错误语义，并写明模板引擎读模板用现有 `read`、不用此方法 | §4.8；§5.2 C-42、C-43、C-44；§6.3；§6.10 |
+| （同步）S3-10 依赖与 C-44 拆分 | 已修改 | v4 把 C-44 放在不受门禁的 S3-10，而 C-44 的放行范围取决于 OP-T5；同一行的 `readInstallSql` 又属于安装向导（S3-20 没列 C-44）。v5 把 `readInstallSql` 拆成 C-69 归 S3-20；C-44 移出 S3-10；S3-13 拆成 S3-13a（内置视图 C-39，不受门禁）、S3-13b（C-44，后端，受 OP-T5 门禁）、S3-13c（C-43，前端，受 OP-T5 门禁）；S3-14 只依赖 S3-13a；C-42 不再注册 C-43（C-43 自带 `@ConditionalOnSiteEnabled`），所以 S3-15 也不依赖 OP-T5。这同时修正了 v4 §7.4 的矛盾：v4 写“S3-14c 之外的 PG 组不受影响”，但 S3-14 依赖 S3-13 | §5.2 C-69；§6.14 INS-1；§7.4；§9；§10 OP-T5；§11 FR-5、FR-10、AC-17；§12 |
+| （同步）V-18 与 OP-T5 相关描述 | 已修改 | V-18 增加单测 `LegacySiteFilesTemplateAssetTest`：两种答案都测符号链接出 `template/`（目录链接和文件链接）、最终文件是符号链接、`.php`/`.PHP`、目录本身、不存在的文件不建目录；a/b 各测 `html/…/index.html`、`info.ini`、`css/x.txt`。评审另核 C-43 不含子目录或扩展名判断。V-29、§10 OP-T5、§11 AC-17、§12 的子任务编号改为 S3-13b、S3-13c；§9 回滚行加上 C-44 | §8.2 V-18、V-29；§9；§10；§11；§12 |
+
 ## 14. 修订记录
 
 | 日期 | 版本 | 作者 | 变更摘要 | 对应 REV- |
@@ -954,3 +966,4 @@ S1 完整设计独立复核（智能调度，对象 v3 `0dd59f5f72b67e286a93a60c
 | 2026-10-31 | v2 | @架构师-海外 | 拆开路径量 PATH-1～PATH-4，`{$maccms.path_tpl}` 改为 `MAC_PATH_TEMPLATE`（桌面 `/template/default_pc/`）；新增 §4.5 与 C-12～C-16（Java 映射修正，G1 后单独提交）、V-9、RISK-T8；改 V-4/V-5 断言及 §1.1、§3、§6、§9、§11、§12 | REV-1 |
 | 2026-11-01 | v3 | @架构师-海外 | 完整技术设计：§1.3/1.4 现状与目标；§3.2 影响面；§4.6～4.10 方案对比（兼容层、模块、静态资源、缓存、安装账号）；C-17～C-66；§6.3～6.20（DEC-7～10、TPL-、RT-、PG-、ALIGN-、DB-、INS-、NET-、SEC-、CACHE-、SNAPD-）；ENV-9/10；§7.4 子任务拆分；V-10～V-29；RISK-T9～T16；关闭 OP-T1～T3，新增 OP-T4、OP-T5 | — |
 | 2026-11-01 | v4 | @架构师-海外 | INS-1 常量改为 blob 哈希 `48dbe0fb…`，新增 C-67、RISK-T17；OP-T4/OP-T5 改为阻塞对应子任务的条件项，§6.8/§6.10/§6.13 写 a/b 两列，新增 SEC-9、C-68、V-30 与 §7.4 条件门禁；更正“PHP 没有观看密码频率限制”，ALIGN-4 按 PHP 恢复按会话 5 秒限制 | REV-3-001、REV-3-002 |
+| 2026-11-01 | v5 | @架构师-海外 | C-44 `readTemplateAsset` 改为“共同约束 + 按 OP-T5 所选列放行”，放行规则只在 C-44；`readInstallSql` 拆为 C-69 归 S3-20；S3-13 拆成 a/b/c，只有 b、c 受 OP-T5 门禁，S3-14/S3-15 不再间接依赖 OP-T5；C-42 不再注册 C-43；§6.3 新增 `readTemplateAsset` 接口；V-18 增加单测部分；V-29、§9、§10、§11、§12 同步 | REV-4-001 |
