@@ -379,7 +379,7 @@
 - 追溯 AC-5
 - 自动化通道：UI（浏览器发起请求并核对最终页面与响应头）
 - 前置：PRE-1 完整产物（见 §2.0：DB-1～DB-4、DBACC-1～DBACC-3、`SHOW GRANTS`、SP-1～SP-4 脚本与基准报告、`it_admin` 生命周期、清理规则；缺任一项 → T3 BLOCKED）；测试库可切换 `site_status`；有一个无播放权限的会员组；有带观看密码的内容（PHP `ajax/pwd` 存在）；PHP 对照进程与 Java 同库同数据；每次密码请求使用**新建会话**
-- 判定来源：`ALIGN-4` ①～④⑥ 按 PHP `application/index/controller/Ajax.php:400-456`；观看密码请求的 6 个响应值、响应体与 HTTP 状态按技术设计 `V-30`；语言包取 `application/lang/zh-cn.php:119/122/727/728`
+- 判定来源：`ALIGN-4` ①～④⑥ 按 PHP `application/index/controller/Ajax.php:400-456`；观看密码请求的 12 个子项（5-a～5-l）的响应码、逐字节响应体与 HTTP 状态按技术设计 `V-30`，其中 5-j/5-k 的固定 `id` 与固定 `msg` 另有源码级依据（`Ajax.php:424-426`、`Ajax.php:447-449`、`Vod.php:584-587`、`Art.php:411-414`、`php/application/lang/zh-cn.php:440`、`response/Json.php:19-20`，逐条见第 5 步的固定输入表）；语言包取 `application/lang/zh-cn.php:119/122/727/728/440`
 - 步骤与预期：
   1. `site_status=0` 时请求任意前台页 → 输出 `public/close` 模板与 `site_close_tip` 内容（ALIGN-1），状态码与 PHP 一致。
   2. 请求不存在的路径 → PHP `_empty` 行为：404 + `public/<page_404 配置名>` 页（ALIGN-2）；`/api/v1/**` 仍是 JSON（回归）。
@@ -398,13 +398,29 @@
      | 5-g 播放密码错 | `mid=1`/`type=4`/`pwd` 不等于 `vod_pwd_play` | 同上 | `{"code":1013,"msg":"密码错误"}` | 200 |
      | 5-h 下载密码错 | `mid=1`/`type=5`/`pwd` 不等于 `vod_pwd_down` | 同上 | `{"code":1014,"msg":"密码错误"}` | 200 |
      | 5-i 文章密码错 | `mid=2`/`pwd` 不等于 `art_pwd` | 同上 | `{"code":1022,"msg":"密码错误"}` | 200 |
-     | 5-j 取数失败（视频） | `mid=1`/`type=1`，`id` 为不存在的 `vod_id` | 同上 | `{"code":1011,"msg":<PHP 同输入返回的 `infoData` 提示>}` | 200 |
-     | 5-k 取数失败（文章） | `mid=2`，`id` 为不存在的 `art_id` | 同上 | `{"code":1021,"msg":<PHP 同输入返回的 `infoData` 提示>}` | 200 |
+     | 5-j 取数失败（视频） | `mid=1`/`type=1`/`pwd=t1-nopwd`/`id=999999999`（均为固定值，见下方 5-j/5-k 固定输入表） | 新会话，距 `last_pwd` ≥ 5 秒，且 5-j-0 前置校验通过 | `{"code":1011,"msg":"获取失败"}` | 200 |
+     | 5-k 取数失败（文章） | `mid=2`/`type=1`/`pwd=t1-nopwd`/`id=999999999`（均为固定值，见下方 5-j/5-k 固定输入表） | 新会话，距 `last_pwd` ≥ 5 秒，且 5-k-0 前置校验通过 | `{"code":1021,"msg":"获取失败"}` | 200 |
      | 5-l 通过 | 与 5-f 同 `id/mid/type`，`pwd` 等于 `vod_pwd` | 新会话，距 `last_pwd` ≥ 5 秒 | `{"code":1,"msg":"ok"}` | 200 |
 
-     → 5-a～5-l 共 12 个子项，每项的响应码、响应体（逐字节）与 HTTP 状态同时满足上表；上表之外的任何响应码均计失败。5-j/5-k 的 `msg` 取 PHP 对同一输入返回的 `infoData` 文本（由 PRE-2 对照进程当场取得并记入报告，两侧逐字节相同）。
+     → 5-a～5-l 共 12 个子项，每项的响应码、响应体（逐字节）与 HTTP 状态同时满足上表；上表之外的任何响应码均计失败。
+
+     **5-j / 5-k 的固定输入与固定 `msg` 来源**（不再由对照进程「当场取得」，`msg` 已是写死的常量）：
+
+     | 项 | 内容 |
+     | --- | --- |
+     | 固定 `id` | `999999999`。`mac_vod.vod_id`、`mac_art.art_id` 均为 `int(10) unsigned`（`install.sql:686`、`install.sql:109`），上限 4294967295，`999999999` 在该类型内；DB-1 中 `mac_vod`/`mac_art` 的任何行（含 PRE-2 合成数据 ≥ 50 行）都由 `AUTO_INCREMENT` 从 1 起分配，远小于该值 |
+     | 5-j-0 / 5-k-0 前置校验（发起请求前必须逐条通过，否则本条记 BLOCKED，不改用别的 id） | ①`SELECT COUNT(*) FROM mac_vod WHERE vod_id=999999999` = 0；②`SELECT COUNT(*) FROM mac_art WHERE art_id=999999999` = 0；③`SELECT MAX(vod_id) FROM mac_vod` < 999999999 且 `SELECT MAX(art_id) FROM mac_art` < 999999999；④`SHOW VARIABLES LIKE 'sql_mode'` 不含 `NO_UNSIGNED_SUBTRACTION`/严格模式不改变等值比较结果（等值比较与 `sql_mode` 无关，仅作留痕） |
+     | 固定 `pwd` | 字面量 `t1-nopwd`。它必须非空以通过 `Ajax.php:405` 的 `empty($pwd)` 检查、从而走到 `infoData` 分支；取固定值是为了让 5-j/5-k 的整个请求输入无自由变量。`pwd` 的具体值不影响本条的响应体（`msg` 不来自 `pwd`） |
+     | 固定 `msg` 的 PHP 源码依据（锁定到路径 + 行号，不是「当场取值」） | `Ajax.php:424-426`：`$info = model('Vod')->infoData($where); if($info['code'] >1){ return json(['code'=>1011,'msg'=>$info['msg']]); }`；`Ajax.php:447-449` 对 `Art` 同构（`code` → `1021`）。`Vod::infoData`（`php/application/common/model/Vod.php:584-587`）与 `Art::infoData`（`php/application/common/model/Art.php:411-414`）在 `find()` 为空时**固定**返回 `['code' => 1002, 'msg' => lang('obtain_err')]`；`1002 > 1` 成立，故 `msg` 恒为 `lang('obtain_err')` |
+     | `lang('obtain_err')` 的值 | `php/application/lang/zh-cn.php:440`：`'obtain_err'=>'获取失败',`（顶层键，非嵌套）；即 `msg` 恒为 `获取失败` |
+     | 逐字节响应体（UTF-8） | 5-j：`{"code":1011,"msg":"获取失败"}`；5-k：`{"code":1021,"msg":"获取失败"}`。序列化方式为 ThinkPHP `json()` → `think\response\Json::output()`，`json_encode` 用 `JSON_UNESCAPED_UNICODE`（`php/thinkphp/library/think/response/Json.php:19-20`），所以中文不转义为 `\uXXXX`；无多余空格；`code` 为 JSON 整数 |
+     | HTTP 状态 | `200`（`json()` 的 `$code` 默认 200，`Ajax.php` 未传第二个参数） |
+     | `Content-Type` | `application/json; charset=utf-8`（`Json::$contentType='application/json'` + `Response::$charset='utf-8'`，`Response.php:275`） |
+     | 缓存不影响本项 | `Ajax` 调用 `infoData($where)` 时 `$cache` 取默认 0，`Vod.php:583` / `Art.php:411` 的条件 `config('cache_core')==0` 或 `$cache==0` 或 `empty($info[.._id])` 三者之一成立恒为真 → 每次都查库，不会读到缓存里的假结果。`Art::infoData` 第 403/406 行在只传 `art_id` 时会访问未定义的 `$where['art_en']`，PHP 7.3 下只产生 `Notice`（不改变返回的 `code`/`msg`），且 `cache_core==0` 时根本不进入读缓存分支，因此 5-k 的固定响应体不受影响；若对照进程的 `display_errors` 打开，报告仅记录该 `Notice` 行，不作为本条失败依据 |
+
+     → 上述 9 行把 5-j/5-k 的响应体收敛为两个**唯一可比对值**（`{"code":1011,"msg":"获取失败"}` / `{"code":1021,"msg":"获取失败"}`）；Java 侧若返回其他 `msg`（包括英文、转义形式、空串）即判本条失败。
      → 补充断言（OP-T4=a / SEC-9）：在 60 秒内对同一内容第 11 次请求得到与 5-e 完全相同的 `{"code":1003,"msg":"请不要频繁请求，请稍后重试!"}` 且 HTTP 200，`general_log` 中无该内容的 `SELECT`；该超限样本按 `排除-SEC-9` 记已确认差异，不进逐字节比较。
-  6. 断言以上响应头：`Content-Type` = `text/html;charset=UTF-8`（HTML 页）；步骤 5 的 JSON 响应 `Content-Type` 与 PHP 一致（含字符集）；CSP 头 = `object-src 'none'; base-uri 'self'; frame-ancestors 'self'`（OP-T6=b，见 TC-F-SEC-001）。
+  6. 断言以上响应头：`Content-Type` = `text/html;charset=UTF-8`（HTML 页）；步骤 5 的 JSON 响应 `Content-Type` 逐字节为 `application/json; charset=utf-8`（依据见上表「`Content-Type`」行）；CSP 头 = `object-src 'none'; base-uri 'self'; frame-ancestors 'self'`（OP-T6=b，见 TC-F-SEC-001）。
 
 #### TC-F-PAGE-006 `/template/**` 静态资源边界（OP-T5=a，SEC-7 白名单）
 - 模块：前台静态资源
@@ -1181,7 +1197,7 @@
 | 3 | 样本分母与 PRD 一致 | ✅ | KPI-1 分母 356 = 桌面 188 + F-D1 2 + F-D2 2 + F-D3 32 + 手机 120 + 模板选择 12（PRD §10 表二，与 §6.1/6.2、附表 B、AC-5、AC-10、AC-20 一致）；用例 PAGE-001（188）+PAGE-003（2）+PAGE-004（2）+DYN-001/002（32）+WAP-001（120）+WAP-002（12）= 356；AC-20 的 224 行另由 PAR-005 校验 |
 | 4 | 每条用例都追溯到 AC- | ✅（例外已列明） | §2 中有 AC- 支撑的用例「追溯 AC-」均非空；仅 §2.14 的 SEC-001～003 与 §4.2 的设计回归用例明确标注「无直接 AC-」，并写明设计依据与「不计入 AC 验收」，未把它们伪称 AC-11/AC-17 |
 | 5 | 覆盖七维度并说明跳过项 | ✅ | 正常/边界/异常/权限/安全/回归/页面状态均有用例；模板语法、标签库、模板函数模块未单列「页面状态」用例，理由写在 §4.1 末行（由 PAGE-005 状态页与 UI 设计 §2 覆盖） |
-| 6 | 步骤与预期一一对应、且无可变判定预期 | ✅（逐条有依据） | 每条用例为编号步骤，每步后接「→」具体预期。本轮回手处理了上一轮点名的四处可变预期：①`TC-F-SYN-002` 第 2 步不再以「无 `eval`/反射执行路径」作为预期（该表述无法由页面输出判定），改为三条可观察的行为断言（变体逐字节对比、两次渲染一致、对照模板一致）；「实现路径不含 `eval`/脚本引擎」已移出功能用例，作为 G2 回归前置单列，并在 §4.1 登记为关注点；②`TC-F-SYN-003` 收为单一「手工」通道，接口断言（500 + `Content-Type`）与日志取证（`template`/`line`/`kind`）同一次人工执行、同一份报告完成，不再写「接口（+ 人工日志核对）」；③`TC-F-PAGE-005` 第 5 步按 PHP `Ajax.php:400-456` 与 V-30 列出 5-a～5-l 逐项固定表（每项一个输入、一个响应码、一段逐字节响应体、一个 HTTP 状态），删除了「等」「按枚举」；④`TC-F-NET-003` 第 2 步以 `api/controller/Base.php:13-17`（站点关闭分支为空实现）与 `admin/controller/Collect.php:140-160` 固定了输入与结果，删除了「若 PHP 行为未明则待澄清」。其余原先含糊处的判定来源：缺页（PAGE-002、WAP-005）、模板选择（WAP-004）、标签向导渲染（ADM-010）、DBT 跳过类（DBT-006）均指向具体条目 |
+| 6 | 步骤与预期一一对应、且无可变判定预期 | ✅（逐条有依据） | 每条用例为编号步骤，每步后接「→」具体预期。①`TC-F-SYN-002` 第 2 步不再以「无 `eval`/反射执行路径」作为预期（该表述无法由页面输出判定），改为三条可观察的行为断言（变体逐字节对比、两次渲染一致、对照模板一致）；「实现路径不含 `eval`/脚本引擎」已移出功能用例，作为 G2 回归前置单列，并在 §4.1 登记为关注点；②`TC-F-SYN-003` 收为单一「手工」通道，接口断言（500 + `Content-Type`）与日志取证（`template`/`line`/`kind`）同一次人工执行、同一份报告完成，不再写「接口（+ 人工日志核对）」；③`TC-F-PAGE-005` 第 5 步按 PHP `Ajax.php:400-456` 与 V-30 列出 5-a～5-l 逐项固定表，删除「等」「按枚举」，**且 5-j/5-k 已从「由对照进程当场取 `msg`」改为写死的唯一响应体**（固定 `id=999999999` + 前置计数校验 + `Ajax.php:424-426`/`447-449` → `infoData` 空结果固定 `code=1002/msg=lang('obtain_err')` → `zh-cn.php:440` `获取失败` → `{"code":1011,"msg":"获取失败"}` / `{"code":1021,"msg":"获取失败"}`），并固定 HTTP 200 与 `Content-Type: application/json; charset=utf-8`；④`TC-F-NET-003` 第 2 步以 `api/controller/Base.php:13-17`（站点关闭分支为空实现）与 `admin/controller/Collect.php:140-160` 固定了输入与结果，删除了「若 PHP 行为未明则待澄清」。全文已无「<…>」「…提示」类未定占位符；全文剩余的「之一」都是**封闭枚举**（AC-14 的四值互斥、AC-16 的「新增 OP- 或附表 D 版本 +1」二选一、自动化通道三选一），不涉及 PAGE-005 期望值的可变性。其余原先含糊处的判定来源：缺页（PAGE-002、WAP-005）、模板选择（WAP-004）、标签向导渲染（ADM-010）、DBT 跳过类（DBT-006）均指向具体条目 |
 | 7 | 优先级标注完整 | ✅ | 每条用例都有 P1/P2；P1 覆盖全部 AC- 的主判定路径与全部门禁类用例 |
 | 8 | 自动化通道收敛为单一值 | ✅ | 逐条检索 §2：每条用例的「自动化通道」只取 `UI` / `接口` / `手工` 之一，无「+」组合；原先组合项已拆分——TC-F-DBT-003（接口）/TC-F-DBT-005（手工取证）、TC-F-ADM-008（UI）/TC-F-ADM-009（接口）、TC-F-SCH-002（手工）、TC-F-SEC-003（接口）；「回归单测」不再作为通道，改为前置（`SchemaGuardTest`、`SiteTemplateSelectionGoldenTest` 由 G2 证据提供，缺失则该用例 BLOCKED） |
 | 9 | 未执行、未发请求 | ✅ | 本文件全部为用例描述，无任何执行结果、响应码、实测数字；未打开被测页面、未连接环境 |
