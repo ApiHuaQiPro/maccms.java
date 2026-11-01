@@ -3,8 +3,6 @@
 # 契约: docs/api/APPK-2/openapi.yaml @ bc612e933aa67abab319b90534c5150c10a51452（MakeParams 各字段 x-business-rule）
 # 判定: 每一项独立一个请求，断言同为 HTTP 200 + msg=参数错误（SCH-1：不返回 400）
 
-import pytest
-
 from conftest import MSG_PARAM_ERR, assert_json_error
 
 # 每一行都对应契约里写明 on-fail: MAKE_PARAM_ERR 的字段规则（MakeParams / IdList / CounterInt）

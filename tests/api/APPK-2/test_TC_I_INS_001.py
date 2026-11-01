@@ -15,7 +15,16 @@ _HERE = os.path.dirname(os.path.abspath(__file__))
 if _HERE not in sys.path:
     sys.path.insert(0, _HERE)
 
-from install_support import ACCOUNT, PASSWORD, PW_FIELD, TOKEN_FIELD
+from install_support import (
+    ACCOUNT,
+    MSG_ACCESS_DENIED,
+    PASSWORD,
+    PW_FIELD,
+    SENSITIVE_ECHO_MARKERS,
+    TOKEN_FIELD,
+    after_token_hits,
+    before_token_hits,
+)
 
 CASE = "INS-001"
 
@@ -39,6 +48,13 @@ def test_TC_I_INS_001(api_as, install_entry):
     # 不得出现任何安装阶段的成功或写库提示
     for leaked in ("系统安装成功", "is_ok", "install.lock"):
         assert leaked not in body, "正常模式响应出现安装逻辑痕迹：%r" % leaked
-    # 不得泄露部署配置与连接信息
-    for leaked in ("MACCMS_DEPLOY_CONFIG", "jdbc:", "password"):
-        assert leaked not in body.lower(), "响应疑似泄露配置项：%r" % leaked
+    # 不得泄露部署配置与连接信息（MACCMS_DEPLOY_CONFIG / jdbc: / 密码字段名）
+    for leaked in SENSITIVE_ECHO_MARKERS + (PW_FIELD,):
+        assert leaked.lower() not in body.lower(), "响应疑似泄露配置项：%r" % leaked
+    # 正常模式下不得出现任何安装分支文案（404 页更不该有「非法访问」「根目录」提示）
+    assert not before_token_hits(body), "正常模式响应出现安装分支文案 %r" % before_token_hits(body)
+    assert not after_token_hits(body), "正常模式响应出现安装分支文案 %r" % after_token_hits(body)
+    # 正常模式必须 404（上面已断言），因此 INSTALL_ACCESS_DENIED 的文案一律不应出现
+    assert MSG_ACCESS_DENIED not in body, (
+        "正常模式响应出现 INSTALL_ACCESS_DENIED 文案「%s」，说明入口被装配" % MSG_ACCESS_DENIED
+    )

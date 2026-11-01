@@ -48,9 +48,9 @@
 | TC-I-INS-001 | 正常 | P1 | 反 | 非安装模式 `/install.php` → 404（API-005），无安装痕迹、无配置泄露 |
 | TC-I-INS-002 | 安全、回归 | P1 | 反 | `install.lock` 存在 → 200 纯文本 `INSTALL_LOCKED` 原文，不建会话、不进写库阶段（全新会话即可，该分支位于方法/令牌之前） |
 | TC-I-INS-003 | 异常、安全 | P1 | 反 | 安装模式 + 无 lock + 全新会话（INS-SEC-3 在环境/令牌之前，按其契约位置执行）：GET / JSON POST / text-plain POST → `INSTALL_ACCESS_DENIED`，不命中更早分支、无执行痕迹 |
-| TC-I-INS-004 | 安全、权限 | P1 | 反 | **有向导状态的会话**（第 3 步签发的真实令牌）+「有效令牌 & install_dir=/sub」对照必须先命中 `INSTALL_DIR_UNSUPPORTED`（证明越过令牌）；不成立 → BLOCKED。省略令牌 / 令牌不符 / 数组令牌 → `INSTALL_ACCESS_DENIED`；不回显令牌与密码 |
+| TC-I-INS-004 | 安全、权限 | P1 | 反 | **两相前置**：向导会话（第 3 步真实令牌）+ 对照「有效令牌 & install_dir=/sub」必须先命中 `INSTALL_DIR_UNSUPPORTED`（证明越过令牌）；对照停在更早分支 → BLOCKED、被令牌拒绝 → FAIL。省略令牌 / 令牌不符 / 数组令牌 → 各自 `INSTALL_ACCESS_DENIED`，且每个验证点后**补正确令牌必须再次越过**（排除伪拒绝）；不回显令牌与密码 |
 | TC-I-INS-005 | 安全、权限 | P1 | 反 | 同一会话真实令牌 + install_dir=/sub，第一次必须命中 `INSTALL_DIR_UNSUPPORTED`（令牌之后、写库前的分支，不写库）；完全重放 → `INSTALL_ACCESS_DENIED`；再取新令牌 → 再次越过（对照）；另含已安装实例的 `INSTALL_LOCKED` 锁终态 |
-| TC-I-INS-006 | 边界、异常 | P2 | 正/反 | SCH-1：`account` 数组必须命中 `INSTALL_ADMIN_REQUIRED`（命中 `INSTALL_NOT_TESTED` → BLOCKED）；`install_dir[]=/other` 出现 `INSTALL_DIR_UNSUPPORTED` 判失败、须命中成功；`install_dir=/other` 标量对照必须命中 `INSTALL_DIR_UNSUPPORTED`；`initdata` 非 1 与 1 在写库前判定一致；另含密码长度 5/21 字符 → `INSTALL_ADMIN_INVALID`、6 字符合法 |
+| TC-I-INS-006 | 边界、异常 | P2 | 正/反 | SCH-1：`account` 数组必须命中 `INSTALL_ADMIN_REQUIRED`（命中更早分支 → BLOCKED）；`install_dir=/other` 标量对照必须命中 `INSTALL_DIR_UNSUPPORTED`；`install_dir[]` 数组不得命中 `INSTALL_DIR_UNSUPPORTED`，且必须命中某条令牌之后的分支（否则 BLOCKED）；`initdata` 非 1 与 1 命中的令牌之后分支集合**完全相等**；另含密码长度 5/21 字符 → `INSTALL_ADMIN_INVALID`、6 字符合法 |
 | TC-I-INS-007 | 边界、异常 | P2 | 反 | 正文 > 1 MiB → HTTP 500 固定系统错误页，不泄露异常细节、不回显正文 |
 | TC-I-MAKE-001 | 权限、异常 | P1 | 反 | PUT/DELETE/OPTIONS → 405 + `Allow` 含 GET/POST（ADM-6） |
 | TC-I-MAKE-002 | 权限、安全 | P1 | 反 | 未登录 302 空正文；无权限 200「您没有权限访问此页面」；无来源头 → 非法请求 |
@@ -73,8 +73,8 @@
 | OUT-1「未建立任何连接」的强证据 | 需要 `loopback-only` + mock 服务连接日志（技术设计 V-26），该配置生产不得开启 | T3 环境侧，非脚本可断言 |
 | `TC-I-INS-003`～`007` 在已安装实例上 | `install.lock` 存在时分支不可达，脚本 skip → T3 记 BLOCKED | 需要一份未安装的安装模式实例 |
 | `TC-I-INS-002` 在未安装实例上 | 需要 lock 已存在的实例，与 INS-003～007 需要的未安装实例互斥 | 需要两份额外的安装模式实例（一份有 lock、一份无 lock） |
-| `TC-I-INS-004`～`007` 的令牌之后分支 | 需要「第 4 步连接配置已完成、仍未安装」的实例；脚本拿不到该前置即 BLOCKED | 环境 |
-| `initdata` 非 1 确实没写初始数据 | 写库阶段之后才可观测，需要空库一次性实例 | 环境/授权 |
+| `TC-I-INS-004`～`007` 的令牌之后分支 | 需要「第 4 步连接配置已完成、仍未安装」的实例；脚本用对照请求（有效令牌 + install_dir=/sub）核验该前置，拿不到即 BLOCKED、绝不改判通过 | 环境 |
+| `initdata` 非 1 确实没写初始数据 | 写库阶段之后才可观测，需要空库一次性实例；脚本只断言「非 1 与 1 在写库之前的判定完全一致」 | 环境/授权 |
 | 向导第 4 步之后的真实安装执行 | 会写被测实例的库与文件系统 | 仅一次性实例 + 明确授权时执行 |
 | OUT-1 连接侧强证据（V-26 mock 连接日志） | 生产禁止开启 `loopback-only` | T3 环境侧 |
 | API-042 / API-044 | 不在本轮派发范围 | 后续单独派发 |

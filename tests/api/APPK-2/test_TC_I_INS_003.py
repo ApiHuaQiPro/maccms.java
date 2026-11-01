@@ -22,7 +22,6 @@ import pytest
 import requests
 
 from install_support import (
-    PW_FIELD,
     assert_html_reply,
     assert_no_install_execution,
     assert_not_echoed,

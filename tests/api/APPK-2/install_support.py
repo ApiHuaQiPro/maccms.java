@@ -1,20 +1,25 @@
 """APPK-2 安装向导（API-030）用例的共享前置与核验（只写阶段建好，T3 才执行）。
 
-供 TC-I-INS-003～007 复用，避免每个文件各写一套不一致的前置判定。本模块只发**建前置所需的 GET**
-与目标用例的 POST，不含断言之外的动作；所有跳过一律 `pytest.skip("BLOCKED：…")`。
+供 TC-I-INS-001～007 复用，避免每个文件各写一套不一致的前置判定。本模块只发**建前置所需的 GET**
+与目标用例的 POST；所有「前置不成立」一律 `pytest.skip("BLOCKED：…")`，不写成宽松 `assert`。
 
 契约：docs/api/APPK-2/openapi.yaml @ bc612e933aa67abab319b90534c5150c10a51452（API-030）
 判定顺序（契约原文，不能改）：
-  INS-SEC-2 install.lock → INS-SEC-3 方法 → INS-SEC-5 环境 → INS-SEC-5 连接配置
-  → account/密码 empty（INSTALL_ADMIN_REQUIRED）→ account/密码规则（INSTALL_ADMIN_INVALID）
-  → INS-SEC-4 令牌（INSTALL_ACCESS_DENIED）→ install_dir → root → 互斥区 → 写库阶段
+  INS-SEC-2 install.lock → INS-SEC-3 方法 → INS-SEC-5 环境 → INS-SEC-5 连接信息（INSTALL_NOT_TESTED）
+  → account/密码为空 → INSTALL_ADMIN_REQUIRED → account/密码规则 → INSTALL_ADMIN_INVALID
+  → INS-SEC-4 令牌（INSTALL_ACCESS_DENIED，令牌在通过校验的同时从会话删除）
+  → install_dir → root → 互斥区（复查 install.lock）→ 写库阶段 ①～⑥ → 成功
 
-因此：
-  * 令牌之前的用例（INS-003 方法、INS-004 令牌缺失/不符、INS-007 正文超限）在**全新会话**上执行即可，
-    只需断言没有命中比目标更早的分支；
-  * 令牌之后的用例（INS-005 重放、INS-006 数组/边界）必须**先证明请求真的越过了令牌**——唯一可观测的证据是
-    命中令牌之后才可能出现的分支（INSTALL_DIR_UNSUPPORTED、root 拒绝、写库阶段各分支、成功）。只命中
-    INSTALL_NOT_TESTED / INSTALL_ENV_FAILED / INSTALL_ADMIN_* 都不能证明令牌被消费，一律 BLOCKED。
+由此得出的三条判定规则（第 3 轮修订 REV-I-01／REV-I-02／REV-I-03）：
+
+1. 每条用例只在它目标分支的契约位置上验证。INS-SEC-3（方法）、INS-SEC-5（环境）、
+   INSTALL_ADMIN_*（账号校验）都在令牌**之前**，它们的用例不需要、也不应该加令牌前置。
+2. 令牌**之后**的分支（install_dir / root / 写库阶段 / 成功）才能证明令牌被接受并消费。
+   只命中 INSTALL_NOT_TESTED / INSTALL_ENV_FAILED / INSTALL_ADMIN_* 的响应证明不了这一点
+   —— 上一轮把这些更早分支当成「令牌已消费的证据」，是假通过。
+3. 「令牌之后的分支可达」本身也是一个前置：用**对照请求**（有效令牌 + install_dir=/sub）观测
+   INSTALL_DIR_UNSUPPORTED。它是令牌之后、root 之前、写库之前的第一个分支，不写库、不写 lock，
+   可以重复执行。对照不成立 → 该实例不满足前置 → BLOCKED，绝不改判通过。
 
 本模块内所有表单值都是合成测试数据（autotest 前缀 + 纯字母数字），不是任何真实凭据。
 """
@@ -28,20 +33,20 @@ import requests
 MSG_ACCESS_DENIED = "非法访问"                        # INSTALL_ACCESS_DENIED  install/access_denied
 MSG_PLEASE_TEST = "请先点击测试数据库连接！"           # INSTALL_NOT_TESTED    install/please_test_connect
 MSG_ENV_FAILED = "环境检测未通过，不能进行下一步操作！"  # 第 2/3 步 install/environment_failed
-MSG_INIT_ERR = "初始失败！"                            # 第 5 步 install/init_err
+MSG_INIT_ERR = "初始失败！"                            # 第 5 步 INSTALL_ENV_FAILED / INSTALL_SQL_FAILED
 MSG_ADMIN_REQUIRED = "请填写管理账号和密码！"           # INSTALL_ADMIN_REQUIRED install/please_input_admin_name_pass
 MSG_CONNECT_FAILED = "数据库连接失败，请检查数据库配置！"  # INSTALL_CONNECT_FAILED install/database_connect_err
 MSG_DIR_UNSUPPORTED = "新版只支持安装在网站根目录（install_dir 为 /）"  # INSTALL_DIR_UNSUPPORTED
-MSG_ROOT_REFUSED = "安装向导默认不接受 root 账号"                      # INSTALL_ROOT_REFUSED
+MSG_ROOT_REFUSED = "安装向导默认不接受 root 账号"       # INSTALL_ROOT_REFUSED（InstallWizard.MSG_ROOT 首段）
 MSG_ADMIN_FAILED = "管理员账号创建失败"                # INSTALL_ADMIN_FAILED  install/admin_err
 MSG_INIT_DATA_FAILED = "导入初始化数据SQL失败"          # INSTALL_INIT_DATA_FAILED install/init_data_err
 MSG_SUCCESS = "系统安装成功"                            # 成功（install/is_ok）
-MSG_LOCKED_WITH_PATH = "[application/data/install/install.lock]"       # INSTALL_LOCK_WRITE_FAILED 固定首段
+MSG_LOCKED_PREFIX = "[application/data/install/install.lock]"   # INSTALL_LOCK_WRITE_FAILED 固定首段
 
-# 停在「令牌之前」的固定文案：命中其中任一条，就说明请求没有走到令牌检查
+# 停在「令牌之前」的固定文案：命中任一条，说明请求没有走到令牌检查
 BEFORE_TOKEN_MARKERS = (MSG_ENV_FAILED, MSG_INIT_ERR, MSG_PLEASE_TEST, MSG_ADMIN_REQUIRED)
 
-# 只在令牌通过之后才可能出现的分支（install/sql_err 的固定文案在 openapi 里没有逐字给出，只按可确定的两项断言）
+# 只在令牌通过之后才可能出现的分支（install/sql_err 的固定文案未在 openapi 逐字给出，故不列入）
 AFTER_TOKEN_MARKERS = (
     MSG_DIR_UNSUPPORTED,
     MSG_ROOT_REFUSED,
@@ -49,7 +54,7 @@ AFTER_TOKEN_MARKERS = (
     MSG_CONNECT_FAILED,
     MSG_ADMIN_FAILED,
     MSG_INIT_DATA_FAILED,
-    MSG_LOCKED_WITH_PATH,
+    MSG_LOCKED_PREFIX,
 )
 
 # 账号校验失败时 ThinkPHP 的语言包原文（不带逗号，避免与「校验器,字段」的拼接混淆）
@@ -67,10 +72,13 @@ TOKEN_PATTERN = re.compile(r"^[0-9a-f]{32}$")
 TOKEN_FIELD = "__token__"
 # 密码字段名按 character-ref 拼出来，避免在某些扫描里被当成明文口令
 PW_FIELD = "pass" + "word"
-# 合成输入（不是凭据）：account 必须符合契约 ^[A-Za-z0-9]+$，密码必须 6～20 个字符，
-# 否则会在令牌之前就被 INSTALL_ADMIN_INVALID / INSTALL_ADMIN_REQUIRED 拦住，目标分支不可达。
+# 合成输入（不是凭据）：account 必须符合契约 ^[A-Za-z0-9]+$、≤30 字符；密码必须 6～20 个字符。
+# 否则会在令牌之前就被 INSTALL_ADMIN_REQUIRED / INSTALL_ADMIN_INVALID 拦住，目标分支不可达。
 ACCOUNT = "autotestappk2admin"
 PASSWORD = "autotestPw2024"
+
+# install_dir 的非法值（契约：不等于 / → INSTALL_DIR_UNSUPPORTED，位于令牌之后）
+DIR_NOT_ROOT = "/sub"
 
 
 def step_url(base_url, install_entry, step):
@@ -109,8 +117,15 @@ def is_access_denied(resp):
     return MSG_ACCESS_DENIED in resp.text
 
 
+def has_success(text):
+    """成功分支（install/is_ok）。成功响应一定已越过令牌并写库，用例不得把它当成拒绝。"""
+    return MSG_SUCCESS in (text or "")
+
+
+# ────────────────────────── 前置 1／2：安装模式 与 install.lock ──────────────────────────
+
 def require_install_mode(base_url, install_entry):
-    """前置 1（INS-SEC-1）：安装模式实例。正常模式返回 404 → BLOCKED。
+    """前置（INS-SEC-1）：安装模式实例。正常模式返回 404 → BLOCKED。
 
     返回探测用的 GET 响应，供调用方继续判定 install.lock（INS-SEC-2）。
     """
@@ -125,10 +140,18 @@ def require_install_mode(base_url, install_entry):
 
 
 def require_not_locked(probe, label="API-030"):
-    """前置 2（INS-SEC-2）：install.lock 不存在。已安装 → BLOCKED。"""
+    """前置（INS-SEC-2）：install.lock 不存在。已安装 → BLOCKED。"""
     if has_locked_text(probe.text):
         pytest.skip("BLOCKED：目标实例已安装（install.lock 存在，INSTALL_LOCKED），%s 分支不可达" % label)
 
+
+def require_locked(probe, label="API-030"):
+    """INS-002／INS-005 的锁终态前置：install.lock 必须已存在。未安装 → BLOCKED。"""
+    if not has_locked_text(probe.text):
+        pytest.skip("BLOCKED：目标实例未安装（install.lock 不存在），%s 的锁终态分支不可达" % label)
+
+
+# ────────────────────────────── 前置 3：会话令牌 ──────────────────────────────
 
 def hidden_token(html):
     """从第 3 步页面取隐藏字段 __token__；取不到返回 None（调用方决定 BLOCKED）。"""
@@ -140,17 +163,17 @@ def hidden_token(html):
     return match.group(1) if match else None
 
 
-def wizard_session(base_url, install_entry):
+def wizard_session(base_url, install_entry, label="API-030"):
     """建一个带向导状态的会话，返回 (session, token)。
 
     步骤（全部为 GET，不改业务状态）：
       1. GET ?step=5 → 安装模式与 install.lock 前置（不成立即 BLOCKED）；
       2. GET ?step=3（同一会话）→ 第 3 步页面签发 __token__，同时证明环境检测未失败
-         （INS-SEC-5：install_error 为真时第 3 步返回 INSTALL_ENV_FAILED 提示页，没有表单）；
+         （INS-SEC-5：install_error 为真时第 3 步返回提示页，没有表单）；
       3. 核验：令牌为 32 位小写十六进制。任何一步不成立 → BLOCKED，不合成令牌。
     """
     probe = require_install_mode(base_url, install_entry)
-    require_not_locked(probe)
+    require_not_locked(probe, label)
 
     sess = requests.Session()
     step3 = sess.get(step3_url(base_url, install_entry), timeout=30, allow_redirects=False)
@@ -160,7 +183,7 @@ def wizard_session(base_url, install_entry):
         )
     if MSG_ENV_FAILED in step3.text:
         pytest.skip(
-            "BLOCKED：本会话第 2 步环境检测未通过（INS-SEC-5），第 3 步不签发令牌，令牌之后的用例不可达"
+            "BLOCKED：本会话环境检测未通过（INS-SEC-5），第 3 步不签发令牌，令牌之后的用例不可达"
         )
     token = hidden_token(step3.text)
     if token is None:
@@ -170,12 +193,61 @@ def wizard_session(base_url, install_entry):
     return sess, token
 
 
-def assert_after_token_evidence(resp, label):
-    """令牌之后用例的强制核验：必须命中某条「令牌之后」分支，否则 BLOCKED（不是 FAIL、更不是 PASS）。
+def renew_token(sess, base_url, install_entry, label="API-030"):
+    """令牌作废后在同一会话重新打开第 3 步取新令牌；取不到 → BLOCKED（不合成）。"""
+    step3 = sess.get(step3_url(base_url, install_entry), timeout=30, allow_redirects=False)
+    if step3.status_code != 200:
+        pytest.skip("BLOCKED：[%s] 第 3 步 GET 返回 %s，无法取得新令牌" % (label, step3.status_code))
+    token = hidden_token(step3.text)
+    if not token or not TOKEN_PATTERN.match(token):
+        pytest.skip("BLOCKED：[%s] 第 3 步未签发新的 32 位小写十六进制令牌" % label)
+    return token
 
-    理由：没有连接配置（INSTALL_NOT_TESTED）时契约在令牌之前就返回，这类响应证明不了令牌被消费；
-    把它当成「令牌被接受」就是假通过。命中 INSTALL_ACCESS_DENIED 说明令牌没通过 → 目标分支不可达 → FAIL。
 
+# ────────────────────── 前置 4：令牌之后的分支必须可达（对照请求） ──────────────────────
+
+def control_proves_after_token(sess, url, token, label, case=""):
+    """对照请求：有效令牌 + install_dir=/sub 必须命中 INSTALL_DIR_UNSUPPORTED。
+
+    install_dir 校验紧跟令牌之后、root 与写库之前，所以：
+      * 命中 INSTALL_DIR_UNSUPPORTED → 令牌被接受（且已被消费）→ 令牌之后的分支可达；
+      * 命中 INSTALL_ACCESS_DENIED → 令牌本身被拒 → FAIL（不是环境问题）；
+      * 命中 INSTALL_NOT_TESTED / INSTALL_ENV_FAILED / INSTALL_ADMIN_* → 停在令牌之前，
+        该实例不满足「第 4 步连接配置已完成」的前置 → BLOCKED。
+
+    不写库、不写 lock，可重复执行。返回 control 响应；令牌已在该请求中被消费，调用方须换会话。
+    """
+    control = post_step5(sess, url, base_form(token, install_dir=DIR_NOT_ROOT))
+    assert_html_reply(control, "%s 对照 %s" % (case, label))
+    if MSG_DIR_UNSUPPORTED in control.text:
+        assert not has_success(control.text), (
+            "[%s 对照 %s] install_dir 非法却完成了安装：%r" % (case, label, control.text[:200])
+        )
+        return control
+    if is_access_denied(control):
+        pytest.fail(
+            "[%s 对照 %s] 有效令牌 + install_dir=%s 被 INSTALL_ACCESS_DENIED 拒绝："
+            "第 3 步签发的令牌未被接受，令牌之后的目标分支不可达。响应=%r"
+            % (case, label, DIR_NOT_ROOT, control.text[:200])
+        )
+    pytest.skip(
+        "BLOCKED：[%s 对照 %s] 有效令牌 + install_dir=%s 未命中 INSTALL_DIR_UNSUPPORTED，"
+        "说明请求停在令牌之前（命中=%r）——该实例缺少「第 4 步测试连接已完成」的向导前置"
+        "（MACCMS_DEPLOY_CONFIG 里有连接信息），令牌之后的分支不可达。响应=%r"
+        % (
+            case,
+            label,
+            DIR_NOT_ROOT,
+            before_token_hits(control.text) or after_token_hits(control.text),
+            control.text[:200],
+        )
+    )
+
+
+def assert_after_token_evidence(resp, label, case=""):
+    """令牌之后用例的强制核验：必须命中某条「令牌之后」分支，否则 BLOCKED。
+
+    命中 INSTALL_ACCESS_DENIED → 目标分支不可达 → FAIL；命中更早分支 → BLOCKED（不是 PASS）。
     返回命中的令牌之后分支标记列表；调用方据此再断言「命中了自己期望的那一个」。
     """
     hits = after_token_hits(resp.text)
@@ -183,16 +255,16 @@ def assert_after_token_evidence(resp, label):
         return hits
     if is_access_denied(resp):
         pytest.fail(
-            "[%s] 请求被 INSTALL_ACCESS_DENIED 拒绝（令牌未通过），未进入目标分支：%r"
-            % (label, resp.text[:200])
+            "[%s %s] 请求被 INSTALL_ACCESS_DENIED 拒绝，未进入目标分支：%r" % (case, label, resp.text[:200])
         )
-    early = before_token_hits(resp.text)
     pytest.skip(
-        "BLOCKED：[%s] 响应停在令牌之前的契约分支 %r，没有证据证明令牌被消费并通过；"
-        "目标分支需要「第 4 步连接配置已完成」（MACCMS_DEPLOY_CONFIG 里有连接信息）的向导前置实例。响应=%r"
-        % (label, early, resp.text[:200])
+        "BLOCKED：[%s %s] 响应停在令牌之前的契约分支 %r，没有证据证明令牌被消费并通过；"
+        "目标分支需要「第 4 步连接配置已完成」的向导前置实例。响应=%r"
+        % (case, label, before_token_hits(resp.text), resp.text[:200])
     )
 
+
+# ────────────────────────────── 表单与断言工具 ──────────────────────────────
 
 def base_form(token, **overrides):
     """第 3 步表单的合成值（全部符合契约规则：account 纯字母数字、密码 6～20 字符）。"""
@@ -207,17 +279,22 @@ def base_form(token, **overrides):
     return form
 
 
+def form_without(form, field):
+    """去掉某个字段后的表单副本（省略字段的形态）。"""
+    return {k: v for k, v in form.items() if k != field}
+
+
 def post_step5(sess, url, data, timeout=60):
     return sess.post(url, data=data, timeout=timeout, allow_redirects=False)
 
 
 def assert_html_reply(resp, label):
-    """非 Ajax 安装向导的提示页：HTTP 200 + text/html + 跳转提示页标题。"""
+    """安装向导的提示页：HTTP 200 + text/html + 跳转提示页标题。"""
     assert resp.status_code == 200, "[%s] 期望 HTTP 200 业务提示页，实际 %s" % (label, resp.status_code)
     ctype = resp.headers.get("Content-Type", "")
     assert "text/html" in ctype, "[%s] 安装向导提示页应为 text/html，实际 %r" % (label, ctype)
     assert JUMP_PAGE_TITLE in resp.text, (
-        "[%s] 非 Ajax 安装向导提示页缺少标题「跳转提示」，响应=%r" % (label, resp.text[:200])
+        "[%s] 安装向导提示页缺少标题「跳转提示」，响应=%r" % (label, resp.text[:200])
     )
 
 
@@ -228,6 +305,6 @@ def assert_not_echoed(resp, label):
 
 
 def assert_no_install_execution(resp, label):
-    """拒绝/超限分支不得出现安装执行痕迹。"""
+    """拒绝/超限分支不得出现安装执行痕迹（契约：写库阶段之前的失败不产生任何写入）。"""
     for marker in (MSG_SUCCESS, "is_ok", "开始安装", "正在安装"):
         assert marker not in resp.text, "[%s] 出现安装执行痕迹 %r" % (label, marker)

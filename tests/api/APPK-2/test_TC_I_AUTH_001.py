@@ -3,8 +3,6 @@
 # 契约: docs/api/APPK-2/openapi.yaml @ bc612e933aa67abab319b90534c5150c10a51452（ADM-1、ADM-4、x-permission）
 # 前置: APP_API_TOKEN_READONLY 为无 collect/images/make 权限的管理员会话
 
-import pytest
-
 from conftest import assert_json_error
 
 # (方法, 后台相对路径, 该路径的 x-permission)

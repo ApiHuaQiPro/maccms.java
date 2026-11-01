@@ -66,6 +66,7 @@ install.lock（INS-SEC-2）→ 方法（INS-SEC-3）→ 环境（INS-SEC-5）→
 | 会话令牌（INS-SEC-4） | 同一会话 `GET <install_entry>?step=3`，从隐藏字段 `__token__` 取 32 位小写十六进制；第 3 步页面打不开或环境检测失败也在此判定 | `pytest.skip("BLOCKED：…")`，**不合成令牌**、不写成 `assert` |
 | 第 4 步连接配置（向导状态） | 环境决定（`MACCMS_DEPLOY_CONFIG` 里已有连接信息），脚本不发送第 4 步请求（会改部署配置） | 目标分支不可达 → **BLOCKED** |
 | 令牌真的被消费 | 只有命中**令牌之后**的分支才算证据（`INSTALL_DIR_UNSUPPORTED`、root 拒绝、写库阶段各分支、成功） | 命中 `INSTALL_NOT_TESTED` / `INSTALL_ENV_FAILED` / `INSTALL_ADMIN_*` → BLOCKED |
+| 令牌之后的分支可达 | 对照请求「有效令牌 + `install_dir=/sub`」命中 `INSTALL_DIR_UNSUPPORTED`（`control_proves_after_token`） | 未命中 → BLOCKED；被 `INSTALL_ACCESS_DENIED` 拒绝 → FAIL |
 
 固定文案（逐字取自 `src/main/resources/lang/zh-cn.json`，`install_support.py` 里集中定义）：
 
@@ -86,6 +87,22 @@ install.lock（INS-SEC-2）→ 方法（INS-SEC-3）→ 环境（INS-SEC-5）→
 合成输入（不是凭据，`install_support.py` 内定义）：`account=autotestappk2admin`（符合 `^[A-Za-z0-9]+$`、
 ≤30 字符）、密码为 6～20 字符的合成串、`install_dir=/`、`initdata=0`。**不再使用带连字符的 `autotest-APPK-2-admin`**
 （会先触发 `INSTALL_ADMIN_INVALID`，到不了令牌分支）。
+
+### 离线自检工具（`tests/api/APPK-2/offline_check.py`）
+
+只写阶段无法连测试环境，但「脚本自己会不会假通过」可以离线验证。`offline_check.py` 不联网、不发请求、
+不读凭据值，纯计算地检查：
+
+1. 每个测试文件的导入符号都被用到（残留死导入会误导复核）；
+2. **判定函数仿真**：用真实的 `install_support` 判定函数对伪造响应体逐一验证 ——
+   「令牌之前」文案（`请先点击测试数据库连接！`/`环境检测未通过…`/`请填写管理账号和密码！`/`初始失败！`）
+   不得产生令牌之后证据；令牌之后文案（`INSTALL_DIR_UNSUPPORTED`/root 拒绝/成功）必须被识别；
+   `INSTALL_ACCESS_DENIED` 与两侧都不混淆；`INSTALL_LOCKED` 页与「写 lock 失败」文案不互相误判；
+   `control_proves_after_token` 的三条分支（通过 / BLOCKED / FAIL）走对；合成 account 与密码符合契约规则；
+3. `assert not is_access_denied(...)` 后面必须跟目标分支的肯定断言或 `pytest.fail/skip` 处置，
+   否则报「弱断言」。
+
+运行：`python tests/api/APPK-2/offline_check.py`（当前输出全部 OK，退出码 0）。
 
 ## 逐条明细
 
@@ -122,16 +139,17 @@ install.lock（INS-SEC-2）→ 方法（INS-SEC-3）→ 环境（INS-SEC-5）→
 
 ### TC-I-INS-004（安全、权限 / P1 / AC-12 / INS-SEC-4）
 
-- 前置：安装模式；`install.lock` 不存在；**每个验证点各自独立会话**，会话内从第 3 步取得真实 32 位小写十六进制令牌；
-  第 4 步连接配置已完成（否则停在 INSTALL_NOT_TESTED）。
-- 前置门槛（REV-I-01 / REV-I-02）：先下发**对照请求**「有效令牌 + `install_dir=/sub`」，
-  只有它命中 `INSTALL_DIR_UNSUPPORTED`（令牌之后、写库之前的第一个分支）才证明「account/密码合法 + 令牌通过」；
-  不成立 → BLOCKED，并把命中的令牌之前/之后文案一起写进 skip 原因。
-- 步骤与预期：
-  1. 会话有令牌但表单**省略** `__token__` → HTTP 200、`text/html`、正文「非法访问」；不回显该会话令牌。
-  2. 会话有令牌但提交值与签发值**不符**（32 位 `f`）→ 同上；随后同一会话补上正确令牌 + `install_dir=/sub`
-     必须命中 `INSTALL_DIR_UNSUPPORTED`（证明上一条的拒绝来自令牌不符，而不是会话失效造成的伪拒绝）。
-  3. `__token__[]=<token>`（数组形态）→ 按缺失处理，同样「非法访问」。
+- 前置（**两相**，任一不成立即 BLOCKED）：
+  - 相 1：安装模式；`install.lock` 不存在；同一会话第 3 步取得真实 32 位小写十六进制令牌（`wizard_session`）。
+  - 相 2：**令牌之后的分支可达** —— 对照请求「有效令牌 + `install_dir=/sub`」必须命中 `INSTALL_DIR_UNSUPPORTED`
+    （令牌之后、root 与写库之前，不写库、不写 lock）。契约判定顺序里 account/密码规则与「第 4 步连接配置」都在令牌之前，
+    只有相 2 成立，本用例的「非法访问」才只能来自令牌判定。
+    对照停在更早分支 → BLOCKED（skip 原因里写明命中了哪些令牌之前文案）；对照被令牌拒绝 → FAIL。
+- 步骤与预期（每个验证点各用**独立会话**，互不消费对方的令牌）：
+  1. 会话有令牌但表单**省略** `__token__` → HTTP 200、`text/html`、正文「非法访问」；不回显该会话令牌；
+     随后同一会话补上正确令牌 + `install_dir=/sub` → 必须命中 `INSTALL_DIR_UNSUPPORTED`（排除伪拒绝）。
+  2. 提交值与签发值**不符**（32 位 `f`）→ 同上形态，回显检查 + 补正确令牌的对照同上。
+  3. `__token__[]=<token>`（数组形态）→ 按缺失处理，同样「非法访问」；同样补正确令牌的对照。
   4. 三条拒绝响应都不新发 `install*` 会话、不回显密码、不回显「账号:密码」。
 
 ### TC-I-INS-005（安全、权限 / P1 / AC-12 / INS-SEC-4 令牌一次性）
@@ -142,6 +160,7 @@ install.lock（INS-SEC-2）→ 方法（INS-SEC-3）→ 环境（INS-SEC-5）→
      → 必须命中 `INSTALL_DIR_UNSUPPORTED`；命中 `INSTALL_ACCESS_DENIED` 判失败，
      命中 `INSTALL_NOT_TESTED` / 环境失败 / account 分支 → **BLOCKED**（证明不了令牌被消费）。
      该分支不写库、不写 lock，用例可重复执行。
+     （注：上一轮把 `INSTALL_NOT_TESTED` / `INSTALL_ENV_FAILED` 当成「令牌已消费」的证据，属假通过，第 3 轮已删除。）
   2. 用**完全相同的表单与 Cookie** 重放 → HTTP 200、「非法访问」；不得再命中任何令牌之后的分支、不得出现安装结果。
   3. 对照：同一会话重新 `GET ?step=3` 取得**新令牌**，再提交「新令牌 + `install_dir=/sub`」→ 必须再次命中
      `INSTALL_DIR_UNSUPPORTED`（证明第 2 步的拒绝来自令牌一次性，不是会话/实例状态变化）。
@@ -157,12 +176,14 @@ install.lock（INS-SEC-2）→ 方法（INS-SEC-3）→ 环境（INS-SEC-5）→
   1. `account[]=…`（数组）→ 不是 400/413/414/415/422/431、不是参数错误、不被令牌拒绝、不是 `INSTALL_ADMIN_INVALID`
      → 必须命中 `请填写管理账号和密码！`（INSTALL_ADMIN_REQUIRED，位于连接配置之后、令牌之前）；
      命中 `INSTALL_NOT_TESTED` → BLOCKED。
-  2. `install_dir[]=/other` → 必须越过后面的判定：若出现 `INSTALL_DIR_UNSUPPORTED` 判**失败**（数组没有按缺失处理），
-     否则须命中成功的 `系统安装成功` 才算「数组按 `/` 处理」；两者都没有 → BLOCKED。
-  3. 对照：`install_dir=/other`（标量）必须命中 `INSTALL_DIR_UNSUPPORTED`，否则 BLOCKED
-     （保证第 2 步的否定结论有区分力）。
-  4. `initdata=1` 与 `initdata=unexpected` 在写库之前的判定完全一致（命中的令牌前/后分支集合相同、是否成功相同）。
-     「非 1 不写初始数据」在写库之后才可观测，列入「未覆盖与原因」。
+  2. 对照（先跑）：`install_dir=/other`（标量）必须命中 `INSTALL_DIR_UNSUPPORTED`，否则 BLOCKED
+     （这是「令牌之后可达」的可重复证据，保证第 3 步的否定结论有区分力）。
+  3. `install_dir[]=/other`（数组，按缺失即 `/`）→ 必须命中**某条令牌之后的分支**（`assert_after_token_evidence`），
+     且**不得**出现 `INSTALL_DIR_UNSUPPORTED`（出现即判失败：数组被按值判定）；令牌被拒 → 失败；
+     一条令牌之后分支都没命中 → BLOCKED。
+  4. `initdata=1` 与 `initdata=unexpected`（都带 `install_dir=/other` 走到令牌之后同一个分支）：
+     两次都必须命中 `INSTALL_DIR_UNSUPPORTED`，且命中的令牌之后分支集合**完全相等**
+     （initdata 不影响写库之前的判定）。「非 1 不写初始数据」在写库之后才可观测，列入「未覆盖与原因」。
 - 补充用例（`test_TC_I_INS_006_boundary`）：密码长度边界 5 / 21 字符 → `INSTALL_ADMIN_INVALID`（长度不符合要求）；
   6 字符 → 不得命中 `INSTALL_ADMIN_INVALID`。这些分支在令牌之前，与连接配置无关。
 
