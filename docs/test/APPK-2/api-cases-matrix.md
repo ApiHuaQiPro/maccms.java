@@ -1,20 +1,26 @@
 # APPK-2 接口用例追溯矩阵（只写阶段）
 
-用例文件在 `tests/api/APPK-2/`，1 条用例对应 1 个测试文件；20 条用例共 22 个测试函数
+用例文件在 `tests/api/APPK-2/`，1 条用例对应 1 个测试文件；22 条用例共 24 个测试函数
 （`TC-I-INS-005` / `TC-I-INS-006` 各含一个补充函数，见 `api-cases.md` 逐条明细与下文「测试函数清单」）。依据：T1 `docs/test/APPK-2/t1-cases.md` @ `a906fac`，
 接口契约 `docs/api/APPK-2/openapi.yaml` @ `bc612e93`。
+
+> **T2 补充（第 3 轮复核之后追加，2026 年，来源见 `t2-coverage.md`）**：
+> `TC-I-CSRF-002`、`TC-I-OUT-002` 两条为 T2 覆盖评估发现的「假覆盖」补丁——
+> 前者补 ADM-3 「来源校验先于登录」的区分力（CSRF-001 的对照请求带会话，302 会被放行）；
+> 后者补 API-041 的 GET/POST 业务体同构与 OUT-1-9 去敏（契约里唯一返回固定业务体的采集动作）。
+> 原有 20 条用例的编号、断言均未修改。
 
 **配套文件**：逐条用例的前置、步骤与预期、判定说明在 `docs/test/APPK-2/api-cases.md`（G2 约定的用例清单文件名）。
 两份文档的**用例编号集合与覆盖结论一致**，可以互相替代查找：编号集合、按 API / 按 AC- 汇总、覆盖状态以本矩阵为准；
 每条用例的具体步骤与预期以 `api-cases.md` 为准（冲突时以 `api-cases.md` 为准并在 T2 改正本矩阵）。
 
-## 测试函数清单（pytest 收集数 = 22）
+## 测试函数清单（pytest 收集数 = 24）
 
 | 用例 | 测试函数 |
 | --- | --- |
 | TC-I-INS-005 | `test_TC_I_INS_005`、`test_TC_I_INS_005_installed_lock_terminal_state`（已安装实例的锁终态，与本用例主前置互斥） |
 | TC-I-INS-006 | `test_TC_I_INS_006`、`test_TC_I_INS_006_boundary`（密码长度边界 5/6/21 字符） |
-| 其余 18 条 | 与用例编号同名的单个函数 |
+| 其余 20 条 | 与用例编号同名的单个函数 |
 
 ## 按 API 汇总
 
@@ -25,8 +31,8 @@
 | API-040 | `/collect/api` | 2 | TC-I-COLLECT-001～002 |
 | API-041 | `/collect/test` | 2 | TC-I-COLLECT-003～004 |
 | API-043 | `/images/sync` | 1 | TC-I-IMAGES-001 |
-| 横切 | 方法策略 / 鉴权 / 来源校验 / 传输上限 | 4 | TC-I-METHOD-001、TC-I-AUTH-001、TC-I-CSRF-001、TC-I-LIMIT-001 |
-| **合计** | | **20 条用例 / 22 个测试函数** | |
+| 横切 | 方法策略 / 鉴权 / 来源校验 / 传输上限 | 6 | TC-I-METHOD-001、TC-I-AUTH-001、TC-I-CSRF-001～002、TC-I-OUT-002、TC-I-LIMIT-001 |
+| **合计** | | **22 条用例 / 24 个测试函数** | |
 
 ## 按 AC- 追溯
 
@@ -34,10 +40,10 @@
 | --- | --- | --- |
 | AC-7（静态生成） | TC-I-MAKE-001～004 | MakeParams 各字段 `x-business-rule`、`MAKE_PARAM_ERR`、SCH-1 |
 | AC-8（后台权限） | TC-I-MAKE-002、TC-I-AUTH-001 | ADM-1（302）、ADM-4（200 无权限体）、`x-permission` |
-| AC-10（在线采集） | TC-I-COLLECT-001～004 | OUT-1-1～4、OUT-1-9、`COLLECT_URL_REJECTED`、`COLLECT_PARAM_ERR` |
+| AC-10（在线采集） | TC-I-COLLECT-001～004、TC-I-OUT-002 | OUT-1-1～4、OUT-1-9、`COLLECT_URL_REJECTED`、`COLLECT_PARAM_ERR`、API-041 GET/POST 等价 |
 | AC-12（安装向导） | TC-I-INS-001～007 | INS-SEC-1～5、判定顺序、`INSTALL_*` |
 | AC-13（图片同步） | TC-I-IMAGES-001 | `ImagesSyncParams`、`IMAGES_PARAM_ERR`、SEC-IN-1 |
-| AC-16（安全与运行约束） | TC-I-METHOD-001、TC-I-CSRF-001、TC-I-LIMIT-001 | ADM-6、SRC-1/SRC-2、TRN-1、CSRF 分类 |
+| AC-16（安全与运行约束） | TC-I-METHOD-001、TC-I-CSRF-001～002、TC-I-OUT-002、TC-I-LIMIT-001 | ADM-3 顺序（来源校验先于登录）、ADM-6、SRC-1/SRC-2、TRN-1、CSRF 分类、OUT-1-9 |
 
 每条 AC- 至少一正一反：见下表「正/反」列。
 
@@ -64,6 +70,8 @@
 | TC-I-METHOD-001 | 权限、异常 | P1 | 反 | 12 组（路径, 方法）逐条核对 `x-method-policy` → 405 + `Allow` 含受理方法 |
 | TC-I-AUTH-001 | 权限、安全 | P1 | 正/反 | 6 个入口三档：未登录 302 / 无权限 200 无权限体（反）/ 有权限不出现无权限体（正） |
 | TC-I-CSRF-001 | 安全、权限 | P1 | 反 | 每个请求显式声明形态并按形态断言：Ajax → 只接受 200 JSON「非法请求」（403 HTML 判失败）；非 Ajax → 只接受 403 提示页「跳转提示」+「非法请求」（200 JSON 判失败）；302/成功体一律失败；同源对照必须到达业务层（JSON 含 code 字段） |
+| TC-I-CSRF-002 | 安全、权限 | P1 | 正/反 | ADM-3 顺序两侧对照（**无凭据**会话）：同源 → 必为未登录 302（证明来源已通过）；跨站 → 必为来源拒绝（Ajax 200 JSON / 非 Ajax 403 提示页），不得是 302；有会话 + 同源 → 业务体含 code 与 msg（不是只排除文案）；有会话 + 跨站 → 仍为来源拒绝 |
+| TC-I-OUT-002 | 安全、异常 | P1 | 反 | API-041：14 个 OUT-1 拒绝目标 + 3 个协议不合规 + 缺 cjurl + 9000 字符超长 → 恒 HTTP 200 `application/json`、`code≠1`、固定 `msg`；GET 与 POST 的 code/msg 逐字相等；业务体字段限于白名单（不得出现 url/host/response/cjurl）；msg 与整份响应按输入动态生成禁止片段做 OUT-1-9 去敏 |
 | TC-I-LIMIT-001 | 边界、异常 | P2 | 反 | 参数个数 > 1000（查询串 / 表单 / 合计）→ `INPUT_LIMIT_EXCEEDED`（200 + 参数错误） |
 
 ## 未覆盖与原因（T3 报告需照抄）

@@ -70,8 +70,10 @@ python -m pytest tests/api/APPK-2 --base-url "<G2.5 判定的测试环境地址>
 
 ## 本阶段的静态自检
 
-- `python -m pytest tests/api/APPK-2 --collect-only -q`：20 条用例全部可收集，与 20 个文件 1:1；
-  `-m install_wizard` 收集 5 条、`-m input_limit` 收集 2 条（标记已注册，`--strict-markers` 通过）；
+- `python -m pytest tests/api/APPK-2 --collect-only -q`：22 条用例（22 个文件）共收集 **24** 个测试函数（`INS-005`/`INS-006` 各多一个函数）；
+  `-m install_wizard` 收集 7 条（含两个补充函数）、`-m input_limit` 收集 2 条（标记已注册，`--strict-markers` 通过）；
+- `python tests/api/APPK-2/offline_check.py`：离线自检全部通过（导入无残留、安装向导判定函数仿真、
+  CSRF-002 的来源拒绝判定仿真、API-041 业务体字段白名单、弱断言扫描）；
 - `python -m compileall tests/api`：语法检查通过；
 - `git diff --check`：无空白错误；
 - 目录内不含任何账号、密码、令牌字面量；安装向导用例的密码/令牌是 `autotest-APPK-2-...` 合成值，

@@ -28,6 +28,9 @@ if HERE not in sys.path:
 
 FAILURES = []
 
+# ADM-3 来源拒绝的固定文案（与 conftest.MSG_ILLEGAL_REQUEST 一致；此处不导入 conftest，避免拉入 requests）
+S_MSG_ILLEGAL = "非法请求"
+
 
 def check(label, ok, detail=""):
     if ok:
@@ -68,6 +71,12 @@ class FakeResp:
         self.text = text
         self.status_code = status
         self.headers = {"Content-Type": ctype}
+
+    def json(self):
+        """同 requests.Response.json()：非 JSON 抛 ValueError（用例靠这个区分 JSON 体与提示页）。"""
+        import json as _json
+
+        return _json.loads(self.text)
 
 
 def fake_reply(msg):
@@ -175,7 +184,6 @@ def check_judgement_simulation():
 
 
 # ── 3. 断言强度自检：确保没有把「前置不成立」写成宽松 assert ────────────────────
-
 # 「只要不是 INSTALL_ACCESS_DENIED 就算过」这类空验证：形式是 `assert not is_access_denied(...)`
 # **且**该断言之后没有跟随目标分支的肯定断言（命中某个 MSG_* 文案 / assert_after_token_evidence /
 # after_token_hits 比较 / has_success）。纯否定断言（如「正常模式 404 页不应出现非法访问」）不在本检查范围。
@@ -185,6 +193,68 @@ FAIL_OR_SKIP_TAIL = re.compile(r"pytest\.(fail|skip)\(")
 AFFIRMATIVE_AFTER = re.compile(
     r"MSG_[A-Z_]+\s+(not\s+)?in\s+|assert_after_token_evidence\(|after_token_hits\(|has_success\("
 )
+
+
+def _load_case_module(module_name, filename, with_conftest=False):
+    """加载单个用例模块。用例模块里的 `from conftest import …` 在离线自检时需要 conftest 可见：
+    tests/api 目录入 sys.path（conftest 顶部不读环境变量、不发请求，只定义 fixture 与断言工具）。
+    """
+    import importlib.util
+
+    if with_conftest:
+        api_dir = os.path.dirname(HERE)
+        if api_dir not in sys.path:
+            sys.path.insert(0, api_dir)
+    path = os.path.join(HERE, filename)
+    spec = importlib.util.spec_from_file_location(module_name, path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def check_source_rejection_simulation():
+    """TC-I-CSRF-002 的 _is_source_rejection：只认 ADM-3 规定的两种拒绝形态，其余一律判否。
+
+    这段判定是 CSRF-002 「同源/跨站走不同分支」和「无凭据 + 跨站必须停在来源拒绝」的唯一依据，
+    一旦它把 302、200 非拒绝体或 403 非提示页认成拒绝，整条用例就会假通过。
+    """
+    import importlib.util
+
+    mod = _load_case_module("tc_csrf_002", "test_TC_I_CSRF_002.py", with_conftest=True)
+
+    illegal = S_MSG_ILLEGAL
+    jump = "<!DOCTYPE html><html><head><title>跳转提示</title></head><body><p>%s</p></body></html>" % illegal
+
+    cases = [
+        # (标签, 响应, 期望是否算来源拒绝)
+        ("Ajax 200 JSON 非法请求", FakeResp('{"code":0,"msg":"%s"}' % illegal, 200, "application/json"), True),
+        ("非 Ajax 403 提示页", FakeResp(jump, 403, "text/html; charset=utf-8"), True),
+        ("302 登录跳转", FakeResp("", 302, "text/html; charset=utf-8"), False),
+        ("200 普通 JSON（code=1）", FakeResp('{"code":1,"msg":"ok"}', 200, "application/json"), False),
+        ("200 JSON 但 msg 不匹配", FakeResp('{"code":0,"msg":"参数错误"}', 200, "application/json"), False),
+        ("403 但不是提示页", FakeResp("forbidden", 403, "text/plain"), False),
+        ("200 HTML 提示页", FakeResp(jump, 200, "text/html; charset=utf-8"), False),
+    ]
+    for label, resp, expected in cases:
+        got = mod._is_source_rejection(resp)
+        check("来源拒绝判定 %s → %s" % (label, "拒绝" if expected else "非拒绝"), got is expected)
+
+
+def check_collect_test_body_shape():
+    """TC-I-OUT-002 的业务体字段白名单：合法失败体过、透传目标字段的失败体被判失败。"""
+    import importlib.util
+
+    mod = _load_case_module("tc_out_002", "test_TC_I_OUT_002.py", with_conftest=True)
+
+    allowed = mod.ALLOWED_KEYS
+    check("允许字段含 code/msg", {"code", "msg"} <= allowed)
+    check("允许字段不含 url/host/response", not ({"url", "host", "response"} & allowed))
+    # 契约里的成功体字段不得把入参透传字段带进来
+    for leak in ("cjurl", "response", "url", "host", "error"):
+        check("允许字段不含 %r" % leak, leak not in allowed)
+
+
+# ── 4. 断言强度自检：确保没有把「前置不成立」写成宽松 assert ────────────────────
 
 
 def check_no_weak_asserts():
@@ -209,6 +279,8 @@ def check_no_weak_asserts():
 def main():
     check_imports()
     check_judgement_simulation()
+    check_source_rejection_simulation()
+    check_collect_test_body_shape()
     check_no_weak_asserts()
     if FAILURES:
         print("")

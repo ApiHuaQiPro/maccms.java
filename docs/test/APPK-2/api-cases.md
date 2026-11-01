@@ -34,6 +34,8 @@
 | TC-I-METHOD-001 | 后台动作路径 | 权限、异常 | P1 | AC-16 / ADM-6 | `test_TC_I_METHOD_001.py` |
 | TC-I-AUTH-001 | API-040/041/043/024 | 权限、安全 | P1 | AC-16 / ADM-1、ADM-4 | `test_TC_I_AUTH_001.py` |
 | TC-I-CSRF-001 | B 类后台动作 | 安全、权限 | P1 | AC-16 / SRC-1、SRC-2 | `test_TC_I_CSRF_001.py` |
+| TC-I-CSRF-002 | API-041/024（探针） | 安全、权限 | P1 | AC-16 / ADM-3 顺序（来源校验先于登录） | `test_TC_I_CSRF_002.py` |
+| TC-I-OUT-002 | API-041 `/collect/test` | 安全、异常 | P1 | AC-10、AC-16 / OUT-1-9、API-041 | `test_TC_I_OUT_002.py` |
 | TC-I-LIMIT-001 | 后台动作路径 | 边界、异常 | P2 | AC-16 / TRN-1 | `test_TC_I_LIMIT_001.py` |
 
 ## 安装向导用例的前置与判定（第 3 轮修订：按契约判定顺序设计）
@@ -299,6 +301,39 @@ install.lock（INS-SEC-2）→ 方法（INS-SEC-3）→ 环境（INS-SEC-5）→
   5. 同源对照**必须证明请求真的通过了来源校验并到达业务层**（不是「没出现非法请求」就算过）：
      `collect/api` 同源 Ajax 请求 → 非 302、非 403、无「非法请求」，且 `Content-Type` 为 `application/json`、
      响应体含业务字段 `code`；同源非 Ajax 请求 → 非 403、无「非法请求」。
+
+### TC-I-CSRF-002（安全、权限 / P1 / AC-16 / ADM-3 顺序）
+
+> T2 补充用例（第 3 轮复核后追加）：`TC-I-CSRF-001` 的对照请求恒带有效会话，302 在 001 里是被允许的，
+> 因此「来源校验被放到登录之后」或「来源校验全放行」的实现在 001 下仍可能保持绿。本条用**无凭据**会话把两者分开。
+
+- 前置：无（不需要令牌）；探针入口 `collect/test`（C 类只读，实现恒返回 `code`）与 `make/make`（缺 `ac` 即参数错误，不入生成循环）。
+- 步骤与预期（对每个探针）：
+  1. 无凭据 + 同源（`Sec-Fetch-Site: same-origin`，不注入令牌）→ **必须是 302** 且 `Location` 含 `login`/`index`；
+     不得是来源拒绝（证明来源已先于登录通过）。
+  2. 无凭据 + 跨站（`Sec-Fetch-Site: cross-site`）→ Ajax 形态必为 200 JSON `msg=非法请求`；
+     非 Ajax 形态必为 403 + `text/html` + 标题「跳转提示」+ 正文「非法请求」；**不得是 302**。
+  3. 有会话 + 同源 → 200 + `application/json` + 业务体含 `code` 与 `msg`（不是只排除「非法请求」文案）。
+  4. 有会话 + 跨站 → 仍为来源拒绝，且拒绝体字段不超过 `code/msg/data/url/wait`。
+- 失败判据：“同源无凭据请求停在来源拒绝”说明实现过严而非过宽，但同样与 ADM-3 顺序不符，按 FAIL 处理（交实现层确认是顺序问题还是用例假设问题）。
+
+### TC-I-OUT-002（安全、异常 / P1 / AC-10、AC-16 / OUT-1-9、API-041）
+
+> T2 补充用例。`TC-I-COLLECT-001` 只覆盖 API-040（B 类、`ac=list`、页面形态），
+> API-041 是同一套 OUT-1 下唯一返回**固定业务体**（`{code,msg}`，PHP `return json($res)`）的采集动作，
+> 也是错误体最容易顺手带上目标 URL 的地方（PHP 原文会附 `url:`/`response:`，契约登记为 SEC-NET-1 差异）。
+> 另外它的页面提交方式是 POST（`collect-info.js:37` 的 `$.post`），只测 GET 会漏掉「POST 走了另一条返回分支」。
+
+- 前置：默认角色会话；不要求测试环境真有该采集链接（全部样本都期望业务失败）。
+- 样本：14 个 OUT-1 拒绝目标（回环/私网/链路本地/云元数据/元数据主机名/IPv4 映射 IPv6/内部服务端口/端口 0）、
+  3 个协议不合规（`ftp:`、带用户信息、带 `#` 片段）、缺 `cjurl`、9000 字符超长 `cjurl`。
+- 步骤与预期：
+  1. 每个拒绝目标先 GET、再 POST → 都是 HTTP 200 + `application/json` + `code≠1` + 非空固定 `msg`；
+  2. GET 与 POST 的 `code`、`msg` 逐字相等（契约：GET 与 POST 等价）；
+  3. 业务体字段限于白名单（`code/msg/data` 与成功体的分页分类字段），**不得出现** `url`/`host`/`response`/`cjurl`；
+  4. `msg` 与整份响应按 `assert_error_body_redacted(msg, cjurl)` 做 OUT-1-9 去敏（完整 URL、主机及子域、
+     IPv4 等价书写、IPv6 等价类、显式端口）——禁止片段按每个输入动态生成，不是固定字符串表；
+  5. 缺 `cjurl` 与超长 `cjurl` → 不得 5xx；JSON 形态按 1～4 断言，非 JSON 形态至少不得回显整段入参。
 
 ### TC-I-LIMIT-001（边界、异常 / P2 / AC-16 / TRN-1）
 
