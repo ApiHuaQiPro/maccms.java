@@ -1,0 +1,1193 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>APPK-2 前台模板迁移 UI 契约</title>
+<!-- TAILWIND_CONFIG
+{ theme: { extend: { colors: { brand: '#155eef', brandDark: '#1849a9', ink: '#101828', muted: '#475467', line: '#d0d5dd', surface: '#f9fafb', danger: '#b42318', warning: '#93370d', success: '#027a48' }, borderRadius: { card: '12px' }, boxShadow: { card: '0 1px 2px rgba(16,24,40,.05)' } } } }
+间距仅使用 Tailwind 4px 刻度；本稿不是官方模板的新皮肤。
+-->
+<style>*, ::before, ::after {
+  --tw-border-spacing-x: 0;
+  --tw-border-spacing-y: 0;
+  --tw-translate-x: 0;
+  --tw-translate-y: 0;
+  --tw-rotate: 0;
+  --tw-skew-x: 0;
+  --tw-skew-y: 0;
+  --tw-scale-x: 1;
+  --tw-scale-y: 1;
+  --tw-pan-x:  ;
+  --tw-pan-y:  ;
+  --tw-pinch-zoom:  ;
+  --tw-scroll-snap-strictness: proximity;
+  --tw-gradient-from-position:  ;
+  --tw-gradient-via-position:  ;
+  --tw-gradient-to-position:  ;
+  --tw-ordinal:  ;
+  --tw-slashed-zero:  ;
+  --tw-numeric-figure:  ;
+  --tw-numeric-spacing:  ;
+  --tw-numeric-fraction:  ;
+  --tw-ring-inset:  ;
+  --tw-ring-offset-width: 0px;
+  --tw-ring-offset-color: #fff;
+  --tw-ring-color: rgb(59 130 246 / 0.5);
+  --tw-ring-offset-shadow: 0 0 #0000;
+  --tw-ring-shadow: 0 0 #0000;
+  --tw-shadow: 0 0 #0000;
+  --tw-shadow-colored: 0 0 #0000;
+  --tw-blur:  ;
+  --tw-brightness:  ;
+  --tw-contrast:  ;
+  --tw-grayscale:  ;
+  --tw-hue-rotate:  ;
+  --tw-invert:  ;
+  --tw-saturate:  ;
+  --tw-sepia:  ;
+  --tw-drop-shadow:  ;
+  --tw-backdrop-blur:  ;
+  --tw-backdrop-brightness:  ;
+  --tw-backdrop-contrast:  ;
+  --tw-backdrop-grayscale:  ;
+  --tw-backdrop-hue-rotate:  ;
+  --tw-backdrop-invert:  ;
+  --tw-backdrop-opacity:  ;
+  --tw-backdrop-saturate:  ;
+  --tw-backdrop-sepia:  ;
+  --tw-contain-size:  ;
+  --tw-contain-layout:  ;
+  --tw-contain-paint:  ;
+  --tw-contain-style:  ;
+}
+
+::backdrop {
+  --tw-border-spacing-x: 0;
+  --tw-border-spacing-y: 0;
+  --tw-translate-x: 0;
+  --tw-translate-y: 0;
+  --tw-rotate: 0;
+  --tw-skew-x: 0;
+  --tw-skew-y: 0;
+  --tw-scale-x: 1;
+  --tw-scale-y: 1;
+  --tw-pan-x:  ;
+  --tw-pan-y:  ;
+  --tw-pinch-zoom:  ;
+  --tw-scroll-snap-strictness: proximity;
+  --tw-gradient-from-position:  ;
+  --tw-gradient-via-position:  ;
+  --tw-gradient-to-position:  ;
+  --tw-ordinal:  ;
+  --tw-slashed-zero:  ;
+  --tw-numeric-figure:  ;
+  --tw-numeric-spacing:  ;
+  --tw-numeric-fraction:  ;
+  --tw-ring-inset:  ;
+  --tw-ring-offset-width: 0px;
+  --tw-ring-offset-color: #fff;
+  --tw-ring-color: rgb(59 130 246 / 0.5);
+  --tw-ring-offset-shadow: 0 0 #0000;
+  --tw-ring-shadow: 0 0 #0000;
+  --tw-shadow: 0 0 #0000;
+  --tw-shadow-colored: 0 0 #0000;
+  --tw-blur:  ;
+  --tw-brightness:  ;
+  --tw-contrast:  ;
+  --tw-grayscale:  ;
+  --tw-hue-rotate:  ;
+  --tw-invert:  ;
+  --tw-saturate:  ;
+  --tw-sepia:  ;
+  --tw-drop-shadow:  ;
+  --tw-backdrop-blur:  ;
+  --tw-backdrop-brightness:  ;
+  --tw-backdrop-contrast:  ;
+  --tw-backdrop-grayscale:  ;
+  --tw-backdrop-hue-rotate:  ;
+  --tw-backdrop-invert:  ;
+  --tw-backdrop-opacity:  ;
+  --tw-backdrop-saturate:  ;
+  --tw-backdrop-sepia:  ;
+  --tw-contain-size:  ;
+  --tw-contain-layout:  ;
+  --tw-contain-paint:  ;
+  --tw-contain-style:  ;
+}
+
+/*
+! tailwindcss v3.4.17 | MIT License | https://tailwindcss.com
+*/
+
+/*
+1. Prevent padding and border from affecting element width. (https://github.com/mozdevs/cssremedy/issues/4)
+2. Allow adding a border to an element by just adding a border-width. (https://github.com/tailwindcss/tailwindcss/pull/116)
+*/
+
+*,
+::before,
+::after {
+  box-sizing: border-box;
+  /* 1 */
+  border-width: 0;
+  /* 2 */
+  border-style: solid;
+  /* 2 */
+  border-color: #e5e7eb;
+  /* 2 */
+}
+
+::before,
+::after {
+  --tw-content: '';
+}
+
+/*
+1. Use a consistent sensible line-height in all browsers.
+2. Prevent adjustments of font size after orientation changes in iOS.
+3. Use a more readable tab size.
+4. Use the user's configured `sans` font-family by default.
+5. Use the user's configured `sans` font-feature-settings by default.
+6. Use the user's configured `sans` font-variation-settings by default.
+7. Disable tap highlights on iOS
+*/
+
+html,
+:host {
+  line-height: 1.5;
+  /* 1 */
+  -webkit-text-size-adjust: 100%;
+  /* 2 */
+  -moz-tab-size: 4;
+  /* 3 */
+  -o-tab-size: 4;
+     tab-size: 4;
+  /* 3 */
+  font-family: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  /* 4 */
+  font-feature-settings: normal;
+  /* 5 */
+  font-variation-settings: normal;
+  /* 6 */
+  -webkit-tap-highlight-color: transparent;
+  /* 7 */
+}
+
+/*
+1. Remove the margin in all browsers.
+2. Inherit line-height from `html` so users can set them as a class directly on the `html` element.
+*/
+
+body {
+  margin: 0;
+  /* 1 */
+  line-height: inherit;
+  /* 2 */
+}
+
+/*
+1. Add the correct height in Firefox.
+2. Correct the inheritance of border color in Firefox. (https://bugzilla.mozilla.org/show_bug.cgi?id=190655)
+3. Ensure horizontal rules are visible by default.
+*/
+
+hr {
+  height: 0;
+  /* 1 */
+  color: inherit;
+  /* 2 */
+  border-top-width: 1px;
+  /* 3 */
+}
+
+/*
+Add the correct text decoration in Chrome, Edge, and Safari.
+*/
+
+abbr:where([title]) {
+  -webkit-text-decoration: underline dotted;
+          text-decoration: underline dotted;
+}
+
+/*
+Remove the default font size and weight for headings.
+*/
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+/*
+Reset links to optimize for opt-in styling instead of opt-out.
+*/
+
+a {
+  color: inherit;
+  text-decoration: inherit;
+}
+
+/*
+Add the correct font weight in Edge and Safari.
+*/
+
+b,
+strong {
+  font-weight: bolder;
+}
+
+/*
+1. Use the user's configured `mono` font-family by default.
+2. Use the user's configured `mono` font-feature-settings by default.
+3. Use the user's configured `mono` font-variation-settings by default.
+4. Correct the odd `em` font sizing in all browsers.
+*/
+
+code,
+kbd,
+samp,
+pre {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  /* 1 */
+  font-feature-settings: normal;
+  /* 2 */
+  font-variation-settings: normal;
+  /* 3 */
+  font-size: 1em;
+  /* 4 */
+}
+
+/*
+Add the correct font size in all browsers.
+*/
+
+small {
+  font-size: 80%;
+}
+
+/*
+Prevent `sub` and `sup` elements from affecting the line height in all browsers.
+*/
+
+sub,
+sup {
+  font-size: 75%;
+  line-height: 0;
+  position: relative;
+  vertical-align: baseline;
+}
+
+sub {
+  bottom: -0.25em;
+}
+
+sup {
+  top: -0.5em;
+}
+
+/*
+1. Remove text indentation from table contents in Chrome and Safari. (https://bugs.chromium.org/p/chromium/issues/detail?id=999088, https://bugs.webkit.org/show_bug.cgi?id=201297)
+2. Correct table border color inheritance in all Chrome and Safari. (https://bugs.chromium.org/p/chromium/issues/detail?id=935729, https://bugs.webkit.org/show_bug.cgi?id=195016)
+3. Remove gaps between table borders by default.
+*/
+
+table {
+  text-indent: 0;
+  /* 1 */
+  border-color: inherit;
+  /* 2 */
+  border-collapse: collapse;
+  /* 3 */
+}
+
+/*
+1. Change the font styles in all browsers.
+2. Remove the margin in Firefox and Safari.
+3. Remove default padding in all browsers.
+*/
+
+button,
+input,
+optgroup,
+select,
+textarea {
+  font-family: inherit;
+  /* 1 */
+  font-feature-settings: inherit;
+  /* 1 */
+  font-variation-settings: inherit;
+  /* 1 */
+  font-size: 100%;
+  /* 1 */
+  font-weight: inherit;
+  /* 1 */
+  line-height: inherit;
+  /* 1 */
+  letter-spacing: inherit;
+  /* 1 */
+  color: inherit;
+  /* 1 */
+  margin: 0;
+  /* 2 */
+  padding: 0;
+  /* 3 */
+}
+
+/*
+Remove the inheritance of text transform in Edge and Firefox.
+*/
+
+button,
+select {
+  text-transform: none;
+}
+
+/*
+1. Correct the inability to style clickable types in iOS and Safari.
+2. Remove default button styles.
+*/
+
+button,
+input:where([type='button']),
+input:where([type='reset']),
+input:where([type='submit']) {
+  -webkit-appearance: button;
+  /* 1 */
+  background-color: transparent;
+  /* 2 */
+  background-image: none;
+  /* 2 */
+}
+
+/*
+Use the modern Firefox focus style for all focusable elements.
+*/
+
+:-moz-focusring {
+  outline: auto;
+}
+
+/*
+Remove the additional `:invalid` styles in Firefox. (https://github.com/mozilla/gecko-dev/blob/2f9eacd9d3d995c937b4251a5557d95d494c9be1/layout/style/res/forms.css#L728-L737)
+*/
+
+:-moz-ui-invalid {
+  box-shadow: none;
+}
+
+/*
+Add the correct vertical alignment in Chrome and Firefox.
+*/
+
+progress {
+  vertical-align: baseline;
+}
+
+/*
+Correct the cursor style of increment and decrement buttons in Safari.
+*/
+
+::-webkit-inner-spin-button,
+::-webkit-outer-spin-button {
+  height: auto;
+}
+
+/*
+1. Correct the odd appearance in Chrome and Safari.
+2. Correct the outline style in Safari.
+*/
+
+[type='search'] {
+  -webkit-appearance: textfield;
+  /* 1 */
+  outline-offset: -2px;
+  /* 2 */
+}
+
+/*
+Remove the inner padding in Chrome and Safari on macOS.
+*/
+
+::-webkit-search-decoration {
+  -webkit-appearance: none;
+}
+
+/*
+1. Correct the inability to style clickable types in iOS and Safari.
+2. Change font properties to `inherit` in Safari.
+*/
+
+::-webkit-file-upload-button {
+  -webkit-appearance: button;
+  /* 1 */
+  font: inherit;
+  /* 2 */
+}
+
+/*
+Add the correct display in Chrome and Safari.
+*/
+
+summary {
+  display: list-item;
+}
+
+/*
+Removes the default spacing and border for appropriate elements.
+*/
+
+blockquote,
+dl,
+dd,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+hr,
+figure,
+p,
+pre {
+  margin: 0;
+}
+
+fieldset {
+  margin: 0;
+  padding: 0;
+}
+
+legend {
+  padding: 0;
+}
+
+ol,
+ul,
+menu {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/*
+Reset default styling for dialogs.
+*/
+
+dialog {
+  padding: 0;
+}
+
+/*
+Prevent resizing textareas horizontally by default.
+*/
+
+textarea {
+  resize: vertical;
+}
+
+/*
+1. Reset the default placeholder opacity in Firefox. (https://github.com/tailwindlabs/tailwindcss/issues/3300)
+2. Set the default placeholder color to the user's configured gray 400 color.
+*/
+
+input::-moz-placeholder, textarea::-moz-placeholder {
+  opacity: 1;
+  /* 1 */
+  color: #9ca3af;
+  /* 2 */
+}
+
+input::placeholder,
+textarea::placeholder {
+  opacity: 1;
+  /* 1 */
+  color: #9ca3af;
+  /* 2 */
+}
+
+/*
+Set the default cursor for buttons.
+*/
+
+button,
+[role="button"] {
+  cursor: pointer;
+}
+
+/*
+Make sure disabled buttons don't get the pointer cursor.
+*/
+
+:disabled {
+  cursor: default;
+}
+
+/*
+1. Make replaced elements `display: block` by default. (https://github.com/mozdevs/cssremedy/issues/14)
+2. Add `vertical-align: middle` to align replaced elements more sensibly by default. (https://github.com/jensimmons/cssremedy/issues/14#issuecomment-634934210)
+   This can trigger a poorly considered lint error in some tools but is included by design.
+*/
+
+img,
+svg,
+video,
+canvas,
+audio,
+iframe,
+embed,
+object {
+  display: block;
+  /* 1 */
+  vertical-align: middle;
+  /* 2 */
+}
+
+/*
+Constrain images and videos to the parent width and preserve their intrinsic aspect ratio. (https://github.com/mozdevs/cssremedy/issues/14)
+*/
+
+img,
+video {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Make elements with the HTML hidden attribute stay hidden by default */
+
+[hidden]:where(:not([hidden="until-found"])) {
+  display: none;
+}
+
+.mx-auto {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.mb-1 {
+  margin-bottom: 0.25rem;
+}
+
+.mb-4 {
+  margin-bottom: 1rem;
+}
+
+.ml-2 {
+  margin-left: 0.5rem;
+}
+
+.mt-1 {
+  margin-top: 0.25rem;
+}
+
+.mt-2 {
+  margin-top: 0.5rem;
+}
+
+.mt-3 {
+  margin-top: 0.75rem;
+}
+
+.mt-4 {
+  margin-top: 1rem;
+}
+
+.mt-6 {
+  margin-top: 1.5rem;
+}
+
+.block {
+  display: block;
+}
+
+.flex {
+  display: flex;
+}
+
+.grid {
+  display: grid;
+}
+
+.aspect-\[3\/4\] {
+  aspect-ratio: 3/4;
+}
+
+.h-10 {
+  height: 2.5rem;
+}
+
+.h-20 {
+  height: 5rem;
+}
+
+.h-3 {
+  height: 0.75rem;
+}
+
+.h-4 {
+  height: 1rem;
+}
+
+.h-fit {
+  height: -moz-fit-content;
+  height: fit-content;
+}
+
+.min-h-10 {
+  min-height: 2.5rem;
+}
+
+.w-1\/2 {
+  width: 50%;
+}
+
+.w-10 {
+  width: 2.5rem;
+}
+
+.w-3 {
+  width: 0.75rem;
+}
+
+.w-3\/4 {
+  width: 75%;
+}
+
+.w-full {
+  width: 100%;
+}
+
+.max-w-3xl {
+  max-width: 48rem;
+}
+
+.max-w-6xl {
+  max-width: 72rem;
+}
+
+.max-w-xs {
+  max-width: 20rem;
+}
+
+.cursor-not-allowed {
+  cursor: not-allowed;
+}
+
+.grid-cols-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.grid-cols-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.flex-wrap {
+  flex-wrap: wrap;
+}
+
+.place-items-center {
+  place-items: center;
+}
+
+.items-end {
+  align-items: flex-end;
+}
+
+.items-center {
+  align-items: center;
+}
+
+.justify-center {
+  justify-content: center;
+}
+
+.justify-between {
+  justify-content: space-between;
+}
+
+.gap-2 {
+  gap: 0.5rem;
+}
+
+.gap-3 {
+  gap: 0.75rem;
+}
+
+.gap-4 {
+  gap: 1rem;
+}
+
+.gap-8 {
+  gap: 2rem;
+}
+
+.space-y-2 > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-y-reverse: 0;
+  margin-top: calc(0.5rem * calc(1 - var(--tw-space-y-reverse)));
+  margin-bottom: calc(0.5rem * var(--tw-space-y-reverse));
+}
+
+.space-y-3 > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-y-reverse: 0;
+  margin-top: calc(0.75rem * calc(1 - var(--tw-space-y-reverse)));
+  margin-bottom: calc(0.75rem * var(--tw-space-y-reverse));
+}
+
+.space-y-4 > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-y-reverse: 0;
+  margin-top: calc(1rem * calc(1 - var(--tw-space-y-reverse)));
+  margin-bottom: calc(1rem * var(--tw-space-y-reverse));
+}
+
+.space-y-8 > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-y-reverse: 0;
+  margin-top: calc(2rem * calc(1 - var(--tw-space-y-reverse)));
+  margin-bottom: calc(2rem * var(--tw-space-y-reverse));
+}
+
+.overflow-hidden {
+  overflow: hidden;
+}
+
+.break-all {
+  word-break: break-all;
+}
+
+.rounded {
+  border-radius: 0.25rem;
+}
+
+.rounded-2xl {
+  border-radius: 1rem;
+}
+
+.rounded-card {
+  border-radius: 12px;
+}
+
+.rounded-full {
+  border-radius: 9999px;
+}
+
+.rounded-lg {
+  border-radius: 0.5rem;
+}
+
+.border {
+  border-width: 1px;
+}
+
+.border-2 {
+  border-width: 2px;
+}
+
+.border-4 {
+  border-width: 4px;
+}
+
+.border-b {
+  border-bottom-width: 1px;
+}
+
+.border-brand {
+  --tw-border-opacity: 1;
+  border-color: rgb(21 94 239 / var(--tw-border-opacity, 1));
+}
+
+.border-danger {
+  --tw-border-opacity: 1;
+  border-color: rgb(180 35 24 / var(--tw-border-opacity, 1));
+}
+
+.border-gray-700 {
+  --tw-border-opacity: 1;
+  border-color: rgb(55 65 81 / var(--tw-border-opacity, 1));
+}
+
+.border-green-200 {
+  --tw-border-opacity: 1;
+  border-color: rgb(187 247 208 / var(--tw-border-opacity, 1));
+}
+
+.border-line {
+  --tw-border-opacity: 1;
+  border-color: rgb(208 213 221 / var(--tw-border-opacity, 1));
+}
+
+.border-red-200 {
+  --tw-border-opacity: 1;
+  border-color: rgb(254 202 202 / var(--tw-border-opacity, 1));
+}
+
+.bg-blue-50 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(239 246 255 / var(--tw-bg-opacity, 1));
+}
+
+.bg-brand {
+  --tw-bg-opacity: 1;
+  background-color: rgb(21 94 239 / var(--tw-bg-opacity, 1));
+}
+
+.bg-brandDark {
+  --tw-bg-opacity: 1;
+  background-color: rgb(24 73 169 / var(--tw-bg-opacity, 1));
+}
+
+.bg-gray-100 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(243 244 246 / var(--tw-bg-opacity, 1));
+}
+
+.bg-gray-200 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(229 231 235 / var(--tw-bg-opacity, 1));
+}
+
+.bg-gray-400 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(156 163 175 / var(--tw-bg-opacity, 1));
+}
+
+.bg-green-50 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(240 253 244 / var(--tw-bg-opacity, 1));
+}
+
+.bg-ink {
+  --tw-bg-opacity: 1;
+  background-color: rgb(16 24 40 / var(--tw-bg-opacity, 1));
+}
+
+.bg-orange-50 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(255 247 237 / var(--tw-bg-opacity, 1));
+}
+
+.bg-red-50 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(254 242 242 / var(--tw-bg-opacity, 1));
+}
+
+.bg-slate-200 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(226 232 240 / var(--tw-bg-opacity, 1));
+}
+
+.bg-slate-300 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(203 213 225 / var(--tw-bg-opacity, 1));
+}
+
+.bg-slate-500 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(100 116 139 / var(--tw-bg-opacity, 1));
+}
+
+.bg-slate-600 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(71 85 105 / var(--tw-bg-opacity, 1));
+}
+
+.bg-slate-700 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(51 65 85 / var(--tw-bg-opacity, 1));
+}
+
+.bg-slate-800 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(30 41 59 / var(--tw-bg-opacity, 1));
+}
+
+.bg-surface {
+  --tw-bg-opacity: 1;
+  background-color: rgb(249 250 251 / var(--tw-bg-opacity, 1));
+}
+
+.bg-white {
+  --tw-bg-opacity: 1;
+  background-color: rgb(255 255 255 / var(--tw-bg-opacity, 1));
+}
+
+.bg-white\/10 {
+  background-color: rgb(255 255 255 / 0.1);
+}
+
+.p-3 {
+  padding: 0.75rem;
+}
+
+.p-4 {
+  padding: 1rem;
+}
+
+.px-3 {
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+}
+
+.px-4 {
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+.py-1 {
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem;
+}
+
+.py-3 {
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+}
+
+.py-4 {
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+}
+
+.py-8 {
+  padding-top: 2rem;
+  padding-bottom: 2rem;
+}
+
+.pb-4 {
+  padding-bottom: 1rem;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.font-mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+.font-sans {
+  font-family: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+}
+
+.text-2xl {
+  font-size: 1.5rem;
+  line-height: 2rem;
+}
+
+.text-lg {
+  font-size: 1.125rem;
+  line-height: 1.75rem;
+}
+
+.text-sm {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+
+.text-xl {
+  font-size: 1.25rem;
+  line-height: 1.75rem;
+}
+
+.text-xs {
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
+
+.font-bold {
+  font-weight: 700;
+}
+
+.font-medium {
+  font-weight: 500;
+}
+
+.font-semibold {
+  font-weight: 600;
+}
+
+.leading-6 {
+  line-height: 1.5rem;
+}
+
+.tracking-tight {
+  letter-spacing: -0.025em;
+}
+
+.text-blue-300 {
+  --tw-text-opacity: 1;
+  color: rgb(147 197 253 / var(--tw-text-opacity, 1));
+}
+
+.text-brand {
+  --tw-text-opacity: 1;
+  color: rgb(21 94 239 / var(--tw-text-opacity, 1));
+}
+
+.text-brandDark {
+  --tw-text-opacity: 1;
+  color: rgb(24 73 169 / var(--tw-text-opacity, 1));
+}
+
+.text-danger {
+  --tw-text-opacity: 1;
+  color: rgb(180 35 24 / var(--tw-text-opacity, 1));
+}
+
+.text-gray-300 {
+  --tw-text-opacity: 1;
+  color: rgb(209 213 219 / var(--tw-text-opacity, 1));
+}
+
+.text-gray-600 {
+  --tw-text-opacity: 1;
+  color: rgb(75 85 99 / var(--tw-text-opacity, 1));
+}
+
+.text-ink {
+  --tw-text-opacity: 1;
+  color: rgb(16 24 40 / var(--tw-text-opacity, 1));
+}
+
+.text-muted {
+  --tw-text-opacity: 1;
+  color: rgb(71 84 103 / var(--tw-text-opacity, 1));
+}
+
+.text-success {
+  --tw-text-opacity: 1;
+  color: rgb(2 122 72 / var(--tw-text-opacity, 1));
+}
+
+.text-warning {
+  --tw-text-opacity: 1;
+  color: rgb(147 55 13 / var(--tw-text-opacity, 1));
+}
+
+.text-white {
+  --tw-text-opacity: 1;
+  color: rgb(255 255 255 / var(--tw-text-opacity, 1));
+}
+
+.shadow-card {
+  --tw-shadow: 0 1px 2px rgba(16,24,40,.05);
+  --tw-shadow-colored: 0 1px 2px var(--tw-shadow-color);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+}
+
+.outline {
+  outline-style: solid;
+}
+
+.outline-2 {
+  outline-width: 2px;
+}
+
+.outline-offset-2 {
+  outline-offset: 2px;
+}
+
+.outline-brand {
+  outline-color: #155eef;
+}
+
+@media (min-width: 640px) {
+  .sm\:grid-cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 768px) {
+  .md\:grid-cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .md\:grid-cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .md\:grid-cols-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .md\:p-6 {
+    padding: 1.5rem;
+  }
+
+  .md\:px-8 {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+
+  .md\:py-12 {
+    padding-top: 3rem;
+    padding-bottom: 3rem;
+  }
+
+  .md\:text-4xl {
+    font-size: 2.25rem;
+    line-height: 2.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .lg\:grid-cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .lg\:grid-cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+</style>
+</head>
+<body class="bg-surface text-ink font-sans text-sm leading-6">
+<header class="bg-ink text-white">
+  <div class="max-w-6xl mx-auto px-4 py-8 md:px-8 md:py-12">
+    <div class="flex flex-wrap items-center gap-2 mb-4"><span class="px-3 py-1 rounded-full bg-brand text-xs font-semibold">APPK-2 · UI v1</span><span class="px-3 py-1 rounded-full bg-white/10 text-xs">官方模板原样迁移 · 不重设计</span></div>
+    <h1 class="text-2xl md:text-4xl font-semibold tracking-tight">前台模板迁移 UI 契约</h1>
+    <p class="mt-4 max-w-3xl text-gray-300">桌面 default_pc 与手机 default_wap 共用 PHP 输出基线。以下稿件固定页面拓扑、六态、交互态与 URL 边界；线框示意不替代 PHP 黄金字节。</p>
+    <div class="mt-6 grid sm:grid-cols-3 gap-3 text-xs"><div class="p-4 rounded-card bg-white/10"><b class="block text-white">桌面</b><span class="text-gray-300">79 有文件 / 41 缺失</span></div><div class="p-4 rounded-card bg-white/10"><b class="block text-white">手机</b><span class="text-gray-300">63 有文件 / 57 缺失</span></div><div class="p-4 rounded-card bg-white/10"><b class="block text-white">验收</b><span class="text-gray-300">PHP 7.3.33 输出为准</span></div></div>
+  </div>
+</header>
+<main class="max-w-6xl mx-auto px-4 py-8 md:px-8 md:py-12 space-y-8">
+<section class="bg-white border border-line rounded-card p-4 md:p-6 shadow-card" aria-labelledby="d01">
+ <div class="flex flex-wrap justify-between gap-2"><div><span class="text-brand font-semibold text-xs">D-01 · 正常</span><h2 id="d01" class="text-xl font-semibold mt-1">桌面内容页拓扑</h2></div><span class="px-3 py-1 rounded-full bg-blue-50 text-brandDark text-xs h-fit">FR-5 · AC-5</span></div>
+ <p class="text-muted mt-2">仅标出官方模板既有区域；导航、卡片比例、留白与文案最终以原模板及 PHP 输出为准，不应用本稿的 4px 文档网格修改官方 CSS。</p>
+ <div class="mt-6 border border-line rounded-lg overflow-hidden">
+  <div class="bg-gray-100 border-b border-line px-4 py-3 flex gap-2 items-center"><span class="w-3 h-3 rounded-full bg-gray-400"></span><span class="w-3 h-3 rounded-full bg-gray-400"></span><span class="text-xs text-muted ml-2">桌面模板 · index / vod / art / topic…</span></div>
+  <div class="p-4 md:p-6 bg-white">
+   <div class="flex flex-wrap items-center justify-between gap-4 border-b border-line pb-4"><div class="flex items-center gap-3"><div class="w-10 h-10 rounded-lg bg-brand text-white grid place-items-center font-bold">M</div><b>站点名称</b></div><nav aria-label="桌面导航示意" class="flex flex-wrap gap-4 text-muted"><a class="text-brand font-medium" href="#d01">首页</a><a href="#d08">电影</a><a href="#d08">剧集</a><a href="#d08">专题</a></nav></div>
+   <div class="py-4 flex flex-wrap justify-between gap-3"><div><h3 class="font-semibold text-lg">本周更新</h3><p class="text-muted text-xs">官方标签输出区域</p></div><a href="#d08" class="text-brand">更多 →</a></div>
+   <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <article class="border border-line rounded-lg overflow-hidden"><div class="aspect-[3/4] bg-slate-700 text-white p-3 flex items-end">示例影片 A</div><div class="p-3"><b class="block">示例影片 A</b><span class="text-xs text-muted">更新至第 08 集</span></div></article>
+    <article class="border border-line rounded-lg overflow-hidden"><div class="aspect-[3/4] bg-slate-500 text-white p-3 flex items-end">示例影片 B</div><div class="p-3"><b class="block">示例影片 B</b><span class="text-xs text-muted">正片</span></div></article>
+    <article class="border border-line rounded-lg overflow-hidden"><div class="aspect-[3/4] bg-slate-600 text-white p-3 flex items-end">示例影片 C</div><div class="p-3"><b class="block">示例影片 C</b><span class="text-xs text-muted">更新至第 12 集</span></div></article>
+    <article class="border border-line rounded-lg overflow-hidden"><div class="aspect-[3/4] bg-slate-800 text-white p-3 flex items-end">示例影片 D</div><div class="p-3"><b class="block">示例影片 D</b><span class="text-xs text-muted">正片</span></div></article>
+   </div>
+  </div>
+ </div>
+</section>
+<div class="grid lg:grid-cols-2 gap-8">
+<section class="bg-white border border-line rounded-card p-4 md:p-6 shadow-card" aria-labelledby="d02"><span class="text-brand font-semibold text-xs">D-02 · 正常</span><h2 id="d02" class="text-xl font-semibold mt-1">手机模板独立呈现</h2><p class="text-muted mt-2">手机 UA 命中选择条件后读取 default_wap，不回退桌面或 JTE。</p><div class="mt-6 mx-auto max-w-xs border-4 border-gray-700 rounded-2xl overflow-hidden"><div class="p-4 bg-white border-b border-line flex justify-between items-center"><b>站点名称</b><span class="text-brand">菜单</span></div><div class="p-4 space-y-4"><div class="h-20 rounded-lg bg-slate-700 text-white p-3 flex items-end">手机焦点内容</div><div class="grid grid-cols-3 gap-2"><div class="aspect-[3/4] rounded bg-slate-200"></div><div class="aspect-[3/4] rounded bg-slate-300"></div><div class="aspect-[3/4] rounded bg-slate-200"></div></div><p class="text-center text-muted text-xs">原模板响应式/固定布局均按 PHP 输出验收</p></div></div></section>
+<section class="bg-white border border-line rounded-card p-4 md:p-6 shadow-card" aria-labelledby="d12"><span class="text-brand font-semibold text-xs">D-12 · URL</span><h2 id="d12" class="text-xl font-semibold mt-1">静态资源地址边界</h2><div class="mt-6 space-y-3 font-mono text-xs break-all"><div class="p-4 rounded-lg bg-green-50 border border-green-200"><b class="text-success block mb-1">✓ path_tpl（不含 html/）</b><span>/template/default_pc/css/style.css</span></div><div class="p-4 rounded-lg bg-green-50 border border-green-200"><b class="text-success block mb-1">✓ 手机</b><span>/template/default_wap/css/style.css</span></div><div class="p-4 rounded-lg bg-red-50 border border-red-200"><b class="text-danger block mb-1">✕ 禁止误拼 PATH-3</b><span>/template/default_pc/html/css/style.css</span></div></div><p class="text-muted mt-4 text-xs">模板读取根含 html/；资源 URL 不含 html/。手机 ads/ 不存在，不创建、不补图。</p></section>
+</div>
+<section class="bg-white border border-line rounded-card p-4 md:p-6 shadow-card" aria-labelledby="states"><div><span class="text-brand font-semibold text-xs">D-03 ～ D-07 · 六态</span><h2 id="states" class="text-xl font-semibold mt-1">状态必须保持 PHP 语义</h2></div><div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
+<article class="p-4 rounded-lg border border-line"><div class="flex justify-between"><b>D-03 加载</b><span class="text-xs text-muted">Ajax 局部</span></div><div class="mt-4 space-y-2" aria-label="加载占位示意"><div class="h-4 rounded bg-gray-200 w-3/4"></div><div class="h-4 rounded bg-gray-200 w-full"></div><div class="h-4 rounded bg-gray-200 w-1/2"></div></div><p class="text-xs text-muted mt-4">只用于原模板已有异步区域；首次导航不新增骨架屏。</p></article>
+<article class="p-4 rounded-lg border border-line"><div class="flex justify-between"><b>D-04 空</b><span class="text-xs text-muted">标签结果 0</span></div><div class="mt-4 p-4 rounded bg-surface text-center text-muted">列表区域无循环输出</div><p class="text-xs text-muted mt-4">保留模板外框、标题与分页的 PHP 原样；不补插画或“暂无数据”。</p></article>
+<article class="p-4 rounded-lg border border-line"><div class="flex justify-between"><b>D-05 错误</b><span class="text-xs text-danger">HTTP 500</span></div><div class="mt-4 p-4 rounded bg-red-50 text-danger">模板语法 / 函数不受支持</div><p class="text-xs text-muted mt-4">输出 PHP 对照错误页；日志记录模板名和行号，不静默残缺。</p></article>
+<article class="p-4 rounded-lg border border-line"><div class="flex justify-between"><b>D-06 禁用</b><span class="text-xs text-muted">仅原表单</span></div><button disabled class="mt-4 w-full min-h-10 rounded-lg bg-gray-200 text-gray-600 cursor-not-allowed">提交处理中</button><p class="text-xs text-muted mt-4">不扩大交互；只约束已有提交控件的防重复状态。</p></article>
+<article class="p-4 rounded-lg border border-line"><div class="flex justify-between"><b>D-07 无权限</b><span class="text-xs text-warning">popedom</span></div><div class="mt-4 p-4 rounded bg-orange-50 text-warning">当前会员组无权访问</div><p class="text-xs text-muted mt-4">沿用旧提示/跳转；观看密码走 *_pwd，不改权限规则。</p></article>
+<article class="p-4 rounded-lg border border-line"><div class="flex justify-between"><b>D-11 模板缺失</b><span class="text-xs text-danger">不补页面</span></div><div class="mt-4 p-4 rounded bg-red-50 text-danger">模板文件不存在</div><p class="text-xs text-muted mt-4">桌面 41 / 手机 57 个固定名，按 PHP 同请求输出；不回退。</p></article>
+</div></section>
+<section class="bg-white border border-line rounded-card p-4 md:p-6 shadow-card" aria-labelledby="interaction"><span class="text-brand font-semibold text-xs">D-08 ～ D-10 · 交互静态变体</span><h2 id="interaction" class="text-xl font-semibold mt-1">悬停、焦点、校验</h2><div class="grid md:grid-cols-3 gap-4 mt-6">
+<div class="p-4 rounded-lg bg-surface"><b>D-08 悬停</b><a href="#d08" class="mt-4 min-h-10 flex items-center justify-center rounded-lg bg-brandDark text-white">内容卡片 / 链接</a><p class="text-xs text-muted mt-3">视觉按官方 :hover；不增加位移或阴影动效。</p></div>
+<div class="p-4 rounded-lg bg-surface"><b>D-09 键盘焦点</b><a href="#d09" class="mt-4 min-h-10 flex items-center justify-center rounded-lg bg-white text-brandDark border-2 border-brand outline outline-2 outline-offset-2 outline-brand">可见焦点</a><p class="text-xs text-muted mt-3">不全局 outline:none；焦点顺序遵循原 DOM。</p></div>
+<div class="p-4 rounded-lg bg-surface"><b>D-10 校验错误</b><label for="pwd" class="block mt-3">密码</label><input id="pwd" value="••••••••" aria-invalid="true" aria-describedby="err" class="mt-1 w-full min-h-10 px-3 rounded-lg border border-danger bg-white"><p id="err" class="text-danger text-xs mt-2">账号或密码错误</p><p class="text-xs text-muted mt-2">不透露账号是否存在。</p></div>
+</div></section>
+<section class="bg-ink text-white rounded-card p-4 md:p-6"><span class="text-blue-300 font-semibold text-xs">D-13 · 路由与下线</span><h2 class="text-xl font-semibold mt-1">唯一呈现来源</h2><div class="grid md:grid-cols-3 gap-4 mt-6 text-sm"><div class="p-4 rounded-lg bg-white/10"><b>PHP 模板</b><p class="text-gray-300 mt-2">274 文件原样使用；存在则渲染。</p></div><div class="p-4 rounded-lg bg-white/10"><b>模板缺失</b><p class="text-gray-300 mt-2">按 PHP 错误页输出；不设计替代页。</p></div><div class="p-4 rounded-lg bg-white/10"><b>src/main/jte/site/**</b><p class="text-gray-300 mt-2">前台全部下线；后台与安装 JTE 不受影响。</p></div></div></section>
+<section class="text-xs text-muted pb-4"><p>可访问性边界：本设计稿自动检查 WCAG AA；官方 274 文件不得为通过本稿检查而修改。实际页面语义、焦点与对比度差异只记录，不在本期擅改模板。可点区域 ≥40px 是实现审查提示，不构成改写官方模板的授权。</p></section>
+</main>
+</body></html>
