@@ -3,8 +3,8 @@
 | 字段 | 值 |
 | --- | --- |
 | 创建者 | @架构师-海外 |
-| 创建时间 | 2026-10-31 19:15（UTC+8）；v3 修订 2026-11-01 08:30（UTC+8） |
-| 版本 | v3 |
+| 创建时间 | 2026-10-31 19:15（UTC+8）；v3 修订 2026-11-01 08:30（UTC+8）；v4 修订 2026-11-01 08:50（UTC+8） |
+| 版本 | v4 |
 | 状态 | 评审中 |
 | Issue | APPK-2 |
 | 上游 PRD | `docs/prd/APPK-2.md` 及附表 `docs/prd/APPK-2/`（A～F）@ `8fa362c25b62b52ed5b16afd9eca7f6ccfcafb9f`（v9）；已经 G0 范围确认 |
@@ -95,7 +95,7 @@
 | jte：`src/main/jte/site/**` 76 个文件（`pages` 41、`ajax` 9、`member` 8、`fragments` 6、`interaction` 5、`player` 4、`components` 2、`layout` 1）；`jte-maven-plugin` 预编译到 `com.maccms.backend.site.web.jte`；同一批源文件另拷到 `classpath:/site-jte/` 供 D4 在线编辑；后台 `src/main/jte-admin`（118 个）与安装 `src/main/jte-install`（5 个）也用 jte | `pom.xml`（`jte-maven-plugin` 三个 execution 与资源拷贝段）；`site/config/SiteConfiguration.java:355-365` |
 | D4 在线编辑：`sitetemplate` 模块（`SiteTemplateService`、`JteSecurityFilter`、`TemplateWizard`、`JteOnlineCompiler`、`JteClassPath`、`BuiltinTemplateSources`、`OnlineHtmlPolicy`），只在后台启用时装配；`SiteConfiguration.OnlineTemplates` 每次渲染取当前引擎 | `sitetemplate/**`；`admin/config/AdminConfiguration.java:65,176-178`；`SiteConfiguration.java:365` |
 | 错误页：`SiteExceptionHandler`（站点关闭 503、找不到 404、其他 500，均渲染 `sitePagesError`）；站点关闭由 `SiteStatusInterceptor` 抛出；前台未匹配的地址落到 `common/web/GlobalExceptionHandler`，返回 JSON 404“接口不存在”。PHP 对应：站点关闭 `public/close`、找不到 `public/<page_404>` 带 404、空方法 `Base._empty` | `site/web/SiteExceptionHandler.java`；`SiteStatusInterceptor`；`common/web/GlobalExceptionHandler.java:34`；`index/controller/Base.php:77`；`All.php:98-116` |
-| 观看密码：Java 用签名 cookie（`PasswordTickets`）+ 频率限制（`PasswordAttempts`），旧 `ajax/pwd` 返回 404；PHP 走 `ajax/pwd` 写 session（`Ajax.php:400-456`，`All.php:547-549`） | `site/application/PasswordTickets.java`、`PasswordAttempts.java` |
+| 观看密码：Java 用签名 cookie（`PasswordTickets`）+ 频率限制（`PasswordAttempts`），旧 `ajax/pwd` 返回 404；PHP 走 `ajax/pwd` 写 session（`Ajax.php:400-456`，`All.php:547-549`），并有按会话的频率限制：`mac_get_time_span("last_pwd") < 5` 时返回 `{"code":1003,"msg":lang('index/pwd_frequently')}`（`Ajax.php:416-418`；`common.php:306-316` 每次调用都把 `last_pwd` 改为当前时间）。Java 的 `PasswordAttempts` 是 B05 用来“代替”这条限制的（按内容 10 次/60 秒、全站 30 次/秒，超限 429，D-B05-3） | `site/application/PasswordTickets.java`、`PasswordAttempts.java` |
 | 取数：视频列表 `ContentReadService.listVideos` + `VideoListQuery`/`VideoFilter`/`VideoLegacyConditions`（B05，已按 `Vod::listCacheData` 的条件实现）；旧标签属性换算 `LegacyTagAttributes`、`LegacyRange` 只在 `VideoTagGoldenMySqlIT` 使用；整行数据 `LegacyRowReadService`（ajax/data、Provide 用）；其他类型 `ArticleReadService` 等与 `LibrarySearchService`；评论留言 `CommentService.comments/gbooks` | `content/application/*.java`；`comment/application/CommentService.java:276,301` |
 | URL：`site/application/LegacyUrlBuilder`（`mac_url`/`url()` 等价）、`LegacyUrlStyle`、`LegacyUrlParser`；图片 `ImageUrlNormalizer`（`mac_url_img`）；静态分支 `staticgen/application/StaticPaths` | 同名类 |
 | 语言包：`common/lang/LegacyLang` 读 `classpath:/lang/zh-cn.json`、`zh-tw.json`（由 `src/test/php/lang_export.php` 从 PHP 导出并校验 SHA-256） | `common/lang/LegacyLang.java` |
@@ -139,7 +139,7 @@
 - 修改 `php/` 下任何文件（`php/` 只读，`AGENTS.md:5`）；修改线上配置。
 - 产品范围、业务规则、样本分母：不改。附表 B 的 120 个固定模板名、桌面 79 有/41 缺、手机 63 有/57 缺在本设计的目录下保持不变（目录名不改变包内相对路径）。
 
-**v3 范围（完整设计）**：FR-1～FR-13 全部；改动清单 C-17～C-66；验证 V-10～V-29；实现顺序 §7.4。
+**v3 范围（完整设计）**：FR-1～FR-13 全部；改动清单 C-17～C-66（v4 增 C-67、C-68）；验证 V-10～V-29（v4 增 V-30）；实现顺序 §7.4。
 
 **v3 仍不做**：
 - 不新增、不修改任何表结构（BR-1）；不做 App（Q8）；不做 CI、测试环境部署、发布（Q7）；不做外部沙箱联调（Q6），在线功能只用本机模拟验收（OP-5）。
@@ -252,7 +252,7 @@
 | 方案 | 做法 | 结论 |
 | --- | --- | --- |
 | A 交给部署层 nginx（同 `/upload/`） | Java 不提供，部署方配置 nginx | 不选：本期不做部署（Q7），本机对照与验收没有 nginx，`java-site` 上的页面资源全部 404，人工核对页面时无法判断样式；PHP 内置服务（PHPB-2）对存在的文件直接返回，两侧不对称 |
-| B **Java 从站点根提供，带白名单** | 新增资源处理：只映射 `/template/<目录>/{css,js,images,ads}/**`，扩展名限 `css js png jpg jpeg gif ico svg webp woff woff2 ttf eot swf`，经 `LegacySiteFiles` 读文件（路径不出站点根、不跟随出根符号链接）；`html/`、`info.ini`、`.html`、`.php` 一律 404 | **选**：Java 自带即可用；不泄露模板源码（PHP+nginx 默认会把 `.html` 模板当静态文件返回，这一点不照搬，属于安全收紧，不进比较样本，见 SEC-7）；生产仍可在 nginx 层直出同一目录，两者 URL 相同（PATH-2、PATH-4） |
+| B **Java 从站点根提供，带白名单** | 新增资源处理：只映射 `/template/<目录>/{css,js,images,ads}/**`，扩展名限 `css js png jpg jpeg gif ico svg webp woff woff2 ttf eot swf`，经 `LegacySiteFiles` 读文件（路径不出站点根、不跟随出根符号链接）；`html/`、`info.ini`、`.html`、`.php` 一律 404 | **选**：Java 自带即可用；不泄露模板源码（PHP+nginx 默认会把 `.html` 模板当静态文件返回，这一点不照搬，属于安全收紧，不进比较样本，见 SEC-7；**条件生效**：OP-T5 选 a 才这样做，选 b 按 §6.10 的 b 列放开）；生产仍可在 nginx 层直出同一目录，两者 URL 相同（PATH-2、PATH-4） |
 
 ### 4.9 应用层缓存在对照时怎么隔离（关闭 OP-T2 / V9-001，v3 新增）
 
@@ -327,13 +327,13 @@
 | # | 文件路径 | 动作 | 改什么 | 为什么 | 端 |
 | --- | --- | --- | --- | --- | --- |
 | C-36 | `B/site/web/legacy/`（新增包）：`HomeVars.java`、`VodVars.java`、`LibraryVars.java`、`InteractionVars.java`、`UserVars.java`、`MiscVars.java`、`PublicVars.java` | 新增 | §6.8：每个 PHP `label_*`/控制器 `assign` 对应一个方法，产出 `PageVars`；整行数据经 `LegacyRowReadService` | FR-4 ②、FR-5 | 前端 |
-| C-37 | `B/site/web/SiteContentController.java`、`SiteSearchController.java`、`SiteVodShowController.java`、`SiteLibraryController.java`、`SiteModuleListController.java`、`SitePlaybackController.java`、`SiteMiscController.java`、`SiteAjaxController.java`、`SiteInteractionController.java`、`SiteUserController.java`、`SiteMemberFinance.java`、`SiteMemberBoards.java`、`SitePaymentController.java` | 修改 | 各页面分支由 `SiteHtmlRenderer.xxx(viewModel)` 改为 `PhpTemplateRenderer.render(variant, mac_tpl_fetch 结果, vars)`；按 PG-1～PG-6 分批（§7.4）；ALIGN-4 恢复 `ajax/pwd` | FR-5、FR-8 | 前端 |
+| C-37 | `B/site/web/SiteContentController.java`、`SiteSearchController.java`、`SiteVodShowController.java`、`SiteLibraryController.java`、`SiteModuleListController.java`、`SitePlaybackController.java`、`SiteMiscController.java`、`SiteAjaxController.java`、`SiteInteractionController.java`、`SiteUserController.java`、`SiteMemberFinance.java`、`SiteMemberBoards.java`、`SitePaymentController.java` | 修改 | 各页面分支由 `SiteHtmlRenderer.xxx(viewModel)` 改为 `PhpTemplateRenderer.render(variant, mac_tpl_fetch 结果, vars)`；按 PG-1～PG-6 分批（§7.4）；ALIGN-4 恢复 `ajax/pwd`（含 PHP 的按会话 5 秒限制；`PasswordAttempts` 去留按 OP-T4，见 C-68） | FR-5、FR-8 | 前端 |
 | C-38 | `B/site/web/SiteExceptionHandler.java`、`SiteStatusInterceptor.java`、`SiteVerifyGate.java`、`B/common/web/GlobalExceptionHandler.java` | 修改 | ALIGN-1～3：站点关闭、404、跳转、验证码页走 `public/*` 模板；站点路径未匹配按 PHP `_empty`（`GlobalExceptionHandler` 只对 `/api/v1/**` 保持 JSON） | FR-5、PG-7 | 前端 |
 | C-39 | `src/main/resources/phptemplate/builtin/index/view/{index/index.html,public/jump.html,public/msg.html}` | 新增 | 从 `php/application/index/view/` 按字节复制的 3 个内置视图（`.gitattributes` 同 C-5 加 `-text`） | ALIGN-3；B.1.2 | 前端 |
 | C-40 | `src/main/jte/site/**`（76 个）、`B/sitetemplate/**`、`src/main/resources/static/site/**`、`src/main/resources/static/site-player/player-boot.js`、`src/test/jte-probe/**`、`T/site/SiteTemplatePolicyTest.java`、`T/sitetemplate/**`、`B/site/web/SiteHtmlRenderer.java`、`B/site/web/view/` 中只为 jte 服务的 record | 删除 | §6.9：按 PG 组逐批删，全部 PG 完成后删 `sitetemplate` 与 `SiteHtmlRenderer` | OP-3；RISK-7 | 前端 |
 | C-41 | `pom.xml` | 修改 | 删 site 的 `jte-maven-plugin` execution 与 `site-jte` 资源拷贝；删只供在线编辑的 `gg.jte:jte` 编译器依赖（后台、安装的 jte 预编译保留）；不新增依赖 | OP-3 | 前端 |
 | C-42 | `B/site/config/SiteConfiguration.java` | 修改 | 删 `siteHtmlRenderer`/`OnlineTemplates`，装配 `PhpTemplateRenderer` 依赖；注册 C-43 | OP-3、DEC-8 | 前端 |
-| C-43 | `B/site/web/TemplateAssetController.java` | 新增 | §6.10 `/template/**` 静态资源（白名单、只读、经 `LegacySiteFiles`） | DEC-8；OP-T1 | 前端 |
+| C-43 | `B/site/web/TemplateAssetController.java` | 新增 | §6.10 `/template/**` 静态资源（只读、经 `LegacySiteFiles`）；子目录与扩展名范围按 OP-T5：a = SEC-7 白名单，b = 同 PHP 放开（§6.10 b 列） | DEC-8；OP-T1；OP-T5 | 前端 |
 | C-44 | `B/legacyconfig/application/LegacySiteFiles.java` | 修改 | 增加只读方法 `readTemplateAsset`（`template/` 区域、扩展名白名单）与 `readInstallSql`（只允许 `application/install/sql/install.sql` 一个路径）；不扩大写区域 | DEC-8、INS-1 | 后端 |
 | C-45 | `B/site/web/InternalPageRenderer.java` | 修改 | `ac2=wap` 时设置手机 `SiteVariant`（替代 UA 推断） | FR-6、§6.2 | 前端 |
 | C-46 | `T/site/**` 约 34 个页面测试类（§3.2 列出） | 修改 / 删除 | 按 §6.9 逐类改为断言 PHP 模板输出，或被 AC-5 对照覆盖后删除 | RISK-7 | 前端 |
@@ -353,11 +353,13 @@
 
 | # | 文件路径 | 动作 | 改什么 | 为什么 | 端 |
 | --- | --- | --- | --- | --- | --- |
-| C-53 | `B/admin/application/DatabaseToolService.java`；新增 `B/admin/application/SqlStatements.java`（`mac_parse_sql` 移植 + DBT-2 分类器） | 修改 / 新增 | DBT-1 `optimize`/`repair`；DBT-2 `sql`；DBT-3 `import` 只还原数据；删除 `REFUSED` 常量的四项用途 | FR-9；AC-11 | 后端 |
+| C-53 | `B/admin/application/DatabaseToolService.java`；新增 `B/admin/application/SqlStatements.java`（`mac_parse_sql` 移植 + DBT-2 分类器） | 修改 / 新增 | DBT-1 `optimize`/`repair`；DBT-2 `sql`；DBT-3 `import` 只还原数据；删除 `REFUSED` 常量的四项用途；SEC-8 的文件读写拒绝规则按 OP-T5（a 有、b 无） | FR-9；AC-11；OP-T5 | 后端 |
 | C-54 | `B/admin/web/AdminDatabaseActions.java`；`B/admin/infrastructure/DatabaseToolMapper.java` 与 `src/main/resources/mapper/admin/DatabaseToolMapper.xml`（或写 Mapper 对应 XML） | 修改 | L63-65 的拒绝改为调用 C-53；语句执行经可写数据源，`DELETE`/`INSERT` 按表登记 `WriteRegistry` | FR-9 | 后端 |
 | C-55 | `T/architecture/SchemaGuardTest.java` | 修改 | `REGISTERED_TEXT` 增加 `SqlStatements.java`、`DatabaseToolService.java` 的 `OPTIMIZE TABLE`/`REPAIR TABLE`/拒绝关键字表，注明 AC-11；其他位置照旧禁止 | BR-1；FR-13 | 后端 |
-| C-56 | `B/install/application/InstallWizard.java`、`InstallSchema.java`；新增 `B/install/application/InstallSqlFile.java`；`B/install/infrastructure/InstallConnections.java` | 修改 / 新增 | INS-1～INS-4：空库 + SHA-256 判定后执行 `install.sql`；删除指纹只读校验分支 | FR-10；AC-12 | 后端 |
-| C-57 | `T/install/InstallSqlFileTest.java`（新增）、`T/install/InstallWizardMySqlIT.java`（修改） | 新增 / 修改 | 常量 = 仓库文件哈希；空库执行、已有表拒绝、哈希不同拒绝三种情况，各断言发出的语句集合 | AC-12 | 后端 |
+| C-56 | `B/install/application/InstallWizard.java`、`InstallSchema.java`；新增 `B/install/application/InstallSqlFile.java`；`B/install/infrastructure/InstallConnections.java` | 修改 / 新增 | INS-1～INS-4：空库 + SHA-256 判定后执行 `install.sql`（常量 `48dbe0fb…`，见 INS-1）；删除指纹只读校验分支 | FR-10；AC-12 | 后端 |
+| C-57 | `T/install/InstallSqlFileTest.java`（新增）、`T/install/InstallWizardMySqlIT.java`（修改） | 新增 / 修改 | 常量 = 仓库文件（git blob 字节）的哈希，且断言工作区文件不含 `\r`（`autocrlf` 检出会让哈希变成 `152e5424…`，测试须直接失败并提示 C-67）；空库执行、已有表拒绝、哈希不同拒绝（1 字节差异、整文件改为 CRLF 两种）三种情况，各断言发出的语句集合 | AC-12 | 后端 |
+| C-67 | `.gitattributes` | 修改 | 末尾加 `php/application/install/sql/install.sql text eol=lf`（附注释：安装向导按 SHA-256 校验该文件，工作区必须与 blob 同为 LF；写法同已有的 `schema-fingerprint.txt text eol=lf`）。只改检出规则，不改 `php/` 下文件内容（blob 本来就是 LF，无需 renormalize） | INS-1；RISK-T17 | 后端 |
+| C-68 | `B/site/application/PasswordAttempts.java`；`B/site/config/SiteConfiguration.java`（装配）；`T/site/application/PlaybackPrimitivesTest.java`（`PasswordAttempts` 用例） | 按 OP-T4：a 修改 / b 删除 | a：保留类与测试，调用点从 `SiteLibraryController`/`SitePlaybackController` 的密码表单移到 `ajax/pwd`（ALIGN-4 ⑤），超限返回 PHP 已有的 1003 JSON；b：删除类、装配与其用例，`ajax/pwd` 只有 PHP 的按会话 5 秒限制 | ALIGN-4；OP-T4 | 前端 |
 | C-58 | `B/integration/collect/`（新增包）、`B/integration/application/ResourceSiteClient.java`（新增）、`B/collect/application/CollectRunService.java`、`CjRunService.java`、`B/admin/web/AdminCollectActions.java`、`B/admin/application/AdminPermissions.java`、`B/staticgen/application/TimmingTasks.java` | 新增 / 修改 | NET-1、NET-2、NET-4 | FR-11；AC-13 | 后端 |
 | C-59 | `B/integration/image/`（新增包）、`B/integration/application/RemoteImages.java`（新增）、`B/collect/application/VodIngest.java`、`B/admin/web/AdminContentActions.java`（L516 `images/sync`） | 新增 / 修改 | NET-3 | FR-11；AC-13 | 后端 |
 | C-60 | `B/integration/storage/`（新增包：`UpyunUploader`、`QiniuUploader`、`FtpUploader`、`WeiboUploader`、`AlibabaUploader`、`UomgUploader`）、`B/integration/application/RemoteStorage.java`（新增）、`B/content/application/AdminUploadService.java` | 新增 / 修改 | NET-5 | FR-11；AC-13 | 后端 |
@@ -513,14 +515,14 @@
 | PG-6 | 地图、RSS、帮助、公告、搜索聚合、自定义标签页 | `SiteMiscController`、`SiteAjaxController`（`label/**`） | `Map.php`、`Rss.php`、`Help.php`、`Note.php`、`Search.php`、`Label.php:19-22` | 字面名；`label/<文件名>`（F-D1，文件名含 `/` 或不存在按 PHP 非法请求） |
 | PG-7 | 公共提示页：站点关闭、404、跳转、验证码页、浏览器提示 | `SiteExceptionHandler`、`SiteStatusInterceptor`、`SiteVerifyGate` | `Base.php:39,67,77,87`；`All.php:98-116` | `public/close`、`public/<app.page_404，空则 jump>`（F-D2）、`public/verify`、`public/browser` |
 
-**与 PHP 输出不一致、须随 FR-5 改成 PHP 行为的点**（“PHP 无漏洞即以 PHP 为准”；六项安全修复除外，见 §6.14）：
+**与 PHP 输出不一致、须随 FR-5 改成 PHP 行为的点**（“PHP 无漏洞即以 PHP 为准”；六项安全修复除外，见 §6.17）：
 
 | 编号 | Java 现状 | 改为 | 依据 |
 | --- | --- | --- | --- |
 | ALIGN-1 | 站点关闭返回 503 + `Retry-After` | 状态码、页面按 PHP `public/close` | `Base.php:77`；比较项 CMP-3 ① |
 | ALIGN-2 | 前台未匹配地址返回 JSON 404“接口不存在” | 站点路径（`/api/v1/**`、`/api.php/**`、后台入口之外）按 PHP `_empty` → `page_error`（404 + `public/<page_404>`）；`/api/v1/**` 仍为 JSON | `Base.php` `_empty`；`All.php:98-116` |
 | ALIGN-3 | 错误页、跳转页是 jte 自绘（`ErrorPage`、`UserJumpPage`） | 一律经模板包的 `public/jump`、`public/msg` 或 PHP 内置视图（`php/application/index/view/public/jump.html`、`msg.html`，按字节随 jar 打包为资源，经同一引擎渲染）；模板文件缺失时按 TPL“模板文件不存在” | B.1.2“内置视图”；`Init.php:67-68` |
-| ALIGN-4 | 观看密码：签名 cookie，`ajax/pwd` 返回 404 | 恢复 `ajax/pwd` 接口与 PHP 相同的请求与响应（JSON）；“已通过密码”的记录仍放进程内会话（`SessionStore`，PHP 是 session，二者都不进库、不参与比较）；保留现有频率限制 `PasswordAttempts`（PHP 无频率限制，此处保留属“不改变成功路径输出”的防爆破，若对照出现差异按 OP-T4 处理） | `Ajax.php:400-456`；`All.php:547-549` |
+| ALIGN-4 | 观看密码：签名 cookie，`ajax/pwd` 返回 404；按内容/全站限流 `PasswordAttempts`，超限 429 | 恢复 `ajax/pwd`，判定顺序与 JSON 逐条按 PHP：① 参数校验 1001；② 本会话已通过 1002；③ 按会话 `last_pwd` 间隔 < 5 秒 1003（每次调用都刷新 `last_pwd`，含被拒的调用，同 `mac_get_time_span`）；④ 取数失败 1011/1021、密码不符 1012/1013/1014/1022；⑥ 通过后写会话并返回 `{"code":1,"msg":"ok"}`。“已通过”与 `last_pwd` 都放进程内会话（`SessionStore`，PHP 是 session，不进库、不参与比较）。⑤ **条件项（OP-T4）**：a = 在 ③ 之后、④ 查库之前再过 `PasswordAttempts`，超限返回与 ③ 相同的 `{"code":1003,"msg":lang('index/pwd_frequently')}`（HTTP 200，不再用 429），与 PHP 的差异只在“哪一次请求得到 1003”，记为 SEC-9；b = 不做 ⑤，删除 `PasswordAttempts`（C-68），行为与 PHP 完全相同。OP-T4 关闭前 S3-14c 不派单、不合入 | `Ajax.php:400-456`（限制在 `:416-418`）；`common.php:306-316`；`All.php:547-549` |
 | ALIGN-5 | 响应头 `Content-Type` 由各控制器设 | 统一按 PHP：HTML 页 `text/html; charset=utf-8`，RSS/地图 XML 与 ajax JSON 按 PHP 控制器（PRE-2 基线记录实际值） | CMP-3 ② |
 
 页面变量的逐页清单（每页 `assign` 的键、层级、取值来源）在各 PG 子任务的设计说明里按 PHP 控制器逐行列出，由 AC-4/AC-5 的样本验证；不允许出现 PHP 没有的键（会改变 `{if isset}` 类分支）。
@@ -539,8 +541,8 @@
 | --- | --- |
 | URL | `GET/HEAD /template/<目录>/<css|js|images|ads>/<相对路径>`；`<目录>` 必须是 `template/` 下实际存在的子目录（不限于 `default_pc`/`default_wap`，与 PHP+nginx 一样跟随配置） |
 | 文件 | 站点根 `template/<目录>/<子目录>/<相对路径>`，只经 `LegacySiteFiles` 读取（只读区域，路径规范化后仍在 `template/` 内，拒绝 `..`、反斜杠、空字节、出根符号链接） |
-| 扩展名白名单 | `css js png jpg jpeg gif ico svg webp woff woff2 ttf eot swf`；其他（含 `html htm ini php txt`）返回 404 |
-| 响应 | `Content-Type` 按扩展名固定表；`Last-Modified` + 条件请求；不设缓存控制以外的额外头 |
+| 子目录与扩展名（**按 OP-T5 条件生效**） | a（SEC-7）：只映射 `css`、`js`、`images`、`ads` 四个子目录，扩展名白名单 `css js png jpg jpeg gif ico svg webp woff woff2 ttf eot swf`，其他（含 `html htm ini php txt`）返回 404。b（同 PHP）：`template/<目录>/` 下任意子目录与扩展名都按文件原样返回（PHP 内置服务与 nginx 对存在的静态文件直接返回，`.html` 模板源码、`info.ini` 也能取到）；只有 `.php` 返回 404（PHP 会执行而不是返回源码，Java 不执行，也不返回源码）。两种答案下路径规范化、不出站点根、只读三条都不变 |
+| 响应 | `Content-Type` 按扩展名固定表（b 时补 `html htm`→`text/html`、`ini txt`→`text/plain`、其他未知→`application/octet-stream`）；`Last-Modified` + 条件请求；不设缓存控制以外的额外头 |
 | 位置 | `site/web/TemplateAssetController`（新增），只在 `maccms.site.enabled=true` 时装配 |
 
 ### 6.11 后台模板管理（FR-7，v3 新增；目录见 §6.1）
@@ -566,7 +568,7 @@
 | 编号 | 动作 | 设计 |
 | --- | --- | --- |
 | DBT-1 | 优化表、修复表 | 入参表名必须属于附表 A 的 26 张表（白名单常量 + 前缀校验），对每张选中的表各发一条 `OPTIMIZE TABLE <名>` / `REPAIR TABLE <名>`（表名用反引号，来自白名单而不是请求原文）；返回结果按 PHP 页面展示。`it_app` 的 `SELECT, INSERT` 权限足够执行这两条语句 |
-| DBT-2 | 执行 SQL | 先按 PHP `mac_parse_sql` 的规则切分语句（逐字移植该函数），再对每条语句做**词法分类**：去掉注释（`-- `、`#`、`/* */`，含 `/*! */` 版本注释一律视为不可识别而拒绝）、跳过空白后取首个关键字，只允许 `SELECT`、`INSERT`、`UPDATE`、`DELETE`；另拒绝含 `INTO OUTFILE`、`INTO DUMPFILE`、`LOAD_FILE(` 的语句（读写服务器文件，属安全收紧，SEC-8）。**任意一条不通过则整批拒绝，不向数据库发送任何语句**（AC-11 ②），提示“结构类操作请由部署方在库外完成”；全部通过后逐条执行，连接关闭多语句（`allowMultiQueries=false`） |
+| DBT-2 | 执行 SQL | 先按 PHP `mac_parse_sql` 的规则切分语句（逐字移植该函数），再对每条语句做**词法分类**：去掉注释（`-- `、`#`、`/* */`，含 `/*! */` 版本注释一律视为不可识别而拒绝）、跳过空白后取首个关键字，只允许 `SELECT`、`INSERT`、`UPDATE`、`DELETE`；**条件项（OP-T5）**：a = 另拒绝含 `INTO OUTFILE`、`INTO DUMPFILE`、`LOAD_FILE(` 的语句（读写服务器文件，安全收紧，SEC-8）；b = 不加这条，这类 `SELECT` 照常发给数据库，结果（含 MySQL 因 `it_app` 无 `FILE` 权限或 `secure_file_priv` 返回的错误）按 PHP 页面的错误展示方式输出。OP-T5 关闭前 S3-19 不派单、不合入。**任意一条不通过则整批拒绝，不向数据库发送任何语句**（AC-11 ②），提示“结构类操作请由部署方在库外完成”；全部通过后逐条执行，连接关闭多语句（`allowMultiQueries=false`） |
 | DBT-3 | 还原备份 | 读取备份文件（只限 `application/data/backup/database/` 下由本系统或 PHP 导出的分卷），按 `mac_parse_sql` 切分；`DROP TABLE`、`CREATE TABLE` 以及其他非 DML 语句**跳过不执行**并计数显示；对备份中出现 `INSERT INTO <表>` 的每张表（必须在 26 张白名单内），先执行一次 `DELETE FROM <表>`，再执行该表的 `INSERT`（“只还原数据”：结果与 PHP 删表重建后插入的数据相同，结构不动） |
 | DBT-4 | 其余 | 列表、列、导出、删备份、批量替换保持 B15 现状 |
 
@@ -576,8 +578,8 @@
 
 | 编号 | 规则 |
 | --- | --- |
-| INS-1 | 待执行文件 = 站点根 `application/install/sql/install.sql`（经 `LegacySiteFiles` 只读，区域白名单增加该一个文件）；Java 内置常量 `INSTALL_SQL_SHA256 = 152e54242d78a7c44f2030bfb0e04c0b5067c0d54180bd6cb77ddee7d3eaabcb`（= 仓库 `php/application/install/sql/install.sql` 的 SHA-256，基线提交核实；单测断言常量等于仓库文件的哈希，防漂移） |
-| INS-2 | 第 5 步顺序：①用第 3 步填写、存于 `MACCMS_DEPLOY_CONFIG` 的账号开连接（AC-12 为 `it_install`）；②查 `information_schema.TABLES` 中该库 `mac_` 开头的表数，>0 → 提示“已存在数据表”，不执行；③读文件算 SHA-256，≠ 常量 → 提示“文件哈希不一致”，不执行；④按 `mac_parse_sql` 切分后逐条执行（前缀固定 `mac_`，Java 已要求前缀为 `mac_`，所以不做替换，“一字不改”）；⑤按 PHP 写初始数据（`initdata` 选 1 时执行 `initdata.sql` 的 INSERT，现有 `InstallWrites`）、写首个管理员、写 `extra/maccms.php`；⑥写 `install.lock` |
+| INS-1 | 待执行文件 = 站点根 `application/install/sql/install.sql`（经 `LegacySiteFiles` 只读，区域白名单增加该一个文件）；Java 内置常量 `INSTALL_SQL_SHA256 = 48dbe0fbd138f670919208d8bcc0ffe28d09b507c527d2a6a1a8f7b77ffa3aa4`（= 基线提交 `a57e9cb` 里 blob `php/application/install/sql/install.sql` 的 SHA-256，45049 字节、全部 LF、不含 `\r`；核对命令 `git show a57e9cb2b94d3e500bea7dfe2c579daee093d969:php/application/install/sql/install.sql \| sha256sum`）。`core.autocrlf=true` 的 Windows 工作区里该文件被检出为 CRLF（45950 字节，SHA-256 `152e5424…`，v3 误用了这个值），所以 C-67 用 `.gitattributes` 固定 LF；单测断言常量等于仓库文件的哈希且文件不含 `\r`，防漂移 |
+| INS-2 | 第 5 步顺序：①用第 3 步填写、存于 `MACCMS_DEPLOY_CONFIG` 的账号开连接（AC-12 为 `it_install`）；②查 `information_schema.TABLES` 中该库 `mac_` 开头的表数，>0 → 提示“已存在数据表”，不执行；③读文件按字节算 SHA-256（不做换行归一化），≠ 常量 → 提示“文件哈希不一致”，不执行（CRLF 检出的同一文件也走这一支）；④按 `mac_parse_sql` 切分后逐条执行（前缀固定 `mac_`，Java 已要求前缀为 `mac_`，所以不做替换，“一字不改”）；⑤按 PHP 写初始数据（`initdata` 选 1 时执行 `initdata.sql` 的 INSERT，现有 `InstallWrites`）、写首个管理员、写 `extra/maccms.php`；⑥写 `install.lock` |
 | INS-3 | 不发 `CREATE DATABASE`（库由部署方或验收脚本预建，A.3）；不执行除该文件外的任何 DDL；删除 `InstallSchema` 指纹校验分支（改为 INS-2 ②③），指纹资源保留给 `InstallWizardMySqlIT` 做结果核对 |
 | INS-4 | 账号分离：建表连接只在第 5 步请求内使用，用后关闭；正常模式运行期只读 `MACCMS_DB_*`（AC-15 的 `it_app`），不读 `MACCMS_DEPLOY_CONFIG`、不读 `database.php`（RISK-15 的交接方式）。PHP 第 5 步写 `application/database.php`（D-23 文件栏）；Java 现状写部署配置文件，是否另写 `database.php` 由 FR-12 对 install 行（附表 C 安装向导 5 行）判定，本设计不预设 |
 
@@ -595,7 +597,7 @@
 ### 6.16 旧控制器对齐（FR-12，v3 新增）
 
 - 判定由测试人员按附表 C 逐行做（AC-14），报告 `docs/test/APPK-2/parity-*.md`，缺口登记 `docs/test/APPK-2/gap-register.md`（§9.1 格式）；本设计不预判结果。
-- 判定口径（交测试人员）：PHP 无漏洞的行为以 PHP 为准；六项安全修复（§6.17）和本设计列出的安全收紧（SEC-7、SEC-8）判 `排除-D2` / `排除-<本设计编号>` 时须经发起人按 OP- 确认，不能自行判“已对齐”；历史 D-Bxx 决定与 PHP 不同、又不是安全修复的（如 D-B15-14、D-B15-15、D-B16-5、D-B16-6、D-B19-15、D-B13-2、D-B19-14），本设计已按 PHP 改回（§6.11～§6.15），对应行判定以改回后的行为为准。
+- 判定口径（交测试人员）：PHP 无漏洞的行为以 PHP 为准；六项安全修复（§6.17 SEC-1～6）判 `排除-D2`；本设计的条件安全收紧 SEC-7、SEC-8（OP-T5）、SEC-9（OP-T4）只有在对应 OP 关闭且选 a 时，才按“已确认的安全差异”判 `排除-SEC-7` / `排除-SEC-8` / `排除-SEC-9`，报告引用关闭该 OP 的 Issue 评论；选 b 时不排除，按 PHP 逐字节比较；OP 未关闭时相关行一律记“未判定”，不能自行判“已对齐”或“排除”；历史 D-Bxx 决定与 PHP 不同、又不是安全修复的（如 D-B15-14、D-B15-15、D-B16-5、D-B16-6、D-B19-15、D-B13-2、D-B19-14），本设计已按 PHP 改回（§6.11～§6.15），对应行判定以改回后的行为为准。
 - 缺口迁移：每个 GAP- 单独建单、单独设计说明（引用本设计的模块边界与附表 D 越界判定），不在本设计里列实现。
 
 ### 6.17 六项安全修复（BR-4、OP-9，v3 新增）
@@ -608,8 +610,11 @@
 | SEC-4 | 可信代理才信转发头 | FR-11（在线采集记录来源 IP）、评论 | 一律经 `ClientIpResolver` |
 | SEC-5 | 管理员每请求重读 | FR-7、FR-9 后台 | `AdminController` 不改 |
 | SEC-6 | 注销/改密/重置轮换 `user_random` | PG-5 | 不改 |
-| SEC-7（本设计） | `/template/**` 只给静态资源，不给 `.html`/`.ini` | DEC-8 | 不进比较样本；FR-12 相关行按 OP 确认 |
-| SEC-8（本设计） | 执行 SQL 拒绝 `INTO OUTFILE/DUMPFILE`、`LOAD_FILE` | DBT-2 | 同上 |
+| SEC-7（本设计，条件：OP-T5 a） | `/template/**` 只给静态资源，不给 `.html`/`.ini` | DEC-8、§6.10 | a：不进比较样本，FR-12 相关行按“已确认的安全差异”判 `排除-SEC-7`；b：不存在本项，按 PHP 返回 |
+| SEC-8（本设计，条件：OP-T5 a） | 执行 SQL 拒绝 `INTO OUTFILE/DUMPFILE`、`LOAD_FILE` | DBT-2 | a：`排除-SEC-8`；b：不存在本项，语句照常执行 |
+| SEC-9（本设计，条件：OP-T4 a） | 观看密码在 PHP 按会话 5 秒限制之外，再按内容/全站限流（`PasswordAttempts`），超限返回 PHP 已有的 1003 | ALIGN-4 ⑤ | a：只有“超限”样本与 PHP 不同，判 `排除-SEC-9`；b：不存在本项 |
+
+SEC-7～SEC-9 不属于 OP-9 已确认的六项，是本设计提出、待发起人确认的行为差异；V-24 的“仍通过”只对 SEC-1～6 无条件适用，SEC-7～9 的用例按所选答案写（V-18、V-23、V-30）。
 
 验证：每项在所属批次已有的用例（“旧行为不再成立”断言）必须在 FR-5～FR-11 合入后仍通过（V-24），列入回归点。
 
@@ -687,17 +692,19 @@
 | S3-10 | 渲染服务、缓存、缺模板页、配置、护栏 | 后端 | C-24～C-26、C-30、C-31、C-32、C-35、C-44 | S3-09、S3-02 | V-13、V-14 |
 | S3-11 | 模板函数 | 后端 | C-27 | S3-10 | V-15 |
 | S3-12a～e | 标签模型（a：vod；b：art/topic；c：actor/role/website；d：type/link/extend 七个筛选项；e：comment/gbook） | 后端 | C-28、C-29、C-34 | S3-10 | V-16（各自标签的属性样例） |
-| S3-13 | `/template/**` 静态资源 + 内置视图 | 前端 | C-39、C-43 | S3-10 | V-18 |
-| S3-14a～g | 页面接入（a：PG-1 首页 + PG-7 公共页 + ALIGN-1～3；b：PG-2 vod 列表/搜索/筛选；c：PG-2 vod 详情/播放/下载/播放器/版权 + ALIGN-4；d：PG-3；e：PG-4；f：PG-5（分两次运行：账号类、财务与记录类）；g：PG-6） | 前端 | C-36～C-38、C-45、C-46，并删除该组 jte（C-40 的对应部分） | S3-11、S3-12 对应标签、S3-13 | 本组样本 V-19 子集通过 |
+| S3-13 | `/template/**` 静态资源 + 内置视图 | 前端 | C-39、C-43 | S3-10；**OP-T5 已关闭** | V-18（按 OP-T5 所选列） |
+| S3-14a～g | 页面接入（a：PG-1 首页 + PG-7 公共页 + ALIGN-1～3；b：PG-2 vod 列表/搜索/筛选；c：PG-2 vod 详情/播放/下载/播放器/版权 + ALIGN-4 + C-68（**须 OP-T4 已关闭**）；d：PG-3；e：PG-4；f：PG-5（分两次运行：账号类、财务与记录类）；g：PG-6） | 前端 | C-36～C-38、C-45、C-46，并删除该组 jte（C-40 的对应部分） | S3-11、S3-12 对应标签、S3-13；c 另需 OP-T4 已关闭 | 本组样本 V-19 子集通过；c 另需 V-30 |
 | S3-15 | jte 前台与 D4 收尾删除 | 前端 | C-40 剩余部分、C-41、C-42 | S3-14 全部 | V-8、`./mvnw -B verify` |
 | S3-16 | 后台模板管理 + 标签向导 | 后端 | C-47～C-49 | S3-10 | V-7、V-22 |
 | S3-17 | 静态生成差异补齐 | 后端 | C-45、C-50、C-51 | S3-14 全部 | V-6 |
 | S3-18 | 缓存清理钩子接入后台 | 后端 | C-52 | S3-10 | V-14 |
-| S3-19 | 数据库工具四项 | 后端 | C-53～C-55 | G1（不依赖模板） | V-23 |
-| S3-20 | 安装向导建表 | 后端 | C-56、C-57 | G1 | V-25 |
+| S3-19 | 数据库工具四项 | 后端 | C-53～C-55 | G1（不依赖模板）；**OP-T5 已关闭** | V-23（按 OP-T5 所选列） |
+| S3-20 | 安装向导建表 | 后端 | C-56、C-57、C-67 | G1 | V-25 |
 | S3-21a～d | 在线功能（a：资源站在线采集 + 定时采集；b：远程图片；c：规则在线抓取；d：远程存储六种） | 后端 | C-58～C-61 | G1 | V-26 |
 | S3-22 | 对照执行器与报告 | 测试 | C-64 | S3-03 | 对 PHP 两次运行结果自比一致（V-19 前置） |
 | T-FR12 | 附表 C 阶段 A 判定（可与 S3 并行，后台/API/安装部分不依赖模板）；阶段 B 按 GAP- 建单 | 测试 | `docs/test/APPK-2/parity-*.md`、`gap-register.md` | G1 | AC-14、AC-19 |
+
+**条件门禁（OP-T4、OP-T5）**：S3-13、S3-19 依赖 OP-T5，S3-14c 依赖 OP-T4。对应 OP 未关闭时调度不建单、不派单，已开工的也不得合入；建单时在单内写明所选答案与关闭该 OP 的 Issue 评论，实现者只实现所选那一列，评审按该列核对（V-29）。选 b 时改回 PHP 的改动只在 C-43、C-53、C-68 三处，不影响其他子任务；S3-14c 之外的 PG 组、S3-10 之前的模板线都不受这两项影响。
 
 并行关系：S3-19、S3-20、S3-21、T-FR12 与模板线（S3-01～S3-18）互不依赖，可并行；模板线内部按表中依赖串行。PG 组切换顺序按 PRD §13 阶段 2（首页与 vod 先）。
 
@@ -758,18 +765,19 @@
 | V-15 | AC-4 | 单测（黄金） | `TemplateFunctionsGoldenTest`：PRE-5 清单每个函数的样例返回值等于 PHP 黄金；`{maccms:path}`、`{maccms:siteaid}`、`{maccms:sitetid}`、`{maccms:siteid}` 的渲染等于 PHP | G2 |
 | V-16 | AC-3 | MySQL 集成测试 + 对照 | `./mvnw -B verify -Pmysql-it -Dit.test=TagModelsMySqlIT`：19 个标签每个属性一个样例，与 PHP 同库输出按附表 F 比较；`paging=yes` 首页、中间页、末页、越界页各一次；合成数据每内容表 ≥ 50 行（AC-3 前置） | G2（集成）+ G3 前对照 |
 | V-17 | AC-10（语言键） | 对照脚本 | `run_compare.py --lang`：`zh-cn`、`zh-tw` 各 1773 键，Java `LegacyLang.get` 与 PHP `lang()` 逐字节相同（CMP-5），计入 KPI-5 | G3 前 |
-| V-18 | DEC-8、SEC-7 | 接口用例 | `/template/default_pc/css/style.css` 200 且字节等于文件；`/template/default_pc/html/index/index.html`、`/template/default_pc/info.ini`、`/template/../application/extra/maccms.php`、`/template/default_pc/css/%2e%2e/info.ini` 均 404；`/template/default_wap/ads/x.js` 404 且不创建目录 | G2 |
+| V-18 | DEC-8、SEC-7（OP-T5） | 接口用例 | 两种答案都要：`/template/default_pc/css/style.css` 200 且字节等于文件；`/template/../application/extra/maccms.php`、`/template/default_pc/css/%2e%2e/%2e%2e/%2e%2e/application/extra/maccms.php` 404（不出站点根）；`/template/default_wap/ads/x.js` 404 且不创建目录。OP-T5 a：`/template/default_pc/html/index/index.html`、`/template/default_pc/info.ini`、`/template/default_pc/css/%2e%2e/info.ini` 均 404。OP-T5 b：这三个地址 200 且字节等于文件；`template/` 下任一 `.php` 404 | G2 |
 | V-19 | AC-5、AC-6、AC-10（页面）、AC-20 | 对照脚本 | `run_compare.py --desktop docs/test/APPK-2/sample-desktop.md --mobile docs/test/APPK-2/sample-mobile.md`：224 + 120 个页面样本、12 个模板选择样本，按 CMP-1～CMP-3、NORM-1～5、EX-1/2 判定，报告每样本两行恢复记录；通过数 / 356 | G3 前本机对照 |
 | V-20 | PRE-2、CMP-2 | 脚本 | `data_snapshot.py restore` 连续两次后 26 张表 `CHECKSUM TABLE` 与 `AUTO_INCREMENT` 都等于记录值 | PRE-2 |
 | V-21 | AC-15、AC-18、KPI-2 | 脚本 | `schema_snapshot.py` 在 SP-1 前后采集，差异行数 0；`./mvnw -B test -Dtest=SchemaGuardTest` 通过；仓库无 `schema.sql`/Flyway/Liquibase | G2 + 验收 |
 | V-22 | AC-8、AC-9（Java 侧细项） | 单测 + 端到端 | `AdminTemplateActions` 测试：扩展名 `htm` 允许、`jte` 拒绝；`LEGACY_FILTER` 命中拒绝；版本冲突提示；向导生成的 `vod` 片段经 `PhpTemplateRenderer` 渲染成功（W-09） | G2 + AC-8 |
-| V-23 | AC-11 | 单测 + MySQL 集成 + 对照 | `SqlStatementsTest`：五类结构语句、注释/版本注释、`INTO OUTFILE` 全拒且分类器在执行前返回；`DatabaseToolMySqlIT`：以 `it_app` 执行优化/修复各 1 张表（`general_log` 中只有这两条），四条 DML 成功，还原含 `DROP/CREATE` 的备份后数据还原、表仍在；前后 SNAP 差异 0 | G2 + 验收 |
+| V-23 | AC-11、SEC-8（OP-T5） | 单测 + MySQL 集成 + 对照 | `SqlStatementsTest`：五类结构语句、注释/版本注释全拒且分类器在执行前返回；OP-T5 a：`SELECT … INTO OUTFILE`、`INTO DUMPFILE`、`LOAD_FILE(` 同样在执行前整批拒绝；OP-T5 b：这三类判为 `SELECT` 放行，`DatabaseToolMySqlIT` 以 `it_app` 执行后页面显示 MySQL 的拒绝错误（无 `FILE` 权限），与 PHP 同库输出一致；`DatabaseToolMySqlIT`：以 `it_app` 执行优化/修复各 1 张表（`general_log` 中只有这两条），四条 DML 成功，还原含 `DROP/CREATE` 的备份后数据还原、表仍在；前后 SNAP 差异 0 | G2 + 验收 |
 | V-24 | BR-4（六项安全修复） | 回归 | 各批次已有的安全修复用例（`MemberAccountService` 登录/注册/注销/改密、`TimmingAccess`、`ClientIpResolver`、`AdminLoginService` 相关测试类）在全部 S3 合入后仍通过 | G2 |
-| V-25 | AC-12 | MySQL 集成 + 验收 | `InstallSqlFileTest` + `InstallWizardMySqlIT`：空库执行后 SNAP 等于附表 A 基线；已有 26 表的库提示“已存在数据表”且无 DDL；1 字节差异的文件提示“文件哈希不一致”、`mac_` 表 0 张；`it_app` DDL 数 0 | G2 + 验收 |
+| V-25 | AC-12 | MySQL 集成 + 验收 | `InstallSqlFileTest` + `InstallWizardMySqlIT`：常量等于 `48dbe0fbd138f670919208d8bcc0ffe28d09b507c527d2a6a1a8f7b77ffa3aa4`，也等于 `git show a57e9cb:php/application/install/sql/install.sql \| sha256sum` 与工作区文件的 SHA-256（C-67 生效后，Windows `autocrlf=true` 检出也一致），文件不含 `\r`；空库执行后 SNAP 等于附表 A 基线；已有 26 表的库提示“已存在数据表”且无 DDL；1 字节差异的文件、整文件改为 CRLF 的文件（SHA-256 `152e5424…`）都提示“文件哈希不一致”、`mac_` 表 0 张；`it_app` DDL 数 0 | G2 + 验收 |
 | V-26 | AC-13 | 集成测试（本机模拟） | `OutboundPolicy.LOOPBACK_ONLY` 下，五项各对本机模拟资源站/存储执行，结果与 PHP 对同一模拟数据一致；`OutboundNetworkGuardTest`、`RegisteredOutboundClientTest` 通过；抓包或连接日志无本机以外地址 | G2 + 验收 |
 | V-27 | AC-14、AC-19 | 人工核对 | `parity-*.md` 379 行无“未判定”；`gap-register.md` 无非终态 GAP- | 本期完成检查 |
 | V-28 | AC-16 | 人工核对 | 评审每个 S3 子任务的“读写的表与字段”按附表 D 四步判定，无越界；`WriteRegistry` 新增登记与附表 D 一致 | G2（后端评审） |
-| V-29 | AC-17 | 人工核对 | 每个子任务收尾时，单内引用的 OP-/OP-T 均已关闭 | 每单 |
+| V-29 | AC-17 | 人工核对 | 每个子任务派单前与收尾时，单内引用的 OP-/OP-T 均已关闭；S3-13、S3-19 单内写明 OP-T5 所选答案，S3-14c 写明 OP-T4 所选答案，并附关闭该 OP 的 Issue 评论；实现与用例只含所选那一列 | 派单前 + 每单收尾 |
+| V-30 | AC-5（`ajax/pwd`）、ALIGN-4、SEC-9（OP-T4） | 接口用例 + 对照 | 两种答案都要：1001（缺参）、1002（本会话已通过后再验）、1003（同一会话 5 秒内第二次，含第一次被拒的情况）、1012/1013/1014/1022（密码错）、1（通过）与 PHP 同请求序列的 JSON 逐字节相同。OP-T4 a：每次换新会话、对同一内容在 60 秒内第 11 次请求得到 1003 且不查库（`general_log` 无该内容的 `SELECT`），HTTP 200；OP-T4 b：同一序列每次都与 PHP 相同，仓库无 `PasswordAttempts` | G2 + 对照 |
 
 构建验证命令（`MULTICA.md` §3）：开发中 `./mvnw -B test -Dtest=<类名>`；交付前 `./mvnw -B verify`；MySQL 集成 `./mvnw -B verify -Pmysql-it`（`MACCMS_IT_ADMIN_URL`/`_USERNAME`/`_PASSWORD`）；打包 `./mvnw -B -q package -DskipTests`。
 
@@ -796,6 +804,7 @@
 | S3-15（jte 与 D4 删除） | `git revert`，恢复 `sitetemplate`、插件 execution、依赖 | 最先回退 |
 | S3-16～S3-18 | `git revert`；模板管理回到 jte 版（依赖 `sitetemplate`，所以 S3-15 已合入时须先回退 S3-15） | S3-15 之后 |
 | S3-19（数据库工具） | `git revert` 即恢复“四项拒绝” | 独立 |
+| OP-T4 / OP-T5 的答案事后改变 | 只改 C-43（静态资源范围）、C-53（SEC-8 一条规则）、C-68（`PasswordAttempts` 一个调用点）各自一处，单独提交，可单独 `git revert`；不涉及数据 | 独立 |
 | S3-20（安装） | `git revert` 即恢复“只读校验” | 独立 |
 | S3-21（在线功能） | `git revert`；`IntegrationPackages` 登记随之撤销 | 独立 |
 | 数据 | 本期不改结构；新增写入只是 DML（`*_time_make`、`mac_annex`、还原的 `DELETE/INSERT`），代码回退后不需反向迁移 | — |
@@ -827,6 +836,7 @@
 | RISK-T13 | 数据库还原/执行 SQL 改数据不可随代码回退 | 管理员操作 | 与 PHP 同语义；页面沿用 PHP 的确认步骤；验收只在一次性库 | 功能固有 |
 | RISK-T14 | 在线采集、远程存储的真实对接未验证（Q6 无外部沙箱） | 上线后 | 只用本机模拟验收（OP-5）；PRD RISK-9 已登记 | 发起人已接受 |
 | RISK-T15 | 渲染性能：解释执行比预编译 jte 慢 | 高流量 | 编译产物缓存为语法树（不重复解析）；Q11 只记录指标、不设门槛；PHP 同样是解释执行 | 记录指标 |
+| RISK-T17 | `install.sql` 在 Windows `core.autocrlf=true` 工作区被检出为 CRLF，SHA-256 与常量不符，安装向导拒绝执行（v3 的 `152e5424…` 就是这样算错的） | 在 Windows 上 clone 后直接运行或打包站点根 | C-67 `text eol=lf`；INS-1 常量按 blob 计算；C-57 断言文件不含 `\r`；V-25 覆盖 CRLF 拒绝 | 已有 Windows 工作区在 C-67 合入后须删掉该文件再 `git checkout -- php/application/install/sql/install.sql` 一次（S3-20 交付说明写明） |
 | RISK-T16 | “启动时读一次配置”的站点 Bean 与 PHP 每请求读配置不同，改配置后两侧短暂不一致 | F-D2、后台保存配置后 | 对照按 CACHE-4 重启；是否改为即时生效由 FR-12 判定 | 待 FR-12 |
 
 **技术待决（v3 更新）**
@@ -836,8 +846,8 @@
 | OP-T1 | `/template/**` 静态资源由谁提供 | **v3 已决**：Java 带白名单提供（DEC-8、§4.8、§6.10），nginx 可选直出同一目录 | 否 | — | — |
 | OP-T2 | 应用层缓存隔离（V9-001） | **v3 已决**：CACHE-1～CACHE-4 + ENV-9 | 否 | — | — |
 | OP-T3 | `php/vendor/` 恢复、PHP 侧会话时区 | **v3 已决**：SNAPD-4、SNAPD-5 | 否 | — | — |
-| OP-T4 | 观看密码的频率限制（`PasswordAttempts`）PHP 没有：保留会在“连续输错”样本上与 PHP 输出不同 | 设计建议保留（防爆破，不改变成功路径输出）；若 PRE-2 样本里出现超限场景导致差异，需发起人决定是否列为安全收紧（新 OP-） | 否（只影响个别样本判定） | 发起人（经调度） | S3-14c 开工前 |
-| OP-T5 | SEC-7（`/template/**` 不返回 `.html`/`.ini`）、SEC-8（执行 SQL 拒绝 `INTO OUTFILE/DUMPFILE`、`LOAD_FILE`）是六项安全修复之外的安全收紧，与“PHP 怎么做 Java 就怎么做”不同 | 设计按收紧实现（两者都不进页面比较样本：模板源码请求不在附表 B，`INTO OUTFILE` 不在 AC-11 的语句集合内）；需发起人确认是否接受为“有意差异”，不接受则改回 PHP 行为（改动只在 C-43、C-53 各一处） | 否 | 发起人（经调度） | S3-13、S3-19 合入前 |
+| OP-T4 | 观看密码在 PHP 已有的“按会话 5 秒一次”限制（`Ajax.php:416-418`，1003）之外，是否再保留 Java 的按内容/全站限流 `PasswordAttempts`（SEC-9）。PHP 的 5 秒限制换一个会话就能绕过；`PasswordAttempts` 能限住换会话的爆破，代价是同一内容被大量试错时其他访客 60 秒内也会收到 1003 | **待发起人确认**。a（设计建议）：保留，超限返回 PHP 已有的 1003，按 SEC-9 记为已确认的安全差异；b：删除 `PasswordAttempts`，只保留 PHP 的 5 秒限制，与 PHP 完全相同（C-68）。两种答案下 ALIGN-4 ①～④⑥ 都按 PHP 恢复 | **是**：阻塞 S3-14c 的派单与合入；不阻塞其他子任务 | 发起人（经调度） | S3-14c 派单前 |
+| OP-T5 | SEC-7（`/template/**` 不返回 `.html`/`.ini` 等模板源码与配置）、SEC-8（执行 SQL 拒绝 `INTO OUTFILE/DUMPFILE`、`LOAD_FILE`）是六项安全修复之外的安全收紧，与“PHP 怎么做 Java 就怎么做”不同 | **待发起人确认**。a（设计建议）：接受两项收紧，按 SEC-7、SEC-8 记为已确认的安全差异，相关地址与语句不进页面比较样本；b：改回 PHP，`/template/**` 按文件原样返回（`.php` 除外），执行 SQL 不加文件读写规则（§6.10、§6.13 的 b 列；改动只在 C-43、C-53）。两项一起答；若要分开答，按 SEC-7、SEC-8 各自选 a/b，设计两列互不依赖 | **是**：阻塞 S3-13、S3-19 的派单与合入；不阻塞其他子任务 | 发起人（经调度） | S3-13、S3-19 派单前 |
 
 ## 11. 需求追溯
 
@@ -864,20 +874,20 @@
 | FR-2 / AC-2 / PRE-5 | §4.6 方案 C；TPL-1～11；RT-1～8 | C-17～C-23、C-33、C-34、C-65 | V-11、V-12、V-13 |
 | FR-3 / AC-3 / BR-5 | §6.6；TAGMAP-1～19；CACHE-1 | C-22、C-28、C-29、C-34 | V-12、V-16 |
 | FR-4 / AC-4 | §6.7；RT-7；`label_maccms` | C-27、C-30、C-36 | V-15、V-19 |
-| FR-5 / AC-5 / AC-6 / AC-20 / BR-12 | §6.8 PG-1～7、ALIGN-1～5；F-D1～F-D3 由 `mac_tpl_fetch` 与 PG-6/PG-7 实现 | C-36～C-40、C-43、C-46 | V-10、V-19 |
+| FR-5 / AC-5 / AC-6 / AC-20 / BR-12 | §6.8 PG-1～7、ALIGN-1～5；F-D1～F-D3 由 `mac_tpl_fetch` 与 PG-6/PG-7 实现 | C-36～C-40、C-43、C-46、C-68 | V-10、V-19、V-30 |
 | FR-6 / AC-7 / BR-6 | §6.2、§6.12；ENV-6/7 | C-45、C-50、C-51 | V-6 |
 | FR-7 / AC-8 / AC-9 | §6.1、§6.11 | C-47～C-49 | V-7、V-22 |
 | FR-8 / AC-10 / KPI-5 | §6.8 手机；PATH-1～4 手机列；`LegacyLang` | C-12～C-16、C-24、C-37 | V-4、V-5、V-17、V-19 |
-| FR-9 / AC-11 | DBT-1～DBT-4 | C-53～C-55 | V-23 |
-| FR-10 / AC-12 / RISK-15 | INS-1～INS-4；§4.10 | C-44、C-56、C-57 | V-25 |
+| FR-9 / AC-11 | DBT-1～DBT-4；DBT-2 的 SEC-8 按 OP-T5 | C-53～C-55 | V-23 |
+| FR-10 / AC-12 / RISK-15 | INS-1～INS-4（常量 `48dbe0fb…`）；§4.10；RISK-T17 | C-44、C-56、C-57、C-67 | V-25 |
 | FR-11 / AC-13 | NET-1～NET-6 | C-58～C-61 | V-26 |
 | FR-12 / AC-14 / AC-19 / BR-9 | §6.16（判定口径，测试人员执行） | `docs/test/APPK-2/parity-*.md`、`gap-register.md`（测试产物） | V-27 |
 | FR-13 / AC-15 / AC-18 / BR-1 / BR-10 | §6.19；不新增结构；SchemaGuard 登记例外仅 AC-11 所需 | C-55、C-66 | V-21 |
 | AC-16 | §6.19；新增写入先登记、按附表 D 判定 | C-29、C-51、C-54、C-59 | V-28 |
-| AC-17 | 每个 S3 子任务引用的 OP-T 已关闭（OP-T4、OP-T5 有期限） | — | V-29 |
+| AC-17 | 每个 S3 子任务引用的 OP-T 在派单前已关闭：OP-T4 → S3-14c；OP-T5 → S3-13、S3-19；未关闭不派单、不合入（§7.4 条件门禁） | — | V-29 |
 | BR-2 | 配置只经 `LegacyConfigService`/`VarExportWriter` 写；密码 md5 不加盐不变 | 不改 | V-24 |
 | BR-3 | 以 PHP 7.3.33 输出为准；编译与值语义以黄金为准 | C-33 | V-11～V-13、V-19 |
-| BR-4 / OP-9 | §6.17 SEC-1～6 不改；ALIGN 只改呈现 | — | V-24 |
+| BR-4 / OP-9 | §6.17 SEC-1～6 不改；ALIGN 只改呈现；SEC-7～9 是待确认的条件差异，不计入六项 | — | V-24；SEC-7～9 见 V-18、V-23、V-30 |
 | BR-6 | 模板、静态页、广告写文件经 `LegacySiteFiles` 原子写 | C-47、C-50 | V-6、V-7 |
 | BR-7 | 对照执行器按附表 F | C-64 | V-19 |
 | BR-8 | OP-15、OP-16 已关闭（Issue 记录） | — | — |
@@ -910,7 +920,9 @@
 | 完整设计：安全 | 是 | 注入：DBT-2 先分类后执行、表名来自白名单；路径穿越：`/template/**` 与模板管理都经 `LegacySiteFiles` 规范化；任意代码执行：解释器 RT-1 子集不含 `eval`/`include`/反射，函数白名单分派；拒绝服务：RT-8 上限；凭据：只经环境变量与部署配置文件，日志不写；出站：NET-6 登记 + 护栏测试；鉴权：后台沿用 `admin_auth`，安全修复不动（§6.17） |
 | 完整设计：可测试 | 是 | 编译与值语义有 PHP 黄金（C-33）；标签有 MySQL 集成测试；页面有 PHP 对照（附表 F）；解释器纯 JDK，可单测 |
 | 完整设计：可回滚 | 是 | §9 v3 表，每个子任务一个可 `revert` 的提交 |
-| 与 PRD 无矛盾（完整设计） | 有两项待确认，已列 OP-T4、OP-T5（不阻塞开发）；ALIGN-1～5 是按“PHP 为准”把 Java 现有差异改回 PHP，不改范围 | §6.8、§10 |
+| 完整设计：常量与哈希按 blob 计算 | 是（v4 修正） | `INSTALL_SQL_SHA256` 按 `git show a57e9cb:php/application/install/sql/install.sql \| sha256sum` = `48dbe0fb…`；v3 的 `152e5424…` 是 `autocrlf` 工作区文件（CRLF）的哈希，已更正并加 C-67、RISK-T17 |
+| 完整设计：PHP 行为描述有源码出处 | 是（v4 修正） | v3 写“PHP 没有观看密码频率限制”不成立：`Ajax.php:416-418` 有按会话 5 秒限制；v4 把它列为 ALIGN-4 ③（按 PHP 恢复），OP-T4 只问是否在其之外保留 `PasswordAttempts` |
+| 与 PRD 无矛盾（完整设计） | 有两项待发起人确认，已列 OP-T4、OP-T5，各自阻塞 S3-14c、S3-13/S3-19 的派单与合入（§7.4 条件门禁），其余子任务不受影响；ALIGN-1～5 是按“PHP 为准”把 Java 现有差异改回 PHP，不改范围 | §6.8、§10 |
 
 ## 13. 评审回应
 
@@ -926,6 +938,14 @@ G1 第 1 轮（@架构评审-海外，对象 `ab57748b6f1fee314eeb97de099fac6f5d
 
 v3（S1 完整设计，不是评审返修）：没有新的 REV-。v2 复审的不阻断建议“正文仍有‘完整设计 v2 起’的旧版本预告”已处理：§2 与 §10 OP-T 表改为指向 v3 内容。
 
+S1 完整设计独立复核（智能调度，对象 v3 `0dd59f5f72b67e286a93a60c25f19c03f9c91990`，评论 `01a19485-64c8-7afa-93c6-1c1061354ac5`）：
+
+| REV- | 处理 | 说明 | 修改位置 |
+| --- | --- | --- | --- |
+| REV-3-001 安装 SQL 哈希错误 | 已修改 | 复核结论正确。原因：v3 对 Windows `core.autocrlf=true` 工作区里的文件算了哈希（CRLF，45950 字节，`152e5424…`），基线 blob 是 LF（45049 字节，`48dbe0fb…`）。常量改为 `48dbe0fbd138f670919208d8bcc0ffe28d09b507c527d2a6a1a8f7b77ffa3aa4`；新增 C-67（`.gitattributes` 固定该文件 LF）与 RISK-T17；C-57、V-25 增加“不含 `\r`”断言与“整文件 CRLF → 哈希不一致”用例；空库执行、已有表拒绝两种用例不变 | §6.14 INS-1、INS-2 ③；§5.2 C-56、C-57、C-67；§7.4 S3-20；§8.2 V-25；§10 RISK-T17；§11 FR-10；§12 |
+| REV-3-002 OP-T4/OP-T5 状态与门禁矛盾 | 已修改 | 两项改为“待发起人确认、阻塞对应子任务”；实现与验证都写成 a/b 两列：OP-T4 → ALIGN-4 ⑤、C-68、V-30、S3-14c；OP-T5 → §6.10、DBT-2、C-43、C-53、V-18、V-23、S3-13、S3-19。§7.4 新增条件门禁：OP 未关闭不派单、不合入，单内写明所选答案；选 b 改回 PHP。SEC-7～9 从“与六项同列的修复”改为条件差异，V-24 只对 SEC-1～6 无条件适用；FR-12 判定口径改为“OP 关闭且选 a 才判排除，否则按 PHP 比较” | §4.8；§5.2 C-37、C-43、C-53、C-68；§6.8；§6.10；§6.13；§6.16；§6.17；§7.4；§8.2 V-18、V-23、V-29、V-30；§9；§10 OP-T4/T5；§11 FR-5、FR-9、AC-17、BR-4；§12 |
+| （自查）OP-T4 前提写错 | 已修改 | 修 REV-3-002 时核对 `Ajax.php:400-456`：PHP **有**按会话 5 秒的观看密码限制（`:416-418`，返回 1003），v3“PHP 没有频率限制”不成立。v4 把这条限制列入 ALIGN-4 ③，两种答案下都按 PHP 恢复；OP-T4 改问“是否在其之外再保留 `PasswordAttempts`”，a 时超限也返回 PHP 已有的 1003，不再用 429 | §1.3；§6.8 ALIGN-4；§10 OP-T4 |
+
 ## 14. 修订记录
 
 | 日期 | 版本 | 作者 | 变更摘要 | 对应 REV- |
@@ -933,3 +953,4 @@ v3（S1 完整设计，不是评审返修）：没有新的 REV-。v2 复审的�
 | 2026-10-31 | v1 | @架构师-海外 | 首版：回答 OP-15（DEC-1～DEC-6、ENV-1～ENV-8），列改动清单 C-1～C-11、验证 V-1～V-8；FR-1～FR-13 完整设计待 G0 后续写 | — |
 | 2026-10-31 | v2 | @架构师-海外 | 拆开路径量 PATH-1～PATH-4，`{$maccms.path_tpl}` 改为 `MAC_PATH_TEMPLATE`（桌面 `/template/default_pc/`）；新增 §4.5 与 C-12～C-16（Java 映射修正，G1 后单独提交）、V-9、RISK-T8；改 V-4/V-5 断言及 §1.1、§3、§6、§9、§11、§12 | REV-1 |
 | 2026-11-01 | v3 | @架构师-海外 | 完整技术设计：§1.3/1.4 现状与目标；§3.2 影响面；§4.6～4.10 方案对比（兼容层、模块、静态资源、缓存、安装账号）；C-17～C-66；§6.3～6.20（DEC-7～10、TPL-、RT-、PG-、ALIGN-、DB-、INS-、NET-、SEC-、CACHE-、SNAPD-）；ENV-9/10；§7.4 子任务拆分；V-10～V-29；RISK-T9～T16；关闭 OP-T1～T3，新增 OP-T4、OP-T5 | — |
+| 2026-11-01 | v4 | @架构师-海外 | INS-1 常量改为 blob 哈希 `48dbe0fb…`，新增 C-67、RISK-T17；OP-T4/OP-T5 改为阻塞对应子任务的条件项，§6.8/§6.10/§6.13 写 a/b 两列，新增 SEC-9、C-68、V-30 与 §7.4 条件门禁；更正“PHP 没有观看密码频率限制”，ALIGN-4 按 PHP 恢复按会话 5 秒限制 | REV-3-001、REV-3-002 |
