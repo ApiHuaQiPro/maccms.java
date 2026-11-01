@@ -1,0 +1,1210 @@
+openapi: 3.0.3
+info:
+  title: APPK-2 PHP 剩余功能迁移 Java —— 本期 HTTP 接口契约
+  version: 1.0.0
+  description: |
+    Issue: APPK-2
+    PRD: docs/prd/APPK-2.md（附表 docs/prd/APPK-2/）@ 8fa362c25b62b52ed5b16afd9eca7f6ccfcafb9f（v9）
+    技术设计: docs/design/APPK-2/tech-design.md @ 20490951e1a9c880e975caee0c72c5e0e92120ed（v8，G1 PASS）
+    UI 设计: docs/design/APPK-2/ @ 0910f7b5e12e779ad2b66f70823b16b601533cd2
+    基线: release/APPK-2-php-template-migration @ a57e9cb2b94d3e500bea7dfe2c579daee093d969
+    已关闭决策: OP-T4=a、OP-T5=a、OP-T6=b（Issue APPK-2 发起人确认评论 01a194e9-23e8-7682-8ae5-b7c5e19b0040），本契约只写所选答案
+    状态: 可对接（待调度独立复核与后端契约评审）
+
+    ## 范围
+    本文件只登记技术设计里**改变 HTTP 可见行为**的接口（新增、恢复或改变状态码/响应体/响应头的入口）。
+    技术设计内部的 Java 接口（`PhpTemplateRenderer`、`LegacySiteFiles.readTemplateAsset/tryExclusiveLock`、`DatabaseRuns` 等，
+    设计 §6.3）不是 HTTP 接口，不在本文件重复；页面 HTML 正文以模板包原样输出为准（BR-11），由页面黄金对照（AC-5）验收，
+    本文件不描述正文结构。
+
+    | 分组 | API-ID | 来源 |
+    | --- | --- | --- |
+    | 前台：模板静态资源（OP-T5=a） | API-001 | 设计 §6.10、C-43、C-44、SEC-7 |
+    | 前台：观看密码 ajax/pwd（OP-T4=a） | API-002 | 设计 §6.8 ALIGN-4、C-68、SEC-9 |
+    | 前台：HTML 页通用响应头与 CSP（OP-T6=b） | API-003（横切，见 `x-cross-cutting`） | 设计 §6.8 ALIGN-5、§4.11、C-70、C-75 |
+    | 前台：站点关闭 / 未匹配地址 / 搜索过快 / 计数接口 | API-004～API-007（横切 + API-007 计数接口） | 设计 §6.8 ALIGN-1、ALIGN-2、ALIGN-6、ALIGN-7 |
+    | 后台：数据库工具（FR-9） | API-010～API-018 | 设计 §6.13 DBT-1～DBT-5、C-53、C-54、C-73 |
+    | 后台：模板管理（FR-7） | API-020～API-023 | 设计 §6.1、§6.11、C-47～C-49 |
+    | 后台：静态生成（FR-6） | API-024 | 设计 §6.2、§6.12、C-45、C-50 |
+    | 后台：清理缓存（V9-001） | API-025 | 设计 §6.18 CACHE-3、C-52 |
+    | 安装向导第 5 步（FR-10） | API-030 | 设计 §6.14 INS-1～INS-4、C-56 |
+    | 在线采集 / 远程图片 / 定时采集（FR-11） | API-040～API-044 | 设计 §6.15 NET-1～NET-6、C-58～C-61 |
+
+    ## 通用约定（与 PHP 线上格式兼容，偏离 multica-artifact-backend 通用 Error 骨架的说明）
+    - 本期所有接口是旧 MacCMS（ThinkPHP 5.0）URL 的 Java 实现，响应必须与 PHP 一致（BR-3、BR-4、FR-12），
+      所以**不使用** `{code: string, message, request_id}` 的通用错误体。`#/components/schemas/Error` 在本文件中定义为
+      PHP 的跳转/提示 JSON（`code=0`），业务错误码以 `x-error-codes` 的 `code` 为契约标识，线上可区分的是 `msg` 文本（`wire_msg`）
+      与 HTTP 状态；不回显 SQL 原文、文件路径、连接串。
+    - 后台（`/{adminEntry}/…`，`adminEntry` = 配置 `maccms.admin.entry`，例如 `/admin.php`）：
+      * 鉴权：管理员会话 cookie（B12，`AdminController` 每请求重读管理员，SEC-5）+ `admin_auth` 权限码 `<controller>/<action>`；
+        未登录 → 302 到登录页；无权限 → PHP `no_auth` 提示。
+      * 写操作只接受 POST，并校验表单令牌 `__token__`（缺失 → 非法请求；不一致 → 令牌错误，同 B12 `AdminForms.check`）。
+        本期新增的 `database/recover`、`database/acknowledge` 同样要求 POST + `__token__`。
+      * Ajax 判定：请求头 `X-Requested-With: XMLHttpRequest` 或参数 `_ajax` 为真。Ajax → `application/json; charset=utf-8`，
+        正文 `{"code","msg","data","url","wait"}`（`code` 1 成功 / 0 失败，HTTP 200）；非 Ajax → PHP 跳转提示页（HTML，HTTP 200）。
+      * 路由与 `.html` 后缀、参数来源（`input()` = 路由参数 + GET + POST 合并）沿用 B12 现有规则，本期不改。
+    - 前台：路由沿用现有 `site` 控制器（`/index.php/<c>/<a>` 与无 `index.php` 的短地址两种写法）；HTML 页一律
+      `text/html; charset=utf-8` 并带 API-003 的 CSP 头；ajax JSON 为 `application/json; charset=utf-8`，
+      编码同 PHP `json_encode(…, JSON_UNESCAPED_UNICODE)`。
+    - 幂等：本期接口均为 PHP 已有的表单/ajax 动作，不引入 `Idempotency-Key`。数据库工具的重复提交由 `dbtool.lock` 互斥与
+      运行记录状态机约束（DBT-5 ④⑤），各操作的幂等性写在对应 operation 的 `x-idempotency`。
+    - 示例数据均为虚构，域名一律 `example.com`。
+  x-changelog:
+    - version: 1.0.0
+      date: 2026-11-01
+      change: 首版。依据技术设计 v8 @ 20490951e1a9c880e975caee0c72c5e0e92120ed，覆盖 OP-T4=a、OP-T5=a、OP-T6=b 与数据库工具运行记录/锁/恢复动作。
+      breaking: false
+servers:
+  - url: /
+    description: 站点根（相对路径；前台与安装向导）
+
+# 后台接口的 servers（Server Object 不支持 $ref，用 YAML 锚点复用）
+x-admin-servers: &adminServers
+  - url: "{adminEntry}"
+    description: 后台入口（maccms.admin.entry）
+    variables:
+      adminEntry:
+        default: /admin.php
+        description: 部署配置 MACCMS_ADMIN_ENTRY 的值
+
+tags:
+  - name: site
+    description: 前台（`maccms.site.enabled=true` 时装配）
+  - name: admin-database
+    description: 后台数据库工具（FR-9）
+  - name: admin-template
+    description: 后台模板管理（FR-7）
+  - name: admin-make
+    description: 后台静态生成（FR-6）
+  - name: admin-collect
+    description: 后台在线采集、远程图片（FR-11）
+  - name: install
+    description: 安装向导（FR-10）
+  - name: api
+    description: api.php 入口
+
+x-cross-cutting:
+  - x-api-id: API-003
+    summary: 前台 HTML 页通用响应头与 CSP（OP-T6=b）
+    x-trace: [FR-5, AC-5, AC-17, ALIGN-5, DEC-11, OP-T6, V-32]
+    applies-to: 前台所有返回 HTML 的响应——全部页面控制器、跳转/提示页（JumpPages）、站点关闭页、404 页、验证码页、浏览器提示页、站点异常页（SitePageResponses 是唯一出口，C-70）
+    headers:
+      Content-Type: "text/html; charset=utf-8（常量只用 SiteRequests.HTML_UTF8）"
+      Content-Security-Policy: "object-src 'none'; base-uri 'self'; frame-ancestors 'self'（逐字，唯一来源 C-75 SiteSecurityHeaders.frontPolicy()，恒有值，没有过渡值）"
+    rules:
+      - 所有前台 HTML 页都发同一条 CSP，不再有会员页 nonce、播放器 frame 策略（PlayerFramePolicy）、支付网关 form-action 变体。
+      - CSP 不限制脚本：模板内联脚本（如 public/jump.html 倒计时）、player.js 的 document.write、支付网关自动提交表单都能运行（V-32 ⑥）。
+      - 站点不能被其他源用 iframe 嵌入（frame-ancestors 'self'）；同源嵌入允许。
+      - 非 HTML 响应（ajax JSON、RSS/地图 XML、/template/** 静态资源、/api/v1/**）不加该头；RSS/地图与 ajax 的 Content-Type 按 PHP 控制器（PRE-2 基线记录值）。
+      - 缓存头按 SitePageResponses 的 CacheMode（NO_CACHE / NO_STORE）与 Vary 规则（C-70、§4.11 方案 E）；本期不改缓存头取值。
+  - x-api-id: API-004
+    summary: 站点关闭（ALIGN-1）
+    x-trace: [FR-5, AC-5, ALIGN-1, CMP-3]
+    before: 503 + Retry-After + jte 关闭页
+    after: 状态码与页面按 PHP `public/close`（Base.php:77），即 HTTP 200 + 模板包 public/close 原样输出；不再发 Retry-After
+  - x-api-id: API-005
+    summary: 前台未匹配地址（ALIGN-2）
+    x-trace: [FR-5, AC-5, ALIGN-2, F-D2]
+    before: JSON 404「接口不存在」
+    after: |
+      除 /api/v1/**、/api.php/**、后台入口之外的未匹配站点路径 → PHP `_empty` → `page_error`：HTTP 404 +
+      `public/<app.page_404>`（配置为空时 `public/jump`）的模板输出（HTML，带 API-003 头）；模板缺失 → “模板文件不存在”页（TemplateNotFoundPage）。
+      /api/v1/** 的未匹配地址仍返回原 JSON 404，不变。
+  - x-api-id: API-006
+    summary: 搜索过快（ALIGN-6）
+    x-trace: [FR-5, AC-5, ALIGN-6]
+    before: 429 + Retry-After + jte 提示页
+    after: PHP `check_search`：HTTP 200 + `public/jump` 错误提示，msg = lang('search_frequently') + search_timespan + lang('seconds')；无 Retry-After；计时规则（只算第 1 页、被拒也刷新）不变
+
+paths:
+  # ───────────────────────────── 前台 ─────────────────────────────
+  /template/{dir}/{assetPath}:
+    get:
+      tags: [site]
+      operationId: getTemplateAsset
+      x-api-id: API-001
+      x-trace: [FR-1, FR-5, AC-5, AC-17, DEC-8, SEC-7, OP-T5, V-18]
+      summary: 读取模板包静态资源（白名单，OP-T5=a）
+      description: |
+        PHP 由 Web 服务器直接返回 template/ 下的文件；Java 由 `TemplateAssetController`（C-43）提供，放行规则只在
+        `LegacySiteFiles.readTemplateAsset`（C-44）一处实现。
+
+        **放行条件（全部满足才 200，否则一律 404，不区分原因、不回显路径）**
+        1. `{dir}` 是站点根 `template/` 下实际存在的子目录（不限 default_pc/default_wap，跟随配置）。
+        2. `{assetPath}` 的第一段是 `css`、`js`、`images`、`ads` 之一，其后至少还有一段文件名（可有多级子目录）。
+        3. 扩展名（按小写比较）在白名单：`css js png jpg jpeg gif ico svg webp woff woff2 ttf eot swf`；
+           `php` 及 `html htm ini txt`、无扩展名一律拒绝（SEC-7：与 PHP 的已确认安全差异，PHP 会原样返回 `.html` 模板源码与 `info.ini`）。
+        4. 路径段不含 `..`、`.`、空段、反斜杠、`:`、空字节、控制字符；规范化后的真实路径在 `<站点根>/template/` 内
+           （中间目录是符号链接且解析后出 template/ 或出站点根 → 拒绝）；最终文件按 NOFOLLOW_LINKS 打开，本身是符号链接、目录、非普通文件 → 拒绝。
+        5. 文件大小不超过实现上限 `maxBytes`（超出 → 404）。
+        只读：不建目录、不写文件、不改时间。只在 `maccms.site.enabled=true` 时装配；未装配时该路径走 API-005 的 404。
+      security: []
+      x-security-note: 公开静态资源（模板 CSS/JS/图片/广告脚本），与 PHP 站点相同无需登录；安全边界由放行条件保证。
+      parameters:
+        - $ref: "#/components/parameters/TemplateDir"
+        - $ref: "#/components/parameters/TemplateAssetPath"
+        - name: If-Modified-Since
+          in: header
+          required: false
+          schema: { type: string, maxLength: 64 }
+          description: HTTP 日期；文件修改时间不晚于该值 → 304
+      responses:
+        "200":
+          description: 文件原始字节
+          headers:
+            Content-Type:
+              description: 按扩展名固定表（见 `components.x-template-asset-content-types`），不按内容嗅探
+              schema: { type: string }
+            Last-Modified:
+              description: 文件修改时间（HTTP 日期）
+              schema: { type: string }
+            Content-Length:
+              schema: { type: integer, minimum: 0 }
+          content:
+            application/octet-stream:
+              schema: { type: string, format: binary }
+        "304":
+          description: 未修改（If-Modified-Since 条件成立），无正文
+        "404":
+          description: 不放行（任一放行条件不满足）或文件不存在；正文同 API-005 的前台 404 页，不含路径信息
+          content:
+            text/html:
+              schema: { type: string }
+      x-error-codes-ref: [TEMPLATE_ASSET_NOT_FOUND]
+    head:
+      tags: [site]
+      operationId: headTemplateAsset
+      x-api-id: API-001
+      x-trace: [FR-5, AC-5, AC-17, SEC-7, V-18]
+      summary: 模板静态资源 HEAD（规则同 GET，无正文）
+      security: []
+      x-security-note: 同 GET
+      parameters:
+        - $ref: "#/components/parameters/TemplateDir"
+        - $ref: "#/components/parameters/TemplateAssetPath"
+      responses:
+        "200": { description: 头部同 GET 200，无正文 }
+        "304": { description: 未修改 }
+        "404": { description: 同 GET 404，无正文 }
+
+  /index.php/ajax/pwd:
+    get:
+      tags: [site]
+      operationId: checkWatchPassword
+      x-api-id: API-002
+      x-trace: [FR-5, AC-5, AC-17, ALIGN-4, SEC-9, OP-T4, V-30]
+      summary: 观看/播放/下载/文章密码校验（恢复 PHP ajax/pwd，保留 PasswordAttempts，OP-T4=a）
+      description: |
+        恢复 PHP `Ajax::pwd`（Ajax.php:400-456），基线 Java 此地址返回 404、改用签名 cookie 的表单校验（随 C-68 移除调用点）。
+        短地址 `/ajax/pwd` 与 `.html` 后缀按现有前台路由同样受理，行为相同。参数来源同 PHP `$this->_param`/`input('param.')`
+        （路由 + GET + POST 合并），所以 GET 与 POST 等价。
+
+        **判定顺序（逐条按 PHP，第一个命中即返回，HTTP 恒为 200）**
+        1. 参数校验：`id` 为空、`pwd` 为空、`mid` ∉ {1,2}、`type` ∉ {1,4,5} → 1001（PHP `empty()` 语义：`"0"` 视为空）。
+        2. 本会话已通过同一 `mid-type-id` → 1002。
+        3. 会话 `last_pwd` 距今 < 5 秒 → 1003；**每次进入这一步都刷新 `last_pwd`（含被拒的调用）**，同 `mac_get_time_span`。
+        4. （OP-T4=a / SEC-9）`PasswordAttempts.tryAcquire(用途, id)` 不通过 → 1003（与第 3 步相同的 JSON），不查库。
+           限流口径沿用基线常量：同一“用途 + 内容 id”每 60 秒最多 10 次，全站合计每秒最多 30 次，键数上限 10000（不记录 IP、会话或密码）。
+           与 PHP 的差异只在“哪一次请求得到 1003”，判 `排除-SEC-9`。
+        5. 取数：`mid=1` 查视频（`vod_status` 等过滤同 PHP `Vod::infoData`），失败 → 1011；`mid=2` 查文章，失败 → 1021；
+           `msg` 为模型返回的消息。
+        6. 比对：`mid=1,type=1` 比 `vod_pwd` → 不符 1012；`type=4` 比 `vod_pwd_play` → 1013；`type=5` 比 `vod_pwd_down` → 1014；
+           `mid=2` 比 `art_pwd`（不看 type）→ 1022。比较为 PHP `!=` 弱比较语义（ZValue 规则，数字串按数值比较）。
+        7. 通过：会话写 `mid-type-id = '1'`，返回 `{"code":1,"msg":"ok"}`。
+        “已通过”与 `last_pwd` 存进程内会话（SessionStore），不进库、不参与页面对照。前端（模板包 JS）据 `code==1` 刷新页面，
+        页面控制器按会话“已通过”放行详情/播放/下载内容。
+      security: []
+      x-security-note: 观看密码本身就是游客的访问凭证，与 PHP 相同无需登录；频率由第 3、4 步限制。
+      parameters:
+        - $ref: "#/components/parameters/PwdMid"
+        - $ref: "#/components/parameters/PwdType"
+        - $ref: "#/components/parameters/PwdId"
+        - $ref: "#/components/parameters/PwdValue"
+      responses:
+        "200":
+          description: PHP JSON（成功或任一业务错误码，见 `x-error-codes` 1001～1022）
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PwdResult" }
+              examples:
+                ok: { value: { code: 1, msg: ok } }
+                frequently: { value: { code: 1003, msg: "<lang index/pwd_frequently>" } }
+                wrong: { value: { code: 1012, msg: "<lang pass_err>" } }
+      x-error-codes-ref: [PWD_PARAM_ERR, PWD_ALREADY_PASSED, PWD_TOO_FREQUENT, PWD_VOD_NOT_FOUND, PWD_VOD_WRONG, PWD_VOD_PLAY_WRONG, PWD_VOD_DOWN_WRONG, PWD_ART_NOT_FOUND, PWD_ART_WRONG]
+      x-idempotency: 非幂等（刷新 last_pwd、消耗 PasswordAttempts 配额、通过时写会话）；客户端不得自动重试。
+    post:
+      tags: [site]
+      operationId: checkWatchPasswordPost
+      x-api-id: API-002
+      x-trace: [FR-5, AC-5, AC-17, ALIGN-4, SEC-9, OP-T4, V-30]
+      summary: 观看密码校验（POST，与 GET 等价）
+      security: []
+      x-security-note: 同 GET
+      requestBody:
+        required: false
+        content:
+          application/x-www-form-urlencoded:
+            schema: { $ref: "#/components/schemas/PwdForm" }
+      responses:
+        "200":
+          description: 同 GET
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PwdResult" }
+      x-error-codes-ref: [PWD_PARAM_ERR, PWD_ALREADY_PASSED, PWD_TOO_FREQUENT, PWD_VOD_NOT_FOUND, PWD_VOD_WRONG, PWD_VOD_PLAY_WRONG, PWD_VOD_DOWN_WRONG, PWD_ART_NOT_FOUND, PWD_ART_WRONG]
+      x-idempotency: 同 GET
+
+  /index.php/ajax/{counter}:
+    post:
+      tags: [site]
+      operationId: postCounter
+      x-api-id: API-007
+      x-trace: [FR-5, FR-12, AC-5, AC-14, ALIGN-7]
+      summary: 计数接口 hits/digg/score/referer 一律返回 PHP JSON（ALIGN-7）
+      description: |
+        基线 Java 对非 ajax 的 POST 返回 jte 提示页（D-B11-10）；jte 表单随页面组删除后，按 PHP（Ajax.php:152-460 各方法 `return json(...)`）
+        **无论是否 ajax 一律返回 JSON**，参数、判定与 JSON 字段不变（仍由 `SiteCounterActions` 处理，BR-4）。GET 同样受理（PHP 不区分方法）。
+        `verify_check` 非 ajax 的输出按 PRE-2 基线记录的 PHP 实际值，附表 C 对应行由 T-FR12 判定，本契约不预设。
+        短地址 `/ajax/{counter}` 同样受理。
+      security: []
+      x-security-note: 游客计数接口，与 PHP 相同公开；频率与去重规则沿用基线实现。
+      parameters:
+        - name: counter
+          in: path
+          required: true
+          schema: { type: string, enum: [hits, digg, score, referer] }
+      responses:
+        "200":
+          description: PHP JSON（字段同基线 ajax 分支），Content-Type application/json; charset=utf-8
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LegacyJson" }
+
+  # ───────────────────────────── 后台：数据库工具 ─────────────────────────────
+  /database/index:
+    servers: *adminServers
+    get:
+      tags: [admin-database]
+      operationId: adminDatabaseIndex
+      x-api-id: API-010
+      x-trace: [FR-9, AC-11, DBT-5, V-31]
+      summary: 数据库工具页（表列表 / group=import 备份列表）加载时做一次不等待的中断判定并显示运行记录提示条
+      description: |
+        列表内容与 B15 相同（`group=import` → 备份列表，否则表列表）。本期新增：
+        1. 页面加载先调用 `DatabaseRuns.probe()`：对 `application/data/backup/database/dbtool.lock` 做一次不等待的取锁（DBT-5 ⑥(a)、⑩）。
+           - 拿不到锁 → 页面显示“执行中”，**不出现任何操作按钮**（含 recover / 我已处理 / 导出 / 还原 / 优化 / 修复 / 删除）。
+           - 拿到锁 → 若记录为 `RUNNING`/`RECOVERING`，先按 `x-interrupt-transitions` 唯一改写并按表中日志级别记日志，释放锁；
+             记录已不是 `RUNNING`/`RECOVERING` 时不改写记录、不写日志（判定幂等，V-31 ⑲）。
+        2. 按运行记录显示提示条与按钮，取值见 `x-page-banner`。
+        3. 处于待处理状态时，普通操作按钮（导出、还原、优化、修复、执行 SQL）仍可点击，但服务端按 API-011～API-016 拒绝；
+           页面仅以提示条说明（不在前端隐藏这些按钮，避免与服务端判定不一致）。
+        Ajax 请求按通用约定返回整页 HTML 的 JSON 字符串（B12 `AdminResponses.page`）。
+      security: [{ adminSession: [] }]
+      x-permission: database/index
+      parameters:
+        - name: group
+          in: query
+          required: false
+          schema: { type: string, enum: [import, export] }
+      responses:
+        "200":
+          description: 后台 HTML 页（含提示条）；Ajax 时为页面 HTML 的 JSON 字符串
+          content:
+            text/html: { schema: { type: string } }
+        "302": { description: 未登录，跳转后台登录页 }
+
+  /database/optimize:
+    servers: *adminServers
+    post:
+      tags: [admin-database]
+      operationId: adminDatabaseOptimize
+      x-api-id: API-011
+      x-trace: [FR-9, AC-11, DBT-1, DBT-5, V-31]
+      summary: 优化表（DBT-1，基线为入口拒绝，本期按 PHP 执行）
+      description: |
+        对每张选中的表各发一条 ``OPTIMIZE TABLE `<表>` ``（表名取自 26 张白名单常量而非请求原文）。
+        顺序：取锁 → 中断判定（⑩）→ 状态检查（待处理/RECOVERED → 拒绝）→ 预检（`ids` 非空且全部在白名单内，任一不在 → 整批拒绝、0 条语句）
+        → 写 `RUNNING`（op=OPTIMIZE）→ 逐表执行（一张失败不影响其他表）→ `DONE`（全部成功 outcome=OK，有表失败 outcome=PARTIAL + `table_results`）。
+        DBT-1 总是以 `DONE` 结束、不进入待处理；进程中断 → `DONE` + outcome=INTERRUPTED（WARN）。
+        PHP 成功提示 `admin/database/optimize_ok`；PHP 只接受 `ids` 数组/逗号串，Java 相同。
+      security: [{ adminSession: [] }]
+      x-permission: database/optimize
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema: { $ref: "#/components/schemas/TableIdsForm" }
+      responses:
+        "200":
+          description: Ajax → LegacyJson（成功 code=1 msg=optimize_ok；拒绝/失败 code=0）；非 Ajax → 跳转提示页
+          content:
+            application/json:
+              schema: { oneOf: [ { $ref: "#/components/schemas/LegacyJson" }, { $ref: "#/components/schemas/Error" } ] }
+      x-error-codes-ref: [DBT_SELECT_OPTIMIZE_TABLE, DBT_TABLE_NOT_ALLOWED, DBT_LOCKED, DBT_PENDING, DBT_OPTIMIZE_PARTIAL, FORM_TOKEN_INVALID]
+      x-idempotency: 幂等，可直接重试（DBT-5 ⑤）
+
+  /database/repair:
+    servers: *adminServers
+    post:
+      tags: [admin-database]
+      operationId: adminDatabaseRepair
+      x-api-id: API-012
+      x-trace: [FR-9, AC-11, DBT-1, DBT-5, V-31]
+      summary: 修复表（DBT-1，规则同 API-011，语句为 REPAIR TABLE，op=REPAIR）
+      description: |
+        同 API-011，语句 ``REPAIR TABLE `<表>` ``，空选提示 `admin/database/select_repair_table`，成功提示 `admin/database/repair_ok`
+        （PHP 失败分支也误用 `repair_ok`，Java 照搬 PHP 文本，结果状态以 code 区分）。
+      security: [{ adminSession: [] }]
+      x-permission: database/repair
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema: { $ref: "#/components/schemas/TableIdsForm" }
+      responses:
+        "200":
+          description: 同 API-011
+          content:
+            application/json:
+              schema: { oneOf: [ { $ref: "#/components/schemas/LegacyJson" }, { $ref: "#/components/schemas/Error" } ] }
+      x-error-codes-ref: [DBT_SELECT_REPAIR_TABLE, DBT_TABLE_NOT_ALLOWED, DBT_LOCKED, DBT_PENDING, DBT_OPTIMIZE_PARTIAL, FORM_TOKEN_INVALID]
+      x-idempotency: 幂等，可直接重试
+
+  /database/sql:
+    servers: *adminServers
+    get:
+      tags: [admin-database]
+      operationId: adminDatabaseSqlPage
+      x-api-id: API-013
+      x-trace: [FR-9, AC-11, DBT-2, DBT-5]
+      summary: 执行 SQL 页面（按 PHP admin@database/sql 视图移植，含运行记录提示条与“执行前请先导出将被修改的表”提示）
+      security: [{ adminSession: [] }]
+      x-permission: database/sql
+      responses:
+        "200":
+          description: 后台 HTML 页；页面加载同样先 probe()（同 API-010），提示条按 `x-page-banner`
+          content:
+            text/html: { schema: { type: string } }
+    post:
+      tags: [admin-database]
+      operationId: adminDatabaseSqlExecute
+      x-api-id: API-013
+      x-trace: [FR-9, AC-11, DBT-2, DBT-5, SEC-8, V-23, V-31]
+      summary: 执行 SQL（DBT-2，PHP 整段语义 + AC-11 结构保护）
+      description: |
+        输入当作**一整段**处理，不切分、不逐条执行。判定顺序（前一步命中即返回，后续不执行）：
+        0. 校验 `__token__`（同 PHP `validate('Token')`）。
+        1. `trim`（PHP 语义）；为空 → 不执行，返回 `run_ok`（code=1）。把 `{pre}` 替换为表前缀。
+        2. **PHP 跳过判定（SEC-8，逐字照搬 Database.php:252-263）**：副本转小写、`/\*.*?\*/`（跨行）换空格、`--` 至行尾换空格、压缩空白并 trim；
+           以 `select` 开头，或含 `outfile`/`dumpfile`/`load_file` 之一 → 不发送，返回 `run_ok`（code=1，与 PHP 文本相同）。
+           例：`SELECT 1; INSERT …` 整段跳过。
+        3. **多语句**：词法扫描（单引号/双引号/反引号字符串及其中 `\` 转义，`--`、`#`、`/* */` 注释），第一个不在字符串与注释中的 `;`
+           之后还有非空白非注释内容 → 不发送，code=0「一次只能执行一条语句」。末尾单个 `;` 允许并原样发送。
+        4. **AC-11 结构保护**：同一词法去注释（出现 `/*!` 版本注释 → 视为不可识别并拒绝），首个关键字只允许 INSERT/UPDATE/DELETE，
+           其他（REPLACE、WITH、`(`、DROP、TRUNCATE、ALTER、CREATE 等）→ 不发送，code=0「结构类操作请由部署方在库外完成」。
+        5. 取锁 → 中断判定 → 状态检查（待处理/RECOVERED → 拒绝）→ 写 `RUNNING`（op=SQL）→ 整段一次 `Statement.execute`
+           （allowMultiQueries=false、自动提交、不重试）。
+        6. 结果：成功 → `DONE` outcome=OK，返回 `run_ok`（不展示结果集）；确定未生效 → `DONE` outcome=FAILED，code=0「执行失败，数据未改动」
+           并附 SQLState 分类；结果不确定 → 状态 `UNKNOWN`（待处理），code=0「结果不确定」+ 核对步骤。提示不回显 SQL 原文。
+        与 PHP 的差异只有：AC-11 拒绝、多语句与失败时的提示文字、运行记录与锁（DBT-5 ⑧）。
+        失败分类（DBT-5 ③）：SQLState `42xxx` 或单值 INSERT 的非连接/非中止类服务端错误 → 确定未生效；
+        SQLState `08xxx`、客户端错误码 2000～2999、1028/1053/1317/1927/3024、SQLTimeoutException、非 SQL 异常，
+        或多行语句（UPDATE/DELETE/多值 INSERT/INSERT…SELECT）出错 → 结果不确定。
+      security: [{ adminSession: [] }]
+      x-permission: database/sql
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema: { $ref: "#/components/schemas/SqlForm" }
+      responses:
+        "200":
+          description: Ajax → LegacyJson / Error；非 Ajax → 跳转提示页（失败时页面保留输入框原文）
+          content:
+            application/json:
+              schema: { oneOf: [ { $ref: "#/components/schemas/LegacyJson" }, { $ref: "#/components/schemas/Error" } ] }
+      x-error-codes-ref: [FORM_TOKEN_INVALID, DBT_SQL_MULTI_STATEMENT, DBT_SQL_STRUCTURE_REFUSED, DBT_LOCKED, DBT_PENDING, DBT_SQL_FAILED, DBT_SQL_UNKNOWN]
+      x-idempotency: 一般不幂等；服务端不重试；“结果不确定”进入待处理，须 acknowledge（API-018）后才能再执行
+
+  /database/import:
+    servers: *adminServers
+    post:
+      tags: [admin-database]
+      operationId: adminDatabaseImport
+      x-api-id: API-014
+      x-trace: [FR-9, AC-11, AC-16, DBT-3, DBT-5, V-31]
+      summary: 还原备份（DBT-3，只还原数据 + 还原前自动备份 + 运行记录）
+      description: |
+        PHP 为 `import($id)`（GET/POST 均可，无令牌）；Java 本期只接受 POST + `__token__`（写操作统一约定），GET → code=0 `param_err`。
+        一次请求同步完成整次还原，持锁直到写完最终记录（DBT-5 ④）；不使用 PHP 分段续传参数（`part`/`start` 被忽略）。
+
+        **顺序**：取锁（拿不到 → DBT_LOCKED）→ 中断判定（⑩）→ 状态检查（待处理/RECOVERED → DBT_PENDING）→ 预检（任一不通过 → 整批拒绝、0 条语句、记录不变）：
+        (a) 分卷齐全（`count($list) === $last[0]`，否则 `admin/database/file_damage`）；(b) 全部分卷可读、`.gz` 可解压；
+        (c) 全部语句按 `mac_parse_sql` 切分完成，还原表集合（备份中 DROP TABLE/CREATE TABLE/INSERT INTO 出现过的全部表）都在 26 张白名单内；
+        (d) 站点已关闭（`site.site_status=0`）；(e) 自动备份目录存在且可写；另：`backup.lock` 存在 → `admin/database/lock_check`。
+        → 写 `RUNNING`（op=IMPORT，phase=AUTO_BACKUP，source_backup，tables）→ 还原前自动备份（导出还原表集合，记 export_files、backup_lock，
+        完成后记 auto_backup 各分卷 SHA-256）→ phase=RESTORE 落盘 → 逐表 `DELETE FROM 表` + 该表全部 INSERT（每条单独一次 JDBC 调用，
+        每完成一张表更新 tables_done/table_current/inserted_current）；DROP/CREATE 及其他非 DML 语句跳过并计数。
+
+        **结果**：全部成功 → `DONE` outcome=OK，`admin/database/import_ok`（附总数、已执行、跳过数）；自动备份失败 → `DONE`
+        outcome=FAILED_BEFORE_WRITE（数据未动）；确定未生效 → `FAILED`（待处理）；结果不确定 → `UNKNOWN`（待处理）。
+        第一处失败立即停止。待处理时页面按 `x-page-banner` 提供 recover（API-017）与“我已处理”（API-018）。
+        确认步骤页面写明“请确认没有其他管理员在编辑内容、api.php/timming 定时任务已停”（RISK-T19，运维约定）。
+      security: [{ adminSession: [] }]
+      x-permission: database/import
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema: { $ref: "#/components/schemas/BackupIdForm" }
+      responses:
+        "200":
+          description: Ajax → LegacyJson（data 为 `ImportResult`）/ Error；非 Ajax → 跳转提示页
+          content:
+            application/json:
+              schema: { oneOf: [ { $ref: "#/components/schemas/LegacyJson" }, { $ref: "#/components/schemas/Error" } ] }
+      x-error-codes-ref: [FORM_TOKEN_INVALID, DBT_SELECT_FILE, DBT_FILE_DAMAGE, DBT_TABLE_NOT_ALLOWED, DBT_SITE_NOT_CLOSED, DBT_BACKUP_DIR_NOT_WRITABLE, DBT_BACKUP_LOCK_EXISTS, DBT_LOCKED, DBT_PENDING, DBT_AUTO_BACKUP_FAILED, DBT_IMPORT_FAILED, DBT_IMPORT_UNKNOWN, BAD_BACKUP_PATH]
+      x-idempotency: 无并发写入时整体幂等（每表先清空再插入）；服务端不自动重试；失败后经 recover（API-017）恢复
+
+  /database/export:
+    servers: *adminServers
+    post:
+      tags: [admin-database]
+      operationId: adminDatabaseExport
+      x-api-id: API-015
+      x-trace: [FR-9, DBT-4, DBT-5, V-31]
+      summary: 导出备份（入参与 JSON 同 B15，本期改为在 dbtool.lock 内执行并写运行记录）
+      description: |
+        入参、分卷命名、`backup.lock` 规则与成功/失败提示同 B15（`ids`、`start`，只接受 POST，否则 `admin/database/backup_err`）。新增：
+        取锁（拿不到 → DBT_LOCKED，提示同 `lock_check`）→ 中断判定 → 状态检查（待处理/RECOVERED → 拒绝，提示同 `lock_check`）→
+        写 `RUNNING`（op=EXPORT，记 export_files、backup_lock）→ 导出 → `DONE`（outcome=OK / FAILED，B15 原样提示）。
+        进程中断 → 下一个持锁者删除 export_files 列出的半成品分卷与内容等于 backup_lock 的 `backup.lock`，`DONE` outcome=INTERRUPTED（WARN）。
+      security: [{ adminSession: [] }]
+      x-permission: database/export
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema: { $ref: "#/components/schemas/ExportForm" }
+      responses:
+        "200":
+          description: Ajax → LegacyJson / Error；非 Ajax → 跳转提示页
+          content:
+            application/json:
+              schema: { oneOf: [ { $ref: "#/components/schemas/LegacyJson" }, { $ref: "#/components/schemas/Error" } ] }
+      x-error-codes-ref: [DBT_SELECT_EXPORT_TABLE, DBT_BACKUP_LOCK_EXISTS, DBT_LOCKED, DBT_PENDING, DBT_BACKUP_ERR]
+      x-idempotency: 每次生成新分卷（同秒冲突顺延），重复提交得到多份备份；不自动重试
+
+  /database/del:
+    servers: *adminServers
+    post:
+      tags: [admin-database]
+      operationId: adminDatabaseDeleteBackup
+      x-api-id: API-016
+      x-trace: [FR-9, DBT-4, DBT-5, REV-14, V-31]
+      summary: 删除备份（入参与 JSON 同 B15；本期纳入 dbtool.lock 并保护待处理还原记录绑定的备份）
+      description: |
+        基线 `AdminDatabaseActions` `del` → `DatabaseToolService.delete`，入参与 JSON 结构不变（B15 对方法不设限，GET 同样受理），只新增两种拒绝：
+        ① `id` 为空 → `admin/database/select_del_file`；备份目录不合法 → BAD_BACKUP_PATH（不取锁、不删文件）；
+        ② 取锁失败 → DBT_LOCKED，0 个文件被删；
+        ③ 锁内先中断判定、再读运行记录：记录 op=IMPORT 且处于待处理（含 RECOVERED），且要删的前缀（`Ymd-His-`，由 `id` 算出）等于
+           `source_backup` 或 `auto_backup` 的前缀 → DBT_BACKUP_BOUND，0 个文件被删；
+        ④ 否则在锁内按卷号升序删除各分卷，返回 `del_ok`/`del_err`（同 B15）；
+        ⑤ 不写运行记录，日志一行 INFO（op=DELETE）。
+      security: [{ adminSession: [] }]
+      x-permission: database/del
+      parameters:
+        - $ref: "#/components/parameters/BackupIdQuery"
+      responses:
+        "200":
+          description: Ajax → LegacyJson / Error；非 Ajax → 跳转提示页
+          content:
+            application/json:
+              schema: { oneOf: [ { $ref: "#/components/schemas/LegacyJson" }, { $ref: "#/components/schemas/Error" } ] }
+      x-error-codes-ref: [DBT_SELECT_DEL_FILE, BAD_BACKUP_PATH, DBT_LOCKED, DBT_BACKUP_BOUND, DBT_DEL_ERR]
+      x-idempotency: 幂等（已删除的备份再删返回 B15 的同一结果）
+
+  /database/recover:
+    servers: *adminServers
+    post:
+      tags: [admin-database]
+      operationId: adminDatabaseRecover
+      x-api-id: API-017
+      x-trace: [FR-9, AC-11, DBT-5, REV-11, V-31]
+      summary: 新增：对 DBT-3 待处理记录执行恢复（只能使用本次运行绑定的自动备份或原备份）
+      description: |
+        PHP 无此动作。只对 op=IMPORT 且状态 ∈ {FAILED, UNKNOWN, INTERRUPTED, RECOVERY_FAILED, RECOVERY_UNKNOWN, RECOVERY_INTERRUPTED} 的记录开放；
+        `RECOVERED`、`DONE`、DBT-2 记录 → DBT_RECOVER_NOT_ALLOWED。入参只有 `run` 与 `target`，**不接受文件名**。
+
+        **预检**（任一不通过 → 拒绝、记录不变、0 条语句）：持锁（DBT_LOCKED）；中断判定；`run` 等于当前记录（DBT_RUN_MISMATCH）；
+        站点已关闭（DBT_SITE_NOT_CLOSED）；target=AUTO_BACKUP 时 `auto_backup` 存在且各分卷 SHA-256 与记录相符（DBT_AUTO_BACKUP_INVALID）；
+        target=SOURCE 时原备份分卷齐全可读（DBT_FILE_DAMAGE）；DBT-3 预检 (a)～(c)。
+        **执行**：记录改 `RECOVERING`（保留原失败信息，`recovery.attempt` +1），按 DBT-3 同一流程逐表还原，**不再做自动备份**。
+        **结果**：成功 → `RECOVERED`（仍是待处理，须 API-018 确认）；确定未生效 → `RECOVERY_FAILED`；结果不确定 → `RECOVERY_UNKNOWN`；
+        进程中途退出 → 下一个持锁者记 `RECOVERY_INTERRUPTED`（attempt 不变）。均可再次 recover（幂等）。
+      security: [{ adminSession: [] }]
+      x-permission: database/import
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema: { $ref: "#/components/schemas/RecoverForm" }
+      responses:
+        "200":
+          description: Ajax → LegacyJson（data 为 `ImportResult`）/ Error；非 Ajax → 跳转提示页（回到数据库工具页）
+          content:
+            application/json:
+              schema: { oneOf: [ { $ref: "#/components/schemas/LegacyJson" }, { $ref: "#/components/schemas/Error" } ] }
+      x-error-codes-ref: [FORM_TOKEN_INVALID, DBT_LOCKED, DBT_RUN_MISMATCH, DBT_RECOVER_NOT_ALLOWED, DBT_SITE_NOT_CLOSED, DBT_AUTO_BACKUP_INVALID, DBT_FILE_DAMAGE, DBT_TABLE_NOT_ALLOWED, DBT_RECOVERY_FAILED, DBT_RECOVERY_UNKNOWN]
+      x-idempotency: 无并发写入时幂等，可反复执行，结果相同（DBT-5 ⑤、V-31 ⑤）；服务端不自动重试
+
+  /database/acknowledge:
+    servers: *adminServers
+    post:
+      tags: [admin-database]
+      operationId: adminDatabaseAcknowledge
+      x-api-id: API-018
+      x-trace: [FR-9, AC-11, DBT-5, REV-11, V-31]
+      summary: 新增：“我已处理”——离开待处理状态的唯一出口
+      description: |
+        PHP 无此动作。持锁 → 中断判定 → `run` 等于当前记录 → 按状态：
+        - `RECOVERED`：`accepted_as_is` 可省略，记录改 `DONE`（`ack.accepted_as_is=false`）。
+        - 其他待处理状态（DBT-2 的 UNKNOWN/INTERRUPTED；DBT-3 的 FAILED/UNKNOWN/INTERRUPTED/RECOVERY_*）：必须 `accepted_as_is=1`
+          （页面勾选“接受当前数据”），否则 DBT_ACK_CONFIRM_REQUIRED；通过 → `DONE`（`ack.accepted_as_is=true`，INFO 日志含 accepted_as_is）。
+        - 非待处理状态（无记录、DONE）→ DBT_ACK_NOT_PENDING。
+        只做一次原子替换，被杀不会留下 RUNNING。
+      security: [{ adminSession: [] }]
+      x-permission: database/import
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema: { $ref: "#/components/schemas/AcknowledgeForm" }
+      responses:
+        "200":
+          description: Ajax → LegacyJson / Error；非 Ajax → 跳转提示页
+          content:
+            application/json:
+              schema: { oneOf: [ { $ref: "#/components/schemas/LegacyJson" }, { $ref: "#/components/schemas/Error" } ] }
+      x-error-codes-ref: [FORM_TOKEN_INVALID, DBT_LOCKED, DBT_RUN_MISMATCH, DBT_ACK_CONFIRM_REQUIRED, DBT_ACK_NOT_PENDING]
+      x-idempotency: 第二次调用时记录已是 DONE → DBT_ACK_NOT_PENDING，数据不变
+
+  # ───────────────────────────── 后台：模板管理 ─────────────────────────────
+  /template/info:
+    servers: *adminServers
+    post:
+      tags: [admin-template]
+      operationId: adminTemplateSave
+      x-api-id: API-020
+      x-trace: [FR-7, AC-8, BR-6, W-04, W-05, W-06, W-07]
+      summary: 保存模板文件（扩展名白名单改回 PHP 的 html/htm/js/xml，删除 jte 编译与备份恢复分支）
+      description: |
+        入参同 PHP `Template::info`（`fpath`、`fname`、`fcontent`、`__token__`，Template.php:149-212），另保留 B15 的 `fversion`（版本冲突检查）。变化：
+        - 扩展名白名单 `html,htm,js,xml`（撤销 D-B15-14：去掉 `jte`、恢复 `htm`），不在白名单 → PHP 同款提示。
+        - 内容过滤 `LEGACY_FILTER` 与 PHP 逐字相同，命中 → `admin/template/php_safe_tip`。
+        - 只能写 `template/` 区域内文件；经 `LegacySiteFiles.replace` 原子写 + 版本冲突检查（B15 约定保留，冲突时提示并不覆盖）。
+        - 删除 jte 专用的覆盖前备份与 `op=restore`/`restore`（PHP 没有），请求里出现这两个参数时按 PHP 忽略。
+        - 保存后下一次前台请求按模板修改时间重编译（TPL-8）。
+        GET（打开编辑页）的列表与路径规则同 §6.1，页面结构按 PHP。
+      security: [{ adminSession: [] }]
+      x-permission: template/info
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema: { $ref: "#/components/schemas/TemplateSaveForm" }
+      responses:
+        "200":
+          description: Ajax → LegacyJson / Error；非 Ajax → 跳转提示页
+          content:
+            application/json:
+              schema: { oneOf: [ { $ref: "#/components/schemas/LegacyJson" }, { $ref: "#/components/schemas/Error" } ] }
+      x-error-codes-ref: [FORM_TOKEN_INVALID, TPL_EXT_NOT_ALLOWED, TPL_UNSAFE_CONTENT, TPL_OUTSIDE_AREA, TPL_VERSION_CONFLICT]
+  /template/del:
+    servers: *adminServers
+    post:
+      tags: [admin-template]
+      operationId: adminTemplateDelete
+      x-api-id: API-021
+      x-trace: [FR-7, AC-8, W-08]
+      summary: 删除模板文件（同 PHP：只能删 template/ 内文件，路径校验同保存）
+      description: 入参同 PHP `Template::del`（`fname`，Template.php:214-235），返回 `del_ok`/`del_err`。PHP 不限方法，Java 同样受理 GET。
+      security: [{ adminSession: [] }]
+      x-permission: template/del
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required: [fname]
+              properties:
+                fname: { type: string, maxLength: 512, description: "template/ 区域内的相对路径（PHP 原样参数）" }
+      responses:
+        "200":
+          description: Ajax → LegacyJson / Error；非 Ajax → 跳转提示页
+          content:
+            application/json:
+              schema: { oneOf: [ { $ref: "#/components/schemas/LegacyJson" }, { $ref: "#/components/schemas/Error" } ] }
+      x-error-codes-ref: [TPL_OUTSIDE_AREA, TPL_EXT_NOT_ALLOWED]
+  /template/wizard:
+    servers: *adminServers
+    get:
+      tags: [admin-template]
+      operationId: adminTemplateWizard
+      x-api-id: API-022
+      x-trace: [FR-7, AC-9, W-09]
+      summary: 标签向导页（改为 PHP admin@template/wizard 的同一表单，浏览器端生成 {maccms:…} 片段）
+      description: |
+        页面按 PHP 视图移植（C-49），生成逻辑在浏览器端（新增后台静态脚本 `admin-assets/template-wizard.js`），输出
+        `{maccms:vod …}…{/maccms:vod}` 等片段，不再输出 jte 片段。服务端不新增生成接口。
+      security: [{ adminSession: [] }]
+      x-permission: template/wizard
+      responses:
+        "200":
+          description: 后台 HTML 页
+          content:
+            text/html: { schema: { type: string } }
+  /template/ads:
+    servers: *adminServers
+    get:
+      tags: [admin-template]
+      operationId: adminTemplateAds
+      x-api-id: API-023
+      x-trace: [FR-7, AC-8, PATH-4]
+      summary: 广告脚本列表（目录 template/<template_dir>/ads/*.js；不存在时只创建桌面目录）
+      description: |
+        同 PHP（§6.1）：列 `template/default_pc/ads/*.js`，目录不存在时创建（只建桌面目录，不在 default_wap 下建 ads/）；
+        页面“调用代码”为字面 `<script src="{$maccms.path_ads}aaa.js"></script>`。本期只确认与 PHP 一致，参数与页面结构不变。
+      security: [{ adminSession: [] }]
+      x-permission: template/ads
+      responses:
+        "200":
+          description: 后台 HTML 页
+          content:
+            text/html: { schema: { type: string } }
+
+  # ───────────────────────────── 后台：静态生成 / 清理缓存 ─────────────────────────────
+  /make/{makeAction}:
+    servers: *adminServers
+    get:
+      tags: [admin-make]
+      operationId: adminMake
+      x-api-id: API-024
+      x-trace: [FR-6, FR-8, AC-7, AC-10, BR-6, K-10, K-11, K-12, D-19]
+      summary: 静态生成（入参同 PHP Make.php；本期按 PHP 补齐 label 生成、RSS 分页、ac2=wap 手机变体、失败输出格式）
+      description: |
+        入参与输出页面同 PHP `Make` 控制器各方法（`ac`、`ac2`、`tab`、`ids`、`jump` 等，Make.php:57-960）。本期行为变化：
+        - `index?ac2=wap`：用手机 `SiteVariant` 渲染（读 `template/default_wap/html/`，`{$maccms.path_tpl}`=`/template/default_wap/`），
+          输出 `wap_index.html`；其他 `ac2` 值为桌面（C-45）。
+        - `label`：按 `label/` 目录下的文件逐个生成（撤销 D-B16-5）。
+        - `rss`：按 PHP 分页生成（撤销 D-B16-6）。
+        - 生成 actor/role/website 详情时写 `actor_time_make`/`role_time_make`/`website_time_make`（K-12，WriteRegistry 登记）。
+        - 某页模板报错 → 记入失败输出（格式按 PHP，K-11）并继续下一页。
+        写文件经 `StaticFiles`/`LegacySiteFiles` 原子写到站点根相对路径（同 PHP `buildHtml(..., './', ...)`）。
+        Java 独有的 `application/data/backup/static-pages/generated.txt` 继续写入（B16 回滚用，不属于生成页）。
+      security: [{ adminSession: [] }]
+      x-permission: "make/<makeAction>"
+      parameters:
+        - name: makeAction
+          in: path
+          required: true
+          schema: { type: string, enum: [index, map, rss, type, topic_index, topic_info, info, label, make, opt] }
+        - name: ac2
+          in: query
+          required: false
+          schema: { type: string, maxLength: 16 }
+          description: "`wap` 时按手机变体生成；其他值或不传为桌面"
+      responses:
+        "200":
+          description: 后台生成进度/结果页（HTML，结构同 PHP）
+          content:
+            text/html: { schema: { type: string } }
+
+  /index/clear:
+    servers: *adminServers
+    get:
+      tags: [admin-make]
+      operationId: adminClearCache
+      x-api-id: API-025
+      x-trace: [V9-001, CACHE-3]
+      summary: 清理缓存（现有入口末尾追加 CacheResetHook.resetAll()）
+      description: |
+        入参与提示同基线 `AdminController.clear`（旧 Index::clear）。新增：末尾清空 phptemplate 编译缓存、标签结果缓存、页面缓存与
+        `LegacyConfigService` 派生缓存（CACHE-3 ①）。对照环境专用的 `maccms.phptemplate.compare.reset-file` 不是 HTTP 接口，不在此列。
+      security: [{ adminSession: [] }]
+      x-permission: index/clear
+      responses:
+        "200":
+          description: 同基线（Ajax → LegacyJson；非 Ajax → 跳转提示页）
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LegacyJson" }
+
+  # ───────────────────────────── 安装向导 ─────────────────────────────
+  /install.php:
+    post:
+      tags: [install]
+      operationId: installStep5
+      x-api-id: API-030
+      x-trace: [FR-10, AC-12, INS-1, INS-2, INS-3, INS-4, RISK-15]
+      summary: 安装向导第 5 步（step=5）改为空库 + SHA-256 校验后执行 install.sql
+      description: |
+        入口、参数与页面同基线安装向导（PHP `install/controller/Index.php` `index($step)`）；只有第 5 步行为变化（INS-2）：
+        1. 用第 3 步填写、存于 `MACCMS_DEPLOY_CONFIG` 的账号开连接（只在本请求内使用，用后关闭）；
+        2. 该库 `mac_` 开头的表数 > 0 → 提示“已存在数据表”，不执行；
+        3. 读站点根 `application/install/sql/install.sql` 原始字节算 SHA-256，≠ `48dbe0fbd138f670919208d8bcc0ffe28d09b507c527d2a6a1a8f7b77ffa3aa4`
+           → 提示“文件哈希不一致”，不执行（CRLF 检出的同一文件也走这一支）；
+        4. 按 `mac_parse_sql` 切分后逐条执行（不替换前缀）；
+        5. 按 PHP 写初始数据（initdata=1）、首个管理员、`extra/maccms.php`；6. 写 `install.lock`。
+        不发 `CREATE DATABASE`，不执行该文件之外的任何 DDL。其他步骤与已安装（install.lock 存在）时的行为不变。
+      security: []
+      x-security-note: 安装向导只在未安装（无 install.lock）时可用，与 PHP 相同无需登录；安装完成后入口关闭。
+      parameters:
+        - name: step
+          in: query
+          required: true
+          schema: { type: integer, minimum: 0, maximum: 6 }
+          description: 本契约只改变 step=5 的行为
+      responses:
+        "200":
+          description: 安装向导页面或 JSON 提示（格式同基线）
+          content:
+            text/html: { schema: { type: string } }
+      x-error-codes-ref: [INSTALL_TABLES_EXIST, INSTALL_SQL_HASH_MISMATCH]
+
+  # ───────────────────────────── 在线采集 / 远程图片 / 定时采集 ─────────────────────────────
+  /collect/api:
+    servers: *adminServers
+    get:
+      tags: [admin-collect]
+      operationId: adminCollectApi
+      x-api-id: API-040
+      x-trace: [FR-11, AC-13, NET-1, NET-3, NET-6]
+      summary: 资源站在线采集（基线只支持离线文件，本期按 PHP 经 OutboundHttpClient 在线取数）
+      description: |
+        入参同 PHP `Collect::api`（`ac`、`t`、`pg`、`h`、`ids`、`wd`、`cjflag`、`cjurl`、`mid`、`opt`、`filter` 等，Collect.php:140-170），
+        页面与进度输出同 PHP。取数经 `integration.collect`（ResourceSiteClient）→ `OutboundHttpClient`，受出站白名单与 `OutboundPolicy` 约束；
+        取回文本交给已有解析与入库（B18/B19）。入库时 `sync_pic_opt` 开启 → 经 `integration.image` 下载远程图片并写 `mac_annex`（NET-3）。
+        出站失败按 PHP 的采集失败提示，不回显内部地址解析细节。
+      security: [{ adminSession: [] }]
+      x-permission: collect/api
+      responses:
+        "200":
+          description: 采集进度/结果页（HTML，结构同 PHP）
+          content:
+            text/html: { schema: { type: string } }
+  /collect/test:
+    servers: *adminServers
+    get:
+      tags: [admin-collect]
+      operationId: adminCollectTest
+      x-api-id: API-041
+      x-trace: [FR-11, AC-13, NET-1]
+      summary: 资源站接口测试（同 PHP Collect::test，经 NET-1 在线取数）
+      description: 入参（`cjurl`、`cjflag` 等）与 JSON 结果同 PHP `Collect::test`（Collect.php:55-60）。
+      security: [{ adminSession: [] }]
+      x-permission: collect/test
+      responses:
+        "200":
+          description: PHP 同款 JSON
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LegacyJson" }
+  /collect/timing:
+    servers: *adminServers
+    get:
+      tags: [admin-collect]
+      operationId: adminCollectTiming
+      x-api-id: API-042
+      x-trace: [FR-11, AC-13, NET-2]
+      summary: 定时采集（从 NOT_PROVIDED 移除，按 PHP Collect::timing 调用 NET-1）
+      description: 基线返回“未提供”提示（D-B19-15），本期按 PHP `Collect::timing`（Collect.php:172-179）执行；入参与输出同 PHP。
+      security: [{ adminSession: [] }]
+      x-permission: collect/timing
+      responses:
+        "200":
+          description: 同 PHP
+          content:
+            text/html: { schema: { type: string } }
+  /images/sync:
+    servers: *adminServers
+    get:
+      tags: [admin-collect]
+      operationId: adminImagesSync
+      x-api-id: API-043
+      x-trace: [FR-11, AC-13, AC-16, NET-3]
+      summary: 远程图片同步（改调 integration.image，按 PHP Image::down_load 下载、校验并写 mac_annex）
+      description: |
+        入参与输出同 PHP `Images::sync`（Images.php:45 起）。下载经 `OutboundHttpClient`，类型与大小校验、落盘目录按 `upload` 配置，
+        写入经 `LegacySiteFiles` 的 `upload/` 写区域；`mac_annex` 写入须在 WriteRegistry 登记（AC-16）。
+      security: [{ adminSession: [] }]
+      x-permission: images/sync
+      responses:
+        "200":
+          description: 同 PHP
+          content:
+            text/html: { schema: { type: string } }
+  /api.php/timming/index:
+    get:
+      tags: [api]
+      operationId: apiTimming
+      x-api-id: API-044
+      x-trace: [FR-11, AC-13, NET-2, SEC-3]
+      summary: 定时任务入口新增 collect 任务类型（鉴权 TimmingAccess 不变）
+      description: |
+        入参、鉴权（SEC-3，`TimmingAccess` 不改）与输出同基线；任务类型 `collect` 从 `TimmingTasks` 的拒绝项移除，按 PHP `api/Timming` 的
+        collect 分支调用 NET-1。其他任务类型不变。
+      security: [{ timmingKey: [] }, {}]
+      x-security-note: 二选一放行——口令头，或本机回环来源（空对象表示该分支不带凭据，由 TimmingAccess 判定来源）；其余 403 固定提示
+      responses:
+        "200":
+          description: 同基线
+          content:
+            text/html: { schema: { type: string } }
+
+components:
+  x-template-asset-content-types:
+    css: text/css
+    js: application/javascript
+    png: image/png
+    jpg: image/jpeg
+    jpeg: image/jpeg
+    gif: image/gif
+    ico: image/x-icon
+    svg: image/svg+xml
+    webp: image/webp
+    woff: font/woff
+    woff2: font/woff2
+    ttf: font/ttf
+    eot: application/vnd.ms-fontobject
+    swf: application/x-shockwave-flash
+  securitySchemes:
+    adminSession:
+      type: apiKey
+      in: cookie
+      name: mac_admin_sid
+      description: 后台管理员会话 cookie（B12 AdminSessions.COOKIE，Path=后台入口、HttpOnly、SameSite=Strict）；另按 admin_auth 校验 `x-permission`，写操作另校验表单令牌 `__token__`
+    timmingKey:
+      type: apiKey
+      in: header
+      name: X-Maccms-Timming-Token
+      description: 基线 TimmingAccess（SEC-3）：请求头口令等于 MACCMS_TIMMING_TOKEN，或客户端为本机回环（可信代理规则同 B06）；本期不改
+  parameters:
+    TemplateDir:
+      name: dir
+      in: path
+      required: true
+      description: template/ 下的子目录名（单段）
+      schema: { type: string, minLength: 1, maxLength: 64, pattern: "^[^/\\\\:\\x00-\\x1f]+$" }
+    TemplateAssetPath:
+      name: assetPath
+      in: path
+      required: true
+      description: 子目录（css/js/images/ads）起的相对路径，可含多级 `/`（OpenAPI 无法表达跨段路径参数，按 `/template/{dir}/**` 理解）
+      schema: { type: string, minLength: 3, maxLength: 512 }
+      example: css/style.css
+    PwdMid:
+      name: mid
+      in: query
+      required: true
+      schema: { type: string, enum: ["1", "2"] }
+      description: 1 视频、2 文章；不在枚举内 → 1001
+    PwdType:
+      name: type
+      in: query
+      required: true
+      schema: { type: string, enum: ["1", "4", "5"] }
+      description: 1 详情、4 播放、5 下载（mid=2 时只要求在枚举内）；不在枚举内 → 1001
+    PwdId:
+      name: id
+      in: query
+      required: true
+      schema: { type: string, maxLength: 20 }
+      description: 内容 ID；空或 "0" → 1001
+    PwdValue:
+      name: pwd
+      in: query
+      required: true
+      schema: { type: string, maxLength: 255 }
+      description: 访问密码；空或 "0" → 1001
+    BackupIdQuery:
+      name: id
+      in: query
+      required: true
+      schema: { type: string, maxLength: 20, pattern: "^[0-9]*$" }
+      description: 备份时间戳（Unix 秒，B15 列表中的 id）；POST 表单字段同名同义
+  schemas:
+    LegacyJson:
+      type: object
+      description: PHP `$this->success()/error()` 的 Ajax JSON（`json_encode(…, JSON_UNESCAPED_UNICODE)`），HTTP 200
+      required: [code, msg]
+      properties:
+        code: { type: integer, enum: [0, 1], description: 1 成功、0 失败 }
+        msg: { type: string }
+        data: { description: 成功时的附加数据（各接口说明），失败时为空串 }
+        url: { type: string }
+        wait: { type: integer, example: 3 }
+    Error:
+      description: 本项目的错误体 = PHP 失败 JSON（code=0），见 info.description「通用约定」
+      allOf:
+        - $ref: "#/components/schemas/LegacyJson"
+        - type: object
+          properties:
+            code: { type: integer, enum: [0] }
+    PwdResult:
+      type: object
+      required: [code, msg]
+      additionalProperties: false
+      properties:
+        code: { type: integer, enum: [1, 1001, 1002, 1003, 1011, 1012, 1013, 1014, 1021, 1022] }
+        msg: { type: string, description: "成功为 ok；其他为 LegacyLang 文本或模型返回消息" }
+    PwdForm:
+      type: object
+      properties:
+        mid: { type: string, enum: ["1", "2"] }
+        type: { type: string, enum: ["1", "4", "5"] }
+        id: { type: string, maxLength: 20 }
+        pwd: { type: string, maxLength: 255 }
+    TableIdsForm:
+      type: object
+      required: [__token__]
+      properties:
+        __token__: { type: string, maxLength: 64 }
+        ids:
+          description: 表名数组（`ids[]=`）或逗号分隔串；每项必须在附表 A 的 26 张表白名单内，最多 26 项
+          oneOf:
+            - type: array
+              maxItems: 26
+              items: { type: string, maxLength: 64, pattern: "^[A-Za-z0-9_]+$" }
+            - type: string
+              maxLength: 2048
+    SqlForm:
+      type: object
+      required: [__token__, sql]
+      properties:
+        __token__: { type: string, maxLength: 64 }
+        sql: { type: string, maxLength: 1048576, description: "整段 SQL；`{pre}` 替换为表前缀；不回显" }
+    BackupIdForm:
+      type: object
+      required: [__token__, id]
+      properties:
+        __token__: { type: string, maxLength: 64 }
+        id: { type: string, maxLength: 20, pattern: "^[0-9]+$", description: 备份时间戳（Unix 秒） }
+    ExportForm:
+      type: object
+      properties:
+        ids:
+          description: 同 B15 导出（表名数组或单值）
+          oneOf:
+            - type: array
+              maxItems: 26
+              items: { type: string, maxLength: 64 }
+            - type: string
+              maxLength: 2048
+        start: { type: string, maxLength: 20, description: 同 B15 }
+    RecoverForm:
+      type: object
+      required: [__token__, run, target]
+      properties:
+        __token__: { type: string, maxLength: 64 }
+        run: { $ref: "#/components/schemas/RunId" }
+        target:
+          type: string
+          enum: [AUTO_BACKUP, SOURCE]
+          description: AUTO_BACKUP = 还原前自动备份（回到还原前数据）；SOURCE = 重跑原备份（完成这次还原）
+    AcknowledgeForm:
+      type: object
+      required: [__token__, run]
+      properties:
+        __token__: { type: string, maxLength: 64 }
+        run: { $ref: "#/components/schemas/RunId" }
+        accepted_as_is:
+          type: string
+          enum: ["0", "1"]
+          description: 页面勾选“接受当前数据”= 1；RECOVERED 以外的待处理状态必须为 1
+    TemplateSaveForm:
+      type: object
+      required: [__token__, fname, fcontent]
+      properties:
+        __token__: { type: string, maxLength: 64 }
+        fpath: { type: string, maxLength: 512 }
+        fname: { type: string, maxLength: 512, description: "扩展名须为 html/htm/js/xml" }
+        fcontent: { type: string, maxLength: 2097152 }
+        fversion: { type: string, maxLength: 128, description: 编辑页带出的文件版本（B15 冲突检查，基线参数名），不一致 → TPL_VERSION_CONFLICT }
+    RunId:
+      type: string
+      minLength: 1
+      maxLength: 64
+      pattern: "^[A-Za-z0-9-]+$"
+      description: 运行记录编号（服务端生成，不透明）
+    ImportResult:
+      type: object
+      description: 还原 / recover 的结果数据（LegacyJson.data），页面同样展示这些值
+      properties:
+        run: { $ref: "#/components/schemas/RunId" }
+        state: { $ref: "#/components/schemas/RunState" }
+        outcome: { $ref: "#/components/schemas/RunOutcome" }
+        total: { type: integer, minimum: 0, description: 将执行的语句总数 }
+        executed: { type: integer, minimum: 0 }
+        skipped: { type: integer, minimum: 0, description: 跳过的 DROP/CREATE 等非 DML 语句数 }
+        failed_index: { type: integer, minimum: 0, description: 失败语句序号（1 起），无失败为 0 }
+        failed_table: { type: string }
+        failure_class: { type: string, enum: ["", NOT_APPLIED, UNKNOWN] }
+        sqlstate: { type: string, maxLength: 5 }
+        tables_done: { type: integer, minimum: 0 }
+        auto_backup_stamp: { type: string, description: "Ymd-His，DBT-3 首次运行生成；recover 不新建" }
+    RunState:
+      type: string
+      enum: [RUNNING, DONE, FAILED, UNKNOWN, INTERRUPTED, RECOVERING, RECOVERED, RECOVERY_FAILED, RECOVERY_UNKNOWN, RECOVERY_INTERRUPTED]
+      description: 待处理 = FAILED、UNKNOWN、INTERRUPTED、RECOVERY_FAILED、RECOVERY_UNKNOWN、RECOVERY_INTERRUPTED、RECOVERED
+    RunOutcome:
+      type: string
+      enum: ["", OK, PARTIAL, FAILED, FAILED_BEFORE_WRITE, INTERRUPTED, INTERRUPTED_BEFORE_WRITE]
+      description: 只在 state=DONE 时有意义；PARTIAL 仅 DBT-1（有表失败，详见 table_results）
+    DatabaseRun:
+      type: object
+      description: |
+        运行记录文件 `application/data/backup/database/dbtool-run.json`（C-73）的格式。**不是 HTTP 响应**，登记在此供测试与评审核对
+        （V-31）；只在持锁时读后写（`LegacySiteFiles.replace` 原子替换），页面可不持锁只读。不写 SQL 原文、数据值、连接串。
+      required: [run, op, state, admin_id, started_at]
+      properties:
+        run: { $ref: "#/components/schemas/RunId" }
+        op: { type: string, enum: [OPTIMIZE, REPAIR, SQL, IMPORT, EXPORT] }
+        phase: { type: string, enum: ["", AUTO_BACKUP, RESTORE], description: 仅 IMPORT；recover 不分阶段 }
+        state: { $ref: "#/components/schemas/RunState" }
+        outcome: { $ref: "#/components/schemas/RunOutcome" }
+        admin_id: { type: integer, minimum: 1 }
+        started_at: { type: integer, description: Unix 秒 }
+        finished_at: { type: integer, description: Unix 秒，未结束为 0 }
+        total: { type: integer, minimum: 0 }
+        executed: { type: integer, minimum: 0 }
+        failed_index: { type: integer, minimum: 0 }
+        failure_class: { type: string, enum: ["", NOT_APPLIED, UNKNOWN] }
+        sqlstate: { type: string, maxLength: 5 }
+        error_code: { type: integer }
+        tables: { type: array, items: { type: string }, description: DBT-1 选中的表或 DBT-3 还原表集合 }
+        table_results:
+          type: array
+          description: 仅 DBT-1，逐表结果
+          items:
+            type: object
+            properties:
+              table: { type: string }
+              ok: { type: boolean }
+              sqlstate: { type: string }
+        tables_done: { type: integer, minimum: 0 }
+        table_current: { type: string }
+        inserted_current: { type: integer, minimum: 0 }
+        source_backup: { type: string, description: "原备份时间戳前缀 Ymd-His（仅 IMPORT）" }
+        auto_backup:
+          type: object
+          description: 仅 IMPORT；phase=RESTORE 时必然完整
+          properties:
+            stamp: { type: string, description: Ymd-His }
+            tables: { type: array, items: { type: string } }
+            files:
+              type: array
+              items:
+                type: object
+                properties:
+                  name: { type: string }
+                  sha256: { type: string, pattern: "^[0-9a-f]{64}$" }
+        export_files: { type: array, items: { type: string }, description: 本次已创建（或即将创建）的分卷文件名，中断清理只删这些 }
+        backup_lock: { type: string, description: 本次写入 backup.lock 的值；清理时内容相同才删，否则记 LOCK_KEPT }
+        recovery:
+          type: object
+          properties:
+            attempt: { type: integer, minimum: 0 }
+            target: { type: string, enum: ["", AUTO_BACKUP, SOURCE] }
+            last_result: { type: string, enum: ["", RECOVERED, RECOVERY_FAILED, RECOVERY_UNKNOWN, INTERRUPTED] }
+        interrupted:
+          type: object
+          description: 中断判定记录（每条记录只判定一次）
+          properties:
+            at: { type: integer }
+            prev_state: { type: string }
+            prev_phase: { type: string }
+            cleanup: { type: string, enum: ["", NONE, OK, LOCK_KEPT, FAILED] }
+            residual_files: { type: array, items: { type: string } }
+        ack:
+          type: object
+          properties:
+            at: { type: integer }
+            admin_id: { type: integer }
+            accepted_as_is: { type: boolean }
+
+x-interrupt-transitions:
+  description: DBT-5 ⑩：任一取锁入口（optimize、repair、sql、import、recover、acknowledge、export、del 与页面 probe）读到 RUNNING/RECOVERING 时的唯一改写，完成后才继续本次动作
+  rows:
+    - { match: "op=OPTIMIZE|REPAIR, state=RUNNING", to: "DONE, outcome=INTERRUPTED（保留 tables_done）", cleanup: 无, pending: false, page: "灰色说明“上次优化/修复在第 k 张表中断，可重新执行”；无 recover/我已处理", log: WARN, verify: "V-31 ⑪" }
+    - { match: "op=SQL, state=RUNNING", to: INTERRUPTED, cleanup: 无, pending: true, page: "红色提示条“该语句可能已生效，也可能未生效”+ 核对步骤；只有“我已处理”（须勾选接受当前数据）", log: ERROR, verify: "V-31 ⑫" }
+    - { match: "op=IMPORT, phase=AUTO_BACKUP, state=RUNNING", to: "DONE, outcome=INTERRUPTED_BEFORE_WRITE", cleanup: "删 export_files；backup.lock 内容等于 backup_lock 时删", pending: false, page: "灰色说明“上次还原在备份阶段中断，数据未改动，可重新发起”", log: "WARN（清理失败 ERROR）", verify: "V-31 ⑬" }
+    - { match: "op=IMPORT, phase=RESTORE, state=RUNNING", to: INTERRUPTED, cleanup: "无（自动备份保留）", pending: true, page: "红色提示条（已完成表、当前表、自动备份时间戳）；recover（AUTO_BACKUP/SOURCE）+ 我已处理（须勾选）", log: ERROR, verify: "V-31 ⑭" }
+    - { match: "op=EXPORT, state=RUNNING", to: "DONE, outcome=INTERRUPTED", cleanup: "同 IMPORT/AUTO_BACKUP", pending: false, page: "灰色说明“上次导出中断，不完整的分卷已删除，请重新导出”；清理为 LOCK_KEPT/FAILED 时列出残留文件并提示部署方手动处理", log: "WARN（清理失败 ERROR）", verify: "V-31 ⑮" }
+    - { match: "op=IMPORT, state=RECOVERING", to: "RECOVERY_INTERRUPTED（attempt 不变，last_result=INTERRUPTED）", cleanup: 无, pending: true, page: "同 IMPORT/RESTORE", log: ERROR, verify: "V-31 ⑯" }
+
+x-page-banner:
+  description: 数据库工具各页面（API-010、API-013 GET）按运行记录显示的提示条与按钮；按钮只按状态机出现
+  rows:
+    - { when: "probe 拿不到锁", banner: "执行中", buttons: [] }
+    - { when: "无记录 / DONE（outcome=OK|FAILED|PARTIAL|FAILED_BEFORE_WRITE）", banner: "无（或上次结果的一行说明）", buttons: [] }
+    - { when: "DONE + outcome=INTERRUPTED|INTERRUPTED_BEFORE_WRITE", banner: "灰色说明（见 x-interrupt-transitions）", buttons: [] }
+    - { when: "SQL：UNKNOWN / INTERRUPTED", banner: "红色：操作类型、开始时间、管理员、失败分类、核对步骤", buttons: ["我已处理（须勾选接受当前数据）"] }
+    - { when: "IMPORT：FAILED / UNKNOWN / INTERRUPTED / RECOVERY_FAILED / RECOVERY_UNKNOWN / RECOVERY_INTERRUPTED", banner: "红色：操作类型、开始时间、管理员、失败序号与分类、已完成表/当前表、自动备份时间戳、恢复次数与最近结果、恢复步骤（DBT-5 ⑦）", buttons: ["recover：还原前自动备份", "recover：重跑原备份", "我已处理（须勾选接受当前数据）"] }
+    - { when: "IMPORT：RECOVERED", banner: "红色：恢复已完成，请核对行数后确认", buttons: ["我已处理"] }
+
+x-error-codes:
+  # 前台
+  - { code: TEMPLATE_ASSET_NOT_FOUND, http: 404, wire_msg: "前台 404 页（不含路径）", meaning: 模板静态资源不放行或不存在, trigger: "API-001 任一放行条件不满足", retry: false, caller: 不重试；检查模板引用的资源路径 }
+  - { code: PWD_PARAM_ERR, http: 200, wire_code: 1001, wire_msg: "lang(param_err)", meaning: 参数不合法, trigger: "id/pwd 为空或 mid/type 不在枚举", retry: false, caller: 提示用户 }
+  - { code: PWD_ALREADY_PASSED, http: 200, wire_code: 1002, wire_msg: "lang(index/pwd_repeat)", meaning: 本会话已通过该内容的校验, trigger: "会话中 mid-type-id = 1", retry: false, caller: 直接刷新页面 }
+  - { code: PWD_TOO_FREQUENT, http: 200, wire_code: 1003, wire_msg: "lang(index/pwd_frequently)", meaning: 过于频繁, trigger: "会话 5 秒内重复提交（PHP），或 PasswordAttempts 超限（SEC-9，OP-T4=a）", retry: true, caller: "等待后由用户重新提交（会话限制 5 秒；内容限流窗口 60 秒）；不得自动重试" }
+  - { code: PWD_VOD_NOT_FOUND, http: 200, wire_code: 1011, wire_msg: "Vod::infoData 返回的 msg", meaning: 视频不存在或不可见, trigger: "mid=1 取数失败", retry: false, caller: 提示用户 }
+  - { code: PWD_VOD_WRONG, http: 200, wire_code: 1012, wire_msg: "lang(pass_err)", meaning: 详情密码错误, trigger: "mid=1,type=1 与 vod_pwd 不符", retry: false, caller: 提示用户重新输入 }
+  - { code: PWD_VOD_PLAY_WRONG, http: 200, wire_code: 1013, wire_msg: "lang(pass_err)", meaning: 播放密码错误, trigger: "mid=1,type=4 与 vod_pwd_play 不符", retry: false, caller: 提示用户重新输入 }
+  - { code: PWD_VOD_DOWN_WRONG, http: 200, wire_code: 1014, wire_msg: "lang(pass_err)", meaning: 下载密码错误, trigger: "mid=1,type=5 与 vod_pwd_down 不符", retry: false, caller: 提示用户重新输入 }
+  - { code: PWD_ART_NOT_FOUND, http: 200, wire_code: 1021, wire_msg: "Art::infoData 返回的 msg", meaning: 文章不存在或不可见, trigger: "mid=2 取数失败", retry: false, caller: 提示用户 }
+  - { code: PWD_ART_WRONG, http: 200, wire_code: 1022, wire_msg: "lang(pass_err)", meaning: 文章密码错误, trigger: "mid=2 与 art_pwd 不符", retry: false, caller: 提示用户重新输入 }
+  # 后台通用
+  - { code: FORM_TOKEN_INVALID, http: 200, wire_code: 0, wire_msg: "非法请求 / 令牌错误（同 B12）", meaning: 表单令牌缺失或不一致, trigger: "POST 写操作 __token__ 校验失败", retry: false, caller: 刷新页面重新提交 }
+  - { code: BAD_BACKUP_PATH, http: 200, wire_code: 0, wire_msg: "DatabaseToolService.BAD_BACKUP_PATH（B15 原文）", meaning: 备份目录配置不合法, trigger: "db.backup_path 不在允许区域", retry: false, caller: 部署方修正配置 }
+  # 数据库工具
+  - { code: DBT_LOCKED, http: 200, wire_code: 0, wire_msg: "已有数据库操作在执行", meaning: dbtool.lock 被占用, trigger: "任一数据库工具动作 tryExclusiveLock 失败", retry: true, caller: 等当前操作结束后由管理员重新提交；不自动重试 }
+  - { code: DBT_PENDING, http: 200, wire_code: 0, wire_msg: "上次操作未处理（导出为 lock_check 原文）", meaning: 运行记录处于待处理或 RECOVERED, trigger: "optimize/repair/sql/import/export begin 时", retry: false, caller: 先按提示条 recover 或“我已处理” }
+  - { code: DBT_TABLE_NOT_ALLOWED, http: 200, wire_code: 0, wire_msg: "表不在允许范围", meaning: 表名不在 26 张白名单, trigger: "DBT-1 入参或 DBT-3 还原表集合", retry: false, caller: 修正选择或备份 }
+  - { code: DBT_SELECT_OPTIMIZE_TABLE, http: 200, wire_code: 0, wire_msg: "lang(admin/database/select_optimize_table)", meaning: 未选表, trigger: "optimize 的 ids 为空", retry: false, caller: 选择表后提交 }
+  - { code: DBT_SELECT_REPAIR_TABLE, http: 200, wire_code: 0, wire_msg: "lang(admin/database/select_repair_table)", meaning: 未选表, trigger: "repair 的 ids 为空", retry: false, caller: 选择表后提交 }
+  - { code: DBT_OPTIMIZE_PARTIAL, http: 200, wire_code: 0, wire_msg: "lang(admin/database/optimize_err) 或 repair_ok（PHP 原文）+ 逐表结果", meaning: 部分表优化/修复失败, trigger: "DBT-1 有表失败", retry: true, caller: 可直接重跑（幂等） }
+  - { code: DBT_SQL_MULTI_STATEMENT, http: 200, wire_code: 0, wire_msg: "一次只能执行一条语句", meaning: 多语句, trigger: "DBT-2 ③", retry: false, caller: 拆成单条后逐条提交 }
+  - { code: DBT_SQL_STRUCTURE_REFUSED, http: 200, wire_code: 0, wire_msg: "结构类操作请由部署方在库外完成", meaning: 非 INSERT/UPDATE/DELETE 或含 /*! 版本注释, trigger: "DBT-2 ④（AC-11）", retry: false, caller: 由部署方在库外执行 }
+  - { code: DBT_SQL_FAILED, http: 200, wire_code: 0, wire_msg: "执行失败，数据未改动（附 SQLState 分类，不回显 SQL）", meaning: 确定未生效, trigger: "DBT-2 SQLState 42xxx 或单值 INSERT 的服务端拒绝", retry: false, caller: 修正后重新提交 }
+  - { code: DBT_SQL_UNKNOWN, http: 200, wire_code: 0, wire_msg: "结果不确定，请核对后点“我已处理”", meaning: 结果不确定，进入待处理, trigger: "DBT-2 连接类/超时/多行语句出错", retry: false, caller: 核对数据后 acknowledge（API-018） }
+  - { code: DBT_SELECT_FILE, http: 200, wire_code: 0, wire_msg: "lang(admin/database/select_file)", meaning: 未选备份, trigger: "import 的 id 为空或非 POST", retry: false, caller: 选择备份 }
+  - { code: DBT_FILE_DAMAGE, http: 200, wire_code: 0, wire_msg: "lang(admin/database/file_damage)", meaning: 分卷不齐、不可读或无法解压, trigger: "DBT-3 预检 (a)(b)，或 recover target=SOURCE 时", retry: false, caller: 换用完整备份 }
+  - { code: DBT_SITE_NOT_CLOSED, http: 200, wire_code: 0, wire_msg: "还原数据前请先在系统设置中关闭站点", meaning: 站点未关闭, trigger: "DBT-3 预检 (d)、recover 预检", retry: false, caller: 关闭站点后重新提交 }
+  - { code: DBT_BACKUP_DIR_NOT_WRITABLE, http: 200, wire_code: 0, wire_msg: "备份目录不可写", meaning: 自动备份目录不存在或不可写, trigger: "DBT-3 预检 (e)", retry: false, caller: 部署方修正目录权限 }
+  - { code: DBT_BACKUP_LOCK_EXISTS, http: 200, wire_code: 0, wire_msg: "lang(admin/database/lock_check)", meaning: backup.lock 存在（可能是 PHP 后台在导出或残留）, trigger: "export/import begin", retry: false, caller: 部署方核对后手动删除残留 backup.lock }
+  - { code: DBT_AUTO_BACKUP_FAILED, http: 200, wire_code: 0, wire_msg: "还原前自动备份失败，数据未改动", meaning: outcome=FAILED_BEFORE_WRITE, trigger: "DBT-3 自动备份阶段失败", retry: true, caller: 排除原因后重新发起还原 }
+  - { code: DBT_IMPORT_FAILED, http: 200, wire_code: 0, wire_msg: "lang(admin/database/import_err) + 失败表与序号、SQLState", meaning: 确定未生效，记录 FAILED（待处理）, trigger: "DBT-3 第 n 条确定未生效", retry: false, caller: 按提示条 recover }
+  - { code: DBT_IMPORT_UNKNOWN, http: 200, wire_code: 0, wire_msg: "lang(admin/database/import_err) + 结果不确定", meaning: 记录 UNKNOWN（待处理）, trigger: "DBT-3 结果不确定", retry: false, caller: 按提示条 recover }
+  - { code: DBT_SELECT_EXPORT_TABLE, http: 200, wire_code: 0, wire_msg: "lang(admin/database/select_export_table)", meaning: 未选表, trigger: "export 的 ids 为空（B15）", retry: false, caller: 选择表 }
+  - { code: DBT_BACKUP_ERR, http: 200, wire_code: 0, wire_msg: "lang(admin/database/backup_err)", meaning: 导出失败或非 POST, trigger: "B15 原样", retry: true, caller: 重新导出 }
+  - { code: DBT_SELECT_DEL_FILE, http: 200, wire_code: 0, wire_msg: "lang(admin/database/select_del_file)", meaning: 未选备份, trigger: "del 的 id 为空", retry: false, caller: 选择备份 }
+  - { code: DBT_BACKUP_BOUND, http: 200, wire_code: 0, wire_msg: "该备份是未处理数据库操作的恢复点", meaning: 要删的备份被待处理还原记录绑定, trigger: "del 前缀等于 source_backup 或 auto_backup", retry: false, caller: 先处理（recover/我已处理）再删 }
+  - { code: DBT_DEL_ERR, http: 200, wire_code: 0, wire_msg: "lang(del_err)", meaning: 删除失败, trigger: "B15 原样", retry: true, caller: 重试或部署方检查文件权限 }
+  - { code: DBT_RUN_MISMATCH, http: 200, wire_code: 0, wire_msg: "运行记录已变化，请刷新页面", meaning: run 不等于当前记录, trigger: "recover/acknowledge 的 run 与当前记录不符", retry: false, caller: 刷新页面后按最新提示条操作 }
+  - { code: DBT_RECOVER_NOT_ALLOWED, http: 200, wire_code: 0, wire_msg: "当前记录不能执行恢复", meaning: 非 DBT-3 待处理记录（含 RECOVERED、DBT-2）, trigger: "recover 状态检查", retry: false, caller: 按提示条操作 }
+  - { code: DBT_AUTO_BACKUP_INVALID, http: 200, wire_code: 0, wire_msg: "自动备份缺失或校验不一致", meaning: auto_backup 不存在或 SHA-256 不符, trigger: "recover target=AUTO_BACKUP 预检", retry: false, caller: 改选重跑原备份，或由部署方处理 }
+  - { code: DBT_RECOVERY_FAILED, http: 200, wire_code: 0, wire_msg: "恢复失败（附失败表与 SQLState）", meaning: RECOVERY_FAILED（仍待处理）, trigger: "recover 确定未生效", retry: true, caller: 排除原因后再次 recover }
+  - { code: DBT_RECOVERY_UNKNOWN, http: 200, wire_code: 0, wire_msg: "恢复结果不确定", meaning: RECOVERY_UNKNOWN（仍待处理）, trigger: "recover 结果不确定", retry: true, caller: 排除原因后再次 recover }
+  - { code: DBT_ACK_CONFIRM_REQUIRED, http: 200, wire_code: 0, wire_msg: "请勾选“接受当前数据”", meaning: 未恢复的待处理记录确认时未勾选, trigger: "acknowledge 且状态非 RECOVERED、accepted_as_is≠1", retry: false, caller: 勾选后再提交 }
+  - { code: DBT_ACK_NOT_PENDING, http: 200, wire_code: 0, wire_msg: "当前没有待处理的数据库操作", meaning: 记录不在待处理, trigger: "acknowledge 时无记录或 DONE", retry: false, caller: 刷新页面 }
+  # 模板管理
+  - { code: TPL_EXT_NOT_ALLOWED, http: 200, wire_code: 0, wire_msg: "PHP Template.php:170 同款提示", meaning: 扩展名不在 html/htm/js/xml, trigger: "template/info 保存、template/del", retry: false, caller: 改用允许的扩展名 }
+  - { code: TPL_UNSAFE_CONTENT, http: 200, wire_code: 0, wire_msg: "lang(admin/template/php_safe_tip)", meaning: 内容命中 LEGACY_FILTER, trigger: "template/info 保存", retry: false, caller: 去掉被过滤的内容 }
+  - { code: TPL_OUTSIDE_AREA, http: 200, wire_code: 0, wire_msg: "PHP 同款非法路径提示", meaning: 路径不在 template/ 区域, trigger: "template/info、template/del", retry: false, caller: 修正路径 }
+  - { code: TPL_VERSION_CONFLICT, http: 200, wire_code: 0, wire_msg: "B15 版本冲突提示（原文不变）", meaning: 文件已被他人修改, trigger: "保存时 fversion 与当前文件不一致", retry: false, caller: 重新打开后合并修改 }
+  # 安装
+  - { code: INSTALL_TABLES_EXIST, http: 200, wire_code: 0, wire_msg: "已存在数据表", meaning: 目标库已有 mac_ 表, trigger: "INS-2 ②", retry: false, caller: 换空库 }
+  - { code: INSTALL_SQL_HASH_MISMATCH, http: 200, wire_code: 0, wire_msg: "文件哈希不一致", meaning: install.sql 与内置 SHA-256 不符（含 CRLF 检出）, trigger: "INS-2 ③", retry: false, caller: 部署方用 LF 原文件替换 }
