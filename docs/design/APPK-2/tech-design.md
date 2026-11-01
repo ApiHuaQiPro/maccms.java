@@ -3,8 +3,8 @@
 | 字段 | 值 |
 | --- | --- |
 | 创建者 | @架构师-海外 |
-| 创建时间 | 2026-10-31 19:15（UTC+8）；v3 修订 2026-11-01 08:30（UTC+8）；v4 修订 2026-11-01 08:50（UTC+8）；v5 修订 2026-11-01 09:20（UTC+8）；v6 修订 2026-11-01 10:40（UTC+8）；v7 修订 2026-11-01 11:20（UTC+8）；v8 修订 2026-11-01 12:10（UTC+8）；v9 修订 2026-11-01 18:10（UTC+8） |
-| 版本 | v9 |
+| 创建时间 | 2026-10-31 19:15（UTC+8）；v3 修订 2026-11-01 08:30（UTC+8）；v4 修订 2026-11-01 08:50（UTC+8）；v5 修订 2026-11-01 09:20（UTC+8）；v6 修订 2026-11-01 10:40（UTC+8）；v7 修订 2026-11-01 11:20（UTC+8）；v8 修订 2026-11-01 12:10（UTC+8）；v9 修订 2026-11-01 18:10（UTC+8）；v10 修订 2026-11-01 18:50（UTC+8） |
+| 版本 | v10 |
 | 状态 | 评审中 |
 | Issue | APPK-2 |
 | 上游 PRD | `docs/prd/APPK-2.md` 及附表 `docs/prd/APPK-2/`（A～F）@ `8fa362c25b62b52ed5b16afd9eca7f6ccfcafb9f`（v9）；已经 G0 范围确认 |
@@ -12,10 +12,11 @@
 | 派工依据 | Issue APPK-2 评论 `01a1946f-ec1e-74b8-85d9-42e88f3fe85f`（S0.5 核验 PASS 后派 S1）；deploy 分支 `release/APPK-2-php-template-migration` @ `a57e9cb2b94d3e500bea7dfe2c579daee093d969` |
 | 已关闭决策（v8） | OP-T4=a、OP-T5=a、OP-T6=b：Issue APPK-2 发起人确认评论 `01a194e9-23e8-7682-8ae5-b7c5e19b0040`（调度核验评论 `01a194e9-f7f0-7bf0-a6cc-09af877c86bd`）。本文件以该评论为三项的唯一决策源，实现、验收、门禁与回滚只写所选答案；将来改选须先由发起人在 Issue 另行确认，再出设计修订 |
 | v9 触发 | Issue APPK-2 评论 `01a19682-a499-7066-8e43-a23260dd1d44`（@后端开发-海外 第 1 批回传：契约 OUT-1-5“用已校验地址建连”在 v8 内无法实现，按职责退回架构）。契约 `docs/api/APPK-2/openapi.yaml` v1.3.0 @ `bc612e933aa67abab319b90534c5150c10a51452`（`x-outbound-policy` OUT-1-5）；出站代码现状核对于 feature 分支 `feature/APPK-2-be-php-template-migration` @ `6f78400102ed8a1e26a28b88df90a96391a7ac1e`（`integration/http` 相对基线 `a57e9cb` 只改了 `OutboundPolicy.java` 与其测试） |
+| 已定方向（v9 DEC-14） | 出站客户端内部引擎换 Apache HttpClient 5（§4.14 方案 B）：Issue APPK-2 评论 `01a196b5-a035-71df-bbe3-077cd09512a6`（确认人代理 Mika 代人类转达：“同意 Apache HttpClient 5 方案，先评审后实现”，回复调度的方向请求 `01a1968b-baed-7015-a20c-14e0a1d13835`）；Mika 代为转达的依据是发起人评论 `01a1958e-5c60-7d72-9328-d7a5146e1d99`（“以后允许Mika 代我转达”）；调度核验评论 `01a196b6-9850-74d8-b3e5-22800625b6e6`。该授权只定方向，不是 G1 或实现放行：S3-21e 仍须 v8→v10 增量经架构评审通过、调度复核放行 G1 后才派单；将来改选须先由发起人在 Issue 另行确认，再出设计修订 |
 | UI 设计 | `docs/design/APPK-2/ui-design.md` @ `0910f7b5e12e779ad2b66f70823b16b601533cd2`（设计评审 PASS）；v6 未改变与其相关的页面路径、缺页处理与 JTE 下线边界；页面呈现以模板包原样输出为准（BR-11），本设计只定实现与验证；两者若有冲突由调度裁决 |
 | 涉及仓库 | `ApiHuaQiPro/maccms.java`（单仓） |
 | 基线提交 | `ApiHuaQiPro/maccms.java` @ `a57e9cb2b94d3e500bea7dfe2c579daee093d969`（deploy 分支 `release/APPK-2-php-template-migration` 当前头） |
-| 本版范围 | v3：FR-1～FR-13 的完整技术设计——模块边界与 PHP 模板兼容层（§4.6、§6.3～§6.7）、页面接入与 jte 下线（§6.8～§6.9）、`/template/**` 静态资源（§6.10，关闭 OP-T1）、后台模板管理与静态生成（§6.11～§6.12）、数据库工具四项、安装向导建表、在线功能（§6.13～§6.15）、旧控制器对齐口径（§6.16）、六项安全修复（§6.17）、缓存与 V9-001（§6.18，关闭 OP-T2）、数据表字段（§6.19）、对照数据恢复与会话时区（§6.20，关闭 OP-T3）、实现顺序与子任务（§7.4）。v2 的 OP-15 部分（模板包目录、配置取值、路径量、对照环境）保持不变。v6：数据库工具的失败、并发与恢复契约 DBT-5（§4.12、§6.13）；`SiteHtmlRenderer` 全部调用方与 CSP/HTML `Content-Type` 的新共享边界（§4.11、§6.8、C-70～C-72）；SEC-8 按 PHP 源码更正为无条件行为，OP-T5 只剩 SEC-7。v7：前台 CSP 收敛到单点 C-75，删除与否列为待决 OP-T6，过渡期沿用现有严格策略、新增 S3-14h 门禁（§4.11、§6.8）；数据库工具互斥改为跨进程 OS 文件锁、补运行记录状态机与专用恢复动作（DBT-5、C-73）；DBT-2 改回 PHP 整段执行语义（§4.13、DBT-2）；DBT-3 还原表集合补上只有 `DROP/CREATE` 的空表。v8：按发起人确认收敛 OP-T4=a、OP-T5=a、OP-T6=b 为唯一实现（删除未选列；C-75 自 S3-14a 起即为三项策略，撤销 v7 的过渡值与 S3-14h，§4.11 方案 E）；删备份纳入 `dbtool.lock` 并在锁内保护绑定备份、预检移到取锁之后（DBT-4、DBT-5 ②④）；进程中断后按操作类型与阶段的唯一转移、页面按钮与日志（DBT-5 ⑩），V-31 ⑪～⑲。v9：OUT-1-5 地址固定的实现方式（§4.14 DEC-14、§6.15 NET-7、C-76～C-80、§7.4 S3-21e、V-33、RISK-T23）：出站客户端内部引擎改为 Apache HttpClient 5（版本由 Spring Boot BOM 管理），每一跳用只返回已校验地址的解析器建连；API 契约、对外接口与其他章节不变 |
+| 本版范围 | v3：FR-1～FR-13 的完整技术设计——模块边界与 PHP 模板兼容层（§4.6、§6.3～§6.7）、页面接入与 jte 下线（§6.8～§6.9）、`/template/**` 静态资源（§6.10，关闭 OP-T1）、后台模板管理与静态生成（§6.11～§6.12）、数据库工具四项、安装向导建表、在线功能（§6.13～§6.15）、旧控制器对齐口径（§6.16）、六项安全修复（§6.17）、缓存与 V9-001（§6.18，关闭 OP-T2）、数据表字段（§6.19）、对照数据恢复与会话时区（§6.20，关闭 OP-T3）、实现顺序与子任务（§7.4）。v2 的 OP-15 部分（模板包目录、配置取值、路径量、对照环境）保持不变。v6：数据库工具的失败、并发与恢复契约 DBT-5（§4.12、§6.13）；`SiteHtmlRenderer` 全部调用方与 CSP/HTML `Content-Type` 的新共享边界（§4.11、§6.8、C-70～C-72）；SEC-8 按 PHP 源码更正为无条件行为，OP-T5 只剩 SEC-7。v7：前台 CSP 收敛到单点 C-75，删除与否列为待决 OP-T6，过渡期沿用现有严格策略、新增 S3-14h 门禁（§4.11、§6.8）；数据库工具互斥改为跨进程 OS 文件锁、补运行记录状态机与专用恢复动作（DBT-5、C-73）；DBT-2 改回 PHP 整段执行语义（§4.13、DBT-2）；DBT-3 还原表集合补上只有 `DROP/CREATE` 的空表。v8：按发起人确认收敛 OP-T4=a、OP-T5=a、OP-T6=b 为唯一实现（删除未选列；C-75 自 S3-14a 起即为三项策略，撤销 v7 的过渡值与 S3-14h，§4.11 方案 E）；删备份纳入 `dbtool.lock` 并在锁内保护绑定备份、预检移到取锁之后（DBT-4、DBT-5 ②④）；进程中断后按操作类型与阶段的唯一转移、页面按钮与日志（DBT-5 ⑩），V-31 ⑪～⑲。v9：OUT-1-5 地址固定的实现方式（§4.14 DEC-14、§6.15 NET-7、C-76～C-80、§7.4 S3-21e、V-33、RISK-T23）：出站客户端内部引擎改为 Apache HttpClient 5（版本由 Spring Boot BOM 管理），每一跳用只返回已校验地址的解析器建连；API 契约、对外接口与其他章节不变。v10：只改设计一致性与决策来源（REV-NET-D01）——§12 依赖结论改为准确的依赖清单与例外口径，元数据、§4.14 登记 DEC-14 方向授权来源；选型、契约、改动项与实现均不变 |
 
 ## 1. 现状与目标
 
@@ -322,7 +323,7 @@
 | C JDK 解析器 SPI（`InetAddressResolverProvider`，JEP 418） | 进程级替换 DNS 解析，按线程取固定地址 | 小 | 由系统类加载器经 `ServiceLoader` 加载，Spring Boot 可执行 jar 的内嵌 jar 加载不到，要改部署方式；影响进程内全部解析（含 JDBC、Redis） | 差 | 否 |
 | D JDK 客户端改连 IP 字面量 | URI 换成已校验 IP，手工写 `Host` | 中 | `Host` 是 JDK 客户端的受限头，要进程级系统属性 `jdk.httpclient.allowRestrictedHeaders`；HTTPS 的 SNI 与证书校验绑定 URI 主机，只能每请求新建客户端、关掉主机名校验再自己校验，安全代码自写最多 | 中 | 否 |
 
-选 B。依赖理由：要满足 OUT-1-5，必须能控制建连时用哪个地址，JDK 自带客户端做不到（C、D 各有进程级副作用）；`org.apache.httpcomponents.client5:httpclient5` 已由 `spring-boot-dependencies` 4.1.1 管理（5.6.4），`pom.xml` 不写版本；只在 `integration.http` 内使用，“只有 `OutboundHttpClient` 能发请求”的护栏不变。每跳一条连接、不复用，与 PHP `mac_curl_get`/`mac_curl_post` 每次新建 curl 句柄一致。
+选 B（方向已获授权，见元数据“已定方向”：Issue APPK-2 评论 `01a196b5-a035-71df-bbe3-077cd09512a6`（确认人代理 Mika 代人类转达：“同意 Apache HttpClient 5 方案，先评审后实现”，回复调度的方向请求 `01a1968b-baed-7015-a20c-14e0a1d13835`）；Mika 代为转达的依据是发起人评论 `01a1958e-5c60-7d72-9328-d7a5146e1d99`（“以后允许Mika 代我转达”）；调度核验评论 `01a196b6-9850-74d8-b3e5-22800625b6e6`；该授权不代替 G1 增量评审）。依赖理由：要满足 OUT-1-5，必须能控制建连时用哪个地址，JDK 自带客户端做不到（C、D 各有进程级副作用）；`org.apache.httpcomponents.client5:httpclient5` 已由 `spring-boot-dependencies` 4.1.1 管理（5.6.4），`pom.xml` 不写版本；只在 `integration.http` 内使用，“只有 `OutboundHttpClient` 能发请求”的护栏不变。每跳一条连接、不复用，与 PHP `mac_curl_get`/`mac_curl_post` 每次新建 curl 句柄一致。
 
 ## 5. 改动清单
 
@@ -849,7 +850,7 @@ SEC-7、SEC-9 不属于 OP-9 已确认的六项，是本设计提出、发起人
 | S3-19b | 数据库工具：还原备份（预检、自动备份与哈希、阶段与逐表状态、`recover`、绑定备份保护） | 后端 | C-53（DBT-3、DBT-4 绑定备份保护、⑩ 的 `IMPORT`/`RECOVERING` 分支）、C-54（`import.jte`、`recover`）、C-74（`DatabaseToolMySqlIT` 其余部分） | S3-19a | V-23 ⑤、V-31 ⑤～⑩、⑬、⑭、⑯、⑱、⑲（DBT-3/`RECOVERING` 部分） |
 | S3-20 | 安装向导建表 | 后端 | C-56、C-57、C-67、C-69 | G1 | V-25 |
 | S3-21a～d | 在线功能（a：资源站在线采集 + 定时采集；b：远程图片；c：规则在线抓取；d：远程存储六种） | 后端 | C-58～C-61 | G1 | V-26 |
-| S3-21e | 出站地址固定（v9，OUT-1-5，NET-7） | 后端 | C-76～C-80 | G1（v9 增量评审通过）；不依赖模板与 OP-T；与后端第 1 批同一 feature 分支续做，须在 S3-21a、S3-21b 合入 deploy 前完成 | V-33、`OutboundNetworkGuardTest`、`./mvnw -B verify` |
+| S3-21e | 出站地址固定（v9，OUT-1-5，NET-7） | 后端 | C-76～C-80 | G1（v8→v10 增量评审通过）；不依赖模板与 OP-T；与后端第 1 批同一 feature 分支续做，须在 S3-21a、S3-21b 合入 deploy 前完成 | V-33、`OutboundNetworkGuardTest`、`./mvnw -B verify` |
 | S3-22 | 对照执行器与报告 | 测试 | C-64 | S3-03 | 对 PHP 两次运行结果自比一致（V-19 前置） |
 | T-FR12 | 附表 C 阶段 A 判定（可与 S3 并行，后台/API/安装部分不依赖模板）；阶段 B 按 GAP- 建单 | 测试 | `docs/test/APPK-2/parity-*.md`、`gap-register.md` | G1 | AC-14、AC-19 |
 
@@ -1071,7 +1072,7 @@ SEC-7、SEC-9 不属于 OP-9 已确认的六项，是本设计提出、发起人
 | 路径量与 PHP 一致 | **基线不一致，按 C-12～C-16 修正**：PHP `{$maccms.path_tpl}` = `MAC_PATH_TEMPLATE`（`All.php:62`），Java `SiteVariant.pathTpl` 取的是 `MAC_PATH_TPL`（`SiteVariants.java:95`）；`Result` 的 `pathTemplate`/`pathTpl`/`pathAds` 与 PHP ②③④ 一致（黄金锁定），不改 | `Init.php:50-53`；`All.php:62-63`；`SiteTemplateSelection.java:99-101`；`SiteVariant.java:16-19` |
 | 被改符号的调用方查全 | 是 | `git grep -n "pathTpl\|pathAds\|pathTemplate" a57e9cb -- src`：`SiteVariant` 构造只在 `SiteVariants.java:95` 与 `SiteVariant.DEFAULT`；`SiteVariant.pathTpl()` 读取只在 `SiteVariantsTest.java:75,82`；`Result.pathTpl()` 读取只在 `SiteVariants.java:95`、`SiteTemplateSelectionGoldenTest.java:58,64`；`src/main/jte*` 里只有 `ads.jte` 的字面 `{$maccms.path_ads}` |
 | 沿用现有模式 | 是 | 站点根 = `MACCMS_LEGACY_CONFIG_DIR` 上一级（`InstallConfiguration.java:36-38`）；文件写入经 `LegacySiteFiles`；`.gitattributes` 按字节规则同 `src/test/resources/legacyconfig/cases/*.php` |
-| 无新依赖 | 是 | 不加 Maven 依赖；装配脚本用 Python 标准库与 git（与现有 `src/test/browser/*.py` 同语言） |
+| OP-15 部分（v2）：无新依赖 | 是（仅限 v2 OP-15 范围；全文依赖见下方“完整设计：依赖清单”） | OP-15 部分不加 Maven 依赖；装配脚本用 Python 标准库与 git（与现有 `src/test/browser/*.py` 同语言） |
 | 无数据库结构变更 | 是 | 不读写任何表 |
 | 无安全回退 | 是 | 不放宽 `LegacySiteFiles` 的区域与路径校验；对照环境只监听 127.0.0.1；凭据只经环境变量，脚本不打印 |
 | 不改 `php/` | 是 | 覆盖只作用于 `.compare/` 副本（C-7、C-8）；PHP 黄金脚本 `src/test/php/template_select_golden*.php` 与黄金 JSON 也不改 |
@@ -1079,9 +1080,9 @@ SEC-7、SEC-9 不属于 OP-9 已确认的六项，是本设计提出、发起人
 | 与 PRD 无矛盾 | 有一处需评审确认：PHPB-9 写“两侧各写其对应值”，本设计取“两侧取值相同”（ENV-4），这是“各写其值”的特例，且是同时满足“13 个文件 SHA-256 相同”的唯一做法 | 附表 F.1 PHPB-9 |
 | 完整设计：分层与依赖方向 | 是 | `phptemplate` 按 `api(无)→application→infrastructure` 分层，`runtime`/`engine` 不访问数据库；`site` 只经 `phptemplate.application`，符合 `02-agent-development-rules.md` 第 2 节“只能调用对方 application 层公开服务”；护栏同步（C-35） |
 | 完整设计：复用而非重写 | 是 | 取数复用 `ContentReadService`/`VideoLegacyConditions`/`LegacyTagAttributes`/`LegacyRange`/`LegacyRowReadService`/`CommentService`；URL 复用 `LegacyUrlBuilder`/`ImageUrlNormalizer`；语言复用 `LegacyLang`；文件复用 `LegacySiteFiles`；出站复用 `OutboundHttpClient`；模板选择复用 `SiteTemplateSelection` |
-| v9：新依赖有理由、范围受控 | 是 | `httpclient5` 只为 OUT-1-5 的地址固定（JDK 客户端无此入口，§4.14 C/D 有进程级副作用）；版本由 Spring Boot BOM 管理；只在 `integration.http` 使用，护栏类型规则不变（C-79）；调用方接口不变（核对 @ `6f78400`：`policy.check` 只有 `OutboundHttpClient.java:115`、`:130` 两处调用） |
+| v9：新依赖有理由、范围受控（v10 起清单见下方“完整设计：依赖清单”） | 是 | `httpclient5` 只为 OUT-1-5 的地址固定（JDK 客户端无此入口，§4.14 C/D 有进程级副作用）；版本由 Spring Boot BOM 管理；只在 `integration.http` 使用，护栏类型规则不变（C-79）；调用方接口不变（核对 @ `6f78400`：`policy.check` 只有 `OutboundHttpClient.java:115`、`:130` 两处调用） |
 | 完整设计：被改公共符号的调用方 | 是（v6 补全） | `SiteHtmlRenderer`：`git grep -n "SiteHtmlRenderer" a57e9cb -- src/main src/test` 的 main 21 个文件、test 7 个文件逐个列在 §1.3，处理与子任务在 §6.8 迁移表（v5 只核对了 `src/main/java` 的页面控制器，漏掉 `SearchThrottle`、`SiteCounterActions`、`PlaybackPages`、`SiteMemberFinance:525` 的静态常量、`SitePaymentController:104` 的静态常量，以及 7 个测试文件，REV-8）；`HTML_UTF8` 的四处定义收敛为 `SiteRequests.HTML_UTF8`；`PlayerFramePolicy` 调用方 `PlaybackPages`、`SiteMemberBoards`、`SiteMemberFinance`、`SitePlaybackController`、`SiteUserController`、`PlaybackPrimitivesTest` 都在 C-37/C-40/C-71 内；`SiteTemplateService` 调用方 = `SiteConfiguration`、`AdminTemplateActions`、`AdminConfiguration`、`AdminPages`、`TemplateWizard`（C-40～C-42、C-47～C-49 覆盖；`AdminPages` 的欢迎页提示随 C-40 改为读模板目录是否存在）；`DatabaseToolService.REFUSED` 只在 `AdminDatabaseActions`；v7 新增的 `LegacySiteFiles.tryExclusiveLock` 是新方法，不改现有方法签名，调用方只有 C-73；`DatabaseToolService.export` 的调用方只有 `AdminDatabaseActions`（改为在锁内执行，不改其入参与返回）；v8：`DatabaseToolService.delete` 的调用方只有 `AdminDatabaseActions.java:60`（`del` 分支，改为在锁内执行，不改其入参与返回结构）；`InstallSchema` 调用方 `InstallWizard`、`InstallWizardMySqlIT` |
-| 完整设计：无新依赖 | 是 | 解释器、正则、签名、FTP 都用 JDK；删除在线编辑用的 `gg.jte:jte` 编译器依赖（C-41） |
+| 完整设计：依赖清单（v10 更正，REV-NET-D01；v3～v9 此行写“无新依赖｜是”，自 v9 C-76 起不成立） | 新增 1 项（唯一例外）、删除 1 项，其余不变 | **新增**：`org.apache.httpcomponents.client5:httpclient5`（C-76，S3-21e），理由与方案对比见 §4.14 DEC-14，方向授权见元数据“已定方向”（评论 `01a196b5-a035-71df-bbe3-077cd09512a6`）；`pom.xml` 不写 `<version>`，版本由 `spring-boot-dependencies` 4.1.1 管理（5.6.4），C-79 断言该 `<dependency>` 不含 `<version>`；传递依赖只允许 `httpcore5`/`httpcore5-h2`（V-33 附 `dependency:tree`）；包边界：`org.apache.hc.` 类型只允许在 `integration.http` 内使用，`OUTBOUND_TYPES` 与合成用例不改，“只有 `OutboundHttpClient` 能发请求”的护栏不变；护栏：`OutboundNetworkGuardTest` 的 `FORBIDDEN_ARTIFACTS` 只去掉 `httpclient5`，`httpclient`、`httpasyncclient`、`okhttp` 等仍禁止（C-79）。**删除**：只供在线编辑的 `gg.jte:jte` 编译器依赖（C-41）。**其余**：解释器、正则、签名、FTP 都用 JDK，不加其他 Maven 依赖。**例外口径**：本设计的新增依赖只有 `httpclient5` 一项；实现中需要任何其他新依赖（含改为显式版本），须先出设计修订并经 G1 评审 |
 | 完整设计：无结构变更 | 是 | §6.19；DDL 只出现在 DBT-1（表维护，OP-6 已确认）与 INS-2 ④（原版 `install.sql`，OP-7 唯一例外）；`SchemaGuardTest` 登记例外只增 AC-11 所需（C-55） |
 | 完整设计：安全 | 是 | 注入：DBT-2 先按 PHP 跳过判定、再拒绝多语句与结构语句，之后整段一次发送（v7），表名来自白名单；CSP：按发起人确认的 OP-T6=b 只保留三项不拦脚本的策略（C-75）；路径穿越：`/template/**` 与模板管理都经 `LegacySiteFiles` 规范化；任意代码执行：解释器 RT-1 子集不含 `eval`/`include`/反射，函数白名单分派；拒绝服务：RT-8 上限；凭据：只经环境变量与部署配置文件，日志不写；出站：NET-6 登记 + 护栏测试；鉴权：后台沿用 `admin_auth`，安全修复不动（§6.17） |
 | 完整设计：可测试 | 是 | 编译与值语义有 PHP 黄金（C-33）；标签有 MySQL 集成测试；页面有 PHP 对照（附表 F）；解释器纯 JDK，可单测 |
@@ -1164,6 +1165,12 @@ G1 第 2 轮（@架构评审-海外，对象 v7 `3da8b4b448ba4ef54051f2d54379461
 | OUT-1-5 在 v8 内无法实现（JDK `HttpClient` 不能按请求指定解析结果，存在重绑定窗口） | 已修改（DEC-14，选后端所列 (a)） | 核对 @ `6f78400`：`OutboundHttpClient.java:79-83` 的 JDK 客户端在 `:186` 按主机名再次解析；`OutboundNetworkGuardTest.java:69-73` 禁止 `httpclient5`。选 Apache HttpClient 5（BOM 管理版本）作为 `integration.http` 的内部引擎，每跳注入只返回已校验地址的解析器；(b) 进程级且可执行 jar 加载不到、(c) 要进程级放开受限头并自写 TLS 主机名校验，均不选；不改契约 | §4.14；§6.15 NET-7；C-76～C-80；§7.4 S3-21e；V-33；§9；RISK-T23；§11；§12 |
 | 同一评论“未完成”第 2 项（OUT-1-7、OUT-1-8/9、TRN-1 参数个数、SRC-2） | 不涉及设计 | 均在 v8 与契约 v1.3.0 内已有明确规则，属后端后续批次，不需要架构决定 | — |
 
+G1 增量独立复核退回（@智能调度-海外，评论 `01a196b6-9850-74d8-b3e5-22800625b6e6`，对象 v9 @ `f2307632f362d4fa7013c1e7a327749fed586c81`；v10 处理）：
+
+| 问题 | 处理 | 说明 | 修改位置 |
+| --- | --- | --- | --- |
+| REV-NET-D01 §12 同时写“v9：新依赖有理由、范围受控”与“完整设计：无新依赖｜是”，与 C-76 新增 `httpclient5` 矛盾；未登记方向授权来源 | 已修改 | “完整设计：无新依赖”改为“完整设计：依赖清单”：新增 `httpclient5` 一项（唯一例外）、删除 `gg.jte:jte`（C-41），并写明 BOM 管理版本、传递依赖、包边界、护栏与例外口径，与 C-76、C-79、§4.14、V-33 一致；v2 的“无新依赖”行限定为 OP-15 范围；元数据新增“已定方向（v9 DEC-14）”并在 §4.14 引用：授权评论 `01a196b5-a035-71df-bbe3-077cd09512a6`（Mika 代人类转达），代转依据为发起人评论 `01a1958e-5c60-7d72-9328-d7a5146e1d99`，调度核验 `01a196b6-9850-74d8-b3e5-22800625b6e6`，并写明该授权不是 G1 或实现放行；S3-21e 门禁改为 v8→v10 增量评审通过。选型、契约、C-76～C-80、NET-7、V-33 与实现内容不变 | 元数据（版本、创建时间、已定方向、本版范围）；§4.14；§7.4 S3-21e；§12 依赖相关三行；§13；§14 |
+
 ## 14. 修订记录
 
 | 日期 | 版本 | 作者 | 变更摘要 | 对应 REV- |
@@ -1177,3 +1184,4 @@ G1 第 2 轮（@架构评审-海外，对象 v7 `3da8b4b448ba4ef54051f2d54379461
 | 2026-11-01 | v7 | @架构师-海外 | 前台 CSP 收敛到 C-75，删除/放宽列为待决 OP-T6，关闭前保持基线严格策略，新增 S3-14h 与发布门禁、RISK-T21，V-32 改断言并更正检索范围（§4.11 方案 D）；数据库工具互斥改为跨进程 OS 文件锁（`LegacySiteFiles.tryExclusiveLock`）、运行记录状态机与专用 `recover`、删备份保护、RISK-T20，V-31 重写（同时起跑、被杀、恢复状态机）；DBT-2 改回 PHP 整段语义（§4.13 DEC-13），V-23 改为样本表；DBT-3 还原表集合补空表；OP-T4、OP-T5 仍待发起人确认 | REV-5、REV-6（未关闭）、REV-9、REV-10、REV-11、REV-12 |
 | 2026-11-01 | v8 | @架构师-海外 | 按发起人确认（OP-T4=a、OP-T5=a、OP-T6=b）收敛为唯一实现：删除未选列，C-44 只剩 SEC-7 白名单，C-68 保留 `PasswordAttempts`，C-75 固定为三项策略并随 S3-14a 落地（§4.11 方案 E），撤销 S3-14h、过渡值与发布门禁（RISK-T21 关闭），条件门禁改为“已关闭决策”；删备份纳入 `dbtool.lock`、锁内保护绑定备份、按卷号升序删除，预检移到取锁之后；新增 DBT-5 ⑩ 与“进程中断后的唯一转移”表（`phase`、`export_files`、`backup_lock`、`probe()`、清理规则、页面按钮与日志级别），RISK-T22；V-18、V-29、V-30、V-32 改为单一答案，V-31 新增 ⑪～⑲ | REV-13、REV-14、REV-15、SUG-1 |
 | 2026-11-01 | v9 | @架构师-海外 | 按后端实现回退（评论 `01a19682-a499-7066-8e43-a23260dd1d44`）定 OUT-1-5 实现方式：新增 §4.14 DEC-14（出站客户端内部引擎换 Apache HttpClient 5，每跳固定已校验地址）、§6.15 NET-7、C-76～C-80、§7.4 S3-21e、V-33、RISK-T23，§9/§11/§12/§13 同步；契约、对外接口与 v8 其余内容不变 | 实现回退 OUT-1-5 |
+| 2026-11-01 | v10 | @架构师-海外 | 按 G1 增量独立复核退回（评论 `01a196b6-9850-74d8-b3e5-22800625b6e6`）修设计一致性与决策来源：§12“完整设计：无新依赖”改为准确的依赖清单与例外口径（新增 `httpclient5`、删除 `gg.jte:jte`），v2 行限定 OP-15 范围；元数据与 §4.14 登记 DEC-14 方向授权（评论 `01a196b5-a035-71df-bbe3-077cd09512a6`，代转依据 `01a1958e-5c60-7d72-9328-d7a5146e1d99`）；S3-21e 门禁改为 v8→v10 增量；选型、契约、改动项与实现不变 | REV-NET-D01 |
