@@ -3,17 +3,17 @@
 | 字段 | 值 |
 | --- | --- |
 | 创建者 | @架构师-海外 |
-| 创建时间 | 2026-10-31 19:15（UTC+8）；v3 修订 2026-11-01 08:30（UTC+8）；v4 修订 2026-11-01 08:50（UTC+8）；v5 修订 2026-11-01 09:20（UTC+8） |
-| 版本 | v5 |
+| 创建时间 | 2026-10-31 19:15（UTC+8）；v3 修订 2026-11-01 08:30（UTC+8）；v4 修订 2026-11-01 08:50（UTC+8）；v5 修订 2026-11-01 09:20（UTC+8）；v6 修订 2026-11-01 10:40（UTC+8） |
+| 版本 | v6 |
 | 状态 | 评审中 |
 | Issue | APPK-2 |
 | 上游 PRD | `docs/prd/APPK-2.md` 及附表 `docs/prd/APPK-2/`（A～F）@ `8fa362c25b62b52ed5b16afd9eca7f6ccfcafb9f`（v9）；已经 G0 范围确认 |
 | 上游技术设计 | 本文件 v2 @ `ebd7aa60ae968229997221d3086b45ddb4fa67e1`（OP-15，独立复核与架构复审 PASS，OP-15 已关闭）；v3 在其上续写，v2 的 DEC-1～6、PATH-1～4、ENV-1～8、C-1～C-16、V-1～V-9 内容不变 |
 | 派工依据 | Issue APPK-2 评论 `01a1946f-ec1e-74b8-85d9-42e88f3fe85f`（S0.5 核验 PASS 后派 S1）；deploy 分支 `release/APPK-2-php-template-migration` @ `a57e9cb2b94d3e500bea7dfe2c579daee093d969` |
-| UI 设计 | 与本版并行产出（S1，@UI设计师-海外），本版未引用其提交；页面呈现以模板包原样输出为准（BR-11），本设计只定实现与验证；两者若有冲突由调度裁决 |
+| UI 设计 | `docs/design/APPK-2/ui-design.md` @ `0910f7b5e12e779ad2b66f70823b16b601533cd2`（设计评审 PASS）；v6 未改变与其相关的页面路径、缺页处理与 JTE 下线边界；页面呈现以模板包原样输出为准（BR-11），本设计只定实现与验证；两者若有冲突由调度裁决 |
 | 涉及仓库 | `ApiHuaQiPro/maccms.java`（单仓） |
 | 基线提交 | `ApiHuaQiPro/maccms.java` @ `a57e9cb2b94d3e500bea7dfe2c579daee093d969`（deploy 分支 `release/APPK-2-php-template-migration` 当前头） |
-| 本版范围 | v3：FR-1～FR-13 的完整技术设计——模块边界与 PHP 模板兼容层（§4.6、§6.3～§6.7）、页面接入与 jte 下线（§6.8～§6.9）、`/template/**` 静态资源（§6.10，关闭 OP-T1）、后台模板管理与静态生成（§6.11～§6.12）、数据库工具四项、安装向导建表、在线功能（§6.13～§6.15）、旧控制器对齐口径（§6.16）、六项安全修复（§6.17）、缓存与 V9-001（§6.18，关闭 OP-T2）、数据表字段（§6.19）、对照数据恢复与会话时区（§6.20，关闭 OP-T3）、实现顺序与子任务（§7.4）。v2 的 OP-15 部分（模板包目录、配置取值、路径量、对照环境）保持不变 |
+| 本版范围 | v3：FR-1～FR-13 的完整技术设计——模块边界与 PHP 模板兼容层（§4.6、§6.3～§6.7）、页面接入与 jte 下线（§6.8～§6.9）、`/template/**` 静态资源（§6.10，关闭 OP-T1）、后台模板管理与静态生成（§6.11～§6.12）、数据库工具四项、安装向导建表、在线功能（§6.13～§6.15）、旧控制器对齐口径（§6.16）、六项安全修复（§6.17）、缓存与 V9-001（§6.18，关闭 OP-T2）、数据表字段（§6.19）、对照数据恢复与会话时区（§6.20，关闭 OP-T3）、实现顺序与子任务（§7.4）。v2 的 OP-15 部分（模板包目录、配置取值、路径量、对照环境）保持不变。v6：数据库工具的失败、并发与恢复契约 DBT-5（§4.12、§6.13）；`SiteHtmlRenderer` 全部调用方与 CSP/HTML `Content-Type` 的新共享边界（§4.11、§6.8、C-70～C-72）；SEC-8 按 PHP 源码更正为无条件行为，OP-T5 只剩 SEC-7 |
 
 ## 1. 现状与目标
 
@@ -95,6 +95,8 @@
 | jte：`src/main/jte/site/**` 76 个文件（`pages` 41、`ajax` 9、`member` 8、`fragments` 6、`interaction` 5、`player` 4、`components` 2、`layout` 1）；`jte-maven-plugin` 预编译到 `com.maccms.backend.site.web.jte`；同一批源文件另拷到 `classpath:/site-jte/` 供 D4 在线编辑；后台 `src/main/jte-admin`（118 个）与安装 `src/main/jte-install`（5 个）也用 jte | `pom.xml`（`jte-maven-plugin` 三个 execution 与资源拷贝段）；`site/config/SiteConfiguration.java:355-365` |
 | D4 在线编辑：`sitetemplate` 模块（`SiteTemplateService`、`JteSecurityFilter`、`TemplateWizard`、`JteOnlineCompiler`、`JteClassPath`、`BuiltinTemplateSources`、`OnlineHtmlPolicy`），只在后台启用时装配；`SiteConfiguration.OnlineTemplates` 每次渲染取当前引擎 | `sitetemplate/**`；`admin/config/AdminConfiguration.java:65,176-178`；`SiteConfiguration.java:365` |
 | 错误页：`SiteExceptionHandler`（站点关闭 503、找不到 404、其他 500，均渲染 `sitePagesError`）；站点关闭由 `SiteStatusInterceptor` 抛出；前台未匹配的地址落到 `common/web/GlobalExceptionHandler`，返回 JSON 404“接口不存在”。PHP 对应：站点关闭 `public/close`、找不到 `public/<page_404>` 带 404、空方法 `Base._empty` | `site/web/SiteExceptionHandler.java`；`SiteStatusInterceptor`；`common/web/GlobalExceptionHandler.java:34`；`index/controller/Base.php:77`；`All.php:98-116` |
+| `SiteHtmlRenderer` 的全部引用（v6 补全，`git grep -n 'SiteHtmlRenderer' a57e9cb -- src/main src/test`）：①构造注入渲染器的 18 个类：13 个页面控制器（含 `SiteMemberFinance`、`SiteMemberBoards`）、`SiteExceptionHandler`、`SiteVerifyGate`、`SitePlaceholderController`，以及 v5 漏列的 **`SearchThrottle`**（搜索频率限制，过快时 `renderer.error(429, tooFrequent, Retry-After)`，由 `SiteConfiguration.siteSearchThrottle` 装配，`SiteSearchController`、`SiteModuleListController` 使用）、**`SiteCounterActions`**（`hits/digg/score/referer/verify_check`，非 ajax 的 POST 用 `renderer.memberPlain` 渲染 jte 提示页 `sitePagesUserJump`，D-B11-10；由 `SiteAjaxController:88` 构造）；②只引用静态常量的：**`PlaybackPages:499`**（播放器内页提示用 `CONTENT_SECURITY_POLICY`）、**`SiteMemberFinance:525`** 与 `SitePaymentController:104`（空响应、支付页用 `HTML_UTF8`）；③装配：`SiteConfiguration:37,338,355-361`；④测试：**`SiteTestRoutes`**（测试专用路由，构造注入渲染器，`/boom-large` 用 `renderer.ok` 模拟渲染中途失败）、`SiteConfigurationTest:52,62`（断言有/无该 Bean）、`PlaybackSwitchCases:101`、`SiteAjaxFragmentsMvcTest:84`、`SiteFinanceContentMvcTest:140`、`SitePlaybackPagesMvcTest:73`、`SiteVodListPagesMvcTest:199`（断言响应头等于 `CONTENT_SECURITY_POLICY`）。另有三处各自私有的同值常量 `HTML_UTF8`：`SiteRequests:31`（包内可见，`SiteRequests.json` 等使用）、`SiteUserController:95`、`SiteVerifyController:42` | 同左各文件行号 |
+| `SiteHtmlRenderer` 的响应头：所有页面 `Content-Type: text/html;charset=UTF-8`、`Content-Length`、`Cache-Control`（`no-cache` 或 `no-store`）、`X-Content-Type-Options: nosniff`、`Content-Security-Policy`（默认 `script-src 'none'`；会员页按响应 nonce 放行同源 `member.js`，`PlayerFramePolicy` 给播放器内页单独策略）、按 `SiteVariants.dependsOnUserAgent` 加 `Vary: User-Agent`、部分页面 `X-Robots-Tag: noindex`、503 带 `Retry-After`；PHP 前台不发 `Content-Security-Policy`（`git grep -n 'Content-Security-Policy' a57e9cb -- php` 无结果），PHP 内置视图 `public/jump.html:23` 和 `/static/js/player.js`（`document.write` 写出 `static/player/<来源>.js`，`PlaybackPages:76` 注释）都依赖脚本 | `SiteHtmlRenderer.java:27-31,148-166`；`site/application/PlayerFramePolicy.java` |
 | 观看密码：Java 用签名 cookie（`PasswordTickets`）+ 频率限制（`PasswordAttempts`），旧 `ajax/pwd` 返回 404；PHP 走 `ajax/pwd` 写 session（`Ajax.php:400-456`，`All.php:547-549`），并有按会话的频率限制：`mac_get_time_span("last_pwd") < 5` 时返回 `{"code":1003,"msg":lang('index/pwd_frequently')}`（`Ajax.php:416-418`；`common.php:306-316` 每次调用都把 `last_pwd` 改为当前时间）。Java 的 `PasswordAttempts` 是 B05 用来“代替”这条限制的（按内容 10 次/60 秒、全站 30 次/秒，超限 429，D-B05-3） | `site/application/PasswordTickets.java`、`PasswordAttempts.java` |
 | 取数：视频列表 `ContentReadService.listVideos` + `VideoListQuery`/`VideoFilter`/`VideoLegacyConditions`（B05，已按 `Vod::listCacheData` 的条件实现）；旧标签属性换算 `LegacyTagAttributes`、`LegacyRange` 只在 `VideoTagGoldenMySqlIT` 使用；整行数据 `LegacyRowReadService`（ajax/data、Provide 用）；其他类型 `ArticleReadService` 等与 `LibrarySearchService`；评论留言 `CommentService.comments/gbooks` | `content/application/*.java`；`comment/application/CommentService.java:276,301` |
 | URL：`site/application/LegacyUrlBuilder`（`mac_url`/`url()` 等价）、`LegacyUrlStyle`、`LegacyUrlParser`；图片 `ImageUrlNormalizer`（`mac_url_img`）；静态分支 `staticgen/application/StaticPaths` | 同名类 |
@@ -110,7 +112,9 @@
 | 模板管理 `admin/web/AdminTemplateActions`（`index`/`ads`/`info`/`del`/`wizard`，L69-339）：扩展名 `jte,html,js,xml`（L43，PHP 为 `html,htm,js,xml`，去掉 `htm` 是 D-B15-14）；非 jte 文件的内容过滤 `SiteTemplateService.LEGACY_FILTER` 与 PHP `Template.php:177` 的正则逐字相同（PHP 用 `mac_reg_replace` 判断，命中即拒绝）；保存带版本号，冲突提示“文件已被他人修改，请刷新页面后重新编辑”；标签向导 `TemplateWizard` 生成 **jte** 片段（D-B15-15），PHP 生成 `{maccms:…}` | `AdminTemplateActions.java:43-45,69-85,214-339`；`SiteTemplateService.java:41,49-53,222,297-326`；`php/application/admin/controller/Template.php:170-195,237` |
 | 静态生成 `staticgen`：`MakeService.run` 分派 `index/map/rss/type/topicIndex/topicInfo/info/label`（L81-701）；页面内容经 `site.application.StaticPageSource` → `site/web/InternalPageRenderer`（进程内游客 GET，走真实前台控制器）；失败只打印“生成失败：…”继续；`label` 页（D-B16-5）与 RSS 第 2 页起（D-B16-6）不生成；`*_time_make` 只更新 `vod/art/topic`（`StaticSourceService.markMade`），可写数据源关闭时跳过（D-B16-8） | `staticgen/application/MakeService.java`；`site/web/InternalPageRenderer.java:109,122`；`content/application/StaticSourceService.java:94` |
 | 安装向导 `install`（独立启动 `MACCMS_INSTALL_MODE=true`）：第 3 步表单填库与账号，第 4 步测连接（只读会话），账号写入部署配置文件 `MACCMS_DEPLOY_CONFIG`（属性文件，权限 600，不是 `database.php`）；第 5 步**不建表**，只按 `InstallSchema` 指纹只读校验，提示部署方库外导入 `install.sql`；运行期连库只用 `MACCMS_DB_*` | `install/application/InstallWizard.java:110,215,283`；`install/infrastructure/DeployConfigFile.java`；`src/main/resources/install/schema-fingerprint.txt` |
-| 数据库工具 `AdminDatabaseActions` + `DatabaseToolService`：已实现列表、列、导出、删备份、批量替换；`import`/`sql`/`optimize`/`repair` 在 L63-65 拒绝，提示 `DatabaseToolService.REFUSED`（D-B15-1） | `admin/web/AdminDatabaseActions.java:52-71`；`admin/application/DatabaseToolService.java:45,81-293` |
+| 数据库工具 `AdminDatabaseActions` + `DatabaseToolService`：已实现列表、列、导出、删备份、批量替换；`import`/`sql`/`optimize`/`repair` 在 L63-65 拒绝，提示 `DatabaseToolService.REFUSED`（D-B15-1）；导出沿用 PHP 的 `backup.lock`（存在则拒绝“检测到有一个备份任务正在执行”，Java 中途出错也删锁）；后台没有 `execute SQL` 页面（`src/main/jte-admin/admin/pages/database/` 只有 `export.jte`、`import.jte`、`rep.jte`）；没有后台操作审计表或审计服务（26 张表中没有日志表），后台写操作只记应用日志 | `admin/web/AdminDatabaseActions.java:52-71`；`admin/application/DatabaseToolService.java:45,81-293,282,313-344` |
+| PHP 数据库工具（v6 补）：`sql()` **不切分**，整段 `trim` 后替换 `{pre}`，把副本转小写、去 `/* */` 与 `--` 注释、压缩空白后判断：以 `select` 开头，或含 `outfile`、`dumpfile`、`load_file` 的**一律不执行**，其余整段 `Db::execute`；两种情况都返回“执行成功”（源码注释“安全修复”）。`import()` 先按卷号检查分卷齐全（`count($list) === $last[0]`，否则“文件损坏”），再逐卷逐条 `Db::execute`，某条失败立即返回“还原失败”，之前的语句已生效，没有锁文件，也不检查站点是否在使用；`optimize`/`repair` 把选中表拼成一条语句 | `php/application/admin/controller/Database.php:141-180,182-220,237-268`；`php/application/common/util/Database.php:170-191` |
+| 表引擎与事务能力：`install.sql` 的 26 张表中 25 张 `ENGINE=MyISAM`，`mac_vod_search` 为 `InnoDB`；可写数据源自动提交、不配事务管理器，护栏禁止 `@Transactional`/`setAutoCommit(false)`；MyISAM 单行语句原子、多行语句中途出错留下前 N-1 行、连接中断/超时/中止时结果不确定且**不做补偿**，交人工对账；写语句锁整表 | `php/application/install/sql/install.sql`（`grep -o 'ENGINE=[A-Za-z]*'`）；`docs/architecture/12-write-infrastructure.md` 第 3.2 节、第 4.3～4.5 节；`22-b13-admin-content.md` “没有事务”表 |
 | 采集：在线抓取资源站未实现（`collect/test` 拒绝）、`collect/timing` 与定时 `collect` 已删（D-B19-15，`AdminPermissions.NOT_PROVIDED`）、远程图片下载未实现（`VodIngest` 保留原地址，`images/sync` 拒绝）、自定义规则只读本地 HTML（`LocalHtmlFiles`）、远程存储没有实现（`AdminUploadService` 只存 `upload/`） | `admin/web/AdminCollectActions.java:47`；`admin/application/AdminPermissions.java:300`；`collect/application/VodIngest.java:302`；`admin/web/AdminContentActions.java:516`；`admin/application/AdminUploadService.java:29-33` |
 | 出站护栏：只有 `integration.http.OutboundHttpClient` 能发请求（调用方包检查），`IntegrationPackages.REGISTERED` 登记业务包，`OutboundNetworkGuardTest` 静态扫描，`OutboundPolicy` 有 `LOOPBACK_ONLY` 测试模式 | `integration/http/*`；`integration/application/IntegrationPackages.java`；`src/test/java/.../architecture/OutboundNetworkGuardTest.java` |
 | 结构守护：`SchemaGuardTest` 静态扫描 `src/main` 的 DDL（含 `OPTIMIZE/REPAIR TABLE`），登记例外只有 `DatabaseToolService.java`、`DatabaseToolMapper.xml`；运行期 `SchemaGuardMySqlIT` 比较前后指纹；仓库无 `schema.sql`/Flyway | `src/test/java/.../architecture/SchemaGuardTest.java:32-52`；`src/test/java/.../schema/SchemaGuardMySqlIT.java` |
@@ -139,7 +143,7 @@
 - 修改 `php/` 下任何文件（`php/` 只读，`AGENTS.md:5`）；修改线上配置。
 - 产品范围、业务规则、样本分母：不改。附表 B 的 120 个固定模板名、桌面 79 有/41 缺、手机 63 有/57 缺在本设计的目录下保持不变（目录名不改变包内相对路径）。
 
-**v3 范围（完整设计）**：FR-1～FR-13 全部；改动清单 C-17～C-66（v4 增 C-67、C-68；v5 增 C-69）；验证 V-10～V-29（v4 增 V-30）；实现顺序 §7.4。
+**v3 范围（完整设计）**：FR-1～FR-13 全部；改动清单 C-17～C-66（v4 增 C-67、C-68；v5 增 C-69；v6 增 C-70～C-74）；验证 V-10～V-29（v4 增 V-30；v6 增 V-31、V-32）；实现顺序 §7.4。
 
 **v3 仍不做**：
 - 不新增、不修改任何表结构（BR-1）；不做 App（Q8）；不做 CI、测试环境部署、发布（Q7）；不做外部沙箱联调（Q6），在线功能只用本机模拟验收（OP-5）。
@@ -168,9 +172,9 @@
 | 类别 | 对象 | 影响 | 证据（调用方 / 读取方检索） |
 | --- | --- | --- | --- |
 | 模块（新增） | `phptemplate`（engine/runtime/application/infrastructure/config） | 新增；只读模板文件与 12 张 TS-TAG 表 | §6.3 |
-| 模块（改） | `site`：13 个前台控制器、`SiteExceptionHandler`、`SiteStatusInterceptor`、`SiteVerifyGate`、`InternalPageRenderer`、`SiteConfiguration` | 由 jte 改为 PHP 模板；ALIGN-1～5 | `git grep -n "SiteHtmlRenderer" a57e9cb -- src/main/java`：调用点都在 §1.3 列出的类 |
-| 模块（删除） | `sitetemplate`；`src/main/jte/site/**`（76 个）；`SiteHtmlRenderer` | OP-3 下线 | `SiteTemplateService` 读取方：`SiteConfiguration`、`AdminTemplateActions`、`AdminConfiguration:65,176-178`、`AdminPages`、`TemplateWizard` |
-| 模块（改） | `admin`：`AdminTemplateActions`、`AdminDatabaseActions`、`DatabaseToolService`、`AdminCollectActions`、`AdminContentActions`（`images/sync`）、`AdminPermissions`、`AdminController.clear` | FR-7、FR-9、FR-11、CACHE-3 | 同名类，§1.3 |
+| 模块（改） | `site`：13 个前台控制器、`SiteExceptionHandler`、`SiteStatusInterceptor`、`SiteVerifyGate`、`SitePlaceholderController`、`InternalPageRenderer`、`SiteConfiguration`；v6 补：`SearchThrottle`、`SiteCounterActions`、`PlaybackPages`、`SiteRequests`，以及只引用静态常量的 `SiteMemberFinance:525`、`SitePaymentController:104` | 由 jte 改为 PHP 模板；ALIGN-1～7；HTML 响应头统一经新的 `SitePageResponses`（C-70），`Content-Type` 常量只留 `SiteRequests.HTML_UTF8`，前台页面不再发 CSP（DEC-11） | `git grep -n "SiteHtmlRenderer" a57e9cb -- src/main src/test`：§1.3 “`SiteHtmlRenderer` 的全部引用”一行逐个列出（main 21 个文件、test 7 个文件），每个文件的处理见 §6.8 末“`SiteHtmlRenderer` 调用方迁移表” |
+| 模块（删除） | `sitetemplate`；`src/main/jte/site/**`（76 个）；`SiteHtmlRenderer`；`site/application/PlayerFramePolicy`（v6 补，只为 jte 播放器内页生成 CSP） | OP-3 下线；DEC-11 | `SiteTemplateService` 读取方：`SiteConfiguration`、`AdminTemplateActions`、`AdminConfiguration:65,176-178`、`AdminPages`、`TemplateWizard` |
+| 模块（改） | `admin`：`AdminTemplateActions`、`AdminDatabaseActions`、`DatabaseToolService`（v6 增 `DatabaseRuns` 运行记录与互斥，DBT-5）、`AdminCollectActions`、`AdminContentActions`（`images/sync`）、`AdminPermissions`、`AdminController.clear` | FR-7、FR-9、FR-11、CACHE-3 | 同名类，§1.3 |
 | 模块（改） | `staticgen`：`MakeService`、`TimmingTasks`；`content`：`StaticSourceService`、`AdminUploadService` | FR-6、FR-11 | 同名类 |
 | 模块（改） | `install`：`InstallWizard`、`InstallSchema`、`InstallConnections` | FR-10 | `InstallSchema` 调用方：`InstallWizard`、`InstallWizardMySqlIT` |
 | 模块（改/新增） | `collect`：`CollectRunService`、`CjRunService`、`VodIngest`；`integration`：新增 `collect`/`image`/`storage` 子包与 `application` 接口，`IntegrationPackages` | FR-11 | `IntegrationPackages.REGISTERED` 现有 7 个包 |
@@ -178,7 +182,7 @@
 | 数据 | 新增写入：`mac_actor.actor_time_make`、`mac_role.role_time_make`、`mac_website.website_time_make`（K-12）；`mac_annex`（NET-3）；数据库还原的 `DELETE/INSERT`（DBT-3）；`OPTIMIZE/REPAIR TABLE`（DBT-1）；安装执行 `install.sql`（INS-2） | 都在附表 D 对应行内，先登记 `WriteRegistry` | 附表 D 的 D-14、D-16、D-18、D-19、D-23 |
 | 配置 | 新增 `maccms.phptemplate.limits.*`、`maccms.phptemplate.compare.reset-file`；旧配置文件读写不变 | 有默认值 | C-31、C-32 |
 | 依赖 | 删除 `gg.jte:jte`（在线编译器）；不新增依赖 | — | `pom.xml` |
-| 测试 | 新增 `T/phptemplate/**`、对照脚本；修改护栏测试（`ModuleBoundaryTest`、`SiteGuardrailsTest`、`ReadOnlyGuardrailsTest`、`SchemaGuardTest`、`OutboundNetworkGuardTest`、`RegisteredOutboundClientTest`）；约 34 个 jte 页面测试改写或删除：`SiteContentPagesMvcTest`、`SiteLibraryPagesMvcTest`、`SitePlaybackPagesMvcTest`、`SitePlaybackSwitch{00,01,10,11}MvcTest`、`SiteSearch*MvcTest`（4 个）、`SiteVodListPagesMvcTest`、`SiteModuleListPagesMvcTest`、`SiteMiscPagesMvcTest`、`SiteAjax*MvcTest`（4 个）、`SiteUserMvcTest`、`SiteFinance*MvcTest`（3 个）、`SitePaymentMvcTest`、`SiteOAuthMvcTest`、`SiteVerify*MvcTest`（3 个）、`SiteClosedMvcTest`、`SiteContentClosedMvcTest`、`SiteVodListClosedMvcTest`、`SiteDisabledMvcTest`、`SitePageMvcTest`、`SiteContentHtmlStructureTest`、`SiteSearchHtmlStructureTest`、`SiteVariantPagesTest`、`SitePagesLogoTest`、`SiteLegacyConfigPagesTest`、`SiteComponentsRenderTest`、`SiteRichTextTemplateTest`、`Site{,Content,Search,User,Verify}RealHttpTest` | RISK-T12 | `src/test/java/com/maccms/backend/site/**` |
+| 测试 | 新增 `T/phptemplate/**`、对照脚本；修改护栏测试（`ModuleBoundaryTest`、`SiteGuardrailsTest`、`ReadOnlyGuardrailsTest`、`SchemaGuardTest`、`OutboundNetworkGuardTest`、`RegisteredOutboundClientTest`）；约 34 个 jte 页面测试改写或删除：`SiteContentPagesMvcTest`、`SiteLibraryPagesMvcTest`、`SitePlaybackPagesMvcTest`、`SitePlaybackSwitch{00,01,10,11}MvcTest`、`SiteSearch*MvcTest`（4 个）、`SiteVodListPagesMvcTest`、`SiteModuleListPagesMvcTest`、`SiteMiscPagesMvcTest`、`SiteAjax*MvcTest`（4 个）、`SiteUserMvcTest`、`SiteFinance*MvcTest`（3 个）、`SitePaymentMvcTest`、`SiteOAuthMvcTest`、`SiteVerify*MvcTest`（3 个）、`SiteClosedMvcTest`、v6 补 `SiteTestRoutes`（测试路由，改用 `SitePageResponses`）、`SiteConfigurationTest`（Bean 断言）、`PlaybackSwitchCases`（CSP 断言）、`SiteContentClosedMvcTest`、`SiteVodListClosedMvcTest`、`SiteDisabledMvcTest`、`SitePageMvcTest`、`SiteContentHtmlStructureTest`、`SiteSearchHtmlStructureTest`、`SiteVariantPagesTest`、`SitePagesLogoTest`、`SiteLegacyConfigPagesTest`、`SiteComponentsRenderTest`、`SiteRichTextTemplateTest`、`Site{,Content,Search,User,Verify}RealHttpTest` | RISK-T12 | `src/test/java/com/maccms/backend/site/**` |
 
 **v3 明确不受影响**：数据库结构；`php/**`；后台其他功能（B12～B15 中除模板管理、数据库工具四项、清理缓存一行之外）；`openapi`（Provide）、`Receive`、公众号、支付、OAuth、短信邮件；`/api/v1/**` JSON 接口；会员与财务的业务规则；六项安全修复的实现类。
 
@@ -269,6 +273,28 @@
 | A 向导与运行期共用 `MACCMS_DB_*` | 运行期账号需要 `CREATE/DROP` | 不选：违反 A.3（`it_app` 只有 DML），AC-12 与 AC-15 不能同时满足 |
 | B **向导用表单里填的连接（同 PHP 第 3 步），只在本次请求内使用；运行期仍用环境变量 `MACCMS_DB_*`** | 安装模式（`MACCMS_INSTALL_MODE=true`）下，第 3 步表单提交的主机、库名、账号（AC-12 用 `it_install`）只用于建表与初始数据那一次连接，用后关闭，不写日志、不进会话之外的存储；完成后按 PHP 写 `application/database.php`（D-23 的写入项）；正常模式启动的 Java 不读 `database.php`，连库只看 `MACCMS_DB_*`（AC-15 用 `it_app`） | **选**：与 PHP 的交互一致（PHP 也是用户在第 3 步填账号），且两组账号天然分开 |
 
+### 4.11 `SiteHtmlRenderer` 删除后，HTML 响应头与 CSP 放在哪（REV-8，v6 新增）
+
+| 方案 | 做法 | 改动量 | 风险 | 可回滚 | 沿用现有模式 |
+| --- | --- | --- | --- | --- | --- |
+| A 最小改动：保留 `SiteHtmlRenderer`，只换掉 jte 入口 | 把 `render(Function<Templates,…>)` 改成收 `RenderedPage`，常量和各响应方法原样保留 | 小 | 类名与职责不符（不再渲染）；默认 CSP `script-src 'none'` 会挡住 PHP 模板与内置视图的脚本（`public/jump.html:23` 的倒计时跳转、`player.js` 的 `document.write`），真实浏览器里跳转页不跳、播放器不出；会员 nonce 策略依赖 jte 页面末尾的 nonce，PHP 模板没有 | 好 | 是 |
+| B 放宽 CSP 后继续发 | 共享边界里给出一个与官方模板兼容的策略 | 中 | 兼容策略必须放行内联脚本、`document.write`、任意第三方播放器与广告脚本的源（站长在后台配置，不可枚举），等于没有保护；每接一个播放源都可能要改策略 | 好 | 部分 |
+| **C（选定，DEC-11）新共享边界 `SitePageResponses`，前台页面不发 CSP** | 新增包内类 `SitePageResponses`，是 `site.web` 中唯一把 `RenderedPage` 变成 HTML 响应的地方：`Content-Type` 用 `SiteRequests.HTML_UTF8`（全包唯一的 HTML 类型常量）、`Content-Length`、按调用方选 `no-cache`/`no-store`、`X-Content-Type-Options: nosniff`、按 `SiteVariants.dependsOnUserAgent` 加 `Vary: User-Agent`、按调用方加 `X-Robots-Tag: noindex`；**不发 `Content-Security-Policy`**（同 PHP）。`CONTENT_SECURITY_POLICY`、`memberPolicy`、`PlayerFramePolicy` 随 jte 页面删除 | 中 | 前台失去 CSP 这层纵深防护（RISK-T18）；不影响比较（CMP-3 只比状态码、`Content-Type`、`Location`） | 好（按 PG 组提交） | 是：与 `admin.web.AdminResponses`、`install.web.InstallResponses` 同样是“各入口一个响应工具类” |
+
+选 C：PHP 模板是本期页面的唯一来源（BR-11 不改模板），A、B 都会让真实浏览器里的页面与 PHP 行为不同，或只剩名义上的策略。CSP 不在六项安全修复内（OP-9），按“PHP 为准”。保留的 `nosniff`、`Cache-Control`、`Vary`、`X-Robots-Tag` 不改变页面渲染，也不参与比较。若评审或发起人认为删除 CSP 需要确认，可另设 OP-T6，备选为方案 B；只影响 C-70 一处常量。
+
+### 4.12 数据库工具“执行 SQL”“还原备份”在非事务表上怎么保证可恢复（REV-7，v6 新增）
+
+前提：26 张表中 25 张 MyISAM，事务回滚无效；可写数据源自动提交，护栏禁止事务（§1.3）；`it_app` 只有 `SELECT, INSERT, UPDATE, DELETE`，不能 `LOCK TABLES`。
+
+| 方案 | 做法 | 改动量 | 风险 | 可回滚 | 沿用现有模式 |
+| --- | --- | --- | --- | --- | --- |
+| A 最小改动：同 PHP 逐条执行，遇错即停 | 失败只提示“还原失败”/错误信息 | 小 | 管理员不知道停在哪、哪些已生效；还原中途失败会留下“已删未插”的空表；前台并发写入可能让 `INSERT` 主键冲突而中途失败 | 无数据层回退 | 是（PHP 原样） |
+| B 改用事务或转 InnoDB | `BEGIN … ROLLBACK` | — | MyISAM 无效；转 InnoDB 违反 BR-1 零结构变更；护栏禁止 | — | 否 |
+| **C（选定，DEC-12）预检 + 逐条状态 + 运行记录互斥 + 还原前自动备份 + 人工恢复步骤** | 见 §6.13 DBT-5：发送任何语句前完成整批预检；执行时逐条记录，第一处失败即停、不补偿，按 12 文档第 4.3 节区分“确定未生效”与“结果不确定”；运行记录文件同时充当互斥锁与审计线索；还原前自动导出将被还原的表，作为数据层回退点；还原要求站点已关闭 | 中 | 自动备份增加耗时与磁盘；仍无法阻止其他管理员在同一时段改内容（运维约定 + 提示） | 数据：用自动备份还原；代码：`git revert` | 是：失败分类同 `WriteSequence`，锁文件同 `backup.lock`，导出复用 B15 `export` |
+
+选 C：不改结构、不引入事务，在“无法原子化”的前提下让每次失败都有确定的可见状态、可执行的恢复步骤和数据层回退点。
+
 ## 5. 改动清单
 
 ### 5.1 OP-15 部分（v2，内容不变）
@@ -327,16 +353,19 @@
 | # | 文件路径 | 动作 | 改什么 | 为什么 | 端 |
 | --- | --- | --- | --- | --- | --- |
 | C-36 | `B/site/web/legacy/`（新增包）：`HomeVars.java`、`VodVars.java`、`LibraryVars.java`、`InteractionVars.java`、`UserVars.java`、`MiscVars.java`、`PublicVars.java` | 新增 | §6.8：每个 PHP `label_*`/控制器 `assign` 对应一个方法，产出 `PageVars`；整行数据经 `LegacyRowReadService` | FR-4 ②、FR-5 | 前端 |
-| C-37 | `B/site/web/SiteContentController.java`、`SiteSearchController.java`、`SiteVodShowController.java`、`SiteLibraryController.java`、`SiteModuleListController.java`、`SitePlaybackController.java`、`SiteMiscController.java`、`SiteAjaxController.java`、`SiteInteractionController.java`、`SiteUserController.java`、`SiteMemberFinance.java`、`SiteMemberBoards.java`、`SitePaymentController.java` | 修改 | 各页面分支由 `SiteHtmlRenderer.xxx(viewModel)` 改为 `PhpTemplateRenderer.render(variant, mac_tpl_fetch 结果, vars)`；按 PG-1～PG-6 分批（§7.4）；ALIGN-4 恢复 `ajax/pwd`（含 PHP 的按会话 5 秒限制；`PasswordAttempts` 去留按 OP-T4，见 C-68） | FR-5、FR-8 | 前端 |
-| C-38 | `B/site/web/SiteExceptionHandler.java`、`SiteStatusInterceptor.java`、`SiteVerifyGate.java`、`B/common/web/GlobalExceptionHandler.java` | 修改 | ALIGN-1～3：站点关闭、404、跳转、验证码页走 `public/*` 模板；站点路径未匹配按 PHP `_empty`（`GlobalExceptionHandler` 只对 `/api/v1/**` 保持 JSON） | FR-5、PG-7 | 前端 |
+| C-37 | `B/site/web/SiteContentController.java`、`SiteSearchController.java`、`SiteVodShowController.java`、`SiteLibraryController.java`、`SiteModuleListController.java`、`SitePlaybackController.java`、`SiteMiscController.java`、`SiteAjaxController.java`、`SiteInteractionController.java`、`SiteUserController.java`、`SiteMemberFinance.java`、`SiteMemberBoards.java`、`SitePaymentController.java` | 修改 | 各页面分支由 `SiteHtmlRenderer.xxx(viewModel)` 改为 `PhpTemplateRenderer.render(variant, mac_tpl_fetch 结果, vars)`；按 PG-1～PG-6 分批（§7.4）；ALIGN-4 恢复 `ajax/pwd`（含 PHP 的按会话 5 秒限制；`PasswordAttempts` 去留按 OP-T4，见 C-68）；响应一律经 C-70 `SitePageResponses`；v6 补：`SiteMemberFinance:525`、`SitePaymentController:104` 的 `SiteHtmlRenderer.HTML_UTF8` 改为 `SiteRequests.HTML_UTF8`，`SiteUserController:95`、`SiteVerifyController:42` 的私有同值常量删除、改用 `SiteRequests.HTML_UTF8`；会员页不再生成 nonce/CSP（DEC-11） | FR-5、FR-8 | 前端 |
+| C-38 | `B/site/web/SiteExceptionHandler.java`、`SiteStatusInterceptor.java`、`SiteVerifyGate.java`、`SitePlaceholderController.java`、`B/common/web/GlobalExceptionHandler.java` | 修改 | ALIGN-1～3：站点关闭、404、跳转、验证码页走 `public/*` 模板（跳转/提示统一经 C-70 `JumpPages`）；错误页模板本身渲染失败时沿用现有兜底（固定文本、不含数据，常量从 `SiteHtmlRenderer.FALLBACK_ERROR_HTML` 移到 `SiteExceptionHandler`）；站点路径未匹配按 PHP `_empty`（`GlobalExceptionHandler` 只对 `/api/v1/**` 保持 JSON） | FR-5、PG-7 | 前端 |
 | C-39 | `src/main/resources/phptemplate/builtin/index/view/{index/index.html,public/jump.html,public/msg.html}` | 新增 | 从 `php/application/index/view/` 按字节复制的 3 个内置视图（`.gitattributes` 同 C-5 加 `-text`） | ALIGN-3；B.1.2 | 前端 |
-| C-40 | `src/main/jte/site/**`（76 个）、`B/sitetemplate/**`、`src/main/resources/static/site/**`、`src/main/resources/static/site-player/player-boot.js`、`src/test/jte-probe/**`、`T/site/SiteTemplatePolicyTest.java`、`T/sitetemplate/**`、`B/site/web/SiteHtmlRenderer.java`、`B/site/web/view/` 中只为 jte 服务的 record | 删除 | §6.9：按 PG 组逐批删，全部 PG 完成后删 `sitetemplate` 与 `SiteHtmlRenderer` | OP-3；RISK-7 | 前端 |
+| C-40 | `src/main/jte/site/**`（76 个）、`B/sitetemplate/**`、`src/main/resources/static/site/**`、`src/main/resources/static/site-player/player-boot.js`、`src/test/jte-probe/**`、`T/site/SiteTemplatePolicyTest.java`、`T/sitetemplate/**`、`B/site/web/SiteHtmlRenderer.java`、`B/site/application/PlayerFramePolicy.java`（v6 补；`PlaybackPrimitivesTest` 中它的用例一并删除）、`B/site/web/view/` 中只为 jte 服务的 record | 删除 | §6.9：按 PG 组逐批删，全部 PG 完成后删 `sitetemplate` 与 `SiteHtmlRenderer`；删除前 `git grep -n 'SiteHtmlRenderer\|CONTENT_SECURITY_POLICY\|PlayerFramePolicy' -- src/main src/test` 必须无结果（V-32） | OP-3；RISK-7；DEC-11 | 前端 |
 | C-41 | `pom.xml` | 修改 | 删 site 的 `jte-maven-plugin` execution 与 `site-jte` 资源拷贝；删只供在线编辑的 `gg.jte:jte` 编译器依赖（后台、安装的 jte 预编译保留）；不新增依赖 | OP-3 | 前端 |
-| C-42 | `B/site/config/SiteConfiguration.java` | 修改 | 删 `siteHtmlRenderer`/`OnlineTemplates`，装配 `PhpTemplateRenderer` 依赖（C-43 自带 `@Controller` + `@ConditionalOnSiteEnabled`，同现有 `site/web` 控制器自动装配，不在此注册） | OP-3 | 前端 |
+| C-42 | `B/site/config/SiteConfiguration.java` | 修改 | 删 `siteHtmlRenderer`/`OnlineTemplates`（L37 的 import、L355-361）；`siteSearchThrottle`（L338）的参数由 `SiteHtmlRenderer` 改为 C-70 的 `JumpPages`（随 S3-14b 先改，见 C-71）；装配 `PhpTemplateRenderer`、`SitePageResponses`、`JumpPages` 依赖（C-43 自带 `@Controller` + `@ConditionalOnSiteEnabled`，同现有 `site/web` 控制器自动装配，不在此注册） | OP-3 | 前端 |
 | C-43 | `B/site/web/TemplateAssetController.java` | 新增 | §6.10 `/template/**` 静态资源控制器（`@Controller` + `@ConditionalOnSiteEnabled`）：只做 URL → 站点根相对路径 `template/…`、`GET/HEAD`、`Content-Type`（按 §6.10 固定表，b 时含补充的三行）与 `Last-Modified` 条件请求；**放行范围不在本类判断**，子目录与扩展名全部由 C-44 `readTemplateAsset` 决定（避免两处规则不一致），收到任何 `FileException` 一律 404、不回显路径 | DEC-8；OP-T1；OP-T5 | 前端 |
 | C-44 | `B/legacyconfig/application/LegacySiteFiles.java` | 修改 | 增加只读方法 `readTemplateAsset(String relative, int maxBytes)`，是 `/template/**` 唯一的放行边界。**两种答案共同的约束**：① `relative` 经 `LegacySiteRoot.validRelative`（拒绝 `..`、`.`、空段、反斜杠、`:`、空字节、控制字符），且以 `template/<目录>/` 开头、其后至少一段；② 经 `LegacySiteRoot.resolve` 规范化，真实路径须在 `<站点根>/template/` 内（比现有 `read` 只校验站点根更严：中间目录是符号链接时，解析后出 `template/` 或出站点根都拒绝）；③ 最终文件按 `NOFOLLOW_LINKS` 打开，本身是符号链接、目录或非普通文件都拒绝；④ 扩展名 `php`（按小写比较）一律拒绝；⑤ 只读：不建目录、不写、不改时间；超 `maxBytes` 拒绝（`TOO_LARGE`）。**按 OP-T5 所选答案（只实现所选那一列）**：a（SEC-7）= 另要求 `<目录>` 后的第一段是 `css`/`js`/`images`/`ads` 之一，且扩展名（按小写）在 `css js png jpg jpeg gif ico svg webp woff woff2 ttf eot swf` 内，否则 `FORBIDDEN`；b（同 PHP）= 不加子目录与扩展名限制，`template/<目录>/` 下任意子目录、任意扩展名（含 `.html`、`.htm`、`.ini`、无扩展名）放行，仍受①～⑤约束。不扩大写区域，不改现有 `read`。OP-T5 关闭前不实现（属 S3-13b） | DEC-8；SEC-7；OP-T5 | 后端 |
 | C-45 | `B/site/web/InternalPageRenderer.java` | 修改 | `ac2=wap` 时设置手机 `SiteVariant`（替代 UA 推断） | FR-6、§6.2 | 前端 |
 | C-46 | `T/site/**` 约 34 个页面测试类（§3.2 列出） | 修改 / 删除 | 按 §6.9 逐类改为断言 PHP 模板输出，或被 AC-5 对照覆盖后删除 | RISK-7 | 前端 |
+| C-70 | 新增 `B/site/web/SitePageResponses.java`、`B/site/web/legacy/JumpPages.java`；修改 `B/site/web/SiteRequests.java` | 新增 / 修改 | DEC-11 的共享边界。`SitePageResponses`（包内 `final` 类，由 `SiteConfiguration` 按 `SiteVariants.dependsOnUserAgent()` 构造一个实例）：`page(RenderedPage, CacheMode{NO_CACHE,NO_STORE}, boolean noindex)` → `ResponseEntity<byte[]>`，头部按 §4.11 方案 C，状态码取 `RenderedPage.status`，不发 CSP；`RenderedPage` 是完整缓冲的字节，渲染中途失败时什么都没写出（保留 `SiteHtmlRenderer` 的缓冲语义，由 `SiteExceptionHandler` 出完整错误页）。`JumpPages`：PHP `$this->error()/success()`（前台模块由 `Init.php:67-68` 把 `dispatch_success_tmpl`/`dispatch_error_tmpl` 设为 `public/jump`）的唯一入口，`error(variant, msg, url, wait)`/`success(...)` 组 `code/msg/data/url/wait` 页面变量交 `PhpTemplateRenderer`，再经 `SitePageResponses` 输出（HTTP 200）。`SiteRequests.HTML_UTF8` 保持包内可见、成为全包唯一的 HTML `Content-Type` 常量 | ALIGN-3、ALIGN-5、ALIGN-6、ALIGN-7；REV-8 | 前端 |
+| C-71 | `B/site/web/SearchThrottle.java`、`SiteCounterActions.java`、`PlaybackPages.java` | 修改 | v5 漏列的三个调用方（§6.8 迁移表）：`SearchThrottle` 构造参数 `SiteHtmlRenderer renderer, SitePages pages` 改为 `JumpPages jumps`，过快时按 ALIGN-6 返回 `jumps.error(lang('search_frequently')+timespan+lang('seconds'))`（HTTP 200，无 `Retry-After`），会话计时逻辑不改；`SiteCounterActions` 删 `renderer` 字段与构造参数，非 ajax 分支按 ALIGN-7 改；`PlaybackPages` 删 `strictFramePolicy()`、`Frame.policy` 与只供 jte 的视图记录，授权与地址判定（W1/W2、协议白名单）不改，结果改为供 C-36 `VodVars` 组页面变量 | REV-8；ALIGN-6、ALIGN-7；BR-4 | 前端 |
+| C-72 | `T/site/web/SiteTestRoutes.java`、`T/site/config/SiteConfigurationTest.java`、`T/site/web/PlaybackSwitchCases.java`、`SiteAjaxFragmentsMvcTest.java`、`SiteFinanceContentMvcTest.java`、`SitePlaybackPagesMvcTest.java`、`SiteVodListPagesMvcTest.java`；新增 `T/site/web/SitePageResponsesTest.java`、`T/site/web/SearchThrottleTest.java`（若已有同名类则修改） | 修改 / 新增 | `SiteTestRoutes`：构造参数改为 `SitePageResponses`；`/boom-large` 改为让 `PhpTemplateRenderer` 的替身在写出约 200 KB 后抛异常，仍断言响应是完整 500 页、不含 `PARTIAL` 片段（保住“不会 200 + 半页”的护栏）；其余路由不变。`SiteConfigurationTest`：`SiteHtmlRenderer` 的 Bean 断言改为 `PhpTemplateRenderer`、`SitePageResponses`。五个 CSP 断言改为“响应没有 `Content-Security-Policy` 头、`Content-Type` 等于 `text/html;charset=UTF-8`”，随所属 PG 组修改，测试类本身被 AC-5 对照覆盖后可按 C-46 删除。新增 `SitePageResponsesTest`：头部集合、`Vary`、`no-store`、长度；`SearchThrottleTest`：ALIGN-6 | REV-8；V-32 | 前端 |
 
 **(c) 后台模板管理、静态生成（FR-6、FR-7）**
 
@@ -353,8 +382,10 @@
 
 | # | 文件路径 | 动作 | 改什么 | 为什么 | 端 |
 | --- | --- | --- | --- | --- | --- |
-| C-53 | `B/admin/application/DatabaseToolService.java`；新增 `B/admin/application/SqlStatements.java`（`mac_parse_sql` 移植 + DBT-2 分类器） | 修改 / 新增 | DBT-1 `optimize`/`repair`；DBT-2 `sql`；DBT-3 `import` 只还原数据；删除 `REFUSED` 常量的四项用途；SEC-8 的文件读写拒绝规则按 OP-T5（a 有、b 无） | FR-9；AC-11；OP-T5 | 后端 |
-| C-54 | `B/admin/web/AdminDatabaseActions.java`；`B/admin/infrastructure/DatabaseToolMapper.java` 与 `src/main/resources/mapper/admin/DatabaseToolMapper.xml`（或写 Mapper 对应 XML） | 修改 | L63-65 的拒绝改为调用 C-53；语句执行经可写数据源，`DELETE`/`INSERT` 按表登记 `WriteRegistry` | FR-9 | 后端 |
+| C-53 | `B/admin/application/DatabaseToolService.java`；新增 `B/admin/application/SqlStatements.java`（`mac_parse_sql` 移植 + DBT-2 分类器） | 修改 / 新增 | DBT-1 `optimize`/`repair`；DBT-2 `sql`（含按 PHP 的 `{pre}` 替换与文件读写语句不执行，v6 起无条件，见 DBT-2 ⑤）；DBT-3 `import` 只还原数据；DBT-5 的预检、逐条状态、失败分类、还原前自动备份；删除 `REFUSED` 常量的四项用途 | FR-9；AC-11；DBT-5 | 后端 |
+| C-54 | `B/admin/web/AdminDatabaseActions.java`；`B/admin/infrastructure/DatabaseToolMapper.java` 与 `src/main/resources/mapper/admin/DatabaseToolMapper.xml`（或写 Mapper 对应 XML）；`src/main/jte-admin/admin/pages/database/import.jte`（修改）、`sql.jte`（新增，按 PHP `admin@database/sql` 视图移植） | 修改 / 新增 | L63-65 的拒绝改为调用 C-53；语句执行经可写数据源，`DELETE`/`INSERT` 按表登记 `WriteRegistry`；页面显示 DBT-5 的运行结果（总数、已执行、失败序号、结果分类、未执行部分）与“上次操作未完成”提示条及“我已处理”确认按钮（DBT-5 ⑥） | FR-9；DBT-5 | 后端 |
+| C-73 | 新增 `B/admin/application/DatabaseRuns.java`、`DatabaseRun.java`（运行记录、互斥、失败分类） | 新增 | DBT-5 ③④⑥：运行记录文件 `application/data/backup/database/dbtool-run.json` 经 `LegacySiteFiles` 原子写（`backup/database/` 已是导出的写区域）；`begin` 时若记录存在且状态非 `DONE`、或 `backup.lock` 存在 → 拒绝；状态 `RUNNING`/`DONE`/`FAILED`/`UNKNOWN`；失败分类按 12 文档第 4.3 节第 3、4 条（与 `WriteSequence` 的判定一致，复用其 SQLState/错误码表，不复制）；只记语句序号、类别、表名、SQLState 与错误码，不记 SQL 原文与数据值 | FR-9；DBT-5；REV-7 | 后端 |
+| C-74 | 新增 `T/admin/application/SqlStatementsTest.java`、`DatabaseRunsTest.java`、`T/admin/DatabaseToolMySqlIT.java` | 新增 | V-23、V-31 的单测与 MySQL 集成测试（中途失败、结果不确定、并发互斥、还原前自动备份与恢复、重复还原幂等）；故障注入用测试侧的 `DataSource` 包装（在第 n 条语句抛指定 SQLState），不在产品代码里留测试钩子 | AC-11；DBT-5 | 后端 |
 | C-55 | `T/architecture/SchemaGuardTest.java` | 修改 | `REGISTERED_TEXT` 增加 `SqlStatements.java`、`DatabaseToolService.java` 的 `OPTIMIZE TABLE`/`REPAIR TABLE`/拒绝关键字表，注明 AC-11；其他位置照旧禁止 | BR-1；FR-13 | 后端 |
 | C-56 | `B/install/application/InstallWizard.java`、`InstallSchema.java`；新增 `B/install/application/InstallSqlFile.java`；`B/install/infrastructure/InstallConnections.java` | 修改 / 新增 | INS-1～INS-4：空库 + SHA-256 判定后执行 `install.sql`（常量 `48dbe0fb…`，见 INS-1）；删除指纹只读校验分支 | FR-10；AC-12 | 后端 |
 | C-57 | `T/install/InstallSqlFileTest.java`（新增）、`T/install/InstallWizardMySqlIT.java`（修改） | 新增 / 修改 | 常量 = 仓库文件（git blob 字节）的哈希，且断言工作区文件不含 `\r`（`autocrlf` 检出会让哈希变成 `152e5424…`，测试须直接失败并提示 C-67）；空库执行、已有表拒绝、哈希不同拒绝（1 字节差异、整文件改为 CRLF 两种）三种情况，各断言发出的语句集合 | AC-12 | 后端 |
@@ -444,7 +475,7 @@
 | `phptemplate.runtime` | PHP 子集解释器：把编译产物切成“字面段 + 代码段”，按 RULE-WS 规则处理空白，解析代码段为语法树并执行；PHP 7.3 值语义（`ZValue`：null/bool/int/float/string/有序数组；字符串化、弱类型比较、数组键规范化、`echo` 规则） | 只依赖 JDK | 读文件、访问数据库、反射调用任意 Java 方法（函数只经 FUNC 白名单表分派） |
 | `phptemplate.application` | 对外服务 `PhpTemplateRenderer`；`mac_*` 等模板函数的 Java 实现（`TemplateFunctions`）；19 个标签对应的旧模型方法 `listCacheData`（`TagModels`）；页面变量 `label_maccms` 等（`PageVariables`）；编译缓存（`CompiledTemplateCache`）；“模板文件不存在”页（`TemplateNotFoundPage`） | `content.application`（含 `.view`，复用已实现的旧标签条件 `VideoLegacyConditions`/`LegacyTagAttributes`/`LegacyRange`、URL 生成）、`member.application`、`comment.application`、`common.lang.LegacyLang`、`legacyconfig.application` | 依赖 `site`、`admin`、`staticgen` |
 | `phptemplate.infrastructure` | 标签查询中现有 `content.application` 不提供的只读查询（Mapper + XML，只 `SELECT`，表与列按附表 D 的 D.6 TAGMAP） | MyBatis | 写入（不登记 `WriteRegistry`） |
-| `site`（改） | 页面控制器保留现有数据与业务逻辑（BR-4），把“返回 jte 视图”改为“调用 `PhpTemplateRenderer.render(模板名, 页面变量)`”；`/template/**` 静态资源（DEC-8，文件只经 `LegacySiteFiles.readTemplateAsset`，C-44） | 增加对 `phptemplate.application` 的依赖（护栏同步，C-35） | 读模板文件、编译模板 |
+| `site`（改） | 页面控制器保留现有数据与业务逻辑（BR-4），把“返回 jte 视图”改为“调用 `PhpTemplateRenderer.render(模板名, 页面变量)`”，HTML 响应只经 `SitePageResponses`、跳转提示只经 `JumpPages`（v6，C-70）；`/template/**` 静态资源（DEC-8，文件只经 `LegacySiteFiles.readTemplateAsset`，C-44） | 增加对 `phptemplate.application` 的依赖（护栏同步，C-35） | 读模板文件、编译模板 |
 | `staticgen`（改） | 内容仍只经 `site.application.StaticPageSource`（进程内游客 GET），所以静态页自动改用 PHP 模板；`ac2=wap` 按手机变体请求 | 不变 | 不变 |
 | `admin`（改） | 模板管理：扩展名白名单回到 `html/htm/js/xml`，过滤规则回到 PHP，标签向导生成 `{maccms:…}`；数据库工具四项；系统配置不变 | 不变 | 不变 |
 
@@ -457,6 +488,9 @@
 | `TemplateFunctions` | 名称 → Java 实现的白名单表；未登记的函数名 → `TemplateUnsupportedException` | 同上 |
 | `TagModels.listCacheData(model, tagParams)` | `model` ∈ `Vod`/`Art`/`Topic`/`Actor`/`Role`/`Website`/`Comment`/`Gbook`/`Type`/`Link`/`Extend`（筛选项 7 个标签）；返回与 PHP 同结构的 `ZValue` 数组（`list`、`page`、`pagecount`、`total`、`pageurl` 等键以 PHP 模型为准） | 属性非法、越界：与 PHP 模型的处理一致（BR-5、AC-3） |
 | `LegacySiteFiles.readTemplateAsset(String relative, int maxBytes)`（v5） | 只读；唯一调用方是 `site.web.TemplateAssetController`（C-43）；`relative` 是站点根相对路径，须以 `template/<目录>/` 开头；放行范围按 OP-T5 所选答案（§6.10、C-44），只实现所选那一列，不设运行时开关 | 不放行一律抛 `FileException`（`INVALID_NAME`/`OUTSIDE_ROOT`/`FORBIDDEN`/`NOT_REGULAR_FILE`/`IS_DIRECTORY`/`TOO_LARGE`），消息不含路径与内容；调用方统一返回 404，不区分原因 |
+| `SitePageResponses.page(RenderedPage, CacheMode, boolean noindex)`（v6，`site.web` 包内） | 唯一把渲染结果变成 HTML 响应的地方；调用方：全部页面控制器、`JumpPages`、`SiteExceptionHandler`、`SiteVerifyGate`、`SitePlaceholderController`、测试 `SiteTestRoutes` | 不抛业务异常；`RenderedPage` 为空字节时照常输出 `Content-Length: 0`（`SiteMemberFinance` 的空响应） |
+| `JumpPages.error/success(SiteVariant, String msg, String url, int wait)`（v6，`site.web.legacy`） | PHP `$this->error()/success()` 的唯一入口；调用方：`SearchThrottle`（ALIGN-6）、`SiteCounterActions`（ALIGN-7）、ALIGN-3 的各提示页 | `public/jump` 缺失 → `TemplateNotFoundPage`（同 PHP） |
+| `DatabaseRuns.begin/step/finish/acknowledge`（v6，`admin.application`） | DBT-5 的运行记录与互斥；只由 `DatabaseToolService` 调用 | `begin` 被占用 → 返回“已有数据库操作在执行或上次操作未处理”，不发任何语句 |
 | `CacheResetHook.resetAll()` | 清空 `phptemplate` 的编译缓存、标签结果缓存、页面缓存，以及 `LegacyConfigService` 的派生缓存 | 只由后台“清理缓存”入口和对照开关（CACHE-3）调用 |
 
 ### 6.4 编译与空白规则（逐字节一致的关键，v3 新增）
@@ -525,9 +559,29 @@
 | ALIGN-2 | 前台未匹配地址返回 JSON 404“接口不存在” | 站点路径（`/api/v1/**`、`/api.php/**`、后台入口之外）按 PHP `_empty` → `page_error`（404 + `public/<page_404>`）；`/api/v1/**` 仍为 JSON | `Base.php` `_empty`；`All.php:98-116` |
 | ALIGN-3 | 错误页、跳转页是 jte 自绘（`ErrorPage`、`UserJumpPage`） | 一律经模板包的 `public/jump`、`public/msg` 或 PHP 内置视图（`php/application/index/view/public/jump.html`、`msg.html`，按字节随 jar 打包为资源，经同一引擎渲染）；模板文件缺失时按 TPL“模板文件不存在” | B.1.2“内置视图”；`Init.php:67-68` |
 | ALIGN-4 | 观看密码：签名 cookie，`ajax/pwd` 返回 404；按内容/全站限流 `PasswordAttempts`，超限 429 | 恢复 `ajax/pwd`，判定顺序与 JSON 逐条按 PHP：① 参数校验 1001；② 本会话已通过 1002；③ 按会话 `last_pwd` 间隔 < 5 秒 1003（每次调用都刷新 `last_pwd`，含被拒的调用，同 `mac_get_time_span`）；④ 取数失败 1011/1021、密码不符 1012/1013/1014/1022；⑥ 通过后写会话并返回 `{"code":1,"msg":"ok"}`。“已通过”与 `last_pwd` 都放进程内会话（`SessionStore`，PHP 是 session，不进库、不参与比较）。⑤ **条件项（OP-T4）**：a = 在 ③ 之后、④ 查库之前再过 `PasswordAttempts`，超限返回与 ③ 相同的 `{"code":1003,"msg":lang('index/pwd_frequently')}`（HTTP 200，不再用 429），与 PHP 的差异只在“哪一次请求得到 1003”，记为 SEC-9；b = 不做 ⑤，删除 `PasswordAttempts`（C-68），行为与 PHP 完全相同。OP-T4 关闭前 S3-14c 不派单、不合入 | `Ajax.php:400-456`（限制在 `:416-418`）；`common.php:306-316`；`All.php:547-549` |
-| ALIGN-5 | 响应头 `Content-Type` 由各控制器设 | 统一按 PHP：HTML 页 `text/html; charset=utf-8`，RSS/地图 XML 与 ajax JSON 按 PHP 控制器（PRE-2 基线记录实际值） | CMP-3 ② |
+| ALIGN-5 | 响应头 `Content-Type` 由各控制器设；`SiteHtmlRenderer` 另发 CSP | 统一按 PHP：HTML 页 `text/html; charset=utf-8`，RSS/地图 XML 与 ajax JSON 按 PHP 控制器（PRE-2 基线记录实际值）；HTML 页只经 C-70 `SitePageResponses` 输出，类型常量只用 `SiteRequests.HTML_UTF8`；前台不发 CSP（DEC-11） | CMP-3 ② |
+| ALIGN-6（v6） | 搜索过快：`SearchThrottle` 返回 429 + `Retry-After` 的 jte 提示页 | 按 PHP `check_search`：`echo $this->error(lang('search_frequently').search_timespan.lang('seconds'))` → `public/jump`，HTTP 200；计时规则（第 1 页、被拒也刷新）不改 | `Base.php:59-61`；`SearchThrottle.java` 类注释“与旧版的差异” |
+| ALIGN-7（v6） | 计数接口非 ajax 的 POST 返回 jte 提示页（D-B11-10，为 jte 无脚本表单所加） | jte 表单随 PG 组删除；`hits/digg/score/referer` 一律按 PHP 返回 JSON（`Ajax.php:152-460` 各方法都 `return json(...)`）；`verify_check` 非 ajax 时按 PRE-2 基线记录的 PHP 实际输出（PHP 返回数组，非 ajax 请求由 ThinkPHP 按默认输出类型处理），附表 C 对应行由 T-FR12 判定 | `Ajax.php:302-346,460-475`；`SiteCounterActions.java:41-45,329-350` |
 
 页面变量的逐页清单（每页 `assign` 的键、层级、取值来源）在各 PG 子任务的设计说明里按 PHP 控制器逐行列出，由 AC-4/AC-5 的样本验证；不允许出现 PHP 没有的键（会改变 `{if isset}` 类分支）。
+
+**`SiteHtmlRenderer` 调用方迁移表（v6，REV-8；基线 `git grep -n 'SiteHtmlRenderer' a57e9cb -- src/main src/test` 的全部结果）**
+
+| 调用方 | 基线用法 | 处理 | 子任务 |
+| --- | --- | --- | --- |
+| 13 个页面控制器（C-37 列出） | 注入渲染器，`ok/noStore/member/memberPlain/memberGatewayForm/playerFrame` | 改 `PhpTemplateRenderer` + `SitePageResponses`；`noStore` 类页面传 `NO_STORE`，会员页不再生成 nonce；支付宝下单页不再改写 CSP 的 `form-action`（页面内容按 PHP 对应输出，PRE-2 基线） | S3-14a～g 各组 |
+| `SiteExceptionHandler`、`SiteVerifyGate`、`SitePlaceholderController` | 注入渲染器，`error(...)` | ALIGN-1～3；经 `JumpPages`/`PhpTemplateRenderer` + `SitePageResponses`；兜底文本常量移入 `SiteExceptionHandler` | S3-14a |
+| `SearchThrottle` + `SiteConfiguration.siteSearchThrottle` | 注入渲染器，`error(429, …, Retry-After)` | 改注入 `JumpPages`，ALIGN-6（C-71、C-42） | S3-14b（`SiteSearchController` 先用到；`SiteModuleListController` 在 S3-14d 只是继续注入同一个 Bean） |
+| `SiteCounterActions`（`SiteAjaxController:88` 构造） | 注入渲染器，非 ajax POST 用 `memberPlain` | 删渲染器依赖，ALIGN-7（C-71）；`SiteAjaxController` 构造处同步去掉该实参 | S3-14g |
+| `PlaybackPages` | 静态引用 `CONTENT_SECURITY_POLICY`（`strictFramePolicy`） | 删 `strictFramePolicy`、`Frame.policy`；授权与地址判定保留（C-71） | S3-14c |
+| `SiteMemberFinance:525`、`SitePaymentController:104` | 静态引用 `HTML_UTF8` | 改 `SiteRequests.HTML_UTF8`（C-37） | S3-14f |
+| `SiteUserController:95`、`SiteVerifyController:42` | 私有同值常量 | 删，改 `SiteRequests.HTML_UTF8`（C-37） | S3-14f、S3-14a |
+| `SiteConfiguration:37,355-361` | 装配渲染器与 `OnlineTemplates` | 删（C-42） | S3-15 |
+| 测试 `SiteTestRoutes` | 注入渲染器，`/boom-large` 模拟半页失败 | 改注入 `SitePageResponses`，用渲染器替身保留“半页失败 → 完整 500 页”断言（C-72） | S3-14a（`SiteExceptionHandler` 改动的同一提交） |
+| 测试 `SiteConfigurationTest:52,62` | 断言有/无 `SiteHtmlRenderer` Bean | 改断言 `PhpTemplateRenderer`、`SitePageResponses`（C-72） | S3-15 |
+| 测试 `PlaybackSwitchCases:101`、`SitePlaybackPagesMvcTest:73`、`SiteAjaxFragmentsMvcTest:84`、`SiteFinanceContentMvcTest:140`、`SiteVodListPagesMvcTest:199` | 断言 CSP 等于常量 | 改为断言无 CSP 头、`Content-Type` 正确（C-72），或随 C-46 整类删除 | 分别随 S3-14c、S3-14g、S3-14f、S3-14b |
+
+S3-15 删除 `SiteHtmlRenderer` 之前，上表其余各行必须都已合入；S3-15 的门禁是 V-32 的检索结果为空。
 
 **手机（FR-8）**：手机/站群选择沿用 `SiteTemplateSelection` + `SiteVariants`（黄金锁定）；`PhpTemplateRenderer` 按 `SiteVariant` 选读取根（PATH-1）与 `path_tpl`/`path_ads`（PATH-2/4，C-12～C-16 修正后）。手机模板目录缺失时不回退桌面（`21-b12-admin-framework.md` 第 12 节）。语言键对照（KPI-5）直接比 `LegacyLang.get(key)` 与 PHP `lang(key)`，不经页面。
 
@@ -570,9 +624,23 @@
 | 编号 | 动作 | 设计 |
 | --- | --- | --- |
 | DBT-1 | 优化表、修复表 | 入参表名必须属于附表 A 的 26 张表（白名单常量 + 前缀校验），对每张选中的表各发一条 `OPTIMIZE TABLE <名>` / `REPAIR TABLE <名>`（表名用反引号，来自白名单而不是请求原文）；返回结果按 PHP 页面展示。`it_app` 的 `SELECT, INSERT` 权限足够执行这两条语句 |
-| DBT-2 | 执行 SQL | 先按 PHP `mac_parse_sql` 的规则切分语句（逐字移植该函数），再对每条语句做**词法分类**：去掉注释（`-- `、`#`、`/* */`，含 `/*! */` 版本注释一律视为不可识别而拒绝）、跳过空白后取首个关键字，只允许 `SELECT`、`INSERT`、`UPDATE`、`DELETE`；**条件项（OP-T5）**：a = 另拒绝含 `INTO OUTFILE`、`INTO DUMPFILE`、`LOAD_FILE(` 的语句（读写服务器文件，安全收紧，SEC-8）；b = 不加这条，这类 `SELECT` 照常发给数据库，结果（含 MySQL 因 `it_app` 无 `FILE` 权限或 `secure_file_priv` 返回的错误）按 PHP 页面的错误展示方式输出。OP-T5 关闭前 S3-19 不派单、不合入。**任意一条不通过则整批拒绝，不向数据库发送任何语句**（AC-11 ②），提示“结构类操作请由部署方在库外完成”；全部通过后逐条执行，连接关闭多语句（`allowMultiQueries=false`） |
+| DBT-2 | 执行 SQL | ① 按 PHP 先 `trim`、把 `{pre}` 替换为表前缀（`Database.php:246-249`）；② 按 PHP `mac_parse_sql`（`common.php:732`）的规则切分语句（PHP `sql()` 本身整段执行、不切分；本设计切分是为了逐条分类，执行前不改变语句文本）；③ 对每条语句做**词法分类**：去掉注释（`-- `、`#`、`/* */`，含 `/*! */` 版本注释一律视为不可识别而拒绝）、跳过空白后取首个关键字，只允许 `SELECT`、`INSERT`、`UPDATE`、`DELETE`（OP-6）；④ **任意一条不通过则整批拒绝，不向数据库发送任何语句**（AC-11 ②），提示“结构类操作请由部署方在库外完成”；⑤ **文件读写语句不执行（v6 更正，无条件）**：按 PHP 的判定方式（副本转小写、去 `/* */` 与 `--` 注释、压缩空白）含 `outfile`、`dumpfile`、`load_file` 的语句不发送给数据库，整批拒绝，提示“含读写服务器文件的语句，不执行”——PHP 对这类语句同样不执行（`Database.php:251-262`），差别只在 PHP 静默返回“执行成功”，属提示文字差异，不是安全收紧，不再归 OP-T5；⑥ 全部通过后按 DBT-5 逐条执行，连接关闭多语句（`allowMultiQueries=false`）；`SELECT` 执行后不展示结果集，页面同 PHP 返回“执行成功” |
 | DBT-3 | 还原备份 | 读取备份文件（只限 `application/data/backup/database/` 下由本系统或 PHP 导出的分卷），按 `mac_parse_sql` 切分；`DROP TABLE`、`CREATE TABLE` 以及其他非 DML 语句**跳过不执行**并计数显示；对备份中出现 `INSERT INTO <表>` 的每张表（必须在 26 张白名单内），先执行一次 `DELETE FROM <表>`，再执行该表的 `INSERT`（“只还原数据”：结果与 PHP 删表重建后插入的数据相同，结构不动） |
-| DBT-4 | 其余 | 列表、列、导出、删备份、批量替换保持 B15 现状 |
+| DBT-4 | 其余 | 列表、列、导出、删备份、批量替换保持 B15 现状；导出另检查 DBT-5 的运行记录（有未完成记录时拒绝，提示同 `lock_check`） |
+| DBT-5 | 失败、并发与恢复（v6，REV-7；方案见 §4.12） | 见下表，适用于 DBT-1～DBT-3 |
+
+**DBT-5 契约（DBT-1～DBT-3 共用）**
+
+| 项 | 契约 |
+| --- | --- |
+| ① 事务能力 | 25 张 MyISAM 表没有事务，`mac_vod_search`（InnoDB）也不开事务（护栏禁止，§1.3）。所以 DBT-2、DBT-3 **没有整批原子性**：执行单位是一条语句；单行语句要么生效要么不生效，多行语句（`DELETE FROM 表`、多值 `INSERT`、条件命中多行的 `UPDATE/DELETE`）中途出错会留下部分结果。不做自动补偿，也不自动重试（补偿会覆盖并发写入，12 文档第 4.3 节第 4 条） |
+| ② 整批预检（发送任何语句之前全部完成，任一不通过 → 整批拒绝、发出语句数为 0） | DBT-1：表名都在 26 张白名单内。DBT-2：DBT-2 ①～⑤。DBT-3：(a) 分卷齐全（同 PHP `count($list) === $last[0]`，否则“文件损坏”）；(b) 全部分卷可读、`.gz` 可解压；(c) 全部语句切分完成，`INSERT INTO` 的目标表都在 26 张白名单内（否则整批拒绝）；(d) **站点已关闭**（`site.site_status` 为 0，经 `LegacyConfigService` 读）——否则提示“还原数据前请先在系统设置中关闭站点”，原因见 ④。预检只读，不发任何写语句；预检不能发现的只有运行期错误（数据不合列定义、主键冲突、连接中断） |
+| ③ 执行与逐条状态 | 预检通过后 `DatabaseRuns.begin` 写运行记录（状态 `RUNNING`、操作类型、管理员编号、开始时间、语句总数、DBT-3 的表清单）。DBT-3 接着做**还原前自动备份**：调用 B15 现有导出逻辑，把备份中涉及的全部表导出到同一备份目录（文件名同 PHP 规则，记入运行记录；这次内部调用属于本次运行，不受 DBT-4 的运行记录检查），导出失败 → 记录改 `FAILED`（已执行 0 条）、不还原。按顺序每条语句单独一次 JDBC 调用。DBT-3 每张表的顺序是 `DELETE FROM 表` → 该表全部 `INSERT`，每完成一张表更新一次记录（已完成表、当前表、当前表已执行的 `INSERT` 数）。**第一处失败立即停止**，其后的语句不执行，按 12 文档第 4.3 节分类：**确定未生效**（服务端返回的非连接类、非中止类错误，且该语句是单行语句）→ `FAILED`，记失败序号 n、`n-1` 条已生效；**结果不确定**（SQLState `08xxx` 或客户端错误码 2000～2999、1028/1053/1317/1927/3024、`SQLTimeoutException`、非 SQL 异常，或出错的是多行语句）→ `UNKNOWN`，记序号 n、第 n 条可能部分生效。全部成功 → `DONE` |
+| ④ 并发协调 | (a) 工具内互斥：`begin` 时若存在 `backup.lock`（导出在执行）或运行记录状态不是 `DONE`，拒绝并提示“已有数据库操作在执行或上次操作未处理”，不发任何语句；导出也检查运行记录（DBT-4）。记录是站点根下的文件，同一站点根的多个进程（含 PHP 后台）都能看到。(b) 与前台写入：DBT-3 要求站点关闭（② d），否则前台在 `DELETE` 与 `INSERT` 之间写入的行会让 `INSERT` 主键冲突而中途失败，或在还原后被覆盖。(c) 与其他管理员、定时任务：本期不加锁（`it_app` 没有 `LOCK TABLES` 权限，加应用层全局锁要改所有写入口，超出范围）；页面在还原确认步骤写明“请确认没有其他管理员在编辑内容、`api.php/timming` 定时任务已停”，属运维约定（RISK-T19）。(d) DBT-1：MySQL 对 MyISAM 的 `OPTIMIZE/REPAIR` 持表锁，期间该表写入排队，与 PHP 相同；逐表执行，一张表失败不影响其他表，结果逐表显示 |
+| ⑤ 重试与幂等 | DBT-1：幂等，可直接重试。DBT-2：一般不幂等（无主键的 `INSERT`、`x=x+1`）。`FAILED` 时页面把第 n 条到最后一条原文回填到输入框，修正后由管理员重新提交（第 1～n-1 条不再提交）；`UNKNOWN` 时先由管理员用 `SELECT` 确认第 n 条是否已生效，再决定从第 n 条或第 n+1 条继续。DBT-3：每张表“先清空、再插入备份中的全部行”，在没有并发写入时整体幂等——失败后修正原因（例如备份文件损坏则换备份），**重新执行整个还原**即可，已还原的表再还原一遍结果相同（V-31 ④验证）。任何情况都不自动重试 |
+| ⑥ 审计与告警 | (a) 运行记录文件 `application/data/backup/database/dbtool-run.json`（C-73）：状态为 `FAILED`/`UNKNOWN`，或 `RUNNING` 且进程已不在执行它（应用重启后看到 `RUNNING` 即视为中断，按 `UNKNOWN` 显示）时，数据库工具各页面顶部显示红色提示条：操作类型、开始时间、管理员、失败序号与分类、DBT-3 的已完成表/当前表/自动备份文件名，以及下面 ⑦ 的恢复步骤；管理员处理完后点“我已处理”（`DatabaseRuns.acknowledge`，状态改 `DONE` 并记处理人与时间），之后才能再执行 DBT-2/DBT-3/导出。(b) 应用日志：logger `maccms.admin.dbtool`，开始与结束各一行 `INFO`，`FAILED` 为 `WARN`、`UNKNOWN` 为 `ERROR`；字段 `run`、`op`、`admin_id`、`total`、`executed`、`failed_index`、`outcome`、`sqlstate`、`error_code`、`tables`、`backup_file`、`duration_ms`；**不写 SQL 原文、数据值、库连接串**（同 `SafeExceptionLog`）。部署方按 `ERROR` 级别与 `outcome=UNKNOWN` 告警 |
+| ⑦ 管理员恢复步骤（写进提示条与页面帮助） | DBT-3 `FAILED`/`UNKNOWN`：1. 保持站点关闭；2. 查明原因（提示条给出失败表与 SQLState）；3a. 原因已排除（如连接恢复）→ 重新执行同一还原（⑤，幂等）；3b. 要回到还原前的数据 → 用提示条中的自动备份文件执行一次还原（同一功能），完成后数据回到还原开始前（期间站点关闭，没有其他写入）；4. 核对行数后点“我已处理”，再开站。DBT-2 `FAILED`：按 ⑤ 修正后提交剩余语句；`UNKNOWN`：先 `SELECT` 核对第 n 条，再提交剩余语句；DBT-2 没有自动备份，页面提示“执行前请先导出将被修改的表”，需要回退时用管理员事先导出的备份还原 |
+| ⑧ 与 PHP 的差异 | PHP 还原没有预检站点状态、没有自动备份、没有运行记录，失败只提示“还原失败”；`sql()` 不切分。这些都是在“只还原数据”（OP-6）之上为可恢复性增加的保护，不改变成功路径的数据结果；FR-9 不做页面对照，相应附表 C 行由 T-FR12 按本表判定 |
 
 `SchemaGuardTest` 的登记例外增加 DBT-1、DBT-2 的实现类（它们的源码里出现 `OPTIMIZE TABLE`、`REPAIR TABLE` 字样与拒绝关键字表），写明理由与 AC-11 编号（C-55）。
 
@@ -599,7 +667,7 @@
 ### 6.16 旧控制器对齐（FR-12，v3 新增）
 
 - 判定由测试人员按附表 C 逐行做（AC-14），报告 `docs/test/APPK-2/parity-*.md`，缺口登记 `docs/test/APPK-2/gap-register.md`（§9.1 格式）；本设计不预判结果。
-- 判定口径（交测试人员）：PHP 无漏洞的行为以 PHP 为准；六项安全修复（§6.17 SEC-1～6）判 `排除-D2`；本设计的条件安全收紧 SEC-7、SEC-8（OP-T5）、SEC-9（OP-T4）只有在对应 OP 关闭且选 a 时，才按“已确认的安全差异”判 `排除-SEC-7` / `排除-SEC-8` / `排除-SEC-9`，报告引用关闭该 OP 的 Issue 评论；选 b 时不排除，按 PHP 逐字节比较；OP 未关闭时相关行一律记“未判定”，不能自行判“已对齐”或“排除”；历史 D-Bxx 决定与 PHP 不同、又不是安全修复的（如 D-B15-14、D-B15-15、D-B16-5、D-B16-6、D-B19-15、D-B13-2、D-B19-14），本设计已按 PHP 改回（§6.11～§6.15），对应行判定以改回后的行为为准。
+- 判定口径（交测试人员）：PHP 无漏洞的行为以 PHP 为准；六项安全修复（§6.17 SEC-1～6）判 `排除-D2`；本设计的条件安全收紧 SEC-7（OP-T5）、SEC-9（OP-T4）只有在对应 OP 关闭且选 a 时，才按“已确认的安全差异”判 `排除-SEC-7` / `排除-SEC-9`（SEC-8 v6 起不是差异，见 §6.17），报告引用关闭该 OP 的 Issue 评论；选 b 时不排除，按 PHP 逐字节比较；OP 未关闭时相关行一律记“未判定”，不能自行判“已对齐”或“排除”；历史 D-Bxx 决定与 PHP 不同、又不是安全修复的（如 D-B15-14、D-B15-15、D-B16-5、D-B16-6、D-B19-15、D-B13-2、D-B19-14），本设计已按 PHP 改回（§6.11～§6.15），对应行判定以改回后的行为为准。
 - 缺口迁移：每个 GAP- 单独建单、单独设计说明（引用本设计的模块边界与附表 D 越界判定），不在本设计里列实现。
 
 ### 6.17 六项安全修复（BR-4、OP-9，v3 新增）
@@ -613,10 +681,10 @@
 | SEC-5 | 管理员每请求重读 | FR-7、FR-9 后台 | `AdminController` 不改 |
 | SEC-6 | 注销/改密/重置轮换 `user_random` | PG-5 | 不改 |
 | SEC-7（本设计，条件：OP-T5 a） | `/template/**` 只给静态资源，不给 `.html`/`.ini` | DEC-8、§6.10、C-44 | a：不进比较样本，FR-12 相关行按“已确认的安全差异”判 `排除-SEC-7`；b：不存在本项，按 PHP 返回 |
-| SEC-8（本设计，条件：OP-T5 a） | 执行 SQL 拒绝 `INTO OUTFILE/DUMPFILE`、`LOAD_FILE` | DBT-2 | a：`排除-SEC-8`；b：不存在本项，语句照常执行 |
+| SEC-8（v6 更正：不是差异，无条件） | 执行 SQL 不执行含 `outfile`/`dumpfile`/`load_file` 的语句 | DBT-2 ⑤ | PHP 同样不执行（`Database.php:251-262`）；只有提示文字不同（PHP 静默“执行成功”），FR-12 相关行按 PHP 行为判“已对齐”，提示差异由 T-FR12 记录 |
 | SEC-9（本设计，条件：OP-T4 a） | 观看密码在 PHP 按会话 5 秒限制之外，再按内容/全站限流（`PasswordAttempts`），超限返回 PHP 已有的 1003 | ALIGN-4 ⑤ | a：只有“超限”样本与 PHP 不同，判 `排除-SEC-9`；b：不存在本项 |
 
-SEC-7～SEC-9 不属于 OP-9 已确认的六项，是本设计提出、待发起人确认的行为差异；V-24 的“仍通过”只对 SEC-1～6 无条件适用，SEC-7～9 的用例按所选答案写（V-18、V-23、V-30）。
+SEC-7、SEC-9 不属于 OP-9 已确认的六项，是本设计提出、待发起人确认的行为差异；V-24 的“仍通过”只对 SEC-1～6 无条件适用，SEC-7、SEC-9 的用例按所选答案写（V-18、V-30）。SEC-8 v5 及以前误写为“PHP 照常执行”的收紧，v6 按 PHP 源码更正为与 PHP 一致的无条件行为（V-23）。前台不再发 CSP（DEC-11）不属于六项，见 RISK-T18。
 
 验证：每项在所属批次已有的用例（“旧行为不再成立”断言）必须在 FR-5～FR-11 合入后仍通过（V-24），列入回归点。
 
@@ -697,20 +765,21 @@ SEC-7～SEC-9 不属于 OP-9 已确认的六项，是本设计提出、待发起
 | S3-13a | 内置视图 | 前端 | C-39 | S3-10 | 3 个资源与 `php/application/index/view/` 对应文件逐字节相同（`git diff --no-index --binary` 无输出）；`./mvnw -B verify` |
 | S3-13b | `readTemplateAsset` 放行边界 | 后端 | C-44 | G1；**OP-T5 已关闭** | V-18 单测部分（按 OP-T5 所选列） |
 | S3-13c | `/template/**` 静态资源控制器 | 前端 | C-43 | S3-13b；**OP-T5 已关闭** | V-18 接口用例部分（按 OP-T5 所选列） |
-| S3-14a～g | 页面接入（a：PG-1 首页 + PG-7 公共页 + ALIGN-1～3；b：PG-2 vod 列表/搜索/筛选；c：PG-2 vod 详情/播放/下载/播放器/版权 + ALIGN-4 + C-68（**须 OP-T4 已关闭**）；d：PG-3；e：PG-4；f：PG-5（分两次运行：账号类、财务与记录类）；g：PG-6） | 前端 | C-36～C-38、C-45、C-46，并删除该组 jte（C-40 的对应部分） | S3-11、S3-12 对应标签、S3-13a；c 另需 OP-T4 已关闭 | 本组样本 V-19 子集通过；c 另需 V-30 |
-| S3-15 | jte 前台与 D4 收尾删除 | 前端 | C-40 剩余部分、C-41、C-42 | S3-14 全部 | V-8、`./mvnw -B verify` |
+| S3-14a～g | 页面接入（a：PG-1 首页 + PG-7 公共页 + ALIGN-1～3 + C-70 共享边界（`SitePageResponses`、`JumpPages`）+ `SiteTestRoutes` 迁移；b：PG-2 vod 列表/搜索/筛选 + ALIGN-6（`SearchThrottle` 与其 Bean）；c：PG-2 vod 详情/播放/下载/播放器/版权 + ALIGN-4 + C-68（**须 OP-T4 已关闭**）+ `PlaybackPages`；d：PG-3；e：PG-4；f：PG-5（分两次运行：账号类、财务与记录类；含 `SiteMemberFinance`/`SitePaymentController` 的 `HTML_UTF8`）；g：PG-6 + ALIGN-7（`SiteCounterActions`）） | 前端 | C-36～C-38、C-45、C-46、C-70～C-72 的对应部分（§6.8 迁移表“子任务”列），并删除该组 jte（C-40 的对应部分） | S3-11、S3-12 对应标签、S3-13a；b～g 另需 S3-14a（共享边界）；c 另需 OP-T4 已关闭 | 本组样本 V-19 子集通过；本组涉及的 V-32 断言；c 另需 V-30 |
+| S3-15 | jte 前台与 D4 收尾删除 | 前端 | C-40 剩余部分、C-41、C-42、C-72 的 `SiteConfigurationTest` | S3-14 全部（含 §6.8 迁移表中除 S3-15 外的全部行） | V-8、V-32、`./mvnw -B verify` |
 | S3-16 | 后台模板管理 + 标签向导 | 后端 | C-47～C-49 | S3-10 | V-7、V-22 |
 | S3-17 | 静态生成差异补齐 | 后端 | C-45、C-50、C-51 | S3-14 全部 | V-6 |
 | S3-18 | 缓存清理钩子接入后台 | 后端 | C-52 | S3-10 | V-14 |
-| S3-19 | 数据库工具四项 | 后端 | C-53～C-55 | G1（不依赖模板）；**OP-T5 已关闭** | V-23（按 OP-T5 所选列） |
+| S3-19a | 数据库工具：优化/修复、执行 SQL、运行记录与互斥 | 后端 | C-53（DBT-1、DBT-2、DBT-5 公共部分）、C-54（`sql.jte`、提示条）、C-55、C-73、C-74（`SqlStatementsTest`、`DatabaseRunsTest`） | G1（不依赖模板，v6 起不依赖 OP-T5） | V-23、V-31 ①②⑤⑥ |
+| S3-19b | 数据库工具：还原备份（预检、自动备份、逐表状态、恢复） | 后端 | C-53（DBT-3）、C-54（`import.jte`）、C-74（`DatabaseToolMySqlIT`） | S3-19a | V-23 ③、V-31 ③④⑦ |
 | S3-20 | 安装向导建表 | 后端 | C-56、C-57、C-67、C-69 | G1 | V-25 |
 | S3-21a～d | 在线功能（a：资源站在线采集 + 定时采集；b：远程图片；c：规则在线抓取；d：远程存储六种） | 后端 | C-58～C-61 | G1 | V-26 |
 | S3-22 | 对照执行器与报告 | 测试 | C-64 | S3-03 | 对 PHP 两次运行结果自比一致（V-19 前置） |
 | T-FR12 | 附表 C 阶段 A 判定（可与 S3 并行，后台/API/安装部分不依赖模板）；阶段 B 按 GAP- 建单 | 测试 | `docs/test/APPK-2/parity-*.md`、`gap-register.md` | G1 | AC-14、AC-19 |
 
-**条件门禁（OP-T4、OP-T5）**：S3-13b、S3-13c、S3-19 依赖 OP-T5，S3-14c 依赖 OP-T4。对应 OP 未关闭时调度不建单、不派单，已开工的也不得合入；建单时在单内写明所选答案与关闭该 OP 的 Issue 评论，实现者只实现所选那一列，评审按该列核对（V-29）。a/b 两列的差别只在 C-43（`Content-Type` 补充三行）、C-44（放行范围）、C-53（SEC-8 一条规则）、C-68（`PasswordAttempts`）四处，不影响其他子任务。S3-14 的 PG 组只依赖 S3-13a（内置视图），不依赖 S3-13b/c：页面渲染只经 `PhpTemplateRenderer` 用现有 `read` 读模板，不经 `/template/**`；S3-14 各组的 V-19 子集只含页面样本，样本清单里若有 `/template/**` 地址，归 S3-13c 收尾时核对；S3-15 也不依赖 S3-13b/c（C-42 不再注册 C-43）。所以 S3-14c 之外的 PG 组、S3-15 与 S3-10 之前的模板线都不受这两项影响。
+**条件门禁（OP-T4、OP-T5）**：S3-13b、S3-13c 依赖 OP-T5（v6 起 OP-T5 只含 SEC-7；SEC-8 已按 PHP 源码更正为无条件行为，S3-19a/b 不再依赖 OP-T5），S3-14c 依赖 OP-T4。对应 OP 未关闭时调度不建单、不派单，已开工的也不得合入；建单时在单内写明所选答案与关闭该 OP 的 Issue 评论，实现者只实现所选那一列，评审按该列核对（V-29）。a/b 两列的差别只在 C-43（`Content-Type` 补充三行）、C-44（放行范围）、C-68（`PasswordAttempts`）三处，不影响其他子任务。S3-14 的 PG 组只依赖 S3-13a（内置视图），不依赖 S3-13b/c：页面渲染只经 `PhpTemplateRenderer` 用现有 `read` 读模板，不经 `/template/**`；S3-14 各组的 V-19 子集只含页面样本，样本清单里若有 `/template/**` 地址，归 S3-13c 收尾时核对；S3-15 也不依赖 S3-13b/c（C-42 不再注册 C-43）。所以 S3-14c 之外的 PG 组、S3-15 与 S3-10 之前的模板线都不受这两项影响。
 
-并行关系：S3-19、S3-20、S3-21、T-FR12 与模板线（S3-01～S3-18）互不依赖，可并行；模板线内部按表中依赖串行。PG 组切换顺序按 PRD §13 阶段 2（首页与 vod 先）。
+并行关系：S3-19a/b、S3-20、S3-21、T-FR12 与模板线（S3-01～S3-18）互不依赖，可并行；模板线内部按表中依赖串行。PG 组切换顺序按 PRD §13 阶段 2（首页与 vod 先）。
 
 ### 7.5 后端（@后端开发-海外）补充步骤
 
@@ -774,16 +843,20 @@ SEC-7～SEC-9 不属于 OP-9 已确认的六项，是本设计提出、待发起
 | V-20 | PRE-2、CMP-2 | 脚本 | `data_snapshot.py restore` 连续两次后 26 张表 `CHECKSUM TABLE` 与 `AUTO_INCREMENT` 都等于记录值 | PRE-2 |
 | V-21 | AC-15、AC-18、KPI-2 | 脚本 | `schema_snapshot.py` 在 SP-1 前后采集，差异行数 0；`./mvnw -B test -Dtest=SchemaGuardTest` 通过；仓库无 `schema.sql`/Flyway/Liquibase | G2 + 验收 |
 | V-22 | AC-8、AC-9（Java 侧细项） | 单测 + 端到端 | `AdminTemplateActions` 测试：扩展名 `htm` 允许、`jte` 拒绝；`LEGACY_FILTER` 命中拒绝；版本冲突提示；向导生成的 `vod` 片段经 `PhpTemplateRenderer` 渲染成功（W-09） | G2 + AC-8 |
-| V-23 | AC-11、SEC-8（OP-T5） | 单测 + MySQL 集成 + 对照 | `SqlStatementsTest`：五类结构语句、注释/版本注释全拒且分类器在执行前返回；OP-T5 a：`SELECT … INTO OUTFILE`、`INTO DUMPFILE`、`LOAD_FILE(` 同样在执行前整批拒绝；OP-T5 b：这三类判为 `SELECT` 放行，`DatabaseToolMySqlIT` 以 `it_app` 执行后页面显示 MySQL 的拒绝错误（无 `FILE` 权限），与 PHP 同库输出一致；`DatabaseToolMySqlIT`：以 `it_app` 执行优化/修复各 1 张表（`general_log` 中只有这两条），四条 DML 成功，还原含 `DROP/CREATE` 的备份后数据还原、表仍在；前后 SNAP 差异 0 | G2 + 验收 |
+| V-23 | AC-11、SEC-8（DBT-2 ⑤） | 单测 + MySQL 集成 + 对照 | `SqlStatementsTest`（C-74）：①五类结构语句、注释/版本注释全拒，分类器在执行前返回；②大小写与空白变体（`select`/`SeLeCt`、前导换行与制表符、`--` 与 `#` 行注释、`/* */` 夹在关键字之间）分类结果正确；③文件读写语句 `SELECT … INTO OUTFILE`、`into/**/outfile`、`INTO  DUMPFILE`、`LOAD_FILE (`、`load_file(` 一律在执行前整批拒绝（无条件）；④`{pre}` 被替换为表前缀；⑤拒绝提示与日志不含 SQL 原文（SUG-1）。`DatabaseToolMySqlIT`（C-74）：以 `it_app` 执行优化/修复各 1 张表（`general_log` 中只有这两条），四条 DML 成功，结构语句与文件读写语句提交后 `general_log` 中该批 0 条；还原含 `DROP/CREATE` 的备份后数据还原、表仍在；前后 SNAP 差异 0 | G2 + 验收 |
+| V-31 | DBT-5（REV-7） | 单测 + MySQL 集成 | `DatabaseRunsTest`（单测，测试侧 `DataSource` 包装注入故障）：①DBT-2 三条语句第 2 条返回服务端非连接错误（单行语句）→ `FAILED`、已执行 1、第 3 条未发送、回填文本为第 2～3 条；第 2 条抛 SQLState `08S01` → `UNKNOWN`、第 3 条未发送、无任何补偿语句；第 2 条是多行 `UPDATE` 出错 → `UNKNOWN`；②互斥：记录为 `RUNNING`/`FAILED`/`UNKNOWN` 或 `backup.lock` 存在时，DBT-2、DBT-3、导出都被拒、0 条语句；`acknowledge` 后放行；应用重启后读到 `RUNNING` 按 `UNKNOWN` 显示；日志行字段齐全且不含 SQL 原文与数据值。`DatabaseToolMySqlIT`（一次性库 `maccms_it_*`）：③**中途失败与恢复**：备份含表 A、B、C，B 的第 3 条 `INSERT` 构造主键冲突 → A 已还原、B 为部分插入、C 未动，记录 `FAILED`/`UNKNOWN` 指向 B，页面提示条显示自动备份文件名；随后用该自动备份执行还原 → A、B、C 的 `CHECKSUM TABLE` 与还原开始前相同；④**重复还原幂等**：同一份正确备份连续还原两次，26 张表 `CHECKSUM TABLE` 两次相同；⑤**站点未关闭**：`site_status=1` 时还原被拒，`general_log` 中无 `DELETE`/`INSERT`；⑥**并发**：测试侧在 A 表 `DELETE` 之后暂停执行线程，期间第二个管理员会话提交还原、执行 SQL、导出均被拒（提示“已有数据库操作在执行…”），恢复执行后第一个还原正常完成；⑦**连接中断**：在 B 表执行期间由 `it_admin` `KILL` 应用连接 → 记录 `UNKNOWN`，`general_log` 中断点之后无该运行的语句（不补偿、不重试） | G2 |
+| V-32 | REV-8（`SiteHtmlRenderer` 调用方迁移、DEC-11） | 检索 + 单测 + 接口用例 | ①S3-15 合入前：`git grep -n 'SiteHtmlRenderer\|CONTENT_SECURITY_POLICY\|PlayerFramePolicy\|memberPolicy' -- src/main src/test` 无结果，`git grep -n 'new MediaType("text", "html"' -- src/main/java/com/maccms/backend/site` 只剩 `SiteRequests`；②`SitePageResponsesTest`：头部为 `Content-Type: text/html;charset=UTF-8`、`Content-Length`、`Cache-Control`、`X-Content-Type-Options: nosniff`，`varyUserAgent` 时有 `Vary: User-Agent`，无 `Content-Security-Policy`；③`SiteTestRoutes` 的 `/boom-large`：响应为完整 500 页，不含 `SYNTHETIC-PARTIAL-CHUNK`，状态码不是 200；④`SearchThrottleTest`：第 1 页过快 → HTTP 200、`public/jump` 页面、消息为 `lang('search_frequently')+timespan+lang('seconds')`、无 `Retry-After`，第 2 页不计时；⑤计数接口：非 ajax 的 POST `hits/digg/score` 返回与 PHP 同请求相同的 JSON（PRE-2 基线）；⑥播放页样本（V-19 子集）在真实浏览器中 `public/jump` 倒计时跳转与播放器脚本可执行（S3-14c、S3-14a 人工核对一次，截图附交付说明） | G2 |
 | V-24 | BR-4（六项安全修复） | 回归 | 各批次已有的安全修复用例（`MemberAccountService` 登录/注册/注销/改密、`TimmingAccess`、`ClientIpResolver`、`AdminLoginService` 相关测试类）在全部 S3 合入后仍通过 | G2 |
 | V-25 | AC-12 | MySQL 集成 + 验收 | `InstallSqlFileTest` + `InstallWizardMySqlIT`：常量等于 `48dbe0fbd138f670919208d8bcc0ffe28d09b507c527d2a6a1a8f7b77ffa3aa4`，也等于 `git show a57e9cb:php/application/install/sql/install.sql \| sha256sum` 与工作区文件的 SHA-256（C-67 生效后，Windows `autocrlf=true` 检出也一致），文件不含 `\r`；空库执行后 SNAP 等于附表 A 基线；已有 26 表的库提示“已存在数据表”且无 DDL；1 字节差异的文件、整文件改为 CRLF 的文件（SHA-256 `152e5424…`）都提示“文件哈希不一致”、`mac_` 表 0 张；`it_app` DDL 数 0 | G2 + 验收 |
 | V-26 | AC-13 | 集成测试（本机模拟） | `OutboundPolicy.LOOPBACK_ONLY` 下，五项各对本机模拟资源站/存储执行，结果与 PHP 对同一模拟数据一致；`OutboundNetworkGuardTest`、`RegisteredOutboundClientTest` 通过；抓包或连接日志无本机以外地址 | G2 + 验收 |
 | V-27 | AC-14、AC-19 | 人工核对 | `parity-*.md` 379 行无“未判定”；`gap-register.md` 无非终态 GAP- | 本期完成检查 |
 | V-28 | AC-16 | 人工核对 | 评审每个 S3 子任务的“读写的表与字段”按附表 D 四步判定，无越界；`WriteRegistry` 新增登记与附表 D 一致 | G2（后端评审） |
-| V-29 | AC-17 | 人工核对 | 每个子任务派单前与收尾时，单内引用的 OP-/OP-T 均已关闭；S3-13b、S3-13c、S3-19 单内写明 OP-T5 所选答案，S3-14c 写明 OP-T4 所选答案，并附关闭该 OP 的 Issue 评论；实现与用例只含所选那一列 | 派单前 + 每单收尾 |
+| V-29 | AC-17 | 人工核对 | 每个子任务派单前与收尾时，单内引用的 OP-/OP-T 均已关闭；S3-13b、S3-13c 单内写明 OP-T5（SEC-7）所选答案，S3-14c 写明 OP-T4 所选答案，并附关闭该 OP 的 Issue 评论；实现与用例只含所选那一列 | 派单前 + 每单收尾 |
 | V-30 | AC-5（`ajax/pwd`）、ALIGN-4、SEC-9（OP-T4） | 接口用例 + 对照 | 两种答案都要：1001（缺参）、1002（本会话已通过后再验）、1003（同一会话 5 秒内第二次，含第一次被拒的情况）、1012/1013/1014/1022（密码错）、1（通过）与 PHP 同请求序列的 JSON 逐字节相同。OP-T4 a：每次换新会话、对同一内容在 60 秒内第 11 次请求得到 1003 且不查库（`general_log` 无该内容的 `SELECT`），HTTP 200；OP-T4 b：同一序列每次都与 PHP 相同，仓库无 `PasswordAttempts` | G2 + 对照 |
 
 构建验证命令（`MULTICA.md` §3）：开发中 `./mvnw -B test -Dtest=<类名>`；交付前 `./mvnw -B verify`；MySQL 集成 `./mvnw -B verify -Pmysql-it`（`MACCMS_IT_ADMIN_URL`/`_USERNAME`/`_PASSWORD`）；打包 `./mvnw -B -q package -DskipTests`。
+
+运维日志字段（v6，SUG-2）：模板资源拒绝（C-43）记 `DEBUG` 一行 `asset_denied reason=<FileException 原因>`，不写请求路径原文；模板编译/执行不支持写法（`TemplateUnsupportedException`）记 `ERROR`，字段 `template`（站点根相对路径）、`line`、`kind`，不写变量值；安装哈希不一致记 `WARN`，字段 `expected`、`actual`、`bytes`；出站护栏拒绝沿用 `OutboundHttpClient` 现有日志；数据库工具见 DBT-5 ⑥。部署方按 `ERROR` 级别告警。
 
 回归点（v3 增补）：后台（B12～B15）全部现有测试；`InternalPageRendererTest`（改为 PHP 模板后的静态生成）；`PlayerConfigController` 输出；`Provide`、`Receive` 接口不受影响（不经模板）；会员登录态与验证码；`SiteVariantsTest`、`SiteTemplateSelectionGoldenTest`。
 
@@ -804,17 +877,19 @@ SEC-7～SEC-9 不属于 OP-9 已确认的六项，是本设计提出、待发起
 | 步骤 | 回退方式 | 顺序 |
 | --- | --- | --- |
 | S3-06～S3-12（`phptemplate` 模块） | `git revert` 各提交；模块未被 `site` 使用前回退无可见影响 | 先回退依赖它的 S3-14 |
-| S3-13a、S3-14（内置视图、页面接入，按 PG 组） | 每组一个提交，`git revert` 该组即恢复该组 jte 页面与测试（jte 文件在同一提交里删除，回退即恢复） | 按组倒序；S3-15 之后须先回退 S3-15 |
-| S3-15（jte 与 D4 删除） | `git revert`，恢复 `sitetemplate`、插件 execution、依赖 | 最先回退 |
+| S3-13a、S3-14（内置视图、页面接入，按 PG 组） | 每组一个提交，`git revert` 该组即恢复该组 jte 页面与测试（jte 文件在同一提交里删除，回退即恢复）；该组迁出的 `SiteHtmlRenderer` 调用方（§6.8 迁移表）随之恢复为注入渲染器——S3-15 之前 `SiteHtmlRenderer` 仍在，所以可编译 | 按组倒序；S3-15 之后须先回退 S3-15；S3-14a 含共享边界 C-70，须在 b～g 全部回退之后才能回退 |
+| C-70～C-72（`SitePageResponses`、`JumpPages`、三个漏列调用方与测试） | 随所属 PG 组提交回退（迁移表“子任务”列）；不单独回退，避免出现既不用渲染器、也没有共享边界的中间状态 | 同上 |
+| S3-15（jte 与 D4 删除） | `git revert`，恢复 `sitetemplate`、`SiteHtmlRenderer`、`PlayerFramePolicy`、`SiteConfiguration` 中的渲染器装配与 `SiteConfigurationTest` 的 Bean 断言、插件 execution、依赖 | 最先回退 |
 | S3-16～S3-18 | `git revert`；模板管理回到 jte 版（依赖 `sitetemplate`，所以 S3-15 已合入时须先回退 S3-15） | S3-15 之后 |
-| S3-19（数据库工具） | `git revert` 即恢复“四项拒绝” | 独立 |
-| OP-T4 / OP-T5 的答案事后改变 | 只改 C-44（静态资源放行范围）与 C-43（`Content-Type` 补充三行）、C-53（SEC-8 一条规则）、C-68（`PasswordAttempts` 一个调用点），单独提交，可单独 `git revert`；不涉及数据 | 独立 |
+| S3-19a/b（数据库工具） | `git revert` 即恢复“四项拒绝”（先回退 b 再回退 a）；站点根下残留的 `dbtool-run.json` 与自动备份文件不影响旧代码（旧代码不读它们，备份列表只认 `Ymd-His-*.sql*`，自动备份按同名规则仍可被 B15 列出、删除） | 独立 |
+| OP-T4 / OP-T5 的答案事后改变 | 只改 C-44（静态资源放行范围）与 C-43（`Content-Type` 补充三行）、C-68（`PasswordAttempts` 一个调用点），单独提交，可单独 `git revert`；不涉及数据 | 独立 |
+| DEC-11（前台不发 CSP）若事后要求恢复 | 只改 C-70 `SitePageResponses` 一处（加方案 B 的策略常量），不涉及模板与数据 | 独立 |
 | S3-20（安装） | `git revert` 即恢复“只读校验” | 独立 |
 | S3-21（在线功能） | `git revert`；`IntegrationPackages` 登记随之撤销 | 独立 |
 | 数据 | 本期不改结构；新增写入只是 DML（`*_time_make`、`mac_annex`、还原的 `DELETE/INSERT`），代码回退后不需反向迁移 | — |
 | 配置 | 新配置项都有默认值，删除配置即回到默认；`compare.reset-file` 生产不设 | — |
 
-**不可逆项**：数据库工具“还原备份”（DBT-3）与“执行 SQL”（DBT-2）会改数据，属于功能本身的语义（与 PHP 相同），由管理员操作；代码回退不恢复已改数据，单列 RISK-T13。
+**不可逆项**：数据库工具“还原备份”（DBT-3）与“执行 SQL”（DBT-2）会改数据，属于功能本身的语义（与 PHP 相同），由管理员操作；代码回退不恢复已改数据，单列 RISK-T13。可逆替代（v6，DBT-5）：DBT-3 每次执行前自动导出将被还原的表，失败或要撤销时用该备份按 DBT-5 ⑦ 还原，数据回到还原开始前；DBT-2 没有自动备份，页面要求先导出相关表，回退靠管理员事先导出的备份。两者中途失败都不自动补偿，状态与恢复步骤见 DBT-5 ③⑥⑦。
 
 ## 10. 风险与待决
 
@@ -837,7 +912,9 @@ SEC-7～SEC-9 不属于 OP-9 已确认的六项，是本设计提出、待发起
 | RISK-T10 | PHP 7.3 值语义（弱比较、浮点字符串化、`json_encode`）复刻不全 | 解释器、函数 | C-33 黄金向量（PHP 7.3.33 生成），V-11、V-15；规则只以黄金为准 | 低 |
 | RISK-T11 | 数据库行值类型（RT-6）与 PHP 不同，导致 `{if}` 分支或数字输出不同 | 标签模型 | RT 黄金在 PRE-2 库上由 PHP 导出每列的 `gettype`，`TagModels` 按表转换，V-16 对比 | 低 |
 | RISK-T12 | 34 个 jte 页面测试改写工作量大、回归面大（PRD RISK-7） | S3-14 | 按 PG 组随页面切换一起改，AC-5 对照覆盖后再删；每组一个可回退提交 | 中：工期 |
-| RISK-T13 | 数据库还原/执行 SQL 改数据不可随代码回退 | 管理员操作 | 与 PHP 同语义；页面沿用 PHP 的确认步骤；验收只在一次性库 | 功能固有 |
+| RISK-T13 | 数据库还原/执行 SQL 改数据不可随代码回退；MyISAM 下中途失败留下部分结果 | 管理员操作；SQL 错误、连接中断、并发写入 | DBT-5：整批预检、逐条状态与失败分类、运行记录互斥与提示条、还原前自动备份、站点关闭前置、人工恢复步骤；验收只在一次性库（V-31） | DBT-2 无自动备份，靠管理员先导出；“结果不确定”须人工核对 |
+| RISK-T18 | 前台不再发 CSP（DEC-11），失去对 XSS 的纵深防护 | S3-14 起各 PG 组 | 与 PHP 一致；模板变量的转义按 PHP 模板原样（BR-11）；保留 `nosniff`；恢复只改 C-70 一处（§9） | 中：若评审/发起人要求保留，另开 OP-T6 选方案 B |
+| RISK-T19 | 还原期间其他管理员或定时任务写入被还原的表 | DBT-3 执行中 | 站点关闭前置（DBT-5 ② d）挡住前台；工具内互斥挡住其他数据库操作；确认步骤提示停定时任务与其他编辑；失败按 DBT-5 ⑦ 恢复 | 低：运维约定，未加全局锁 |
 | RISK-T14 | 在线采集、远程存储的真实对接未验证（Q6 无外部沙箱） | 上线后 | 只用本机模拟验收（OP-5）；PRD RISK-9 已登记 | 发起人已接受 |
 | RISK-T15 | 渲染性能：解释执行比预编译 jte 慢 | 高流量 | 编译产物缓存为语法树（不重复解析）；Q11 只记录指标、不设门槛；PHP 同样是解释执行 | 记录指标 |
 | RISK-T17 | `install.sql` 在 Windows `core.autocrlf=true` 工作区被检出为 CRLF，SHA-256 与常量不符，安装向导拒绝执行（v3 的 `152e5424…` 就是这样算错的） | 在 Windows 上 clone 后直接运行或打包站点根 | C-67 `text eol=lf`；INS-1 常量按 blob 计算；C-57 断言文件不含 `\r`；V-25 覆盖 CRLF 拒绝 | 已有 Windows 工作区在 C-67 合入后须删掉该文件再 `git checkout -- php/application/install/sql/install.sql` 一次（S3-20 交付说明写明） |
@@ -850,8 +927,8 @@ SEC-7～SEC-9 不属于 OP-9 已确认的六项，是本设计提出、待发起
 | OP-T1 | `/template/**` 静态资源由谁提供 | **v3 已决**：Java 带白名单提供（DEC-8、§4.8、§6.10），nginx 可选直出同一目录 | 否 | — | — |
 | OP-T2 | 应用层缓存隔离（V9-001） | **v3 已决**：CACHE-1～CACHE-4 + ENV-9 | 否 | — | — |
 | OP-T3 | `php/vendor/` 恢复、PHP 侧会话时区 | **v3 已决**：SNAPD-4、SNAPD-5 | 否 | — | — |
-| OP-T4 | 观看密码在 PHP 已有的“按会话 5 秒一次”限制（`Ajax.php:416-418`，1003）之外，是否再保留 Java 的按内容/全站限流 `PasswordAttempts`（SEC-9）。PHP 的 5 秒限制换一个会话就能绕过；`PasswordAttempts` 能限住换会话的爆破，代价是同一内容被大量试错时其他访客 60 秒内也会收到 1003 | **待发起人确认**。a（设计建议）：保留，超限返回 PHP 已有的 1003，按 SEC-9 记为已确认的安全差异；b：删除 `PasswordAttempts`，只保留 PHP 的 5 秒限制，与 PHP 完全相同（C-68）。两种答案下 ALIGN-4 ①～④⑥ 都按 PHP 恢复 | **是**：阻塞 S3-14c 的派单与合入；不阻塞其他子任务 | 发起人（经调度） | S3-14c 派单前 |
-| OP-T5 | SEC-7（`/template/**` 不返回 `.html`/`.ini` 等模板源码与配置）、SEC-8（执行 SQL 拒绝 `INTO OUTFILE/DUMPFILE`、`LOAD_FILE`）是六项安全修复之外的安全收紧，与“PHP 怎么做 Java 就怎么做”不同 | **待发起人确认**。a（设计建议）：接受两项收紧，按 SEC-7、SEC-8 记为已确认的安全差异，相关地址与语句不进页面比较样本；b：改回 PHP，`/template/**` 按文件原样返回（`.php` 除外），执行 SQL 不加文件读写规则（§6.10、§6.13 的 b 列；改动只在 C-43、C-44、C-53）。两项一起答；若要分开答，按 SEC-7、SEC-8 各自选 a/b，设计两列互不依赖 | **是**：阻塞 S3-13b、S3-13c、S3-19 的派单与合入；不阻塞其他子任务（S3-13a 内置视图不受影响） | 发起人（经调度） | S3-13b、S3-19 派单前 |
+| OP-T4 | 观看密码在 PHP 已有的“按会话 5 秒一次”限制（`Ajax.php:416-418`，1003）之外，是否再保留 Java 的按内容/全站限流 `PasswordAttempts`（SEC-9）。PHP 的 5 秒限制换一个会话就能绕过；`PasswordAttempts` 能限住换会话的爆破，代价是同一内容被大量试错时其他访客 60 秒内也会收到 1003 | **待发起人确认（截至 v6 未关闭，REV-5）**。a（设计建议）：保留，超限返回 PHP 已有的 1003，按 SEC-9 记为已确认的安全差异；b：删除 `PasswordAttempts`，只保留 PHP 的 5 秒限制，与 PHP 完全相同（C-68）。两种答案下 ALIGN-4 ①～④⑥ 都按 PHP 恢复 | **是**：阻塞 S3-14c 的派单与合入；不阻塞其他子任务 | 发起人（经调度） | S3-14c 派单前 |
+| OP-T5 | SEC-7（`/template/**` 不返回 `.html`/`.ini` 等模板源码与配置）是六项安全修复之外的安全收紧，与“PHP 怎么做 Java 就怎么做”不同。**v6 范围缩小**：v5 把 SEC-8（执行 SQL 拒绝 `INTO OUTFILE/DUMPFILE`、`LOAD_FILE`）也列在这里，并写“PHP 照常执行”，这与 PHP 源码不符——`Database.php:251-262` 对含 `outfile`/`dumpfile`/`load_file` 的语句同样不执行，所以 SEC-8 不是选择题，v6 改为与 PHP 一致的无条件行为（DBT-2 ⑤），不再需要发起人回答 | **待发起人确认（截至 v6 未关闭，REV-6）**。a（设计建议）：接受 SEC-7，按已确认的安全差异记录，相关地址不进页面比较样本；b：改回 PHP，`/template/**` 按文件原样返回（`.php` 除外）（§6.10 的 b 列；改动只在 C-43、C-44）。此前请发起人回复的原文中“OP-T5 a：接受 SEC-7/SEC-8 安全收紧”仍可用，其中 SEC-8 部分已无选择意义 | **是**：阻塞 S3-13b、S3-13c 的派单与合入；v6 起不阻塞 S3-19a/b；不阻塞其他子任务（S3-13a 内置视图不受影响） | 发起人（经调度） | S3-13b 派单前 |
 
 ## 11. 需求追溯
 
@@ -878,20 +955,20 @@ SEC-7～SEC-9 不属于 OP-9 已确认的六项，是本设计提出、待发起
 | FR-2 / AC-2 / PRE-5 | §4.6 方案 C；TPL-1～11；RT-1～8 | C-17～C-23、C-33、C-34、C-65 | V-11、V-12、V-13 |
 | FR-3 / AC-3 / BR-5 | §6.6；TAGMAP-1～19；CACHE-1 | C-22、C-28、C-29、C-34 | V-12、V-16 |
 | FR-4 / AC-4 | §6.7；RT-7；`label_maccms` | C-27、C-30、C-36 | V-15、V-19 |
-| FR-5 / AC-5 / AC-6 / AC-20 / BR-12 | §6.8 PG-1～7、ALIGN-1～5；F-D1～F-D3 由 `mac_tpl_fetch` 与 PG-6/PG-7 实现 | C-36～C-40、C-43、C-44、C-46、C-68 | V-10、V-19、V-30 |
+| FR-5 / AC-5 / AC-6 / AC-20 / BR-12 | §6.8 PG-1～7、ALIGN-1～5；F-D1～F-D3 由 `mac_tpl_fetch` 与 PG-6/PG-7 实现 | C-36～C-40、C-43、C-44、C-46、C-68、C-70～C-72 | V-10、V-19、V-30、V-32 |
 | FR-6 / AC-7 / BR-6 | §6.2、§6.12；ENV-6/7 | C-45、C-50、C-51 | V-6 |
 | FR-7 / AC-8 / AC-9 | §6.1、§6.11 | C-47～C-49 | V-7、V-22 |
 | FR-8 / AC-10 / KPI-5 | §6.8 手机；PATH-1～4 手机列；`LegacyLang` | C-12～C-16、C-24、C-37 | V-4、V-5、V-17、V-19 |
-| FR-9 / AC-11 | DBT-1～DBT-4；DBT-2 的 SEC-8 按 OP-T5 | C-53～C-55 | V-23 |
+| FR-9 / AC-11 | DBT-1～DBT-5（v6：SEC-8 按 PHP 无条件；失败、并发、恢复契约 DBT-5；§4.12 DEC-12） | C-53～C-55、C-73、C-74 | V-23、V-31 |
 | FR-10 / AC-12 / RISK-15 | INS-1～INS-4（常量 `48dbe0fb…`）；§4.10；RISK-T17 | C-56、C-57、C-67、C-69 | V-25 |
 | FR-11 / AC-13 | NET-1～NET-6 | C-58～C-61 | V-26 |
 | FR-12 / AC-14 / AC-19 / BR-9 | §6.16（判定口径，测试人员执行） | `docs/test/APPK-2/parity-*.md`、`gap-register.md`（测试产物） | V-27 |
 | FR-13 / AC-15 / AC-18 / BR-1 / BR-10 | §6.19；不新增结构；SchemaGuard 登记例外仅 AC-11 所需 | C-55、C-66 | V-21 |
 | AC-16 | §6.19；新增写入先登记、按附表 D 判定 | C-29、C-51、C-54、C-59 | V-28 |
-| AC-17 | 每个 S3 子任务引用的 OP-T 在派单前已关闭：OP-T4 → S3-14c；OP-T5 → S3-13b、S3-13c、S3-19；未关闭不派单、不合入（§7.4 条件门禁） | — | V-29 |
+| AC-17 | 每个 S3 子任务引用的 OP-T 在派单前已关闭：OP-T4 → S3-14c；OP-T5（v6 起只含 SEC-7）→ S3-13b、S3-13c；未关闭不派单、不合入（§7.4 条件门禁）。截至 v6 两项都未关闭 | — | V-29 |
 | BR-2 | 配置只经 `LegacyConfigService`/`VarExportWriter` 写；密码 md5 不加盐不变 | 不改 | V-24 |
 | BR-3 | 以 PHP 7.3.33 输出为准；编译与值语义以黄金为准 | C-33 | V-11～V-13、V-19 |
-| BR-4 / OP-9 | §6.17 SEC-1～6 不改；ALIGN 只改呈现；SEC-7～9 是待确认的条件差异，不计入六项 | — | V-24；SEC-7～9 见 V-18、V-23、V-30 |
+| BR-4 / OP-9 | §6.17 SEC-1～6 不改；ALIGN 只改呈现；SEC-7、SEC-9 是待确认的条件差异，不计入六项；SEC-8 与 PHP 一致；前台不发 CSP（DEC-11）不属于六项 | — | V-24；SEC-7、SEC-9 见 V-18、V-30；SEC-8 见 V-23 |
 | BR-6 | 模板、静态页、广告写文件经 `LegacySiteFiles` 原子写 | C-47、C-50 | V-6、V-7 |
 | BR-7 | 对照执行器按附表 F | C-64 | V-19 |
 | BR-8 | OP-15、OP-16 已关闭（Issue 记录） | — | — |
@@ -918,15 +995,17 @@ SEC-7～SEC-9 不属于 OP-9 已确认的六项，是本设计提出、待发起
 | 与 PRD 无矛盾 | 有一处需评审确认：PHPB-9 写“两侧各写其对应值”，本设计取“两侧取值相同”（ENV-4），这是“各写其值”的特例，且是同时满足“13 个文件 SHA-256 相同”的唯一做法 | 附表 F.1 PHPB-9 |
 | 完整设计：分层与依赖方向 | 是 | `phptemplate` 按 `api(无)→application→infrastructure` 分层，`runtime`/`engine` 不访问数据库；`site` 只经 `phptemplate.application`，符合 `02-agent-development-rules.md` 第 2 节“只能调用对方 application 层公开服务”；护栏同步（C-35） |
 | 完整设计：复用而非重写 | 是 | 取数复用 `ContentReadService`/`VideoLegacyConditions`/`LegacyTagAttributes`/`LegacyRange`/`LegacyRowReadService`/`CommentService`；URL 复用 `LegacyUrlBuilder`/`ImageUrlNormalizer`；语言复用 `LegacyLang`；文件复用 `LegacySiteFiles`；出站复用 `OutboundHttpClient`；模板选择复用 `SiteTemplateSelection` |
-| 完整设计：被改公共符号的调用方 | 是 | `SiteHtmlRenderer` 的调用方 = §1.3 的 13 个控制器 + `SiteExceptionHandler` + `SiteVerifyGate`（全部在 C-37/C-38 内）；`SiteTemplateService` 调用方 = `SiteConfiguration`、`AdminTemplateActions`、`AdminConfiguration`、`AdminPages`、`TemplateWizard`（C-40～C-42、C-47～C-49 覆盖；`AdminPages` 的欢迎页提示随 C-40 改为读模板目录是否存在）；`DatabaseToolService.REFUSED` 只在 `AdminDatabaseActions`；`InstallSchema` 调用方 `InstallWizard`、`InstallWizardMySqlIT` |
+| 完整设计：被改公共符号的调用方 | 是（v6 补全） | `SiteHtmlRenderer`：`git grep -n "SiteHtmlRenderer" a57e9cb -- src/main src/test` 的 main 21 个文件、test 7 个文件逐个列在 §1.3，处理与子任务在 §6.8 迁移表（v5 只核对了 `src/main/java` 的页面控制器，漏掉 `SearchThrottle`、`SiteCounterActions`、`PlaybackPages`、`SiteMemberFinance:525` 的静态常量、`SitePaymentController:104` 的静态常量，以及 7 个测试文件，REV-8）；`HTML_UTF8` 的四处定义收敛为 `SiteRequests.HTML_UTF8`；`PlayerFramePolicy` 调用方 `PlaybackPages`、`SiteMemberBoards`、`SiteMemberFinance`、`SitePlaybackController`、`SiteUserController`、`PlaybackPrimitivesTest` 都在 C-37/C-40/C-71 内；`SiteTemplateService` 调用方 = `SiteConfiguration`、`AdminTemplateActions`、`AdminConfiguration`、`AdminPages`、`TemplateWizard`（C-40～C-42、C-47～C-49 覆盖；`AdminPages` 的欢迎页提示随 C-40 改为读模板目录是否存在）；`DatabaseToolService.REFUSED` 只在 `AdminDatabaseActions`；`InstallSchema` 调用方 `InstallWizard`、`InstallWizardMySqlIT` |
 | 完整设计：无新依赖 | 是 | 解释器、正则、签名、FTP 都用 JDK；删除在线编辑用的 `gg.jte:jte` 编译器依赖（C-41） |
 | 完整设计：无结构变更 | 是 | §6.19；DDL 只出现在 DBT-1（表维护，OP-6 已确认）与 INS-2 ④（原版 `install.sql`，OP-7 唯一例外）；`SchemaGuardTest` 登记例外只增 AC-11 所需（C-55） |
 | 完整设计：安全 | 是 | 注入：DBT-2 先分类后执行、表名来自白名单；路径穿越：`/template/**` 与模板管理都经 `LegacySiteFiles` 规范化；任意代码执行：解释器 RT-1 子集不含 `eval`/`include`/反射，函数白名单分派；拒绝服务：RT-8 上限；凭据：只经环境变量与部署配置文件，日志不写；出站：NET-6 登记 + 护栏测试；鉴权：后台沿用 `admin_auth`，安全修复不动（§6.17） |
 | 完整设计：可测试 | 是 | 编译与值语义有 PHP 黄金（C-33）；标签有 MySQL 集成测试；页面有 PHP 对照（附表 F）；解释器纯 JDK，可单测 |
-| 完整设计：可回滚 | 是 | §9 v3 表，每个子任务一个可 `revert` 的提交 |
+| 完整设计：可回滚 | 是 | §9 v3 表，每个子任务一个可 `revert` 的提交；数据层：DBT-3 有还原前自动备份，DBT-2 要求先导出（DBT-5） |
+| 完整设计：失败与并发边界（v6） | 是 | 数据库工具按 MyISAM 无事务的事实写了预检、逐条状态、失败分类（同 12 文档第 4.3 节）、互斥、站点关闭前置、重试规则、审计日志与提示条、人工恢复步骤（DBT-5），并有中途失败、恢复、幂等、并发、连接中断的验证（V-31） |
+| 完整设计：PHP 行为描述有源码出处（v6） | 是（v6 修正） | v5 写 OP-T5 b“SEC-8 这类 SELECT 照常发给数据库”不成立：`Database.php:251-262` 不执行含 `outfile`/`dumpfile`/`load_file` 的语句；v6 改为无条件不执行，SEC-8 移出 OP-T5，S3-19 不再受门禁 |
 | 完整设计：常量与哈希按 blob 计算 | 是（v4 修正） | `INSTALL_SQL_SHA256` 按 `git show a57e9cb:php/application/install/sql/install.sql \| sha256sum` = `48dbe0fb…`；v3 的 `152e5424…` 是 `autocrlf` 工作区文件（CRLF）的哈希，已更正并加 C-67、RISK-T17 |
 | 完整设计：PHP 行为描述有源码出处 | 是（v4 修正） | v3 写“PHP 没有观看密码频率限制”不成立：`Ajax.php:416-418` 有按会话 5 秒限制；v4 把它列为 ALIGN-4 ③（按 PHP 恢复），OP-T4 只问是否在其之外保留 `PasswordAttempts` |
-| 与 PRD 无矛盾（完整设计） | 有两项待发起人确认，已列 OP-T4、OP-T5，各自阻塞 S3-14c、S3-13b/S3-13c/S3-19 的派单与合入（§7.4 条件门禁），其余子任务不受影响；ALIGN-1～5 是按“PHP 为准”把 Java 现有差异改回 PHP，不改范围 | §6.8、§10 |
+| 与 PRD 无矛盾（完整设计） | 有两项待发起人确认，已列 OP-T4、OP-T5（v6 起只含 SEC-7），各自阻塞 S3-14c、S3-13b/S3-13c 的派单与合入（§7.4 条件门禁），其余子任务不受影响；ALIGN-1～7 是按“PHP 为准”把 Java 现有差异改回 PHP，不改范围；DBT-5 在 OP-6“只还原数据”之上增加可恢复性保护，不改变成功路径的数据结果，其中“还原前站点须关闭”是新增前置条件（PHP 没有），FR-9 不做页面对照，由 T-FR12 按 DBT-5 判定；前台不发 CSP（DEC-11）与 PHP 一致 | §6.8、§6.13、§10 |
 
 ## 13. 评审回应
 
@@ -958,6 +1037,17 @@ S1 完整设计独立复核（智能调度，对象 v4 `9f6782d20fddb21f2d69a949
 | （同步）S3-10 依赖与 C-44 拆分 | 已修改 | v4 把 C-44 放在不受门禁的 S3-10，而 C-44 的放行范围取决于 OP-T5；同一行的 `readInstallSql` 又属于安装向导（S3-20 没列 C-44）。v5 把 `readInstallSql` 拆成 C-69 归 S3-20；C-44 移出 S3-10；S3-13 拆成 S3-13a（内置视图 C-39，不受门禁）、S3-13b（C-44，后端，受 OP-T5 门禁）、S3-13c（C-43，前端，受 OP-T5 门禁）；S3-14 只依赖 S3-13a；C-42 不再注册 C-43（C-43 自带 `@ConditionalOnSiteEnabled`），所以 S3-15 也不依赖 OP-T5。这同时修正了 v4 §7.4 的矛盾：v4 写“S3-14c 之外的 PG 组不受影响”，但 S3-14 依赖 S3-13 | §5.2 C-69；§6.14 INS-1；§7.4；§9；§10 OP-T5；§11 FR-5、FR-10、AC-17；§12 |
 | （同步）V-18 与 OP-T5 相关描述 | 已修改 | V-18 增加单测 `LegacySiteFilesTemplateAssetTest`：两种答案都测符号链接出 `template/`（目录链接和文件链接）、最终文件是符号链接、`.php`/`.PHP`、目录本身、不存在的文件不建目录；a/b 各测 `html/…/index.html`、`info.ini`、`css/x.txt`。评审另核 C-43 不含子目录或扩展名判断。V-29、§10 OP-T5、§11 AC-17、§12 的子任务编号改为 S3-13b、S3-13c；§9 回滚行加上 C-44 | §8.2 V-18、V-29；§9；§10；§11；§12 |
 
+G1 架构评审第 1 轮（@架构评审-海外，对象 v5 `f44b73920b40756cf84766dbac9dee1dfb8103d1`，评论 `01a194a2-ff37-7e6c-8079-028acd934e57`；调度接受驳回，评论 `01a194a4-798d-7a9c-8942-30fff4fb58c4`）：
+
+| REV- | 处理 | 说明 | 修改位置 |
+| --- | --- | --- | --- |
+| REV-5 OP-T4 未关闭 | **待发起人决定，本版无法关闭** | 截至 v6 提交，Issue 中没有发起人对 OP-T4 的确认评论。设计不能代发起人选择；a/b 两列与 S3-14c 门禁保持 v5 原样，§10 标注“截至 v6 未关闭”。发起人确认后出 v7：§10 记关闭评论，从 ALIGN-4 ⑤、C-68、V-30、§7.4 中删除未选列 | §10 OP-T4；§11 AC-17 |
+| REV-6 OP-T5 未关闭 | **部分处理；SEC-7 待发起人决定** | 修订时核对 PHP 源码发现 v5 的 SEC-8 前提错误：`Database.php:251-262` 对含 `outfile`/`dumpfile`/`load_file` 的语句同样不执行，SEC-8 不是安全收紧。v6 把它改为与 PHP 一致的无条件行为（DBT-2 ⑤、§6.17、V-23），从 OP-T5 移出；C-53 不再有 a/b 列，S3-19 不再受 OP-T5 门禁。OP-T5 只剩 SEC-7（C-43/C-44、V-18、S3-13b/c），仍待发起人确认；确认后出 v7，只保留所选列 | §6.13 DBT-2；§6.16；§6.17；§7.4；§8.2 V-23、V-29；§9；§10 OP-T5；§11；§12 |
+| REV-7 DBT-2/DBT-3 失败、并发、恢复 | 已修改 | 新增 §4.12 方案对比（DEC-12）与 §6.13 DBT-5 契约：①事务能力（25 张 MyISAM + `mac_vod_search` InnoDB，均不开事务，无整批原子性）；②整批预检（分卷齐全、可解压、分类、白名单、站点已关闭），不通过则 0 条语句；③逐条执行、第一处失败即停、不补偿，按 12 文档第 4.3 节分 `FAILED`/`UNKNOWN`，DBT-3 逐表记录；还原前自动导出涉及的表；④运行记录文件兼作互斥（与 `backup.lock` 互认），还原要求站点关闭，其他管理员与定时任务按运维约定；⑤重试规则（DBT-2 回填剩余语句、DBT-3 整体幂等重跑）；⑥审计：运行记录 + 提示条 + “我已处理” + 结构化日志（不含 SQL 原文）；⑦管理员恢复步骤。新增 C-73、C-74，C-53/C-54 扩充；V-31 覆盖中途失败、用自动备份恢复、重复还原幂等、站点未关闭、并发互斥、连接中断；S3-19 拆为 a/b；§9 不可逆项给出可逆替代；RISK-T13 更新、新增 RISK-T19 | §1.3；§4.12；§5.2 C-53、C-54、C-73、C-74；§6.3；§6.13；§7.4；§8.2 V-31；§9；§10；§11 FR-9；§12 |
+| REV-8 `SiteHtmlRenderer` 调用方遗漏 | 已修改 | 按基线 `git grep` 补全 main 21 个、test 7 个文件（§1.3），§6.8 新增逐文件迁移表（处理方式 + 子任务）。共享边界：新增 `SitePageResponses`（唯一的 HTML 响应构造处）与 `JumpPages`（PHP `error/success` 的唯一入口），`Content-Type` 常量收敛为 `SiteRequests.HTML_UTF8`；CSP 按 §4.11 方案 C（DEC-11）不再发送（同 PHP，严格 CSP 会挡住模板与内置视图的脚本），删除 `CONTENT_SECURITY_POLICY`、`memberPolicy`、`PlayerFramePolicy`。`SearchThrottle` 改注入 `JumpPages`，过快时按 PHP 返回 200 跳转页（ALIGN-6）；`SiteCounterActions` 删渲染器依赖，非 ajax 按 PHP（ALIGN-7）；`PlaybackPages` 删 CSP 引用，授权判定不改；`SiteTestRoutes` 改用新边界并保留“半页失败 → 完整 500 页”的断言；5 个 CSP 断言与 `SiteConfigurationTest` 改写。新增 C-70～C-72，改 C-37、C-38、C-40、C-42；V-32；§7.4 各组子任务、§9 回滚顺序（S3-14a 的共享边界最后回退，S3-15 最先）；RISK-T18 | §1.3；§3.2；§4.11；§5.2；§6.3；§6.8；§7.4；§8.2 V-32；§9；§10；§11；§12 |
+| SUG-1 分类器绕过与日志 | 已采纳 | V-23 ②③⑤ 增加大小写、注释/空白变体、`OUTFILE`/`DUMPFILE`/`LOAD_FILE` 词法变体，拒绝原因不回显 SQL | §8.2 V-23 |
+| SUG-2 结构化日志 | 已采纳 | §8.2 增“运维日志字段”：模板资源拒绝、编译 500、安装哈希不一致、出站拒绝、数据库工具 | §8.2；§6.13 DBT-5 ⑥ |
+
 ## 14. 修订记录
 
 | 日期 | 版本 | 作者 | 变更摘要 | 对应 REV- |
@@ -967,3 +1057,4 @@ S1 完整设计独立复核（智能调度，对象 v4 `9f6782d20fddb21f2d69a949
 | 2026-11-01 | v3 | @架构师-海外 | 完整技术设计：§1.3/1.4 现状与目标；§3.2 影响面；§4.6～4.10 方案对比（兼容层、模块、静态资源、缓存、安装账号）；C-17～C-66；§6.3～6.20（DEC-7～10、TPL-、RT-、PG-、ALIGN-、DB-、INS-、NET-、SEC-、CACHE-、SNAPD-）；ENV-9/10；§7.4 子任务拆分；V-10～V-29；RISK-T9～T16；关闭 OP-T1～T3，新增 OP-T4、OP-T5 | — |
 | 2026-11-01 | v4 | @架构师-海外 | INS-1 常量改为 blob 哈希 `48dbe0fb…`，新增 C-67、RISK-T17；OP-T4/OP-T5 改为阻塞对应子任务的条件项，§6.8/§6.10/§6.13 写 a/b 两列，新增 SEC-9、C-68、V-30 与 §7.4 条件门禁；更正“PHP 没有观看密码频率限制”，ALIGN-4 按 PHP 恢复按会话 5 秒限制 | REV-3-001、REV-3-002 |
 | 2026-11-01 | v5 | @架构师-海外 | C-44 `readTemplateAsset` 改为“共同约束 + 按 OP-T5 所选列放行”，放行规则只在 C-44；`readInstallSql` 拆为 C-69 归 S3-20；S3-13 拆成 a/b/c，只有 b、c 受 OP-T5 门禁，S3-14/S3-15 不再间接依赖 OP-T5；C-42 不再注册 C-43；§6.3 新增 `readTemplateAsset` 接口；V-18 增加单测部分；V-29、§9、§10、§11、§12 同步 | REV-4-001 |
+| 2026-11-01 | v6 | @架构师-海外 | 数据库工具失败/并发/恢复契约 DBT-5（§4.12 DEC-12、§6.13、C-73、C-74、V-31，S3-19 拆 a/b）；`SiteHtmlRenderer` 全部调用方迁移表与新共享边界 `SitePageResponses`/`JumpPages`、前台不发 CSP（§4.11 DEC-11、§6.8 ALIGN-6/7、C-70～C-72、V-32、RISK-T18）；按 PHP 源码更正 SEC-8 为无条件行为、移出 OP-T5，S3-19 不再受门禁；OP-T4、OP-T5（SEC-7）仍待发起人确认；SUG-1、SUG-2 采纳 | REV-5（未关闭）、REV-6（部分）、REV-7、REV-8 |
