@@ -64,7 +64,7 @@
             "compiled_sha1": "86c9626dc27cdbc6a7ec0dcda80646a87ffb0961",
             "compiled_bytes": 10182,
             "php_chunks": 101,
-            "model_calls": 0,
+            "model_calls": 2,
             "info_data_calls": 2
         },
         {

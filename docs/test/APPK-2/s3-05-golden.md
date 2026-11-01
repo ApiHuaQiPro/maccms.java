@@ -59,17 +59,17 @@ $PHP src/test/php/tpl_runtime_golden.php --model-calls art-infodata \
 PRE-5 记录的 80 处时间来源里 79 处是 DATA-1，但 `infoData` 的返回值取决于 MySQL 实际返回哪一行
 （PHP 不给 `ORDER BY`，见 INFO-2），只有真跑才知道。
 
-只允许**一次性库**，用完即删：
+只允许**一次性库**，用完即删。库名由你临时生成，账号口令**只从已登记的环境变量读取**，本文件不写任何
+账号或口令值（下面用 `<管理员账号>`、`<管理员口令>` 这种无值占位表示“你自己在环境里填”）：
 
 ```bash
 DBN=maccms_it_s305_$(date +%s)
-mysql -u root -p -e "CREATE DATABASE \`$DBN\` DEFAULT CHARACTER SET utf8mb4;"
-mysql -u root -p --default-character-set=utf8 "$DBN" < php/application/install/sql/install.sql
-mysql -u root -p --default-character-set=utf8 "$DBN" < src/test/resources/phptemplate/model-fixtures/art-infodata.sql
+mysql -u "$MACCMS_IT_ADMIN_USERNAME" -p -e "CREATE DATABASE \`$DBN\` DEFAULT CHARACTER SET utf8mb4;"
+mysql -u "$MACCMS_IT_ADMIN_USERNAME" -p --default-character-set=utf8 "$DBN" < php/application/install/sql/install.sql
+mysql -u "$MACCMS_IT_ADMIN_USERNAME" -p --default-character-set=utf8 "$DBN" < src/test/resources/phptemplate/model-fixtures/art-infodata.sql
 
-export MACCMS_IT_ADMIN_URL="mysql://root:root@127.0.0.1:3306/$DBN"
-export MACCMS_IT_ADMIN_USERNAME=root
-export MACCMS_IT_ADMIN_PASSWORD=root
+# MACCMS_IT_ADMIN_URL / MACCMS_IT_ADMIN_USERNAME / MACCMS_IT_ADMIN_PASSWORD 由本机环境提供，值不入库
+export MACCMS_IT_ADMIN_URL="mysql://<管理员账号>:<管理员口令>@<主机>:<端口>/$DBN"
 export GOLDEN_DB_NAME="$DBN"
 
 $PHP src/test/php/tpl_runtime_golden.php --model-calls art-infodata \
@@ -77,7 +77,7 @@ $PHP src/test/php/tpl_runtime_golden.php --model-calls art-infodata \
      --out src/test/resources/phptemplate \
      --explain-out src/test/resources/phptemplate/model-golden/art-infodata.explain.txt
 
-mysql -u root -p -e "DROP DATABASE \`$DBN\`;"
+mysql -u "$MACCMS_IT_ADMIN_USERNAME" -p -e "DROP DATABASE \`$DBN\`;"
 ```
 
 脚本自身有护栏，不满足就**报 BLOCKED 并退出（状态码 4）**，不写任何文件：
@@ -86,7 +86,9 @@ mysql -u root -p -e "DROP DATABASE \`$DBN\`;"
 - `GOLDEN_DB_NAME` 不是 `maccms_it_*` 形状；
 - `MACCMS_IT_ADMIN_URL` 里不含 `maccms_it_`。
 
-**绝不指向 `maccms_dev` 或任何共享库。** 库名、账号只在环境变量里，不写进脚本、黄金、文档或提交信息。
+**绝不指向 `maccms_dev` 或任何共享库。** 库名、账号、口令只在环境变量里给出实际值，
+不写进脚本、黄金、夹具、文档或提交信息；本文件只引用变量名（`MACCMS_IT_ADMIN_URL`、
+`MACCMS_IT_ADMIN_USERNAME`、`MACCMS_IT_ADMIN_PASSWORD`、`GOLDEN_DB_NAME`）和 `<…>` 无值占位。
 
 ## 4. 夹具 ART-FIX 的形状（`art-infodata.sql`）
 
@@ -114,6 +116,7 @@ mysql -u root -p -e "DROP DATABASE \`$DBN\`;"
 | C-33 ② / RT-2～RT-6：值语义 | `semantics/php73-vectors.json`：`rt2_array_keys`(10)、`rt2_array_order`(5)、`rt3_stringify`(22)、`rt3_json`(15)、`rt4_compare`(21)、`rt4_in_array`(6)、`rt5_undefined`(5)、`rt5_str_index`(6)、`rt5_str_index_bytes`(4)、`fn_mac_day`(44)、`fn_date`(24)、`fn_list`(58)、`fn_url_list`(10)、`fn_internal`(14) |
 | C-33 ③ / V-13 R-1：808 字节切片、五情形 | `render-golden/art-detail-prevnext-{a,b,c,d,e}.html` + `art-detail-prevnext.json` |
 | R-1 ② 调用实参 | `art-detail-prevnext.json` 的 `calls`：恰好 2 次，先 `lt` 后 `gt`，模型 `Art`，`field='*'`，`cache=1` |
+| C-33 ① / V-12 模型调用计数：桌面页 2 次 `model(`、2 次 `infoData` | `compile-golden/default_pc/html/art/detail.html`（`manifest.json` 记 `model_calls:2`、`info_data_calls:2`） |
 | V-13 R-2：手机页 0 次 `model(`/`infoData` | `compile-golden/default_wap/html/art/detail.html`（`manifest.json` 记 `model_calls:0`、`info_data_calls:0`） |
 | C-33 ④ / V-16 IA-1～IA-5 | `model-golden/ia{1,2,3,4,5a,5b}.zdump.txt` + `art-infodata.json` |
 | V-16 IA-8 ②：两侧 EXPLAIN 一致 | `model-golden/art-infodata.explain.txt`（含 `SELECT VERSION()`） |
@@ -139,7 +142,9 @@ Java 侧若按“未定义标识符”报错，这一页就会 500。这条差�
   `label/rank.html` 原件本身带 BOM，编译产物必须原样保留这三个字节，否则两侧会差 3 字节）；
 - `render-golden` 五份齐全；
 - `compile-golden` 恰好 168 个 `.html`，`manifest.json` 记 168；
-- R-2 的手机编译产物不含 `model(`、`infoData`；桌面编译产物恰好 2 次 `->infoData(`；
+- `manifest.json` 的 `model_calls` / `info_data_calls` 与编译产物逐项一致（生成器正则修正后重新生成，见 §6.2）；
+- R-2 的手机编译产物不含 `model(`、`infoData`，`manifest.json` 记 `model_calls:0`、`info_data_calls:0`；
+- 桌面编译产物恰好 2 次 `->infoData(`、2 次 `model(`，`manifest.json` 记 `model_calls:2`、`info_data_calls:2`；
 - GAP-1 的两处样例在位；
 - IA-1/IA-2 是 1002 分支，IA-4 的 `type`/`type_1` 为 `null`，`info` 的键**恰为**
   `art_id, type_id, art_name, art_en, art_time, type, type_1`（D1-FLD-1 再 D1-FLD-2）；
@@ -172,6 +177,34 @@ Java 侧若按“未定义标识符”报错，这一页就会 500。这条差�
 **实测（PHP 7.3.33）**：在两个不同的检出目录、三个不同的工作目录各跑一次 `--semantics`，
 四份输出的 SHA-256 全部为 `b76c85c9590137e52a9aa30d5a7f842d05502d8c036d3907884a0c662e49cf6b`，与提交中的
 `semantics/php73-vectors.json` 逐字节一致。
+
+### 6.2 编译黄金的模型调用计数（测试评审第 1 轮修改项 1 修复）
+
+`manifest.json` 的 `model_calls` 原先是 0，与桌面编译产物里实际存在的 2 次 `model(` 矛盾。
+根因是生成器的正则字面量里混入了一个 **U+0008 控制字符**（原写法 `'/\bmode l\s*\(/'` 的首字符被写成
+0x08），它不是单词边界 `\b`，所以一次都匹配不到。现在改为显式否定型零宽断言：
+
+```php
+'model_calls' => preg_match_all('/(?<![A-Za-z0-9_$])model\s*\(/', $compiled),
+```
+
+即“`model` 前面不是标识符字符或 `$`”，等价于单词边界但不会在 `$model(` 这类写法上漏判。
+`info_data_calls` 的正则本来就是 `infoData\s*\(`，未改动。
+
+**重新生成与核对（PHP 7.3.33，从模板包放行提交 `200cffc` 的 `git archive` 目录取包）**：
+
+```bash
+$PHP src/test/php/tpl_runtime_golden.php --compile --package "$PKG" --out src/test/resources/phptemplate
+```
+
+- 168 个编译产物、6032 个 PHP chunk，与修复前的黄金**逐字节相同**（只有 `manifest.json` 的一处计数变了）；
+- 桌面 `default_pc/html/art/detail.html`：`source_sha1` `293b8549…`、`compiled_sha1` `86c9626d…`，
+  `model_calls:2`、`info_data_calls:2`（该文件实际含 2 次 `model('art')`）；
+- 手机 `default_wap/html/art/detail.html`：`source_sha1` `7f356e1d…`、`compiled_sha1` `99405bf0…`，
+  `model_calls:0`、`info_data_calls:0`；
+- 其余 166 个文件的两个计数均为 0，且与各自编译产物按同一正则实测的计数逐项相等；
+- `PhpTemplateGoldenAssetsTest` 的 `编译黄金覆盖全部168个模板且记录两个关键样例的调用数` 对上述四个数做精确断言，
+  并对 `manifest.json` 的全部 168 条记录做“清单计数 = 编译产物实测计数”的一致性断言。
 
 ## 7. 尚未交付 / 未验证
 

@@ -19,7 +19,9 @@ import tools.jackson.databind.json.JsonMapper;
  * <ol>
  *   <li>黄金文件齐全、可读、为 UTF-8 + LF，且没有任何 BOM 或 CR，保证逐字节比较在两台机器上都成立；</li>
  *   <li>样本本身没漂移——特别是 V-13 R-1 规定的 808 字节 / {@code a615d09d…} 切片，以及 168 个模板的数量；</li>
- *   <li>GAP-1 的两个 {@code mac_day(...,color)} 裸标识符样例确实在覆盖范围内（编译产物与值语义向量各一处）。</li>
+ *   <li>GAP-1 的两个 {@code mac_day(...,color)} 裸标识符样例确实在覆盖范围内（编译产物与值语义向量各一处）；</li>
+ *   <li>{@code compile-golden/manifest.json} 记录的 {@code model_calls} / {@code info_data_calls} 与编译产物实测值
+ *       逐项相等（测试评审第 1 轮修改项 1：旧生成器正则里混入 U+0008，导致桌面详情页被记成 0 次）。</li>
  * </ol>
  *
  * <p>黄金由 {@code src/test/php/tpl_runtime_golden.php}（PHP 7.3.33）生成，生成命令与逐项依据见
@@ -163,6 +165,120 @@ class PhpTemplateGoldenAssetsTest {
         String pcCompiled = Files.readString(pc, StandardCharsets.UTF_8);
         assertThat(countOf(pcCompiled, "->infoData(")).as("桌面文章详情页的 infoData 调用次数").isEqualTo(2);
         assertThat(pcCompiled).contains("'lt'").contains("'gt'");
+    }
+
+    @Test
+    void 编译黄金manifest的模型调用计数与编译产物逐项一致() throws IOException {
+        // 测试评审第 1 轮修改项 1：manifest 的 model_calls 曾因生成器正则里混入 U+0008 控制字符而恒为 0，
+        // 与桌面编译产物实际的 2 次 model( 矛盾。这里逐项把 manifest 的计数和编译产物实测计数对上，
+        // 任一文件不一致就失败，避免再出现“清单说 0、产物里有 2 次”的自相矛盾证据。
+        Path dir = GOLDEN_ROOT.resolve("compile-golden");
+        JsonNode root = JsonMapper.builder().build()
+                .readTree(Files.readString(dir.resolve("manifest.json"), StandardCharsets.UTF_8));
+        JsonNode files = root.path("files");
+        assertThat(files.isArray()).as("manifest.json 的 files 数组").isTrue();
+        assertThat(files.size()).as("manifest 记录的文件数（PRE-5 的 %d 个模板）", TEMPLATE_COUNT)
+                .isEqualTo(TEMPLATE_COUNT);
+        assertThat(root.path("_meta").path("file_count").asInt()).as("manifest._meta.file_count")
+                .isEqualTo(TEMPLATE_COUNT);
+
+        List<String> bad = new ArrayList<>();
+        int modelTotal = 0;
+        int infoTotal = 0;
+        for (JsonNode f : files) {
+            String rel = f.path("path").asText();
+            Path compiled = dir.resolve(rel);
+            if (!Files.isRegularFile(compiled)) {
+                bad.add(rel + ": 编译产物缺失");
+                continue;
+            }
+            String text = Files.readString(compiled, StandardCharsets.UTF_8);
+            int model = countModelCalls(text);
+            int infoData = countInfoDataCalls(text);
+            modelTotal += model;
+            infoTotal += infoData;
+            int gotModel = f.path("model_calls").asInt(-1);
+            int gotInfo = f.path("info_data_calls").asInt(-1);
+            if (gotModel != model) {
+                bad.add(rel + ": manifest model_calls=" + gotModel + "，编译产物实测 " + model);
+            }
+            if (gotInfo != infoData) {
+                bad.add(rel + ": manifest info_data_calls=" + gotInfo + "，编译产物实测 " + infoData);
+            }
+        }
+        assertThat(bad).as("manifest 的 model_calls / info_data_calls 必须与编译产物实测计数逐项相等")
+                .isEmpty();
+        // 全量口径：整个模板包只在这两处产生模型调用，且 desktop 一处占满
+        assertThat(modelTotal).as("168 个编译产物的 model( 总次数").isEqualTo(2);
+        assertThat(infoTotal).as("168 个编译产物的 infoData( 总次数").isEqualTo(2);
+    }
+
+    @Test
+    void 文章详情页的模型调用计数在PC与WAP上恰好是2和0() throws IOException {
+        // C-33 ① / V-12 与 V-13 R-1、R-2 的交叉证据：桌面详情页必须记 2 次 model( + 2 次 infoData，
+        // 手机详情页必须都是 0。四个数写在断言里，不允许只写单边。
+        Path dir = GOLDEN_ROOT.resolve("compile-golden");
+        JsonNode root = JsonMapper.builder().build()
+                .readTree(Files.readString(dir.resolve("manifest.json"), StandardCharsets.UTF_8));
+
+        assertCounts(dir, root, "default_pc/html/art/detail.html", 2, 2);
+        assertCounts(dir, root, "default_wap/html/art/detail.html", 0, 0);
+    }
+
+    /** 对一个 manifest 条目做四重断言：manifest 计数、编译产物实测计数、以及两者各自的两个期望值。 */
+    private static void assertCounts(Path dir, JsonNode root, String rel, int model, int infoData)
+            throws IOException {
+        JsonNode entry = null;
+        for (JsonNode f : root.path("files")) {
+            if (rel.equals(f.path("path").asText())) {
+                entry = f;
+                break;
+            }
+        }
+        assertThat(entry).as("manifest 里必须有 %s", rel).isNotNull();
+        String text = Files.readString(dir.resolve(rel), StandardCharsets.UTF_8);
+        assertThat(entry.path("model_calls").asInt()).as("%s 的 manifest model_calls", rel).isEqualTo(model);
+        assertThat(entry.path("info_data_calls").asInt()).as("%s 的 manifest info_data_calls", rel)
+                .isEqualTo(infoData);
+        assertThat(countModelCalls(text)).as("%s 编译产物实测 model( 次数", rel).isEqualTo(model);
+        assertThat(countInfoDataCalls(text)).as("%s 编译产物实测 infoData( 次数", rel).isEqualTo(infoData);
+    }
+
+    /** 与生成器 `--compile` 的 model_calls 正则同一口径：`model` 前不是标识符字符或 `$`。 */
+    private static int countModelCalls(String text) {
+        return countMatches(text, "model(", true);
+    }
+
+    /** 与生成器 `--compile` 的 info_data_calls 正则同一口径：`infoData` 前不是标识符字符或 `$`。 */
+    private static int countInfoDataCalls(String text) {
+        return countMatches(text, "infoData(", true);
+    }
+
+    /** 匹配 {@code <name>(}，前面可选地要求“不是标识符字符”。 */
+    private static int countMatches(String text, String token, boolean requireBoundary) {
+        String head = token.substring(0, token.length() - 1);
+        int n = 0;
+        int i = 0;
+        while ((i = text.indexOf(token, i)) >= 0) {
+            boolean ok = true;
+            if (requireBoundary && i > 0) {
+                char prev = text.charAt(i - 1);
+                ok = !(Character.isLetterOrDigit(prev) || prev == '_' || prev == '$');
+            }
+            // `model (` 这种带空白的写法：生成器的正则是 `model\s*\(`，这里补上同一容忍
+            if (ok && head.length() > 0) {
+                int j = i + head.length();
+                while (j < text.length() && Character.isWhitespace(text.charAt(j))) {
+                    j++;
+                }
+                ok = j < text.length() && text.charAt(j) == '(';
+            }
+            if (ok) {
+                n++;
+            }
+            i += token.length();
+        }
+        return n;
     }
 
     // ------------------------------------------------------------------ GAP-1

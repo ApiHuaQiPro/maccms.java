@@ -629,10 +629,14 @@ if ($opts['cmd'] === 'compile') {
 
         $dst = $outDir . '/' . $rel;
         writeText($dst, $compiled, false);
+        // 计数口径：`model` / `infoData` 前面不是标识符字符或 `$`，后面允许空白再接 `(`。
+        // 旧写法想用单词边界，但正则字面量里混进了 U+0008 控制字符，导致总是 0；
+        // 这里用显式否定型零宽断言，等价于单词边界但不会在 `$model(` 上漏判。
+        // 同一个口径在 Java 侧 PhpTemplateGoldenAssetsTest 里逐项复核。
         $manifest[] = ['path' => $rel, 'source_sha1' => sha1($raw), 'source_bytes' => strlen($raw),
             'compiled_sha1' => sha1($compiled), 'compiled_bytes' => strlen($compiled),
             'php_chunks' => preg_match_all('/<\?php|<\?=/', $compiled),
-            'model_calls' => preg_match_all('/model\s*\(/', $compiled),
+            'model_calls' => preg_match_all('/(?<![A-Za-z0-9_$])model\s*\(/', $compiled),
             'info_data_calls' => preg_match_all('/infoData\s*\(/', $compiled)];
         $chunks += $manifest[count($manifest) - 1]['php_chunks'];
         @unlink($cacheFile);
