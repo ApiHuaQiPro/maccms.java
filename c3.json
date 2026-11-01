@@ -1,0 +1,311 @@
+[
+  {
+    "author_id": "fc9235d2-e00c-400c-98f7-f90b6a065bce",
+    "author_type": "member",
+    "content": "q6暂不提供q7待定10  11是什么",
+    "created_at": "2026-10-31T02:16:57-07:00",
+    "id": "01a1913f-739f-7277-baf3-2fa921a4e50a",
+    "revision": 1,
+    "type": "comment"
+  },
+  {
+    "author_id": "fc9235d2-e00c-400c-98f7-f90b6a065bce",
+    "author_type": "member",
+    "content": "[**当前任务 · APPK-2**](http://localhost:3000/app-kaifa/issues/01a18e13-3405-796d-84b6-aa0e2a8b13d7)",
+    "created_at": "2026-10-31T16:47:25-07:00",
+    "id": "01a1945c-6410-7541-8c5d-eecbf7d3d56c",
+    "parent_id": "01a1913f-739f-7277-baf3-2fa921a4e50a",
+    "revision": 1,
+    "type": "comment"
+  },
+  {
+    "author_id": "dfa610b3-4132-45c3-9cec-4c851d795ab5",
+    "author_type": "agent",
+    "content": "这条评论只有任务页面链接，不能作为范围确认。请登记确认人整条回复只保留下面这行，不要加链接、代码块、标点或其他说明：\n\n确认范围 APPK-2 v9 8fa362c2\n\n在收到逐字匹配的确认前，G0 范围门禁、完整设计和开发派工继续暂停。",
+    "created_at": "2026-10-31T16:47:46-07:00",
+    "id": "01a1945c-b7ee-7efd-8428-94d9ea81a13e",
+    "parent_id": "01a1945c-6410-7541-8c5d-eecbf7d3d56c",
+    "revision": 1,
+    "type": "comment"
+  },
+  {
+    "author_id": "fc9235d2-e00c-400c-98f7-f90b6a065bce",
+    "author_type": "member",
+    "content": "确认范围 [APPK-2](mention://issue/01a18e13-3405-796d-84b6-aa0e2a8b13d7) v9 8fa362c2",
+    "created_at": "2026-10-31T16:50:34-07:00",
+    "id": "01a1945f-4598-7b5f-b46d-e5faf16acdb0",
+    "parent_id": "01a1913f-739f-7277-baf3-2fa921a4e50a",
+    "revision": 1,
+    "type": "comment"
+  },
+  {
+    "author_id": "dfa610b3-4132-45c3-9cec-4c851d795ab5",
+    "author_type": "agent",
+    "content": "需要你决定：范围确认仍未通过核验。回复中仍包含 Issue 链接，不能视为与请求逐字一致。\n\n请登记确认人重新回复，整条评论只保留下面这一行，不要加链接、代码块、标点或其他说明：\n\n确认范围 APPK-2 v9 8fa362c2\n\n在收到纯文本精确匹配前，G0 范围门禁、完整设计、开发派工和后续实现继续暂停。",
+    "created_at": "2026-10-31T16:50:48-07:00",
+    "id": "01a1945f-7c67-71fe-a881-99c4d4d3e62c",
+    "parent_id": "01a1945f-4598-7b5f-b46d-e5faf16acdb0",
+    "revision": 1,
+    "type": "comment"
+  },
+  {
+    "author_id": "fc9235d2-e00c-400c-98f7-f90b6a065bce",
+    "author_type": "member",
+    "content": "确定范围  当前任务 appk-2 v9 8fa362c2",
+    "created_at": "2026-10-31T16:51:12-07:00",
+    "id": "01a1945f-dc25-7cf1-a18a-8300ad82e26d",
+    "parent_id": "01a1913f-739f-7277-baf3-2fa921a4e50a",
+    "revision": 1,
+    "type": "comment"
+  },
+  {
+    "author_id": "dfa610b3-4132-45c3-9cec-4c851d795ab5",
+    "author_type": "agent",
+    "content": "需要你决定：范围确认仍未通过核验。你这次回复使用了“确定范围 当前任务 appk-2”，与请求的“确认范围 APPK-2”不同，且大小写和空格也不一致。\n\n请登记确认人重新回复，整条评论只保留下面这一行，不要加链接、代码块、标点或其他说明：\n\n确认范围 APPK-2 v9 8fa362c2\n\n在收到逐字匹配的纯文本确认前，G0 范围门禁、完整设计、开发派工和后续实现继续暂停。",
+    "created_at": "2026-10-31T16:51:30-07:00",
+    "id": "01a19460-2226-71d0-bed2-6afa6f041303",
+    "parent_id": "01a1945f-dc25-7cf1-a18a-8300ad82e26d",
+    "revision": 1,
+    "type": "comment"
+  },
+  {
+    "author_id": "dfa610b3-4132-45c3-9cec-4c851d795ab5",
+    "author_type": "agent",
+    "content": "【G0 路由单】PASS｜范围确认已核验，进入评审版流程\n\n确认核验：\n\n- 确认评论：`01a1945f-4598-7b5f-b46d-e5faf16acdb0`。\n- 确认人：登记确认人 `fc9235d2-e00c-400c-98f7-f90b6a065bce`。\n- `confirm_check.mjs` 输出：\n\n```text\nPASS\n还原后的回复：\"确认范围 APPK-2 v9 8fa362c2\"\n请求原文：    \"确认范围 APPK-2 v9 8fa362c2\"\n```\n\n- 时效通过：确认时间晚于范围请求评论；确认后 PRD 分支没有新提交。\n- 需求事实来源：`docs/prd/APPK-2.md` 及附表 A～F @ `8fa362c25b62b52ed5b16afd9eca7f6ccfcafb9f`；产品评审 v9 PASS。\n- 源码基线：`ApiHuaQiPro/maccms.java` `main` @ `a57e9cb2b94d3e500bea7dfe2c579daee093d969`。\n- OP-15 已关闭：`docs/design/APPK-2/tech-design.md` @ `ebd7aa60ae968229997221d3086b45ddb4fa67e1`，独立复核与架构复审 PASS。\n- OP-16 已关闭：确认本期不补官方模板缺失页面，按 PHP 的“模板文件不存在”行为处理。\n\n档位与范围：选择评审版。原因是本期涉及前台模板迁移、架构设计、后台与静态生成、后端和前端行为、安全边界、数据库结构不变约束及 PHP 对照验收，且包含跨模块与设计前置项。数据库结构保持不变；六项安全修复继续有效；Q5-b、Q6、Q7、Q10、Q11 的已确认边界继续有效；OP-T1～T3、V9-001、恢复脚本实现和恢复耗时按 PRD 记录留给后续设计/测试门禁。\n\n在场角色与跳过：\n\n- 产品经理：跳过；PRD v9 已就绪。\n- 产品评审：N/A；随 PRD v9 PASS 记录。\n- 架构师、架构评审：在场；需完成完整技术设计及评审，OP-15 v2 仅作为已关闭的模板路径上游。\n- UI 设计师、设计评审：在场；前台模板迁移和页面行为有 UI 变化。\n- 后端开发、后端评审：在场；涉及 PHP 对齐、后台、静态生成、安装、数据库工具和安全边界。\n- 前端开发、前端评审：在场；涉及前台模板解析、页面、静态资源与手机模板。\n- 测试人员、测试评审：在场；负责 PRE-1～PRE-5、T1/T2/T3 及 PHP 对照验收。\n- 运营打包：在场；负责 deploy 分支、后续流水线/测试环境与发布链路。Q7 已确认本期不做 CI、测试环境部署和发布链路，相关门禁按 N/A/阻断规则记录，不擅自放行。\n\n仓库矩阵：\n\n| 仓库 | 主干基线 | deploy 分支 | 需求/设计引用 |\n| --- | --- | --- | --- |\n| `ApiHuaQiPro/maccms.java` | `main@a57e9cb2b94d3e500bea7dfe2c579daee093d969` | `release/APPK-2-php-template-migration`，当前远端头同为 `a57e9cb2b94d3e500bea7dfe2c579daee093d969` | PRD v9、OP-15 技术设计 |\n\n路由图：\n\n```text\nG0（本单）\n  → S0.5 运营打包核对/确保 deploy 分支存在（本轮先派）\n  → S1 架构设计 ∥ UI 设计\n  → 各自产物由我独立复核 PASS\n  → 架构评审 ∥ 设计评审\n  → G1 完整设计放行\n  → S2 API 契约 ∥ T1 功能用例（有接口变更时）\n  → S3 后端实现 ∥ 前端实现 ∥ 接口用例\n  → G2 两层评审汇合\n  → S4 T2 → G2.5 部署核验 → S6 T3 → G3\n  → S7 发布包/清单 → G4\n```\n\n现在派 S0.5：请 [@运营打包-海外](mention://agent/25073779-f6be-44a3-a03b-cde9015cf5a9) 在上述仓库核对 deploy 分支 `release/APPK-2-php-template-migration`，若不存在则从 `main@a57e9cb2b94d3e500bea7dfe2c579daee093d969` 创建；若已存在则确认其头和血缘符合该基线。不得推送流水线、启动 CI、部署测试环境或发布生产。\n\n完成判据：回传仓库 + deploy 分支 + 核对后的完整提交号；确认分支存在、当前头为基线、没有额外改动，且 `MULTICA.md` 主干人工声明未被分支改动。回传后我独立核验，再派 S1；在此之前不派设计、实现或测试工作。",
+    "created_at": "2026-10-31T17:06:10-07:00",
+    "id": "01a1946d-8fa6-7e07-bb97-cf089646614c",
+    "parent_id": "01a1913f-739f-7277-baf3-2fa921a4e50a",
+    "revision": 1,
+    "type": "comment"
+  },
+  {
+    "author_id": "25073779-f6be-44a3-a03b-cde9015cf5a9",
+    "author_type": "agent",
+    "content": "【S0.5 deploy 分支回执】\n\n- 仓库：`ApiHuaQiPro/maccms.java`\n- deploy 分支：`release/APPK-2-php-template-migration`（已存在，无需新建）\n- 核对后的完整提交号：`a57e9cb2b94d3e500bea7dfe2c579daee093d969`\n\n本人已通过 `git ls-remote`、`git fetch` 及提交/树对象比对复核：\n\n- 远端分支存在，当前头与指定 `main` 基线完全相同，基线是其祖先。\n- 分支与基线的 tree 均为 `9247ba108d19a6317141e9a02ab40995b0412285`，没有额外提交或内容改动。\n- 已读取 `origin/main:MULTICA.md` 的人工声明；deploy 分支与主干在该文件上无差异，§0 未被分支改动。\n\n本轮未推送任何内容，未启动 CI，未部署测试环境，也未发布生产。S0.5 核对结果交回智能调度独立核验；S1 及后续工作等待派发。",
+    "created_at": "2026-10-31T17:08:00-07:00",
+    "id": "01a1946f-3bf8-7755-89ba-956fad53125a",
+    "parent_id": "01a1946d-8fa6-7e07-bb97-cf089646614c",
+    "revision": 1,
+    "type": "comment"
+  },
+  {
+    "author_id": "dfa610b3-4132-45c3-9cec-4c851d795ab5",
+    "author_type": "agent",
+    "content": "【S0.5 核验】PASS\n\n独立核验结果：\n\n- 仓库：`ApiHuaQiPro/maccms.java`。\n- deploy：`release/APPK-2-php-template-migration`。\n- deploy 头：`a57e9cb2b94d3e500bea7dfe2c579daee093d969`。\n- `origin/main` 头：`a57e9cb2b94d3e500bea7dfe2c579daee093d969`。\n- 两个分支 tree：`9247ba108d19a6317141e9a02ab40995b0412285`。\n- deploy 包含 main 基线，且没有额外提交或内容改动。\n- `origin/main:MULTICA.md` 的人工声明与 deploy 分支一致，§0 未被改动。\n- 本轮没有启动 CI、测试环境部署或生产发布。\n\n现在并行派发 S1：\n\n1. 请 [@架构师-海外](mention://agent/9257d279-a014-4617-b4ea-23c5832d6f9d) 基于 PRD `docs/prd/APPK-2.md` 及附表 A～F @ `8fa362c25b62b52ed5b16afd9eca7f6ccfcafb9f`、已通过的 OP-15 技术设计 `docs/design/APPK-2/tech-design.md` @ `ebd7aa60ae968229997221d3086b45ddb4fa67e1`，产出本期完整技术设计。覆盖 FR-1～FR-13 的模块边界、PHP 模板兼容层、Java/PHP 路径语义、后端/前端/静态生成/后台/安装与数据库不变约束、六项安全修复、OP-T1～T3、V9-001、PRE-2/数据恢复和实现顺序。完成判据：回传仓库 + 路径 + 新提交号；文档只在架构 feature 分支，引用本条上游提交；逐条映射 AC-/FR-/BR-/PRE-，列出文件、接口、数据表字段和验证命令，不修改 Java、`php/`、数据库或 deploy 分支。\n\n2. 请 [@UI设计师-海外](mention://agent/0e6aac40-4c17-4f2c-b0dc-6bdef1c4969a) 基于同一 PRD v9、OP-15 技术设计和 deploy 基线，产出本期前台模板迁移相关 UI 设计。覆盖桌面 `default_pc`、手机 `default_wap`、缺失页面按 PHP 模板不存在处理、静态资源 URL、页面状态/错误页、响应式与可访问性边界，并明确哪些现有 jte 页面下线、哪些页面沿用官方模板；不扩展产品范围。完成判据：回传仓库 + 路径 + 新提交号；文档/设计产物只在 UI feature 分支，逐条映射相关 AC-/FR-/BR-，给出页面清单、状态和验收基线，不修改 Java、`php/`、数据库或 deploy 分支。\n\n两份产物都回传后，我会先独立复核；通过后分别派架构评审和设计评审。未完成独立复核前，不派实现、测试或评审工作。",
+    "created_at": "2026-10-31T17:08:45-07:00",
+    "id": "01a1946f-ec1e-74b8-85d9-42e88f3fe85f",
+    "parent_id": "01a1946f-3bf8-7755-89ba-956fad53125a",
+    "revision": 1,
+    "type": "comment"
+  },
+  {
+    "author_id": "0e6aac40-4c17-4f2c-b0dc-6bdef1c4969a",
+    "author_type": "agent",
+    "content": "【S1 UI 设计】APPK-2 v1 已交付\n\n- 仓库：`ApiHuaQiPro/maccms.java`\n- UI feature 分支：`feature/APPK-2-ui-template-migration`\n- 新提交号：`0341f1721ba490800cb503b2b8269b81287d1d12`\n- 目录：`docs/design/APPK-2/`\n- 主文档：`ui-design.md`；DESIGN-ID 映射：`design-map.md`\n- 稿件：`template-migration.html`\n- 三档截图：`shot-390.png`、`shot-768.png`、`shot-1280.png`\n- 自评：`self-review.md`\n\n已覆盖桌面 `default_pc`、手机 `default_wap`、桌面 41/手机 57 个缺页按 PHP“模板文件不存在”处理、静态资源 PATH-2/PATH-4 与 `/html/css/` 反例、六态和交互态、响应式/可访问性边界，以及 `src/main/jte/site/**` 全下线和官方模板沿用清单。页面索引逐项引用 F-001～F-120，映射相关 AC-/FR-/BR-；未扩展 FR-9～FR-13 的非视觉范围。\n\n三档渲染均亲自查看，自动 WCAG AA 对比度检查均为 0 违规；该结论只针对设计说明稿，不冒充官方页面验收。提交只含上述 7 个设计产物，未修改 Java、`php/`、数据库、deploy 分支或架构师文档。",
+    "created_at": "2026-10-31T17:18:21-07:00",
+    "id": "01a19478-b8af-7949-b258-32931b53090c",
+    "parent_id": "01a1946f-ec1e-74b8-85d9-42e88f3fe85f",
+    "revision": 1,
+    "type": "comment"
+  },
+  {
+    "author_id": "dfa610b3-4132-45c3-9cec-4c851d795ab5",
+    "author_type": "agent",
+    "content": "【S1 UI 设计独立复核】FAIL，退回清理后重传\n\n对象：UI 设计 v1 `docs/design/APPK-2/` @ `0341f1721ba490800cb503b2b8269b81287d1d12`。\n\n已核验通过的部分：\n\n- v1 提交本身只新增 7 个设计产物：`ui-design.md`、`design-map.md`、`template-migration.html`、`self-review.md` 和三档 PNG；没有在该提交直接修改 Java、`php/`、数据库或 deploy 分支。\n- 设计内容覆盖桌面/手机模板、41/57 个缺页按 PHP 模板不存在处理、PATH-2/PATH-4 与 `/html/css/` 反例、状态与交互态、JTE 前台下线边界及 F-001～F-120 映射。\n\n阻断项 UI-REV-1：提交父链包含不属于设计交付的运行时依赖目录。\n\n- `0341f1721ba490800cb503b2b8269b81287d1d12` 的父提交为 `92a415fc0b129d9debfb7dc9ff1987376d4bce29`。\n- `92a415fc` 的提交内容为 `.pi/skills/multica-design-ui-impl/node_modules/**`，独立核对共有 478 个 node_modules 文件，含 Playwright/Chromium 运行时文件。\n- 因此该 feature 分支不是从 deploy 基线 `a57e9cb2b94d3e500bea7dfe2c579daee093d969` 直接递增的纯设计交付，无法作为下游评审和后续合入的干净上游。成员回传的“只含 7 个设计产物”只描述 v1 相对其父提交的变更，不能覆盖父链污染。\n\n请 [@UI设计师-海外](mention://agent/0e6aac40-4c17-4f2c-b0dc-6bdef1c4969a) 清理 UI feature 分支提交血缘后回传新的完整提交号。修订完成判据：\n\n1. 新提交从 deploy 基线 `a57e9cb2b94d3e500bea7dfe2c579daee093d969` 直接或以干净设计提交递增；不能包含 `92a415fc` 或任何 `.pi/skills/**/node_modules/**`。\n2. 只保留本次 7 个设计产物及必要的 UI 设计文档，不修改 Java、`php/`、数据库、deploy 分支或架构师文档。\n3. 保持当前已核验的 UI 范围、AC/FR/BR 映射、截图和自评内容；清理后回传仓库、路径和新提交号。\n\n收到新提交后我会从 deploy 基线重新独立核验，再交 [@设计评审-海外](mention://agent/0e1a5140-f2c9-4a2f-9091-27d255cd26fa) 复审。架构师的 S1 技术设计仍按独立依赖推进；UI 设计未复核 PASS 前不派 UI 评审或前端实现。",
+    "created_at": "2026-10-31T17:20:12-07:00",
+    "id": "01a1947a-68b1-7055-a879-df84fea843e0",
+    "parent_id": "01a19478-b8af-7949-b258-32931b53090c",
+    "revision": 1,
+    "type": "comment"
+  },
+  {
+    "author_id": "0e1a5140-f2c9-4a2f-9091-27d255cd26fa",
+    "author_type": "agent",
+    "content": "设计评审：本条没有派评审给我（UI-REV-1 退回 UI 设计师清理提交血缘，独立复核 PASS 前不派 UI 评审），所以这一轮不评审，也不改状态。\n\n等智能调度从 deploy 基线 `a57e9cb2b94d3e500bea7dfe2c579daee093d969` 复核通过、回传干净的新提交号并正式派单后，我再按 multica-design-content 看图自评清单和 multica-review-designer 评审者核查给出 G1 结论。评审时会对清理后的提交重新查看三档截图、自评记录和 DESIGN-ID→AC 映射，v1 `0341f172` 上看到的内容不作为评审依据。",
+    "created_at": "2026-10-31T17:20:54-07:00",
+    "id": "01a1947b-0e12-7da7-85da-ad2bf4ff2d5c",
+    "parent_id": "01a1947a-68b1-7055-a879-df84fea843e0",
+    "revision": 1,
+    "type": "comment"
+  },
+  {
+    "author_id": "0e6aac40-4c17-4f2c-b0dc-6bdef1c4969a",
+    "author_type": "agent",
+    "content": "【UI-REV-1 清理完成，重传干净提交】\n\n- 仓库：`ApiHuaQiPro/maccms.java`\n- UI feature 分支：`feature/APPK-2-ui-template-migration`\n- 新完整提交号：`0910f7b5e12e779ad2b66f70823b16b601533cd2`\n- 路径：`docs/design/APPK-2/`\n- deploy 基线：`a57e9cb2b94d3e500bea7dfe2c579daee093d969`\n\n已从 deploy 基线重建并更新远端 UI feature 分支。新提交直接以 deploy 基线为唯一父提交；不包含 `92a415fc`，新树中 `.pi/skills/**/node_modules/**` 为 0 个文件。\n\n基线 diff 仅新增原 7 个设计产物：`ui-design.md`、`design-map.md`、`template-migration.html`、`self-review.md`、`shot-390.png`、`shot-768.png`、`shot-1280.png`。7 个文件的 blob 已逐一与 `0341f1721ba490800cb503b2b8269b81287d1d12` 比对，内容全部相同；UI 范围、AC/FR/BR 映射、截图和自评均保持不变。\n\n本次未修改 Java、`php/`、数据库、deploy 分支或架构师文档；未合入任何分支。请按新提交从 deploy 基线重新独立复核。",
+    "created_at": "2026-10-31T17:24:16-07:00",
+    "id": "01a1947e-1f9c-73be-8381-5cb8c838b42f",
+    "parent_id": "01a1947a-68b1-7055-a879-df84fea843e0",
+    "revision": 1,
+    "type": "comment"
+  },
+  {
+    "author_id": "00000000-0000-0000-0000-000000000000",
+    "author_type": "system",
+    "content": "Delegated task `01a1947a-68cb-79d2-832f-6ee3308dc83a` ended in a final failure (`local_directory_error`) and no automatic retry is pending. Resume coordination: inspect the failed work, then reassign it, skip it, or end the workflow explicitly. Untrusted error summary (diagnostic only): \"local_directory worktree: refusing to record branch agent/ui/appk-2: the delivered commit 09365d82 no longer contains 27a3f1e8, the commit this turn started from; the task worktree is preserved at C:\\\\Users\\\\Administrator\\\\multica_workspaces_desktop-localhost-8080\\\\app-kaifa-13795ae06128\\\\appk-2-6ee3308dc83a\\\\worktree (listed by `git worktree list` in E:\\\\Ai\\\\maccms.java) — recover the work from there, and let the run keep the commit the worktree started from instead of resetting past it\" Source coordinator task: `01a19478-b8ba-7049-9df6-eaefc89a5a02`.",
+    "created_at": "2026-10-31T17:24:40-07:00",
+    "id": "01a1947e-7fe3-7592-8059-8f5f7ace24de",
+    "parent_id": "01a19478-b8af-7949-b258-32931b53090c",
+    "revision": 1,
+    "type": "progress_update"
+  },
+  {
+    "author_id": "0e6aac40-4c17-4f2c-b0dc-6bdef1c4969a",
+    "author_type": "agent",
+    "content": "local_directory worktree: refusing to record branch agent/ui/appk-2: the delivered commit 09365d82 no longer contains 27a3f1e8, the commit this turn started from; the task worktree is preserved at C:\\Users\\Administrator\\multica_workspaces_desktop-localhost-8080\\app-kaifa-13795ae06128\\appk-2-6ee3308dc83a\\worktree (listed by `git worktree list` in E:\\Ai\\maccms.java) — recover the work from there, and let the run keep the commit the worktree started from instead of resetting past it",
+    "created_at": "2026-10-31T17:24:40-07:00",
+    "id": "01a1947e-7ff3-7c1d-b709-719212e5ae35",
+    "parent_id": "01a1947a-68b1-7055-a879-df84fea843e0",
+    "revision": 1,
+    "type": "system"
+  },
+  {
+    "author_id": "dfa610b3-4132-45c3-9cec-4c851d795ab5",
+    "author_type": "agent",
+    "content": "【S1 UI 设计独立复核】PASS，可交设计评审\n\n对象：`docs/design/APPK-2/` UI v1 @ `0910f7b5e12e779ad2b66f70823b16b601533cd2`。\n\n独立核验结果：\n\n- 提交存在，直接父提交为 deploy 基线 `a57e9cb2b94d3e500bea7dfe2c579daee093d969`，祖先关系通过。\n- 基线 diff 仅新增 7 个设计产物：`ui-design.md`、`design-map.md`、`template-migration.html`、`self-review.md`、`shot-390.png`、`shot-768.png`、`shot-1280.png`。\n- 新提交树中 `.pi/skills/**/node_modules/**` 为 0 个文件；不包含此前污染父链 `92a415fc`；没有 Java、`php/`、数据库、deploy 分支或架构师文档改动。\n- 新提交的 7 个文件 blob 与此前 v1 `0341f1721ba490800cb503b2b8269b81287d1d12` 逐一一致，清理未改变 UI 内容。\n- 文档覆盖官方 `default_pc`/`default_wap`、桌面 41/手机 57 个缺页按 PHP 模板不存在处理、PATH-2/PATH-4 与错误 `/html/css/` 反例、正常/加载/空/错误/禁用/无权限/缺页状态、响应式与可访问性边界、前台 JTE 下线边界；F-001～F-120 与 DESIGN-ID 到 AC-/FR-/BR- 的映射存在。\n- 已查看三档 PNG：`shot-390.png`、`shot-768.png`、`shot-1280.png`。设计稿在三种宽度下保持内容可读，桌面/手机独立呈现、路径正反例、六态、交互态和 JTE 下线说明均可见。`self-review.md` 保留三次截图命令的零对比度违规记录，并明确该证据只针对设计稿，不替代 PHP 页面验收。\n- UI 设计范围未扩展 FR-9～FR-13 的非视觉工作，未把设计稿声明为实现或验收通过。\n\n请 [@设计评审-海外](mention://agent/0e1a5140-f2c9-4a2f-9091-27d255cd26fa) 按 UI 设计规范复审同一提交 `0910f7b5e12e779ad2b66f70823b16b601533cd2`：重新查看三档截图、`self-review.md`、`design-map.md` 和 `ui-design.md`，核对页面范围、缺页处理、路径契约、AC/FR/BR 映射及是否越界。评审结论必须引用该提交号。评审 PASS 前不派前端实现。",
+    "created_at": "2026-10-31T17:26:30-07:00",
+    "id": "01a19480-2cdc-7d87-9ddf-cd0c7230419c",
+    "parent_id": "01a1947e-1f9c-73be-8381-5cb8c838b42f",
+    "revision": 1,
+    "type": "comment"
+  },
+  {
+    "author_id": "9257d279-a014-4617-b4ea-23c5832d6f9d",
+    "author_type": "agent",
+    "content": "【技术设计】APPK-2 v3（S1 完整设计）\n\n- 文件：`docs/design/APPK-2/tech-design.md`\n- 仓库 / 分支：`ApiHuaQiPro/maccms.java` / `feature/APPK-2-arch-tech-design`\n- 提交号：`0dd59f5f72b67e286a93a60c25f19c03f9c91990`（直接父提交是 OP-15 v2 `ebd7aa60ae968229997221d3086b45ddb4fa67e1`，只改这一个文件，远端是快进推送）\n- 基线：deploy `release/APPK-2-php-template-migration` @ `a57e9cb2b94d3e500bea7dfe2c579daee093d969`（未改动）；上游 PRD v9 `8fa362c25b62b52ed5b16afd9eca7f6ccfcafb9f`\n- 上一轮提交号：`ebd7aa60ae968229997221d3086b45ddb4fa67e1`。看改动：`git diff ebd7aa6 0dd59f5 -- docs/design/APPK-2/tech-design.md`\n- 本轮没有改 Java、`php/`、数据库或 deploy 分支。v2 里 OP-15 的部分（DEC-1～6、PATH-1～4、ENV-1～8、C-1～C-16、V-1～V-9）保持原样。\n\n**主要决定**\n1. **PHP 模板兼容层（DEC-7，§4.6）**：不自写语法树，而是在 Java 里按原顺序、原正则移植 ThinkPHP 的编译流程（`Template.php`、`Cx.php`、`Maccms.php`），再用一个 PHP 子集解释器执行。逐字节一致主要靠三条空白规则：合并相邻代码块的正则、PHP 吃掉 `?\u003e` 后面的换行、`include` 按文本替换（TPL-1～11）。Java 的编译产物可以和 PHP `runtime/temp` 里的文件逐字节对比（V-12），差异能定位到具体标签。模板里的 `{php}`/`\u003c?php` 交给同一个解释器执行；子集外的写法报 500，日志写文件名和行号。值语义按 PHP 7.3 处理，用 PHP 7.3.33 生成的黄金数据锁定（RT-1～8）。\n2. **模块（§6.3）**：新建 `phptemplate` 模块（engine/runtime/application/infrastructure）。`site` 只通过 `PhpTemplateRenderer` 渲染；标签取数优先复用 `content`/`comment` 已有的服务。\n3. **页面接入（§6.8）**：按 PG-1～7 分组切换，路由和业务逻辑不动（BR-4）。ALIGN-1～5 把 Java 现有的几处行为改回 PHP 的做法：站点关闭的状态码、未匹配地址的 404 页、跳转/提示页、`ajax/pwd`、`Content-Type`。jte 前台和 D4 在线编辑按组逐批下线（§6.9）。\n4. **后台与其他（§6.11～6.15）**：\n   - 模板管理：扩展名改回 `html/htm/js/xml`，标签向导生成 `{maccms:…}`。\n   - 静态生成：补上 label、RSS 分页，`*_time_make` 扩到 actor/role/website。\n   - 数据库工具四项：先分类再执行；还原改成“`DELETE` 后再 `INSERT`”。\n   - 安装向导：库里没有表、且 `install.sql` 的 SHA-256 等于 `152e5424…` 时才执行；建表账号和运行期账号分开（RISK-15）。\n   - 五项在线功能：新增 `integration.collect`/`image`/`storage` 三个包，登记出站白名单，不加新依赖。\n5. **六项安全修复（§6.17）**：都不改，列为回归点（V-24）。\n6. **技术待决关闭**：\n   - OP-T1：`/template/**` 由 Java 提供，只放行带白名单的静态资源（DEC-8）。\n   - OP-T2 / V9-001：缓存只在 `cache_core`/`cache_page` 开启时生效；对照时每个单元先清缓存，PHP 删 `runtime`，Java 改 flag 文件触发清空（CACHE-1～4、ENV-9）。\n   - OP-T3：会话时区在 PHP 侧通过 `database.php` 的 `params` 设置、Java 侧通过 `sessionVariables` 设置；`vendor` 记录摘要（SNAPD-4、5）。\n7. **实现顺序（§7.4）**：拆成 S3-01～S3-22 和 T-FR12，每单约一次运行，标明端、改动行、依赖和验证行。数据库工具、安装、在线功能、FR-12 阶段 A 可以和模板这条线并行。\n\n**逐条映射**：§11 覆盖 FR-1～13、AC-1～20、BR-1～12、PRE-1～5。改动清单是 C-17～C-66，路径已在基线核实，新增的文件都标了“新增”。验证是 V-10～V-29，写了命令和门禁。\n\n**需要发起人确认（不阻塞开发，已登记期限）**\n- OP-T4：观看密码的频率限制 PHP 里没有。设计建议保留。如果对照样本因此出现差异，需要决定是否把它算作安全收紧。\n- OP-T5：两项不在六项安全修复里的收紧：`/template/**` 不返回 `.html`/`.ini`（SEC-7），执行 SQL 拒绝 `INTO OUTFILE`/`LOAD_FILE`（SEC-8）。两者都不在比较样本里。不接受的话，各改一处就能回到 PHP 行为。\n\n**请评审重点看**：§4.6 方案取舍、§6.4 TPL-3/5/6（空白规则与替换发生的阶段）、§6.8 ALIGN 表、§6.13 DBT-2 分类器、§6.14 INS-2 顺序。\n\n读取：`git show 0dd59f5f72b67e286a93a60c25f19c03f9c91990:docs/design/APPK-2/tech-design.md`\n\n[@智能调度-海外](mention://agent/dfa610b3-4132-45c3-9cec-4c851d795ab5) 请独立复核。复核通过后再交架构评审，评审对象是同一提交。本文档里不写“已通过”。",
+    "created_at": "2026-10-31T17:27:02-07:00",
+    "id": "01a19480-a9e2-7bf7-b4d7-27ee7648ae96",
+    "parent_id": "01a1946f-ec1e-74b8-85d9-42e88f3fe85f",
+    "revision": 1,
+    "type": "comment"
+  },
+  {
+    "author_id": "dfa610b3-4132-45c3-9cec-4c851d795ab5",
+    "author_type": "agent",
+    "content": "失败运行 `01a1947a-68cb-79d2-832f-6ee3308dc83a` 不再重派。\n\n该运行的工作树记录失败，但 UI 设计师已经回传干净提交 `0910f7b5e12e779ad2b66f70823b16b601533cd2`；我已核验其直接父提交为 deploy 基线、仅含 7 个设计产物且不含 node_modules，并登记 UI 独立复核 PASS。当前设计评审已针对同一提交运行中，架构师的 S1 完整技术设计也已回传并进入独立复核队列。\n\n因此本次失败已由可核验的后续提交覆盖，跳过失败运行的自动重派，不重复派 UI 设计；等待现有设计评审和架构设计复核继续推进。",
+    "created_at": "2026-10-31T17:27:33-07:00",
+    "id": "01a19481-214c-7a74-ae48-8cd42f5eb400",
+    "parent_id": "01a1947e-7fe3-7592-8059-8f5f7ace24de",
+    "revision": 1,
+    "type": "comment"
+  },
+  {
+    "author_id": "0e6aac40-4c17-4f2c-b0dc-6bdef1c4969a",
+    "author_type": "agent",
+    "content": "【UI-REV-1 清理完成】干净提交已就绪\n\n- 仓库：`ApiHuaQiPro/maccms.java`\n- UI feature 分支：`feature/APPK-2-ui-template-migration`\n- 当前干净提交：`0910f7b5e12e779ad2b66f70823b16b601533cd2`\n- 路径：`docs/design/APPK-2/`\n- deploy 基线：`a57e9cb2b94d3e500bea7dfe2c579daee093d969`\n\n已核验该提交以 deploy 基线为唯一父提交，不包含 `92a415fc`；树中 `.pi/skills/**/node_modules/**` 为 0 个文件。基线 diff 仅新增原 7 个设计产物，且各文件 blob 与 v1 完全一致，UI 范围、AC/FR/BR 映射、截图和自评内容均未变化；未修改 Java、`php/`、数据库、deploy 分支或架构师文档。\n\n本次任务记录分支另保留了完整起点血缘，交付提交为 `45270213835ee63f6db3c96d9e8da88fc9e2aa87`，其 tree 与上述干净 feature 提交完全一致。请继续以远端 UI feature 分支的 `0910f7b5e12e779ad2b66f70823b16b601533cd2` 从 deploy 基线独立复核。",
+    "created_at": "2026-10-31T17:28:18-07:00",
+    "id": "01a19481-d47c-7a36-8f80-14cca2c17441",
+    "parent_id": "01a1947a-68b1-7055-a879-df84fea843e0",
+    "revision": 1,
+    "type": "comment"
+  },
+  {
+    "author_id": "0e1a5140-f2c9-4a2f-9091-27d255cd26fa",
+    "author_type": "agent",
+    "content": "【G1 设计评审】APPK-2 UI v1｜**PASS**\n\n对象：`ApiHuaQiPro/maccms.java` `docs/design/APPK-2/` UI v1 @ `0910f7b5e12e779ad2b66f70823b16b601533cd2`（分支 `feature/APPK-2-ui-template-migration`，远端分支头与该提交一致）。本次批准只针对这个提交号。\n\n## 前置核查\n\n- 唯一父提交是 deploy 基线 `a57e9cb2`。基线 diff 只新增 7 个设计产物：`ui-design.md`、`design-map.md`、`template-migration.html`、`self-review.md`，以及三档 PNG。\n- 三档截图齐全（390→780×9700、768→1536×6954、1280→2560×5862，均为 2x），与稿件同属这一个提交。我把每张图切段后逐段看过，以下结论都来自截图像素。\n- 映射对照 PRD v9 `8fa362c2`：FR-1～FR-13、AC-1～AC-20、BR-1～BR-12 在 `design-map.md` 里都有着落。FR-9～FR-13、AC-11～AC-19 明确标为不属于本次视觉范围，BR-8/BR-9 归入「BR-6～BR-10 不改变视觉规则」。DESIGN-ID 从 D-01 连续编到 D-13，符合 `D-\u003c两位序号\u003e` 规则。\n\n## 看图自评清单（评审结论）\n\n| # | 清单项 | 结论 | 依据 |\n| --- | --- | --- | --- |\n| 1 | 间距只用 4px 刻度 | ✅ | 三档卡片内边距和网格间距节奏一致。HTML 里唯一的任意值是 `aspect-[3/4]`，它是比例，不是间距 |\n| 2 | 字号阶梯与层级 | ✅ | 1280 页首主标题 → 卡片标题 → 正文 → 辅助说明四级清楚；390 主标题按比例缩小，层级不乱 |\n| 3 | 颜色来自 token，语义正确 | ✅ | config 里定义了 brand/ink/muted/line/surface/danger/warning/success。截图中绿色标正确 URL，红色标错误、缺页和禁止反例，橙色标无权限，蓝色标主信息 |\n| 4 | 六态齐全 | ✅ | 1280 中部的「状态必须保持 PHP 语义」区：正常 D-01/D-02、加载 D-03、空 D-04、错误 D-05、禁用 D-06、无权限 D-07，另加模板缺失 D-11，每态都写明表现和禁止做法 |\n| 5 | 交互态静态变体 | ✅ | D-08 深蓝悬停、D-09 双层可见焦点环、D-10 红框加错误文案，三档都能看到 |\n| 6 | 三档不塌版、无横向滚动 | ✅ | 390 单列，海报 2×2，内容没有被裁切；768 海报 4 列，六态 2 列，交互态 3 列；1280 居中，两侧留白均衡。最长的 URL 在 390 下也没有超出卡片 |\n| 7 | 对比度 0 违规、焦点可见、点击区 ≥ 40px | ✅ | `self-review.md` 记录 390/768/1280 三次运行都是 0 违规且未加 `--no-a11y`；D-09 焦点环清晰；按 2x 像素量，D-06/D-08/D-09 按钮和 D-10 输入框高约 40px |\n| 8 | 真实文案、不泄露敏感信息 | ✅ | 没有 lorem；「示例影片 A～D」「站点名称」都标明是拓扑示意；D-10 统一用「账号或密码错误」，并注明不透露账号是否存在 |\n| 9 | 整体观感 | ✅ | 卡片网格对齐，留白一致，深色页首和底部总结卡把首尾框住，层级清楚 |\n| 10 | DESIGN-ID→AC 映射 | ✅ | 见上方前置核查 |\n\n## 评审者专属核查\n\n- **抽查自评真实性（3 项）**\n  - 「六态齐全」：截图中可找到依据，成立。\n  - 「D-10 统一账号或密码错误」：截图中可找到依据，成立。\n  - 「三档不塌版」：结论成立，但描述有两处与截图不符：390 下的 URL 并没有换行，而是一行放得下；768 下 D-02/D-12 是单列堆叠，不是「两列/三列重排」。不涉及造假，所以不驳回，记为 N-1。\n- **自动对比度**：提交里的记录显示 0 违规，并写明只对设计稿有效。\n- **截图与提交**：截图与稿件是同一个提交，齐全。\n- **无需补静态变体图**：悬停、焦点、校验都已经画成静态图。\n\n## 范围与契约核对\n\n- **页面范围与缺页**：桌面 79 有 / 41 缺、手机 63 有 / 57 缺，样本 224，KPI-1 分母 356，都与 PRD v9 附表 B 一致。我抽查了 `vod/role`、`art/show`、`search/index`、`public/verify` 四个缺页，都与 PRD 的 RISK-12 和 OP-16 一致。缺页一律按 PHP「模板文件不存在」处理：不补页，也不回退到另一套模板包或 JTE（D-11、`ui-design.md` §4）。\n- **路径契约**：`ui-design.md` §3 中 PATH-1～PATH-4 的桌面、手机取值，与已通过的 OP-15 技术设计 `ebd7aa60` 一致。截图 D-12 画出了正确的 `/template/default_pc/css/…` 和 `/template/default_wap/css/…`，以及 `/html/css/` 反例；手机 `ads/` 写明不创建。\n- **不越界**：没有扩展 FR-9～FR-13 的非视觉范围，没有替架构师决定 OP-T1 的选型，没有改官方 274 个文件，也没有改 Java、`php/`、数据库或 deploy 分支。前台 `src/main/jte/site/**` 全部下线，后台和安装用的 JTE 保留。\n- **设计稿定位**：文档多处写明设计稿不代替 PHP 输出验收，与 BR-3/BR-7 一致。\n\n## 不阻断的备注（下次修订时顺手改，不需要为此重新提交）\n\n- **N-1**：把 `self-review.md` 第 25 行的「长 URL 在手机截图内换行」和「其余按两列/三列重排」改成与截图一致的描述。\n- **N-2**：D-01 卡片右上角的标签写「FR-5 · AC-5」，而 `design-map.md` 中 D-01 映射的是 AC-1/AC-5/AC-6/AC-20、FR-1/FR-5，两处应保持一致。\n- **N-3**：D-12 截图只画了 CSS 的正例和反例，PATH-4 广告 URL `/template/default_pc/ads/` 只在说明文字和 `ui-design.md` §3 里出现。前端实现和验收时，以 `ui-design.md` §3 的表格为准。\n- **N-4**：在 768 和 390 下，等宽字体中的中文（「不含」「手机」「禁止误拼」）回退成了宋体，和其他中文字体不一致，只影响观感。\n\n结论：UI v1 @ `0910f7b5e12e779ad2b66f70823b16b601533cd2` 通过 G1 设计评审，可以进入前端实现派工。前端的设计对照以 D-01～D-13 加 `ui-design.md` §3～§8 为准；验收仍以 PHP 输出对照（附表 F）为唯一标准。本次通过不代表实现或验收已完成。",
+    "created_at": "2026-10-31T17:28:47-07:00",
+    "id": "01a19482-45e3-7d67-b6af-d17b234c177e",
+    "parent_id": "01a19480-2cdc-7d87-9ddf-cd0c7230419c",
+    "revision": 1,
+    "type": "comment"
+  },
+  {
+    "author_id": "dfa610b3-4132-45c3-9cec-4c851d795ab5",
+    "author_type": "agent",
+    "content": "需要你决定：完整技术设计里新增了两项会改变系统行为的选择，目前不能直接按设计开工。\n\n第一项是观看密码连续输错后的限制。PHP 没有这项限制，但设计建议保留 Java 的限制。请决定是否接受这个安全收紧。第二项是禁止通过模板资源地址读取 `.html`/`.ini`，以及禁止 SQL 导出或读取服务器文件。PHP 允许这些路径或语句的一部分，但设计建议拒绝。请决定是否接受这两项安全收紧。\n\n建议接受安全收紧，因为它们降低了泄露模板源码、服务器文件和数据的风险；接受后，测试报告要把这些差异按已确认的安全差异记录。若不接受，架构师需把对应行为改回 PHP。请回复下面的整条原文：\n\n```text\n确认 OP-T4 a：保留观看密码频率限制；确认 OP-T5 a：接受 SEC-7/SEC-8 安全收紧\n```\n\n技术细节：\n\n【S1 完整技术设计独立复核】FAIL，暂不交架构评审。\n\n对象：`docs/design/APPK-2/tech-design.md` @ `0dd59f5f72b67e286a93a60c25f19c03f9c91990`。\n\n已通过的结构核验：提交直接父提交为 OP-15 v2 `ebd7aa60ae968229997221d3086b45ddb4fa67e1`；本轮只修改技术设计；C-17～C-66、V-10～V-29、FR-1～FR-13、AC-1～AC-20、BR-1～BR-12、PRE-1～PRE-5 均有映射；deploy 基线和 PRD v9 未变。\n\n阻断项：\n\n1. **REV-3-001｜安装 SQL 哈希错误。** 设计 §6.14 INS-1 写入 `152e54242d78a7c44f2030bfb0e04c0b5067c0d54180bd6cb77ddee7d3eaabcb`，但我从基线提交 `a57e9cb2b94d3e500bea7dfe2c579daee093d969` 的 `php/application/install/sql/install.sql` 重新计算 SHA-256，结果为 `48dbe0fbd138f670919208d8bcc0ffe28d09b507c527d2a6a1a8f7b77ffa3aa4`。请修正 INS-1、对应常量、C-56/C-57、V-25、§11 追溯和所有引用，并重新核对空库安装与哈希不一致用例。\n\n2. **REV-3-002｜OP-T4/OP-T5 状态与实现门禁矛盾。** §10 把两项写成“待发起人确认”且“否（不阻塞开发）”，但：\n   - OP-T4 的保留行为已经写入 ALIGN-4，并会在 S3-14c 实现；\n   - OP-T5 的 SEC-7 已写入 C-43/S3-13，SEC-8 已写入 C-53/S3-19；\n   - §7.4 的 AC-17/V-29 又要求子任务引用的 OP-T 必须关闭。\n\n   这两项不是已确认的六项安全修复，而是新增行为差异。必须把实现和验证写成条件性路径，明确相关子任务在对应 OP 关闭前不得合入；发起人拒绝时改回 PHP。修订后同步 §6.8、§6.10、§6.13、§7.4、§8、§10、§11 和 AC-17 相关说明。\n\n请 [@架构师-海外](mention://agent/9257d279-a014-4617-b4ea-23c5832d6f9d) 暂停提交架构评审，修正 REV-3-001，并根据发起人的 OP-T4/OP-T5 决定更新条件分支与门禁。修订后回传新的完整提交号，我会先重新独立复核，再交架构评审复审。当前不派后端、前端或测试实现。",
+    "created_at": "2026-10-31T17:32:12-07:00",
+    "id": "01a19485-64c8-7afa-93c6-1c1061354ac5",
+    "parent_id": "01a19480-a9e2-7bf7-b4d7-27ee7648ae96",
+    "revision": 1,
+    "type": "comment"
+  },
+  {
+    "author_id": "dfa610b3-4132-45c3-9cec-4c851d795ab5",
+    "author_type": "agent",
+    "content": "【S1 UI 设计评审】PASS\n\n对象：`ApiHuaQiPro/maccms.java` `docs/design/APPK-2/` @ `0910f7b5e12e779ad2b66f70823b16b601533cd2`。\n\n设计评审已重新核对同一提交的干净血缘、7 个设计产物、三档截图、自评记录、DESIGN-ID 映射、页面范围、缺页处理、PATH-1～PATH-4、AC/FR/BR 边界和不越界约束，结论 PASS。N-1～N-4 为不阻断备注，记录供后续实现对照；本次评审不要求为备注重新提交。此前 UI 清理回执与本次评审对象一致，UI 设计两层检查完成。\n\n当前流程状态：UI 设计门禁已通过，但 G1 完整设计尚未放行。架构技术设计 `0dd59f5f72b67e286a93a60c25f19c03f9c91990` 仍处于独立复核 FAIL，待修正安装 SQL 哈希并完成 OP-T4/OP-T5 决策及条件门禁后重新复核、再交架构评审。因此暂不派前端、后端或测试实现，也不进入 G1 汇合。\n\n前端后续设计对照固定为 `0910f7b5e12e779ad2b66f70823b16b601533cd2` 的 D-01～D-13 与 `ui-design.md` §3～§8；实现和验收仍以 PHP 输出对照为准。",
+    "created_at": "2026-10-31T17:33:28-07:00",
+    "id": "01a19486-8c90-7d72-9e96-0d63798c7628",
+    "parent_id": "01a19482-45e3-7d67-b6af-d17b234c177e",
+    "revision": 1,
+    "type": "comment"
+  },
+  {
+    "author_id": "9257d279-a014-4617-b4ea-23c5832d6f9d",
+    "author_type": "agent",
+    "content": "【技术设计】APPK-2 v4（回应 REV-3-001、REV-3-002）\n\n- 文件：`docs/design/APPK-2/tech-design.md`\n- 仓库 / 分支：`ApiHuaQiPro/maccms.java` / `feature/APPK-2-arch-tech-design`\n- 提交号：`9f6782d20fddb21f2d69a9492b01ae8dfbf090af`（直接父提交是 v3 `0dd59f5f72b67e286a93a60c25f19c03f9c91990`，只改这一个文件，远端是快进推送）\n- 基线：deploy `a57e9cb2b94d3e500bea7dfe2c579daee093d969`（未改动）；PRD v9 `8fa362c2…` 未变\n- 看改动：`git diff 0dd59f5 9f6782d -- docs/design/APPK-2/tech-design.md`\n- 本轮没有改 Java、`php/`、数据库或 deploy 分支，也没有交架构评审。\n\n**REV-3-001 安装 SQL 哈希：已修正**\n- 复核结论是对的。v3 的哈希是在本机 Windows 工作区上算的，这里 `core.autocrlf=true` 把文件检出成了 CRLF（45950 字节，`152e5424…`）。基线 blob 是 LF，45049 字节，哈希 `48dbe0fbd138f670919208d8bcc0ffe28d09b507c527d2a6a1a8f7b77ffa3aa4`，和你算的一致。\n- 改动：\n  - INS-1 常量改为 `48dbe0fb…`，并写明核对命令 `git show a57e9cb:… | sha256sum`；INS-2 ③ 改为按原始字节计算哈希。\n  - 新增 C-67：在 `.gitattributes` 里把这个文件固定为 LF。这只是检出规则，不改 `php/` 下的文件内容。同时新增 RISK-T17。\n  - C-57/V-25 增加两条：断言文件不含 `\\r`；新增“整个文件改成 CRLF 时提示哈希不一致”的用例。空库安装、已有表时拒绝这两个用例不变。\n  - C-56、§11 FR-10、§12 已同步。\n\n**REV-3-002 OP-T4/OP-T5 门禁：已改为条件路径**\n- 两项都改为“待发起人确认，并且阻塞对应子任务”：\n  - OP-T4 阻塞 S3-14c。\n  - OP-T5 阻塞 S3-13 和 S3-19。\n  - 对应 OP 没关闭时，这些子任务不建单、不派单、不合入。§7.4 新增“条件门禁”一段，V-29 改为派单前和收尾时各核一次，单内要写明所选答案。\n- 实现和验证都写成 a/b 两列：\n  - OP-T4：ALIGN-4 ⑤、C-68、V-30。\n  - OP-T5：§6.10、DBT-2、C-43、C-53、V-18、V-23。\n  - 选 b 就改回 PHP 的做法，改动只在 C-43、C-53、C-68 三处。\n- SEC-7～9 改成条件差异，不再和六项安全修复列在一起。V-24 只对 SEC-1～6 无条件适用。FR-12 的判定口径改为：OP 已关闭且选 a，才判为“已确认的安全差异”；否则一律按 PHP 逐字节比较。§6.8、§6.10、§6.13、§6.16、§6.17、§8、§9、§10、§11、§12 都已同步。\n\n**更正：发给发起人的 OP-T4 说明有一句不对，请改正后再请发起人确认**\nv3 写的“PHP 没有观看密码频率限制”是错的，这是我的错误。PHP 的 `ajax/pwd` 有一条按会话的限制：同一会话 5 秒内只能试一次，超出返回 1003“请不要频繁请求”（`Ajax.php:416-418`）。v4 的处理是：\n- 不管怎么选，Java 都按 PHP 恢复这条 5 秒限制（ALIGN-4 ③）。\n- OP-T4 实际要问的是：在 PHP 的 5 秒限制之外，要不要再保留 Java 的“按内容、按全站”限流。\n  - a（建议）：保留。超限时也返回 PHP 已有的 1003，不再返回 429。和 PHP 的差别只在于哪一次请求会收到 1003。\n  - b：删掉这条限流，行为和 PHP 完全一样。\n- 保留的理由：PHP 的 5 秒限制换一个会话就能绕过。代价是同一部影片被大量试错时，其他访客在 60 秒内也会收到 1003。\n\nOP-T5 的事实描述不变，两项建议仍是 a。你原来那句确认原文也还能用。另外，如果发起人想分开回答 SEC-7 和 SEC-8，设计里这两列互不依赖，可以分开选。\n\n**待决**：OP-T4、OP-T5 等发起人确认；其余 OP-T 已关闭。发起人回复后，如果选 b，我按 b 列删掉 a 列再出 v5；如果选 a，设计正文不用改，只需在 §10 记下关闭该 OP 的那条评论。\n\n请 [@智能调度-海外](mention://agent/dfa610b3-4132-45c3-9cec-4c851d795ab5) 对 `9f6782d20fddb21f2d69a9492b01ae8dfbf090af` 重新做独立复核。",
+    "created_at": "2026-10-31T17:41:06-07:00",
+    "id": "01a1948d-8915-763c-86f0-a2d813c0cdad",
+    "parent_id": "01a19485-64c8-7afa-93c6-1c1061354ac5",
+    "revision": 1,
+    "type": "comment"
+  },
+  {
+    "author_id": "dfa610b3-4132-45c3-9cec-4c851d795ab5",
+    "author_type": "agent",
+    "content": "【S1 完整技术设计独立复核】FAIL，暂不交架构评审\n\n对象：`docs/design/APPK-2/tech-design.md` @ `9f6782d20fddb21f2d69a9492b01ae8dfbf090af`。\n\n已通过的复核项：\n\n- 提交直接父提交为 v3 `0dd59f5f72b67e286a93a60c25f19c03f9c91990`，且 v3 继续位于 deploy 基线 `a57e9cb2b94d3e500bea7dfe2c579daee093d969` 之上。\n- v3→v4 只修改 `docs/design/APPK-2/tech-design.md`；未修改 Java、`php/`、数据库或 deploy 分支。\n- INS-1 已改为基线 blob 的 LF 字节哈希 `48dbe0fbd138f670919208d8bcc0ffe28d09b507c527d2a6a1a8f7b77ffa3aa4`；我从基线文件重新计算得到相同值，文件为 45049 字节且不含 `\\r`。C-67、C-57、V-25 对 LF/CRLF 和原始字节校验的说明已补齐。\n- OP-T4/OP-T5 已改为阻塞对应子任务的条件门禁；PHP `ajax/pwd` 的按会话 5 秒限制已由源码 `Ajax.php:416-418` 核对并纳入 ALIGN-4，OP-T4 正确改问是否额外保留 `PasswordAttempts`。\n\n阻断项：\n\n**REV-4-001｜C-44 的 `readTemplateAsset` 契约没有跟随 OP-T5 分支。**\n\n- §6.10 明确规定：OP-T5=a 时仅允许四类静态资源和扩展名白名单；OP-T5=b 时，`template/\u003c目录\u003e/` 下任意子目录与扩展名按 PHP 原样返回，只有 `.php` 返回 404。\n- C-43 已正确写成“a=SEC-7 白名单、b=同 PHP 放开”。\n- 但 C-44 仍写成新增 `readTemplateAsset` “（`template/` 区域、扩展名白名单）”，没有条件化为 a/b 两种行为。\n- 因此实现者若按 C-44 建立 `LegacySiteFiles` 边界，即使发起人选择 OP-T5=b，也会继续拒绝 `.html`、`info.ini` 等文件，与 §6.10 的 b 列、V-18 的 b 用例和 OP-T5 决策不一致。\n\n请 [@架构师-海外](mention://agent/9257d279-a014-4617-b4ea-23c5832d6f9d) 修订 C-44，明确 `readTemplateAsset`/其调用边界按 OP-T5 所选答案执行：a 使用四类目录与扩展名白名单；b 在 `template/` 根内按 PHP 放开任意非 `.php` 文件，同时保留路径规范化、禁止越出站点根、拒绝符号链接出根和只读约束。同步检查 C-44 的模块边界、S3-10 依赖、V-18/OP-T5 相关描述，回传新的完整提交号；我会重新独立复核后再交架构评审。当前不派发实现或架构评审。",
+    "created_at": "2026-10-31T17:43:54-07:00",
+    "id": "01a19490-1c01-7407-a950-8c21a1af29d9",
+    "parent_id": "01a1948d-8915-763c-86f0-a2d813c0cdad",
+    "revision": 1,
+    "type": "comment"
+  },
+  {
+    "author_id": "9257d279-a014-4617-b4ea-23c5832d6f9d",
+    "author_type": "agent",
+    "content": "【技术设计】APPK-2 v5（回应 REV-4-001）\n\n- 文件：`docs/design/APPK-2/tech-design.md`\n- 仓库 / 分支：`ApiHuaQiPro/maccms.java` / `feature/APPK-2-arch-tech-design`\n- 提交号：`f44b73920b40756cf84766dbac9dee1dfb8103d1`\n  - 直接父提交是 v4 `9f6782d20fddb21f2d69a9492b01ae8dfbf090af`，只改了这一个文件，远端是快进推送。\n- 基线：deploy `a57e9cb2b94d3e500bea7dfe2c579daee093d969` 和 PRD v9 `8fa362c2…` 都没变。\n- 看改动：`git diff 9f6782d f44b739 -- docs/design/APPK-2/tech-design.md`\n- 本轮没有改 Java、`php/`、数据库或 deploy 分支，也没有交架构评审。\n\n**REV-4-001：已修改**\n\n你的结论是对的。v4 的 C-44 写死了扩展名白名单，即使选 OP-T5=b，也会继续拒绝 `.html` 和 `info.ini`。\n\nC-44 的 `readTemplateAsset` 现在分两层，是 `/template/**` 唯一的放行边界。\n\n1. 两种答案都要遵守的约束：\n   - ① 路径先经过 `validRelative` 校验，并且必须以 `template/\u003c目录\u003e/` 开头。\n   - ② 路径规范化后，真实路径必须在 `\u003c站点根\u003e/template/` 内。这比现有 `read` 只校验站点根更严：中间目录是符号链接时，解析后出了 `template/` 也要拒绝。\n   - ③ 最终文件用 `NOFOLLOW_LINKS` 打开。它本身是符号链接、目录或非普通文件时都拒绝。\n   - ④ 扩展名是 `php` 时一律拒绝。\n   - ⑤ 只读：不建目录、不写文件。\n2. 放行范围按 OP-T5 所选答案执行，只实现所选的那一种：\n   - a：只允许四类子目录，并按扩展名白名单放行。\n   - b：`template/\u003c目录\u003e/` 下的任意非 `.php` 文件都按 PHP 原样返回，但仍受上面 ①～⑤ 约束。\n\n放行规则只写在 C-44 这一处。C-43 只负责 URL 映射、`Content-Type` 和条件请求，收到任何拒绝都返回 404，不再另设一份白名单。§6.3 新增了 `readTemplateAsset` 的接口和错误语义，并写明模板引擎读模板时用现有的 `read`，不用这个方法。§4.8、§6.10 和 SEC-7 也已同步。\n\n**按要求同步检查时发现的问题（已一并修正）**\n\n- **S3-10 依赖**：v4 把 C-44 放进了 S3-10，但 S3-10 不受 OP-T5 门禁限制。另外，同一行的 `readInstallSql` 实际属于安装向导，而 S3-20 的改动清单里没有列 C-44。v5 的处理：\n  - 把 `readInstallSql` 拆成 C-69，归入 S3-20。\n  - 把 C-44 移出 S3-10。\n  - 更新 §6.14 INS-1 和 §11 FR-10。\n- **S3-13 拆成三个子任务**：\n  - S3-13a：内置视图 C-39，不受 OP-T5 门禁限制。\n  - S3-13b：C-44，后端，受 OP-T5 门禁限制。\n  - S3-13c：C-43，前端，受 OP-T5 门禁限制。\n- **v4 的一处矛盾**：§7.4 写着“S3-14c 之外的 PG 组不受影响”，但 S3-14 依赖 S3-13，所以全部页面接入其实都被 OP-T5 间接卡住了。v5 的处理：\n  - S3-14 只依赖 S3-13a。\n  - C-42 不再注册 C-43。C-43 和现有 `site/web` 控制器一样，用 `@ConditionalOnSiteEnabled` 自动装配。这样 S3-15 也不再依赖 OP-T5。\n- **V-18**：新增单测 `LegacySiteFilesTemplateAssetTest`。\n  - 两种答案都要测：目录符号链接和文件符号链接出 `template/`、最终文件本身是符号链接、`.php` 与 `.PHP`、目录本身、不存在的文件不会建目录。\n  - a 和 b 各自测 `html/…/index.html`、`info.ini`、`css/x.txt`。\n  - 评审时另外核对 C-43 里没有子目录或扩展名判断。\n- **其他引用**：V-29、§9 回滚（加上了 C-44）、§10 OP-T5、§11 AC-17、§12 里的子任务编号都改成了 S3-13b 和 S3-13c。\n- §13 新增 REV-4-001 的回应表，§14 新增 v5 记录。\n\n**OP-T4、OP-T5 仍待发起人确认**，门禁不变：\n- S3-13b、S3-13c、S3-19 在 OP-T5 关闭前不建单、不派单、不合入。\n- S3-14c 在 OP-T4 关闭前同样不建单、不派单、不合入。\n\n请按 `f44b73920b40756cf84766dbac9dee1dfb8103d1` 重新独立复核。",
+    "created_at": "2026-10-31T17:49:39-07:00",
+    "id": "01a19495-6094-7da1-8644-451d98921630",
+    "parent_id": "01a19490-1c01-7407-a950-8c21a1af29d9",
+    "revision": 1,
+    "type": "comment"
+  },
+  {
+    "author_id": "dfa610b3-4132-45c3-9cec-4c851d795ab5",
+    "author_type": "agent",
+    "content": "【S1 完整技术设计独立复核】PASS，可交架构评审\n\n对象：`docs/design/APPK-2/tech-design.md` @ `f44b73920b40756cf84766dbac9dee1dfb8103d1`。\n\n复核证据：\n\n- 提交直接父提交为 v4 `9f6782d20fddb21f2d69a9492b01ae8dfbf090af`；v4 继续位于 deploy 基线 `a57e9cb2b94d3e500bea7dfe2c579daee093d969` 之上。\n- v4→v5 只修改 `docs/design/APPK-2/tech-design.md`，没有 Java、`php/`、数据库或 deploy 分支改动。\n- REV-4-001 已闭环：C-44 的 `readTemplateAsset` 明确拆成共同安全约束与 OP-T5 条件放行。a 只允许四类资源目录和扩展名白名单；b 允许 `template/\u003c目录\u003e/` 下任意非 `.php` 文件，同时保留路径校验、真实路径必须位于 `template/` 内、禁止中间目录和最终文件符号链接、只读、大小限制等约束。C-43 不重复实现白名单，只负责 URL、响应头和 404 映射。\n- C-44 与模板引擎边界已分开：模板引擎继续使用现有 `read`，静态资源唯一使用 `readTemplateAsset`；接口错误语义和调用方处理已明确。\n- `readInstallSql` 已拆为 C-69，归入 S3-20；C-44 不再错误阻塞 S3-10。S3-13 已拆为 S3-13a（内置视图）、S3-13b（资源读取边界）、S3-13c（资源控制器），其中只有 b/c 受 OP-T5 门禁；S3-14 仅依赖 S3-13a，S3-15 也不再间接受 OP-T5 影响。\n- V-18 已覆盖两种答案下的目录/文件符号链接、出根链接、目录、`.php`/`.PHP`、不存在文件不建目录、a/b 放行差异和控制器路径安全；V-29、§9、§10、§11、§12 的子任务、门禁、回滚和追溯已同步。\n\n结论：REV-4-001 已修正，v5 的提交血缘、范围、C-44/C-69 职责、S3-13 依赖拆分和 OP-T5 条件路径内部一致，S1 独立复核 PASS。请 [@架构评审-海外](mention://agent/c94c7c44-2da0-4e3b-9802-d6f854e9947e) 针对同一提交 `f44b73920b40756cf84766dbac9dee1dfb8103d1` 进行架构复审。\n\n注意：OP-T4、OP-T5 仍待发起人确认；S3-14c、S3-13b、S3-13c、S3-19 在对应 OP 关闭前不建单、不派单、不合入。本次 PASS 仅表示设计可进入架构评审，不表示 G1 已放行或实现已获授权。",
+    "created_at": "2026-10-31T17:51:32-07:00",
+    "id": "01a19497-19d9-7f25-ae39-437121df1be5",
+    "parent_id": "01a19495-6094-7da1-8644-451d98921630",
+    "revision": 1,
+    "type": "comment"
+  },
+  {
+    "author_id": "c94c7c44-2da0-4e3b-9802-d6f854e9947e",
+    "author_type": "agent",
+    "content": "【技术设计评审】APPK-2 tech-design.md v5 @ f44b73920b40756cf84766dbac9dee1dfb8103d1\n结论：驳回\n轮次：第 1 / 3 轮\n前置检查：通过 — 元数据、章节、版本递增（v4→v5）、修订记录和 REV-4-001 逐条回应齐全；设计、PRD 与基线均按指定提交读取。\n\n维度结论：\n- A 需求对齐：不通过 — FR/AC/BR/PRE 的改动与验证映射基本齐全，页面路径契约与 UI 设计 `0910f7b5e12e779ad2b66f70823b16b601533cd2` 的 PATH-1～PATH-4、缺页处理和 JTE 下线边界未发现冲突；但 OP-T4、OP-T5 仍是未关闭的行为决策，AC-17 对应的 S3-14c、S3-13b、S3-13c、S3-19 不能获得 G1 放行或派工。\n- B 源码合理：分层通过 — 设计让 `phptemplate` 经 `LegacySiteFiles`/`LegacyConfigService` 访问文件和配置，`site` 只调用 `phptemplate.application`，与基线 `LegacySiteFiles.java:24-80`、`SiteConfiguration.java:354-361` 及开发规范的依赖方向一致；重复通过 — 计划复用 `ContentReadService`、`LegacyRowReadService`、`LegacyUrlBuilder`、`LegacyLang`、`CommentService` 和现有文件访问边界；耦合不通过 — 删除 `SiteHtmlRenderer` 的影响面没有完整覆盖，见 REV-8；命名通过 — `readTemplateAsset`、`readInstallSql`、`PhpTemplateRenderer` 与现有 application/infrastructure 命名一致；最小改动通过 — 改动按 FR/AC 和 S3 子任务拆分，没有把 PHP 快照或数据库结构纳入改动；可回滚不通过 — 代码提交按子任务可回退，但 DBT-2/DBT-3 的中途失败和并发写入没有可执行的回退/恢复语义，见 REV-7；沿用现有模式通过 — 路径安全复用 `LegacySiteRoot`，后台写入复用 `LegacySiteFiles` 原子写；可测试不通过 — V-23 覆盖正常 SQL/结构保护和快照，但没有覆盖批量执行中途失败、恢复部分完成和并发写入行为，且漏掉的渲染器调用方没有对应验证落点。\n- C 查漏：不通过 — 基线调用方复检发现 `SearchThrottle`、`SiteCounterActions` 直接持有 `SiteHtmlRenderer`，`PlaybackPages` 和 `SiteMemberFinance` 读取其 `CONTENT_SECURITY_POLICY`/`HTML_UTF8` 静态符号，`src/test/.../SiteTestRoutes` 也直接构造它；设计 §3.2 的“全部在 §1.3 列出”不成立。其他已声明的 `SiteTemplateService`、`PasswordAttempts`、`InstallSchema`、数据库拒绝入口调用方与基线检索结果基本相符。\n- D 可验证与可运维：不通过 — 模板编译、资源边界、安装 SQL 原始字节、OP 条件分支和结构快照都有具体验证命令；但未定义数据库批量语句部分执行、备份恢复中途失败、与应用写入并发时的行为、重试和审计/告警，无法据此执行可靠运维和回滚。\n- E 方案取舍与开放项：不通过 — 模板兼容层、静态资源边界、缓存和安装账号均有方案对比及最小改动基线；OP-T4、OP-T5 是阻塞开发的开放项，尚未由发起人关闭，不能 PASS。\n\n阻断项：\n- REV-5 | 开放项 / AC-17 | OP-T4 仍标为“待发起人确认”，但其两条分支已经分别规定 `PasswordAttempts` 的保留、调用点和 V-30 验证，S3-14c 仍依赖该决定；未关闭时不能完成 G1 或派工 | §6.8 ALIGN-4 ⑤、C-68、V-30、§7.4、§10 OP-T4、§11 AC-17 | 由发起人关闭 OP-T4 后，设计升为 v6，§10 记录关闭评论，并从 C-68、S3-14c、V-30 中删除未选分支，只保留已确认行为及其验证。\n- REV-6 | 开放项 / AC-17 | OP-T5 仍标为“待发起人确认”，同时影响 `/template/**` 的文件放行和 DBT-2 的服务器文件语句；S3-13b、S3-13c、S3-19 仍依赖该决定 | §6.10、C-43/C-44、DBT-2、C-53、V-18/V-23、§7.4、§10 OP-T5、§11 AC-17 | 由发起人关闭 OP-T5（可分别确认 SEC-7/SEC-8）后升为 v6，记录各自关闭评论，并确保 C-43/C-44/C-53、V-18/V-23 和子任务门禁只保留已选列。\n- REV-7 | 失败/并发/可回滚 | DBT-2 逐条执行和 DBT-3 的“先 DELETE、再 INSERT”在中途 SQL 错误、连接断开或与应用写入并发时可能留下部分数据；§9 仅说明功能本身不可逆，没有定义一致性边界、锁/维护窗口、重试幂等性或恢复路径 | §6.13 DBT-2/DBT-3、§8 V-23、§9 RISK-T13、C-53/C-54、AC-11 | 明确每类操作的事务能力与边界（考虑基线 MyISAM）、执行前完整预检、失败后用户可见状态、并发协调/维护模式、重试与审计日志；补充中途失败和并发写入验证，说明无法原子化时的管理员恢复步骤及回滚风险。\n- REV-8 | 源码合理 / 查漏 / 可测试 | `git grep -n 'SiteHtmlRenderer' a57e9cb -- src/main src/test` 显示下列调用方未列入 §3.2 影响面或 C-37/C-40/C-42 的改动与验证：`src/main/.../site/web/SearchThrottle.java`、`SiteCounterActions.java`、`PlaybackPages.java`、`SiteMemberFinance.java`，以及 `src/test/.../site/web/SiteTestRoutes.java`。删除 `SiteHtmlRenderer` 或其静态常量后会直接编译失败或改变错误响应/CSP/Content-Type 行为 | §1.3、§3.2、C-37、C-40、C-42、V-24；基线上述文件中的 `SiteHtmlRenderer` 字段、构造参数或静态常量引用 | 补齐每个调用方的替换、迁移或删除方案：错误/频率限制动作改用新的 PHP 渲染服务，CSP 与 HTML Content-Type 常量移到明确的共享边界或由新服务提供；更新改动清单、依赖图、测试清单和回滚顺序，并为 `SiteTestRoutes` 等测试调用方增加迁移/删除验证。\n\n建议项（不阻断）：\n- SUG-1 | 在 V-23 中增加 SQL 分类器对大小写、注释/空白变体、`INTO OUTFILE`/`DUMPFILE`/`LOAD_FILE` 词法绕过的测试，并记录拒绝原因不回显 SQL 内容。\n- SUG-2 | 在运维说明中给出模板资源 404、模板编译 500、安装哈希不匹配和出站护栏拒绝的结构化日志字段与告警定位方式。\n\n与上一轮核对（复审时）：\n- REV-4-001：已解决 — C-44 已按 OP-T5 拆为共同安全约束与 a/b 条件放行；`readInstallSql` 已拆为 C-69，S3-13 已拆为 a/b/c，相关 V-18、V-29、§9、§10、§11、§12 已同步。\n- REV-3-001：已解决 — 安装 SQL 使用基线 blob 的 LF SHA-256，并补充 C-67、CRLF 拒绝用例。\n- REV-3-002：已解决 — OP-T4/OP-T5 已变为条件门禁；但本轮仍未关闭，故继续阻断 G1。\n\n本结论只表示技术设计评审结果，不代表合并确认或实现授权。",
+    "created_at": "2026-10-31T18:04:32-07:00",
+    "id": "01a194a2-ff37-7e6c-8079-028acd934e57",
+    "parent_id": "01a19497-19d9-7f25-ae39-437121df1be5",
+    "revision": 1,
+    "type": "comment"
+  },
+  {
+    "author_id": "dfa610b3-4132-45c3-9cec-4c851d795ab5",
+    "author_type": "agent",
+    "content": "【S1 完整技术设计架构评审】FAIL，接受驳回并退回架构师修订\n\n对象：`docs/design/APPK-2/tech-design.md` @ `f44b73920b40756cf84766dbac9dee1dfb8103d1`。\n\n我已独立核验架构评审结论，REV-5～REV-8 均成立：\n\n- **REV-5 / REV-6：OP-T4、OP-T5 仍未关闭。** 这是已记录的实现前置决策，继续阻塞 S3-14c、S3-13b、S3-13c、S3-19；不进入 G1 放行或派工。发起人确认后，设计必须升级新版本，只保留已选分支并引用关闭评论。\n- **REV-7：DBT-2/DBT-3 的失败、并发和恢复边界不足。** 基线 `docs/architecture/12-write-infrastructure.md` 已明确旧表为 MyISAM、事务回滚无效、多行语句可能部分生效、连接中断时结果不确定且不应盲目补偿；`docs/architecture/22-b13-admin-content.md` 也明确批量操作的中途失败语义。v5 的 §6.13、V-23 和 §9 只写了不可逆风险，没有把预检、逐条执行失败状态、并发协调/维护窗口、重试幂等性、审计告警和管理员恢复步骤写成可执行契约。\n- **REV-8：`SiteHtmlRenderer` 调用方遗漏。** 我从基线执行 `git grep -n 'SiteHtmlRenderer' a57e9cb2b94d3e500bea7dfe2c579daee093d969 -- src/main src/test`，复现了评审列出的遗漏：`SearchThrottle`、`SiteCounterActions`、`PlaybackPages`、`SiteMemberFinance`、`SiteTestRoutes`；其中既有渲染器依赖，也有 `CONTENT_SECURITY_POLICY`/`HTML_UTF8` 静态常量引用。v5 的 §3.2、C-37/C-40/C-42、V-24 和 §12 仍未覆盖这些迁移、替换或删除方案。\n\n请 [@架构师-海外](mention://agent/9257d279-a014-4617-b4ea-23c5832d6f9d) 按 REV-5～REV-8 修订并回传新的完整提交号：\n\n1. 等 OP-T4/OP-T5 关闭后，将对应分支收敛为已选行为，并同步 C-43/C-44/C-53/C-68、V-18/V-23/V-30、S3 门禁、§10 和追溯；\n2. 补齐 DBT-2/DBT-3 在 MyISAM 下的事务能力说明、整批预检、逐条失败与连接中断状态、并发协调、重试/幂等、审计告警和管理员恢复步骤，并为中途失败、恢复部分完成和并发写入增加验证落点；\n3. 补齐 `SiteHtmlRenderer` 五个遗漏调用方的替换/迁移/删除方案，明确错误与频率限制动作、CSP 和 HTML Content-Type 的新共享边界，并同步改动清单、依赖图、测试清单和回滚顺序。\n\n修订后我会先重新独立复核，再交原架构评审复审同一提交。当前不派后端、前端或测试实现；G1 保持阻塞。",
+    "created_at": "2026-10-31T18:06:09-07:00",
+    "id": "01a194a4-798d-7a9c-8942-30fff4fb58c4",
+    "parent_id": "01a194a2-ff37-7e6c-8079-028acd934e57",
+    "revision": 1,
+    "type": "comment"
+  },
+  {
+    "author_id": "9257d279-a014-4617-b4ea-23c5832d6f9d",
+    "author_type": "agent",
+    "content": "【技术设计】APPK-2 v6（回应 REV-5～REV-8）\n\n- 文件：`docs/design/APPK-2/tech-design.md`\n- 仓库 / 分支：`ApiHuaQiPro/maccms.java` / `feature/APPK-2-arch-tech-design`\n- 提交号：`55afe8645440de83120b75bb1360ab7dd73fbb4a`\n  - 直接父提交是 v5 `f44b73920b40756cf84766dbac9dee1dfb8103d1`。\n  - 只改了这一个文件，远端是快进推送。\n- 基线：deploy `a57e9cb2b94d3e500bea7dfe2c579daee093d969` 和 PRD v9 `8fa362c2…` 都没变。\n- 看改动：`git diff f44b739 55afe86 -- docs/design/APPK-2/tech-design.md`\n- 本轮没有改 Java、`php/`、数据库或 deploy 分支，也没有交架构评审。\n\n**REV-5 / REV-6：OP-T4、OP-T5 还不能关闭**\n\nIssue 里还没有发起人的确认，设计不能替发起人选。所以两项继续保留 a/b 两列，门禁也不变，§10 标为“截至 v6 未关闭”。\n\n修订时发现 v5 有一处事实错误，已经更正：\n- v5 说 OP-T5 选 b 时，“含 `INTO OUTFILE`/`LOAD_FILE` 的 SQL 照常发给数据库”。这不对。基线 `php/application/admin/controller/Database.php:251-262` 会把 SQL 先转小写、去掉注释，只要含 `outfile`、`dumpfile`、`load_file` 就**不执行**，只是静默返回“执行成功”。\n- 所以 SEC-8 不是安全收紧。v6 把它改成和 PHP 一致的固定行为（DBT-2 ⑤），从 OP-T5 里移出去了。\n- 结果有三点：\n  - OP-T5 只剩 SEC-7（`/template/**` 能不能读 `.html`/`.ini`），只阻塞 S3-13b 和 S3-13c；\n  - S3-19 不再受 OP-T5 门禁限制；\n  - 之前请发起人回复的那句原文还能用，里面关于 SEC-8 的部分已经没有选择的意义。\n- **请你向发起人确认时按缩小后的问题说明。** 发起人回复后我出 v7：只保留所选的那一列，并在 §10 引用关闭评论。\n\n**REV-7：数据库工具的失败、并发和恢复（新增 §4.12 方案对比，§6.13 新增 DBT-5 契约）**\n- **事务能力**：26 张表里 25 张是 MyISAM，`mac_vod_search` 是 InnoDB。可写数据源不开事务，所以执行 SQL 和还原都不是整批原子的。中途失败时不自动补偿、不自动重试。\n- **整批预检**：不通过就一条语句都不发。预检包括：分卷齐全、能解压、语句分类、表名在白名单里、**还原前站点必须已关闭**。\n- **逐条执行，遇到第一处失败就停**，按 `12-write-infrastructure.md` §4.3 分两类：\n  - `FAILED`：确定这一条没生效；\n  - `UNKNOWN`：连接中断、超时、多行语句出错，结果不确定。\n  - 还原按表记录进度：哪些表已完成、当前是哪张表、当前表插入到第几条。\n- **还原前自动备份**：先导出这次要还原的表。失败时或想撤销时，用这份备份再还原一次，数据就回到还原开始之前。\n- **并发**：\n  - 运行记录文件 `dbtool-run.json` 同时当锁用，和 `backup.lock` 互相认得；有未完成的记录时，执行 SQL、还原、导出都会被拒绝。\n  - 前台的写入靠“站点已关闭”这个前提挡住。\n  - 其他管理员和定时任务不加锁，在确认步骤里提醒管理员（RISK-T19）。\n- **重试**：\n  - 执行 SQL 失败后，把第 n 条到最后一条回填到输入框，由管理员修改后重新提交。\n  - 还原整体是幂等的，可以整个重跑。\n- **审计**：失败或中断后，数据库工具页面顶部显示提示条，处理完点“我已处理”才能继续操作。另有结构化日志，`UNKNOWN` 记为 ERROR 级别；日志里不写 SQL 原文和数据值。\n- **恢复步骤**：管理员照着做的步骤写在 DBT-5 ⑦。\n- **改动与验证**：\n  - 改动清单：新增 C-73（运行记录与互斥）、C-74（测试）；C-53、C-54 补充了页面（新增 `sql.jte`、提示条）。\n  - 新增 V-31，覆盖：中途失败后用自动备份恢复、重复还原结果相同、站点没关时拒绝、并发互斥、`KILL` 连接后不补偿。\n  - S3-19 拆成 a/b 两单。§9 给出了不可逆项的可逆替代。\n\n**REV-8：`SiteHtmlRenderer` 的调用方（新增 §4.11 方案对比，§6.8 新增逐文件迁移表）**\n- 按基线 `git grep` 补全了所有引用它的文件：main 里 21 个，test 里 7 个，逐个列在 §1.3。迁移表写明每个文件怎么处理、归哪个子任务。\n- 新的共享边界（C-70）：\n  - `SitePageResponses` 是唯一组装 HTML 响应的地方。\n  - `JumpPages` 是 PHP `error()/success()` 的唯一入口。\n  - HTML `Content-Type` 常量只保留 `SiteRequests.HTML_UTF8`。\n- **CSP（DEC-11，需要你留意）**：前台页面不再发 CSP，和 PHP 一样。原因是严格的 CSP 会挡住模板和内置视图里的脚本，比如 `public/jump.html:23` 的倒计时跳转、`player.js` 的 `document.write`；放宽到能兼容的程度，又等于没有防护。\n  - 随之删除 `CONTENT_SECURITY_POLICY`、`memberPolicy`、`PlayerFramePolicy`，风险记为 RISK-T18。\n  - 如果你认为这件事要发起人确认，可以另开 OP-T6，备选方案是“放宽后的 CSP”，改动只在 C-70 一处。\n- 评审点名漏掉的五个调用方（C-71、C-72）：\n  - `SearchThrottle`：改为注入 `JumpPages`；搜索太快时按 PHP `Base.php:59-61` 返回 200 的跳转页，不再返回 429（ALIGN-6）。\n  - `SiteCounterActions`：去掉渲染器依赖，非 ajax 请求按 PHP 处理（ALIGN-7）。\n  - `PlaybackPages`：删掉对 CSP 常量的引用，授权判定不动。\n  - `SiteMemberFinance:525`：引用的 `HTML_UTF8` 改为 `SiteRequests.HTML_UTF8`（`SitePaymentController:104` 同样处理）。\n  - `SiteTestRoutes`：改用新的共享边界，保留“页面渲染到一半失败时，返回完整 500 页”的断言。\n  - 另外，5 处断言 CSP 的测试和 `SiteConfigurationTest` 一起改写。\n- 验证落在 V-32：S3-15 合入前检索结果必须为空、检查响应头、检查搜索限频、检查计数接口，再用真实浏览器核对一次跳转页和播放器。回滚顺序：S3-15 最先回退，S3-14a（含共享边界）最后回退。\n\n**建议项**：SUG-1 已并入 V-23，SUG-2 写在 §8.2 的“运维日志字段”。\n\n**评审回应和修订记录**：§13 逐条回应 REV-5～8，§14 记录 v6。\n\n请 [@智能调度-海外](mention://agent/dfa610b3-4132-45c3-9cec-4c851d795ab5) 对 `55afe8645440de83120b75bb1360ab7dd73fbb4a` 重新做独立复核。REV-5 和 REV-6 要等发起人确认后才能在 v7 关闭。",
+    "created_at": "2026-10-31T18:21:48-07:00",
+    "id": "01a194b2-cf2e-7330-8ea4-de1c783954cb",
+    "parent_id": "01a194a4-798d-7a9c-8942-30fff4fb58c4",
+    "revision": 1,
+    "type": "comment"
+  },
+  {
+    "author_id": "dfa610b3-4132-45c3-9cec-4c851d795ab5",
+    "author_type": "agent",
+    "content": "【S1 完整技术设计独立复核】FAIL，暂不交架构评审\n\n对象：`ApiHuaQiPro/maccms.java` `docs/design/APPK-2/tech-design.md` @ `55afe8645440de83120b75bb1360ab7dd73fbb4a`。\n\n前置核验通过：\n\n- 提交存在，直接父提交是 v5 `f44b73920b40756cf84766dbac9dee1dfb8103d1`，并且位于 deploy 基线 `a57e9cb2b94d3e500bea7dfe2c579daee093d969` 之上。\n- 相对 v5 只修改 `docs/design/APPK-2/tech-design.md`；`git diff --check` 通过。\n- 基线 PHP `Database.php:251-262` 的事实核对正确：标准化后以 `select` 开头，或包含 `outfile`、`dumpfile`、`load_file` 的输入不执行，只返回成功结果；v6 已把 SEC-8 从 OP-T5 移出。\n- 基线 `SiteHtmlRenderer` 引用复核得到 main 21 个文件、test 7 个文件；v6 的迁移表已覆盖此前 REV-8 点名的调用方和测试方。\n\n阻断项：\n\n**REV-5 / REV-6｜OP-T4、OP-T5 仍未关闭**\n\n发起人尚未对 OP-T4（是否额外保留 `PasswordAttempts`）和 OP-T5（是否拒绝通过 `/template/**` 读取 `.html`/`.ini` 等文件）作出确认。v6 正确地把它们保留为条件分支，但这不等于已授权的行为。S3-14c、S3-13b、S3-13c 仍不能进入 G1 或派工；架构评审对象不能按“设计已完成”处理。OP-T5 的 SEC-8 已按 PHP 更正，不再是待决选择，但不能替代 SEC-7 的确认。\n\n**REV-9｜DEC-11 删除前台 CSP 需要独立的人类安全确认**\n\nv6 在 DEC-11、C-70～C-72、S3-14 和 S3-15 中选定删除前台 `Content-Security-Policy`、`memberPolicy` 和 `PlayerFramePolicy`。PHP 源码确实没有该响应头，且现有严格策略可能阻挡 `public/jump` 和播放器脚本；但这仍然是 Java 现有安全行为的删除，会降低 XSS 纵深防护。当前 PRD 只明确确认了六项安全修复，不能由“PHP 没有该头”自动替代这项安全取舍。§4.11 的“如评审或发起人认为可另设 OP-T6”不是确认记录。\n\n请新增并关闭 OP-T6，或保留现有安全策略并设计一个与模板兼容的已批准策略。关闭前不能把 DEC-11 当成已选方案，也不能按 V-32 的“无 CSP”断言派发实现。\n\n**REV-10｜`dbtool-run.json` 的互斥不是可执行的跨进程锁**\n\nDBT-5 ④只规定 `begin` 先检查记录和 `backup.lock`，再通过 `LegacySiteFiles` 原子写入 `RUNNING`。原子替换保证单次写入不被撕裂，但不能保证“检查不存在/已完成 → 占用”这一组操作互斥。两个 Java 进程可以同时通过检查，随后都写入 `RUNNING` 并执行 SQL。现有 PHP `backup()` 的 `is_file` 后 `file_put_contents` 也属于同样的检查后创建竞态，不能作为跨进程占用依据。\n\n同时，“RUNNING 且进程已不在执行它”需要进程身份、租约/心跳或等价的可核验字段；v6 的运行记录字段和 `DatabaseRuns` 契约没有定义这些内容。请补充一个跨进程原子获取方案（例如独占创建或 OS 文件锁）、锁的所有权与释放规则、崩溃/重启后的恢复规则，并在 V-31 增加两个并发 `begin` 同时起跑的测试。仅在第一个运行已写好 `RUNNING` 后再启动第二个运行，不能证明该竞态已关闭。\n\n**REV-11｜自动备份恢复步骤与运行锁状态互相矛盾**\n\nDBT-5 ⑥规定 `FAILED`/`UNKNOWN`/中断的 `RUNNING` 在管理员点击“我已处理”并将记录改为 `DONE`之前，DBT-2、DBT-3 和导出全部禁止。DBT-5 ⑦又要求管理员在失败后使用提示条中的自动备份，通过“同一功能”执行还原，完成后再点击“我已处理”。按当前状态机，失败记录尚未确认时，使用同一还原功能会先被 `begin` 拒绝；若先点击确认再恢复，又失去了“未恢复前禁止继续操作”的保护。\n\n请定义专用的恢复动作或明确的状态转换：只能使用该次运行绑定的自动备份，恢复期间仍保持互斥，恢复成功/失败分别如何记录，何时允许 `acknowledge`，以及恢复本身再次失败时如何处理。V-31 必须按该状态机验证，而不是只验证“随后能用备份还原”。\n\n**REV-12｜DBT-2 的拆句执行改变了 PHP 语义，当前没有被声明或覆盖**\n\n基线 PHP `sql()` 对整个输入先 `trim` 和替换 `{pre}`，然后把整个字符串交给一次 `Db::execute($sql)`；它不调用 `mac_parse_sql`，也不逐句执行。v6 的 DBT-2 改为切分后逐条预检和逐条 JDBC 执行。由此至少存在可观察差异：例如输入 `SELECT 1; INSERT INTO ...` 时，PHP 因整体以 `select` 开头而跳过整个输入，v6 若各句均属于允许类别则会执行后面的 `INSERT`。混合有效/无效语句、文件读写语句和多语句输入也有类似差异。\n\n请二选一并写入 DBT-2、V-23、FR-9 追溯和差异判定：保持 PHP 的整段语义；或明确这是 OP-6 允许的新增安全/可恢复性差异，由发起人确认并补充完整的输入语义与验收样本。当前“执行前切分是为了失败分类”同时又声称成功路径不改变，结论不成立。\n\n请架构师修订并回传新的完整技术设计提交。修订后我会先按同一基线独立复核，再交原架构评审复审；在此之前不派后端、前端或测试实现，G1 保持阻塞。",
+    "created_at": "2026-10-31T18:31:40-07:00",
+    "id": "01a194bb-d7b2-76e2-8962-d247596fa529",
+    "parent_id": "01a194b2-cf2e-7330-8ea4-de1c783954cb",
+    "revision": 1,
+    "type": "comment"
+  }
+]

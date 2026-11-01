@@ -1,0 +1,21 @@
+[
+  {
+    "author_id": "fc9235d2-e00c-400c-98f7-f90b6a065bce",
+    "author_type": "member",
+    "content": "q6暂不提供q7待定10  11是什么",
+    "created_at": "2026-10-31T02:16:57-07:00",
+    "id": "01a1913f-739f-7277-baf3-2fa921a4e50a",
+    "revision": 1,
+    "type": "comment"
+  },
+  {
+    "author_id": "dfa610b3-4132-45c3-9cec-4c851d795ab5",
+    "author_type": "agent",
+    "content": "【S1 完整技术设计独立复核】FAIL，暂不交架构评审\n\n对象：`ApiHuaQiPro/maccms.java` `docs/design/APPK-2/tech-design.md` @ `55afe8645440de83120b75bb1360ab7dd73fbb4a`。\n\n前置核验通过：\n\n- 提交存在，直接父提交是 v5 `f44b73920b40756cf84766dbac9dee1dfb8103d1`，并且位于 deploy 基线 `a57e9cb2b94d3e500bea7dfe2c579daee093d969` 之上。\n- 相对 v5 只修改 `docs/design/APPK-2/tech-design.md`；`git diff --check` 通过。\n- 基线 PHP `Database.php:251-262` 的事实核对正确：标准化后以 `select` 开头，或包含 `outfile`、`dumpfile`、`load_file` 的输入不执行，只返回成功结果；v6 已把 SEC-8 从 OP-T5 移出。\n- 基线 `SiteHtmlRenderer` 引用复核得到 main 21 个文件、test 7 个文件；v6 的迁移表已覆盖此前 REV-8 点名的调用方和测试方。\n\n阻断项：\n\n**REV-5 / REV-6｜OP-T4、OP-T5 仍未关闭**\n\n发起人尚未对 OP-T4（是否额外保留 `PasswordAttempts`）和 OP-T5（是否拒绝通过 `/template/**` 读取 `.html`/`.ini` 等文件）作出确认。v6 正确地把它们保留为条件分支，但这不等于已授权的行为。S3-14c、S3-13b、S3-13c 仍不能进入 G1 或派工；架构评审对象不能按“设计已完成”处理。OP-T5 的 SEC-8 已按 PHP 更正，不再是待决选择，但不能替代 SEC-7 的确认。\n\n**REV-9｜DEC-11 删除前台 CSP 需要独立的人类安全确认**\n\nv6 在 DEC-11、C-70～C-72、S3-14 和 S3-15 中选定删除前台 `Content-Security-Policy`、`memberPolicy` 和 `PlayerFramePolicy`。PHP 源码确实没有该响应头，且现有严格策略可能阻挡 `public/jump` 和播放器脚本；但这仍然是 Java 现有安全行为的删除，会降低 XSS 纵深防护。当前 PRD 只明确确认了六项安全修复，不能由“PHP 没有该头”自动替代这项安全取舍。§4.11 的“如评审或发起人认为可另设 OP-T6”不是确认记录。\n\n请新增并关闭 OP-T6，或保留现有安全策略并设计一个与模板兼容的已批准策略。关闭前不能把 DEC-11 当成已选方案，也不能按 V-32 的“无 CSP”断言派发实现。\n\n**REV-10｜`dbtool-run.json` 的互斥不是可执行的跨进程锁**\n\nDBT-5 ④只规定 `begin` 先检查记录和 `backup.lock`，再通过 `LegacySiteFiles` 原子写入 `RUNNING`。原子替换保证单次写入不被撕裂，但不能保证“检查不存在/已完成 → 占用”这一组操作互斥。两个 Java 进程可以同时通过检查，随后都写入 `RUNNING` 并执行 SQL。现有 PHP `backup()` 的 `is_file` 后 `file_put_contents` 也属于同样的检查后创建竞态，不能作为跨进程占用依据。\n\n同时，“RUNNING 且进程已不在执行它”需要进程身份、租约/心跳或等价的可核验字段；v6 的运行记录字段和 `DatabaseRuns` 契约没有定义这些内容。请补充一个跨进程原子获取方案（例如独占创建或 OS 文件锁）、锁的所有权与释放规则、崩溃/重启后的恢复规则，并在 V-31 增加两个并发 `begin` 同时起跑的测试。仅在第一个运行已写好 `RUNNING` 后再启动第二个运行，不能证明该竞态已关闭。\n\n**REV-11｜自动备份恢复步骤与运行锁状态互相矛盾**\n\nDBT-5 ⑥规定 `FAILED`/`UNKNOWN`/中断的 `RUNNING` 在管理员点击“我已处理”并将记录改为 `DONE`之前，DBT-2、DBT-3 和导出全部禁止。DBT-5 ⑦又要求管理员在失败后使用提示条中的自动备份，通过“同一功能”执行还原，完成后再点击“我已处理”。按当前状态机，失败记录尚未确认时，使用同一还原功能会先被 `begin` 拒绝；若先点击确认再恢复，又失去了“未恢复前禁止继续操作”的保护。\n\n请定义专用的恢复动作或明确的状态转换：只能使用该次运行绑定的自动备份，恢复期间仍保持互斥，恢复成功/失败分别如何记录，何时允许 `acknowledge`，以及恢复本身再次失败时如何处理。V-31 必须按该状态机验证，而不是只验证“随后能用备份还原”。\n\n**REV-12｜DBT-2 的拆句执行改变了 PHP 语义，当前没有被声明或覆盖**\n\n基线 PHP `sql()` 对整个输入先 `trim` 和替换 `{pre}`，然后把整个字符串交给一次 `Db::execute($sql)`；它不调用 `mac_parse_sql`，也不逐句执行。v6 的 DBT-2 改为切分后逐条预检和逐条 JDBC 执行。由此至少存在可观察差异：例如输入 `SELECT 1; INSERT INTO ...` 时，PHP 因整体以 `select` 开头而跳过整个输入，v6 若各句均属于允许类别则会执行后面的 `INSERT`。混合有效/无效语句、文件读写语句和多语句输入也有类似差异。\n\n请二选一并写入 DBT-2、V-23、FR-9 追溯和差异判定：保持 PHP 的整段语义；或明确这是 OP-6 允许的新增安全/可恢复性差异，由发起人确认并补充完整的输入语义与验收样本。当前“执行前切分是为了失败分类”同时又声称成功路径不改变，结论不成立。\n\n请架构师修订并回传新的完整技术设计提交。修订后我会先按同一基线独立复核，再交原架构评审复审；在此之前不派后端、前端或测试实现，G1 保持阻塞。",
+    "created_at": "2026-10-31T18:31:40-07:00",
+    "id": "01a194bb-d7b2-76e2-8962-d247596fa529",
+    "parent_id": "01a194b2-cf2e-7330-8ea4-de1c783954cb",
+    "revision": 1,
+    "type": "comment"
+  }
+]
