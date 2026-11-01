@@ -1147,6 +1147,8 @@
 | 12 | 前置门禁写实 | ✅ | OP-15 已关闭（`ebd7aa60` + G0 `01a1946d`）、OP-16 已关闭＝a（G0 `01a1946d`）、OP-T4/5/6 已关闭（`01a194e9`）均按 Issue 登记写；PRE-1 完整产物单列 §2.0，被 AC-11/12/15/18 及依赖用例统一引用，缺失即 T3 BLOCKED；测试环境地址与版本探针缺失亦在 §0.1 与 Q-4 写明 |
 | 13 | 与上游条目冲突已记录而非自裁 | ✅ | 冲突项见 §5「上游待澄清项」，未在本文件更改验收标准 |
 | 14 | 设计回归用例未冒充 AC- | ✅ | §4.2 的 18 条按 DBT-5/V-31 分支编写的用例逐条标「追溯：无 AC-，不计入 AC 验收」；AC-11 矩阵行与 §2.9 的 DBT 用例仍只断言 PRD AC-11 的三个分项 |
+| 15 | DBT-5 锁对象与运行记录举证统一 | ✅ | `dbtool.lock` 在 P-3、取证口径表、「取证入口索引」与 TC-X-DBT-002/003/004/011～018 中逐条出现；运行记录 `dbtool-run.json` 在 P-4、取证口径表及全部 18 条的可观察结果列出现。同 JVM/跨进程抢锁（002/003）、被杀识别（004/011～016）、`delete`/`recover` 竞态（017）、`probe()` 幂等（018）均核同一把锁文件与同一份运行记录；测试中不删除锁文件、`delete` 不写运行记录均与 C-73 / DBT-4 一致 |
+| 16 | 提交范围单一文件 | ✅ | deploy 基线（`main@a57e9cb`）到本次提交的 `git diff --name-only` 只有 `docs/test/APPK-2/t1-cases.md`；前一轮误入的 `.tmp-t1/` 与根目录临时采集文件已全部 `git rm` 后不在提交内 |
 
 ## 4. 关注点与设计回归用例（无 AC- 支撑，不计入验收分母）
 
@@ -1176,30 +1178,61 @@
 - T3 结果与 AC- 判定分开出结论；失败按 T-产品 立缺陷单交智能调度，但**不改变 AC-11 的裁决**；
 - 待产品经理在 PRD 增补 AC- 后再映射，映射时只需在矩阵加行，不改本文用例内容。
 
-**统一前置**：§2.0 的 PRE-1 完整产物（DB-1、DBACC-1/3、`SHOW GRANTS`、SP-1 脚本与基准报告、`it_admin` 生命周期、清理规则），另加：一次性库 `maccms_it_*`（不得指向 `maccms_dev` 或任何共享库）、站点根在本机文件系统（RISK-T20）、站点关闭（`site.site_status=0`）、`MACCMS_WRITE_ENABLED=true` 只在一次性库打开。缺任一项 → 判 BLOCKED。
+**统一前置（全部 18 条共用，逐条不再重复）**：§2.0 的 PRE-1 完整产物（DB-1、DBACC-1/3、`SHOW GRANTS`、SP-1 脚本与基准报告、`it_admin` 生命周期、清理规则），另加下列 P-1～P-6。缺任一项 → 该用例判 BLOCKED。
+
+| 编号 | 前置项 | 达标判定 | 来源 |
+| --- | --- | --- | --- |
+| P-1 | 一次性库 `maccms_it_*`（**不得**指向 `maccms_dev` 或任何共享库） | 库名匹配 `maccms_it_<时间>_<随机>`，执行前 `information_schema.tables` 为 0 | AGENTS.md 本地运行 3；V-31 |
+| P-2 | 站点根在本机文件系统（RISK-T20） | 站点根路径所在卷为本地盘（非 NFS/SMB）；`application/data/backup/database/` 可读写 | 技术设计 ④(a)、RISK-T20 |
+| P-3 | **锁对象 `application/data/backup/database/dbtool.lock`**（站点根相对路径，下称「锁文件」） | 执行前记录**锁文件**的绝对路径、`stat` 内容（size/mtime，文件不存在则记「不存在」）；测试中**任何时刻都不删除锁文件**（C-73：锁文件只创建、不删除） | 技术设计 C-73、DBT-5 ④(a) |
+| P-4 | **运行记录文件 `application/data/backup/database/dbtool-run.json`**（站点根相对路径，下称「运行记录」） | 执行前记录其绝对路径与状态（不存在 / `DONE` / 待处理）；跨进程用例前先将其置为**无记录或 `DONE`**；每步取证用「字段值 + 文件 mtime + 内容 SHA-256」三元组 | 技术设计 C-73、DBT-5 ⑥ |
+| P-5 | 站点关闭（`site.site_status=0`）+ `MACCMS_WRITE_ENABLED=true` 只在一次性库打开 | `SELECT site_status FROM mac_site WHERE site_id=1` 为 0；写开关只对 P-1 的库生效 | DBT-5 ②(d)、§2.0 |
+| P-6 | 取证通道齐备 | 应用日志 logger `maccms.admin.dbtool` 可采集（文件或控制台重定向）；MySQL `general_log` 开启并可按 user 过滤；备份目录可逐个文件 `SHA-256` 比对（含 `backup.lock`） | DBT-5 ⑥(b)、V-31 |
+
+**锁与运行记录的取证口径（本节 18 条统一适用）**：凡是判定「拿不到锁 / 持锁 / 锁忙 / 被拒」，**证据必须指向同一把锁文件** `application/data/backup/database/dbtool.lock`，不接受「页面提示执行中」这类间接证据单独成立。可观察证据按下列三类采：
+
+| 证据 | 采法 | 判定 |
+| --- | --- | --- |
+| 锁占用 | 被杀/挂起进程的 PID 与主机名（`dbtool-run.json` 的 `owner.host`/`owner.pid`/进程启动时间）；持锁期间由测试侧另一进程对**锁文件**再取一次独占锁，必失败 | 抢锁轮次必须计「恰好 1 个成功、1 个 `BUSY`」；两份进程输出与同一次运行的 `owner.pid` 交叉比对 |
+| 锁释放 | 强杀进程后，测试侧对**锁文件**新取独占锁必须成功（操作系统已释放），且 `dbtool.lock` 文件本身**仍存在**（只创建不删除） | 锁文件 `stat` 的 mtime 可变化，但路径始终存在 |
+| 运行记录 | `dbtool-run.json` 的 `run`/`op`/`phase`/`state`/`outcome`/`tables_done`/`export_files`/`backup_lock`/`interrupted`/`recovery`/`ack` 字段值 + mtime + SHA-256 | 状态转移一律按 DBT-5「运行记录状态机」与「进程中断后的唯一转移」表逐字段核对；**记录只在持锁时被改写**，故任何一次记录改写都隐含「当时持锁」 |
+| 日志 | `maccms.admin.dbtool` 中该 `run` 的全部行，含级别与 `run`/`op`/`phase`/`state`/`outcome`/`cleanup`/`duration_ms` 字段 | 不含 SQL 原文、数据值、连接串；级别符合 DBT-5 ⑩ 表「日志」列 |
 
 | 用例编号 | 模块 / 维度 / 优先级 | 追溯 | 自动化通道 | 断言要点（来源：DBT-5 条号 / V-31 项号） | 可观察结果 |
 | --- | --- | --- | --- | --- | --- |
 | TC-X-DBT-001 | 数据库工具 / 异常、回归 / P1 | 无 AC-（不计入 AC 验收） | 手工（`maccms.admin.dbtool` 日志 + 运行记录文件核对） | **结果分类**（DBT-5 ③、V-31 ①）：服务端 `42S02` → `DONE`/`FAILED` 且不进入待处理；单值 `INSERT` 的 `23000` → 同上；多行 `UPDATE` 的非连接错误 → `UNKNOWN` 且待处理；抛 `08S01` → `UNKNOWN`、无补偿语句、不重试 | `dbtool-run.json` 的 `state`/`outcome` 与预期一致；`general_log` 无补偿语句 |
-| TC-X-DBT-002 | 数据库工具 / 异常、回归 / P1 | 无 AC- | 手工（两线程同 JVM 同时起跑，失败注入由测试侧数据源包装） | **同 JVM 同时起跑**（DBT-5 ④(a)、V-31 ②）：重复 200 轮，每轮恰好一个成功、另一个被拒；被拒方发出 0 条语句 | 每轮汇总表：成功数=1、`BUSY` 数=1、`general_log` 新增 Query=1 |
-| TC-X-DBT-003 | 数据库工具 / 异常、并发 / P1 | 无 AC- | 手工（两个子进程 + 起跑信号文件） | **跨进程同时起跑**（V-31 ③）：重复 50 轮，每轮恰好一个输出 `ACQUIRED`、另一个 `BUSY`；`dbtool-run.json` 始终是一个合法记录 | 子进程输出与记录文件逐轮比对，均为 1 成功 1 拒绝 |
-| TC-X-DBT-004 | 数据库工具 / 权限、并发 / P1 | 无 AC- | 手工（持锁子进程挂起 + 父进程动作） | **持锁拒绝与被杀识别**（DBT-5 ④(a)、V-31 ④，以 DBT-2 为例）：持锁子进程写 `RUNNING` 后挂起，父进程 `begin`、`delete`、页面加载 → 前两者拒绝「已有数据库操作在执行」（0 条语句、0 个文件被删），页面显示「执行中」且无操作按钮；随后强制结束子进程，父进程再 `begin` → 记录被改为 `INTERRUPTED`（待处理）、本次 `begin` 被拒、`acknowledge` 可用 | 拒绝文案、`general_log` 计数、目录文件逐个比对、页面截图 |
+| TC-X-DBT-002 | 数据库工具 / 异常、回归 / P1 | 无 AC- | 手工（两线程同 JVM 同时起跑，失败注入由测试侧数据源包装） | **同 JVM 同时起跑**（DBT-5 ④(a)、C-73、V-31 ②）：两个线程经 `CyclicBarrier` 同时调 `begin`，重复 200 轮。二者抢的是**同一把锁** `application/data/backup/database/dbtool.lock`（C-73：同 JVM 内另加按规范化路径登记的进程内 `ReentrantLock`，`FileLock` 的重叠加锁按「占用」处理）→ 每轮恰好一个成功、另一个被拒；被拒方发出 0 条语句 | 每轮汇总表：成功数=1、`BUSY` 数=1、`general_log` 新增 Query=1；每轮结束后**锁文件**仍在（未被删除）、且可被下一次取到；200 轮共 200 个 `dbtool-run.json` 合法记录、`run` 互不相同 |
+| TC-X-DBT-003 | 数据库工具 / 异常、并发 / P1 | 无 AC- | 手工（两个子进程 + 起跑信号文件） | **跨进程同时起跑**（DBT-5 ④(a)、C-74 `DatabaseRunsLockProbe`、V-31 ③）：两个子进程共用同一站点根，等待同一信号文件后同时 `begin`，重复 50 轮；二者抢**同一路径的锁文件** `application/data/backup/database/dbtool.lock`（OS 独占文件锁，非运行记录）→ 每轮恰好一个输出 `ACQUIRED`、另一个 `BUSY` | 两个子进程输出与**运行记录** `dbtool-run.json` 逐轮比对：1 成功 1 拒绝；每轮记录的 `owner.pid` 等于输出 `ACQUIRED` 的那个子进程 PID；`dbtool-run.json` 全程是一个合法 JSON（无半写）；锁文件路径全程存在 |
+| TC-X-DBT-004 | 数据库工具 / 权限、并发 / P1 | 无 AC- | 手工（持锁子进程挂起 + 父进程动作） | **持锁拒绝与被杀识别**（DBT-5 ④(a)、V-31 ④，以 DBT-2 为例）：子进程取得**锁文件** `dbtool.lock` 并写运行记录 `state=RUNNING` 后挂起；父进程 `begin`、`delete`、页面加载 → 前两者拒绝「已有数据库操作在执行」（0 条语句、0 个文件被删），页面 `probe()` 拿不到同一把锁 → 显示「执行中」且无操作按钮，记录仍为 `RUNNING` 且未被改写（SHA-256 不变）；随后 `destroyForcibly()` 子进程 → 操作系统释放该锁文件上的锁，父进程再 `begin` 时先取到锁、再做中断判定 → 记录被改为 `INTERRUPTED`（待处理）、`interrupted` 记判定时间与判定前状态/阶段、本次 `begin` 被拒、`acknowledge` 可用 | 拒绝文案；`general_log` 计数；目录文件逐个比对（0 删除）；`dbtool-run.json` 逐字段 + SHA-256 前后比对；锁文件 `stat`（仍存在）；页面截图；日志一行 `ERROR` |
 | TC-X-DBT-005 | 数据库工具 / 异常、回归 / P1 | 无 AC- | 手工（一次性库 + 故障注入备份） | **中途失败与两种恢复**（DBT-5 ③⑤⑥、V-31 ⑤）：备份含 A/B/C，B 的第 3 条 `INSERT` 构造主键冲突 → A 已还原、B 部分插入、C 未动，记录 `FAILED` 指向 B、自动备份各卷哈希已记录；此时普通还原、执行 SQL、导出、删除该自动备份都被拒；`recover(AUTO_BACKUP)` 后 A/B/C 的 `CHECKSUM TABLE` 与还原前相同，期间另一会话 `begin` 被拒；修正备份后 `recover(SOURCE)` → A/B/C 等于备份内容 | 每步 `CHECKSUM TABLE` 三表值、记录状态、拒绝文案 |
 | TC-X-DBT-006 | 数据库工具 / 异常、回归 / P1 | 无 AC- | 手工（故障注入） | **恢复再失败**（DBT-5 ⑨、V-31 ⑥）：`recover` 在 B 表注入 `08S01` → `RECOVERY_UNKNOWN`，仍待处理；再次 `recover` 成功 → `RECOVERED`，`recovery.attempt=2` | 记录字段 `state`/`recovery.attempt`/最近结果 |
 | TC-X-DBT-007 | 数据库工具 / 权限、安全 / P1 | 无 AC- | 手工（页面勾选 + 接口提交） | **确认规则**（状态机、V-31 ⑦）：`RECOVERED` 时 `acknowledge` → `DONE`；`FAILED` 时未勾选「接受当前数据」的 `acknowledge` 被拒，勾选后 → `DONE` 且 `accepted_as_is=true` | 记录 `state`/`ack.accepted_as_is`；日志一行 `INFO` |
 | TC-X-DBT-008 | 数据库工具 / 安全、异常 / P1 | 无 AC- | 手工（篡改自动备份一卷） | **自动备份被改**（DBT-5 ⑨、V-31 ⑧）：篡改自动备份一个分卷后 `recover(AUTO_BACKUP)` 被拒、0 条语句、记录不变 | 拒绝文案；`general_log` 新增 0 行；记录逐字段不变 |
 | TC-X-DBT-009 | 数据库工具 / 边界、异常 / P1 | 无 AC- | 手工（改 `site_status`） | **站点未关闭**（DBT-5 ②(d)、V-31 ⑨）：`site_status=1` 时还原与 `recover` 都被拒，`general_log` 中无该运行的 `DELETE`/`INSERT` | 拒绝文案；`general_log` 0 行；记录仍为原状态 |
 | TC-X-DBT-010 | 数据库工具 / 异常、回归 / P1 | 无 AC- | 手工（`it_admin` `KILL` 应用连接） | **连接中断**（DBT-5 ③、V-31 ⑩）：B 表执行期间 `KILL` 应用连接 → 记录 `UNKNOWN`，`general_log` 中断点之后无该运行的语句（不补偿、不重试）；同一份正确备份连续还原两次，26 张表 `CHECKSUM TABLE` 两次相同（幂等） | 记录状态；`general_log` 时间序；26 表校验和两次比对 |
-| TC-X-DBT-011 | 数据库工具 / 异常、回归 / P1 | 无 AC- | 手工（跨进程强制结束） | **DBT-1 被杀**（DBT-5 ⑩ 表第 1 行、V-31 ⑪）：在第 2 张表的 `OPTIMIZE` 前被杀 → `DONE`、`outcome=INTERRUPTED`、`tables_done=1`、不进入待处理；页面一行灰色说明、无 `recover`/「我已处理」；随后 DBT-1 可直接再执行；日志一行 `WARN` | 记录字段、页面按钮清单、日志级别 |
-| TC-X-DBT-012 | 数据库工具 / 异常、回归 / P1 | 无 AC- | 手工（跨进程强制结束 ×2 时点） | **DBT-2 被杀**（DBT-5 ⑩ 表第 2 行、V-31 ⑫）：分别在「写 `RUNNING` 后、发送前」与「语句执行中」被杀 → 两次都 `INTERRUPTED`（待处理）；页面只有「我已处理」，未勾选时被拒，无 `recover`；DBT-1/DBT-2/DBT-3/导出 `begin` 均被拒且 0 条语句；日志一行 `ERROR` | 两个时点的记录状态、页面按钮、拒绝文案、日志 |
-| TC-X-DBT-013 | 数据库工具 / 异常、安全 / P1 | 无 AC- | 手工（跨进程强制结束 + 文件逐个比对） | **DBT-3 备份阶段被杀**（DBT-5 ⑩ 表第 3 行、V-31 ⑬）：`phase=AUTO_BACKUP` 第 1 卷写一半时被杀 → `DONE`、`outcome=INTERRUPTED_BEFORE_WRITE`；`export_files` 列出的分卷与值相符的 `backup.lock` 被删、其他备份文件逐个比对不变；被还原表 `CHECKSUM TABLE` 与开始前相同、`general_log` 中该运行无 `DELETE`/`INSERT`；页面无恢复按钮；同一备份可立即重新发起还原；日志一行 `WARN`（含清理的文件名） | 目录逐个文件比对、校验和、`general_log`、记录与日志 |
-| TC-X-DBT-014 | 数据库工具 / 异常、回归 / P1 | 无 AC- | 手工（跨进程强制结束） | **DBT-3 还原阶段被杀**（DBT-5 ⑩ 表第 4 行、V-31 ⑭）：`phase=RESTORE`、B 表 `INSERT` 执行中被杀 → `INTERRUPTED`（待处理），`auto_backup` 各卷哈希完整；页面有 `recover`（两个目标）与「我已处理」（须勾选）；普通操作与删除绑定备份被拒；`recover(AUTO_BACKUP)` 后 A/B/C 校验和等于还原前；日志一行 `ERROR` | 记录、页面按钮、拒绝文案、校验和、日志 |
-| TC-X-DBT-015 | 数据库工具 / 异常、边界 / P1 | 无 AC- | 手工（跨进程强制结束 + 改写 `backup.lock`） | **导出被杀与清理**（DBT-5 ⑩ 表第 5 行、V-31 ⑮）：第 2 张表第 1 批 `SELECT` 后被杀 → `DONE`、`outcome=INTERRUPTED`；半成品分卷与值相符的 `backup.lock` 被删除、备份列表中无该时间戳、之后导出成功；另一轮在被杀后把 `backup.lock` 改写为其他值 → 不删除它、`interrupted.cleanup=LOCK_KEPT`、页面列出残留文件、之后导出按 `lock_check` 被拒；日志一行 `WARN` | 备份目录逐个文件、`interrupted.cleanup` 字段、页面文案、日志 |
-| TC-X-DBT-016 | 数据库工具 / 异常、回归 / P1 | 无 AC- | 手工（跨进程强制结束） | **`recover` 被杀**（DBT-5 ⑩ 表第 6 行、V-31 ⑯）：`RECOVERING`、B 表执行中被杀 → `RECOVERY_INTERRUPTED`（待处理）、`recovery.attempt` 不变；页面有 `recover`（两个目标）与「我已处理」（须勾选）；再次 `recover(AUTO_BACKUP)` → `RECOVERED`、`attempt` 加 1、A/B/C 等于还原前；日志一行 `ERROR` | 记录字段、页面按钮、校验和、日志 |
-| TC-X-DBT-017 | 数据库工具 / 权限、安全 / P1 | 无 AC- | 手工（持锁子进程 + 目录逐个比对） | **删备份入锁与绑定保护**（DBT-4、DBT-5 ④(a)、V-31 ⑰⑱）：①持锁子进程挂起时删除任一备份（含非绑定）→ 拒绝「已有数据库操作在执行」，目录文件逐个比对不变（0 个删除）；②无待处理记录时删除成功、返回与基线一致的文案；③存在 DBT-3 待处理记录（`FAILED`、`RECOVERED` 各一轮）时删除其 `source_backup` 或 `auto_backup` 时间戳 → 拒绝「该备份是未处理数据库操作的恢复点」、0 个删除；删除另一个非绑定备份 → 成功；④两个子进程同时发起 `recover(SOURCE)` 与删除原备份，重复 50 轮：每轮或删除被拒（锁忙/绑定保护）、或 `recover` 被拒（锁忙），绑定备份的分卷与哈希始终完整 | 拒绝文案、目录逐个文件比对、每轮结果汇总表 |
-| TC-X-DBT-018 | 数据库工具 / 回归、边界 / P1 | 无 AC- | 手工（页面二次加载 + 记录与日志哈希） | **页面判定幂等**（DBT-5 ⑥(a) `probe()`、V-31 ⑲）：TC-X-DBT-011～016 每个场景中第二次打开页面 → 不再改写记录、不再写日志；按钮与第一次相同；`dbtool-run.json` 的 mtime 与内容哈希两次一致 | 记录文件哈希、日志行数、按钮清单两次比对 |
+| TC-X-DBT-011 | 数据库工具 / 异常、回归 / P1 | 无 AC- | 手工（跨进程强制结束） | **DBT-1 被杀**（DBT-5 ⑩ 表第 1 行、V-31 ⑪）：子进程持**锁文件** `dbtool.lock`、写运行记录 `state=RUNNING` 后，在第 2 张表的 `OPTIMIZE` 前被杀 → 锁由操作系统释放；下一个持锁者（页面加载 `probe()`）做中断判定，按 `op=OPTIMIZE` 唯一改写运行记录为 `DONE`、`outcome=INTERRUPTED`、保留 `tables_done=1`、不进入待处理 | `dbtool-run.json` 的 `state`/`outcome`/`tables_done`/`interrupted` 字段 + SHA-256；页面一行灰色说明、无 `recover`/「我已处理」；随后 DBT-1 能直接再执行（须能取到同一把锁，第 2 张表起重新执行）；`maccms.admin.dbtool` 一行 `WARN` |
+| TC-X-DBT-012 | 数据库工具 / 异常、回归 / P1 | 无 AC- | 手工（跨进程强制结束 ×2 时点） | **DBT-2 被杀**（DBT-5 ⑩ 表第 2 行、V-31 ⑫）：子进程持**锁文件** `dbtool.lock` 后，分别在「写运行记录 `RUNNING` 后、发送前」与「语句执行中（`SELECT SLEEP` 包装挂起）」被 `destroyForcibly()` → 两次都经下一个持锁者的中断判定改为 `INTERRUPTED`（待处理，`op=SQL` 无 `phase`）；页面只有「我已处理」且未勾选「接受当前数据」时被拒，无 `recover`；DBT-1/DBT-2/DBT-3/导出 `begin` 均须先取同一把锁且被待处理状态拒绝、0 条语句 | 两个时点的 `dbtool-run.json` 字段（`op=SQL`/`state`/`interrupted`/SHA-256）；页面按钮清单；拒绝文案；`maccms.admin.dbtool` 每个时点一行 `ERROR`；锁文件仍存在且可再取 |
+| TC-X-DBT-013 | 数据库工具 / 异常、安全 / P1 | 无 AC- | 手工（跨进程强制结束 + 文件逐个比对） | **DBT-3 备份阶段被杀**（DBT-5 ⑩ 表第 3 行、V-31 ⑬）：子进程持**锁文件** `dbtool.lock`、运行记录为 `op=IMPORT`/`phase=AUTO_BACKUP` 时，第 1 卷写一半被杀 → 下一个持锁者判定为 `DONE`、`outcome=INTERRUPTED_BEFORE_WRITE`；清理只在锁内、只删运行记录点名的文件：`export_files` 列出的分卷，以及内容与 `backup_lock` 相同的 `backup.lock`（内容不同记 `LOCK_KEPT` 不删）；`dbtool.lock` **不删** | `dbtool-run.json` 的 `phase`/`outcome`/`export_files`/`backup_lock`/`interrupted.cleanup` 字段；备份目录逐个文件比对（被还原表 `CHECKSUM TABLE` 与开始前相同、`general_log` 中该运行无 `DELETE`/`INSERT`）；页面无恢复按钮、普通操作可用、同一备份可立即重新发起还原；`maccms.admin.dbtool` 一行 `WARN`（含清理的文件名，清理失败则 `ERROR` 且 `interrupted.cleanup=FAILED` + 残留文件名）；锁文件 `stat` 前后均在 |
+| TC-X-DBT-014 | 数据库工具 / 异常、回归 / P1 | 无 AC- | 手工（跨进程强制结束） | **DBT-3 还原阶段被杀**（DBT-5 ⑩ 表第 4 行、V-31 ⑭）：子进程持**锁文件** `dbtool.lock`、运行记录为 `op=IMPORT`/`phase=RESTORE` 时，B 表 `INSERT` 执行中被杀 → 下一个持锁者判定为 `INTERRUPTED`（待处理），`auto_backup` 各卷 SHA-256 完整保留（清理为空，恢复点不删）；页面有 `recover`（两个目标）与「我已处理」（须勾选）；普通操作与删除绑定备份被拒（后者须先取同一把锁、再做中断判定、再读运行记录）；`recover(AUTO_BACKUP)` 后 A/B/C 的 `CHECKSUM TABLE` 等于还原前 | `dbtool-run.json` 的 `phase`/`state`/`auto_backup`/`interrupted` 字段 + SHA-256；页面按钮清单；拒绝文案；备份目录逐个文件比对（`auto_backup` 各卷未变）；`maccms.admin.dbtool` 一行 `ERROR` |
+| TC-X-DBT-015 | 数据库工具 / 异常、边界 / P1 | 无 AC- | 手工（跨进程强制结束 + 改写 `backup.lock`） | **导出被杀与清理**（DBT-5 ⑩ 表第 5 行、V-31 ⑮）：子进程持**锁文件** `dbtool.lock`、运行记录为 `op=EXPORT` 时，第 2 张表第 1 批 `SELECT` 后被杀 → 下一个持锁者判定为 `DONE`、`outcome=INTERRUPTED`；半成品分卷（`export_files` 点名）与值相符的 `backup.lock` 被删除、备份列表中无该时间戳、之后导出成功（须再取到同一把锁）；另一轮在被杀后把 `backup.lock` 改写为其他值（模拟 PHP 后台）→ 不删除它、`interrupted.cleanup=LOCK_KEPT`、页面列出残留文件、之后导出按 B15 `lock_check` 被拒 | `dbtool-run.json` 的 `outcome`/`export_files`/`backup_lock`/`interrupted.cleanup` 字段 + SHA-256；备份目录逐个文件比对（含 `backup.lock` 内容）；页面文案；`maccms.admin.dbtool` 一行 `WARN`；锁文件 `stat` 前后均在 |
+| TC-X-DBT-016 | 数据库工具 / 异常、回归 / P1 | 无 AC- | 手工（跨进程强制结束） | **`recover` 被杀**（DBT-5 ⑩ 表第 6 行、V-31 ⑯）：子进程持**锁文件** `dbtool.lock`、运行记录为 `op=IMPORT`（`recover` 不分阶段）/`state=RECOVERING` 时，B 表执行中被杀 → 下一个持锁者判定为 `RECOVERY_INTERRUPTED`（待处理）、`recovery.attempt` 不变、最近结果记 `INTERRUPTED`；页面有 `recover`（两个目标）与「我已处理」（须勾选）；再次 `recover(AUTO_BACKUP)`（先取同一把锁）→ `RECOVERED`、`attempt` 加 1、A/B/C 等于还原前 | `dbtool-run.json` 的 `state`/`recovery.attempt`/`recovery.最近结果`/`interrupted` 字段 + SHA-256；页面按钮清单；A/B/C 的 `CHECKSUM TABLE`；`maccms.admin.dbtool` 一行 `ERROR` |
+| TC-X-DBT-017 | 数据库工具 / 权限、安全 / P1 | 无 AC- | 手工（持锁子进程 + 目录逐个比对） | **删备份入锁与绑定保护**（DBT-4、DBT-5 ④(a)、V-31 ⑰⑱）：`delete` 与 `recover` 抢的是**同一把锁文件** `application/data/backup/database/dbtool.lock`。①子进程持该锁挂起时删除任一备份（含非绑定）→ `delete` 取锁失败，拒绝「已有数据库操作在执行」，目录文件逐个比对不变（0 个删除）；②无待处理记录时删除成功、返回与基线一致的 `del_ok`/`del_err` 文案、日志一行 `INFO`（`op=DELETE`，不进状态机，`dbtool-run.json` 不写）；③存在 DBT-3 待处理记录（`FAILED`、`RECOVERED` 各一轮）时删除其 `source_backup` 或 `auto_backup` 时间戳（`Ymd-His-` 前缀）→ 在锁内先做中断判定、再读运行记录，拒绝「该备份是未处理数据库操作的恢复点」、0 个删除；删除另一个非绑定备份 → 成功；④两个子进程分别发起 `recover(SOURCE)` 与删除原备份，重复 50 轮抢同一把锁：每轮或删除被拒（取锁失败 / 绑定保护）、或 `recover` 被拒（取锁失败），二者不会同时成功 | 拒绝文案；目录逐个文件比对（含 `backup.lock`）；每轮结果汇总表 + 两个子进程输出；`dbtool-run.json` 在 `delete` 轮次 SHA-256 不变；锁文件全程存在 |
+| TC-X-DBT-018 | 数据库工具 / 回归、边界 / P1 | 无 AC- | 手工（页面二次加载 + 记录与日志哈希） | **页面判定幂等**（DBT-5 ⑥(a) `probe()`、C-73、V-31 ⑲）：`probe()` 是取**同一把锁文件** `dbtool.lock` 的八个入口之一，拿不到 → 显示「执行中」、不出按钮、不改记录、不写日志；拿到 → 先完成中断判定、释放锁，再按运行记录显示提示条与按钮。TC-X-DBT-011～016 每个场景中第二次打开页面 → 运行记录已不是 `RUNNING`/`RECOVERING`，故不再改写记录、不再写日志；按钮清单与第一次相同 | `dbtool-run.json` 的 mtime 与内容 SHA-256 两次一致；`maccms.admin.dbtool` 日志行数两次一致；页面按钮清单两次相同；第二次加载后锁文件仍可被下一次操作取到（`probe()` 已释放） |
 
 **这些用例的 T3 结论单独成段**（「设计回归（V-31）执行结果」），不与 AC- 判定混算；全部失败项按 T-产品 立缺陷单，交智能调度路由给后端开发。
+
+**锁与运行记录的取证入口索引**（便于核对是否都落在同一对象上）：
+
+| 取锁入口（C-73 八个） | 涉及的用例 | 期望行为 |
+| --- | --- | --- |
+| DBT-1 `begin` | DBT-002、003、004、011、018 | 取 `dbtool.lock`；失败 → 拒绝、0 语句 |
+| DBT-2 `begin` | DBT-002、003、004、012、018 | 同上 |
+| DBT-3 `begin` | DBT-003、005、013、014、018 | 同上，且在锁内做备份预检 |
+| 导出 `begin` | DBT-003、015、018 | 同上；锁内写 `backup.lock` 并记 `backup_lock` |
+| `recover` | DBT-005、006、008、014、016、017 | 同上 |
+| `acknowledge` | DBT-004、007、012、014、016 | 同上；只做一次原子替换、被杀不留 `RUNNING` |
+| `delete` | DBT-004、017 | 同上；锁内中断判定 → 读记录 → 绑定保护 → 升序删 |
+| 页面加载 `probe()` | DBT-004、011～018 | 不等待取锁；拿不到 → 「执行中」无按钮；拿到 → 中断判定后释放 |
 
 ## 5. 上游待澄清项与待补用例
 
