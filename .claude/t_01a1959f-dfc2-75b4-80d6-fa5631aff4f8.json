@@ -1,0 +1,51 @@
+[
+  {
+    "author_id": "dfa610b3-4132-45c3-9cec-4c851d795ab5",
+    "author_type": "agent",
+    "content": "【巡检补派】停在评论 `01a19594-7619-75a4-ba3f-de5a6d71c817`，约 30 分钟未收到新提交。请仅修正 `docs/test/APPK-2/t1-cases.md` 的 §0.1 和 §3 自检第 12 条，明确列出 `GEN-001/002/003/005`，保持其他内容、单文件范围和只写规划边界不变。完成判据：回传新的完整提交号，我再独立复核后交同一测试评审者复审。\n\n[@测试人员-海外](mention://agent/cf8bac8b-dfbf-4b7c-8b21-d7339d2cf899)",
+    "created_at": "2026-10-31T22:40:45-07:00",
+    "id": "01a1959f-dfc2-75b4-80d6-fa5631aff4f8",
+    "revision": 1,
+    "type": "comment"
+  },
+  {
+    "author_id": "cf8bac8b-dfbf-4b7c-8b21-d7339d2cf899",
+    "author_type": "agent",
+    "content": "T1 限定修订已完成（仅 §0.1 与 §3 自检第 12 条），仍为只写阶段：未执行用例、未发请求、未连环境、无执行结果。\n\n**仓库**：`ApiHuaQiPro/maccms.java`\n**分支**：`agent/agent/appk-2-a2c972fd0c56`\n**路径**：`docs/test/APPK-2/t1-cases.md`（单文件）\n**新提交**：`a906fac5031e253a1af9d4bae037e5531d6a5411`\n**父提交**：`5105f04a7daa20d6265619ba3d24b3dde4f2503b`\n\n## 改动（2 行，只动这两处）\n\n1. **§0.1 PRE-1 行「引用范围」**：`GEN-001/003/005` → **`GEN-001/002/003/005`**，并在同一括号组内注明「其中 `GEN-002` 以「同 TC-F-GEN-001」的显式转引形式承担同一门禁」，与 §2.0 表的实际依赖一致。\n2. **§3 自检第 12 条**：同一处引用集合同步改为 **`GEN-001/002/003/005`**，并注明 `GEN-002` 是显式转引、未被范围写法隐去。\n\n未改动：§2.0 表（其 `GEN-001～003/005` 范围写法本就包含 `GEN-002`，保留原样）、AC-1～AC-20 矩阵、77 条 TC-F 用例的编号/步骤/预期/优先级/通道、§4.2 的 18 条 TC-X-DBT 设计回归、`TC-F-TPL-002` 与 `TC-F-WAP-001` 已补齐的 PRE-1 前置、AC-16 的 P2 例外表述、统一 BLOCKED 结论。没有新增或删除任何用例。\n\n## 复核证据\n\n- `git diff --stat 5105f04..a906fac` → `docs/test/APPK-2/t1-cases.md | 4 ++--`，2 增 2 删，仅此一文件。\n- `git diff --name-only a57e9cb2b94d3e500bea7dfe2c579daee093d969 HEAD` → 只有 `docs/test/APPK-2/t1-cases.md`，变更文件数 = 1。\n- `git diff --check a57e9cb..HEAD` 无输出；父提交为 `5105f04`；起点提交 `5105f04` 与 deploy 基线均为 HEAD 祖先（`git merge-base --is-ancestor` 通过，未 squash/amend/rebase）。\n- 用例基数未变：`^#### TC-F-` 计数仍为 **77**；矩阵仍 AC-1～AC-20 共 20 行；通道仍为单一 UI / 接口 / 手工。\n- 三处口径现已统一：§0.1、§2.0、自检第 12 条对 `GEN-` 组的引用分别为 `GEN-001/002/003/005`、`GEN-001～003/005`（含 002）、`GEN-001/002/003/005`。\n\n请复核后交同一测试评审者复审。T3 仍未开始，等你的门禁。",
+    "created_at": "2026-10-31T22:42:13-07:00",
+    "id": "01a195a1-3a03-7e4b-bf99-07716c0f07c5",
+    "parent_id": "01a1959f-dfc2-75b4-80d6-fa5631aff4f8",
+    "revision": 1,
+    "type": "comment"
+  },
+  {
+    "author_id": "dfa610b3-4132-45c3-9cec-4c851d795ab5",
+    "author_type": "agent",
+    "content": "T1 限定修订提交 `a906fac5031e253a1af9d4bae037e5531d6a5411` 已通过独立复核，现交同一测试评审者进行第 3/3 轮复审。\n\n复核证据：\n\n- 提交父为 `5105f04a7daa20d6265619ba3d24b3dde4f2503b`，deploy 基线 `a57e9cb2b94d3e500bea7dfe2c579daee093d969` 是祖先；未 squash、amend、rebase 或改写血缘。\n- 相对 deploy 基线仅修改 `docs/test/APPK-2/t1-cases.md`；`git diff --check` 通过；最终树中没有 `.tmp-t1/`、`c1.json`、`thr*.txt` 等临时文件。\n- 本次相对上一提交仅 2 行修改：§0.1 和 §3 自检第 12 条均明确列出 `GEN-001/002/003/005`，并注明 `GEN-002` 以「同 TC-F-GEN-001」显式转引 PRE-1 门禁；与 §2.0 的 `GEN-001～003/005` 范围一致。\n- 统计保持 77 条 TC-F、18 条 TC-X、AC-1～AC-20 共 20 行矩阵，测试通道仍为单一 UI / 接口 / 手工。\n- 文档仍是只写阶段：未执行用例、未发请求、未连接环境、无执行结果、无实测响应和无凭据。\n- `TC-F-TPL-002`、`TC-F-WAP-001` 的完整 PRE-1、恢复/快照要求和缺失即 T3 BLOCKED 规则保持；AC-16 的 `TC-F-SCH-003` / `TC-F-SCH-006` P2 例外保持。\n\n请基于同一提交完成第 3/3 轮专业复审，回传 PASS 或编号修改清单。T3 仍不得开始执行或写入执行结果。\n\n[@测试评审-海外](mention://agent/1977da2f-9e1b-472a-88ea-deb9455dec14)",
+    "created_at": "2026-10-31T22:43:14-07:00",
+    "id": "01a195a2-28ef-730c-957c-b32d803a17c9",
+    "parent_id": "01a195a1-3a03-7e4b-bf99-07716c0f07c5",
+    "revision": 1,
+    "type": "comment"
+  },
+  {
+    "author_id": "1977da2f-9e1b-472a-88ea-deb9455dec14",
+    "author_type": "agent",
+    "content": "【测试评审】阶段 T1｜`docs/test/APPK-2/t1-cases.md` @ `a906fac5031e253a1af9d4bae037e5531d6a5411`\n\n结论：通过（PASS）\n轮次：第 3 / 3 轮\n\n复审依据：\n\n- 提交血缘、单文件范围和只写边界通过：`a906fac` 的父为 `5105f04`，deploy 基线 `a57e9cb` 为祖先；相对 deploy 基线仅有 `docs/test/APPK-2/t1-cases.md`，`git diff --check` 通过；没有执行请求、实测结果、凭据或 T3 产物。\n- 上一轮修改项已闭合：§0.1、§2.0 和 §3 自检第 12 条均纳入 `DBT-001～007`、`SCH-001～007`、`INS-001～004`、`PAGE-001～005`、`TAG-001～002`、`DYN-001～003`、`GEN-001/002/003/005`、`TPL-002`、`WAP-001` 及 18 条 `TC-X-DBT`；`GEN-002` 明确以「同 TC-F-GEN-001」转引 PRE-1；正文对应前置均写明完整 PRE-1 产物，缺任一项即 T3 BLOCKED。\n- 统计和追溯通过：77 条 TC-F、18 条 TC-X、AC-1～AC-20 共 20 行矩阵；用例编号无重复；功能用例通道均为单一 UI / 接口 / 手工；AC-19 无阶段 B 输入的 BLOCKED 边界已如实保留。\n- 自检真实性通过：第 7 条已明确 AC-16 的 `TC-F-SCH-003/006` 为 P2 例外，不再声称所有 AC 主判定均为 P1；第 12 条与正文实际引用一致。抽查的 PRE-1、AC-19、只写未执行和单文件范围结论均能在产物中找到依据。\n- 既有关键修补保持有效：`TC-F-SYN-002/003`、`TC-F-NET-003`、`TC-F-PAGE-005` 的可判定性已收敛；5-j/5-k 的固定输入、响应体、HTTP 200 和 JSON Content-Type 有 PHP 源码依据；`TC-F-TPL-002`、`TC-F-WAP-001` 已补齐恢复/快照门禁。\n\n修改清单：无。\n\n本 PASS 只表示 T1 用例文档评审通过，不表示 T3 已执行或结果 PASS。T3 仍须等待 G2.5 PASS、测试环境地址与版本探针，以及文档中列明的 PRE-1/PRE-3 等前置产物；未满足时按用例规则判 BLOCKED。",
+    "created_at": "2026-10-31T22:59:15-07:00",
+    "id": "01a195b0-d106-7350-a0e4-7b8eab0d4154",
+    "parent_id": "01a195a2-28ef-730c-957c-b32d803a17c9",
+    "revision": 1,
+    "type": "comment"
+  },
+  {
+    "author_id": "dfa610b3-4132-45c3-9cec-4c851d795ab5",
+    "author_type": "agent",
+    "content": "T1 双层门禁已通过。\n\n独立复核结论：PASS\n\n- 产物：`docs/test/APPK-2/t1-cases.md`\n- 提交：`a906fac5031e253a1af9d4bae037e5531d6a5411`\n- deploy 基线：`a57e9cb2b94d3e500bea7dfe2c579daee093d969`\n- 血缘：提交父为 `5105f04a7daa20d6265619ba3d24b3dde4f2503b`，deploy 基线为祖先。\n- 范围：相对 deploy 基线仅有该单一文档文件；`git diff --check` 通过；最终树无 `.tmp-t1/`、`c1.json`、`thr*.txt` 等临时文件。\n- 内容：77 条 TC-F、18 条 TC-X、AC-1～AC-20 共 20 行矩阵；功能用例通道均为单一 UI / 接口 / 手工。\n- 本轮修改：§0.1 与自检第 12 条明确列出 `GEN-001/002/003/005`，并说明 `GEN-002` 以「同 TC-F-GEN-001」显式转引 PRE-1。\n- T1 边界：文档仍只写规划，未执行用例、未发请求、未连接环境、无执行结果、无实测响应和无凭据。\n- 评审层：同一提交已由测试评审者完成第 3/3 轮专业复审，结论 PASS，修改清单为空。\n\nT1 现在可作为后续流程的测试用例基线。T3 仍需 G2.5 PASS、测试环境地址和版本探针，以及文档列明的 PRE-1/PRE-3 前置；未满足时保持 BLOCKED。\n\nAPI 契约仍停在后端评审第 2/3 轮驳回状态，API-030 安装安全边界、采集 URL SSRF 边界和 REV-API-5～8 尚未闭合；因此当前不推进实现、接口执行或 T3。",
+    "created_at": "2026-10-31T23:00:18-07:00",
+    "id": "01a195b1-c70a-7d03-bc29-09399e7876c5",
+    "parent_id": "01a195b0-d106-7350-a0e4-7b8eab0d4154",
+    "revision": 1,
+    "type": "comment"
+  }
+]

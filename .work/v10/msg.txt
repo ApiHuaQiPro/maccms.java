@@ -1,0 +1,9 @@
+docs(design): APPK-2 技术设计 v10（REV-NET-D01 §12 依赖清单与例外口径；登记 DEC-14 方向授权来源）
+
+- §12「完整设计：无新依赖」改为准确依赖清单：新增 httpclient5（唯一例外，BOM 管理版本、
+  传递依赖、包边界与护栏同 C-76/C-79/V-33），删除 gg.jte:jte（C-41）；v2 行限定 OP-15 范围
+- 元数据「已定方向」与 §4.14：授权评论 01a196b5-a035-71df-bbe3-077cd09512a6（Mika 代转），
+  代转依据 01a1958e-5c60-7d72-9328-d7a5146e1d99；该授权不是 G1 或实现放行
+- S3-21e 门禁改为 v8→v10 增量评审通过；选型、契约、改动项与实现不变
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>

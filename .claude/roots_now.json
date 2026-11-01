@@ -1,0 +1,74 @@
+[
+  {
+    "author_id": "dfa610b3-4132-45c3-9cec-4c851d795ab5",
+    "author_type": "agent",
+    "content": "本单按开发前只读盘点推进，暂不启动开发门禁；基线已核对为 `ApiHuaQiPro/maccms.java` main@`3a3262e70c31757f64427682c42262665e64d4d0`，工作区干净，状态保持进行中。\n\n[@架构师-海外](mention://agent/9257d279-a014-4617-b4ea-23c5832d6f9d) 负责本轮盘点与拆分，因其职责覆盖迁…",
+    "content_truncated": true,
+    "created_at": "2026-10-30T03:47:28-07:00",
+    "id": "01a18e13-3405-79af-81e3-6f00703d5d0f",
+    "last_activity_at": "2026-10-30T11:31:44-07:00",
+    "reply_count": 12,
+    "revision": 1,
+    "type": "comment"
+  },
+  {
+    "author_id": "fc9235d2-e00c-400c-98f7-f90b6a065bce",
+    "author_type": "member",
+    "content": "[@智能调度-海外](mention://agent/dfa610b3-4132-45c3-9cec-4c851d795ab5) 我授权原架构师再做一轮只读修订：\n\n1. **范围**：只改架构评审提出的 REV-1～6；复杂、需要先设计的实施项，明确列为待拆组。修订完由你复核，再交原架构评审复审。\n2. **基线已变，以新主干为准**：`ApiHuaQiPro/maccms.java` 的 ma…",
+    "content_truncated": true,
+    "created_at": "2026-10-30T13:17:16-07:00",
+    "id": "01a18e75-a3cc-7c90-8b92-f5a146acc15f",
+    "last_activity_at": "2026-10-30T13:35:45-07:00",
+    "reply_count": 3,
+    "revision": 1,
+    "type": "comment"
+  },
+  {
+    "author_id": "fc9235d2-e00c-400c-98f7-f90b6a065bce",
+    "author_type": "member",
+    "content": "[@智能调度-海外](mention://agent/dfa610b3-4132-45c3-9cec-4c851d795ab5) 你 13:35 复核提的 1～5 项我看过了，都认可。我授权原架构师再做一轮只读修订（v6），同时**缩小 B21 演练部分的交付范围**：\n\n1. **写全（第 1 项）**：v6 必须能单独拿来确认，全文不出现\"同 v4\"\"与 v4 相同\"之类的引用，原 14 单、…",
+    "content_truncated": true,
+    "created_at": "2026-10-30T16:29:38-07:00",
+    "id": "01a18f25-c13d-7482-855a-6c84b0aab3f4",
+    "last_activity_at": "2026-10-31T02:03:18-07:00",
+    "reply_count": 41,
+    "revision": 1,
+    "type": "comment"
+  },
+  {
+    "author_id": "fc9235d2-e00c-400c-98f7-f90b6a065bce",
+    "author_type": "member",
+    "content": "q6暂不提供q7待定10  11是什么",
+    "content_truncated": false,
+    "created_at": "2026-10-31T02:16:57-07:00",
+    "id": "01a1913f-739f-7277-baf3-2fa921a4e50a",
+    "last_activity_at": "2026-10-31T18:31:40-07:00",
+    "reply_count": 82,
+    "revision": 1,
+    "type": "comment"
+  },
+  {
+    "author_id": "dfa610b3-4132-45c3-9cec-4c851d795ab5",
+    "author_type": "agent",
+    "content": "【巡检补派】停在评论 `01a194bb-d7b2-76e2-8962-d247596fa529`，约 30 分钟未收到修订回传。请补充完整技术设计的新提交，处理 REV-9～REV-12：OP-T4/OP-T5 与 CSP 安全决策门禁、跨进程原子互斥及崩溃恢复、自动备份恢复状态机、DBT-2 与 PHP 整段 SQL 语义差异。完成判据：回传完整设计提交号；提交只含设计产物并保持指定基线血缘；…",
+    "content_truncated": true,
+    "created_at": "2026-10-31T18:40:49-07:00",
+    "id": "01a194c4-379f-71f6-89d0-f328b05e4ca3",
+    "last_activity_at": "2026-11-01T02:45:11-08:00",
+    "reply_count": 71,
+    "revision": 1,
+    "type": "comment"
+  },
+  {
+    "author_id": "dfa610b3-4132-45c3-9cec-4c851d795ab5",
+    "author_type": "agent",
+    "content": "【巡检补派】停在评论 `01a19594-7619-75a4-ba3f-de5a6d71c817`，约 30 分钟未收到新提交。请仅修正 `docs/test/APPK-2/t1-cases.md` 的 §0.1 和 §3 自检第 12 条，明确列出 `GEN-001/002/003/005`，保持其他内容、单文件范围和只写规划边界不变。完成判据：回传新的完整提交号，我再独立复核后交同一测试评审者…",
+    "content_truncated": true,
+    "created_at": "2026-10-31T22:40:45-07:00",
+    "id": "01a1959f-dfc2-75b4-80d6-fa5631aff4f8",
+    "last_activity_at": "2026-10-31T23:00:18-07:00",
+    "reply_count": 4,
+    "revision": 1,
+    "type": "comment"
+  }
+]
