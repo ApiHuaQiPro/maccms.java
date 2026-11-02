@@ -40,7 +40,7 @@ sha256sum php/application/install/sql/install.sql   # 48dbe0fbd138f670919208d8bc
 # 9 个类 37 条：0 失败 0 错误
 
 # 全量
-./mvnw -B verify   # Tests run: 3031, Failures: 0, Errors: 0, Skipped: 0；BUILD SUCCESS（基线 3005 条，+26 为本分支并入的 feature 基线与本段新增）
+./mvnw -B verify   # Tests run: 3031, Failures: 0, Errors: 0, Skipped: 0；BUILD SUCCESS
 ```
 
 先红后绿：`InstallSqlFileTest` 先于 `InstallSqlFile` 写好；在改 `.gitattributes` 之前，本机工作区的 install.sql 是 CRLF（45950 字节），`constantEqualsRepositoryFileAndFileIsLf` 的“不含 \r”断言对它必然失败。本段没有单独留存红灯运行的输出。
