@@ -258,10 +258,11 @@ public final class PhpLexer {
         while (p < len && isDigit(src[p])) {
             p++;
         }
+        int intDigits = p - pos;
         boolean isFloat = false;
-        if (p - pos > 1 && src[pos] == '0' || p - pos == 1 && src[pos] == '0' && p < len
+        if (intDigits == 1 && src[pos] == '0' && p < len
                 && (src[p] == 'x' || src[p] == 'X' || src[p] == 'b' || src[p] == 'B')) {
-            // 八进制 / 十六进制 / 二进制整数不在 RT-1 内
+            // 十六进制 / 二进制整数不在 RT-1 内
             throw new TemplateUnsupportedException(TemplateUnsupportedException.Kind.TOKEN, src, start);
         }
         if (p < len && src[p] == '.' && !(p + 1 < len && src[p + 1] == '.' && p + 2 < len && src[p + 2] == '.')) {
@@ -283,6 +284,11 @@ public final class PhpLexer {
                     p++;
                 }
             }
+        }
+        if (!isFloat && intDigits > 1 && src[pos] == '0') {
+            // 八进制整数（含 00、07、012）不在 RT-1 内；带小数点或指数的前导零串（00.5、01.5、00e1）
+            // 在 PHP 7.3 是十进制 T_DNUMBER，上面已识别为 float，不走这里
+            throw new TemplateUnsupportedException(TemplateUnsupportedException.Kind.TOKEN, src, start);
         }
         String text = new String(src, pos, p - pos, StandardCharsets.ISO_8859_1);
         pos = p;

@@ -384,6 +384,26 @@ class PhpLexerTest {
         }
 
         @Test
+        void leadingZeroDecimalFloatsAndExponentsAreDecimal() {
+            // REV-1：PHP 7.3.33 token_get_all 把以下各项都切为单个 T_DNUMBER（十进制，前导零不表示八进制）
+            assertThat(ops(tokens("<?php 00.5; 01.5; 00e1; 00.; 09.5; 08e1; 0012.25; 00E+2; 00.5e-1;")))
+                    .isEqualTo("F:0.5 ; F:1.5 ; F:0.0 ; F:0.0 ; F:9.5 ; F:80.0 ; F:12.25 ; F:0.0 ; F:0.05 ;");
+            Token t = tokens("<?php 0012.25;").get(0);
+            assertThat(t.start()).isEqualTo(6);
+            assertThat(t.end()).isEqualTo(13);
+        }
+
+        @Test
+        void leadingZeroIntegerWithoutFractionOrExponentStaysUnsupported() {
+            // PHP 7.3.33：00 / 07 为 T_LNUMBER（八进制），00e 为 T_LNUMBER"00" + T_STRING"e"——都仍按非十进制整数拒绝
+            for (String src : List.of("<?php 00;", "<?php 07;", "<?php 00e;", "<?php 00...$a;")) {
+                TemplateUnsupportedException e = rejected(src);
+                assertThat(e.kind()).as(src).isEqualTo(Kind.TOKEN);
+                assertThat(e.offset()).as(src).isEqualTo(6);
+            }
+        }
+
+        @Test
         void nonDecimalIntegerLiteralsAreUnsupported() {
             for (String src : List.of("<?php 012;", "<?php 0x1A;", "<?php 0b11;")) {
                 TemplateUnsupportedException e = rejected(src);
