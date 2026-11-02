@@ -350,3 +350,95 @@ git rev-parse 05ffd11:third_party/maccms-template-v2020.1000.1035 → 75038ae7f8
 - 范围：只改上表 5 个文件与本说明；未改模板原件（包目录树不变）、PRD、设计、API、T1、`tests/api/**`、deploy；未发接口请求，未部署。
 - 安全：本批不新增路由、输入、查询、文件读写或出站请求；`pathTpl` 的值来自旧配置 `install_dir`/`template_dir`，与改前同源，只是不再拼 `html_dir`。没有凭据或个人数据。
 - 不含的部分：C-11 部署说明（流水线）、V-4/V-5 接口对照（测试线，FR-1 实现之后）。
+
+## S3-06：运行时值语义（C-17；RT-2～RT-5；V-11 的值语义部分）
+
+依据：技术设计 v13 `docs/design/APPK-2/tech-design.md` @ `9c73bf6ced044f40eeb87ef7861e616b6157499a` §5.2 C-17、§6.3（`phptemplate.runtime` 只依赖 JDK）、§6.5 RT-2～RT-5、§7.4 S3-06、§8.2 V-11；PRD v10 @ `9dd36a73febe8bac4c5d02b2638dd57c3e642a49`（FR-2、FR-4、BR-3）；值语义黄金 `src/test/resources/phptemplate/semantics/php73-vectors.json` 与生成器 `src/test/php/tpl_runtime_golden.php`、说明 `docs/test/APPK-2/s3-05-golden.md` @ `b71b1aa4be0190f85686650a7b22459c995cf57e`（S3-05 两层检查 PASS）。本批不含接口，契约：N/A（没有 HTTP 路由、没有 API-ID）。基于已放行的 S3-02 `2de6979799b9ed9552900715806ab0513c13d833`。
+
+### 变更文件
+
+| # | 文件 | 改动 |
+| --- | --- | --- |
+| C-17 | `src/main/java/com/maccms/backend/phptemplate/runtime/ZValue.java` | 新增。值类型：`Null`、`Bool`、`Int`（`long`，64 位）、`Float`（`double`）、`Str`（不可变字节串，长度/下标/比较按字节）、`ZArray`；`typeName()` 同 PHP `gettype` |
+| C-17 | `src/main/java/com/maccms/backend/phptemplate/runtime/ZArray.java` | 新增。有序数组：插入序遍历，覆盖保留原位；键规范化（字符串键规则同 `PhpArray.normalizeKey`；`bool`→0/1、`null`→`""`、`float`→`zend_dval_to_lval`、数组作键非法）；自动下标 `nNextFreeElement`（只增不减，到 `PHP_INT_MAX` 后拒绝追加）；`copy()` 逐层快照（供解释器实现写时复制 / MC-4） |
+| C-17 | `src/main/java/com/maccms/backend/phptemplate/runtime/PhpSemantics.java` | 新增。RT-3 字符串化（`precision=14` 的 `%.14G`，按精确二进制值偶数舍入，同 `zend_dtoa` mode 2 + `php_gcvt`）；RT-4 `compare_function`、`==`/`<`/`<=`（`>`、`>=` 交换操作数）、`===`、`in_array`；`is_numeric_string_ex`、`zendi_smart_strcmp`、`zend_binary_strcmp`、`zend_is_true`、`zval_get_long`；RT-5 `fetchDim`（读：数组缺键为 null，字符串单字节、越界为空串，标量容器为 null）与 `fetchDimQuiet`（isset/empty 上下文） |
+| C-34（部分） | `src/test/java/com/maccms/backend/phptemplate/runtime/PhpSemanticsGoldenTest.java` | 新增。V-11 值语义黄金逐条比对（8 项） |
+| C-34（部分） | `src/test/java/com/maccms/backend/phptemplate/runtime/PhpSemanticsTest.java` | 新增。黄金之外的边界单测与“runtime 只依赖 JDK”检查（9 项） |
+| 黄金 | `src/test/resources/phptemplate/semantics/php73-vectors.json` | 从 `b71b1aa` 原样取出（`git show b71b1aa:<路径>`），blob `d28769ad2744c12c8eb9f46170961e734347a13b`、SHA-256 `b76c85c9590137e52a9aa30d5a7f842d05502d8c036d3907884a0c662e49cf6b`，与放行提交、s3-05-golden.md §6.1 记载逐字节相同 |
+| — | `.gitattributes` | 追加 S3-05 同一条 `src/test/resources/phptemplate/** -text -whitespace`（原文照抄 `b71b1aa`），黄金按字节检出 |
+| — | `docs/api/APPK-2/impl-notes.md` | 本说明：新增「S3-06」一节 |
+
+只引入值语义需要的 1 个黄金文件；S3-05 的生成器、编译/渲染/模型黄金、`.compare/` 临时目录与 `docs/test/APPK-2/s3-05-golden.md` 都没有带入本分支。
+
+### RT- → 黄金分组 → 测试（V-11 值语义部分）
+
+| 规则 | 黄金分组（条数） | 测试 | 断言方式 |
+| --- | --- | --- | --- |
+| RT-2 键规范化 | `rt2_array_keys`（10） | `PhpSemanticsGoldenTest.rt2ArrayKeysNormalizeLikePhp73` | 按生成器源码同序写 12 次（`'1'`、`'01'`、`1.7`、`true`、`null`、`'-3'`、`' 3'`、`'3 '`、`'+4'`、`'-0'`、`'1.0'`、溢出串），遍历结果的值、键类型、键逐条等于黄金 |
+| RT-2 键序与自动下标 | `rt2_array_order`（5） | `rt2ArrayOrderAndAutoIndexMatchPhp73` | `['b']`、`[]`、`['a']`、`[10]`、`[]` 后键序/类型/值等于黄金（第二次追加为 11） |
+| RT-2 与 `PhpArray.normalizeKey` 同规则 | — | `PhpSemanticsTest.stringKeysNormalizeExactlyLikePhpArray` | 22 个字符串键两边结果相同 |
+| RT-3 字符串化 | `rt3_stringify`（22） | `rt3StringifyMatchesPhp73Precision14` | 输入表标签与黄金逐一对应；`gettype` 与 `(string)` 结果逐条相等（含 `-0`、`1.0E+14`、`1.0E-5`、`0.33333333333333`、`1.2345678901235E+17`、`PHP_INT_MIN`、`Array`） |
+| RT-4 弱比较 | `rt4_compare`（21） | `rt4LooseComparisonMatchesPhp73` | 先按生成器 `hexOf`/`serializeArray` 校验输入编码等于黄金，再比 `==`、`!=`、`===`、`<`、`>`、`<=`、`>=` 共 7 个结果（147 个断言） |
+| RT-4 `in_array` | `rt4_in_array`（6） | `rt4InArrayIsLooseByDefault` | 输入编码等于黄金；默认弱比较与 `strict=true` 两个结果 |
+| RT-5 未定义取值 | `rt5_undefined`（5） | `rt5UndefinedValuesReadAsNull` | 未定义下标/嵌套下标读为 null、输出 `""`；`isset` 为假、`empty` 为真。“undefined var”只验证值层面（null → `""`），变量表查找归 S3-07 |
+| RT-5 字符串下标 | `rt5_str_index`（6）、`rt5_str_index_bytes`（4） | `rt5StringOffsetsReadSingleBytes` | `'abc'` 的 0/1/2/3/-1/`'1'` 下标的字符与类型（越界为空串、类型 string）；`"你"` 三字节逐字节取 |
+| 分组归属完整 | 全部 19 个分组 | `everyGoldenGroupIsCoveredHereOrAssignedToALaterTask` | 黄金分组 = 本类 8 个 + `NOT_COVERED_HERE` 11 个；黄金新增分组时测试失败 |
+| 64 位边界、数值串、下标边界、字节串、JDK 依赖 | — | `PhpSemanticsTest` 其余 8 项 | 取模/截断、溢出整数串退回字节比较、NaN、7.3 不允许尾随空白、`Long.MIN_VALUE` 下标不抛异常、`phptemplate.runtime` 的 import 与全限定名只含 `java.*` |
+
+期望值一律取自黄金；部分分组黄金没有记录输入值（`rt2_*`、`rt3_stringify`、`rt4_compare`），测试的输入表逐字照抄生成器 `b71b1aa` 同名分组源码，并用标签、条数和输入编码与黄金互相校验。没有跳过、没有按标签硬编码结果。
+
+### V-11 中不属于本批的剩余覆盖
+
+| 黄金分组 | 归属 | 说明 |
+| --- | --- | --- |
+| `rt3_json`（15） | 函数工作（C-22 的 `json_encode` 转义规则 / `TemplateFunctions`） | C-17 的 RT-2～RT-5 不含 `json_encode`；V-11 点名的 `json_encode` 向量待该子任务比对 |
+| `gap1_bare_identifier`（2） | S3-07 解释器（C-18/C-19） | 裸标识符 `color` 按未定义常量取名字作字符串；GAP-1 须在 S3-07 前完成设计处理 |
+| `gap1_mac_day_color`（3）、`fn_mac_day`（44）、`fn_date`（24）、`fn_list`（58）、`fn_url_list`（10）、`fn_internal`（14） | `TemplateFunctionsGoldenTest`（函数工作） | 函数返回值与签名 |
+| `tag_names` | `TagLibCompileTest`（C-22） | TPL-11 原样输出的标签名 |
+| `art_info_empty_where`、`art_info_not_found` | `TagModelsInfoDataTest`（S3-12b） | `Art.infoData` 1001/1002 分支 |
+| 变量表、算术、`.` 连接、`echo` 输出缓冲、`ZDUMP-1` 编码 | S3-07（`InterpreterTest`）/ S3-12b | 本批只提供值与语义原语，不含执行；V-11 的 `InterpreterTest` 部分由 S3-07 交付 |
+
+### 实际执行的命令与结果（S3-06）
+
+```text
+# 工作目录：仓库根（Git Bash）；JDK 21，JDK_JAVA_OPTIONS 同 MULTICA.md ⚠ 条
+# 黄金原样引入
+git show b71b1aa:src/test/resources/phptemplate/semantics/php73-vectors.json > src/test/resources/phptemplate/semantics/php73-vectors.json
+git rev-parse b71b1aa:src/test/resources/phptemplate/semantics/php73-vectors.json → d28769ad2744c12c8eb9f46170961e734347a13b
+git hash-object src/test/resources/phptemplate/semantics/php73-vectors.json   → d28769ad2744c12c8eb9f46170961e734347a13b
+sha256sum …/php73-vectors.json → b76c85c9590137e52a9aa30d5a7f842d05502d8c036d3907884a0c662e49cf6b（= s3-05-golden.md §6.1）
+
+# 相关测试（V-11 值语义部分）
+./mvnw -B -q test -Dtest=PhpSemanticsGoldenTest,PhpSemanticsTest
+→ 第 1 次：Tests run: 17, Errors: 3（rt2_array_keys、rt2_array_order、rt4_compare 的测试辅助方法把 int 键强转成 Str 抛
+  ClassCastException，是测试工具写错，不是语义不符）；改为经 PhpSemantics.toStr 字符串化后
+→ 第 2 次：退出码 0；PhpSemanticsGoldenTest Tests run: 8, Failures: 0；PhpSemanticsTest Tests run: 9, Failures: 0
+
+# 先红：实现与测试同一轮写成，没有“先写测试、实现为空”的红灯记录；改用变异核验黄金测试能抓到错误语义
+# （每次只改一处、跑 PhpSemanticsGoldenTest、再恢复原文件，恢复后 git diff --no-index 无差异）
+M1 浮点舍入精度 14 → 15                         → Failures: 2（rt3StringifyMatchesPhp73Precision14、rt4LooseComparisonMatchesPhp73 的输入编码）
+M2 非数字串与 int 改成 PHP 8 的按字符串比较      → Failures: 2（rt4LooseComparisonMatchesPhp73、rt4InArrayIsLooseByDefault）
+M3 字符串下标越界读改为 null                    → Failures: 1（rt5StringOffsetsReadSingleBytes）
+M4 键 "-0" 改为规范化成 int                      → Failures: 1（rt2ArrayKeysNormalizeLikePhp73）
+
+# 提交范围与空白检查
+git diff --name-status 2de6979 8a58086 → M .gitattributes；A 3 个 runtime 源文件、2 个测试、1 个黄金
+git --attr-source=8a58086 diff --check 2de6979 8a58086 → 无输出，退出码 0
+
+# 全量回归（工作区 = 提交 8a58086 的内容）
+./mvnw -B verify → Tests run: 3044, Failures: 0, Errors: 0, Skipped: 0；BUILD SUCCESS；耗时 09:11
+  （S3-02 的 3027 项 + 本批新增 17 项；无退步）
+```
+
+### 迁移与回滚
+
+- 无数据库、配置或数据迁移；新包 `phptemplate.runtime` 目前没有任何产品代码调用（`site` 等模块未接入），不改变页面与接口输出。
+- 回滚（设计 §9 “S3-06～S3-12”行）：`git revert 8a58086`（及本说明提交）；依赖它的 S3-07 起的提交须先回退。
+
+### S3-06 自查（自查不代替审计）
+
+- 与设计一致：只实现 C-17 的三个类与 RT-2～RT-5；`phptemplate.runtime` 只 import `java.*`（`PhpSemanticsTest.runtimeDependsOnlyOnJdk` 守住）；字符串键规则与 `PhpArray.normalizeKey` 同（逐键对照测试），未复用/改动 `legacyconfig`，也没有动各模块已有的 `PhpLoose` 等工具（设计 §1 第 159 行）。
+- 黄金：只读不改，期望值全部取自黄金；没有发现与 PHP 7.3 事实或设计条目冲突的向量，没有需要停下回报的项。
+- 范围：未实现 S3-07 词法/语法/解释器、函数表、模型调用、模板编译器或页面接入；未改 PRD、设计、API、T1、黄金期望、模板资产、`tests/api/**`；未合入 deploy，未部署。C-35（`ModuleBoundaryTest` 登记 `phptemplate` 分层）不在本单，JDK 依赖约束先由本单测试守住。
+- 安全：不新增路由、输入、查询、文件读写、出站请求或日志；`ZValue.Str`/`ZArray` 的 `toString()` 不输出内容（模板变量可能含用户数据）；字符串下标对 `Long.MIN_VALUE`/`Long.MAX_VALUE` 等极端下标不抛异常（单测覆盖）；没有凭据或个人数据。
+- 已知限制：PHP 的 Notice/Warning（数组转串、未定义下标、非法偏移）不在值层记录，是否写日志由 S3-07 解释器决定；数组作字符串下标按 `zval_get_long` 处理（非空为 1），模板包中无此写法。
