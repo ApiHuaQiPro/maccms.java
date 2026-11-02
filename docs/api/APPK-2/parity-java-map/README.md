@@ -83,6 +83,15 @@ $ python docs/api/APPK-2/parity-java-map/verify_map.py
 exit 0
 ```
 
+抽跑被引用的非 IT 测试（证明引用的测试类可运行；不代表行为等价判定）：
+
+```
+$ ./mvnw -q -o test -Dtest='AdminSystemGoldenTest,AdminMakeMvcTest,MakeServiceTest,AddonMarketGoldenTest,AdminTemplateMvcTest,TimmingControllerMvcTest,TimmingGoldenTest,InstallWizardGoldenTest,InstallModeTest,WechatServiceTest,KindIngestTest,VodIngestTest,ProvideGoldenVersionsTest,AdminMvcTest'
+exit 0；14 个测试类 84 个用例：失败 0、错误 0、跳过 0（target/surefire-reports）
+```
+
+`*MySqlIT` 与前台 `Site*MvcTest` 本轮未执行。
+
 `verify_map.py` 核对的是**引用可检出**（文件、行号范围、类与方法名存在），不核对“这一行代码确实处理该动作”；后者在后台由生成器规则保证，在前台/API/安装行由人工阅读保证，评审可按 §4 第 3 条逐行抽查。
 
 ## 5. 边界
