@@ -73,7 +73,11 @@ sha256sum php/application/install/sql/install.sql   # 48dbe0fbd138f670919208d8bc
 # Tests run: 3, Failures: 0, Errors: 0, Skipped: 0 — BUILD SUCCESS
 # 事后 SHOW DATABASES LIKE 'maccms_it_%' 为 0 行；未连接 maccms_dev
 
-./mvnw -B verify   # 全量结果见 Issue 回传
+./mvnw -B verify
+# Tests run: 3043, Failures: 1, Errors: 0, Skipped: 0（比第 1 段 3031 多 12 条，即本段新增的两个测试类）
+# 唯一失败：SitePaymentMvcTest.alipayFormPostsToTheGatewayOnlyAndCspAllowsJustThatOrigin:173——CSP 来源列表里多出一个随机串
+# "w2jwskoymmnh6ag"，与安装模块无关、不在本单 diff 内；单独复跑 ./mvnw -B -q test -Dtest=SitePaymentMvcTest → 9/0/0/0。
+# 疑为该测试的随机值偶发撞上来源解析，留给支付模块负责人判断
 ```
 
 第 2 段的单测针对第 1 段已写好的产品代码，属于补测，没有红灯阶段可留存；IT 首次运行暴露两处测试自身问题（驱动在语句末尾附加 `[Created on: …]`、令牌作废后仍用旧令牌）并已修正，产品代码未改。
