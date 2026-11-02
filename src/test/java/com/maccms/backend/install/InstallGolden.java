@@ -63,7 +63,7 @@ final class InstallGolden {
 
     // ------------------------------------------------------------------ 临时旧站与安装模式应用
 
-    /** 一份临时旧站（只放新版读写的文件：extra/*.php、route.php 与检查的目录）与部署配置文件的位置（在旧站之外）。 */
+    /** 一份临时旧站（只放新版读写的文件：extra/*.php、route.php、install/sql/install.sql 与检查的目录）与部署配置文件的位置（在旧站之外）。 */
     record Site(Path root, Path application, Path deployConfig) {
 
         static Site create() throws IOException {
@@ -77,6 +77,9 @@ final class InstallGolden {
                 }
             }
             Files.copy(REPO_APPLICATION.resolve("route.php"), app.resolve("route.php"));
+            // APPK-2 INS-1：第 5 步执行的 install.sql（仓库文件按 .gitattributes 为 LF，原样复制字节）
+            Path sql = Files.createDirectories(app.resolve("install/sql")).resolve("install.sql");
+            Files.copy(REPO_APPLICATION.resolve("install/sql/install.sql"), sql);
             for (String d : List.of("data/backup", "data/update", "data/install")) {
                 Files.createDirectories(app.resolve(d));
             }

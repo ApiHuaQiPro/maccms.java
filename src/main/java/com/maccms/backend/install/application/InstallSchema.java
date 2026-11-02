@@ -12,20 +12,21 @@ import java.util.Objects;
 import java.util.TreeSet;
 
 /**
- * 安装向导核对的目标表结构（B22，31 文档第 5.2 节）：在一次性库里原样导入仓库 {@code install.sql} 后、由
- * {@code InstallDatabaseProbe#fingerprint} 读出的指纹，存为 jar 内的 {@code install/schema-fingerprint.txt}（每行
- * {@code 键<TAB>定义}，定义里的反斜杠、制表符、换行转义为 {@code \\}、{@code \t}、{@code \n}）。{@code InstallWizardMySqlIT} 每次在新导入的
- * 库上重新读一遍并要求与这份文件完全相同，install.sql 或 MySQL 版本带来的变化都会让测试失败。
+ * install.sql 建出的目标表结构（B22，31 文档第 5.2 节）：在一次性库里执行仓库 {@code install.sql} 后、由
+ * {@code InstallDatabaseProbe#inspect} 读出的指纹，存为 jar 内的 {@code install/schema-fingerprint.txt}（每行
+ * {@code 键<TAB>定义}，定义里的反斜杠、制表符、换行转义为 {@code \\}、{@code \t}、{@code \n}）。
+ *
+ * <p>APPK-2 S3-20（技术设计 §6.14 INS-3、C-56）起安装向导运行期不再调用本类（第 4、5 步不做结构指纹只读核对，改为 INS-2 ②③）；
+ * 本类与指纹资源只保留给测试核对结果：{@code InstallSchemaTest} 校验资源格式，{@code InstallWizardMySqlIT} 在第 5 步执行 install.sql
+ * 建表后读出指纹，要求与 {@link #expected()} 完全相同（install.sql 或 MySQL 版本带来的变化都会让测试失败）。
  */
 public final class InstallSchema {
 
     static final String RESOURCE = "install/schema-fingerprint.txt";
-    /** install.sql 的表数。 */
+    /** install.sql 建出的表数。 */
     public static final int TABLES = 26;
-    /** 原样导入 install.sql 后各表的行数（install.sql:376-378 插入 3 个默认会员组），其余表为 0。 */
+    /** 执行 install.sql 后各表的行数（install.sql 插入 3 个默认会员组），其余表为 0。 */
     public static final Map<String, Long> SEED_ROWS = Map.of("mac_group", 3L);
-    /** 提示里最多列出的差异条数。 */
-    static final int SHOWN = 5;
 
     private InstallSchema() {
     }
