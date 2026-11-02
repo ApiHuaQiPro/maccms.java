@@ -1,0 +1,3413 @@
+[
+ {
+  "row": "R-001",
+  "old": "Actor.php::index",
+  "action": "`site/web/SiteLibraryController.java:134` #page → `:188` case ACTOR_INDEX→library.list",
+  "mapping_state": "演员列表",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteLibraryPagesMvcTest#otherListsAndVideoRoles"
+ },
+ {
+  "row": "R-002",
+  "old": "Actor.php::type",
+  "action": "`site/web/SiteLibraryController.java:134` #page → `:188` case ACTOR_TYPE",
+  "mapping_state": "演员分类列表",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteLibraryPagesMvcTest#otherListsAndVideoRoles"
+ },
+ {
+  "row": "R-003",
+  "old": "Actor.php::show",
+  "action": "`site/web/SiteModuleListController.java:102` #list；`site/application/ModuleListPage.java:29` ACTOR_SHOW",
+  "mapping_state": "受 app.show 开关",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteModuleListPagesMvcTest#showUsesTheModuleCategoryAndUnknownCategoriesAre404；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-004",
+  "old": "Actor.php::ajax_show",
+  "action": "`site/web/SiteModuleListController.java:102` #list；`site/application/ModuleListPage.java:30` ACTOR_AJAX_SHOW",
+  "mapping_state": "仅 MySQL IT（ajax_ 变体）",
+  "verdict": "缺口",
+  "evidence_source": "GAP-IT 有实现，测试只在未执行的 *MySqlIT",
+  "basis": "只有 MySQL IT 证据（本轮未执行，需 `MACCMS_IT_*`）：ModuleSearchGoldenMySqlIT#everyGoldenCaseListsTheSameIdsAsTheLegacyPage → 进 GAP-，补跑 IT 通过后可升级为 ✅已对齐"
+ },
+ {
+  "row": "R-005",
+  "old": "Actor.php::search",
+  "action": "`site/web/SiteModuleListController.java:102` #list；`site/application/ModuleListPage.java:27` ACTOR_SEARCH",
+  "mapping_state": "仅 MySQL IT",
+  "verdict": "缺口",
+  "evidence_source": "GAP-IT 有实现，测试只在未执行的 *MySqlIT",
+  "basis": "只有 MySQL IT 证据（本轮未执行，需 `MACCMS_IT_*`）：ModuleSearchGoldenMySqlIT#everyGoldenCaseListsTheSameIdsAsTheLegacyPage、ModuleSearchGoldenMySqlIT#invalidAndHiddenInputsAre400Or404WithoutSql → 进 GAP-，补跑 IT 通过后可升级为 ✅已对齐"
+ },
+ {
+  "row": "R-006",
+  "old": "Actor.php::ajax_search",
+  "action": "`site/web/SiteModuleListController.java:102` #list；`site/application/ModuleListPage.java:28` ACTOR_AJAX_SEARCH",
+  "mapping_state": "仅 MySQL IT（ajax_ 变体）",
+  "verdict": "缺口",
+  "evidence_source": "GAP-IT 有实现，测试只在未执行的 *MySqlIT",
+  "basis": "只有 MySQL IT 证据（本轮未执行，需 `MACCMS_IT_*`）：ModuleSearchGoldenMySqlIT#everyGoldenCaseListsTheSameIdsAsTheLegacyPage → 进 GAP-，补跑 IT 通过后可升级为 ✅已对齐"
+ },
+ {
+  "row": "R-007",
+  "old": "Actor.php::detail",
+  "action": "`site/web/SiteLibraryController.java:134` #page → `:190` case ACTOR_DETAIL→library.detail",
+  "mapping_state": "",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteLibraryPagesMvcTest#everyContentTypeSanitizesItsRichText、SiteLibraryPagesMvcTest#otherListsAndVideoRoles、SiteFinanceLibraryMvcTest#articleTopicAndActorDetailsHaveFavoriteFormsForMembersOnly"
+ },
+ {
+  "row": "R-008",
+  "old": "Actor.php::ajax_detail",
+  "action": "`site/web/SiteLibraryController.java:134` #page → `:190` case ACTOR_AJAX_DETAIL（`:180` ajax_page 开关）",
+  "mapping_state": "默认 ajax_page 关闭→404",
+  "verdict": "缺口",
+  "evidence_source": "GAP-T 有实现，无任何测试",
+  "basis": "实现位置 `site/web` 的 `SiteLibraryController#render` ajax 分支（旧 `Actor::ajax_detail`，受 `app.ajax_page` 控制） 可读，但本轮**没有任何测试覆盖这一行**（映射表测试列为空或只有 `*MySqlIT`）。按 PRD 附表 C，没有测试名不能写 `✅已对齐` → 需产品经理建 GAP- 并指给对应开发补测试。"
+ },
+ {
+  "row": "R-009",
+  "old": "Actor.php::rss",
+  "action": "`site/web/SiteLibraryController.java:175` page.rss()→rss → `:269` case ACTOR_RSS",
+  "mapping_state": "单条 RSS",
+  "verdict": "缺口",
+  "evidence_source": "GAP-T 有实现，无任何测试",
+  "basis": "实现位置 `SiteLibraryController#rss` 的 ACTOR_RSS 分支（旧 `Actor::rss`） 可读，但本轮**没有任何测试覆盖这一行**（映射表测试列为空或只有 `*MySqlIT`）。按 PRD 附表 C，没有测试名不能写 `✅已对齐` → 需产品经理建 GAP- 并指给对应开发补测试。"
+ },
+ {
+  "row": "R-010",
+  "old": "Ajax.php::index",
+  "action": "`site/web/SiteAjaxController.java:109` #handle → `:158` default→404",
+  "mapping_state": "旧方法空体；Java 无 case，404",
+  "verdict": "旧版无功能",
+  "evidence_source": "NA 旧版无功能（PHP 源码行证据）",
+  "basis": "PHP 源码 `php/application/index/controller/Ajax.php` 的 `public function index()` 方法体为空（映射表记为“缺实现”，本轮复核源码为空方法体），无任何输出；新版 `SiteAjaxController` 无该 case，落 default 404，与“无功能”一致。"
+ },
+ {
+  "row": "R-011",
+  "old": "Ajax.php::data",
+  "action": "`site/web/SiteAjaxController.java:109` #handle → `:148` case \"data\"",
+  "mapping_state": "",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteAjaxMvcTest#dataRowsKeepTheLegacyShape、SiteAjaxMvcTest#dataNormalizesLimitPageAndTid；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-012",
+  "old": "Ajax.php::suggest",
+  "action": "`site/web/SiteAjaxController.java:109` #handle → `:149` case \"suggest\"",
+  "mapping_state": "需搜索开关，否则 code 999",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteAjaxSuggestMvcTest#suggestQueriesNameOrEnglishNameAndKeepsTheLegacyShape、SiteAjaxMvcTest#suggestIsClosedUnlessTheSearchSwitchesAreOn"
+ },
+ {
+  "row": "R-013",
+  "old": "Ajax.php::desktop",
+  "action": "`site/web/SiteAjaxController.java:109` #handle → `:156` case \"desktop\"",
+  "mapping_state": "",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteAjaxMvcTest#desktopShortcutIsByteCompatibleAndRejectsInjection"
+ },
+ {
+  "row": "R-014",
+  "old": "Ajax.php::hits",
+  "action": "`site/web/SiteAjaxController.java:157` → `:174` counters.hits",
+  "mapping_state": "仅 MySQL IT",
+  "verdict": "缺口",
+  "evidence_source": "GAP-IT 有实现，测试只在未执行的 *MySqlIT",
+  "basis": "只有 MySQL IT 证据（本轮未执行，需 `MACCMS_IT_*`）：InteractionGoldenMySqlIT#httpCasesMatchPhp80Golden、InteractionGoldenMySqlIT#concurrentCountersNeverLoseUpdates → 进 GAP-，补跑 IT 通过后可升级为 ✅已对齐"
+ },
+ {
+  "row": "R-015",
+  "old": "Ajax.php::referer",
+  "action": "`site/web/SiteAjaxController.java:157` → `:177` counters.referer",
+  "mapping_state": "仅 MySQL IT",
+  "verdict": "缺口",
+  "evidence_source": "GAP-IT 有实现，测试只在未执行的 *MySqlIT",
+  "basis": "只有 MySQL IT 证据（本轮未执行，需 `MACCMS_IT_*`）：InteractionGoldenMySqlIT#httpCasesMatchPhp80Golden → 进 GAP-，补跑 IT 通过后可升级为 ✅已对齐"
+ },
+ {
+  "row": "R-016",
+  "old": "Ajax.php::digg",
+  "action": "`site/web/SiteAjaxController.java:157` → `:175` counters.digg",
+  "mapping_state": "仅 MySQL IT",
+  "verdict": "缺口",
+  "evidence_source": "GAP-IT 有实现，测试只在未执行的 *MySqlIT",
+  "basis": "只有 MySQL IT 证据（本轮未执行，需 `MACCMS_IT_*`）：InteractionGoldenMySqlIT#httpCasesMatchPhp80Golden → 进 GAP-，补跑 IT 通过后可升级为 ✅已对齐"
+ },
+ {
+  "row": "R-017",
+  "old": "Ajax.php::score",
+  "action": "`site/web/SiteAjaxController.java:157` → `:176` counters.score",
+  "mapping_state": "仅 MySQL IT",
+  "verdict": "缺口",
+  "evidence_source": "GAP-IT 有实现，测试只在未执行的 *MySqlIT",
+  "basis": "只有 MySQL IT 证据（本轮未执行，需 `MACCMS_IT_*`）：InteractionGoldenMySqlIT#httpCasesMatchPhp80Golden → 进 GAP-，补跑 IT 通过后可升级为 ✅已对齐"
+ },
+ {
+  "row": "R-018",
+  "old": "Ajax.php::pwd",
+  "action": "`site/web/SitePlaybackController.java:124` #password；`site/web/SiteLibraryController.java:141` #password；原址落 `site/web/SiteAjaxController.java:158` 404",
+  "mapping_state": "原址404，改POST播放/下载/文章；视频详情密码未实现（503）",
+  "verdict": "缺口",
+  "evidence_source": "GAP-I 实现不完整/需产品经理判定",
+  "basis": "旧 `Ajax::pwd` 覆盖 mid=1（vod_pwd / vod_pwd_play / vod_pwd_down）与 mid=2（art_pwd）多种密码校验并写会话。新版原地址 404；`PasswordTarget` 只有 VIDEO_PLAY / VIDEO_DOWN / ARTICLE——**视频详情密码（`1-1` / vod_pwd）明确“不在本批”**，`ContentReadService` 抛 `VIDEO_PASSWORD_REQUIRED`、`SiteExceptionHandler` 交还 503（`PasswordTarget` 注释记 MACC-14 未批）。即多条密码路径里 `1-1` 这一路没有等价实现 → 缺口（实现不完整），需产品经理建 GAP- 并指给后端开发。其余三路已有通过用例：`SitePlaybackPagesMvcTest#playerPasswordFlowUsesSignedHttpOnlyTicket`、`SiteLibraryPagesMvcTest#articlePointsAndPasswordAreFixed403Pages`。"
+ },
+ {
+  "row": "R-019",
+  "old": "Ajax.php::verify_check",
+  "action": "`site/web/SiteAjaxController.java:157` → `:178` counters.verifyCheck",
+  "mapping_state": "仅 MySQL IT",
+  "verdict": "缺口",
+  "evidence_source": "GAP-IT 有实现，测试只在未执行的 *MySqlIT",
+  "basis": "只有 MySQL IT 证据（本轮未执行，需 `MACCMS_IT_*`）：InteractionGoldenMySqlIT#httpCasesMatchPhp80Golden → 进 GAP-，补跑 IT 通过后可升级为 ✅已对齐"
+ },
+ {
+  "row": "R-020",
+  "old": "Art.php::index",
+  "action": "`site/web/SiteLibraryController.java:134` #page → `:188` case ART_INDEX",
+  "mapping_state": "",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteLibraryPagesMvcTest#articleListsUseVisibleCategoriesAndPaging"
+ },
+ {
+  "row": "R-021",
+  "old": "Art.php::type",
+  "action": "`site/web/SiteLibraryController.java:134` #page → `:188` case ART_TYPE",
+  "mapping_state": "",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteLibraryPagesMvcTest#articleListsUseVisibleCategoriesAndPaging"
+ },
+ {
+  "row": "R-022",
+  "old": "Art.php::show",
+  "action": "`site/web/SiteModuleListController.java:102` #list；`site/application/ModuleListPage.java:23` ART_SHOW",
+  "mapping_state": "受 app.show 开关",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteModuleListPagesMvcTest#showUsesTheModuleCategoryAndUnknownCategoriesAre404、SiteModuleListPagesMvcTest#urlReachableLegacyConditionsAndSortsArePassedThrough"
+ },
+ {
+  "row": "R-023",
+  "old": "Art.php::ajax_show",
+  "action": "`site/web/SiteModuleListController.java:102` #list；`site/application/ModuleListPage.java:24` ART_AJAX_SHOW",
+  "mapping_state": "仅 MySQL IT（ajax_ 变体）",
+  "verdict": "缺口",
+  "evidence_source": "GAP-IT 有实现，测试只在未执行的 *MySqlIT",
+  "basis": "只有 MySQL IT 证据（本轮未执行，需 `MACCMS_IT_*`）：ModuleSearchGoldenMySqlIT#everyGoldenCaseListsTheSameIdsAsTheLegacyPage → 进 GAP-，补跑 IT 通过后可升级为 ✅已对齐"
+ },
+ {
+  "row": "R-024",
+  "old": "Art.php::search",
+  "action": "`site/web/SiteModuleListController.java:102` #list；`site/application/ModuleListPage.java:21` ART_SEARCH",
+  "mapping_state": "",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteModuleListPagesMvcTest#articleSearchPassesTheConditionsAndEveryLinkKeepsThem、SiteModuleListPagesMvcTest#urlReachableLegacyConditionsAndSortsArePassedThrough"
+ },
+ {
+  "row": "R-025",
+  "old": "Art.php::ajax_search",
+  "action": "`site/web/SiteModuleListController.java:102` #list；`site/application/ModuleListPage.java:22` ART_AJAX_SEARCH",
+  "mapping_state": "",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteModuleListPagesMvcTest#ajaxFragmentsHaveNoShell"
+ },
+ {
+  "row": "R-026",
+  "old": "Art.php::detail",
+  "action": "`site/web/SiteLibraryController.java:134` #page → `:190` case ART_DETAIL；密码 POST `:141`",
+  "mapping_state": "",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteLibraryPagesMvcTest#articleRendersOnlyTheCurrentPageWithLegacyPaging、SiteLibraryPagesMvcTest#articlePointsAndPasswordAreFixed403Pages"
+ },
+ {
+  "row": "R-027",
+  "old": "Art.php::ajax_detail",
+  "action": "`site/web/SiteLibraryController.java:134` #page → `:190` case ART_AJAX_DETAIL",
+  "mapping_state": "默认关闭，开 ajax_page 后片段",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteAjaxFragmentsMvcTest#fragmentsHaveNoShellAndNoScripts、SiteLibraryPagesMvcTest#ajaxDetailIsClosedByDefault"
+ },
+ {
+  "row": "R-028",
+  "old": "Art.php::rss",
+  "action": "`site/web/SiteLibraryController.java:175` → `:255` case ART_RSS",
+  "mapping_state": "受限文章 403",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteLibraryPagesMvcTest#singleItemRssIsEscapedXml"
+ },
+ {
+  "row": "R-029",
+  "old": "Base.php::_empty",
+  "action": "`site/web/SiteExceptionHandler.java:48` #api NOT_FOUND→404 页",
+  "mapping_state": "各控制器未知动作抛 NOT_FOUND→站点404页",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteMiscPagesMvcTest#parametersAndUnknownFormsAre404、SiteAjaxMvcTest#otherAjaxActionsAndRewriteFormsAre404"
+ },
+ {
+  "row": "R-030",
+  "old": "Comment.php::index",
+  "action": "`site/web/SiteInteractionController.java:110` #handle → `:134` case \"index\"",
+  "mapping_state": "仅 MySQL IT；GET 列表/POST 保存",
+  "verdict": "缺口",
+  "evidence_source": "GAP-IT 有实现，测试只在未执行的 *MySqlIT",
+  "basis": "只有 MySQL IT 证据（本轮未执行，需 `MACCMS_IT_*`）：InteractionGoldenMySqlIT#httpCasesMatchPhp80Golden → 进 GAP-，补跑 IT 通过后可升级为 ✅已对齐"
+ },
+ {
+  "row": "R-031",
+  "old": "Comment.php::ajax",
+  "action": "`site/web/SiteInteractionController.java:110` #handle → `:136` case \"ajax\"",
+  "mapping_state": "",
+  "verdict": "缺口",
+  "evidence_source": "GAP-T 有实现，无任何测试",
+  "basis": "实现位置 `site/web/SiteInteractionController#handle` 的 case \"ajax\"（旧 `Comment::ajax`） 可读，但本轮**没有任何测试覆盖这一行**（映射表测试列为空或只有 `*MySqlIT`）。按 PRD 附表 C，没有测试名不能写 `✅已对齐` → 需产品经理建 GAP- 并指给对应开发补测试。"
+ },
+ {
+  "row": "R-032",
+  "old": "Comment.php::saveData",
+  "action": "`site/web/SiteInteractionController.java:110` #handle → `:137` case \"savedata\"",
+  "mapping_state": "仅 MySQL IT",
+  "verdict": "缺口",
+  "evidence_source": "GAP-IT 有实现，测试只在未执行的 *MySqlIT",
+  "basis": "只有 MySQL IT 证据（本轮未执行，需 `MACCMS_IT_*`）：InteractionGoldenMySqlIT#httpCasesMatchPhp80Golden → 进 GAP-，补跑 IT 通过后可升级为 ✅已对齐"
+ },
+ {
+  "row": "R-033",
+  "old": "Comment.php::report",
+  "action": "`site/web/SiteInteractionController.java:110` #handle → `:138` case \"report\"",
+  "mapping_state": "仅 MySQL IT",
+  "verdict": "缺口",
+  "evidence_source": "GAP-IT 有实现，测试只在未执行的 *MySqlIT",
+  "basis": "只有 MySQL IT 证据（本轮未执行，需 `MACCMS_IT_*`）：InteractionGoldenMySqlIT#httpCasesMatchPhp80Golden → 进 GAP-，补跑 IT 通过后可升级为 ✅已对齐"
+ },
+ {
+  "row": "R-034",
+  "old": "Comment.php::digg",
+  "action": "`site/web/SiteInteractionController.java:110` #handle → `:139` case \"digg\"",
+  "mapping_state": "仅 MySQL IT",
+  "verdict": "缺口",
+  "evidence_source": "GAP-IT 有实现，测试只在未执行的 *MySqlIT",
+  "basis": "只有 MySQL IT 证据（本轮未执行，需 `MACCMS_IT_*`）：InteractionGoldenMySqlIT#httpCasesMatchPhp80Golden → 进 GAP-，补跑 IT 通过后可升级为 ✅已对齐"
+ },
+ {
+  "row": "R-035",
+  "old": "Gbook.php::index",
+  "action": "`site/web/SiteInteractionController.java:110` #handle → `:144` case \"index\"",
+  "mapping_state": "仅 MySQL IT",
+  "verdict": "缺口",
+  "evidence_source": "GAP-IT 有实现，测试只在未执行的 *MySqlIT",
+  "basis": "只有 MySQL IT 证据（本轮未执行，需 `MACCMS_IT_*`）：InteractionGoldenMySqlIT#httpCasesMatchPhp80Golden → 进 GAP-，补跑 IT 通过后可升级为 ✅已对齐"
+ },
+ {
+  "row": "R-036",
+  "old": "Gbook.php::ajax",
+  "action": "`site/web/SiteInteractionController.java:110` #handle → `:146` case \"ajax\"",
+  "mapping_state": "",
+  "verdict": "缺口",
+  "evidence_source": "GAP-T 有实现，无任何测试",
+  "basis": "实现位置 `SiteInteractionController#handle` 的 case \"ajax\"（旧 `Gbook::ajax`） 可读，但本轮**没有任何测试覆盖这一行**（映射表测试列为空或只有 `*MySqlIT`）。按 PRD 附表 C，没有测试名不能写 `✅已对齐` → 需产品经理建 GAP- 并指给对应开发补测试。"
+ },
+ {
+  "row": "R-037",
+  "old": "Gbook.php::report",
+  "action": "`site/web/SiteInteractionController.java:110` #handle → `:147` case \"report\"→reportPage",
+  "mapping_state": "",
+  "verdict": "缺口",
+  "evidence_source": "GAP-T 有实现，无任何测试",
+  "basis": "实现位置 `SiteInteractionController#handle` 的 case \"report\" → reportPage（旧 `Gbook::report`） 可读，但本轮**没有任何测试覆盖这一行**（映射表测试列为空或只有 `*MySqlIT`）。按 PRD 附表 C，没有测试名不能写 `✅已对齐` → 需产品经理建 GAP- 并指给对应开发补测试。"
+ },
+ {
+  "row": "R-038",
+  "old": "Gbook.php::saveData",
+  "action": "`site/web/SiteInteractionController.java:110` #handle → `:148` case \"savedata\"",
+  "mapping_state": "仅 MySQL IT",
+  "verdict": "缺口",
+  "evidence_source": "GAP-IT 有实现，测试只在未执行的 *MySqlIT",
+  "basis": "只有 MySQL IT 证据（本轮未执行，需 `MACCMS_IT_*`）：InteractionGoldenMySqlIT#httpCasesMatchPhp80Golden → 进 GAP-，补跑 IT 通过后可升级为 ✅已对齐"
+ },
+ {
+  "row": "R-039",
+  "old": "Help.php::index",
+  "action": "`site/web/SiteMiscController.java:52` #page → `:66` case HELP_INDEX",
+  "mapping_state": "",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteMiscPagesMvcTest#helpHasFixedStructureWithoutEchoingParameters"
+ },
+ {
+  "row": "R-040",
+  "old": "Index.php::index",
+  "action": "`site/web/SiteContentController.java:84` #page → `:100` case SiteRoute.Home",
+  "mapping_state": "仅 / 与 /index.php；index/index 路径未映射",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteContentPagesMvcTest#homeRendersNavigationAndLimitedSummaries、SiteContentPagesMvcTest#homeWithoutAnyContentShowsEmptyState、InternalPageRendererTest#renderedBodiesEqualBrowserResponses"
+ },
+ {
+  "row": "R-041",
+  "old": "Label.php::index",
+  "action": "`site/web/SiteAjaxController.java:128` controller==\"label\"→illegalRequest 404",
+  "mapping_state": "D9-a：不执行模板，一律\"非法请求\"",
+  "verdict": "缺口",
+  "evidence_source": "GAP-X 新版自身行为与旧版不同（非 CRUD 差异）",
+  "basis": "旧 `Label::index` 用 `label_fetch` 执行模板标签（PHP 有功能）；新版 `SiteAjaxController` 对 controller==label 固定返回“非法请求”，注释称依 D9-a，但 D9-a 不在 PRD 已确认的排除清单里，且新系统没有模板引擎接替这条路径 → 缺口：产品经理补 `排除-D9-a` 编号，否则需建 GAP-。"
+ },
+ {
+  "row": "R-042",
+  "old": "Map.php::index",
+  "action": "`site/web/SiteMiscController.java:52` #page → `:62` case MAP_INDEX",
+  "mapping_state": "",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteMiscPagesMvcTest#mapListsVisibleCategoriesAndEntryLinks、SiteMiscPagesMvcTest#mapShorthandFormsAreInputsWithTheSameCanonical、SiteMiscPagesMvcTest#compatibilityModeOnTheEntryPath"
+ },
+ {
+  "row": "R-043",
+  "old": "MyError.php::_empty",
+  "action": "`common/web/GlobalExceptionHandler.java:34` #handleNoRoute",
+  "mapping_state": "未映射控制器→全局 JSON 404，非旧 HTML 页",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteAjaxMvcTest#otherAjaxActionsAndRewriteFormsAre404"
+ },
+ {
+  "row": "R-044",
+  "old": "Note.php::index",
+  "action": "无：site/web 全部 @*Mapping 中无 note 路由",
+  "mapping_state": "/index.php/note 无映射，Spring 404",
+  "verdict": "缺口",
+  "evidence_source": "GAP-I 实现不完整/需产品经理判定",
+  "basis": "旧 `Note::index` 不是空方法：`php/application/index/controller/Note.php` 的方法体是 `return $this->label_fetch('note/index');`（`All.php:41` → ThinkPHP `fetch()` 渲染模板）。新版 `site/web` 的全部 @*Mapping 里没有该路由（`LegacyPage` 无对应常量），请求落 Spring 404 → 缺实现，缺口。需产品经理判定建 GAP- 还是按 OP-/D 排除；补实现归后端开发。（附带事实：旧模板目录 `php/template/default/html/` 只有 0 字节 index.html，本仓库无法渲染旧版输出做对照。）"
+ },
+ {
+  "row": "R-045",
+  "old": "Payment.php::notify",
+  "action": "`site/web/SitePaymentController.java:67` #handle；`:148` 仅认 notify",
+  "mapping_state": "",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SitePaymentMvcTest#notifyPostPassesInputPostAndRawBodyAndAnswersVerbatim、SitePaymentMvcTest#notifyGetIsThePaidPage、SitePaymentMvcTest#otherPaymentActionsAre404AndNoWriteDatabaseIs503"
+ },
+ {
+  "row": "R-046",
+  "old": "Plot.php::index",
+  "action": "`site/web/SiteLibraryController.java:134` #page → `:188` case PLOT_INDEX",
+  "mapping_state": "",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteLibraryPagesMvcTest#otherListsAndVideoRoles"
+ },
+ {
+  "row": "R-047",
+  "old": "Plot.php::search",
+  "action": "`site/web/SiteModuleListController.java:102` #list；`site/application/ModuleListPage.java:40` PLOT_SEARCH",
+  "mapping_state": "",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteModuleListPagesMvcTest#plotSearchListsVideosWithPlots、SiteModuleListPagesMvcTest#plotSearchReadsTheSameKeysAsTheVideoSearchIncludingTidAndRandom"
+ },
+ {
+  "row": "R-048",
+  "old": "Plot.php::ajax_search",
+  "action": "`site/web/SiteModuleListController.java:102` #list；`site/application/ModuleListPage.java:41` PLOT_AJAX_SEARCH",
+  "mapping_state": "仅 MySQL IT（ajax_ 变体）",
+  "verdict": "缺口",
+  "evidence_source": "GAP-IT 有实现，测试只在未执行的 *MySqlIT",
+  "basis": "只有 MySQL IT 证据（本轮未执行，需 `MACCMS_IT_*`）：ModuleSearchGoldenMySqlIT#everyGoldenCaseListsTheSameIdsAsTheLegacyPage → 进 GAP-，补跑 IT 通过后可升级为 ✅已对齐"
+ },
+ {
+  "row": "R-049",
+  "old": "Plot.php::detail",
+  "action": "`site/web/SiteLibraryController.java:134` #page → `:190` case PLOT_DETAIL",
+  "mapping_state": "",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteLibraryPagesMvcTest#plotPagesListPartsAndRenderOnlyTheCurrentOne、SiteLibraryPagesMvcTest#everyContentTypeSanitizesItsRichText"
+ },
+ {
+  "row": "R-050",
+  "old": "Plot.php::ajax_detail",
+  "action": "`site/web/SiteLibraryController.java:134` #page → `:190` case PLOT_AJAX_DETAIL",
+  "mapping_state": "仅测默认关闭 404",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteLibraryPagesMvcTest#ajaxDetailIsClosedByDefault"
+ },
+ {
+  "row": "R-051",
+  "old": "Plot.php::rss",
+  "action": "`site/web/SiteLibraryController.java:175` → `:247` case PLOT_RSS",
+  "mapping_state": "",
+  "verdict": "缺口",
+  "evidence_source": "GAP-T 有实现，无任何测试",
+  "basis": "实现位置 `SiteLibraryController#rss` 的 PLOT_RSS 分支（旧 `Plot::rss`） 可读，但本轮**没有任何测试覆盖这一行**（映射表测试列为空或只有 `*MySqlIT`）。按 PRD 附表 C，没有测试名不能写 `✅已对齐` → 需产品经理建 GAP- 并指给对应开发补测试。"
+ },
+ {
+  "row": "R-052",
+  "old": "Qrcode.php::index",
+  "action": "`site/web/SiteAjaxController.java:140` qrcode/index→#qrcode",
+  "mapping_state": "",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteAjaxMvcTest#qrcodeGeneratesOnlyForLegacyValidUrls；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-053",
+  "old": "Role.php::index",
+  "action": "`site/web/SiteLibraryController.java:134` #page → `:188` case ROLE_INDEX",
+  "mapping_state": "",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteLibraryPagesMvcTest#otherListsAndVideoRoles"
+ },
+ {
+  "row": "R-054",
+  "old": "Role.php::show",
+  "action": "`site/web/SiteModuleListController.java:102` #list；`site/application/ModuleListPage.java:33` ROLE_SHOW",
+  "mapping_state": "",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteModuleListPagesMvcTest#roleShowListsAllPublishedRolesWithTheSearchConditions、SiteModuleListPagesMvcTest#showUsesTheModuleCategoryAndUnknownCategoriesAre404"
+ },
+ {
+  "row": "R-055",
+  "old": "Role.php::ajax_show",
+  "action": "`site/web/SiteModuleListController.java:102` #list；`site/application/ModuleListPage.java:34` ROLE_AJAX_SHOW",
+  "mapping_state": "",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteModuleListPagesMvcTest#roleShowListsAllPublishedRolesWithTheSearchConditions"
+ },
+ {
+  "row": "R-056",
+  "old": "Role.php::search",
+  "action": "`site/web/SiteModuleListController.java:102` #list；`site/application/ModuleListPage.java:31` ROLE_SEARCH",
+  "mapping_state": "",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteModuleListPagesMvcTest#urlReachableLegacyConditionsAndSortsArePassedThrough；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-057",
+  "old": "Role.php::ajax_search",
+  "action": "`site/web/SiteModuleListController.java:102` #list；`site/application/ModuleListPage.java:32` ROLE_AJAX_SEARCH",
+  "mapping_state": "仅 MySQL IT（ajax_ 变体）",
+  "verdict": "缺口",
+  "evidence_source": "GAP-IT 有实现，测试只在未执行的 *MySqlIT",
+  "basis": "只有 MySQL IT 证据（本轮未执行，需 `MACCMS_IT_*`）：ModuleSearchGoldenMySqlIT#everyGoldenCaseListsTheSameIdsAsTheLegacyPage → 进 GAP-，补跑 IT 通过后可升级为 ✅已对齐"
+ },
+ {
+  "row": "R-058",
+  "old": "Role.php::detail",
+  "action": "`site/web/SiteLibraryController.java:134` #page → `:190` case ROLE_DETAIL",
+  "mapping_state": "",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteLibraryPagesMvcTest#everyContentTypeSanitizesItsRichText、SiteLibraryPagesMvcTest#otherListsAndVideoRoles"
+ },
+ {
+  "row": "R-059",
+  "old": "Role.php::ajax_detail",
+  "action": "`site/web/SiteLibraryController.java:134` #page → `:190` case ROLE_AJAX_DETAIL",
+  "mapping_state": "默认 ajax_page 关闭→404",
+  "verdict": "缺口",
+  "evidence_source": "GAP-T 有实现，无任何测试",
+  "basis": "实现位置 `SiteLibraryController#render` ajax 分支（旧 `Role::ajax_detail`） 可读，但本轮**没有任何测试覆盖这一行**（映射表测试列为空或只有 `*MySqlIT`）。按 PRD 附表 C，没有测试名不能写 `✅已对齐` → 需产品经理建 GAP- 并指给对应开发补测试。"
+ },
+ {
+  "row": "R-060",
+  "old": "Role.php::rss",
+  "action": "`site/web/SiteLibraryController.java:175` → `:276` case ROLE_RSS",
+  "mapping_state": "",
+  "verdict": "缺口",
+  "evidence_source": "GAP-T 有实现，无任何测试",
+  "basis": "实现位置 `SiteLibraryController#rss` 的 ROLE_RSS 分支（旧 `Role::rss`） 可读，但本轮**没有任何测试覆盖这一行**（映射表测试列为空或只有 `*MySqlIT`）。按 PRD 附表 C，没有测试名不能写 `✅已对齐` → 需产品经理建 GAP- 并指给对应开发补测试。"
+ },
+ {
+  "row": "R-061",
+  "old": "Rss.php::index",
+  "action": "`site/web/SiteMiscController.java:52` #page → `:74` case RSS_INDEX",
+  "mapping_state": "",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteMiscPagesMvcTest#rssIsWellFormedAndEscaped、InternalPageRendererTest#renderedBodiesEqualBrowserResponses"
+ },
+ {
+  "row": "R-062",
+  "old": "Rss.php::baidu",
+  "action": "`site/web/SiteMiscController.java:52` #page → `:75` case RSS_BAIDU",
+  "mapping_state": "六个引擎共用 pages.sitemap()",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteMiscPagesMvcTest#sitemapsUseTheSitemapProtocol、SiteMiscPagesMvcTest#compatibilityModeOnTheEntryPath、InternalPageRendererTest#renderedBodiesEqualBrowserResponses"
+ },
+ {
+  "row": "R-063",
+  "old": "Rss.php::google",
+  "action": "`site/web/SiteMiscController.java:52` #page → `:75` case RSS_GOOGLE",
+  "mapping_state": "共用 pages.sitemap()",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteMiscPagesMvcTest#sitemapsUseTheSitemapProtocol"
+ },
+ {
+  "row": "R-064",
+  "old": "Rss.php::so",
+  "action": "`site/web/SiteMiscController.java:52` #page → `:75` case RSS_SO",
+  "mapping_state": "共用 pages.sitemap()",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteMiscPagesMvcTest#sitemapsUseTheSitemapProtocol"
+ },
+ {
+  "row": "R-065",
+  "old": "Rss.php::sogou",
+  "action": "`site/web/SiteMiscController.java:52` #page → `:75` case RSS_SOGOU",
+  "mapping_state": "共用 pages.sitemap()",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteMiscPagesMvcTest#sitemapsUseTheSitemapProtocol"
+ },
+ {
+  "row": "R-066",
+  "old": "Rss.php::bing",
+  "action": "`site/web/SiteMiscController.java:52` #page → `:75` case RSS_BING",
+  "mapping_state": "共用 pages.sitemap()",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteMiscPagesMvcTest#sitemapsUseTheSitemapProtocol"
+ },
+ {
+  "row": "R-067",
+  "old": "Rss.php::sm",
+  "action": "`site/web/SiteMiscController.java:52` #page → `:75` case RSS_SM",
+  "mapping_state": "共用 pages.sitemap()",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteMiscPagesMvcTest#sitemapsUseTheSitemapProtocol"
+ },
+ {
+  "row": "R-068",
+  "old": "Search.php::index",
+  "action": "无：只有 `site/web/SiteSearchController.java:62` 映射 vod/search，无 search/index",
+  "mapping_state": "/index.php/search 无映射",
+  "verdict": "缺口",
+  "evidence_source": "GAP-I 实现不完整/需产品经理判定",
+  "basis": "旧 `Search::index` 不是空方法：`php/application/index/controller/Search.php` 的方法体是 `return $this->label_fetch('search/index');`（`All.php:41` → ThinkPHP `fetch()` 渲染模板）。新版 `site/web` 的全部 @*Mapping 里没有该路由（`LegacyPage` 无对应常量），请求落 Spring 404 → 缺实现，缺口。需产品经理判定建 GAP- 还是按 OP-/D 排除；补实现归后端开发。（附带事实：旧模板目录 `php/template/default/html/` 只有 0 字节 index.html，本仓库无法渲染旧版输出做对照。）"
+ },
+ {
+  "row": "R-069",
+  "old": "Topic.php::index",
+  "action": "`site/web/SiteLibraryController.java:134` #page → `:188` case TOPIC_INDEX",
+  "mapping_state": "",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteLibraryPagesMvcTest#otherListsAndVideoRoles"
+ },
+ {
+  "row": "R-070",
+  "old": "Topic.php::search",
+  "action": "`site/web/SiteModuleListController.java:102` #list；`site/application/ModuleListPage.java:25` TOPIC_SEARCH",
+  "mapping_state": "",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteModuleListPagesMvcTest#emptySearchShowsOnlyTheFormAndDoesNotQuery；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-071",
+  "old": "Topic.php::ajax_search",
+  "action": "`site/web/SiteModuleListController.java:102` #list；`site/application/ModuleListPage.java:26` TOPIC_AJAX_SEARCH",
+  "mapping_state": "MVC 仅测限流 429",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteVerifyThrottleMvcTest#moduleSearchIsLimitedToo；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-072",
+  "old": "Topic.php::detail",
+  "action": "`site/web/SiteLibraryController.java:134` #page → `:190` case TOPIC_DETAIL",
+  "mapping_state": "",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteLibraryPagesMvcTest#everyContentTypeSanitizesItsRichText、SiteLibraryPagesMvcTest#otherListsAndVideoRoles"
+ },
+ {
+  "row": "R-073",
+  "old": "Topic.php::ajax_detail",
+  "action": "`site/web/SiteLibraryController.java:134` #page → `:190` case TOPIC_AJAX_DETAIL",
+  "mapping_state": "",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteAjaxFragmentsMvcTest#fragmentsHaveNoShellAndNoScripts、SiteLibraryPagesMvcTest#ajaxDetailIsClosedByDefault"
+ },
+ {
+  "row": "R-074",
+  "old": "Topic.php::rss",
+  "action": "`site/web/SiteLibraryController.java:175` → `:262` case TOPIC_RSS",
+  "mapping_state": "",
+  "verdict": "缺口",
+  "evidence_source": "GAP-T 有实现，无任何测试",
+  "basis": "实现位置 `SiteLibraryController#rss` 的 TOPIC_RSS 分支（旧 `Topic::rss`） 可读，但本轮**没有任何测试覆盖这一行**（映射表测试列为空或只有 `*MySqlIT`）。按 PRD 附表 C，没有测试名不能写 `✅已对齐` → 需产品经理建 GAP- 并指给对应开发补测试。"
+ },
+ {
+  "row": "R-075",
+  "old": "User.php::ajax_login",
+  "action": "`site/web/SiteUserController.java:170` #handle → `:217` case \"ajax_login\"",
+  "mapping_state": "",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteUserMvcTest#labelUserWritesGuestResetAndScopesTheViewerGroupForTheRequestOnly、SiteOAuthMvcTest#loginPageShowsOnlyEnabledProviders"
+ },
+ {
+  "row": "R-076",
+  "old": "User.php::ajax_info",
+  "action": "`site/web/SiteUserController.java:170` #handle → `:219` case \"ajax_info\"",
+  "mapping_state": "",
+  "verdict": "缺口",
+  "evidence_source": "GAP-T 有实现，无任何测试",
+  "basis": "实现位置 `site/web` 会员控制器的 ajax 用户信息分支（旧 `User::ajax_info`） 可读，但本轮**没有任何测试覆盖这一行**（映射表测试列为空或只有 `*MySqlIT`）。按 PRD 附表 C，没有测试名不能写 `✅已对齐` → 需产品经理建 GAP- 并指给对应开发补测试。"
+ },
+ {
+  "row": "R-077",
+  "old": "User.php::ajax_ulog",
+  "action": "`site/web/SiteUserController.java:211` finance.handle → `site/web/SiteMemberFinance.java:140` case \"ajax_ulog\"",
+  "mapping_state": "",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteFinanceMvcTest#ulogListJsonMatchesPhpGoldenIncludingContentData、SiteFinanceMvcTest#contentFormsWithoutAjaxGetAJumpPageBackToTheContent；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-078",
+  "old": "User.php::ajax_buy_popedom",
+  "action": "`site/web/SiteUserController.java:211` → `site/web/SiteMemberFinance.java:142` case \"ajax_buy_popedom\"",
+  "mapping_state": "",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteFinanceMvcTest#contentFormsWithoutAjaxGetAJumpPageBackToTheContent、SiteFinanceMvcTest#guestsGetNotLoggedInAndVisitStaysPublic；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-079",
+  "old": "User.php::index",
+  "action": "`site/web/SiteUserController.java:170` #handle → `:220` case \"index\"",
+  "mapping_state": "",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteFinanceMvcTest#memberCenterLinksAndPermissionsPage、SiteUserMvcTest#protectedActionsAnswerNotLoggedInLikeTheLegacyConstructor"
+ },
+ {
+  "row": "R-080",
+  "old": "User.php::login",
+  "action": "`site/web/SiteUserController.java:170` #handle → `:214` case \"login\"",
+  "mapping_state": "",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteUserMvcTest#loginPostReadsRawBytesAndReturnsLegacyJsonWithCookies、SiteUserMvcTest#loginPageHasNoncedScriptHooksAndRedirectsWhenCookiesPresent；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-081",
+  "old": "User.php::logout",
+  "action": "`site/web/SiteUserController.java:170` #handle → `:216` case \"logout\"",
+  "mapping_state": "",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteUserMvcTest#logoutRedirectsOrAnswersJson"
+ },
+ {
+  "row": "R-082",
+  "old": "User.php::oauth",
+  "action": "`site/web/SiteUserController.java:170` #handle → `:235` case \"oauth\"",
+  "mapping_state": "未配 OAuth 时 404",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteOAuthMvcTest#startIssuesASessionAndAFreshStateEachTime、SiteOAuthMvcTest#loginPageShowsOnlyEnabledProviders"
+ },
+ {
+  "row": "R-083",
+  "old": "User.php::logincallback",
+  "action": "`site/web/SiteUserController.java:170` #handle → `:241` case \"logincallback\"",
+  "mapping_state": "未配 OAuth 时 404",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteOAuthMvcTest#missingCodeOrTypeIsAParameterErrorAndConsumesTheState"
+ },
+ {
+  "row": "R-084",
+  "old": "User.php::bindmsg",
+  "action": "`site/web/SiteUserController.java:170` #handle → `:225` case \"bindmsg\"",
+  "mapping_state": "",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteUserMvcTest#bindUnbindAndBindmsgRequireLoginAndPassTheMember"
+ },
+ {
+  "row": "R-085",
+  "old": "User.php::bind",
+  "action": "`site/web/SiteUserController.java:170` #handle → `:226` case \"bind\"",
+  "mapping_state": "",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteUserMvcTest#bindUnbindAndBindmsgRequireLoginAndPassTheMember"
+ },
+ {
+  "row": "R-086",
+  "old": "User.php::unbind",
+  "action": "`site/web/SiteUserController.java:170` #handle → `:227` case \"unbind\"",
+  "mapping_state": "",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteUserMvcTest#bindUnbindAndBindmsgRequireLoginAndPassTheMember"
+ },
+ {
+  "row": "R-087",
+  "old": "User.php::info",
+  "action": "`site/web/SiteUserController.java:170` #handle → `:228` case \"info\"",
+  "mapping_state": "",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteUserMvcTest#infoUsesThinkPhpSuccessAndErrorShapes、SiteOAuthMvcTest#memberInfoOffersBindingWithoutUnbindActions"
+ },
+ {
+  "row": "R-088",
+  "old": "User.php::regcheck",
+  "action": "`site/web/SiteUserController.java:170` #handle → `:223` case \"regcheck\"",
+  "mapping_state": "",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteUserMvcTest#regPageStoresTheInviterAndRegcheckAnswersTextOrJson；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-089",
+  "old": "User.php::reg",
+  "action": "`site/web/SiteUserController.java:170` #handle → `:221` case \"reg\"",
+  "mapping_state": "",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteUserMvcTest#regPageStoresTheInviterAndRegcheckAnswersTextOrJson；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-090",
+  "old": "User.php::reg_msg",
+  "action": "`site/web/SiteUserController.java:170` #handle → `:224` case \"reg_msg\"",
+  "mapping_state": "",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteUserMvcTest#sendMessageAndFindpassResetAnswerJson；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-091",
+  "old": "User.php::portrait",
+  "action": "`site/web/SiteUserController.java:170` #handle → `:230` case \"portrait\"",
+  "mapping_state": "",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteUserMvcTest#portraitAnswersLegacyKeyOrder；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-092",
+  "old": "User.php::findpass",
+  "action": "`site/web/SiteUserController.java:170` #handle → `:232` case \"findpass\"",
+  "mapping_state": "",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteUserMvcTest#sendMessageAndFindpassResetAnswerJson；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-093",
+  "old": "User.php::findpass_msg",
+  "action": "`site/web/SiteUserController.java:170` #handle → `:233` case \"findpass_msg\"",
+  "mapping_state": "",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteUserMvcTest#sendMessageAndFindpassResetAnswerJson；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-094",
+  "old": "User.php::findpass_reset",
+  "action": "`site/web/SiteUserController.java:170` #handle → `:234` case \"findpass_reset\"",
+  "mapping_state": "",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteUserMvcTest#sendMessageAndFindpassResetAnswerJson；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-095",
+  "old": "User.php::buy",
+  "action": "`site/web/SiteUserController.java:211` → `site/web/SiteMemberFinance.java:155` case \"buy\"",
+  "mapping_state": "",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteFinanceMvcTest#buyPageAndUnconfiguredPaymentNeverLeaveTheSite；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-096",
+  "old": "User.php::pay",
+  "action": "`site/web/SiteUserController.java:211` → `site/web/SiteMemberFinance.java:157` case \"pay\"",
+  "mapping_state": "",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteFinanceMvcTest#buyPageAndUnconfiguredPaymentNeverLeaveTheSite；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-097",
+  "old": "User.php::gopay",
+  "action": "`site/web/SiteUserController.java:211` → `site/web/SiteMemberFinance.java:158` case \"gopay\"",
+  "mapping_state": "",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SitePaymentMvcTest#messagesAndBlankFollowLegacy、SitePaymentMvcTest#alipayFormPostsToTheGatewayOnlyAndCspAllowsJustThatOrigin、SiteFinanceMvcTest#buyPageAndUnconfiguredPaymentNeverLeaveTheSite"
+ },
+ {
+  "row": "R-098",
+  "old": "User.php::qrcode",
+  "action": "`site/web/SiteUserController.java:211` → `site/web/SiteMemberFinance.java:159` case \"qrcode\"",
+  "mapping_state": "",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteFinanceMvcTest#weixinQrcodeIsALocalPngOfTheSameText"
+ },
+ {
+  "row": "R-099",
+  "old": "User.php::upgrade",
+  "action": "`site/web/SiteUserController.java:211` → `site/web/SiteMemberFinance.java:160` case \"upgrade\"",
+  "mapping_state": "",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteFinanceMvcTest#upgradeAnswersJsonWithGroupCookies；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-100",
+  "old": "User.php::popedom",
+  "action": "`site/web/SiteUserController.java:211` → `site/web/SiteMemberFinance.java:161` case \"popedom\"",
+  "mapping_state": "",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteFinanceMvcTest#memberCenterLinksAndPermissionsPage"
+ },
+ {
+  "row": "R-101",
+  "old": "User.php::plays",
+  "action": "`site/web/SiteUserController.java:211` → `site/web/SiteMemberFinance.java:143` case \"plays\"",
+  "mapping_state": "",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteFinanceMvcTest#recordListsHaveDeleteFormsFiltersAndPagination"
+ },
+ {
+  "row": "R-102",
+  "old": "User.php::downs",
+  "action": "`site/web/SiteUserController.java:211` → `site/web/SiteMemberFinance.java:145` case \"downs\"",
+  "mapping_state": "测试仅断言会员中心链接",
+  "verdict": "缺口",
+  "evidence_source": "GAP-T 有实现，无任何测试",
+  "basis": "实现位置 `site/web` 会员中心下载记录页（旧 `User::downs`） 可读，但本轮**没有任何测试覆盖这一行**（映射表测试列为空或只有 `*MySqlIT`）。按 PRD 附表 C，没有测试名不能写 `✅已对齐` → 需产品经理建 GAP- 并指给对应开发补测试。"
+ },
+ {
+  "row": "R-103",
+  "old": "User.php::favs",
+  "action": "`site/web/SiteUserController.java:211` → `site/web/SiteMemberFinance.java:147` case \"favs\"",
+  "mapping_state": "",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteFinanceMvcTest#recordListsHaveDeleteFormsFiltersAndPagination"
+ },
+ {
+  "row": "R-104",
+  "old": "User.php::ulog",
+  "action": "`site/web/SiteUserController.java:211` → `site/web/SiteMemberFinance.java:149` case \"ulog\"",
+  "mapping_state": "",
+  "verdict": "缺口",
+  "evidence_source": "GAP-T 有实现，无任何测试",
+  "basis": "实现位置 `site/web` 会员中心登录日志页（旧 `User::ulog`） 可读，但本轮**没有任何测试覆盖这一行**（映射表测试列为空或只有 `*MySqlIT`）。按 PRD 附表 C，没有测试名不能写 `✅已对齐` → 需产品经理建 GAP- 并指给对应开发补测试。"
+ },
+ {
+  "row": "R-105",
+  "old": "User.php::ulog_del",
+  "action": "`site/web/SiteUserController.java:211` → `site/web/SiteMemberFinance.java:152` case \"ulog_del\"",
+  "mapping_state": "服务层黄金 IT；MVC 仅断言表单 action",
+  "verdict": "缺口",
+  "evidence_source": "GAP-IT 有实现，测试只在未执行的 *MySqlIT",
+  "basis": "只有 MySQL IT 证据（本轮未执行，需 `MACCMS_IT_*`）：MemberFinanceGoldenMySqlIT#financeCasesMatchPhpGolden → 进 GAP-，补跑 IT 通过后可升级为 ✅已对齐"
+ },
+ {
+  "row": "R-106",
+  "old": "User.php::plog",
+  "action": "`site/web/SiteUserController.java:211` → `site/web/SiteMemberFinance.java:153` case \"plog\"",
+  "mapping_state": "测试仅断言会员中心链接",
+  "verdict": "缺口",
+  "evidence_source": "GAP-T 有实现，无任何测试",
+  "basis": "实现位置 `site/web` 会员中心积分日志页（旧 `User::plog`） 可读，但本轮**没有任何测试覆盖这一行**（映射表测试列为空或只有 `*MySqlIT`）。按 PRD 附表 C，没有测试名不能写 `✅已对齐` → 需产品经理建 GAP- 并指给对应开发补测试。"
+ },
+ {
+  "row": "R-107",
+  "old": "User.php::plog_del",
+  "action": "`site/web/SiteUserController.java:211` → `site/web/SiteMemberFinance.java:154` case \"plog_del\"",
+  "mapping_state": "仅服务层黄金 IT",
+  "verdict": "缺口",
+  "evidence_source": "GAP-IT 有实现，测试只在未执行的 *MySqlIT",
+  "basis": "只有 MySQL IT 证据（本轮未执行，需 `MACCMS_IT_*`）：MemberFinanceGoldenMySqlIT#financeCasesMatchPhpGolden → 进 GAP-，补跑 IT 通过后可升级为 ✅已对齐"
+ },
+ {
+  "row": "R-108",
+  "old": "User.php::cash",
+  "action": "`site/web/SiteUserController.java:211` → `site/web/SiteMemberFinance.java:162` case \"cash\"",
+  "mapping_state": "",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteFinanceMvcTest#memberCenterLinksAndPermissionsPage；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-109",
+  "old": "User.php::cash_del",
+  "action": "`site/web/SiteUserController.java:211` → `site/web/SiteMemberFinance.java:163` case \"cash_del\"",
+  "mapping_state": "MVC 仅测未登录",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteFinanceMvcTest#guestsGetNotLoggedInAndVisitStaysPublic；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-110",
+  "old": "User.php::reward",
+  "action": "`site/web/SiteUserController.java:211` → `site/web/SiteMemberFinance.java:164` case \"reward\"",
+  "mapping_state": "",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteFinanceMvcTest#recordListsHaveDeleteFormsFiltersAndPagination"
+ },
+ {
+  "row": "R-111",
+  "old": "User.php::orders",
+  "action": "`site/web/SiteUserController.java:211` → `site/web/SiteMemberFinance.java:165` case \"orders\"",
+  "mapping_state": "",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteFinanceMvcTest#recordListsHaveDeleteFormsFiltersAndPagination、SiteFinanceMvcTest#withoutTheWriteDatabaseFinanceActionsAre503"
+ },
+ {
+  "row": "R-112",
+  "old": "User.php::order_info",
+  "action": "`site/web/SiteUserController.java:211` → `site/web/SiteMemberFinance.java:166` case \"order_info\"",
+  "mapping_state": "",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteFinanceMvcTest#orderInfoIsJsonForAjaxAndAPageOtherwise；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-113",
+  "old": "User.php::cards",
+  "action": "`site/web/SiteUserController.java:211` → `site/web/SiteMemberFinance.java:167` case \"cards\"",
+  "mapping_state": "测试仅断言会员中心链接",
+  "verdict": "缺口",
+  "evidence_source": "GAP-T 有实现，无任何测试",
+  "basis": "实现位置 `site/web` 会员中心充值卡页（旧 `User::cards`） 可读，但本轮**没有任何测试覆盖这一行**（映射表测试列为空或只有 `*MySqlIT`）。按 PRD 附表 C，没有测试名不能写 `✅已对齐` → 需产品经理建 GAP- 并指给对应开发补测试。"
+ },
+ {
+  "row": "R-114",
+  "old": "User.php::comment",
+  "action": "`site/web/SiteUserController.java:247` case \"comment\" → `site/web/SiteMemberBoards.java:57` #handle",
+  "mapping_state": "仅测未登录/无 boards 时 404",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteUserMvcTest#protectedActionsAnswerNotLoggedInLikeTheLegacyConstructor"
+ },
+ {
+  "row": "R-115",
+  "old": "User.php::gbook",
+  "action": "`site/web/SiteUserController.java:247` case \"gbook\" → `site/web/SiteMemberBoards.java:57` #handle",
+  "mapping_state": "",
+  "verdict": "缺口",
+  "evidence_source": "GAP-T 有实现，无任何测试",
+  "basis": "实现位置 `site/web` 会员中心留言页（旧 `User::gbook`） 可读，但本轮**没有任何测试覆盖这一行**（映射表测试列为空或只有 `*MySqlIT`）。按 PRD 附表 C，没有测试名不能写 `✅已对齐` → 需产品经理建 GAP- 并指给对应开发补测试。"
+ },
+ {
+  "row": "R-116",
+  "old": "User.php::visit",
+  "action": "`site/web/SiteUserController.java:211` → `site/web/SiteMemberFinance.java:168` case \"visit\"",
+  "mapping_state": "",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteFinanceMvcTest#visitRedirectsOnlyToTheSameHost、SiteFinanceMvcTest#guestsGetNotLoggedInAndVisitStaysPublic；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-117",
+  "old": "Verify.php::index",
+  "action": "`site/web/SiteVerifyController.java:57` #image",
+  "mapping_state": "",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteVerifyThrottleMvcTest#imageIsPngWithSessionCookieAndRepoCaptchaSize、SiteVerifyZhMvcTest#imageHasLegacySizeAndDrawsTheGlyphs"
+ },
+ {
+  "row": "R-118",
+  "old": "Verify.php::check",
+  "action": "`site/web/SiteVerifyController.java:73` #check",
+  "mapping_state": "",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteVerifyThrottleMvcTest#checkPassesOnceThenReplayFails、SiteVerifyZhMvcTest#correctPassesOnceViaGetAndPostThenReplayFails"
+ },
+ {
+  "row": "R-119",
+  "old": "Vod.php::index",
+  "action": "无：`site/web/SiteContentController.java:82` 只映射 vod/type、vod/detail；`site/application/LegacyPage.java` 无 VOD_INDEX",
+  "mapping_state": "vod/index 无映射，404",
+  "verdict": "缺口",
+  "evidence_source": "GAP-I 实现不完整/需产品经理判定",
+  "basis": "旧 `Vod::index` 不是空方法：`php/application/index/controller/Vod.php` 的方法体是 `return $this->label_fetch('vod/index');`（`All.php:41` → ThinkPHP `fetch()` 渲染模板）。新版 `site/web` 的全部 @*Mapping 里没有该路由（`LegacyPage` 无对应常量），请求落 Spring 404 → 缺实现，缺口。需产品经理判定建 GAP- 还是按 OP-/D 排除；补实现归后端开发。（附带事实：旧模板目录 `php/template/default/html/` 只有 0 字节 index.html，本仓库无法渲染旧版输出做对照。）"
+ },
+ {
+  "row": "R-120",
+  "old": "Vod.php::type",
+  "action": "`site/web/SiteContentController.java:84` #page → `:104` case SiteRoute.VodType",
+  "mapping_state": "",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteContentPagesMvcTest#categoryFirstPage、SiteContentPagesMvcTest#categoryLaterPageHasSelfCanonicalAndPrevLink"
+ },
+ {
+  "row": "R-121",
+  "old": "Vod.php::show",
+  "action": "`site/web/SiteVodShowController.java:55` #show",
+  "mapping_state": "受 app.show 开关",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteVodListPagesMvcTest#showListsTheCategoryAndEveryLinkKeepsIt、SiteVodListPagesMvcTest#childCategoryUsesItsOwnExtendAndConditionsRoundTrip、SiteVodListClosedMvcTest#showAndAjaxEntriesAre404WhenTheLegacySwitchesAreOff"
+ },
+ {
+  "row": "R-122",
+  "old": "Vod.php::ajax_show",
+  "action": "`site/web/SiteVodShowController.java:55` #show，`:61` ajax 判定",
+  "mapping_state": "",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteVodListPagesMvcTest#ajaxFragmentsHaveNoShellNoScriptsAndTheSameCards、SiteVodListClosedMvcTest#showAndAjaxEntriesAre404WhenTheLegacySwitchesAreOff"
+ },
+ {
+  "row": "R-123",
+  "old": "Vod.php::search",
+  "action": "`site/web/SiteSearchController.java:66` #search",
+  "mapping_state": "",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteSearchPagesMvcTest#keywordSearchRendersResultsFiltersSortAndPagination、SiteSearchPagesMvcTest#withoutConditionsShowsFormWithoutQueries"
+ },
+ {
+  "row": "R-124",
+  "old": "Vod.php::ajax_search",
+  "action": "`site/web/SiteSearchController.java:66` #search，`:69` ajax 判定",
+  "mapping_state": "",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteVodListPagesMvcTest#ajaxFragmentsHaveNoShellNoScriptsAndTheSameCards、SiteVodListPagesMvcTest#invalidAjaxConditionsAre400EmptyFragments、SiteVerifyThrottleMvcTest#secondFirstPageSearchWithinTimespanIs429AndDoesNotQuery"
+ },
+ {
+  "row": "R-125",
+  "old": "Vod.php::detail",
+  "action": "`site/web/SiteContentController.java:84` #page → `:108` case SiteRoute.VodDetail",
+  "mapping_state": "密码/版权视频返回 503（未交还）",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteContentPagesMvcTest#detailRendersPublicMetadataSanitizedContentAndNoPlayback、SiteContentPagesMvcTest#missingVideoIs404、SiteContentPagesMvcTest#passwordAndCopyrightStay503WithoutReason"
+ },
+ {
+  "row": "R-126",
+  "old": "Vod.php::ajax_detail",
+  "action": "`site/web/SiteLibraryController.java:134` #page → `:183` VOD_AJAX_DETAIL",
+  "mapping_state": "",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteAjaxFragmentsMvcTest#fragmentsHaveNoShellAndNoScripts、SiteLibraryPagesMvcTest#ajaxDetailIsClosedByDefault"
+ },
+ {
+  "row": "R-127",
+  "old": "Vod.php::copyright",
+  "action": "`site/web/SiteMiscController.java:52` #page → `:70` case VOD_COPYRIGHT",
+  "mapping_state": "",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteMiscPagesMvcTest#copyrightPageShowsTheNoticeAndHidesRestrictedDetails"
+ },
+ {
+  "row": "R-128",
+  "old": "Vod.php::role",
+  "action": "`site/web/SiteLibraryController.java:134` #page → `:188` case VOD_ROLE",
+  "mapping_state": "",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteLibraryPagesMvcTest#otherListsAndVideoRoles"
+ },
+ {
+  "row": "R-129",
+  "old": "Vod.php::play",
+  "action": "`site/web/SitePlaybackController.java:109` #page → `:113` case VOD_PLAY",
+  "mapping_state": "",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SitePlaybackPagesMvcTest#playPageIsScriptFreeAndOnlyFramesTheSameOriginPlayer、SitePlaybackPagesMvcTest#compatModeOnTheEntryPathReachesThePlaybackPages；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-130",
+  "old": "Vod.php::player",
+  "action": "`site/web/SitePlaybackController.java:109` #page → `:114` case VOD_PLAYER；POST `:124`",
+  "mapping_state": "",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SitePlaybackPagesMvcTest#playerFrameHasPerResponseNonceSameOriginScriptsAndLegacyPlayerData、SitePlaybackPagesMvcTest#playerPasswordFlowUsesSignedHttpOnlyTicket；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-131",
+  "old": "Vod.php::down",
+  "action": "`site/web/SitePlaybackController.java:109` #page → `:115` case VOD_DOWN",
+  "mapping_state": "",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SitePlaybackPagesMvcTest#downPageListsEpisodesAndDownerShowsTheAddressOnlyAfterChecks；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-132",
+  "old": "Vod.php::downer",
+  "action": "`site/web/SitePlaybackController.java:109` #page → `:116` case VOD_DOWNER；POST `:124`",
+  "mapping_state": "",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SitePlaybackPagesMvcTest#downPageListsEpisodesAndDownerShowsTheAddressOnlyAfterChecks；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-133",
+  "old": "Vod.php::rss",
+  "action": "`site/web/SiteLibraryController.java:175` → `:247` case VOD_RSS",
+  "mapping_state": "",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteLibraryPagesMvcTest#singleItemRssIsEscapedXml"
+ },
+ {
+  "row": "R-134",
+  "old": "Vod.php::plot",
+  "action": "`site/web/SiteLibraryController.java:134` #page → `:190` case VOD_PLOT",
+  "mapping_state": "",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteLibraryPagesMvcTest#plotPagesListPartsAndRenderOnlyTheCurrentOne、SiteLibraryPagesMvcTest#everyContentTypeSanitizesItsRichText"
+ },
+ {
+  "row": "R-135",
+  "old": "Website.php::index",
+  "action": "`site/web/SiteLibraryController.java:134` #page → `:188` case WEBSITE_INDEX",
+  "mapping_state": "",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteLibraryPagesMvcTest#otherListsAndVideoRoles"
+ },
+ {
+  "row": "R-136",
+  "old": "Website.php::type",
+  "action": "`site/web/SiteLibraryController.java:134` #page → `:188` case WEBSITE_TYPE",
+  "mapping_state": "",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteLibraryPagesMvcTest#otherListsAndVideoRoles"
+ },
+ {
+  "row": "R-137",
+  "old": "Website.php::show",
+  "action": "`site/web/SiteModuleListController.java:102` #list；`site/application/ModuleListPage.java:37` WEBSITE_SHOW",
+  "mapping_state": "仅 MySQL IT",
+  "verdict": "缺口",
+  "evidence_source": "GAP-IT 有实现，测试只在未执行的 *MySqlIT",
+  "basis": "只有 MySQL IT 证据（本轮未执行，需 `MACCMS_IT_*`）：ModuleSearchGoldenMySqlIT#everyGoldenCaseListsTheSameIdsAsTheLegacyPage → 进 GAP-，补跑 IT 通过后可升级为 ✅已对齐"
+ },
+ {
+  "row": "R-138",
+  "old": "Website.php::ajax_show",
+  "action": "`site/web/SiteModuleListController.java:102` #list；`site/application/ModuleListPage.java:38` WEBSITE_AJAX_SHOW",
+  "mapping_state": "仅 MySQL IT（ajax_ 变体）",
+  "verdict": "缺口",
+  "evidence_source": "GAP-IT 有实现，测试只在未执行的 *MySqlIT",
+  "basis": "只有 MySQL IT 证据（本轮未执行，需 `MACCMS_IT_*`）：ModuleSearchGoldenMySqlIT#everyGoldenCaseListsTheSameIdsAsTheLegacyPage → 进 GAP-，补跑 IT 通过后可升级为 ✅已对齐"
+ },
+ {
+  "row": "R-139",
+  "old": "Website.php::search",
+  "action": "`site/web/SiteModuleListController.java:102` #list；`site/application/ModuleListPage.java:35` WEBSITE_SEARCH",
+  "mapping_state": "MVC 仅测 400",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteModuleListPagesMvcTest#containsMatchIs400BeforeQueryingWhenSearchIsOffAndExactFiltersStillWork；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-140",
+  "old": "Website.php::ajax_search",
+  "action": "`site/web/SiteModuleListController.java:102` #list；`site/application/ModuleListPage.java:36` WEBSITE_AJAX_SEARCH",
+  "mapping_state": "仅 MySQL IT（ajax_ 变体）",
+  "verdict": "缺口",
+  "evidence_source": "GAP-IT 有实现，测试只在未执行的 *MySqlIT",
+  "basis": "只有 MySQL IT 证据（本轮未执行，需 `MACCMS_IT_*`）：ModuleSearchGoldenMySqlIT#everyGoldenCaseListsTheSameIdsAsTheLegacyPage → 进 GAP-，补跑 IT 通过后可升级为 ✅已对齐"
+ },
+ {
+  "row": "R-141",
+  "old": "Website.php::detail",
+  "action": "`site/web/SiteLibraryController.java:134` #page → `:190` case WEBSITE_DETAIL",
+  "mapping_state": "",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：SiteLibraryPagesMvcTest#everyContentTypeSanitizesItsRichText、SiteLibraryPagesMvcTest#otherListsAndVideoRoles"
+ },
+ {
+  "row": "R-142",
+  "old": "Website.php::ajax_detail",
+  "action": "`site/web/SiteLibraryController.java:134` #page → `:190` case WEBSITE_AJAX_DETAIL",
+  "mapping_state": "默认 ajax_page 关闭→404",
+  "verdict": "缺口",
+  "evidence_source": "GAP-T 有实现，无任何测试",
+  "basis": "实现位置 `SiteLibraryController#render` ajax 分支（旧 `Website::ajax_detail`） 可读，但本轮**没有任何测试覆盖这一行**（映射表测试列为空或只有 `*MySqlIT`）。按 PRD 附表 C，没有测试名不能写 `✅已对齐` → 需产品经理建 GAP- 并指给对应开发补测试。"
+ },
+ {
+  "row": "R-143",
+  "old": "Website.php::rss",
+  "action": "`site/web/SiteLibraryController.java:175` → `:283` case WEBSITE_RSS",
+  "mapping_state": "",
+  "verdict": "缺口",
+  "evidence_source": "GAP-T 有实现，无任何测试",
+  "basis": "实现位置 `SiteLibraryController#rss` 的 WEBSITE_RSS 分支（旧 `Website::rss`） 可读，但本轮**没有任何测试覆盖这一行**（映射表测试列为空或只有 `*MySqlIT`）。按 PRD 附表 C，没有测试名不能写 `✅已对齐` → 需产品经理建 GAP- 并指给对应开发补测试。"
+ },
+ {
+  "row": "R-144",
+  "old": "`Base.php`（空类）",
+  "action": "",
+  "mapping_state": "非动作（占位行）",
+  "verdict": "旧版无功能",
+  "evidence_source": "NA 旧版无功能（PHP 源码行证据）",
+  "basis": "台账占位行：`php/application/api/controller/Base.php`（只有 `__construct`，方法体为空） 内无 public function（附表 C 预填，本轮 `grep -c 'public function'` 复核为 0），旧版没有这条功能"
+ },
+ {
+  "row": "R-145",
+  "old": "`Index.php::index`",
+  "action": "",
+  "mapping_state": "缺实现",
+  "verdict": "旧版无功能",
+  "evidence_source": "NA 旧版无功能（PHP 源码行证据）",
+  "basis": "PHP 源码 `php/application/api/controller/Index.php` 的 `index()` 方法体为空（映射表记为“旧方法体为空”），无输出；新版 `/api.php/index` 无映射，请求 404。"
+ },
+ {
+  "row": "R-146",
+  "old": "`Provide.php::index`",
+  "action": "",
+  "mapping_state": "实现+测试",
+  "verdict": "缺口",
+  "evidence_source": "GAP-IT 有实现，测试只在未执行的 *MySqlIT",
+  "basis": "只有 MySQL IT 证据（本轮未执行，需 `MACCMS_IT_*`）：ProvideGoldenMySqlIT#everyGoldenCaseMatchesTheLegacyOutputOrTheRegisteredDifference → 进 GAP-，补跑 IT 通过后可升级为 ✅已对齐"
+ },
+ {
+  "row": "R-147",
+  "old": "`Provide.php::vod`",
+  "action": "",
+  "mapping_state": "实现+测试",
+  "verdict": "缺口",
+  "evidence_source": "GAP-IT 有实现，测试只在未执行的 *MySqlIT",
+  "basis": "只有 MySQL IT 证据（本轮未执行，需 `MACCMS_IT_*`）：ProvideGoldenMySqlIT#everyGoldenCaseMatchesTheLegacyOutputOrTheRegisteredDifference → 进 GAP-，补跑 IT 通过后可升级为 ✅已对齐"
+ },
+ {
+  "row": "R-148",
+  "old": "`Provide.php::vod_url_deal`",
+  "action": "",
+  "mapping_state": "实现+测试",
+  "verdict": "缺口",
+  "evidence_source": "GAP-IT 有实现，测试只在未执行的 *MySqlIT",
+  "basis": "只有 MySQL IT 证据（本轮未执行，需 `MACCMS_IT_*`）：ProvideGoldenMySqlIT#everyGoldenCaseMatchesTheLegacyOutputOrTheRegisteredDifference → 进 GAP-，补跑 IT 通过后可升级为 ✅已对齐"
+ },
+ {
+  "row": "R-149",
+  "old": "`Provide.php::vod_json`",
+  "action": "",
+  "mapping_state": "实现+测试",
+  "verdict": "缺口",
+  "evidence_source": "GAP-IT 有实现，测试只在未执行的 *MySqlIT",
+  "basis": "只有 MySQL IT 证据（本轮未执行，需 `MACCMS_IT_*`）：ProvideGoldenMySqlIT#everyGoldenCaseMatchesTheLegacyOutputOrTheRegisteredDifference → 进 GAP-，补跑 IT 通过后可升级为 ✅已对齐"
+ },
+ {
+  "row": "R-150",
+  "old": "`Provide.php::vod_xml`",
+  "action": "",
+  "mapping_state": "实现+测试",
+  "verdict": "缺口",
+  "evidence_source": "GAP-IT 有实现，测试只在未执行的 *MySqlIT",
+  "basis": "只有 MySQL IT 证据（本轮未执行，需 `MACCMS_IT_*`）：ProvideGoldenMySqlIT#everyGoldenCaseMatchesTheLegacyOutputOrTheRegisteredDifference → 进 GAP-，补跑 IT 通过后可升级为 ✅已对齐"
+ },
+ {
+  "row": "R-151",
+  "old": "`Provide.php::art`",
+  "action": "",
+  "mapping_state": "实现+测试",
+  "verdict": "缺口",
+  "evidence_source": "GAP-IT 有实现，测试只在未执行的 *MySqlIT",
+  "basis": "只有 MySQL IT 证据（本轮未执行，需 `MACCMS_IT_*`）：ProvideGoldenMySqlIT#everyGoldenCaseMatchesTheLegacyOutputOrTheRegisteredDifference → 进 GAP-，补跑 IT 通过后可升级为 ✅已对齐"
+ },
+ {
+  "row": "R-152",
+  "old": "`Provide.php::actor`",
+  "action": "",
+  "mapping_state": "实现+测试",
+  "verdict": "缺口",
+  "evidence_source": "GAP-IT 有实现，测试只在未执行的 *MySqlIT",
+  "basis": "只有 MySQL IT 证据（本轮未执行，需 `MACCMS_IT_*`）：ProvideGoldenMySqlIT#everyGoldenCaseMatchesTheLegacyOutputOrTheRegisteredDifference → 进 GAP-，补跑 IT 通过后可升级为 ✅已对齐"
+ },
+ {
+  "row": "R-153",
+  "old": "`Provide.php::role`",
+  "action": "",
+  "mapping_state": "实现+测试",
+  "verdict": "缺口",
+  "evidence_source": "GAP-IT 有实现，测试只在未执行的 *MySqlIT",
+  "basis": "只有 MySQL IT 证据（本轮未执行，需 `MACCMS_IT_*`）：ProvideGoldenMySqlIT#everyGoldenCaseMatchesTheLegacyOutputOrTheRegisteredDifference → 进 GAP-，补跑 IT 通过后可升级为 ✅已对齐"
+ },
+ {
+  "row": "R-154",
+  "old": "`Provide.php::website`",
+  "action": "",
+  "mapping_state": "实现+测试",
+  "verdict": "缺口",
+  "evidence_source": "GAP-IT 有实现，测试只在未执行的 *MySqlIT",
+  "basis": "只有 MySQL IT 证据（本轮未执行，需 `MACCMS_IT_*`）：ProvideGoldenMySqlIT#everyGoldenCaseMatchesTheLegacyOutputOrTheRegisteredDifference → 进 GAP-，补跑 IT 通过后可升级为 ✅已对齐"
+ },
+ {
+  "row": "R-155",
+  "old": "`Provide.php::comment`",
+  "action": "",
+  "mapping_state": "实现+测试",
+  "verdict": "缺口",
+  "evidence_source": "GAP-IT 有实现，测试只在未执行的 *MySqlIT",
+  "basis": "只有 MySQL IT 证据（本轮未执行，需 `MACCMS_IT_*`）：ProvideGoldenMySqlIT#everyGoldenCaseMatchesTheLegacyOutputOrTheRegisteredDifference → 进 GAP-，补跑 IT 通过后可升级为 ✅已对齐"
+ },
+ {
+  "row": "R-156",
+  "old": "`Receive.php::index`",
+  "action": "",
+  "mapping_state": "实现+测试",
+  "verdict": "缺口",
+  "evidence_source": "GAP-IT 有实现，测试只在未执行的 *MySqlIT",
+  "basis": "只有 MySQL IT 证据（本轮未执行，需 `MACCMS_IT_*`）：ReceiveGoldenMySqlIT#scenariosMatchPhpGolden → 进 GAP-，补跑 IT 通过后可升级为 ✅已对齐"
+ },
+ {
+  "row": "R-157",
+  "old": "`Receive.php::vod`",
+  "action": "",
+  "mapping_state": "实现+测试",
+  "verdict": "缺口",
+  "evidence_source": "GAP-IT 有实现，测试只在未执行的 *MySqlIT",
+  "basis": "只有 MySQL IT 证据（本轮未执行，需 `MACCMS_IT_*`）：ReceiveGoldenMySqlIT#scenariosMatchPhpGolden、ReceiveGoldenMySqlIT#concurrentSubmissionsOfOneVideoInsertOnce → 进 GAP-，补跑 IT 通过后可升级为 ✅已对齐"
+ },
+ {
+  "row": "R-158",
+  "old": "`Receive.php::art`",
+  "action": "",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：KindIngestTest#artPagesFollowTheContentPageCount；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-159",
+  "old": "`Receive.php::actor`",
+  "action": "",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：KindIngestTest#actorRequiresSexWithTheLegacyMisspelledLangKey；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-160",
+  "old": "`Receive.php::role`",
+  "action": "",
+  "mapping_state": "实现+测试",
+  "verdict": "缺口",
+  "evidence_source": "GAP-IT 有实现，测试只在未执行的 *MySqlIT",
+  "basis": "只有 MySQL IT 证据（本轮未执行，需 `MACCMS_IT_*`）：ReceiveGoldenMySqlIT#kindScenariosMatchPhpGolden → 进 GAP-，补跑 IT 通过后可升级为 ✅已对齐"
+ },
+ {
+  "row": "R-161",
+  "old": "`Receive.php::website`",
+  "action": "",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：KindIngestTest#actorAndWebsiteKeepANullPictureForTheWrite；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-162",
+  "old": "`Receive.php::comment`",
+  "action": "",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：KindIngestTest#commentWithoutDedupeRulesAlwaysInserts；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-163",
+  "old": "`Timming.php::index`",
+  "action": "",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：TimmingControllerMvcTest#loopbackRequestRunsTheFirstDueTaskAndWritesRuntime、TimmingControllerMvcTest#parametersAreTrimmedThenUrldecodedLikeInput、TimmingGoldenTest#scheduleDecisionsMatchPhp"
+ },
+ {
+  "row": "R-164",
+  "old": "`Wechat.php::index`",
+  "action": "",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：WechatServiceTest#handshakeAcceptsLegacyAndDictionaryOrderAndEscapesEchostr；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-165",
+  "old": "`Actor.php::data`",
+  "action": "`actor/data`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-166",
+  "old": "`Actor.php::info`",
+  "action": "`actor/info`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-167",
+  "old": "`Actor.php::del`",
+  "action": "`actor/del`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-168",
+  "old": "`Actor.php::field`",
+  "action": "`actor/field`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-169",
+  "old": "`Addon.php::index`",
+  "action": "`addon/index`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminSystemGoldenTest#scenariosMatchPhpGolden、AdminFrameGoldenTest#menusMatchPhp；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-170",
+  "old": "`Addon.php::config`",
+  "action": "`addon/config`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminSystemGoldenTest#scenariosMatchPhpGolden、AdminFrameGoldenTest#menusMatchPhp；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-171",
+  "old": "`Addon.php::info`",
+  "action": "`addon/info`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminSystemGoldenTest#scenariosMatchPhpGolden"
+ },
+ {
+  "row": "R-172",
+  "old": "`Addon.php::downloaded`",
+  "action": "`addon/downloaded`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminSystemGoldenTest#scenariosMatchPhpGolden、AdminFrameGoldenTest#menusMatchPhp；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-173",
+  "old": "`Addon.php::install`",
+  "action": "`addon/install`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AddonMarketGoldenTest#scenariosMatchPhpGolden、AdminPermissionsGoldenTest#everyAuthCodeHasABatchAndB12OwnsIndexAndAdmin、AdminFrameGoldenTest#menusMatchPhp"
+ },
+ {
+  "row": "R-174",
+  "old": "`Addon.php::uninstall`",
+  "action": "`addon/uninstall`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AddonMarketGoldenTest#scenariosMatchPhpGolden、AdminSystemGoldenTest#scenariosMatchPhpGolden、AdminFrameGoldenTest#menusMatchPhp；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-175",
+  "old": "`Addon.php::state`",
+  "action": "`addon/state`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AddonMarketGoldenTest#scenariosMatchPhpGolden、AdminSystemGoldenTest#scenariosMatchPhpGolden、AdminFrameGoldenTest#menusMatchPhp；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-176",
+  "old": "`Addon.php::local`",
+  "action": "`addon/local`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminSystemGoldenTest#scenariosMatchPhpGolden、AdminFrameGoldenTest#menusMatchPhp；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-177",
+  "old": "`Addon.php::add`",
+  "action": "`addon/add`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminSystemGoldenTest#scenariosMatchPhpGolden、AdminFrameGoldenTest#menusMatchPhp；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-178",
+  "old": "`Addon.php::upgrade`",
+  "action": "`addon/upgrade`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AddonMarketGoldenTest#scenariosMatchPhpGolden、AdminFrameGoldenTest#menusMatchPhp；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-179",
+  "old": "`Admin.php::index`",
+  "action": "`admin/index`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminMvcTest#adminListRendersLegacyStructure、AdminMvcTest#anUppercaseStoredHashLogsInAndStaysLoggedInLikeLegacy、AdminMvcTest#disablingChangingPasswordOrDeletingKicksTheSessionOnTheNextRequest、AdminMvcTest#permissionChangesApplyToTheNextRequest、AdminPermissionsGoldenTest#everyAuthCodeHasABatchAndB12OwnsIndexAndAdmin；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-180",
+  "old": "`Admin.php::info`",
+  "action": "`admin/info`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminMvcTest#adminFormTokenAndSave、AdminMvcTest#entryRootAndOtherModulesGoToTheFrameAndUnknownControllersAre404、AdminFrameGoldenTest#menusMatchPhp、AdminMvcTest#permissionChangesApplyToTheNextRequest、AdminPermissionsGoldenTest#everyAuthCodeHasABatchAndB12OwnsIndexAndAdmin；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-181",
+  "old": "`Admin.php::del`",
+  "action": "`admin/del`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminMvcTest#deleteAndStatus、AdminMvcTest#writeGetsFromAnotherOriginOfTheSameSiteAreRejected、AdminFrameGoldenTest#menusMatchPhp、AdminPermissionsGoldenTest#everyAuthCodeHasABatchAndB12OwnsIndexAndAdmin；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-182",
+  "old": "`Admin.php::field`",
+  "action": "`admin/field`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminMvcTest#adminListRendersLegacyStructure、AdminMvcTest#deleteAndStatus、AdminMvcTest#writeGetsFromAnotherOriginOfTheSameSiteAreRejected、AdminRouteTest#extraSegmentsArePairs、AdminPermissionsGoldenTest#everyAuthCodeHasABatchAndB12OwnsIndexAndAdmin"
+ },
+ {
+  "row": "R-183",
+  "old": "`Annex.php::data`",
+  "action": "`annex/data`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-184",
+  "old": "`Annex.php::file`",
+  "action": "`annex/file`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-185",
+  "old": "`Annex.php::info`",
+  "action": "`annex/info`",
+  "mapping_state": "实现+测试",
+  "verdict": "缺口",
+  "evidence_source": "GAP-IT 有实现，测试只在未执行的 *MySqlIT",
+  "basis": "只有 MySQL IT 证据（本轮未执行，需 `MACCMS_IT_*`）：AdminContentGoldenMySqlIT#scenariosMatchPhpGolden → 进 GAP-，补跑 IT 通过后可升级为 ✅已对齐"
+ },
+ {
+  "row": "R-186",
+  "old": "`Annex.php::del`",
+  "action": "`annex/del`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-187",
+  "old": "`Annex.php::check`",
+  "action": "`annex/check`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-188",
+  "old": "`Annex.php::init`",
+  "action": "`annex/init`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-189",
+  "old": "`Art.php::data`",
+  "action": "`art/data`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-190",
+  "old": "`Art.php::batch`",
+  "action": "`art/batch`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-191",
+  "old": "`Art.php::info`",
+  "action": "`art/info`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-192",
+  "old": "`Art.php::del`",
+  "action": "`art/del`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-193",
+  "old": "`Art.php::field`",
+  "action": "`art/field`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-194",
+  "old": "`Art.php::updateToday`",
+  "action": "`art/updatetoday`",
+  "mapping_state": "实现+测试",
+  "verdict": "缺口",
+  "evidence_source": "GAP-IT 有实现，测试只在未执行的 *MySqlIT",
+  "basis": "只有 MySQL IT 证据（本轮未执行，需 `MACCMS_IT_*`）：AdminContentGoldenMySqlIT#scenariosMatchPhpGolden → 进 GAP-，补跑 IT 通过后可升级为 ✅已对齐"
+ },
+ {
+  "row": "R-195",
+  "old": "`Base.php::check_auth`",
+  "action": "`base/check_auth`",
+  "mapping_state": "非动作（辅助方法）",
+  "verdict": "旧版无功能",
+  "evidence_source": "NA 旧版无功能（PHP 源码行证据）",
+  "basis": "PHP 源码 `php/application/admin/controller/Base.php:42-58`：`check_auth($c,$a)` 只做权限字符串比对并返回 true/false，是控制器基类的鉴权辅助、不对应任何 URL 动作（台账列为“非动作”，auth 导出里也没有它）；新版由 `admin/web/AdminController` 的请求级鉴权 + `admin/application/AdminAuthorization` 承担。无对等 URL 功能。"
+ },
+ {
+  "row": "R-196",
+  "old": "`Base.php::_cache_clear`",
+  "action": "`base/_cache_clear`",
+  "mapping_state": "非动作（辅助方法）",
+  "verdict": "旧版无功能",
+  "evidence_source": "NA 旧版无功能（PHP 源码行证据）",
+  "basis": "PHP 源码 `php/application/admin/controller/Base.php:60-100`：`_cache_clear()` 仅在 `ENTRANCE=='admin'` 时把 vodplayer/voddowner/vodserver 写回配置文件，由基类构造调用，不对外暴露动作；新版在 `admin/application/PlayerAdminService` / `index/clear` 重写播放器配置。无对等 URL 功能。"
+ },
+ {
+  "row": "R-197",
+  "old": "`Card.php::index`",
+  "action": "`card/index`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-198",
+  "old": "`Card.php::info`",
+  "action": "`card/info`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-199",
+  "old": "`Card.php::del`",
+  "action": "`card/del`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-200",
+  "old": "`Cash.php::index`",
+  "action": "`cash/index`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-201",
+  "old": "`Cash.php::del`",
+  "action": "`cash/del`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-202",
+  "old": "`Cash.php::audit`",
+  "action": "`cash/audit`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-203",
+  "old": "`Cj.php::index`",
+  "action": "`cj/index`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-204",
+  "old": "`Cj.php::info`",
+  "action": "`cj/info`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-205",
+  "old": "`Cj.php::program`",
+  "action": "`cj/program`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 4 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-206",
+  "old": "`Cj.php::col_all`",
+  "action": "`cj/col_all`",
+  "mapping_state": "实现+测试",
+  "verdict": "缺口",
+  "evidence_source": "GAP-IT 有实现，测试只在未执行的 *MySqlIT",
+  "basis": "只有 MySQL IT 证据（本轮未执行，需 `MACCMS_IT_*`）：AdminCjMySqlIT#colAllRoundFromAdminAndTimmingTask → 进 GAP-，补跑 IT 通过后可升级为 ✅已对齐"
+ },
+ {
+  "row": "R-207",
+  "old": "`Cj.php::col_url`",
+  "action": "`cj/col_url`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 5 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-208",
+  "old": "`Cj.php::col_content`",
+  "action": "`cj/col_content`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 4 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-209",
+  "old": "`Cj.php::publish`",
+  "action": "`cj/publish`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminPermissionsGoldenTest#everyAuthCodeHasABatchAndB12OwnsIndexAndAdmin、AdminFrameGoldenTest#menusMatchPhp；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-210",
+  "old": "`Cj.php::show`",
+  "action": "`cj/show`",
+  "mapping_state": "实现+测试",
+  "verdict": "缺口",
+  "evidence_source": "GAP-IT 有实现，测试只在未执行的 *MySqlIT",
+  "basis": "只有 MySQL IT 证据（本轮未执行，需 `MACCMS_IT_*`）：AdminCjMySqlIT#fullFlowCollectsUrlsContentsAndImports → 进 GAP-，补跑 IT 通过后可升级为 ✅已对齐"
+ },
+ {
+  "row": "R-211",
+  "old": "`Cj.php::content_del`",
+  "action": "`cj/content_del`",
+  "mapping_state": "实现+测试",
+  "verdict": "缺口",
+  "evidence_source": "GAP-IT 有实现，测试只在未执行的 *MySqlIT",
+  "basis": "只有 MySQL IT 证据（本轮未执行，需 `MACCMS_IT_*`）：AdminCjMySqlIT#deletingContentsAlsoForgetsAllTheirUrls → 进 GAP-，补跑 IT 通过后可升级为 ✅已对齐"
+ },
+ {
+  "row": "R-212",
+  "old": "`Cj.php::content_into`",
+  "action": "`cj/content_into`",
+  "mapping_state": "实现+测试",
+  "verdict": "缺口",
+  "evidence_source": "GAP-IT 有实现，测试只在未执行的 *MySqlIT",
+  "basis": "只有 MySQL IT 证据（本轮未执行，需 `MACCMS_IT_*`）：AdminCjMySqlIT#fullFlowCollectsUrlsContentsAndImports、AdminCjMySqlIT#rollbackDrillRestoresWithDmlOnly → 进 GAP-，补跑 IT 通过后可升级为 ✅已对齐"
+ },
+ {
+  "row": "R-213",
+  "old": "`Cj.php::show_url`",
+  "action": "`cj/show_url`",
+  "mapping_state": "实现+测试",
+  "verdict": "缺口",
+  "evidence_source": "GAP-IT 有实现，测试只在未执行的 *MySqlIT",
+  "basis": "只有 MySQL IT 证据（本轮未执行，需 `MACCMS_IT_*`）：AdminCjMySqlIT#fullFlowCollectsUrlsContentsAndImports → 进 GAP-，补跑 IT 通过后可升级为 ✅已对齐"
+ },
+ {
+  "row": "R-214",
+  "old": "`Cj.php::del`",
+  "action": "`cj/del`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-215",
+  "old": "`Cj.php::export`",
+  "action": "`cj/export`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-216",
+  "old": "`Cj.php::import`",
+  "action": "`cj/import`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-217",
+  "old": "`Collect.php::index`",
+  "action": "`collect/index`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 5 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-218",
+  "old": "`Collect.php::test`",
+  "action": "`collect/test`",
+  "mapping_state": "实现+测试",
+  "verdict": "缺口",
+  "evidence_source": "GAP-IT 有实现，测试只在未执行的 *MySqlIT",
+  "basis": "只有 MySQL IT 证据（本轮未执行，需 `MACCMS_IT_*`）：AdminCollectGoldenMySqlIT#collectTestNeverConnects → 进 GAP-，补跑 IT 通过后可升级为 ✅已对齐"
+ },
+ {
+  "row": "R-219",
+  "old": "`Collect.php::info`",
+  "action": "`collect/info`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-220",
+  "old": "`Collect.php::del`",
+  "action": "`collect/del`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-221",
+  "old": "`Collect.php::union`",
+  "action": "`collect/union`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 3 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-222",
+  "old": "`Collect.php::load`",
+  "action": "`collect/load`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 4 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-223",
+  "old": "`Collect.php::api`",
+  "action": "`collect/api`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminPermissionsGoldenTest#everyAuthCodeHasABatchAndB12OwnsIndexAndAdmin、AdminFrameGoldenTest#menusMatchPhp；另有 4 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-224",
+  "old": "`Collect.php::timing`",
+  "action": "`collect/timing`",
+  "mapping_state": "显式不提供",
+  "verdict": "缺口",
+  "evidence_source": "GAP-X 新版自身行为与旧版不同（非 CRUD 差异）",
+  "basis": "旧 `Collect::timing` 是可用定时挂机页；新版 `admin/application/AdminPermissions.NOT_PROVIDED` 固定返回“该功能未在新系统中提供”。源码注释记 2026-10-28 用户决定删除，但该决定没有 OP-/D 编号落进 PRD → 缺口：产品经理补决策编号后本行改 `排除-<编号>`，否则需建 GAP-。"
+ },
+ {
+  "row": "R-225",
+  "old": "`Collect.php::clearbind`",
+  "action": "`collect/clearbind`",
+  "mapping_state": "实现+测试",
+  "verdict": "缺口",
+  "evidence_source": "GAP-IT 有实现，测试只在未执行的 *MySqlIT",
+  "basis": "只有 MySQL IT 证据（本轮未执行，需 `MACCMS_IT_*`）：AdminCollectGoldenMySqlIT#scenariosMatchPhpGolden → 进 GAP-，补跑 IT 通过后可升级为 ✅已对齐"
+ },
+ {
+  "row": "R-226",
+  "old": "`Collect.php::bind`",
+  "action": "`collect/bind`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-227",
+  "old": "`Collect.php::vod`",
+  "action": "`collect/vod`",
+  "mapping_state": "间接实现·待核",
+  "verdict": "缺口",
+  "evidence_source": "GAP-IT 有实现，测试只在未执行的 *MySqlIT",
+  "basis": "旧 `Collect::api` 按 `mid=='1'` 内部调对应方法；新版 `AdminCollectActions#api` 用 `ProvideKind.ofMid(mid)` → VOD 分派到 `collect/application/CollectPreviewService` / `CollectRunService`。分派链读代码可见，但覆盖它的测试只有 MySQL IT（`AdminCollectIngestMySqlIT#cjallWalksAllPagesWithBreakpointThenFinishes`（mid=1）），本轮未设 `MACCMS_IT_*`、未执行 → 不能写 `✅已对齐`，进 GAP-；补跑 IT 通过后可升级。"
+ },
+ {
+  "row": "R-228",
+  "old": "`Collect.php::art`",
+  "action": "`collect/art`",
+  "mapping_state": "间接实现·待核",
+  "verdict": "缺口",
+  "evidence_source": "GAP-IT 有实现，测试只在未执行的 *MySqlIT",
+  "basis": "旧 `Collect::api` 按 `mid=='2'` 内部调对应方法；新版 `AdminCollectActions#api` 用 `ProvideKind.ofMid(mid)` → ART 分派到 `collect/application/CollectPreviewService` / `CollectRunService`。分派链读代码可见，但覆盖它的测试只有 MySQL IT（`AdminCollectIngestMySqlIT#selectedRowsAndTodaysArticles`（mid=2 载入 + cjday 入库）），本轮未设 `MACCMS_IT_*`、未执行 → 不能写 `✅已对齐`，进 GAP-；补跑 IT 通过后可升级。"
+ },
+ {
+  "row": "R-229",
+  "old": "`Collect.php::actor`",
+  "action": "`collect/actor`",
+  "mapping_state": "间接实现·待核",
+  "verdict": "缺口",
+  "evidence_source": "GAP-IT 有实现，测试只在未执行的 *MySqlIT",
+  "basis": "旧 `Collect::api` 按 `mid=='8'` 内部调对应方法；新版 `AdminCollectActions#api` 用 `ProvideKind.ofMid(mid)` → ACTOR 分派到 `collect/application/CollectPreviewService` / `CollectRunService`。分派链读代码可见，但覆盖它的测试只有 MySQL IT（**没有任何 IT 用例覆盖 mid=8**），本轮未设 `MACCMS_IT_*`、未执行 → 不能写 `✅已对齐`，进 GAP-；补跑 IT 通过后可升级。"
+ },
+ {
+  "row": "R-230",
+  "old": "`Collect.php::role`",
+  "action": "`collect/role`",
+  "mapping_state": "间接实现·待核",
+  "verdict": "缺口",
+  "evidence_source": "GAP-IT 有实现，测试只在未执行的 *MySqlIT",
+  "basis": "旧 `Collect::api` 按 `mid=='9'` 内部调对应方法；新版 `AdminCollectActions#api` 用 `ProvideKind.ofMid(mid)` → ROLE 分派到 `collect/application/CollectPreviewService` / `CollectRunService`。分派链读代码可见，但覆盖它的测试只有 MySQL IT（**没有任何 IT 用例覆盖 mid=9**），本轮未设 `MACCMS_IT_*`、未执行 → 不能写 `✅已对齐`，进 GAP-；补跑 IT 通过后可升级。"
+ },
+ {
+  "row": "R-231",
+  "old": "`Collect.php::website`",
+  "action": "`collect/website`",
+  "mapping_state": "间接实现·待核",
+  "verdict": "缺口",
+  "evidence_source": "GAP-IT 有实现，测试只在未执行的 *MySqlIT",
+  "basis": "旧 `Collect::api` 按 `mid=='11'` 内部调对应方法；新版 `AdminCollectActions#api` 用 `ProvideKind.ofMid(mid)` → WEBSITE 分派到 `collect/application/CollectPreviewService` / `CollectRunService`。分派链读代码可见，但覆盖它的测试只有 MySQL IT（`AdminCollectPreviewMySqlIT#realHttpMultipartUploadAndItsSizeLimit`（mid=11）），本轮未设 `MACCMS_IT_*`、未执行 → 不能写 `✅已对齐`，进 GAP-；补跑 IT 通过后可升级。"
+ },
+ {
+  "row": "R-232",
+  "old": "`Comment.php::data`",
+  "action": "`comment/data`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-233",
+  "old": "`Comment.php::info`",
+  "action": "`comment/info`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-234",
+  "old": "`Comment.php::del`",
+  "action": "`comment/del`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-235",
+  "old": "`Comment.php::field`",
+  "action": "`comment/field`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-236",
+  "old": "`Database.php::index`",
+  "action": "`database/index`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminSystemGoldenTest#scenariosMatchPhpGolden、AdminFrameGoldenTest#menusMatchPhp；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-237",
+  "old": "`Database.php::export`",
+  "action": "`database/export`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminSystemGoldenTest#scenariosMatchPhpGolden、AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-238",
+  "old": "`Database.php::import`",
+  "action": "`database/import`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-239",
+  "old": "`Database.php::optimize`",
+  "action": "`database/optimize`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-240",
+  "old": "`Database.php::repair`",
+  "action": "`database/repair`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-241",
+  "old": "`Database.php::del`",
+  "action": "`database/del`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminSystemGoldenTest#scenariosMatchPhpGolden、AdminFrameGoldenTest#menusMatchPhp；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-242",
+  "old": "`Database.php::sql`",
+  "action": "`database/sql`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminSystemGoldenTest#scenariosMatchPhpGolden、AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-243",
+  "old": "`Database.php::columns`",
+  "action": "`database/columns`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminSystemGoldenTest#scenariosMatchPhpGolden、AdminFrameGoldenTest#menusMatchPhp；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-244",
+  "old": "`Database.php::rep`",
+  "action": "`database/rep`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminSystemGoldenTest#scenariosMatchPhpGolden、AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-245",
+  "old": "`Domain.php::index`",
+  "action": "`domain/index`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminSystemGoldenTest#scenariosMatchPhpGolden、AdminFrameGoldenTest#menusMatchPhp；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-246",
+  "old": "`Domain.php::del`",
+  "action": "`domain/del`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminSystemGoldenTest#scenariosMatchPhpGolden、AdminFrameGoldenTest#menusMatchPhp；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-247",
+  "old": "`Domain.php::export`",
+  "action": "`domain/export`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminSystemGoldenTest#scenariosMatchPhpGolden、AdminFrameGoldenTest#menusMatchPhp；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-248",
+  "old": "`Domain.php::import`",
+  "action": "`domain/import`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminSystemGoldenTest#scenariosMatchPhpGolden、AdminFrameGoldenTest#menusMatchPhp；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-249",
+  "old": "`Gbook.php::data`",
+  "action": "`gbook/data`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-250",
+  "old": "`Gbook.php::info`",
+  "action": "`gbook/info`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-251",
+  "old": "`Gbook.php::del`",
+  "action": "`gbook/del`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-252",
+  "old": "`Gbook.php::field`",
+  "action": "`gbook/field`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-253",
+  "old": "`Group.php::index`",
+  "action": "`group/index`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-254",
+  "old": "`Group.php::info`",
+  "action": "`group/info`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-255",
+  "old": "`Group.php::del`",
+  "action": "`group/del`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-256",
+  "old": "`Group.php::field`",
+  "action": "`group/field`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-257",
+  "old": "`Images.php::data`",
+  "action": "`images/data`",
+  "mapping_state": "实现+测试",
+  "verdict": "缺口",
+  "evidence_source": "GAP-IT 有实现，测试只在未执行的 *MySqlIT",
+  "basis": "只有 MySQL IT 证据（本轮未执行，需 `MACCMS_IT_*`）：AdminContentGoldenMySqlIT#scenariosMatchPhpGolden → 进 GAP-，补跑 IT 通过后可升级为 ✅已对齐"
+ },
+ {
+  "row": "R-258",
+  "old": "`Images.php::opt`",
+  "action": "`images/opt`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-259",
+  "old": "`Images.php::del`",
+  "action": "`images/del`",
+  "mapping_state": "实现+测试",
+  "verdict": "缺口",
+  "evidence_source": "GAP-IT 有实现，测试只在未执行的 *MySqlIT",
+  "basis": "只有 MySQL IT 证据（本轮未执行，需 `MACCMS_IT_*`）：AdminContentGoldenMySqlIT#scenariosMatchPhpGolden → 进 GAP-，补跑 IT 通过后可升级为 ✅已对齐"
+ },
+ {
+  "row": "R-260",
+  "old": "`Images.php::sync`",
+  "action": "`images/sync`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-261",
+  "old": "`Index.php::login`",
+  "action": "`index/login`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminMvcTest#anUppercaseStoredHashLogsInAndStaysLoggedInLikeLegacy、AdminMvcTest#crossOriginPostsAreRejectedBeforeAnythingElse、AdminMvcTest#disablingChangingPasswordOrDeletingKicksTheSessionOnTheNextRequest、AdminMvcTest#logoutNeedsNoPermissionButStillChecksTheSourceAndDestroysTheSession；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-262",
+  "old": "`Index.php::logout`",
+  "action": "`index/logout`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp、AdminMvcTest#frameActions、AdminMvcTest#writeGetsFromAnotherOriginOfTheSameSiteAreRejected、AdminRealHttpTest#cookieAndHeaderBytes、AdminMvcTest#everyAuthCodeIsDeniedToAnAdminWithoutPermissions、AdminMvcTest#logoutNeedsNoPermissionButStillChecksTheSourceAndDestroysTheSession"
+ },
+ {
+  "row": "R-263",
+  "old": "`Index.php::index`",
+  "action": "`index/index`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminMvcTest#entryRootAndOtherModulesGoToTheFrameAndUnknownControllersAre404、AdminMvcTest#frameActions、AdminMvcTest#loginPageVariantsRender、AdminMvcTest#writeGetsFromAnotherOriginOfTheSameSiteAreRejected"
+ },
+ {
+  "row": "R-264",
+  "old": "`Index.php::welcome`",
+  "action": "`index/welcome`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp、AdminMvcTest#anUppercaseStoredHashLogsInAndStaysLoggedInLikeLegacy、AdminMvcTest#everyAuthCodeIsDeniedToAnAdminWithoutPermissions、AdminMvcTest#logoutNeedsNoPermissionButStillChecksTheSourceAndDestroysTheSession；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-265",
+  "old": "`Index.php::quickmenu`",
+  "action": "`index/quickmenu`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminMvcTest#frameActions、AdminTemplateMvcTest#fileRollbackDrill、AdminFrameGoldenTest#menusMatchPhp、AdminPermissionsGoldenTest#everyAuthCodeHasABatchAndB12OwnsIndexAndAdmin；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-266",
+  "old": "`Index.php::checkcache`",
+  "action": "`index/checkcache`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp、AdminMvcTest#frameActions；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-267",
+  "old": "`Index.php::clear`",
+  "action": "`index/clear`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp、AdminMvcTest#frameActions、AdminMvcTest#writeGetsFromAnotherOriginOfTheSameSiteAreRejected、AdminSystemGoldenTest#scenariosMatchPhpGolden、AdminPermissionsGoldenTest#everyAuthCodeHasABatchAndB12OwnsIndexAndAdmin"
+ },
+ {
+  "row": "R-268",
+  "old": "`Index.php::iframe`",
+  "action": "`index/iframe`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminMvcTest#frameActions、AdminRealHttpTest#cookieAndHeaderBytes、AdminFrameGoldenTest#menusMatchPhp、AdminPermissionsGoldenTest#everyAuthCodeHasABatchAndB12OwnsIndexAndAdmin；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-269",
+  "old": "`Index.php::unlocked`",
+  "action": "`index/unlocked`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminMvcTest#anUppercaseStoredHashLogsInAndStaysLoggedInLikeLegacy、AdminMvcTest#frameActions、AdminMvcTest#writeGetsFromAnotherOriginOfTheSameSiteAreRejected、AdminMvcTest#logoutNeedsNoPermissionButStillChecksTheSourceAndDestroysTheSession、AdminPermissionsGoldenTest#everyAuthCodeHasABatchAndB12OwnsIndexAndAdmin；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-270",
+  "old": "`Index.php::check_back_link`",
+  "action": "`index/check_back_link`",
+  "mapping_state": "实现+测试",
+  "verdict": "缺口",
+  "evidence_source": "GAP-IT 有实现，测试只在未执行的 *MySqlIT",
+  "basis": "只有 MySQL IT 证据（本轮未执行，需 `MACCMS_IT_*`）：UrlsendBacklinkGoldenMySqlIT#scenariosMatchPhpGolden → 进 GAP-，补跑 IT 通过后可升级为 ✅已对齐"
+ },
+ {
+  "row": "R-271",
+  "old": "`Index.php::select`",
+  "action": "`index/select`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminPermissionsGoldenTest#everyAuthCodeHasABatchAndB12OwnsIndexAndAdmin、AdminFrameGoldenTest#menusMatchPhp；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-272",
+  "old": "`Link.php::index`",
+  "action": "`link/index`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-273",
+  "old": "`Link.php::info`",
+  "action": "`link/info`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-274",
+  "old": "`Link.php::del`",
+  "action": "`link/del`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-275",
+  "old": "`Link.php::batch`",
+  "action": "`link/batch`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-276",
+  "old": "`Make.php::opt`",
+  "action": "`make/opt`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminMakeMvcTest#errorsAppendTheJumpPageAndRefJumpsOnlyToSameOrigin、AdminMakeMvcTest#optPageKeepsTheLegacyFormWithDataAttributesInsteadOfInlineHandlers、MakeServiceTest#indexWritesTheHomePageAtIndexHtml、MakeServiceTest#nomakeStopsWhenGeneratedTimeCannotBeRecorded、AdminFrameGoldenTest#menusMatchPhp；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-277",
+  "old": "`Make.php::make`",
+  "action": "`make/make`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminMakeMvcTest#makeRunsTheServiceAndJumpsLikeMacJump、AdminMakeMvcTest#optPageKeepsTheLegacyFormWithDataAttributesInsteadOfInlineHandlers、MakeServiceTest#typePagesAreBatchedByMakesizeWithTheLegacyJumpParameters、MakeServiceTest#indexWritesTheHomePageAtIndexHtml、AdminFrameGoldenTest#menusMatchPhp；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-278",
+  "old": "`Make.php::index`",
+  "action": "`make/index`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：MakeServiceTest#indexWritesTheHomePageAtIndexHtml、MakeServiceTest#cleanupDeletesExactlyTheGeneratedFilesAndEmptyDirectories、MakeServiceTest#withoutSiteEveryPageFails、AdminPermissionsGoldenTest#everyAuthCodeHasABatchAndB12OwnsIndexAndAdmin、AdminPermissionsGoldenTest#groupsAndEntriesMatchAuthPhpExactly"
+ },
+ {
+  "row": "R-279",
+  "old": "`Make.php::map`",
+  "action": "`make/map`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：MakeServiceTest#failedPagesAndForbiddenNamesAreReportedNotWritten、AdminFrameGoldenTest#menusMatchPhp；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-280",
+  "old": "`Make.php::rss`",
+  "action": "`make/rss`",
+  "mapping_state": "实现·缺测试",
+  "verdict": "缺口",
+  "evidence_source": "GAP-T 有实现，无任何测试",
+  "basis": "实现位置 `admin/web/AdminMakeActions` 的 `rss` 动作（`MakeServiceTest` 没有该动作用例，README §3 已记） 可读，但本轮**没有任何测试覆盖这一行**（映射表测试列为空或只有 `*MySqlIT`）。按 PRD 附表 C，没有测试名不能写 `✅已对齐` → 需产品经理建 GAP- 并指给对应开发补测试。"
+ },
+ {
+  "row": "R-281",
+  "old": "`Make.php::type`",
+  "action": "`make/type`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：MakeServiceTest#typePagesAreBatchedByMakesizeWithTheLegacyJumpParameters、MakeServiceTest#apiEntranceGeneratesFirstMakesizePagesOfEveryType、MakeServiceTest#nonStaticViewModeStopsWithTheLegacyMessage、MakeServiceTest#cleanupDeletesExactlyTheGeneratedFilesAndEmptyDirectories、AdminFrameGoldenTest#menusMatchPhp；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-282",
+  "old": "`Make.php::topic_index`",
+  "action": "`make/topic_index`",
+  "mapping_state": "实现·缺测试",
+  "verdict": "缺口",
+  "evidence_source": "GAP-T 有实现，无任何测试",
+  "basis": "实现位置 `admin/web/AdminMakeActions` 的 `topic_index` 动作（同上，`MakeServiceTest` 无该动作用例） 可读，但本轮**没有任何测试覆盖这一行**（映射表测试列为空或只有 `*MySqlIT`）。按 PRD 附表 C，没有测试名不能写 `✅已对齐` → 需产品经理建 GAP- 并指给对应开发补测试。"
+ },
+ {
+  "row": "R-283",
+  "old": "`Make.php::topic_info`",
+  "action": "`make/topic_info`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminMakeMvcTest#errorsAppendTheJumpPageAndRefJumpsOnlyToSameOrigin、MakeServiceTest#failedPagesAndForbiddenNamesAreReportedNotWritten、AdminFrameGoldenTest#menusMatchPhp；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-284",
+  "old": "`Make.php::info`",
+  "action": "`make/info`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminMakeMvcTest#errorsAppendTheJumpPageAndRefJumpsOnlyToSameOrigin、MakeServiceTest#infoWritesDetailAndEpisodePagesAndMarksMade、MakeServiceTest#failedPagesAndForbiddenNamesAreReportedNotWritten、MakeServiceTest#nomakeStopsWhenGeneratedTimeCannotBeRecorded、AdminFrameGoldenTest#menusMatchPhp；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-285",
+  "old": "`Make.php::label`",
+  "action": "`make/label`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminMakeMvcTest#errorsAppendTheJumpPageAndRefJumpsOnlyToSameOrigin、MakeServiceTest#failedPagesAndForbiddenNamesAreReportedNotWritten、AdminFrameGoldenTest#menusMatchPhp；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-286",
+  "old": "`Order.php::index`",
+  "action": "`order/index`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-287",
+  "old": "`Order.php::del`",
+  "action": "`order/del`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-288",
+  "old": "`Plog.php::index`",
+  "action": "`plog/index`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-289",
+  "old": "`Plog.php::del`",
+  "action": "`plog/del`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-290",
+  "old": "`Role.php::data`",
+  "action": "`role/data`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-291",
+  "old": "`Role.php::info`",
+  "action": "`role/info`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-292",
+  "old": "`Role.php::del`",
+  "action": "`role/del`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-293",
+  "old": "`Role.php::field`",
+  "action": "`role/field`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-294",
+  "old": "`Safety.php`（空类）",
+  "action": "—",
+  "mapping_state": "非动作（占位行）",
+  "verdict": "旧版无功能",
+  "evidence_source": "NA 旧版无功能（PHP 源码行证据）",
+  "basis": "台账占位行：`php/application/admin/controller/Safety.php`（类体只有 `class Safety extends Base {}`） 内无 public function（附表 C 预填，本轮 `grep -c 'public function'` 复核为 0），旧版没有这条功能"
+ },
+ {
+  "row": "R-295",
+  "old": "`System.php::test_email`",
+  "action": "`system/test_email`",
+  "mapping_state": "实现+测试",
+  "verdict": "缺口",
+  "evidence_source": "GAP-IT 有实现，测试只在未执行的 *MySqlIT",
+  "basis": "只有 MySQL IT 证据（本轮未执行，需 `MACCMS_IT_*`）：SmsMailGoldenMySqlIT#replay → 进 GAP-，补跑 IT 通过后可升级为 ✅已对齐"
+ },
+ {
+  "row": "R-296",
+  "old": "`System.php::test_cache`",
+  "action": "`system/test_cache`",
+  "mapping_state": "显式不提供",
+  "verdict": "缺口",
+  "evidence_source": "GAP-X 新版自身行为与旧版不同（非 CRUD 差异）",
+  "basis": "旧 `System::test_cache` 真的连接缓存并测试；新版 `AdminSystemActions` 固定返回“新系统不使用外部缓存服务，未进行连接测试”，注释记 D-B15-4（不在 PRD 已确认清单内）→ 缺口：产品经理补编号后本行改 `排除-<编号>`，否则需建 GAP-。"
+ },
+ {
+  "row": "R-297",
+  "old": "`System.php::config`",
+  "action": "`system/config`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminSystemGoldenTest#scenariosMatchPhpGolden、AdminMvcTest#everyAuthCodeIsDeniedToAnAdminWithoutPermissions、AdminPermissionsGoldenTest#everyAuthCodeHasABatchAndB12OwnsIndexAndAdmin"
+ },
+ {
+  "row": "R-298",
+  "old": "`System.php::configurl`",
+  "action": "`system/configurl`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminSystemGoldenTest#scenariosMatchPhpGolden、AdminFrameGoldenTest#menusMatchPhp；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-299",
+  "old": "`System.php::configuser`",
+  "action": "`system/configuser`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminSystemGoldenTest#scenariosMatchPhpGolden、AdminFrameGoldenTest#menusMatchPhp；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-300",
+  "old": "`System.php::configupload`",
+  "action": "`system/configupload`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminSystemGoldenTest#scenariosMatchPhpGolden、AdminFrameGoldenTest#menusMatchPhp；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-301",
+  "old": "`System.php::configcomment`",
+  "action": "`system/configcomment`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminSystemGoldenTest#scenariosMatchPhpGolden、AdminFrameGoldenTest#menusMatchPhp；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-302",
+  "old": "`System.php::configweixin`",
+  "action": "`system/configweixin`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminSystemGoldenTest#scenariosMatchPhpGolden、AdminFrameGoldenTest#menusMatchPhp；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-303",
+  "old": "`System.php::configpay`",
+  "action": "`system/configpay`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminSystemGoldenTest#scenariosMatchPhpGolden、AdminFrameGoldenTest#menusMatchPhp；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-304",
+  "old": "`System.php::configconnect`",
+  "action": "`system/configconnect`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminSystemGoldenTest#scenariosMatchPhpGolden、AdminFrameGoldenTest#menusMatchPhp；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-305",
+  "old": "`System.php::configemail`",
+  "action": "`system/configemail`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminSystemGoldenTest#scenariosMatchPhpGolden、AdminFrameGoldenTest#menusMatchPhp；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-306",
+  "old": "`System.php::configsms`",
+  "action": "`system/configsms`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminSystemGoldenTest#scenariosMatchPhpGolden、AdminFrameGoldenTest#menusMatchPhp；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-307",
+  "old": "`System.php::configapi`",
+  "action": "`system/configapi`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminSystemGoldenTest#scenariosMatchPhpGolden、AdminFrameGoldenTest#menusMatchPhp；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-308",
+  "old": "`System.php::configinterface`",
+  "action": "`system/configinterface`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminSystemGoldenTest#scenariosMatchPhpGolden、AdminFrameGoldenTest#menusMatchPhp；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-309",
+  "old": "`System.php::configcollect`",
+  "action": "`system/configcollect`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminSystemGoldenTest#scenariosMatchPhpGolden、AdminFrameGoldenTest#menusMatchPhp；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-310",
+  "old": "`System.php::configplay`",
+  "action": "`system/configplay`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminSystemGoldenTest#scenariosMatchPhpGolden、AdminFrameGoldenTest#menusMatchPhp；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-311",
+  "old": "`System.php::configseo`",
+  "action": "`system/configseo`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminSystemGoldenTest#scenariosMatchPhpGolden、AdminFrameGoldenTest#menusMatchPhp；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-312",
+  "old": "`Template.php::index`",
+  "action": "`template/index`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminTemplateMvcTest#editCompileRestoreAndConflictThroughTheAdmin、AdminSystemGoldenTest#scenariosMatchPhpGolden、AdminFrameGoldenTest#menusMatchPhp；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-313",
+  "old": "`Template.php::ads`",
+  "action": "`template/ads`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminSystemGoldenTest#scenariosMatchPhpGolden、AdminFrameGoldenTest#menusMatchPhp；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-314",
+  "old": "`Template.php::info`",
+  "action": "`template/info`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminTemplateMvcTest#editCompileRestoreAndConflictThroughTheAdmin、AdminTemplateMvcTest#fileRollbackDrill、AdminSystemGoldenTest#scenariosMatchPhpGolden、AdminFrameGoldenTest#menusMatchPhp；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-315",
+  "old": "`Template.php::del`",
+  "action": "`template/del`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminTemplateMvcTest#editCompileRestoreAndConflictThroughTheAdmin、AdminSystemGoldenTest#scenariosMatchPhpGolden、AdminFrameGoldenTest#menusMatchPhp；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-316",
+  "old": "`Template.php::wizard`",
+  "action": "`template/wizard`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminTemplateMvcTest#editCompileRestoreAndConflictThroughTheAdmin、AdminSystemGoldenTest#scenariosMatchPhpGolden、AdminFrameGoldenTest#menusMatchPhp；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-317",
+  "old": "`Timming.php::index`",
+  "action": "`timming/index`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminSystemGoldenTest#scenariosMatchPhpGolden、AdminFrameGoldenTest#menusMatchPhp；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-318",
+  "old": "`Timming.php::info`",
+  "action": "`timming/info`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminSystemGoldenTest#timmingCollectTaskTypeIsNotProvided、AdminSystemGoldenTest#scenariosMatchPhpGolden、AdminFrameGoldenTest#menusMatchPhp；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-319",
+  "old": "`Timming.php::del`",
+  "action": "`timming/del`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminSystemGoldenTest#scenariosMatchPhpGolden、AdminFrameGoldenTest#menusMatchPhp；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-320",
+  "old": "`Timming.php::field`",
+  "action": "`timming/field`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminSystemGoldenTest#scenariosMatchPhpGolden、AdminFrameGoldenTest#menusMatchPhp；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-321",
+  "old": "`Topic.php::data`",
+  "action": "`topic/data`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-322",
+  "old": "`Topic.php::info`",
+  "action": "`topic/info`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-323",
+  "old": "`Topic.php::del`",
+  "action": "`topic/del`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-324",
+  "old": "`Topic.php::field`",
+  "action": "`topic/field`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-325",
+  "old": "`Type.php::index`",
+  "action": "`type/index`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-326",
+  "old": "`Type.php::info`",
+  "action": "`type/info`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-327",
+  "old": "`Type.php::del`",
+  "action": "`type/del`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-328",
+  "old": "`Type.php::field`",
+  "action": "`type/field`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-329",
+  "old": "`Type.php::batch`",
+  "action": "`type/batch`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-330",
+  "old": "`Type.php::extend`",
+  "action": "`type/extend`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-331",
+  "old": "`Type.php::move`",
+  "action": "`type/move`",
+  "mapping_state": "实现+测试",
+  "verdict": "缺口",
+  "evidence_source": "GAP-IT 有实现，测试只在未执行的 *MySqlIT",
+  "basis": "只有 MySQL IT 证据（本轮未执行，需 `MACCMS_IT_*`）：AdminContentGoldenMySqlIT#scenariosMatchPhpGolden → 进 GAP-，补跑 IT 通过后可升级为 ✅已对齐"
+ },
+ {
+  "row": "R-332",
+  "old": "`Ulog.php::index`",
+  "action": "`ulog/index`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-333",
+  "old": "`Ulog.php::del`",
+  "action": "`ulog/del`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-334",
+  "old": "`Update.php`（空类）",
+  "action": "—",
+  "mapping_state": "非动作（占位行）",
+  "verdict": "旧版无功能",
+  "evidence_source": "NA 旧版无功能（PHP 源码行证据）",
+  "basis": "台账占位行：`php/application/admin/controller/Update.php`（类体只有 `class Update extends Base {}`） 内无 public function（附表 C 预填，本轮 `grep -c 'public function'` 复核为 0），旧版没有这条功能"
+ },
+ {
+  "row": "R-335",
+  "old": "`Upload.php::index`",
+  "action": "`upload/index`",
+  "mapping_state": "实现+测试",
+  "verdict": "缺口",
+  "evidence_source": "GAP-IT 有实现，测试只在未执行的 *MySqlIT",
+  "basis": "只有 MySQL IT 证据（本轮未执行，需 `MACCMS_IT_*`）：AdminContentGoldenMySqlIT#scenariosMatchPhpGolden → 进 GAP-，补跑 IT 通过后可升级为 ✅已对齐"
+ },
+ {
+  "row": "R-336",
+  "old": "`Upload.php::test`",
+  "action": "`upload/test`",
+  "mapping_state": "实现+测试",
+  "verdict": "缺口",
+  "evidence_source": "GAP-IT 有实现，测试只在未执行的 *MySqlIT",
+  "basis": "只有 MySQL IT 证据（本轮未执行，需 `MACCMS_IT_*`）：AdminContentGoldenMySqlIT#scenariosMatchPhpGolden → 进 GAP-，补跑 IT 通过后可升级为 ✅已对齐"
+ },
+ {
+  "row": "R-337",
+  "old": "`Upload.php::upload`",
+  "action": "`upload/upload`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminPermissionsGoldenTest#everyAuthCodeHasABatchAndB12OwnsIndexAndAdmin、AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-338",
+  "old": "`Urlsend.php::index`",
+  "action": "`urlsend/index`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminSystemGoldenTest#scenariosMatchPhpGolden、AdminFrameGoldenTest#menusMatchPhp；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-339",
+  "old": "`Urlsend.php::data`",
+  "action": "`urlsend/data`",
+  "mapping_state": "实现+测试",
+  "verdict": "缺口",
+  "evidence_source": "GAP-IT 有实现，测试只在未执行的 *MySqlIT",
+  "basis": "只有 MySQL IT 证据（本轮未执行，需 `MACCMS_IT_*`）：UrlsendBacklinkGoldenMySqlIT#scenariosMatchPhpGolden → 进 GAP-，补跑 IT 通过后可升级为 ✅已对齐"
+ },
+ {
+  "row": "R-340",
+  "old": "`Urlsend.php::push`",
+  "action": "`urlsend/push`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminPermissionsGoldenTest#everyAuthCodeHasABatchAndB12OwnsIndexAndAdmin、AdminFrameGoldenTest#menusMatchPhp；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-341",
+  "old": "`User.php::data`",
+  "action": "`user/data`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminPermissionsGoldenTest#everyAuthCodeHasABatchAndB12OwnsIndexAndAdmin、AdminFrameGoldenTest#menusMatchPhp；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-342",
+  "old": "`User.php::reward`",
+  "action": "`user/reward`",
+  "mapping_state": "实现+测试",
+  "verdict": "缺口",
+  "evidence_source": "GAP-IT 有实现，测试只在未执行的 *MySqlIT",
+  "basis": "只有 MySQL IT 证据（本轮未执行，需 `MACCMS_IT_*`）：AdminMemberGoldenMySqlIT#scenariosMatchPhpGolden → 进 GAP-，补跑 IT 通过后可升级为 ✅已对齐"
+ },
+ {
+  "row": "R-343",
+  "old": "`User.php::info`",
+  "action": "`user/info`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 3 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-344",
+  "old": "`User.php::del`",
+  "action": "`user/del`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-345",
+  "old": "`User.php::field`",
+  "action": "`user/field`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-346",
+  "old": "`Visit.php::index`",
+  "action": "`visit/index`",
+  "mapping_state": "实现+测试",
+  "verdict": "缺口",
+  "evidence_source": "GAP-IT 有实现，测试只在未执行的 *MySqlIT",
+  "basis": "只有 MySQL IT 证据（本轮未执行，需 `MACCMS_IT_*`）：AdminMemberGoldenMySqlIT#scenariosMatchPhpGolden → 进 GAP-，补跑 IT 通过后可升级为 ✅已对齐"
+ },
+ {
+  "row": "R-347",
+  "old": "`Visit.php::del`",
+  "action": "`visit/del`",
+  "mapping_state": "实现+测试",
+  "verdict": "缺口",
+  "evidence_source": "GAP-IT 有实现，测试只在未执行的 *MySqlIT",
+  "basis": "只有 MySQL IT 证据（本轮未执行，需 `MACCMS_IT_*`）：AdminMemberGoldenMySqlIT#scenariosMatchPhpGolden → 进 GAP-，补跑 IT 通过后可升级为 ✅已对齐"
+ },
+ {
+  "row": "R-348",
+  "old": "`Vod.php::data`",
+  "action": "`vod/data`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminMvcTest#entryRootAndOtherModulesGoToTheFrameAndUnknownControllersAre404、AdminMvcTest#superAdminSeesLaterBatchNoticesForEveryNonB12Action、AdminPermissionsGoldenTest#everyAuthCodeHasABatchAndB12OwnsIndexAndAdmin、AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-349",
+  "old": "`Vod.php::batch`",
+  "action": "`vod/batch`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-350",
+  "old": "`Vod.php::info`",
+  "action": "`vod/info`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-351",
+  "old": "`Vod.php::iplot`",
+  "action": "`vod/iplot`",
+  "mapping_state": "实现+测试",
+  "verdict": "缺口",
+  "evidence_source": "GAP-IT 有实现，测试只在未执行的 *MySqlIT",
+  "basis": "只有 MySQL IT 证据（本轮未执行，需 `MACCMS_IT_*`）：AdminContentGoldenMySqlIT#scenariosMatchPhpGolden → 进 GAP-，补跑 IT 通过后可升级为 ✅已对齐"
+ },
+ {
+  "row": "R-352",
+  "old": "`Vod.php::del`",
+  "action": "`vod/del`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-353",
+  "old": "`Vod.php::field`",
+  "action": "`vod/field`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-354",
+  "old": "`Vod.php::updateToday`",
+  "action": "`vod/updatetoday`",
+  "mapping_state": "实现+测试",
+  "verdict": "缺口",
+  "evidence_source": "GAP-IT 有实现，测试只在未执行的 *MySqlIT",
+  "basis": "只有 MySQL IT 证据（本轮未执行，需 `MACCMS_IT_*`）：AdminContentGoldenMySqlIT#scenariosMatchPhpGolden → 进 GAP-，补跑 IT 通过后可升级为 ✅已对齐"
+ },
+ {
+  "row": "R-355",
+  "old": "`Voddowner.php::index`",
+  "action": "`voddowner/index`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminSystemGoldenTest#scenariosMatchPhpGolden、AdminFrameGoldenTest#menusMatchPhp；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-356",
+  "old": "`Voddowner.php::info`",
+  "action": "`voddowner/info`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminSystemGoldenTest#scenariosMatchPhpGolden、AdminFrameGoldenTest#menusMatchPhp；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-357",
+  "old": "`Voddowner.php::del`",
+  "action": "`voddowner/del`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminSystemGoldenTest#scenariosMatchPhpGolden、AdminFrameGoldenTest#menusMatchPhp；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-358",
+  "old": "`Voddowner.php::field`",
+  "action": "`voddowner/field`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminSystemGoldenTest#scenariosMatchPhpGolden、AdminFrameGoldenTest#menusMatchPhp；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-359",
+  "old": "`Vodplayer.php::index`",
+  "action": "`vodplayer/index`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminSystemGoldenTest#scenariosMatchPhpGolden、AdminFrameGoldenTest#menusMatchPhp；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-360",
+  "old": "`Vodplayer.php::info`",
+  "action": "`vodplayer/info`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminSystemGoldenTest#scenariosMatchPhpGolden、AdminFrameGoldenTest#menusMatchPhp；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-361",
+  "old": "`Vodplayer.php::del`",
+  "action": "`vodplayer/del`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminSystemGoldenTest#scenariosMatchPhpGolden、AdminFrameGoldenTest#menusMatchPhp；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-362",
+  "old": "`Vodplayer.php::field`",
+  "action": "`vodplayer/field`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminTemplateMvcTest#fileRollbackDrill、AdminSystemGoldenTest#scenariosMatchPhpGolden、AdminFrameGoldenTest#menusMatchPhp；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-363",
+  "old": "`Vodplayer.php::export`",
+  "action": "`vodplayer/export`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminSystemGoldenTest#scenariosMatchPhpGolden"
+ },
+ {
+  "row": "R-364",
+  "old": "`Vodplayer.php::import`",
+  "action": "`vodplayer/import`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminSystemGoldenTest#scenariosMatchPhpGolden"
+ },
+ {
+  "row": "R-365",
+  "old": "`Vodserver.php::index`",
+  "action": "`vodserver/index`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminSystemGoldenTest#scenariosMatchPhpGolden、AdminFrameGoldenTest#menusMatchPhp；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-366",
+  "old": "`Vodserver.php::info`",
+  "action": "`vodserver/info`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminSystemGoldenTest#scenariosMatchPhpGolden、AdminFrameGoldenTest#menusMatchPhp；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-367",
+  "old": "`Vodserver.php::del`",
+  "action": "`vodserver/del`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminSystemGoldenTest#scenariosMatchPhpGolden、AdminFrameGoldenTest#menusMatchPhp；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-368",
+  "old": "`Vodserver.php::field`",
+  "action": "`vodserver/field`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminSystemGoldenTest#scenariosMatchPhpGolden、AdminFrameGoldenTest#menusMatchPhp；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-369",
+  "old": "`Website.php::data`",
+  "action": "`website/data`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-370",
+  "old": "`Website.php::batch`",
+  "action": "`website/batch`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-371",
+  "old": "`Website.php::info`",
+  "action": "`website/info`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-372",
+  "old": "`Website.php::del`",
+  "action": "`website/del`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-373",
+  "old": "`Website.php::field`",
+  "action": "`website/field`",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：AdminFrameGoldenTest#menusMatchPhp；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-374",
+  "old": "`Website.php::updateToday`",
+  "action": "`website/updatetoday`",
+  "mapping_state": "实现+测试",
+  "verdict": "缺口",
+  "evidence_source": "GAP-IT 有实现，测试只在未执行的 *MySqlIT",
+  "basis": "只有 MySQL IT 证据（本轮未执行，需 `MACCMS_IT_*`）：AdminContentGoldenMySqlIT#scenariosMatchPhpGolden → 进 GAP-，补跑 IT 通过后可升级为 ✅已对齐"
+ },
+ {
+  "row": "R-375",
+  "old": "`Index.php` I-1 协议/入口页",
+  "action": "",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：InstallWizardGoldenTest#pagesAndValidationMatchPhp73And80、InstallModeTest#startsWithoutAnyDatabaseAndServesOnlyTheWizard"
+ },
+ {
+  "row": "R-376",
+  "old": "`Index.php` I-2 环境检测（step2）",
+  "action": "",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：InstallWizardGoldenTest#pagesAndValidationMatchPhp73And80；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-377",
+  "old": "`Index.php` I-3 数据库信息页（step3）",
+  "action": "",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：InstallWizardGoldenTest#pagesAndValidationMatchPhp73And80、InstallModeTest#lockRejectsEveryRequestAndFailedEnvironmentBlocksStep3"
+ },
+ {
+  "row": "R-378",
+  "old": "`Index.php` I-4 安装执行（step4）",
+  "action": "",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：InstallWizardGoldenTest#pagesAndValidationMatchPhp73And80；另有 2 条 MySQL IT 未执行（升级证据待补跑）"
+ },
+ {
+  "row": "R-379",
+  "old": "`Index.php` I-5 完成页（step5）",
+  "action": "",
+  "mapping_state": "实现+测试",
+  "verdict": "✅已对齐",
+  "evidence_source": "IT-0 旧源码 + Java 实现 + 本轮执行通过的非 IT 测试",
+  "basis": "本轮执行通过：InstallWizardGoldenTest#pagesAndValidationMatchPhp73And80；另有 1 条 MySQL IT 未执行（升级证据待补跑）"
+ }
+]
