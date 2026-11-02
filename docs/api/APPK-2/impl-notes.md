@@ -626,3 +626,45 @@ git diff --check 0b3fcd58cbbe67438035c554b8e61549821cce94 HEAD → 无输出，�
 | R-1 | 解析器：BARE-1/2/5、RT-7 函数调用节点、MC-1 `ModelCall`、OP-T7 `instanceof` 固定形态、`//` 注释与下标赋值的语法节点、BV-1～BV-5 | S3-07b（APPK-3） |
 | R-2 | 解释执行、TPL-5 吃换行在输出上的体现、BV-6c/6d、RT-8 限额、日志断言 | S3-07c（APPK-4） |
 | R-3 | `OriginMap` 与模板文件/行号补全（C-23 其余部分、TPL-9） | S3-08 / C-24 |
+
+## S3-07b：C-18 语法解析与白名单边界（RT-1；BARE-1～BARE-5；MC-1/MC-2；OP-T7）
+
+起点 `d50077f`，按派单以普通合并取得 S3-07a `8588474`（合并提交 `bb0d483`，无冲突）。只构造/校验语法树，不含解释器、业务函数、模型执行、编译器或页面；黄金未改。
+
+### 变更文件
+
+- `src/main/java/com/maccms/backend/phptemplate/runtime/PhpParser.java`（新增）：记号流 → `PhpAst.Program`；`?>` 充当 `;`；PHP 7.3 优先级/结合性（`. + -` 同级左结合、三元左结合、相等/比较不结合）；花括号与 `:`/`endXxx;` 两种写法；解析时注入 RT-7 白名单判定 `Predicate<String>`。
+- `PhpAst.java`（增量）：语句 Echo/ExprStmt/If/Branch/Foreach/For/Switch/Case/Break；表达式 Interpolated/ArrayLiteral/ArrayItem/Index/Assign(`=`,`.=`)/Increment(`++`)/Unary/Binary/Ternary/Isset/Empty/FunctionCall/ModelCall（含 MC-2 `normalizedModel()`）/InstanceOf/IsEmptyCall；`REGISTERED_CLASSES = {\think\Collection, \think\Paginator}`。
+- `TemplateUnsupportedException.java`：新增 kind `syntax`、`function`、`model_call`、`object`（追加在既有 5 个之后，既有代码不变）。
+- 测试：`PhpParserTest`（新增，137 例）、`PhpParserGoldenTest`（新增）、`RuntimeDiagnosticsTest.kindCodesAreStable`（期望列表追加 4 个新 code，仍为精确匹配）。
+
+### AC → 测试
+
+| AC | 测试 |
+| --- | --- |
+| AC-307B-1 语法覆盖 | `PhpParserTest$Statements`（alt/花括号 if/elseif/else、foreach、for、switch、`{php}` 块含 `//` 注释与下标赋值、23 种语句拒绝）、`$Expressions`（优先级、赋值/下标/++/数组/插值/isset/empty，29+5 种表达式拒绝）；`PhpParserGoldenTest`：168 个真实编译产物中 166 个解析通过，节点计数与 41 个函数名锁定（覆盖表见测试断言），2 个按 GAP-2 拒绝 |
+| AC-307B-2 BARE | `$BareIdentifiersAndFunctions`：BV-1/2 字面量与 `color`；BV-3 位置无关；BV-4 `color(1)`→`function`@11、`$color` 变量；BV-5 九例 `bare_identifier`@11、`constant`/`defined`→`function`@11、片段含名字；未执行分支 `if(false){ echo PHP_EOL; }`→@22；另 21 例（预定义/框架常量、魔术常量、`self::`/`static::`、命名空间函数、宿主函数、`call_user_func`、`Model(...)`）|
+| AC-307B-2 MC-1 | `$ModelCalls`：MC-2 规范化；10 种非登记 `model` 形态→`model_call` |
+| AC-307B-3 OP-T7 | `$ObjectForms`：两种固定形态（if 与 elseif 条件）通过；其他/非完整/大小写变体/动态类名、黄金 `/think/…`、固定形态外的 instanceof、主语不一致、顺序颠倒、缺项、`$b->isEmpty()`、未执行分支，以及任意成员访问、独立/变形/链式方法→`object`；`PhpParserGoldenTest.normalizedGoldenClassNamesAreRejectedAsObjectSyntax`：28 个原样黄金文件全部在 `/think/Collection` 处拒绝 |
+| AC-307B-4 | 见下方命令；`PhpSemanticsTest.runtimeDependsOnlyOnJdk` 通过（解析器只 import `java.*`） |
+
+### 实际执行的命令与结果（S3-07b）
+
+```text
+export JDK_JAVA_OPTIONS=-Djdk.net.unixdomain.tmpdir=D:\Tools\Java\afunix-tmp
+./mvnw -B test -Dtest='PhpParser*,PhpLexer*,RuntimeDiagnosticsTest,PhpSemantics*' → Tests run: 218, Failures: 0, Errors: 0, Skipped: 0
+git --attr-source=HEAD diff --check d50077f HEAD -- src/main/java/com/maccms/backend/phptemplate src/test/java/com/maccms/backend/phptemplate → 退出码 0
+./mvnw -B verify → 本次运行未执行（单次运行时限内未跑完，见剩余项）
+```
+
+### 设计说明与边界
+
+- 函数白名单在**解析阶段**判定（注入的 `Predicate`），所以未执行分支里的白名单外函数同样拒绝；`model`/`isset`/`empty`/`array` 由语法层处理。白名单内容归 C-19/C-27。
+- MC-3 方法白名单不在语法层（`TagModels` 唯一分派表）；语法层只保证 `model(<无插值字面量>)->名字(实参)` 且不接 `->`/下标/`::`。
+- OP-T7：`instanceof` 只在整个 if/elseif 条件恰为形态 A/B 时被认领，未认领的 instanceof/isEmpty 在解析结束时按首个偏移报 `object`。值域（数组/标量）与短路不调用 `isEmpty`、到达即拒绝属 S3-07c 执行层。
+- 有意不接受（未登记）：`--`、复合赋值（`+=` 等）、`??`、位运算、类型转换、`@`、`$a[]`、调用尾逗号、对非变量取下标、`break N`、`continue`。
+
+### 已知问题与剩余
+
+- **GAP-2（设计缺口，需架构师裁定）**：两份 `rss/index.html` 第 11 行模板原文 `{$maccms:site_url}{$maccms:path_tpl}` 编译为 `$maccms->site_url`、`$maccms->path_tpl`（各 1 次，偏移 437 起）。RT-1 写明“单独的 `->属性` 取值不支持”，PRE-5 未登记；PHP 7.3 对数组取属性得 null 并记 Notice（输出 `http://images/logo.png`，未实测）。解析器按现设计拒绝，测试锁定该拒绝；不自行定义语义。
+- 全量 `./mvnw -B verify` 未在本次运行内执行，须下一次运行或复核时补跑。
