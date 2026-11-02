@@ -486,3 +486,109 @@ git --attr-source=e939e25 diff --check 1775e26 e939e25 → 无输出，退出码
 ./mvnw -B verify → Tests run: 3046, Failures: 0, Errors: 0, Skipped: 0；BUILD SUCCESS；耗时 08:47；退出码 0
   （S3-06 初版的 3044 项 + 本次新增 2 项；无退步）
 ```
+
+## S3-07a：词法切分、AST 基础与 runtime 诊断（C-18 词法部分；C-23 runtime 部分；BARE-3）
+
+依据：技术设计 v15 `docs/design/APPK-2/tech-design.md` @ `9671aae615450647d75647eb6a0e1c549c99001e`（G1 增量放行评论 `01a19a4e-1987-7eed-8dd0-edd70c0f69dd`）§5.2 C-18、C-23，§6.3（runtime 只依赖 JDK），§6.4 TPL-5、TPL-10，§6.5 RT-1，§6.5.1 BARE-3、BARE-7 与 S15-1～S15-3，§8.2 V-11；C-17 @ `ff3a1a659dcc15c7cc3eda18541bcd1406922b4e`；黄金 @ `b71b1aa4be0190f85686650a7b22459c995cf57e`；PRE-5 `docs/test/APPK-2/template-scan.md` @ `b550151b4243622fe7ac060c9ff6e720d83ae605`。OP-T7/OP-T8 方向按评论 `01a19a29-0da2-7580-867e-5aaa35b1c877`、核验 `01a19a2b-3f7b-796c-b374-4970aa9edec3`。本批不含接口，契约：N/A（没有 HTTP 路由、没有 API-ID）。
+
+分支 `agent/agent/appk-5`，起始提交 `f98ad7d256adcc9809194471d6a4e23c659386f2`，只追加提交：
+
+| 提交 | 内容 |
+| --- | --- |
+| `d25577a64bd8f4d81f12f040f9b97af1d5d05986` | 普通合并 `ff3a1a6`（C-17 两层 PASS），无冲突；保留起始血缘 |
+| `d03773128ae7463e9422c8d93cc9d1522a506dd6` | 从 `b71b1aa` 按路径原样取黄金（见下“黄金引入”） |
+| `a3e040e6df30a411fb7348133c867d57fc7272e8` | 本批代码与测试 |
+| 本说明所在提交 | 本节 |
+
+### 黄金引入（为什么不是整枝合并）
+
+试过普通合并 `b71b1aa`：`.gitattributes` 冲突（两边对同一段各追加不同的行），且该分支带有 `.compare/APPK-2/**` 等 800 余个过程文件（`chore(agent): uncommitted changes from task` 提交）。按派单“冲突停报，不任意覆盖”，已 `git merge --abort`，改为 `git checkout b71b1aa -- <路径>` 只取本批要读的黄金：`src/test/resources/phptemplate/**`（185 个文件）、`src/test/php/tpl_runtime_golden.php`、`src/test/php/tpl_art_fixture.php`、`docs/test/APPK-2/s3-05-golden.md`。`git diff --stat b71b1aa HEAD -- <上述路径>` 为空（逐字节相同）；两份 `ajax_info.html` blob 为 `d5ec0086…`、`9817833c…`，与设计 S15-1 一致。`.gitattributes` 只追加 `b71b1aa` 已有的两行 `src/test/php/tpl_{runtime_golden,art_fixture}.php text eol=lf`（与上游取并集，不改已有行）。`PhpTemplateGoldenAssetsTest` 依赖 `.compare/`，没有带入。日后若整枝合并 `b71b1aa`，这些路径是相同内容的 add/add，不会冲突；`.gitattributes` 冲突仍需人工取并集。
+
+### 变更文件
+
+| # | 文件 | 改动 |
+| --- | --- | --- |
+| C-18 | `src/main/java/com/maccms/backend/phptemplate/runtime/PhpLexer.java` | 新增。按原始字节切成首尾相接的 `Segment.Literal` / `Segment.Code`；代码段内切记号 `Token`（`Op`、`Variable`、`Name`+`NameKind`、`Keyword`、`Cast`、`IntLit`、`FloatLit`、`Str`、`Interpolated`），偏移全为原始字节偏移 |
+| C-18 | `src/main/java/com/maccms/backend/phptemplate/runtime/PhpAst.java` | 新增（本批基础）。`Node`/`Stmt`/`Expr`、`Program`、`InlineHtml`、`NullLiteral`、`BoolLiteral`、`IntLiteral`、`FloatLiteral`、`StringLiteral`、`Variable`、`BareConst`（只接受登记名）。语句与其余表达式节点由 S3-07b 追加 |
+| C-23 | `src/main/java/com/maccms/backend/phptemplate/runtime/TemplateUnsupportedException.java` | 新增。`kind()`（`open_tag`、`token`、`unterminated`、`interpolation`、`bare_identifier`）、`offset()`（原始字节偏移）、`snippet()`（偏移起到 CR/LF 前、最多 80 字节、不截断 UTF-8）。不带变量值，不读配置/宿主/反射 |
+| BARE-3 | `src/main/java/com/maccms/backend/phptemplate/runtime/BareIdentifiers.java` | 新增。`public static final Set<String> REGISTERED = Set.of("color")`，final 类、私有构造、只此一个字段 |
+| 测试 | `src/test/java/com/maccms/backend/phptemplate/runtime/PhpLexerTest.java` | 新增，42 项 |
+| 测试 | `src/test/java/com/maccms/backend/phptemplate/runtime/PhpLexerGoldenTest.java` | 新增，3 项（两包 S15 + 全量编译黄金） |
+| 测试 | `src/test/java/com/maccms/backend/phptemplate/runtime/RuntimeDiagnosticsTest.java` | 新增，13 项 |
+| — | `.gitattributes`、黄金 188 个文件 | 见上节 |
+| — | `docs/api/APPK-2/impl-notes.md` | 本节 |
+
+### 词法规则（逐条对照 PHP 7.3.33 `token_get_all` 实测）
+
+| 规则 | 实现 | PHP 7.3.33 依据 |
+| --- | --- | --- |
+| 开标签 | `<?php`（不分大小写）+ 1 个空格/TAB/LF/CR 或整个 CRLF，空白属于开标签（`codeStart`） | 探针 `opentab`/`opencrlf`/`upper` |
+| 其他 `<?` 形态 | 字面段里出现 `<?=`、`<?`+空白、`<?xml`、`<?phpx`、末尾 `<?php` 等 → `open_tag`。编译器（TPL-2 php 步，`short_open_tag` 开时）已把短标签改写为 `<?php echo '<?'; ?>`（黄金 20 处），残留写法的 PHP 行为取决于 `short_open_tag`，不能静默当字面输出 | 探针 `eofopen`/`phpx`（`short_open_tag` 关时为字面）；黄金里只有 `<?php ` 6032 处 |
+| TPL-5 | `?>` 后紧跟一个 LF → `Close.TAG_LF`；整个 CRLF → `Close.TAG_CRLF`；否则 `Close.TAG`；无 `?>` 到末尾 → `Close.EOF`。被吃字节在 `[codeEnd, end)` 内，下一个字面段从 `end` 起，原样保留后续换行 | 探针 `lf`/`crlf`/`lflf` |
+| `//` 注释 | 到 LF、CR 或 `?>` 前为止，不吞 `?>`；注释里的引号不开始字符串；随后的 `?>` 仍按 TPL-5 吃换行 | 探针 `cmt`/`cmtcr` |
+| 字符串 | 单引号只解 `\'`、`\\`；双引号解 `\n \t \r \v \e \f \\ \$ \"`、八进制 1～3 位（取低 8 位）、`\xH{1,2}`、`\u{…}`，未知转义保留反斜杠；字符串里的 `?>`、`<?`、`//` 只是字节；未结束 → `unterminated`（偏移 = 起始引号） | 探针 `dq` |
+| 插值 | 双引号串内 `$name` → `Interpolated`（`Part.Text`/`Part.Var`）；`{$`、`${`、`$a[`、`$a->b` 不在 RT-1 → `interpolation` | RT-1 只列 `$var` 插值；黄金 0 处插值 |
+| 名字 | `[A-Za-z_\x80-\xff][A-Za-z0-9_\x80-\xff]*`；`a\b` 为 `QUALIFIED`、`\think\Collection`/`\color` 为 `FULLY_QUALIFIED`，整个记号从前导 `\` 起算（BV-5 偏移口径）；悬空 `\` → `token` | 探针 `fq` |
+| 保留字 | PHP 7.3 保留字（不分大小写）→ `Keyword`；`true`/`false`/`null` 不是保留字，与 `color`、函数名一样是 `Name`，裸名/函数名在解析阶段按下一个记号判定（BARE-1/BARE-2，S3-07b）；`->` 之后一律是 `Name`（`$a->list`） | 探针 `prop` |
+| `/think/…` | 归一化黄金里的 `/think/Collection` 切成 `/`、`Name think`、`/`、`Name Collection`，不当作完整类名（OP-T8） | 全量黄金测试：98 个 `think` 均为 `UNQUALIFIED` |
+| 数字 | 十进制整数、`1.5`/`.5`/`2.`/指数浮点；超出 64 位的整数按 float；八/十六/二进制整数不在 RT-1 → `token` | 探针 `oct` |
+| 其他 | `(int)` 等类型转换为一个 `Cast` 记号（解析器拒绝）；运算符最长匹配（含 `<=>`、`**`、`...`）；块注释、`#`、反引号、heredoc、非法字节 → `token`；`$$a` 切成 `$` + `$a`（解析器拒绝） | 探针 `cast` |
+
+### AC-307A → 测试映射
+
+| AC | 测试 | 断言 |
+| --- | --- | --- |
+| AC-307A-1 原始字节与偏移、TPL-5 | `PhpLexerTest$Segmentation`（7）、`$Tpl5CloseTagNewline`（5）；`PhpLexerGoldenTest.wholeCompileGoldenSplitsIntoContiguousSegmentsWithoutNormalisation` | 字面段原样含 CRLF/TAB/多字节；段首尾相接覆盖全部字节；LF/CRLF 只吃一个，第二个换行原样留在下一字面段；168 个编译黄金逐文件分段连续、`codeBlocks=6032` |
+| AC-307A-2 记号、引号转义、`//` 不吞 `?>`、名字/变量/类名区分 | `$Strings`（8）、`$Comments`（5）、`$NamesAndVariables`（8）、`$NumbersAndOperators`（5）、`$OpenTags`（2）、`sourceIsCopiedDefensively` | 字符串/注释边界各自独立；`color`、`color(`、`$color`、`\think\Collection`、`a\color` 记号种类与偏移；`/think/` 不成类名 |
+| AC-307A-3 名单、JDK-only、诊断不读宿主 | `RuntimeDiagnosticsTest`（13）；既有 `PhpSemanticsTest.runtimeDependsOnlyOnJdk` | `REGISTERED == Set.of("color")` 且不可改；类 final、字段唯一且 `public static final`；异常 kind/偏移/片段、片段不截断 UTF-8；四个新文件不含 `System.getProperty/getenv`、反射、文件、日志等；`BareConst` 只接受登记名；词法器不拒绝任何名字（`color(1)`、`PHP_EOL` 都只是 `Name`） |
+| AC-307A-4 真实黄金 R15/P15/B15 | `PhpLexerGoldenTest.s15SampleBoundaryAndLexerSegmentation[default_pc, default_wap]` | 原始字节读取；无 `0x0d`、26 个 LF；R15 91 字节、SHA-256 `2fca28e7…59d9b`、后接 LF；EX-15 `<?php`/`?>` 各 1 次、s=33、e=91；P15 33 字节、B15 58 字节且 SHA-256 `6d67a065…b3de7e`；词法切分 R15+LF = 字面 P15 + 代码段 [33, 92)、`TAG_LF`；R15 无 LF → `TAG`；B15 单独切分 [0, 58)；B15 记号与偏移逐个相等（`'user_last_login_time'` 是字符串记号，`color` 是 `Name`）；整份文件中该代码段位于原始偏移 |
+| AC-307A-5 有效/无效/截断、先红后绿 | 以上全部；无效与截断见 `unterminatedStringsReportStartOffset`、`complexInterpolationIsUnsupported`、`nonDecimalIntegerLiteralsAreUnsupported`、`unsupportedLexemes`、`shortEchoAndShortOpenTagsAreUnsupported`、`danglingNamespaceSeparatorIsUnsupported`、`otherCommentFormsAreOutsideRt1` | 每个拒绝都断言 kind 与原始字节偏移 |
+
+本批只验证切分与定位：BV-6 的执行层（BV-6c/6d，S15-4 的 `STUB` 输出）、BV-1～BV-5 的求值与拒绝判定属 S3-07b/S3-07c，本批不冒充其通过。
+
+### 实际执行的命令与结果
+
+```bash
+# 工作目录：仓库根（Git Bash）；JDK 21，JDK_JAVA_OPTIONS=-Djdk.net.unixdomain.tmpdir=D:\Tools\Java\afunix-tmp（MULTICA.md ⚠ 条）
+# PHP 7.3 词法探针（D:\Tools\php\7.3\php.exe，PHP 7.3.33 NTS x64；脚本在仓库外临时目录，不入库）
+#   用例 lf/crlf/cr/lflf/cmt/cmtcr/eofopen/opentab/opencrlf/upper/phpx/prop/fq/dq/oct/cast，对每个源串打印 token_get_all 结果
+#   关键输出：T_CLOSE_TAG "?>\n" / "?>\r\n" / "?>\r"；"a<?php" 为 T_INLINE_HTML；"// x '" 后 T_CLOSE_TAG "?>"；
+#             $a->list 的 list 为 T_STRING；\think\Collection 为 T_NS_SEPARATOR+T_STRING 序列
+
+# 先红：测试 + 只能编译的空壳（lex 抛 UnsupportedOperationException，名单为空集）
+./mvnw -B -q test -Dtest='PhpLexerTest,PhpLexerGoldenTest,RuntimeDiagnosticsTest'
+  → Tests run: 58, Failures: 10, Errors: 45（通过的 3 项是类结构与源码扫描）
+
+# 后绿（含既有 PhpSemanticsTest 的 JDK-only 检查；第一次因 PhpLexer 里 import 同包嵌套类被该检查判为非 java.* 导入而失败，改为限定名引用后通过）
+./mvnw -B -q test -Dtest='PhpLexerTest,PhpLexerGoldenTest,RuntimeDiagnosticsTest,PhpSemanticsTest'
+  → Tests run: 67, Failures: 0, Errors: 0
+
+# 空白检查（目标属性）
+git diff --check f98ad7d HEAD → 无输出，退出码 0
+
+# 全量回归
+./mvnw -B verify（工作区 = 提交 a3e040e 的内容；本说明当时未提交，不参与构建）
+  → Tests run: 3104, Failures: 0, Errors: 0, Skipped: 0；BUILD SUCCESS；耗时 11:21；退出码 0
+  （S3-06 的 3046 项 + 本批新增 58 项；无退步）
+```
+
+### 迁移与回滚
+
+- 无数据库或数据迁移；不读写表、配置或文件；没有调用方（解析器/解释器尚未接入），产品行为不变。
+- 回滚：`git revert` 本节所在提交与 `a3e040e`（只删 4 个新类与 3 个测试类）；黄金提交 `d037731` 与 C-17 合并 `d25577a` 可保留（后续批次要用）。
+
+### S3-07a 自查（自查不代替审计）
+
+- 与设计一致：文件与包同 C-18/C-23；`BareIdentifiers` 原样同 BARE-3；异常只带 kind、编译产物偏移与片段，模板文件/行号留给 C-24（C-23 v11）；`runtime` 只依赖 JDK（既有检查通过）。
+- 测试先红后绿：红灯 55 项失败都来自空壳未实现，不是测试写错；断言用具体字节、偏移、哈希，没有 mock 被测逻辑；期望值来自 PHP 7.3.33 实测与黄金。
+- 安全：词法器不执行代码、不做任何 I/O；拒绝路径的片段只截取编译产物原文（模板文本），不含变量值；名单写死不可扩充；`BareConst` 构造即校验登记名，后续批次无法误造未登记裸名节点。没有新增路由、输入、查询、出站或凭据。
+- 范围：未写 PhpParser、Interpreter、OriginMap、模型/数据库、编译器或页面；未改 PRD、设计、API、T1、模板、黄金、接口脚本或流水线；未发接口请求、未连库。
+
+### 已知问题与剩余项
+
+| # | 内容 | 归属 |
+| --- | --- | --- |
+| KI-1 | **TPL-5 与 PHP 的一处差异**：PHP 7.3.33 实测 `?>` 后的**单独 CR**（`\r` 后不是 `\n`）也被吃掉（探针 `cr`：`T_CLOSE_TAG "?>\r"`），设计 TPL-5 只写 LF 与整个 CRLF。本批按设计实现（单独 CR 原样输出，`loneCrIsNotEatenPerDesignTpl5` 锁定），模板包与 168 个编译黄金里 `0x0d` 为 0 处，不影响现有页面。是否把单独 CR 纳入 TPL-5 需架构师裁定，裁定后改一处判断与该测试 | 架构师-海外（经智能调度） |
+| R-1 | 解析器：BARE-1/2/5、RT-7 函数调用节点、MC-1 `ModelCall`、OP-T7 `instanceof` 固定形态、`//` 注释与下标赋值的语法节点、BV-1～BV-5 | S3-07b（APPK-3） |
+| R-2 | 解释执行、TPL-5 吃换行在输出上的体现、BV-6c/6d、RT-8 限额、日志断言 | S3-07c（APPK-4） |
+| R-3 | `OriginMap` 与模板文件/行号补全（C-23 其余部分、TPL-9） | S3-08 / C-24 |
