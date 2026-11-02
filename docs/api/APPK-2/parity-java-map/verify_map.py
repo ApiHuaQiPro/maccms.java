@@ -30,6 +30,8 @@ METHOD_REF = re.compile(r"\b([A-Z]\w+)#(\w+)")
 
 
 def main() -> int:
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")  # Windows 控制台默认代码页输出中文会报错
     ledger = {}
     for line in LEDGER.read_text(encoding="utf-8").splitlines():
         if line.startswith("| R-"):
