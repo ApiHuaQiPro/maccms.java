@@ -44,6 +44,17 @@ public final class DatabaseToolService {
     /** 还原备份、执行 SQL、优化表、修复表的固定提示（新增的文字，24 文档 D-B15-1）。 */
     public static final String REFUSED = "新系统不在后台执行还原备份、执行 SQL、优化表、修复表：这些操作会改表结构或做表维护，"
             + "请由部署方用 mysqldump、mysql 命令行等库外手段完成";
+    /** DBT-5 ④ (a)：{@code dbtool.lock} 被占用（契约 DBT_LOCKED）。 */
+    public static final String LOCKED = "已有数据库操作在执行";
+    /** DBT-4 ③：要删的备份是待处理还原记录绑定的恢复点（契约 DBT_BACKUP_BOUND）。 */
+    public static final String BACKUP_BOUND = "该备份是未处理数据库操作的恢复点";
+    /** 表不在附表 A 的 26 张表白名单内（契约 DBT_TABLE_NOT_ALLOWED）。 */
+    public static final String TABLE_NOT_ALLOWED = "表不在允许范围";
+    /** 附表 A 的 26 张表（与 B15 批量替换登记的表集合相同）。 */
+    public static final java.util.Set<String> ALLOWED_TABLES = java.util.Set.copyOf(DatabaseReplaceWriteMapper.COLUMNS.keySet());
+    /** 契约 BackupIdQuery：1～20 位十进制数字串。 */
+    private static final Pattern BACKUP_ID = Pattern.compile("^[0-9]{1,20}$");
+
     /** 备份目录不在允许的范围（新增的文字，D-B15-2）。 */
     public static final String BAD_BACKUP_PATH = "备份目录必须在 application/data/backup/ 下";
 
@@ -63,16 +74,21 @@ public final class DatabaseToolService {
     private final LegacySiteFiles files;
     private final Clock clock;
     private final Endpoint endpoint;
+    private final DatabaseRuns runs;
 
-    /** @param writer 可写数据源关闭时为 null（批量替换不可用） */
+    /**
+     * @param writer 可写数据源关闭时为 null（批量替换不可用）
+     * @param runs   {@code dbtool.lock} 与运行记录（DBT-5，C-73）
+     */
     public DatabaseToolService(DatabaseToolMapper reader, DatabaseReplaceWriteMapper writer, LegacyConfigService config,
-                               LegacySiteFiles files, Clock clock, Endpoint endpoint) {
+                               LegacySiteFiles files, Clock clock, Endpoint endpoint, DatabaseRuns runs) {
         this.reader = reader;
         this.writer = writer;
         this.config = config;
         this.files = files;
         this.clock = clock;
         this.endpoint = endpoint;
+        this.runs = runs;
     }
 
     // ------------------------------------------------------------------ 表
@@ -253,24 +269,94 @@ public final class DatabaseToolService {
      * 旧 {@code Database::del}（Database.php:222-235）：删除 {@code date('Ymd-His', $id)-*.sql*} 的各卷；删不掉时"删除失败"。
      */
     public Reply delete(String id, LegacyLang lang) {
-        if (empty(id)) {
+        // v8 DBT-4（REV-14，契约 API-016）：① 入参；② 取 dbtool.lock（拿不到 → LOCKED）；③ 锁内（中断判定已完成）拒绝删除 IMPORT 待处理记录
+        // 绑定的备份（BACKUP_BOUND）；④ 锁内按卷号升序删除；⑤ 不写运行记录，日志一行 INFO。0 个文件被删的分支都在删除之前返回。
+        if (empty(id) || !BACKUP_ID.matcher(id).matches()) {
             return Reply.error(lang.get("admin/database/select_del_file"));
         }
         String dir = backupDir();
         if (dir == null) {
             return Reply.error(BAD_BACKUP_PATH);
         }
-        String name = STAMP.format(Instant.ofEpochSecond(PhpIntval.of(id)).atZone(PRC)) + "-";
-        boolean left = false;
-        for (LegacySiteFiles.Entry e : files.list(dir)) {
-            if (!e.directory() && e.name().startsWith(name) && e.name().substring(name.length()).contains(".sql")) {
-                files.delete(dir + "/" + e.name());
-                if (files.stat(dir + "/" + e.name()) != null) {
+        java.util.Optional<DatabaseRuns.Session> held = runs.open();
+        if (held.isEmpty()) {
+            return Reply.error(LOCKED);
+        }
+        try (DatabaseRuns.Session session = held.get()) {
+            String name = prefix(id);
+            DatabaseRun r = session.current();
+            if (r != null && r.op == DatabaseRun.Op.IMPORT && r.pending() && (name.equals(prefixOrNull(r.sourceBackup))
+                    || (r.autoBackup != null && name.equals(prefixOrNull(r.autoBackup.stamp))))) {
+                return Reply.error(BACKUP_BOUND);
+            }
+            java.util.TreeMap<Long, String> parts = new java.util.TreeMap<>();
+            List<String> others = new ArrayList<>();
+            for (LegacySiteFiles.Entry e : files.list(dir)) {
+                if (!e.directory() && e.name().startsWith(name) && e.name().substring(name.length()).contains(".sql")) {
+                    Matcher m = BACKUP_FILE.matcher(e.name());
+                    if (m.matches() && m.group(3).length() < 10) {
+                        parts.put(Long.parseLong(m.group(3)), e.name());
+                    } else {
+                        others.add(e.name());
+                    }
+                }
+            }
+            List<String> ordered = new ArrayList<>(parts.values());
+            ordered.addAll(others);
+            boolean left = false;
+            for (String f : ordered) {
+                files.delete(dir + "/" + f);
+                if (files.stat(dir + "/" + f) != null) {
                     left = true;
                 }
             }
+            DatabaseRuns.LOG.info("dbtool op=DELETE stamp={} files={} result={}", name, ordered.size(), left ? "del_err" : "del_ok");
+            return left ? Reply.error(lang.get("del_err")) : Reply.success(lang.get("del_ok"));
         }
-        return left ? Reply.error(lang.get("del_err")) : Reply.success(lang.get("del_ok"));
+    }
+
+    /** 契约 RunId：1～64 个 {@code [A-Za-z0-9-]}。 */
+    private static final Pattern RUN_ID = Pattern.compile("^[A-Za-z0-9-]{1,64}$");
+    public static final String RUN_MISMATCH = "运行记录已变化，请刷新页面";
+    public static final String ACK_CONFIRM_REQUIRED = "请勾选“接受当前数据”";
+    public static final String ACK_NOT_PENDING = "当前没有待处理的数据库操作";
+
+    /**
+     * “我已处理”（契约 API-018，令牌由调用方先校验）：{@code run} 不合 RunId、{@code acceptedAsIs} 出现但不是 {@code "0"}/{@code "1"} →
+     * {@code param_err}；取锁（{@link #LOCKED}）→ 中断判定 → {@link DatabaseRuns#acknowledge}。只做一次原子替换。
+     *
+     * @param acceptedAsIs 表单 {@code accepted_as_is} 原文，缺失为 null（按 0）
+     */
+    public Reply acknowledge(String run, String acceptedAsIs, String adminId, LegacyLang lang) {
+        if (run == null || !RUN_ID.matcher(run).matches()
+                || (acceptedAsIs != null && !acceptedAsIs.equals("0") && !acceptedAsIs.equals("1"))) {
+            return Reply.error(lang.get("param_err"));
+        }
+        java.util.Optional<DatabaseRuns.Session> held = runs.open();
+        if (held.isEmpty()) {
+            return Reply.error(LOCKED);
+        }
+        try (DatabaseRuns.Session session = held.get()) {
+            return switch (runs.acknowledge(session, run, "1".equals(acceptedAsIs), adminId)) {
+                case OK -> Reply.success(lang.get("save_ok"));
+                case RUN_MISMATCH -> Reply.error(RUN_MISMATCH);
+                case CONFIRM_REQUIRED -> Reply.error(ACK_CONFIRM_REQUIRED);
+                case NOT_PENDING -> Reply.error(ACK_NOT_PENDING);
+            };
+        }
+    }
+
+    /** 页面加载的不等待判定（DBT-5 ⑥(a)、⑩；契约 API-010、API-013 GET）。 */
+    public DatabaseRuns.Probe probe() {
+        return runs.probe();
+    }
+
+    private static String prefix(String id) {
+        return STAMP.format(Instant.ofEpochSecond(PhpIntval.of(id)).atZone(PRC)) + "-";
+    }
+
+    private static String prefixOrNull(String stamp) {
+        return stamp == null || !BACKUP_ID.matcher(stamp).matches() ? null : prefix(stamp);
     }
 
     // ------------------------------------------------------------------ 备份导出
@@ -290,7 +376,7 @@ public final class DatabaseToolService {
      *
      * @param start 旧版 {@code export($ids, $start)} 从请求里绑定的起始行（只作用于第一张表；按 {@code intval}）
      */
-    public Reply export(List<String> ids, String start, LegacyLang lang) {
+    public Reply export(List<String> ids, String start, LegacyLang lang, String adminId) {
         if (ids == null || ids.isEmpty() || (ids.size() == 1 && empty(ids.getFirst()))) {
             return Reply.error(lang.get("admin/database/select_export_table"));
         }
@@ -310,6 +396,22 @@ public final class DatabaseToolService {
         if (dir == null) {
             return Reply.error(BAD_BACKUP_PATH);
         }
+        // v7/v8 DBT-4：取锁（LOCKED）→ 中断判定 → 状态检查（待处理/RECOVERED → lock_check 原文）→ 预检 → 写 RUNNING（op=EXPORT）
+        java.util.Optional<DatabaseRuns.Session> held = runs.open();
+        if (held.isEmpty()) {
+            return Reply.error(LOCKED);
+        }
+        try (DatabaseRuns.Session session = held.get()) {
+            if (session.blocksNewOperation()) {
+                return Reply.error(lang.get("admin/database/lock_check"));
+            }
+            return exportLocked(session, tables, dir, start, lang, adminId);
+        }
+    }
+
+    /** 持锁、状态检查之后的导出：{@code backup.lock} 仍按 B15 写删（兼容 PHP 后台），写入值记入 {@code backup_lock}，每新建一卷先记入 {@code export_files}。 */
+    private Reply exportLocked(DatabaseRuns.Session session, List<String> tables, String dir, String start, LegacyLang lang,
+                               String adminId) {
         String lock = dir + "/backup.lock";
         if (files.stat(lock) != null) {
             return Reply.error(lang.get("admin/database/lock_check"));
@@ -319,14 +421,28 @@ public final class DatabaseToolService {
             if (!IDENT.matcher(t).matches() || !valid.contains(t)) {
                 return Reply.error(lang.get("admin/database/backup_err"));
             }
+            if (!ALLOWED_TABLES.contains(t)) {
+                return Reply.error(TABLE_NOT_ALLOWED);
+            }
         }
         long now = clock.instant().getEpochSecond();
         files.mkdirs(dir);
-        files.replace(lock, Long.toString(now).getBytes(StandardCharsets.US_ASCII), null);
+        DatabaseRun run = session.begin(DatabaseRun.Op.EXPORT, adminId, tables.size());
+        run.exportDir = dir;
+        run.backupLock = Long.toString(now);
+        session.write(run);
+        files.replace(lock, run.backupLock.getBytes(StandardCharsets.US_ASCII), null);
         PhpValue db = db();
         BackupWriter w = new BackupWriter(dir, STAMP.format(Instant.ofEpochSecond(now).atZone(PRC)),
                 PhpIntval.of(PhpValues.text(PhpArrays.get(db, "part_size"))), PhpLoose.bool(PhpArrays.get(db, "compress")),
                 (int) Math.max(0, Math.min(9, PhpIntval.of(PhpValues.text(PhpArrays.get(db, "compress_level"))))));
+        w.onNewFile = rel -> {
+            if (!run.exportFiles.contains(rel)) {
+                run.exportFiles.add(rel);
+                session.write(run);
+            }
+        };
+        boolean ok = false;
         try {
             w.create();
             long from = PhpIntval.of(start);
@@ -337,11 +453,17 @@ public final class DatabaseToolService {
                 }
                 from = 0;
             }
+            ok = true;
         } catch (IOException | RuntimeException e) {
             return Reply.error(lang.get("admin/database/backup_err"));
         } finally {
             w.close();
             files.delete(lock);
+            run.state = DatabaseRun.State.DONE;
+            run.outcome = ok ? "OK" : "FAILED";
+            session.write(run);
+            DatabaseRuns.log(ok ? org.slf4j.event.Level.INFO : org.slf4j.event.Level.WARN,
+                    "dbtool end run={} op=EXPORT state=DONE outcome={} files={}", run.run, run.outcome, run.exportFiles.size());
         }
         return Reply.success(lang.get("admin/database/backup_ok"));
     }
@@ -424,6 +546,8 @@ public final class DatabaseToolService {
         private int part = 1;
         private OutputStream out;
         private double size;
+        /** 每新建一卷之前调用（先记入运行记录的 {@code export_files} 再创建）。 */
+        java.util.function.Consumer<String> onNewFile = rel -> { };
 
         BackupWriter(String dir, String name, long partSize, boolean compress, int level) {
             this.dir = dir;
@@ -459,6 +583,9 @@ public final class DatabaseToolService {
             }
             String rel = dir + "/" + name + "-" + part + ".sql" + (compress ? ".gz" : "");
             LegacySiteFiles.Entry existing = files.stat(rel);
+            if (existing == null) {
+                onNewFile.accept(rel);
+            }
             OutputStream raw = files.openAppend(rel);
             out = compress ? new GZIPOutputStream(raw, 8192) {
                 {

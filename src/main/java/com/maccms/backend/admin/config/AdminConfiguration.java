@@ -276,8 +276,10 @@ public class AdminConfiguration {
         if (r == null) {
             return null;
         }
-        return new com.maccms.backend.admin.application.DatabaseToolService(r, writer.getIfAvailable(), legacy, files,
-                clock.getIfAvailable(Clock::systemUTC), databaseEndpoint(url));
+        Clock c = clock.getIfAvailable(Clock::systemUTC);
+        return new com.maccms.backend.admin.application.DatabaseToolService(r, writer.getIfAvailable(), legacy, files, c,
+                databaseEndpoint(url), new com.maccms.backend.admin.application.DatabaseRuns(files, c,
+                        () -> java.util.UUID.randomUUID().toString()));
     }
 
     /** {@code jdbc:mysql://主机[:端口]/库名?…} 的主机、端口（缺省 3306）与库名。 */

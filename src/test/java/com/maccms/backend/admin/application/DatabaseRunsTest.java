@@ -6,14 +6,11 @@ import com.maccms.backend.admin.application.DatabaseRun.Op;
 import com.maccms.backend.admin.application.DatabaseRun.Phase;
 import com.maccms.backend.admin.application.DatabaseRun.State;
 import com.maccms.backend.admin.application.DatabaseRuns.AckResult;
-import com.maccms.backend.admin.application.DatabaseRuns.Failure;
 import com.maccms.backend.legacyconfig.application.LegacyConfigProperties;
 import com.maccms.backend.legacyconfig.application.LegacySiteFiles;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.sql.SQLException;
-import java.sql.SQLTimeoutException;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -225,24 +222,6 @@ class DatabaseRunsTest {
             assertThat(s.blocksNewOperation()).isFalse();
         }
         assertThat(runs.read().ack.acceptedAsIs).isFalse();
-    }
-
-    @Test
-    void failureClassificationFollowsDbt5() {
-        SQLException syntax = new SQLException("x", "42000", 1064);
-        SQLException duplicate = new SQLException("x", "23000", 1062);
-        SQLException link = new SQLException("x", "08S01", 0);
-        SQLException client = new SQLException("x", "HY000", 2013);
-        SQLException killed = new SQLException("x", "70100", 1317);
-        assertThat(DatabaseRuns.classify(syntax, false)).isEqualTo(Failure.NOT_APPLIED);
-        assertThat(DatabaseRuns.classify(new RuntimeException(syntax), false)).isEqualTo(Failure.NOT_APPLIED);
-        assertThat(DatabaseRuns.classify(duplicate, true)).isEqualTo(Failure.NOT_APPLIED);
-        assertThat(DatabaseRuns.classify(duplicate, false)).isEqualTo(Failure.UNCERTAIN);
-        assertThat(DatabaseRuns.classify(link, true)).isEqualTo(Failure.UNCERTAIN);
-        assertThat(DatabaseRuns.classify(client, true)).isEqualTo(Failure.UNCERTAIN);
-        assertThat(DatabaseRuns.classify(killed, true)).isEqualTo(Failure.UNCERTAIN);
-        assertThat(DatabaseRuns.classify(new SQLTimeoutException("x", "42000", 3024), true)).isEqualTo(Failure.UNCERTAIN);
-        assertThat(DatabaseRuns.classify(new IllegalStateException(), true)).isEqualTo(Failure.UNCERTAIN);
     }
 
     private static DatabaseRun running(Op op, Phase phase) {

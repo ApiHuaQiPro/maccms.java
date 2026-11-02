@@ -3,15 +3,10 @@ package com.maccms.backend.admin.application;
 import com.maccms.backend.admin.application.DatabaseRun.Op;
 import com.maccms.backend.admin.application.DatabaseRun.Phase;
 import com.maccms.backend.admin.application.DatabaseRun.State;
-import com.maccms.backend.common.write.WriteSequence;
 import com.maccms.backend.legacyconfig.application.LegacySiteFiles;
 import java.nio.charset.StandardCharsets;
-import java.sql.SQLException;
 import java.time.Clock;
-import java.util.Collections;
-import java.util.IdentityHashMap;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import org.slf4j.Logger;
@@ -40,7 +35,6 @@ public final class DatabaseRuns {
     private static final int MAX_RECORD_BYTES = 1 << 20;
     /** 中断清理只删这样的分卷（导出与自动备份的文件名规则，同 B15）。 */
     private static final Pattern BACKUP_PART = Pattern.compile("^application/data/backup/[A-Za-z0-9_/.-]*/\\d{8}-\\d{6}-\\d+\\.sql(?:\\.gz)?$");
-    private static final Set<Integer> INTERRUPTED_CODES = Set.of(1028, 1053, 1317, 1927, 3024);
 
     private final LegacySiteFiles files;
     private final Clock clock;
@@ -240,38 +234,7 @@ public final class DatabaseRuns {
         i.cleanup = failed ? "FAILED" : kept ? "LOCK_KEPT" : "OK";
     }
 
-    // ------------------------------------------------------------------ 失败分类（DBT-5 ③）
-
-    public enum Failure { NOT_APPLIED, UNCERTAIN }
-
-    /**
-     * 12 文档第 4.3 节：SQLState {@code 42xxx}（数据库在执行前拒绝）→ 确定未生效；单行语句的非连接、非中止类服务端错误 → 确定未生效
-     * （与 {@link WriteSequence#definitelyNotApplied} 一致）；其余（{@code 08xxx}、客户端错误码 2000～2999、1028/1053/1317/1927/3024、超时、
-     * 非 SQL 异常、多行语句出错）→ 结果不确定。
-     */
-    public static Failure classify(Throwable e, boolean singleRow) {
-        SQLException s = sqlException(e);
-        if (s != null && !(s instanceof java.sql.SQLTimeoutException)) {
-            String state = s.getSQLState();
-            int code = s.getErrorCode();
-            boolean connection = (state != null && state.startsWith("08")) || (code >= 2000 && code < 3000)
-                    || INTERRUPTED_CODES.contains(code);
-            if (!connection && state != null && state.startsWith("42")) {
-                return Failure.NOT_APPLIED;
-            }
-        }
-        return singleRow && WriteSequence.definitelyNotApplied(e) ? Failure.NOT_APPLIED : Failure.UNCERTAIN;
-    }
-
-    static SQLException sqlException(Throwable e) {
-        Set<Throwable> seen = Collections.newSetFromMap(new IdentityHashMap<>());
-        for (Throwable t = e; t != null && seen.add(t); t = t.getCause()) {
-            if (t instanceof SQLException s) {
-                return s;
-            }
-        }
-        return null;
-    }
+    // 失败分类（DBT-5 ③）在 admin.infrastructure.DatabaseToolFailures：JDBC 类型只出现在 infrastructure（ModuleBoundaryTest）。
 
     // ------------------------------------------------------------------ acknowledge（API-018）
 
@@ -317,12 +280,8 @@ public final class DatabaseRuns {
 
     private static String owner() {
         ProcessHandle self = ProcessHandle.current();
-        String host;
-        try {
-            host = java.net.InetAddress.getLocalHost().getHostName();
-        } catch (java.io.IOException e) {
-            host = "?";
-        }
+        // 主机名取环境变量（出站网络 API 只允许在 integration.http，OutboundNetworkGuardTest）
+        String host = System.getenv().getOrDefault("COMPUTERNAME", System.getenv().getOrDefault("HOSTNAME", "?"));
         return host + "/" + self.pid() + "/" + self.info().startInstant().map(Object::toString).orElse("?");
     }
 }

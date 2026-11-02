@@ -56,10 +56,11 @@ public class AdminDatabaseActions {
         try {
             return switch (ctx.route().action()) {
                 case "index" -> index(ctx);
-                case "export" -> export(ctx);
+                case "export" -> export(ctx, session);
                 case "del" -> reply(ctx, db.delete(scalar(ctx, "id"), settings.lang()));
                 case "columns" -> columns(ctx);
                 case "rep" -> rep(ctx, session);
+                case "acknowledge" -> acknowledge(ctx, session);
                 // 零结构变更：不还原、不执行 SQL、不做表维护（D-B15-1）
                 case "import", "optimize", "repair" -> responses.error(ctx.ajax(), DatabaseToolService.REFUSED);
                 case "sql" -> responses.notice(ctx.ajax(), HttpStatus.OK, "跳转提示", DatabaseToolService.REFUSED);
@@ -100,7 +101,7 @@ public class AdminDatabaseActions {
     }
 
     /** 旧 {@code export($ids = '', $start = 0)}：参数按名字从 {@code input()} 绑定；只接受 POST，否则"备份出错"。 */
-    private ResponseEntity<String> export(Ctx ctx) {
+    private ResponseEntity<String> export(Ctx ctx, SessionState session) {
         if (!ctx.post_()) {
             return responses.error(ctx.ajax(), settings.lang().get("admin/database/backup_err"));
         }
@@ -113,7 +114,7 @@ public class AdminDatabaseActions {
         } else if (ctx.params().scalar("ids") != null) {
             ids.add(utf8(ctx.params().scalar("ids")));
         }
-        return reply(ctx, db.export(ids, scalar(ctx, "start"), settings.lang()));
+        return reply(ctx, db.export(ids, scalar(ctx, "start"), settings.lang(), adminId(session)));
     }
 
     /** 旧 {@code Database::columns}：表不在库里 → "Table is invalid."；有表 → 列清单（{@code success} 带 data）；否则"参数错误"。 */
@@ -156,6 +157,18 @@ public class AdminDatabaseActions {
                 settings.lang()));
     }
 
+    /** 新增“我已处理”（契约 API-018，A 类：只收 POST + 一次性 {@code __token__}；令牌在取锁、读记录之前校验）。 */
+    private ResponseEntity<String> acknowledge(Ctx ctx, SessionState session) {
+        AdminForms.TokenCheck t = AdminForms.check(session, ctx.params());
+        if (t.error() != null) {
+            return responses.error(ctx.ajax(), settings.lang().get(t.error()));
+        }
+        if (ctx.params().list("run") != null || ctx.params().list("accepted_as_is") != null) {
+            return responses.error(ctx.ajax(), settings.lang().get("param_err"));
+        }
+        return reply(ctx, db.acknowledge(scalar(ctx, "run"), scalar(ctx, "accepted_as_is"), adminId(session), settings.lang()));
+    }
+
     private ResponseEntity<String> page(Ctx ctx, String titleKey, Map<String, PhpValue> roots, String token, String template) {
         AdminHead head = new AdminHead(settings.lang().get(titleKey), endpoint.sitePath(), endpoint.root(), settings.versionCode());
         ConfigPage view = new ConfigPage(head, settings.lang(), new LinkedHashMap<>(roots), ctx.url(), token);
@@ -169,6 +182,11 @@ public class AdminDatabaseActions {
     private ResponseEntity<String> reply(Ctx ctx, Reply r) {
         return r.ok() ? responses.success(ctx.ajax(), r.message(), AdminController.successUrl(ctx))
                 : responses.error(ctx.ajax(), r.message());
+    }
+
+    /** 运行记录里的管理员编号（会话里的 {@code admin_id}；只作审计显示）。 */
+    static String adminId(SessionState session) {
+        return session == null ? "" : session.get(AdminSessions.ADMIN_ID, Long.class).map(String::valueOf).orElse("");
     }
 
     private static String scalar(Ctx ctx, String name) {

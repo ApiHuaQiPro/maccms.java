@@ -30,7 +30,11 @@ class AdminAuthorizationTest {
             ",vod/data,|vod|data|true",
             ",vod/data,|vod|dat|false",
             ",make/index?ac2=wap,|make|index?ac2=wap|true",
-            ",make/index?ac2=wap,|make|index|false"})
+            ",make/index?ac2=wap,|make|index|false",
+            ",database/import,|database|acknowledge|true",   // API-018 沿用 database/import
+            ",database/import,|database|recover|true",       // API-017 沿用 database/import
+            ",database/acknowledge,|database|acknowledge|false",
+            ",database/sql,|database|acknowledge|false"})
     void textSemanticsMatchTheLegacyCheck(String auth, String controller, String action, boolean allowed) {
         String a = auth.equals("''") ? "" : auth;
         assertThat(AdminAuthorization.allowed(7, a, controller, action)).isEqualTo(allowed);

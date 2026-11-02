@@ -30,6 +30,10 @@ public final class AdminAuthorization {
         if (c.equals("index") && a.equals("logout")) {
             return true;
         }
+        if (c.equals("database") && (a.equals("acknowledge") || a.equals("recover"))) {
+            // APPK-2 契约 API-017/018（x-permission: database/import）：新增的两个动作沿用“还原”的权限码，不新增权限项
+            a = "import";
+        }
         String auths = (adminAuth == null ? "" : adminAuth) + DEFAULT_AUTHS;
         return auths.contains("," + c + "/" + a + ",");
     }
