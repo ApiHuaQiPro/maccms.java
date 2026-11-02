@@ -28,7 +28,15 @@ public final class TemplateUnsupportedException extends RuntimeException {
         /** 双引号串里 {@code $var} 以外的插值写法。 */
         INTERPOLATION("interpolation"),
         /** BARE-5：登记名单以外的裸标识符（解析阶段判定，S3-07b）。 */
-        BARE_IDENTIFIER("bare_identifier");
+        BARE_IDENTIFIER("bare_identifier"),
+        /** RT-1 以外的语法（类定义、include、eval、可变函数名、{@code $$}、类型转换、未列运算符等，S3-07b）。 */
+        SYNTAX("syntax"),
+        /** RT-7：函数名不在解析时注入的白名单内，或带命名空间（S3-07b）。 */
+        FUNCTION("function"),
+        /** MC-1：{@code model(...)} 不是“字符串字面量 + 一次 {@code ->方法(实参)}”的形态（S3-07b）。 */
+        MODEL_CALL("model_call"),
+        /** OP-T7：对象写法——登记类名以外的 {@code instanceof}、{@code ->} 属性/方法、非固定形态（S3-07b）。 */
+        OBJECT("object");
 
         private final String code;
 
