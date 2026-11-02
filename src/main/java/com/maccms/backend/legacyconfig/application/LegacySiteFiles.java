@@ -421,6 +421,90 @@ public class LegacySiteFiles {
         }
     }
 
+    /** {@link #tryExclusiveLock} 返回的锁句柄；{@code close()} 先放 OS 锁再放进程内锁，可重复调用。 */
+    public interface ExclusiveLock extends AutoCloseable {
+        @Override
+        void close();
+    }
+
+    /** 同一 JVM 内按规范化路径登记的进程内锁（{@code FileLock} 只在进程之间互斥，同进程重叠加锁会抛异常）。 */
+    private static final java.util.concurrent.ConcurrentHashMap<Path, java.util.concurrent.Semaphore> IN_PROCESS =
+            new java.util.concurrent.ConcurrentHashMap<>();
+
+    /**
+     * 不等待地取站点根相对路径 {@code relative} 上的独占锁（技术设计 v13 C-73、DBT-5 ④ (a)）：路径按读写区校验后解析；锁文件不存在则创建，
+     * <b>永不删除</b>（删除会让两个进程锁住不同的文件）；先取进程内锁（按路径登记的单许可 {@code Semaphore.tryAcquire()}，不绑定线程，同线程重入同样视为占用），再 {@code FileChannel.open(CREATE, WRITE)}
+     * 后 {@code tryLock()} 取 OS 独占锁。任一步拿不到 → 空（调用方按“占用”处理）。进程退出时 OS 锁由操作系统释放。
+     * 前提：站点根在本机文件系统（NFS/SMB 上的锁语义不可靠，RISK-T20）。
+     */
+    public java.util.Optional<ExclusiveLock> tryExclusiveLock(String relative) {
+        LegacySiteRoot r = check(relative, Mode.WRITE);
+        Path p;
+        try {
+            int slash = relative.lastIndexOf('/');
+            if (slash > 0) {
+                r.mkdirs(relative.substring(0, slash));
+            }
+            p = r.resolve(relative);
+        } catch (LegacySiteRoot.AccessException e) {
+            throw translate(e);
+        }
+        java.util.concurrent.Semaphore local = IN_PROCESS.computeIfAbsent(p.toAbsolutePath().normalize(),
+                k -> new java.util.concurrent.Semaphore(1));
+        if (!local.tryAcquire()) {
+            return java.util.Optional.empty();
+        }
+        java.nio.channels.FileChannel channel = null;
+        try {
+            channel = java.nio.channels.FileChannel.open(p, java.nio.file.StandardOpenOption.CREATE, java.nio.file.StandardOpenOption.WRITE,
+                    java.nio.file.LinkOption.NOFOLLOW_LINKS);
+            java.nio.channels.FileLock os = channel.tryLock();
+            if (os == null) {
+                channel.close();
+                local.release();
+                return java.util.Optional.empty();
+            }
+            java.nio.channels.FileChannel held = channel;
+            return java.util.Optional.of(new ExclusiveLock() {
+                private boolean closed;
+
+                @Override
+                public synchronized void close() {
+                    if (closed) {
+                        return;
+                    }
+                    closed = true;
+                    try {
+                        os.release();
+                        held.close();
+                    } catch (java.io.IOException ignored) {
+                        // 通道关闭失败时 OS 锁随进程释放
+                    } finally {
+                        local.release();
+                    }
+                }
+            });
+        } catch (java.nio.channels.OverlappingFileLockException e) {
+            closeQuietly(channel);
+            local.release();
+            return java.util.Optional.empty();
+        } catch (java.io.IOException e) {
+            closeQuietly(channel);
+            local.release();
+            throw new FileException(Reason.IO);
+        }
+    }
+
+    private static void closeQuietly(java.nio.channels.FileChannel c) {
+        if (c != null) {
+            try {
+                c.close();
+            } catch (java.io.IOException ignored) {
+                // 已在失败分支
+            }
+        }
+    }
+
     /** 根目录的真实路径（写回之外的用途：运行时模板编译的外部目录）。 */
     public Path resolve(String relative) {
         LegacySiteRoot r = check(relative, Mode.READ);
