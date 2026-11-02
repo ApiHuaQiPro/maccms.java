@@ -20,7 +20,9 @@ import java.util.regex.Pattern;
  * {@code site_wapurl}（PHP 宽松比较：{@code '01'}、{@code ' 2'}、整数都按数值）时，模板、html、广告目录取 {@code mob_*}（非站群时
  * {@code mob_template_dir} 为空或 {@code no} 也照用，旧版不回退）。</li>
  * </ol>
- * 结果中的 {@code pathTpl}、{@code pathAds} 就是旧模板里的 {@code {$maccms.path_tpl}}、{@code {$maccms.path_ads}}。
+ * 结果中的 {@code pathTemplate}、{@code pathTpl}、{@code pathAds} 分别是 {@code MAC_PATH_TEMPLATE}、{@code MAC_PATH_TPL}、{@code MAC_PATH_ADS}；
+ * 模板变量 {@code {$maccms.path_tpl}} 取 {@code pathTemplate}、{@code {$maccms.path_ads}} 取 {@code pathAds}（{@code All.php:62-63}）；
+ * {@code pathTpl} 供“模板文件不存在”消息使用（{@code think_exception.tpl:366}）。
  *
  * <p>与旧版的差异：请求没有 {@code User-Agent} 时旧版整页报错（ThinkPHP 把 Notice 转成异常），新版按桌面处理（D-B12-L2）。
  * 新版前台是一套响应式 jte 模板（B05），这里的选择结果供页面中依赖手机标志与目录的输出使用；接线在 B12 之后与前端协调（21 文档第 12 节）。

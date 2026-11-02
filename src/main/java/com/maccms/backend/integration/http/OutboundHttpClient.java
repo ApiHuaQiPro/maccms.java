@@ -4,30 +4,54 @@ import com.maccms.backend.common.web.SafeExceptionLog;
 import com.maccms.backend.integration.application.IntegrationPackages;
 import com.maccms.backend.integration.application.LogRedactor;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.ConnectException;
+import java.net.NoRouteToHostException;
+import java.net.Proxy;
+import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpConnectTimeoutException;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.net.http.HttpTimeoutException;
-import java.nio.ByteBuffer;
+import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
+import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.CancellationException;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Flow;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
+import javax.net.ssl.SSLContext;
+import org.apache.hc.client5.http.ConnectTimeoutException;
+import org.apache.hc.client5.http.HttpHostConnectException;
+import org.apache.hc.client5.http.classic.methods.HttpUriRequestBase;
+import org.apache.hc.client5.http.config.ConnectionConfig;
+import org.apache.hc.client5.http.config.RequestConfig;
+import org.apache.hc.client5.http.impl.DefaultSchemePortResolver;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.HttpClients;
+import org.apache.hc.client5.http.impl.io.BasicHttpClientConnectionManager;
+import org.apache.hc.client5.http.impl.io.DefaultHttpClientConnectionOperator;
+import org.apache.hc.client5.http.impl.routing.DefaultRoutePlanner;
+import org.apache.hc.client5.http.io.DetachedSocketFactory;
+import org.apache.hc.client5.http.protocol.HttpClientContext;
+import org.apache.hc.client5.http.ssl.DefaultClientTlsStrategy;
+import org.apache.hc.client5.http.ssl.TlsSocketStrategy;
+import org.apache.hc.core5.http.ClassicHttpResponse;
+import org.apache.hc.core5.http.Header;
+import org.apache.hc.core5.http.HttpEntity;
+import org.apache.hc.core5.http.HttpHost;
+import org.apache.hc.core5.http.config.Lookup;
+import org.apache.hc.core5.http.config.RegistryBuilder;
+import org.apache.hc.core5.http.io.entity.ByteArrayEntity;
+import org.apache.hc.core5.io.CloseMode;
+import org.apache.hc.core5.util.Timeout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,6 +68,16 @@ import org.slf4j.LoggerFactory;
  * 经 {@link LogRedactor} 脱敏（含配置中的已知密钥）的响应摘要；异常只记类型链。</li>
  * </ul>
  * 用户代理沿用旧版 curl 设置的字符串。与旧版的差异：校验 TLS 证书（旧版 {@code CURLOPT_SSL_VERIFYPEER=0}）。
+ *
+ * <p>内部引擎（APPK-2 OUT-1-5，DEC-14 / NET-7）：Apache HttpClient 5 classic，只在本包内使用。每一跳新建只含一条连接的
+ * 连接管理器，由 {@link PinnedDnsResolver} 只返回 {@link OutboundPolicy#check} 已检查的地址，建连时不再按主机名解析；
+ * {@code Host} 头、TLS 的 SNI 与证书主机名校验仍用原主机名；路由固定直连，套接字以 {@link Proxy#NO_PROXY} 创建，不读系统代理。
+ * 连接不跨跳、不跨请求复用（与旧版每次新建 curl 句柄相同）。不发 {@code Accept-Encoding}、不自动解压、不自动重试、不存 cookie。
+ *
+ * <p>总时限由本实例持有的单个守护线程定时器执行：到点对进行中的请求 {@code cancel()}。定时器线程空闲
+ * {@link #TIMER_IDLE_SECONDS} 秒后自行退出、有请求时再建，所以应用停止时不需要单独关闭（守护线程也不阻止 JVM 退出）。
+ * 每跳结束（成功或异常）依次：撤销定时任务 → 中止交换（连接不复用，关闭时不再读剩余响应体）→ 关闭响应 → 关闭客户端
+ * → 关闭连接管理器。
  */
 public final class OutboundHttpClient {
 
@@ -52,18 +86,25 @@ public final class OutboundHttpClient {
             + "Chrome/45.0.2454.101 Safari/537.36";
     static final int MAX_REDIRECTS = 5;
     static final int LOG_EXCERPT_BYTES = 1024;
+    static final int TIMER_IDLE_SECONDS = 30;
 
     private static final Logger log = LoggerFactory.getLogger(OutboundHttpClient.class);
     private static final StackWalker WALKER = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
     private static final String OWN_PACKAGE = OutboundHttpClient.class.getPackageName();
     private static final Set<String> CROSS_HOST_DROPPED = Set.of("authorization", "cookie", "proxy-authorization");
+    /** 调用方不能设置的请求头（同 JDK {@code HttpClient} 的受限头，NET-7 ⑤）。 */
+    private static final Set<String> RESTRICTED_HEADERS = Set.of("host", "connection", "content-length", "expect", "upgrade");
+    /** 直连套接字：{@code new Socket()} 连接时会询问系统 {@code ProxySelector}（SOCKS），这里显式不用代理。 */
+    private static final DetachedSocketFactory DIRECT_SOCKETS = proxy -> new Socket(Proxy.NO_PROXY);
 
     private final OutboundPolicy policy;
     private final Set<String> registered;
     private final Duration readTimeout;
     private final int maxResponseBytes;
     private final List<String> knownSecrets;
-    private final HttpClient http;
+    private final ConnectionConfig connectionConfig;
+    private final Lookup<TlsSocketStrategy> tls;
+    private final ScheduledThreadPoolExecutor deadlines;
 
     /**
      * @param registered   允许调用的子包（相对 {@code com.maccms.backend}），生产为 {@link IntegrationPackages#REGISTERED} 的键
@@ -71,16 +112,39 @@ public final class OutboundHttpClient {
      */
     public OutboundHttpClient(OutboundPolicy policy, Collection<String> registered, Duration connectTimeout,
                               Duration readTimeout, int maxResponseBytes, Collection<String> knownSecrets) {
+        this(policy, registered, connectTimeout, readTimeout, maxResponseBytes, knownSecrets, defaultSslContext());
+    }
+
+    /** 同公开构造器，TLS 用给定的 {@link SSLContext}（只供 V-33 的 TLS 用例信任测试证书；主机名校验同样开启）。 */
+    OutboundHttpClient(OutboundPolicy policy, Collection<String> registered, Duration connectTimeout,
+                       Duration readTimeout, int maxResponseBytes, Collection<String> knownSecrets, SSLContext sslContext) {
         this.policy = policy;
         this.registered = Set.copyOf(registered);
         this.readTimeout = readTimeout;
         this.maxResponseBytes = maxResponseBytes;
         this.knownSecrets = List.copyOf(knownSecrets);
-        this.http = HttpClient.newBuilder()
-                .connectTimeout(connectTimeout)
-                .followRedirects(HttpClient.Redirect.NEVER)
-                .version(HttpClient.Version.HTTP_1_1)
+        this.connectionConfig = ConnectionConfig.custom()
+                .setConnectTimeout(Timeout.of(connectTimeout.toMillis(), TimeUnit.MILLISECONDS))
                 .build();
+        this.tls = RegistryBuilder.<TlsSocketStrategy>create()
+                .register("https", new DefaultClientTlsStrategy(sslContext))
+                .build();
+        this.deadlines = new ScheduledThreadPoolExecutor(1, r -> {
+            Thread t = new Thread(r, "outbound-deadline");
+            t.setDaemon(true);
+            return t;
+        });
+        deadlines.setRemoveOnCancelPolicy(true);
+        deadlines.setKeepAliveTime(TIMER_IDLE_SECONDS, TimeUnit.SECONDS);
+        deadlines.allowCoreThreadTimeOut(true);
+    }
+
+    private static SSLContext defaultSslContext() {
+        try {
+            return SSLContext.getDefault();
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("JDK 默认 TLS 不可用", e);
+        }
     }
 
     public OutboundPolicy.Mode mode() {
@@ -112,22 +176,24 @@ public final class OutboundHttpClient {
         URI uri = request.uri();
         byte[] body = request.body();
         Map<String, List<String>> headers = request.headers();
-        String host = policy.check(uri);
+        OutboundPolicy.Target target = policy.check(uri);
+        String host = target.logHost();
         for (int hop = 0; ; hop++) {
-            HttpResponse<byte[]> resp = exchange(method, uri, headers, body, host, deadline, maxResponseBytes);
-            int status = resp.statusCode();
-            Optional<String> location = resp.headers().firstValue("location");
-            if (isRedirect(status) && location.isPresent()) {
+            Exchanged resp = exchange(method, uri, headers, body, target, deadline, maxResponseBytes);
+            int status = resp.status();
+            List<String> location = resp.headers().getOrDefault("location", List.of());
+            if (isRedirect(status) && !location.isEmpty()) {
                 if (hop >= MAX_REDIRECTS) {
                     throw new OutboundException(OutboundException.Reason.REDIRECT_FAILED, host);
                 }
                 URI next;
                 try {
-                    next = uri.resolve(location.get().strip());
+                    next = uri.resolve(location.get(0).strip());
                 } catch (IllegalArgumentException e) {
                     throw new OutboundException(OutboundException.Reason.REDIRECT_FAILED, host);
                 }
-                String nextHost = policy.check(next);
+                OutboundPolicy.Target nextTarget = policy.check(next);
+                String nextHost = nextTarget.logHost();
                 if (status == 303 || ((status == 301 || status == 302) && method.equals("POST"))) {
                     method = "GET";
                     body = null;
@@ -138,6 +204,7 @@ public final class OutboundHttpClient {
                 }
                 log.info("outbound redirect purpose={} status={} from={} to={}", request.purpose(), status, host, nextHost);
                 uri = next;
+                target = nextTarget;
                 host = nextHost;
                 continue;
             }
@@ -153,7 +220,7 @@ public final class OutboundHttpClient {
                 log.warn("outbound purpose={} caller={} method={} host={} status={} bytes={} ms={} body={}",
                         request.purpose(), caller, method, host, status, data.length, ms, excerpt(data));
             }
-            return new OutboundResponse(status, lowerCaseHeaders(resp.headers().map()), data, host);
+            return new OutboundResponse(status, resp.headers(), data, host);
         }
     }
 
@@ -163,51 +230,141 @@ public final class OutboundHttpClient {
         return LogRedactor.redact(new String(data, 0, n, StandardCharsets.UTF_8), knownSecrets);
     }
 
-    private HttpResponse<byte[]> exchange(String method, URI uri, Map<String, List<String>> headers, byte[] body,
-                                          String host, long deadline, int maxResponseBytes) {
+    /** 一跳的结果：状态码、按 {@link #lowerCaseHeaders} 合并的响应头、响应体。 */
+    private record Exchanged(int status, Map<String, List<String>> headers, byte[] body) {
+    }
+
+    /** 一跳（NET-7 ②～⑥）：用这一跳已检查的地址建连，发出请求并读完响应；跳结束即关闭全部资源，连接不复用。 */
+    private Exchanged exchange(String method, URI uri, Map<String, List<String>> headers, byte[] body,
+                               OutboundPolicy.Target target, long deadline, int maxResponseBytes) {
+        String host = target.logHost();
         long remaining = deadline - System.nanoTime();
         if (remaining <= 0) {
             throw fail(OutboundException.Reason.TIMEOUT, host, "timeout", null);
         }
-        HttpRequest.Builder b = HttpRequest.newBuilder(uri)
-                .timeout(Duration.ofNanos(remaining))
-                .method(method, body == null ? HttpRequest.BodyPublishers.noBody()
-                        : HttpRequest.BodyPublishers.ofByteArray(body));
+        HttpUriRequestBase req = new HttpUriRequestBase(method, uri);
         boolean hasAgent = false;
         for (Map.Entry<String, List<String>> e : headers.entrySet()) {
-            hasAgent |= e.getKey().equalsIgnoreCase("user-agent");
+            String name = e.getKey().toLowerCase(Locale.ROOT);
+            if (RESTRICTED_HEADERS.contains(name)) {
+                throw new IllegalArgumentException("restricted header name: \"" + e.getKey() + "\"");
+            }
+            hasAgent |= name.equals("user-agent");
             for (String v : e.getValue()) {
-                b.header(e.getKey(), v);
+                req.addHeader(e.getKey(), v);
             }
         }
         if (!hasAgent) {
-            b.header("User-Agent", LEGACY_USER_AGENT);
+            req.addHeader("User-Agent", LEGACY_USER_AGENT);
         }
-        CompletableFuture<HttpResponse<byte[]>> f = http.sendAsync(b.build(), info -> new LimitedBody(maxResponseBytes));
+        if (body != null) {
+            // Content-Type 原样随上面复制的请求头发出（实体不另带类型，不改写调用方给的值）；POST/PUT 无请求体时引擎发 Content-Length: 0
+            req.setEntity(new ByteArrayEntity(body, null));
+        }
+        if (Thread.currentThread().isInterrupted()) {
+            throw fail(OutboundException.Reason.INTERRUPTED, host, "interrupted", null);
+        }
+        HttpClientContext context = HttpClientContext.create();
+        context.setRequestConfig(RequestConfig.custom()
+                .setResponseTimeout(Timeout.of(Math.max(1, TimeUnit.NANOSECONDS.toMillis(remaining)), TimeUnit.MILLISECONDS))
+                .setRedirectsEnabled(false)
+                .build());
+        String hostName = uri.getHost();
+        if (hostName.startsWith("[") && hostName.endsWith("]")) {
+            hostName = hostName.substring(1, hostName.length() - 1);
+        }
+        // 原 scheme、原主机名、原端口：Host 头、SNI 与证书主机名校验都用它；地址只来自 PinnedDnsResolver
+        HttpHost endpoint = new HttpHost(uri.getScheme().toLowerCase(Locale.ROOT), hostName, uri.getPort());
+
+        BasicHttpClientConnectionManager connections = new BasicHttpClientConnectionManager(
+                new DefaultHttpClientConnectionOperator(DIRECT_SOCKETS, DefaultSchemePortResolver.INSTANCE,
+                        new PinnedDnsResolver(target.host(), target.addresses()), tls), null);
+        connections.setConnectionConfig(connectionConfig);
+        AtomicBoolean timedOut = new AtomicBoolean();
+        ScheduledFuture<?> timer = null;
+        CloseableHttpClient http = null;
+        ClassicHttpResponse resp = null;
         try {
-            return f.get(remaining, TimeUnit.NANOSECONDS);
-        } catch (TimeoutException e) {
-            f.cancel(true);
-            throw fail(OutboundException.Reason.TIMEOUT, host, "timeout", e);
-        } catch (InterruptedException e) {
-            f.cancel(true);
-            Thread.currentThread().interrupt();
-            throw fail(OutboundException.Reason.INTERRUPTED, host, "interrupted", e);
-        } catch (CancellationException e) {
-            throw fail(OutboundException.Reason.IO_ERROR, host, "cancelled", e);
-        } catch (ExecutionException e) {
-            Throwable c = e.getCause() == null ? e : e.getCause();
-            OutboundException.Reason reason;
-            if (c instanceof OutboundException oe) {
-                reason = oe.reason();
-            } else if (c instanceof HttpConnectTimeoutException || c instanceof HttpTimeoutException) {
-                reason = OutboundException.Reason.TIMEOUT;
-            } else if (c instanceof ConnectException) {
-                reason = OutboundException.Reason.CONNECT_FAILED;
-            } else {
-                reason = OutboundException.Reason.IO_ERROR;
+            http = HttpClients.custom()
+                    .setConnectionManager(connections)
+                    .setRoutePlanner(new DefaultRoutePlanner(DefaultSchemePortResolver.INSTANCE))
+                    .disableRedirectHandling()
+                    .disableAutomaticRetries()
+                    .disableCookieManagement()
+                    .disableAuthCaching()
+                    .disableContentCompression()
+                    .disableDefaultUserAgent()
+                    // 引擎默认补的 Connection: keep-alive 去掉：基线 JDK 客户端不发这个头（HTTP/1.1 默认即持久连接，这里也不复用）
+                    .addRequestInterceptorLast((r, entity, ctx) -> r.removeHeaders("Connection"))
+                    .build();
+            timer = deadlines.schedule(() -> {
+                timedOut.set(true);
+                req.cancel();
+            }, remaining, TimeUnit.NANOSECONDS);
+            resp = http.executeOpen(endpoint, req, context);
+            byte[] data = readLimited(resp.getEntity(), maxResponseBytes, req);
+            Map<String, List<String>> raw = new LinkedHashMap<>();
+            for (Header h : resp.getHeaders()) {
+                raw.computeIfAbsent(h.getName(), k -> new ArrayList<>()).add(h.getValue());
             }
-            throw fail(reason, host, reason.name().toLowerCase(Locale.ROOT), c);
+            return new Exchanged(resp.getCode(), lowerCaseHeaders(raw), data);
+        } catch (OutboundException e) {
+            throw fail(e.reason(), host, e.reason().name().toLowerCase(Locale.ROOT), e);
+        } catch (IOException e) {
+            OutboundException.Reason reason = classify(e, timedOut.get());
+            throw fail(reason, host, reason.name().toLowerCase(Locale.ROOT), e);
+        } finally {
+            if (timer != null) {
+                timer.cancel(false);
+            }
+            req.cancel();
+            closeQuietly(resp);
+            closeQuietly(http);
+            connections.close(CloseMode.IMMEDIATE);
+        }
+    }
+
+    /** NET-7 ⑥：引擎异常归入既有原因。被定时取消的一律算超时；线程中断（中断标志保留）算中断。 */
+    private static OutboundException.Reason classify(IOException e, boolean timedOut) {
+        if (timedOut || e instanceof ConnectTimeoutException || e instanceof SocketTimeoutException) {
+            return OutboundException.Reason.TIMEOUT;
+        }
+        if (Thread.currentThread().isInterrupted()) {
+            return OutboundException.Reason.INTERRUPTED;
+        }
+        if (e instanceof HttpHostConnectException || e instanceof ConnectException
+                || e instanceof NoRouteToHostException || e instanceof UnknownHostException) {
+            return OutboundException.Reason.CONNECT_FAILED;
+        }
+        return OutboundException.Reason.IO_ERROR;
+    }
+
+    /** 边读边计数，超过上限立即中止连接（不信任 {@code Content-Length}，也不读剩余部分）。 */
+    private static byte[] readLimited(HttpEntity entity, int max, HttpUriRequestBase req) throws IOException {
+        if (entity == null) {
+            return new byte[0];
+        }
+        ByteArrayOutputStream buf = new ByteArrayOutputStream();
+        InputStream in = entity.getContent();
+        byte[] chunk = new byte[8192];
+        for (int n; (n = in.read(chunk)) != -1; ) {
+            if (buf.size() + n > max) {
+                req.cancel();
+                throw new OutboundException(OutboundException.Reason.RESPONSE_TOO_LARGE, "");
+            }
+            buf.write(chunk, 0, n);
+        }
+        return buf.toByteArray();
+    }
+
+    private static void closeQuietly(AutoCloseable c) {
+        if (c == null) {
+            return;
+        }
+        try {
+            c.close();
+        } catch (Exception ignored) {
+            // 交换已中止，关闭失败不影响结果
         }
     }
 
@@ -270,56 +427,5 @@ public final class OutboundHttpClient {
         headers.forEach((k, v) -> out.merge(k.toLowerCase(Locale.ROOT), List.copyOf(v),
                 (x, y) -> java.util.stream.Stream.concat(x.stream(), y.stream()).toList()));
         return out;
-    }
-
-    /** 累积响应体，超过上限即取消订阅并以 {@link OutboundException.Reason#RESPONSE_TOO_LARGE} 结束。 */
-    private static final class LimitedBody implements HttpResponse.BodySubscriber<byte[]> {
-
-        private final int max;
-        private final ByteArrayOutputStream buf = new ByteArrayOutputStream();
-        private final CompletableFuture<byte[]> result = new CompletableFuture<>();
-        private Flow.Subscription subscription;
-
-        LimitedBody(int max) {
-            this.max = max;
-        }
-
-        @Override
-        public CompletionStage<byte[]> getBody() {
-            return result;
-        }
-
-        @Override
-        public void onSubscribe(Flow.Subscription s) {
-            subscription = s;
-            s.request(Long.MAX_VALUE);
-        }
-
-        @Override
-        public void onNext(List<ByteBuffer> items) {
-            if (result.isDone()) {
-                return;
-            }
-            for (ByteBuffer b : items) {
-                if (buf.size() + b.remaining() > max) {
-                    subscription.cancel();
-                    result.completeExceptionally(new OutboundException(OutboundException.Reason.RESPONSE_TOO_LARGE, ""));
-                    return;
-                }
-                byte[] chunk = new byte[b.remaining()];
-                b.get(chunk);
-                buf.write(chunk, 0, chunk.length);
-            }
-        }
-
-        @Override
-        public void onError(Throwable t) {
-            result.completeExceptionally(t);
-        }
-
-        @Override
-        public void onComplete() {
-            result.complete(buf.toByteArray());
-        }
     }
 }
