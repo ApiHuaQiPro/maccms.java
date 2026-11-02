@@ -667,4 +667,52 @@ git --attr-source=HEAD diff --check d50077f HEAD -- src/main/java/com/maccms/bac
 ### 已知问题与剩余
 
 - **GAP-2（设计缺口，需架构师裁定）**：两份 `rss/index.html` 第 11 行模板原文 `{$maccms:site_url}{$maccms:path_tpl}` 编译为 `$maccms->site_url`、`$maccms->path_tpl`（各 1 次，偏移 437 起）。RT-1 写明“单独的 `->属性` 取值不支持”，PRE-5 未登记；PHP 7.3 对数组取属性得 null 并记 Notice（输出 `http://images/logo.png`，未实测）。解析器按现设计拒绝，测试锁定该拒绝；不自行定义语义。
-- 全量 `./mvnw -B verify` 未在本次运行内执行，须下一次运行或复核时补跑。
+- 全量 `./mvnw -B verify` 未在本次运行内执行，须下一次运行或复核时补跑。（已由下方 REV 修复补跑，见该节。）
+
+### REV-1/REV-2 修复（后端评审第 1 轮，评论 `01a19b76-93d6-70f6-ba3b-25cb3077bcd3`）
+
+起点 `c02c686f3f5e32b504a2d1315586a2db6d2e0c12`，在同一分支追加提交，未改写历史；已含上游 `8588474`，无需再合并。范围只限 REV-1/REV-2：GAP-2、设计、黄金、PHP、接口与执行器均未改。
+
+**变更文件**
+
+- `src/main/java/com/maccms/backend/phptemplate/runtime/PhpParser.java`
+  - REV-1：`assignment()` 的三元中间分支由 `assignment()` 改为 `expr()`。PHP 7.3 文法是 `expr '?' expr ':' expr`，中间分支被 `?` 和 `:` 夹住，可以是包含 `and`/`or`/`xor` 的完整表达式。冒号之后仍然只解析到 `orExpr()`（`||` 级），因此三元左结合、`true ? 1 : 2 or 3` ≡ `(…) or 3`、赋值右侧在 `and/or/xor` 前截止等行为都不变。
+  - REV-2：`postfix()` 记录表达式是否以 `(` 开头。括号表达式后面紧跟写操作符（`=`、`.=`、`++`、`--`、复合赋值）时，在该写操作符的偏移处报 `syntax`。前置 `++` 的目标如果以 `(` 开头，在 `(` 的偏移处报 `syntax`。判定依据是语法上的起始 `(`，与内部是变量还是下标、括号嵌套几层都无关。只读场景（`isset(($a))`、`($a) instanceof …`、作右值）的行为不变，这与 PHP 7.3 一致：括号不生成 AST 节点，`isset(($a))` 合法。
+- `src/test/java/com/maccms/backend/phptemplate/runtime/PhpParserTest.java`：在 `$Expressions` 中新增 28 例，均直接调用真实解析器，不使用 mock，也没有放宽白名单。既有用例没有删改。
+
+**AC → 测试（本次增量）**
+
+| 评审项 / AC | 测试（`PhpParserTest$Expressions`） | 断言 |
+| --- | --- | --- |
+| REV-1 / AC-307B-1 | `rev1TernaryMiddleAcceptsLowPrecedenceLogic`（`or`/`and`/`xor` 3 例） | 整棵 `Ternary` 的 AST 与偏移：then 为 `Binary(18, op, BoolLiteral(18,false), BoolLiteral(…,true))` |
+| REV-1 / AC-307B-1 | `rev1TernaryMiddleKeepsAssignmentAssociativityAndLeftAssociativeTernary` | 中间分支 `($x = 1) or 0`；`$a ? $b and $c : $d ? 1 : 2` 仍左结合；`true ? 1 : 2 or 3` 的顶层是 `or`；`$a = $b ? $c or $d : $e and $f` 的顶层是 `and`，左侧为 Assign |
+| REV-1 / AC-307B-1 | `rev1TernaryMiddleInFunctionArgumentAndUnexecutedBranch` | 函数实参 `f(true ? $a xor $b : 0, 1)` 的 AST 与偏移；`if(false){…}`、`if(false): … endif;` 两种未执行分支都能解析，节点正确 |
+| REV-2 / AC-307B-1 | `rev2ParenthesizedExpressionIsNotAWritableLvalue`（22 例） | `($a)=1`、`($a).='x'`、`($a)++`、`++($a)`、`($a)+=1`、`($a)--`；`(($a))` 两层括号的 `=`、`.=`、后置/前置 `++`；下标 `($a['k'])` 的四种写法；`(($a['x']))=2`、`(($a['x'][0]))++`、`++((($a['x'])))`；作赋值右侧、echo 中、函数实参中，以及 `if(false){}` 与 `if(false): endif;` 中。全部报 `syntax`，偏移精确 |
+| REV-2 / AC-307B-1 | `rev2ParenthesizedReadsAndDirectWritesStillParse` | 普通括号算术 `(1 + 2) * ((3))`；括号读取与拼接；`$a = ($b = 1)`；`isset(($a))`；直接变量/下标的 `=`、`.=`、前后置 `++`（含 `++$a['k'][0]`）；编译器产物 `$mod = ($i % 2 );++$i;` 均不回退 |
+
+**PHP 7.3.33 对照**（`D:\Tools\php\7.3\php.exe`，合成源码，探针在仓库外未入库）：`true ? false or true : false` → `bool(true)`，`and` → `bool(false)`，`xor` → `bool(true)`，`if(false){ echo true ? 1 or 2 : 3; }` 可解析；`true ? $x = 1 or 0 : 2` → `bool(true)` 且 `$x = 1`。`($a) = 1;` 报 `unexpected '='`；`($a)++;` 报 `unexpected '++'`；`++($a);` 报 `unexpected ';'`；`($a) .= "x";` 报 `unexpected '.='`；`(($a["x"])) = 2;`、`(($a))++;`、`++(($a["k"]));` 均为 ParseError。`isset(($a))` 合法。
+
+**先红后绿（实际执行，Git Bash，仓库根）**
+
+```text
+export JDK_JAVA_OPTIONS=-Djdk.net.unixdomain.tmpdir=D:\Tools\Java\afunix-tmp
+# 先红：只加测试，PhpParser.java 与 c02c686 相同
+./mvnw -B test -Dtest='PhpParserTest'
+  → 退出码 1，BUILD FAILURE；Tests run: 165, Failures: 20, Errors: 5, Skipped: 0
+    REV-1 共 5 个 ERROR，均为 TemplateUnsupportedException：syntax at offset 24 "or true : false"、
+    syntax at offset 25 "or 0 : 2"、syntax at offset 23 "xor $b : 0, 1)" 等
+    REV-2 共 20 个 FAILURE（期望抛异常，实际被接受）；($a)+=1 与 ($a)-- 两例修复前已经拒绝，作为回归保护保留
+    rev2ParenthesizedReadsAndDirectWritesStillParse 修复前就通过（正向不回退基线）
+# 后绿：修复后（提交 8abbaf7241d279db8dadf751dabeb585f0b66836）
+./mvnw -B test -Dtest='PhpParser*,PhpLexer*,RuntimeDiagnosticsTest,PhpSemantics*'
+  → 退出码 0，BUILD SUCCESS；Tests run: 246, Failures: 0, Errors: 0, Skipped: 0
+    （原 218 例 + 新增 28 例；PhpParserGoldenTest 的 166 例解析通过、2 例拒绝，覆盖表断言不变）
+# 全量回归（同一提交 8abbaf7…；交付头只在此基础上追加本说明文档）
+./mvnw -B verify
+  → 退出码 0，BUILD SUCCESS，Total time 07:49 min；Tests run: 3273, Failures: 0, Errors: 0, Skipped: 0
+    （评审第 1 轮在 c02c686 上的日志计数为 3245，差值 28 即本次新增用例）
+# 空白检查（目标属性）
+git --attr-source=HEAD diff --check c02c686f3f5e32b504a2d1315586a2db6d2e0c12 HEAD → 退出码 0
+```
+
+**自查**：没有新增依赖，runtime 仍只用 JDK（`PhpSemanticsTest.runtimeDependsOnlyOnJdk` 通过）。没有新增日志、I/O 和接口。诊断仍只含 kind、偏移和有界片段。修复只收紧了接受面：REV-2 变为拒绝；REV-1 新接受的只是 PHP 7.3 合法、本就由既有节点表示的 `and/or/xor`，没有引入新节点、新函数或新对象形态，白名单判定照旧，未执行分支同样经过白名单。黄金目录无改动。没有迁移，回滚方式是撤销本修复提交。
