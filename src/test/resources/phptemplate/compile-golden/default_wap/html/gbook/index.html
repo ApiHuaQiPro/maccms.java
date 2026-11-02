@@ -1,0 +1,128 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no">
+    <title>留言板 - <?php echo $maccms['site_name']; ?></title>
+    <link href="<?php echo $maccms['path']; ?>static/css/home.css" rel="stylesheet" type="text/css" />
+<link href="<?php echo $maccms['path_tpl']; ?>css/style.css" rel="stylesheet" type="text/css" />
+<script src="<?php echo $maccms['path']; ?>static/js/jquery.js"></script>
+<script src="<?php echo $maccms['path']; ?>static/js/jquery.lazyload.js"></script>
+<script src="<?php echo $maccms['path']; ?>static/js/jquery.autocomplete.js"></script>
+<script>var maccms={"path":"__ROOT__","mid":"<?php echo $maccms['mid']; ?>","aid":"<?php echo $maccms['aid']; ?>","url":"<?php echo $maccms['site_url']; ?>","wapurl":"<?php echo $maccms['site_wapurl']; ?>","mob_status":"<?php echo $maccms['mob_status']; ?>"};</script>
+<script src="<?php echo $maccms['path']; ?>static/js/home.js"></script>
+<script src="<?php echo $maccms['path']; ?>static/js/jquery.imageupload.js"></script>
+    <script>
+        $(function(){
+            MAC.Gbook.Login = <?php echo $gbook['login']; ?>;
+            MAC.Gbook.Verify = <?php echo $gbook['verify']; ?>;
+            MAC.Gbook.Init();
+        });
+    </script>
+</head>
+<body>
+<!-- 页头 -->
+<input type="checkbox" id="navSwitch">
+<header class="g_nav trans">
+    <ul class="g_wrap_p">
+        <li><a href="<?php echo $maccms['path']; ?>">首页</a></li>
+        {maccms:type ids="parent" order="asc" by="sort"}
+        <li><a href="<?php echo mac_url_type($vo); ?>"><?php echo $vo['type_name']; ?></a></li>
+        {/maccms:type}
+        <li><a href="<?php echo mac_url('topic/index'); ?>">影视专题</a></li>
+        <li><a href="<?php echo mac_url('map/index'); ?>">热门排行</a></li>
+    </ul>
+    <div class="g_wrap_p">
+        <div class="ui-search">
+            <form id="search" name="search" method="get" action="<?php echo mac_url('vod/search'); ?>" onSubmit="return qrsearch();">
+                <input type="text" id="wd" name="wd" class="search-input" value="请输入影片名或演员名称" onfocus="if(this.value=='请输入影片名或演员名称'){this.value='';}" onblur="if(this.value==''){this.value='请输入影片名或演员名称';};" />
+                <input type="submit" id="searchbutton"  class="search-button" value="搜索" />
+            </form>
+        </div>
+        <div class="resou">
+            {maccms:foreach name=":explode(',',$maccms.search_hot)" id="vo2" key="key2"}
+            <a href="<?php echo mac_url('vod/search',['wd'=>$vo2]); ?>"><?php echo $vo2; ?></a>
+            {/maccms:foreach}
+        </div>
+    </div>
+</header>
+<header class="g_header">
+    <h1 class="s_l g_logo"><a href="<?php echo $maccms['path']; ?>"><img src="<?php echo mac_url_img($maccms['site_logo']); ?>"></a></h1>
+    <label for="navSwitch" href="javascript:;" class="s_r s_bt"><i class="i_bread"><span></span></i></label>
+</header>
+
+<div class="wrap wrap_ff">
+    <section class="reply_box clearfix">
+        <!--留言开始-->
+        <div class="mac_msg_r">
+            <div class="msg_tit">我要留言</div>
+            <form class="gbook_form">
+                <p class="msg_cue">请输入您的留言内容：</p>
+                <textarea class="gbook_content" name="gbook_content"></textarea>
+                <div class="msg_code">
+                    <?php if($gbook['verify'] == 1): ?>
+                    验证码：<input type="text" name="verify" class="mac_verify">
+                    <?php endif; ?>
+                    <div class="remaining-w fr">还可输入<span class="gbook_remaining remaining " >200</span></div>
+                </div>
+                <input type="button" class="gbook_submit submit_btn" value="提交留言">
+            </form>
+        </div>
+        <div class="mac_msg_l">
+            {maccms:gbook num="10" paging="yes" order="desc" by="id"}
+            <div class="mac_msg_item">
+                <div class="msg_tag">
+                    <div class="count_bg"></div>
+                    <div class="msg_count"><strong>第<?php echo $vo['gbook_id']; ?></strong>条留言</div>
+                </div>
+                <div class="msg_list">
+                    <div class="msg_reply">
+                        <p class="msg_title"><strong><a class="name" href="javascript:;"><?php echo $vo['gbook_name']; ?></a><a target="_blank">(<?php echo mac_long2ip($vo['gbook_ip']); ?>)</a></strong><span class="time"><?php echo date('Y-m-d H:i:s',$vo['gbook_time']); ?></span></p>
+                        <div class="msg_cont">
+                            <?php echo $vo['gbook_content']; ?>
+                        </div>
+                    </div>
+                    <?php if($vo['gbook_reply_time'] > 0): ?>
+                    <div class="reply_answer">
+                        <p class="msg_title"><strong>站长回复：</strong><span class="time"><?php echo date('Y-m-d H:i:s',$vo['gbook_reply_time']); ?></span></p>
+                        <div class="msg_cont">
+                            <?php echo $vo['gbook_reply']; ?>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+            {/maccms:gbook}
+        </div>
+        <!--留言结束-->
+    </section>
+
+    
+<div class="mac_pages">
+    <div class="page_tip">共<?php echo $__PAGING__['record_total']; ?>条数据,当前<?php echo $__PAGING__['page_current']; ?>/<?php echo $__PAGING__['page_total']; ?>页</div>
+    <div class="page_info">
+        <a class="page_link" href="<?php echo mac_url_page($__PAGING__['page_url'],1); ?>" title="首页">首页</a>
+        <a class="page_link" href="<?php echo mac_url_page($__PAGING__['page_url'],$__PAGING__['page_prev']); ?>" title="上一页">上一页</a>
+        {maccms:foreach name="$__PAGING__.page_num" id="num"}
+        <?php if($__PAGING__['page_current'] == $num): ?>
+        <a class="page_link page_current" href="javascript:;" title="第<?php echo $num; ?>页"><?php echo $num; ?></a>
+        <?php else: ?>
+        <a class="page_link" href="<?php echo mac_url_page($__PAGING__['page_url'],$num); ?>" title="第<?php echo $num; ?>页" ><?php echo $num; ?></a>
+        <?php endif; ?>
+        {/maccms:foreach}
+        <a class="page_link" href="<?php echo mac_url_page($__PAGING__['page_url'],$__PAGING__['page_next']); ?>" title="下一页">下一页</a>
+        <a class="page_link" href="<?php echo mac_url_page($__PAGING__['page_url'],$__PAGING__['page_total']); ?>" title="尾页">尾页</a>
+
+        <input class="page_input" type="text" placeholder="页码"  id="page" autocomplete="off" style="width:40px">
+        <button class="page_btn mac_page_go" type="button"  data-url="<?php echo $__PAGING__['page_url']; ?>" data-total="<?php echo $__PAGING__['page_total']; ?>" data-sp="<?php echo $__PAGING__['page_sp']; ?>">GO</button>
+    </div>
+</div>
+
+</div>
+<!-- 页脚 -->
+<footer class="footer">
+    Copyright &#169; 2012-2018 <?php echo $maccms['site_wapurl']; ?>. All Rights Reserved.
+</footer>
+
+</body>
+</html>

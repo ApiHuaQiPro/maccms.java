@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.function.BooleanSupplier;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -211,9 +212,11 @@ public class InstallWizard {
 
     /**
      * 旧 {@code step5}（Index.php:177-272）。参数为原始表单值（缺失为 null）；{@code passwordBytes} 为密码的原始字节（md5 按字节计算）。
+     *
+     * @param tokenOk 校验并作废一次性表单令牌（APPK-2 INS-SEC-4）；只在账号密码规则通过之后、连库之前调用一次
      */
     public Reply install(String account, String password, byte[] passwordBytes, String installDir, String initdata,
-                         boolean tokenOk, LegacyLang lang) {
+                         BooleanSupplier tokenOk, LegacyLang lang) {
         InstallTarget target = readDeployTarget();
         if (target == null) {
             return Reply.error(lang.get("install/please_test_connect"));
@@ -232,7 +235,7 @@ public class InstallWizard {
                 || (m = InstallValidation.length(password, 6, 20, t, lang)) != null) {
             return Reply.error(m);
         }
-        if (!tokenOk) {
+        if (!tokenOk.getAsBoolean()) {
             return Reply.error(lang.get("install/access_denied"));
         }
         String dir = installDir == null || installDir.isEmpty() ? "/" : installDir;

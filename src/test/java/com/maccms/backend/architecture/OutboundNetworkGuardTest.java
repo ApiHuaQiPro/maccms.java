@@ -65,11 +65,15 @@ class OutboundNetworkGuardTest {
     private static final Pattern OUTBOUND_CALLS = Pattern.compile(
             "\\.\\s*(openConnection|openStream|toURL)\\s*\\(");
 
-    /** pom.xml 中不允许出现的出站客户端依赖（artifactId）。B23 起按批登记时同步调整。 */
+    /**
+     * pom.xml 中不允许出现的出站客户端依赖（artifactId）。B23 起按批登记时同步调整。
+     * APPK-2 DEC-14：{@code httpclient5} 只作为 {@code integration.http} 出站客户端的内部引擎放开（版本由 Spring Boot BOM 管理，
+     * 见 {@link #httpClient5IsBomManaged()}）；{@code org.apache.hc.} 类型仍只允许出现在 {@code integration.http}（{@link #OUTBOUND_TYPES}）。
+     */
     private static final List<String> FORBIDDEN_ARTIFACTS = List.of(
             "spring-boot-starter-mail", "spring-boot-starter-webflux", "spring-boot-starter-webclient",
             "spring-boot-starter-restclient", "spring-boot-starter-reactor-netty", "spring-boot-starter-websocket",
-            "spring-cloud-starter-openfeign", "commons-net", "okhttp", "httpclient5", "httpclient", "httpasyncclient",
+            "spring-cloud-starter-openfeign", "commons-net", "okhttp", "httpclient", "httpasyncclient",
             "jakarta.mail", "jakarta.mail-api", "angus-mail", "javax.mail", "jsch", "netty-all", "reactor-netty-http");
 
     @Test
@@ -103,6 +107,22 @@ class OutboundNetworkGuardTest {
             }
         }
         assertThat(found).as("pom.xml 引入了出站客户端依赖").isEmpty();
+    }
+
+    /** APPK-2 DEC-14（C-79）：{@code httpclient5} 的 {@code <dependency>} 不写 {@code <version>}，版本只由 Spring Boot BOM 决定。 */
+    @Test
+    void httpClient5IsBomManaged() throws IOException {
+        String pom = JavaSources.stripXmlComments(Files.readString(Path.of("pom.xml"), StandardCharsets.UTF_8));
+        Matcher m = Pattern.compile("<dependency>((?:(?!</dependency>).)*)</dependency>", Pattern.DOTALL).matcher(pom);
+        List<String> blocks = new ArrayList<>();
+        while (m.find()) {
+            if (m.group(1).matches("(?s).*<artifactId>\\s*httpclient5\\s*</artifactId>.*")) {
+                blocks.add(m.group(1));
+            }
+        }
+        assertThat(blocks).as("httpclient5 依赖").singleElement()
+                .satisfies(b -> assertThat(b).contains("<groupId>org.apache.httpcomponents.client5</groupId>")
+                        .doesNotContain("<version>"));
     }
 
     @Test

@@ -1,0 +1,99 @@
+{
+    "t": "array",
+    "v": [
+        [
+            "code",
+            {
+                "t": "int",
+                "v": "1"
+            }
+        ],
+        [
+            "msg",
+            {
+                "t": "string",
+                "v": "b2J0YWluX29r"
+            }
+        ],
+        [
+            "info",
+            {
+                "t": "array",
+                "v": [
+                    [
+                        "art_id",
+                        {
+                            "t": "int",
+                            "v": "910002"
+                        }
+                    ],
+                    [
+                        "type_id",
+                        {
+                            "t": "int",
+                            "v": "9102"
+                        }
+                    ],
+                    [
+                        "art_name",
+                        {
+                            "t": "string",
+                            "v": "56ysMuevhw=="
+                        }
+                    ],
+                    [
+                        "art_en",
+                        {
+                            "t": "string",
+                            "v": "YTI="
+                        }
+                    ],
+                    [
+                        "art_time",
+                        {
+                            "t": "int",
+                            "v": "1577923200"
+                        }
+                    ],
+                    [
+                        "type",
+                        {
+                            "t": "array",
+                            "v": [
+                                [
+                                    "type_en",
+                                    {
+                                        "t": "string",
+                                        "v": "c3ViLWE="
+                                    }
+                                ]
+                            ]
+                        }
+                    ],
+                    [
+                        "type_1",
+                        {
+                            "t": "array",
+                            "v": [
+                                [
+                                    "type_id",
+                                    {
+                                        "t": "int",
+                                        "v": "9101"
+                                    }
+                                ],
+                                [
+                                    "type_en",
+                                    {
+                                        "t": "string",
+                                        "v": "dG9wLWE="
+                                    }
+                                ]
+                            ]
+                        }
+                    ]
+                ]
+            }
+        ]
+    ]
+}

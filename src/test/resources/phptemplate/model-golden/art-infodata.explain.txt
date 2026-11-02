@@ -1,0 +1,18 @@
+mysql_version: 5.7.44
+
+--- EXPLAIN php-lt ---
+sql: SELECT * FROM mac_art WHERE art_status=1 AND art_id < 910002 LIMIT 1
+{"id":1,"select_type":"SIMPLE","table":"mac_art","partitions":null,"type":"range","possible_keys":"PRIMARY","key":"PRIMARY","key_len":"4","ref":null,"rows":3,"filtered":10,"Extra":"Using index condition; Using where"}
+
+--- EXPLAIN php-gt ---
+sql: SELECT * FROM mac_art WHERE art_status=1 AND art_id > 910051 LIMIT 1
+{"id":1,"select_type":"SIMPLE","table":"mac_art","partitions":null,"type":"range","possible_keys":"PRIMARY","key":"PRIMARY","key_len":"4","ref":null,"rows":3,"filtered":10,"Extra":"Using index condition; Using where"}
+
+--- EXPLAIN java-lt ---
+sql: SELECT /*+ MAX_EXECUTION_TIME(3000) */ art_id, type_id, art_name, art_en, art_time FROM mac_art WHERE art_status = 1 AND art_id < 910002 LIMIT 1
+{"id":1,"select_type":"SIMPLE","table":"mac_art","partitions":null,"type":"range","possible_keys":"PRIMARY","key":"PRIMARY","key_len":"4","ref":null,"rows":3,"filtered":10,"Extra":"Using index condition; Using where"}
+
+--- EXPLAIN java-gt ---
+sql: SELECT /*+ MAX_EXECUTION_TIME(3000) */ art_id, type_id, art_name, art_en, art_time FROM mac_art WHERE art_status = 1 AND art_id > 910051 LIMIT 1
+{"id":1,"select_type":"SIMPLE","table":"mac_art","partitions":null,"type":"range","possible_keys":"PRIMARY","key":"PRIMARY","key_len":"4","ref":null,"rows":3,"filtered":10,"Extra":"Using index condition; Using where"}
+

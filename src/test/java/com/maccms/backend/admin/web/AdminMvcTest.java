@@ -213,6 +213,75 @@ class AdminMvcTest {
         }
     }
 
+    /** APPK-2 ADM-6：契约登记的路径只受理方法表内的方法，其他方法 405 + Allow，先于来源校验与登录检查；未登记路径维持基线。 */
+    @Test
+    void registeredPathsRejectUnlistedMethodsWith405() throws Exception {
+        record Row(String method, String path, String allow) {
+        }
+        for (Row row : List.of(new Row("GET", "/admin/database/import", "POST"), new Row("HEAD", "/admin/database/import.html", "POST"),
+                new Row("GET", "/admin/database/recover", "POST"), new Row("GET", "/admin/database/acknowledge", "POST"),
+                new Row("HEAD", "/admin/database/index", "GET"), new Row("POST", "/admin/database/index", "GET"),
+                new Row("PUT", "/admin/template/info", "GET, POST"), new Row("DELETE", "/admin/template/del", "GET, POST"),
+                new Row("HEAD", "/admin/make/make", "GET, POST"), new Row("POST", "/admin/collect/api", "GET"),
+                new Row("HEAD", "/admin/images/sync", "GET, POST"), new Row("PATCH", "/admin/index/clear", "GET, POST"),
+                new Row("PUT", "/admin/index/welcome", "GET, HEAD, POST"))) {
+            MvcResult r = mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                    .request(org.springframework.http.HttpMethod.valueOf(row.method()), E + row.path())
+                    .header("Origin", "https://evil.example.com")).andReturn();
+            assertThat(r.getResponse().getStatus()).as(row.toString()).isEqualTo(405);
+            assertThat(r.getResponse().getHeader("Allow")).as(row.toString()).isEqualTo(row.allow());
+            assertThat(r.getResponse().getHeader("Cache-Control")).as(row.toString()).isEqualTo("no-store");
+            assertThat(r.getResponse().getHeader("Set-Cookie")).as(row.toString()).isNull();
+            if (!row.method().equals("HEAD")) {
+                assertThat(body(r)).as(row.toString()).isEqualTo("Method Not Allowed");
+            }
+        }
+        // 受理的方法照常进入后续判定（未登录 → 登录页）；控制器不存在先 404
+        for (String p : List.of("/admin/database/index", "/admin/template/info", "/admin/collect/api")) {
+            assertThat(mvc.perform(get(E + p)).andReturn().getResponse().getStatus()).as(p).isEqualTo(302);
+        }
+        assertThat(mvc.perform(post(E + "/admin/database/import")).andReturn().getResponse().getStatus()).isEqualTo(302);
+        assertThat(mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put(E + "/admin/nosuch/thing"))
+                .andReturn().getResponse().getStatus()).isEqualTo(404);
+        assertThat(AdminMethodPolicy.registered("index/welcome")).isFalse();
+        assertThat(AdminMethodPolicy.codes()).hasSize(28);
+    }
+
+    /** APPK-2 TRN-1：参数超过 1000 个或表单正文超过 8 MiB → 「参数错误」（HTTP 200，不是 400），在 ADM-6 之后判定；上限之内照常处理。 */
+    @Test
+    void inputLimitsReturnParamErrorInsteadOf400() throws Exception {
+        String fail = "{\"code\":0,\"msg\":\"参数错误\",\"data\":\"\",\"url\":\"\",\"wait\":3}";
+        String many = java.util.stream.IntStream.range(0, 1001).mapToObj(i -> "p" + i + "=1")
+                .collect(java.util.stream.Collectors.joining("&"));
+        String limit = java.util.stream.IntStream.range(0, 1000).mapToObj(i -> "p" + i + "=1")
+                .collect(java.util.stream.Collectors.joining("&"));
+        MvcResult r = mvc.perform(ajax(post(E + "/admin/database/sql").contentType("application/x-www-form-urlencoded")
+                .content(many))).andReturn();
+        assertThat(r.getResponse().getStatus()).isEqualTo(200);
+        assertThat(body(r)).isEqualTo(fail);
+        // 查询串与表单合计
+        String half = java.util.stream.IntStream.range(0, 501).mapToObj(i -> "q" + i + "=1")
+                .collect(java.util.stream.Collectors.joining("&"));
+        assertThat(body(mvc.perform(ajax(post(E + "/admin/database/sql?" + half).contentType("application/x-www-form-urlencoded")
+                .content(half))).andReturn())).isEqualTo(fail);
+        assertThat(body(mvc.perform(ajax(get(E + "/admin/database/index?" + many))).andReturn())).isEqualTo(fail);
+        // 正文超过 8 MiB
+        byte[] big = ("sql=" + "a".repeat(AdminController.MAX_FORM_BYTES)).getBytes(StandardCharsets.US_ASCII);
+        MvcResult b = mvc.perform(ajax(post(E + "/admin/database/sql").contentType("application/x-www-form-urlencoded")
+                .content(big))).andReturn();
+        assertThat(b.getResponse().getStatus()).isEqualTo(200);
+        assertThat(body(b)).isEqualTo(fail);
+        // 方法表先判（405）
+        assertThat(mvc.perform(get(E + "/admin/database/import?" + many)).andReturn().getResponse().getStatus()).isEqualTo(405);
+        // 恰好 1000 个参数、正文恰好 8 MiB：不触发上限（未登录 → 登录页）
+        assertThat(mvc.perform(post(E + "/admin/database/sql").contentType("application/x-www-form-urlencoded").content(limit))
+                .andReturn().getResponse().getStatus()).isEqualTo(302);
+        byte[] exact = ("sql=" + "a".repeat(AdminController.MAX_FORM_BYTES - 4)).getBytes(StandardCharsets.US_ASCII);
+        assertThat(mvc.perform(post(E + "/admin/database/sql").contentType("application/x-www-form-urlencoded").content(exact))
+                .andReturn().getResponse().getStatus()).isEqualTo(302);
+        assertThat(AdminController.segments("a=1&&b=2&".getBytes(StandardCharsets.US_ASCII))).isEqualTo(2);
+    }
+
     @Test
     void loginPageVariantsRender() throws Exception {
         for (String p : List.of("/admin/index/login", "/admin/index/login.html", "/admin/Index/LOGIN.html",
@@ -335,7 +404,9 @@ class AdminMvcTest {
             if (code.contains("?")) {
                 continue;
             }
-            MvcResult r = as(sid, ajax(get(E + "/admin/" + code)));
+            // 只受理 POST 的动作（ADM-6）用 POST 访问，其余用 GET
+            boolean postOnly = !AdminMethodPolicy.allowed(code).contains("GET");
+            MvcResult r = as(sid, ajax(postOnly ? post(E + "/admin/" + code) : get(E + "/admin/" + code)));
             String b = body(r);
             if (code.equals("index/welcome")) {
                 if (!b.startsWith("\"<!DOCTYPE html>")) {

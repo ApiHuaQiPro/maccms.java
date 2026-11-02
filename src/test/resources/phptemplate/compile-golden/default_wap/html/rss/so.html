@@ -1,0 +1,10 @@
+<?php echo '<?'; ?>
+xml version="1.0" encoding="UTF-8"?>
+<sitemapindex>
+{maccms:vod num="30" paging="yes" order="desc" by="time"}
+<sitemap>
+<loc>http://<?php echo $maccms['site_url']; ?><?php echo mac_url_vod_detail($vo); ?></loc>
+<lastmod><?php echo date('Y-m-d',$vo['vod_time']); ?></lastmod>
+</sitemap>
+{/maccms:vod}
+</sitemapindex>

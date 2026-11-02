@@ -1,0 +1,1691 @@
+{
+    "_meta": {
+        "generator": "src/test/php/tpl_runtime_golden.php --compile",
+        "php": "7.3.33",
+        "package": "200cffc5d01090faf4f61e153feb472b107b34df",
+        "design": "9c73bf6ced044f40eeb87ef7861e616b6157499a",
+        "file_count": 168
+    },
+    "files": [
+        {
+            "path": "default_pc/html/actor/detail.html",
+            "source_sha1": "970dbd255b122564a955888e0b8ca7a7db65de85",
+            "source_bytes": 9208,
+            "compiled_sha1": "9f7cfde0ab4e3bcb416916de6b862b5e4af91755",
+            "compiled_bytes": 14797,
+            "php_chunks": 104,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/actor/index.html",
+            "source_sha1": "aabd6d9aabd5f5bef483355f1436c53d79a7bf57",
+            "source_bytes": 3539,
+            "compiled_sha1": "4018166e70c8219d8e51594c77c3d510883ef175",
+            "compiled_bytes": 8747,
+            "php_chunks": 81,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/actor/rss.html",
+            "source_sha1": "f4f54872c03bbdd2908724f5b1811975a3168b4b",
+            "source_bytes": 410,
+            "compiled_sha1": "481cca2c55cdc2da2c0df7aee0f62d1376d6557f",
+            "compiled_bytes": 525,
+            "php_chunks": 7,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/actor/show.html",
+            "source_sha1": "eb11673a649b167a525e52595cbc5ebb25b59d22",
+            "source_bytes": 4877,
+            "compiled_sha1": "764a67dce21bb199769d197370f1296048599245",
+            "compiled_bytes": 11761,
+            "php_chunks": 118,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/art/confirm.html",
+            "source_sha1": "2a3d4125d293253315a5b01b057eee2744a836ff",
+            "source_bytes": 1406,
+            "compiled_sha1": "ea07d74ace0c412367c30f35db4f8535616c580e",
+            "compiled_bytes": 1570,
+            "php_chunks": 13,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/art/detail.html",
+            "source_sha1": "293b8549b89822aebd013bdbebd8a49b2f9a5b6f",
+            "source_bytes": 3365,
+            "compiled_sha1": "86c9626dc27cdbc6a7ec0dcda80646a87ffb0961",
+            "compiled_bytes": 10182,
+            "php_chunks": 101,
+            "model_calls": 2,
+            "info_data_calls": 2
+        },
+        {
+            "path": "default_pc/html/art/detail_pwd.html",
+            "source_sha1": "6420ee1c1b681fa0719a4bcc48d327cad24f34e1",
+            "source_bytes": 2016,
+            "compiled_sha1": "3465481f963752dd80a893dd6ca98cb1d2f4794c",
+            "compiled_bytes": 2164,
+            "php_chunks": 12,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/art/index.html",
+            "source_sha1": "7529e26709201d255e222b024a5255cbdefe2276",
+            "source_bytes": 1756,
+            "compiled_sha1": "f947f854c69ab8b210efb382a6515fffa06dafe9",
+            "compiled_bytes": 6645,
+            "php_chunks": 62,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/art/rss.html",
+            "source_sha1": "89f5d514b47e0391b55349d3d0b86c7e5a49df8e",
+            "source_bytes": 994,
+            "compiled_sha1": "cd1ce578c8695323ce6690b5f46b4d7fab632486",
+            "compiled_bytes": 1283,
+            "php_chunks": 18,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/art/search.html",
+            "source_sha1": "26c1032946e591fb5619ab7627ddcce9fad90760",
+            "source_bytes": 379,
+            "compiled_sha1": "393e86a1f8304fad462a3b91bd11d47c276cb0fb",
+            "compiled_bytes": 5136,
+            "php_chunks": 51,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/art/type.html",
+            "source_sha1": "f81086a86c91532fa39880fc7f76c39bb517fa00",
+            "source_bytes": 1593,
+            "compiled_sha1": "9ad0ca8e702db17bdcf2982ee1a2e19ac0d9e64a",
+            "compiled_bytes": 8232,
+            "php_chunks": 85,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/comment/ajax.html",
+            "source_sha1": "e536ddff2fe394ccd6938474dd690f9679e52610",
+            "source_bytes": 6496,
+            "compiled_sha1": "a21e7d1a4d4aefc6669a5900964642a4a9c7ec70",
+            "compiled_bytes": 7048,
+            "php_chunks": 39,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/comment/index.html",
+            "source_sha1": "b9a503cc4e1314304ff63ccd99bd65a4819ec5ab",
+            "source_bytes": 3769,
+            "compiled_sha1": "084a2032ca88713a95c305571511c6c5aa462f8e",
+            "compiled_bytes": 9483,
+            "php_chunks": 77,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/gbook/index.html",
+            "source_sha1": "79f60009701d3276d5a2adc08e2e7055c42265bb",
+            "source_bytes": 2824,
+            "compiled_sha1": "d36f8cb80c0e215567474ca2503f01b3b6943579",
+            "compiled_bytes": 9409,
+            "php_chunks": 82,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/gbook/report.html",
+            "source_sha1": "c06f6ecfa298e283e8fb9e1b35c6f3f3d421bec0",
+            "source_bytes": 1096,
+            "compiled_sha1": "bfdd50ab2514d23d30cdbc4f4cf4cd594e8b190e",
+            "compiled_bytes": 1170,
+            "php_chunks": 6,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/index/index.html",
+            "source_sha1": "59541fc8c8573734310f67507ab91adb8afe7f85",
+            "source_bytes": 14610,
+            "compiled_sha1": "a5094e474665464f3b54c30195a817c06f0c5424",
+            "compiled_bytes": 14850,
+            "php_chunks": 20,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/label/rank.html",
+            "source_sha1": "7f245969da2e18247bac45e27ecb946506e55097",
+            "source_bytes": 6361,
+            "compiled_sha1": "ebcaa7f5240e5d5324a85c428f0347e53bc519c6",
+            "compiled_bytes": 11754,
+            "php_chunks": 96,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/map/index.html",
+            "source_sha1": "4b8450f0e73103c008419a5db442511a55f360a5",
+            "source_bytes": 2371,
+            "compiled_sha1": "98027f9e9451eb46391ce7a90f99f0c0d251e0e2",
+            "compiled_bytes": 7390,
+            "php_chunks": 71,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/plot/detail.html",
+            "source_sha1": "a9588f1cf49a5b86f088af49a95e291c50d385a6",
+            "source_bytes": 2529,
+            "compiled_sha1": "def27a2afd687cbbe35f029007e9fa67aa970596",
+            "compiled_bytes": 7635,
+            "php_chunks": 78,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/plot/index.html",
+            "source_sha1": "9ee0dfda53b0782ede443c87a09bea1e1184daae",
+            "source_bytes": 176,
+            "compiled_sha1": "9ee0dfda53b0782ede443c87a09bea1e1184daae",
+            "compiled_bytes": 176,
+            "php_chunks": 0,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/public/browser.html",
+            "source_sha1": "b0237fdd1bd03f9cb68e00b6ffff8c2d8852b189",
+            "source_bytes": 4394,
+            "compiled_sha1": "6e4c9569d06f2b64e573cf9f83e9d3c58d6a6e68",
+            "compiled_bytes": 4474,
+            "php_chunks": 5,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/public/close.html",
+            "source_sha1": "66a40f45e67b7c788303a213ef910249671a2b05",
+            "source_bytes": 571,
+            "compiled_sha1": "3bf93ba92d092cbda9cf8b29a5963e00dbc3a2ac",
+            "compiled_bytes": 584,
+            "php_chunks": 1,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/public/digg.html",
+            "source_sha1": "c7ad735cd9de18c1ab59c35d818368cb3df045f3",
+            "source_bytes": 672,
+            "compiled_sha1": "acd3480d2395bf33b9b7774da83febef3226b0ae",
+            "compiled_bytes": 887,
+            "php_chunks": 14,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/public/foot.html",
+            "source_sha1": "8aac4cedd7f8e89739362bbe4a8a9b22a8c57cbf",
+            "source_bytes": 890,
+            "compiled_sha1": "f4d48151631b702ca4994f1d6c4beeeec77bf857",
+            "compiled_bytes": 1030,
+            "php_chunks": 10,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/public/head.html",
+            "source_sha1": "c2c33ab511e0f788d4cfa0e99360e3dddf4e8da1",
+            "source_bytes": 2431,
+            "compiled_sha1": "7f0d13216c569b9f230cc931a14957564a727b7e",
+            "compiled_bytes": 2713,
+            "php_chunks": 23,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/public/include.html",
+            "source_sha1": "9c6b84a26dd4786d63a54d6bb6650666f4677202",
+            "source_bytes": 828,
+            "compiled_sha1": "f3692fe9686bb2d1d4e3ca930c5ca24ecf6923c6",
+            "compiled_bytes": 1037,
+            "php_chunks": 14,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/public/jump.html",
+            "source_sha1": "ebaed4d8035c0a17f28db22714835ba97d8133c0",
+            "source_bytes": 1121,
+            "compiled_sha1": "887c9372e8b5538818bc3ad882303ad47be98807",
+            "compiled_bytes": 1134,
+            "php_chunks": 3,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/public/msg.html",
+            "source_sha1": "bb2f7d78cd9c1342add52067eabd4f2bb9aa9664",
+            "source_bytes": 565,
+            "compiled_sha1": "7e6b721b8e4bfc6d3c15e5ac7c84f49649cb4d2b",
+            "compiled_bytes": 578,
+            "php_chunks": 1,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/public/paging.html",
+            "source_sha1": "bd289353936e7801907c4ab64c0223ffacafde1d",
+            "source_bytes": 1475,
+            "compiled_sha1": "47a148a9f775eb3e678e741c8b3e9c213281647a",
+            "compiled_bytes": 1748,
+            "php_chunks": 21,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/public/score.html",
+            "source_sha1": "704aabee07c1b13a0dcdbc0658b1c7b0730fa95f",
+            "source_bytes": 1207,
+            "compiled_sha1": "cc893c65a84112a4e4455cb2688177ad07faae35",
+            "compiled_bytes": 1262,
+            "php_chunks": 4,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/public/star.html",
+            "source_sha1": "94aefb017c1d8168b2986d8970539e531a1dbd12",
+            "source_bytes": 249,
+            "compiled_sha1": "7e345e6e0dbf4f08dd0e92d0370f41eb53b2cae0",
+            "compiled_bytes": 314,
+            "php_chunks": 4,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/public/star2.html",
+            "source_sha1": "fe85a938d5929da907bebd3607251f1ef289459d",
+            "source_bytes": 1197,
+            "compiled_sha1": "28e82890d1adb546ee4e3699c749cfb2d7da74c8",
+            "compiled_bytes": 1332,
+            "php_chunks": 21,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/role/detail.html",
+            "source_sha1": "2ee74c97c445f10f042723e2483c5898d246f68e",
+            "source_bytes": 308,
+            "compiled_sha1": "18c2f9745a939c103e18e1af93930c2ef7a9e7d9",
+            "compiled_bytes": 340,
+            "php_chunks": 2,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/role/index.html",
+            "source_sha1": "019595c3ffd99c59ff89a0de60cce60f136e6ce7",
+            "source_bytes": 123,
+            "compiled_sha1": "019595c3ffd99c59ff89a0de60cce60f136e6ce7",
+            "compiled_bytes": 123,
+            "php_chunks": 0,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/role/show.html",
+            "source_sha1": "019595c3ffd99c59ff89a0de60cce60f136e6ce7",
+            "source_bytes": 123,
+            "compiled_sha1": "019595c3ffd99c59ff89a0de60cce60f136e6ce7",
+            "compiled_bytes": 123,
+            "php_chunks": 0,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/rss/baidu.html",
+            "source_sha1": "754813de7a83c7e0ec1887720fff3548e5a1a68e",
+            "source_bytes": 313,
+            "compiled_sha1": "bcb6e9fda2f402ee5eb9ce49cf03bb30e12d618e",
+            "compiled_bytes": 372,
+            "php_chunks": 4,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/rss/bing.html",
+            "source_sha1": "754813de7a83c7e0ec1887720fff3548e5a1a68e",
+            "source_bytes": 313,
+            "compiled_sha1": "bcb6e9fda2f402ee5eb9ce49cf03bb30e12d618e",
+            "compiled_bytes": 372,
+            "php_chunks": 4,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/rss/google.html",
+            "source_sha1": "a5ae10c502eb7b82c00ffa82a624a913c1d7165d",
+            "source_bytes": 571,
+            "compiled_sha1": "8b466380d955fb3460f54151e9c8fc20034615c4",
+            "compiled_bytes": 630,
+            "php_chunks": 4,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/rss/index.html",
+            "source_sha1": "a344533fde6ec17f049ba0dc0f606454a10f6de9",
+            "source_bytes": 833,
+            "compiled_sha1": "65a6213aa515ec0c5ef82e93643f6617eb4cb2ea",
+            "compiled_bytes": 1069,
+            "php_chunks": 15,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/rss/sm.html",
+            "source_sha1": "754813de7a83c7e0ec1887720fff3548e5a1a68e",
+            "source_bytes": 313,
+            "compiled_sha1": "bcb6e9fda2f402ee5eb9ce49cf03bb30e12d618e",
+            "compiled_bytes": 372,
+            "php_chunks": 4,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/rss/so.html",
+            "source_sha1": "e8d9ac77effcafde4f2d2a33777d12d6ba140766",
+            "source_bytes": 276,
+            "compiled_sha1": "afe74115d3575573dd67b34401e5ef30b454290b",
+            "compiled_bytes": 335,
+            "php_chunks": 4,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/rss/sogou.html",
+            "source_sha1": "754813de7a83c7e0ec1887720fff3548e5a1a68e",
+            "source_bytes": 313,
+            "compiled_sha1": "bcb6e9fda2f402ee5eb9ce49cf03bb30e12d618e",
+            "compiled_bytes": 372,
+            "php_chunks": 4,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/topic/detail.html",
+            "source_sha1": "e5724cdf063fbd64c5084b0f30ebd5e4d8fb4676",
+            "source_bytes": 2823,
+            "compiled_sha1": "b8be39d99f0104bf43bfb8669859aea0f5dd2fe3",
+            "compiled_bytes": 7977,
+            "php_chunks": 78,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/topic/index.html",
+            "source_sha1": "f3c948e533a6818b47c6faf2d8ec0a407aa8a8af",
+            "source_bytes": 1556,
+            "compiled_sha1": "c1266b15b8c032c4f8c07efb9ba5c93259fa6d7a",
+            "compiled_bytes": 8114,
+            "php_chunks": 78,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/user/ajax_info.html",
+            "source_sha1": "70adf52f16cc345b3ad322293641eb3aecceaaa3",
+            "source_bytes": 829,
+            "compiled_sha1": "97de8d529643858ed0387d2ef15dbb88e8c8fbda",
+            "compiled_bytes": 934,
+            "php_chunks": 7,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/user/ajax_login.html",
+            "source_sha1": "750e6b9bba6bd2837aea561cd793b357f24685f7",
+            "source_bytes": 1088,
+            "compiled_sha1": "c2b5798a8c638f0d64d683e4e677d4e62be08a80",
+            "compiled_bytes": 1131,
+            "php_chunks": 5,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/user/bind.html",
+            "source_sha1": "6e9a77af8b4140dd50c2cc061f4889b6b5df16cc",
+            "source_bytes": 5109,
+            "compiled_sha1": "6dba67d857c917266267e2c293e615486984c571",
+            "compiled_bytes": 8244,
+            "php_chunks": 46,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/user/buy.html",
+            "source_sha1": "e11d65062b2655f0011fbc93a36b01c0d9e90783",
+            "source_bytes": 4033,
+            "compiled_sha1": "3206a05ef922a7416f008ce85fa0a7f22f39333d",
+            "compiled_bytes": 7242,
+            "php_chunks": 48,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/user/cards.html",
+            "source_sha1": "93124ce9d244f26d3d7b7ae3bf977a7f189c125f",
+            "source_bytes": 4178,
+            "compiled_sha1": "c189920feae7cb6b447b905f9636d0846538d9c8",
+            "compiled_bytes": 8112,
+            "php_chunks": 64,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/user/cash.html",
+            "source_sha1": "ece3775120825809483bda853c13e779709a6047",
+            "source_bytes": 7799,
+            "compiled_sha1": "5b62ca009ac202b59b8f74d336ea619c57770d22",
+            "compiled_bytes": 11766,
+            "php_chunks": 70,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/user/downs.html",
+            "source_sha1": "bd66fbd24730608767de156b550c27785c2746c3",
+            "source_bytes": 4815,
+            "compiled_sha1": "445934fe5d20ce1007a832e678d15f3f1fd7bf4a",
+            "compiled_bytes": 8808,
+            "php_chunks": 67,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/user/favs.html",
+            "source_sha1": "02f46bb2ff7843744bdb10d52aae8d2a14755bd9",
+            "source_bytes": 4803,
+            "compiled_sha1": "ae0ee112bb9d02e995af8a0ad89b569c84379475",
+            "compiled_bytes": 8740,
+            "php_chunks": 67,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/user/findpass.html",
+            "source_sha1": "13053d3d2f114cdd94fc8ead01a83c692c569159",
+            "source_bytes": 4024,
+            "compiled_sha1": "0dfd9fdc9c00f20c9c6c4be5d033ec5417451768",
+            "compiled_bytes": 6519,
+            "php_chunks": 31,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/user/findpass_msg.html",
+            "source_sha1": "534f65f20c2c100d878965d65631059f9b91ad86",
+            "source_bytes": 4979,
+            "compiled_sha1": "954c1d518e5f39840c488ad4fedd62bb87d89314",
+            "compiled_bytes": 7565,
+            "php_chunks": 38,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/user/foot.html",
+            "source_sha1": "0b0f4f15669d05d433402ef1a6e029662f015b06",
+            "source_bytes": 1136,
+            "compiled_sha1": "5eb02bf8d614cb60040ee6415c5deaa19c6c7b59",
+            "compiled_bytes": 1184,
+            "php_chunks": 3,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/user/head.html",
+            "source_sha1": "d0cd40f14aba2a29fc8b18b57303a8105a9f593c",
+            "source_bytes": 518,
+            "compiled_sha1": "283a8f41e518bb6ca5736353431fc24a463215de",
+            "compiled_bytes": 594,
+            "php_chunks": 5,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/user/include.html",
+            "source_sha1": "65fe9fdcd60d3fcdc359bbd9366fe207bfe98350",
+            "source_bytes": 962,
+            "compiled_sha1": "a8c811376d324849e78c5c76c81dc34a1754f6af",
+            "compiled_bytes": 1190,
+            "php_chunks": 15,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/user/index.html",
+            "source_sha1": "4d3689324497b1cbca1a37e0d9edbae6fe3c471b",
+            "source_bytes": 6142,
+            "compiled_sha1": "c3ad9beb869fb96f930cad34eccc963c0f652991",
+            "compiled_bytes": 8385,
+            "php_chunks": 57,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/user/info.html",
+            "source_sha1": "db1c6e44c9e6e7e51be49fc4718b0587f602d686",
+            "source_bytes": 5224,
+            "compiled_sha1": "50bfbad1e5885097ee088be59bcb07b74b02a1fa",
+            "compiled_bytes": 8518,
+            "php_chunks": 57,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/user/login.html",
+            "source_sha1": "af7df1f05134c8cf17d0801fe80b5da4265ce0b0",
+            "source_bytes": 3425,
+            "compiled_sha1": "5dd90f9fb0c96101d16c093545abf702abaa04e2",
+            "compiled_bytes": 5886,
+            "php_chunks": 32,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/user/orders.html",
+            "source_sha1": "e04de34d1dfc9f7d4ee9ca2b1658254ad0215319",
+            "source_bytes": 4508,
+            "compiled_sha1": "d65762d465115d007a0a39aa4e2fc3acb8066131",
+            "compiled_bytes": 8498,
+            "php_chunks": 71,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/user/pay.html",
+            "source_sha1": "b4bb282956ea3b4a5f89ff43e85567302c76a259",
+            "source_bytes": 3231,
+            "compiled_sha1": "77fe060df89e7d12e67f2a02468a2445d853f1ab",
+            "compiled_bytes": 6691,
+            "php_chunks": 55,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/user/payment_weixin.html",
+            "source_sha1": "d030a454de4744227b130bb942a64db7706d1a73",
+            "source_bytes": 2153,
+            "compiled_sha1": "a8506f1bf090d9ca37b616d3f3034d33f4fb8ccc",
+            "compiled_bytes": 5352,
+            "php_chunks": 45,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/user/plays.html",
+            "source_sha1": "f2a20800b8e817eff9ea8a84124b4eb183406507",
+            "source_bytes": 4924,
+            "compiled_sha1": "038d665e254691c475b625b27166e8b22de8da7d",
+            "compiled_bytes": 8899,
+            "php_chunks": 66,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/user/plog.html",
+            "source_sha1": "6cb2a0cb02e4ce337850e88f42ba0ae4f21791f8",
+            "source_bytes": 4838,
+            "compiled_sha1": "96cff6ca2769d9c9f0ba66987d3d4d8179e2fabd",
+            "compiled_bytes": 8704,
+            "php_chunks": 62,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/user/popedom.html",
+            "source_sha1": "2d522f29e79b7f0e597c367a2fef66dc87012525",
+            "source_bytes": 2789,
+            "compiled_sha1": "c924cac9c544f793eaf2bb82daff52e1115ea0a2",
+            "compiled_bytes": 5787,
+            "php_chunks": 55,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/user/reg.html",
+            "source_sha1": "7de0b172f1f07b4bc8cb4930a8a5f3e259914a40",
+            "source_bytes": 6127,
+            "compiled_sha1": "35f73eba2ddebff93cf97f5fedcf8c0b6cfd0eb5",
+            "compiled_bytes": 8602,
+            "php_chunks": 33,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/user/reward.html",
+            "source_sha1": "a5f14b211f85d32389a096caee4e1abaaf40ee11",
+            "source_bytes": 3869,
+            "compiled_sha1": "3b81bf7e743aaf713069c98d9d48a7b6aefa7714",
+            "compiled_bytes": 7718,
+            "php_chunks": 65,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/user/upgrade.html",
+            "source_sha1": "453ffb1612ccee588b9fe277e44a495ed39c45b4",
+            "source_bytes": 4284,
+            "compiled_sha1": "b3c94355908678bbe2e128c673fda5cabfa28be3",
+            "compiled_bytes": 8020,
+            "php_chunks": 67,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/vod/confirm.html",
+            "source_sha1": "d7fbe963442ddbd0328d533a21a561e91801c62a",
+            "source_bytes": 1490,
+            "compiled_sha1": "1f5627a2024c7607ff08d84baa0e0d8786c29d69",
+            "compiled_bytes": 1690,
+            "php_chunks": 17,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/vod/copyright.html",
+            "source_sha1": "daace3d23020f90f120a378481368585e8d1b4fd",
+            "source_bytes": 1446,
+            "compiled_sha1": "e39d1b0f4d096fda6f360b6b6164a5c92a9c8aaa",
+            "compiled_bytes": 1497,
+            "php_chunks": 8,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/vod/detail.html",
+            "source_sha1": "e1efcd3d3bc51ad2da1539a6b55cc367a6387350",
+            "source_bytes": 11121,
+            "compiled_sha1": "fce6782df6e1544699c0c12012152d8f8a76894e",
+            "compiled_bytes": 18373,
+            "php_chunks": 150,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/vod/detail_pwd.html",
+            "source_sha1": "249c3961bbc3c8cb97de0ba3a11c97632d798ad5",
+            "source_bytes": 2015,
+            "compiled_sha1": "f87e5238e86e4ac694fe5d0be37f6ff46442b8e8",
+            "compiled_bytes": 2163,
+            "php_chunks": 12,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/vod/down.html",
+            "source_sha1": "42265cd2e0837656e03e06a7e648a4377f755afc",
+            "source_bytes": 2273,
+            "compiled_sha1": "f0fa38be287666f839c1f4407b56baf22436b019",
+            "compiled_bytes": 7315,
+            "php_chunks": 70,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/vod/downer.html",
+            "source_sha1": "217ce2707daee2bfab5ae7ce985acfd29c2c7b44",
+            "source_bytes": 2875,
+            "compiled_sha1": "5a3604bf67b6e6918416207fcbdfeae40f4bc158",
+            "compiled_bytes": 3160,
+            "php_chunks": 25,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/vod/downer_pwd.html",
+            "source_sha1": "ee30feb1d8f7de52c9e308dc252db32c09b11b83",
+            "source_bytes": 2025,
+            "compiled_sha1": "8774ce4231dd3a3469bddbfec32ec0b44bbdb39b",
+            "compiled_bytes": 2173,
+            "php_chunks": 12,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/vod/index.html",
+            "source_sha1": "f44c25845babccad2dfe4a768d4a2e93c874b119",
+            "source_bytes": 19014,
+            "compiled_sha1": "0119350aec0509c8244369a7ebca6e54e627fdc9",
+            "compiled_bytes": 26807,
+            "php_chunks": 256,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/vod/play.html",
+            "source_sha1": "a1444ae1eb6595d84edc73610fbd49f21443671a",
+            "source_bytes": 3889,
+            "compiled_sha1": "f6ac917f6ba030cba9e2a941530f2c1bfc65baa9",
+            "compiled_bytes": 9321,
+            "php_chunks": 96,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/vod/player.html",
+            "source_sha1": "826f069372fddf5809344c1525368d2f557c455c",
+            "source_bytes": 2888,
+            "compiled_sha1": "2feea995f70c2c173f9d73c1cda00c4ebc3d17a2",
+            "compiled_bytes": 3173,
+            "php_chunks": 25,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/vod/player_pwd.html",
+            "source_sha1": "ec5908fe2a278ee4813dee0d5dea338d6df09dad",
+            "source_bytes": 2025,
+            "compiled_sha1": "888e43de3abedacac16037c793fcd6eca6609c19",
+            "compiled_bytes": 2173,
+            "php_chunks": 12,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/vod/plot.html",
+            "source_sha1": "d31476e05cd6f35b94051f34ed148aead43768a5",
+            "source_bytes": 2694,
+            "compiled_sha1": "e42994ab1b90b92cb16a4a8b2fef2c2cdfc1a68d",
+            "compiled_bytes": 9694,
+            "php_chunks": 92,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/vod/role.html",
+            "source_sha1": "8b9ece095245e0d78d6eb71de47efec60384b546",
+            "source_bytes": 258,
+            "compiled_sha1": "702d00d0d30457f8241cee42cbc37d8bc96501fa",
+            "compiled_bytes": 565,
+            "php_chunks": 5,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/vod/rss.html",
+            "source_sha1": "c7b22b3676b69537b0131731dd9ce6f3024180ce",
+            "source_bytes": 1106,
+            "compiled_sha1": "cb3773cc336287b5522629ef154ae7e27ba568b9",
+            "compiled_bytes": 1416,
+            "php_chunks": 19,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/vod/search.html",
+            "source_sha1": "016acedd5245cef6d2e3ea34fb9c0eadb81d9f46",
+            "source_bytes": 4467,
+            "compiled_sha1": "54b664d6857452a188470fe4e7d54bd69bac763b",
+            "compiled_bytes": 11802,
+            "php_chunks": 133,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/vod/show.html",
+            "source_sha1": "2f418707c2e21db7ca902eba6a3da1046104f7b3",
+            "source_bytes": 9818,
+            "compiled_sha1": "da26c6a25d9e789f3f7543fb8a6bb511e88e2b36",
+            "compiled_bytes": 17664,
+            "php_chunks": 154,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/vod/type.html",
+            "source_sha1": "43ae25e55bb8523efe4c2ef5c44263fbd2baaa75",
+            "source_bytes": 7704,
+            "compiled_sha1": "47f03954ef8ea150ce945369712ef26c600be704",
+            "compiled_bytes": 15743,
+            "php_chunks": 155,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/website/detail.html",
+            "source_sha1": "f9d6cd7cfc4b806d136afae2232d54a4446f98c5",
+            "source_bytes": 7534,
+            "compiled_sha1": "37408166696afb42ed34bb943d15e3ed964e10d1",
+            "compiled_bytes": 14301,
+            "php_chunks": 116,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/website/index.html",
+            "source_sha1": "060889abcb573eca0e7ed833cf34c8a9f9c8d6a0",
+            "source_bytes": 2615,
+            "compiled_sha1": "ac1a44b32f2fb5e7cf713bef1bbba01cd5f79a2a",
+            "compiled_bytes": 7569,
+            "php_chunks": 64,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/website/rss.html",
+            "source_sha1": "0c378871c19143129502c1d4f622927356e570ff",
+            "source_bytes": 471,
+            "compiled_sha1": "28064fe4e5591de0373aae4ce648afcbc3fe2aa8",
+            "compiled_bytes": 586,
+            "php_chunks": 7,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/website/search.html",
+            "source_sha1": "a652badace965540687d5d24b82a66f07b09dd23",
+            "source_bytes": 2720,
+            "compiled_sha1": "7eee0a79d5b90844be05b3b0bc95b9714121961b",
+            "compiled_bytes": 9460,
+            "php_chunks": 89,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/website/show.html",
+            "source_sha1": "93f7054a50b326800e891c7d7c4e4e21feb90f03",
+            "source_bytes": 8722,
+            "compiled_sha1": "05ed2c63891b0cb10fbaba684d9eeaca3262e177",
+            "compiled_bytes": 16372,
+            "php_chunks": 145,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_pc/html/website/type.html",
+            "source_sha1": "b30f3fffcb4fd4964aa92acf7921b34804d95d29",
+            "source_bytes": 2526,
+            "compiled_sha1": "fb5c0f11df3ec09c254520f827d48f9b56102dad",
+            "compiled_bytes": 9262,
+            "php_chunks": 89,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_wap/html/art/confirm.html",
+            "source_sha1": "7a666c1f9927198430da4e8995c71952085ff259",
+            "source_bytes": 1401,
+            "compiled_sha1": "2c84bb9740fb45c13e1446aefd1a77a3c8c805af",
+            "compiled_bytes": 1562,
+            "php_chunks": 13,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_wap/html/art/detail.html",
+            "source_sha1": "7f356e1d3b0c7e88172408d73ab36736edbb6a42",
+            "source_bytes": 1471,
+            "compiled_sha1": "99405bf05a64161ce58f6f8b95dd5b7f12e1d649",
+            "compiled_bytes": 3936,
+            "php_chunks": 30,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_wap/html/art/detail_pwd.html",
+            "source_sha1": "e90efa721aa2fd0cc0b0ba65d457d635e7c80565",
+            "source_bytes": 2015,
+            "compiled_sha1": "bfd3c0519c03ab64e0691bbd1eebd0a0870a5a7f",
+            "compiled_bytes": 2163,
+            "php_chunks": 12,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_wap/html/art/rss.html",
+            "source_sha1": "4c6199dae49cacf33fa40d27b3d6e872110c6b60",
+            "source_bytes": 907,
+            "compiled_sha1": "3035a8094235d806fce756445784495b4a8f4876",
+            "compiled_bytes": 1148,
+            "php_chunks": 18,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_wap/html/art/search.html",
+            "source_sha1": "26c1032946e591fb5619ab7627ddcce9fad90760",
+            "source_bytes": 379,
+            "compiled_sha1": "b892591f0f2444a3ab67d389514fda1c6ff47700",
+            "compiled_bytes": 2767,
+            "php_chunks": 25,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_wap/html/art/type.html",
+            "source_sha1": "dc879f94a6c99f330fc50b9eb415bafe0cace065",
+            "source_bytes": 1414,
+            "compiled_sha1": "a516a51dd891182640a3a36a41c55e5e598f8d72",
+            "compiled_bytes": 5437,
+            "php_chunks": 47,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_wap/html/comment/ajax.html",
+            "source_sha1": "98beafe138da6b16472982e13e36489f1eca50ec",
+            "source_bytes": 6432,
+            "compiled_sha1": "b2fe12ff7d51f3bf80124ef490b7b002ed5512d1",
+            "compiled_bytes": 6968,
+            "php_chunks": 38,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_wap/html/comment/index.html",
+            "source_sha1": "b9a503cc4e1314304ff63ccd99bd65a4819ec5ab",
+            "source_bytes": 3769,
+            "compiled_sha1": "f0aadcad6edd55bca9a843914cc773f65d672336",
+            "compiled_bytes": 7863,
+            "php_chunks": 57,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_wap/html/gbook/index.html",
+            "source_sha1": "01dd9daade031a865154675a730fc98297f46d30",
+            "source_bytes": 3206,
+            "compiled_sha1": "50efe6dc18eb6987ae180849363cf03d808ef0f9",
+            "compiled_bytes": 7315,
+            "php_chunks": 55,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_wap/html/gbook/report.html",
+            "source_sha1": "c06f6ecfa298e283e8fb9e1b35c6f3f3d421bec0",
+            "source_bytes": 1096,
+            "compiled_sha1": "bfdd50ab2514d23d30cdbc4f4cf4cd594e8b190e",
+            "compiled_bytes": 1170,
+            "php_chunks": 6,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_wap/html/index/index.html",
+            "source_sha1": "160f95375f032b0d76c4a5922d1bd0d72930a829",
+            "source_bytes": 7058,
+            "compiled_sha1": "15d358366cf4f44168d1442e2727fa839b54a0e8",
+            "compiled_bytes": 10223,
+            "php_chunks": 82,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_wap/html/label/rank.html",
+            "source_sha1": "e6559943e003992c081e720e4d259cf6889f6502",
+            "source_bytes": 4539,
+            "compiled_sha1": "7a5f7218f3abfb85436a4301d82861601ae91828",
+            "compiled_bytes": 7255,
+            "php_chunks": 62,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_wap/html/map/index.html",
+            "source_sha1": "74114689863977218a5ec6bf367198d8b9071853",
+            "source_bytes": 1724,
+            "compiled_sha1": "a08aa9f0eee2be2f14f67f082fb10e5302b34cd2",
+            "compiled_bytes": 4161,
+            "php_chunks": 30,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_wap/html/plot/detail.html",
+            "source_sha1": "18fac1c9ebae1f34bd5c2870f474fc7b4d088395",
+            "source_bytes": 2005,
+            "compiled_sha1": "fb91dda8b7de20e7e12354b94ea31970eb52d3a0",
+            "compiled_bytes": 4523,
+            "php_chunks": 38,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_wap/html/plot/index.html",
+            "source_sha1": "9ecd2518669056c2bfa31e6789ebe1cdc424a2f9",
+            "source_bytes": 172,
+            "compiled_sha1": "9ecd2518669056c2bfa31e6789ebe1cdc424a2f9",
+            "compiled_bytes": 172,
+            "php_chunks": 0,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_wap/html/public/browser.html",
+            "source_sha1": "b0237fdd1bd03f9cb68e00b6ffff8c2d8852b189",
+            "source_bytes": 4394,
+            "compiled_sha1": "6e4c9569d06f2b64e573cf9f83e9d3c58d6a6e68",
+            "compiled_bytes": 4474,
+            "php_chunks": 5,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_wap/html/public/close.html",
+            "source_sha1": "66a40f45e67b7c788303a213ef910249671a2b05",
+            "source_bytes": 571,
+            "compiled_sha1": "3bf93ba92d092cbda9cf8b29a5963e00dbc3a2ac",
+            "compiled_bytes": 584,
+            "php_chunks": 1,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_wap/html/public/digg.html",
+            "source_sha1": "fbc9a08f7a5d8ce21454d83c5468047fe8ae4719",
+            "source_bytes": 636,
+            "compiled_sha1": "6b2796e616df91acadb37b11d39da97247c6c65a",
+            "compiled_bytes": 824,
+            "php_chunks": 14,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_wap/html/public/foot.html",
+            "source_sha1": "f2d9aea39ae902aa3e1aeb15bbf30db8da4a0250",
+            "source_bytes": 125,
+            "compiled_sha1": "1f898e12e55cb714a7ee7ee2744e5a05cd8c39d8",
+            "compiled_bytes": 141,
+            "php_chunks": 1,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_wap/html/public/head.html",
+            "source_sha1": "538f99049da388f3426d2df0f9e55876ef1becde",
+            "source_bytes": 1299,
+            "compiled_sha1": "9ebae1e7c44f00b7f39bc75d5c03d8531f0c2d9a",
+            "compiled_bytes": 1404,
+            "php_chunks": 8,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_wap/html/public/include.html",
+            "source_sha1": "f7cca750e3c0bdb9b90b93e02e754ca34e20a8a1",
+            "source_bytes": 689,
+            "compiled_sha1": "db440466ce0bcf457826a16e699ccf8af5afa1e2",
+            "compiled_bytes": 866,
+            "php_chunks": 12,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_wap/html/public/jump.html",
+            "source_sha1": "e53ceff116b4d52b32c57dd32224ceb5cdcc340b",
+            "source_bytes": 1125,
+            "compiled_sha1": "969992dffaf54dd0a975b079d2939da4131dd228",
+            "compiled_bytes": 1138,
+            "php_chunks": 3,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_wap/html/public/msg.html",
+            "source_sha1": "bb2f7d78cd9c1342add52067eabd4f2bb9aa9664",
+            "source_bytes": 565,
+            "compiled_sha1": "7e6b721b8e4bfc6d3c15e5ac7c84f49649cb4d2b",
+            "compiled_bytes": 578,
+            "php_chunks": 1,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_wap/html/public/paging.html",
+            "source_sha1": "828660b5e0bcba757a30fda768115224955820e3",
+            "source_bytes": 1351,
+            "compiled_sha1": "4e8d3d8f92392decbae9676a4eb1a86dae186850",
+            "compiled_bytes": 1608,
+            "php_chunks": 18,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_wap/html/public/score.html",
+            "source_sha1": "704aabee07c1b13a0dcdbc0658b1c7b0730fa95f",
+            "source_bytes": 1207,
+            "compiled_sha1": "cc893c65a84112a4e4455cb2688177ad07faae35",
+            "compiled_bytes": 1262,
+            "php_chunks": 4,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_wap/html/public/star.html",
+            "source_sha1": "94aefb017c1d8168b2986d8970539e531a1dbd12",
+            "source_bytes": 249,
+            "compiled_sha1": "7e345e6e0dbf4f08dd0e92d0370f41eb53b2cae0",
+            "compiled_bytes": 314,
+            "php_chunks": 4,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_wap/html/public/star2.html",
+            "source_sha1": "fe85a938d5929da907bebd3607251f1ef289459d",
+            "source_bytes": 1197,
+            "compiled_sha1": "28e82890d1adb546ee4e3699c749cfb2d7da74c8",
+            "compiled_bytes": 1332,
+            "php_chunks": 21,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_wap/html/rss/baidu.html",
+            "source_sha1": "754813de7a83c7e0ec1887720fff3548e5a1a68e",
+            "source_bytes": 313,
+            "compiled_sha1": "bcb6e9fda2f402ee5eb9ce49cf03bb30e12d618e",
+            "compiled_bytes": 372,
+            "php_chunks": 4,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_wap/html/rss/bing.html",
+            "source_sha1": "754813de7a83c7e0ec1887720fff3548e5a1a68e",
+            "source_bytes": 313,
+            "compiled_sha1": "bcb6e9fda2f402ee5eb9ce49cf03bb30e12d618e",
+            "compiled_bytes": 372,
+            "php_chunks": 4,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_wap/html/rss/google.html",
+            "source_sha1": "98e49466f7a3d60b5cf2619ba88eb47624d92b87",
+            "source_bytes": 619,
+            "compiled_sha1": "119af44c4e2f3776d70fcd21ee7098218c44fff4",
+            "compiled_bytes": 678,
+            "php_chunks": 4,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_wap/html/rss/index.html",
+            "source_sha1": "a344533fde6ec17f049ba0dc0f606454a10f6de9",
+            "source_bytes": 833,
+            "compiled_sha1": "65a6213aa515ec0c5ef82e93643f6617eb4cb2ea",
+            "compiled_bytes": 1069,
+            "php_chunks": 15,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_wap/html/rss/sm.html",
+            "source_sha1": "754813de7a83c7e0ec1887720fff3548e5a1a68e",
+            "source_bytes": 313,
+            "compiled_sha1": "bcb6e9fda2f402ee5eb9ce49cf03bb30e12d618e",
+            "compiled_bytes": 372,
+            "php_chunks": 4,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_wap/html/rss/so.html",
+            "source_sha1": "e8d9ac77effcafde4f2d2a33777d12d6ba140766",
+            "source_bytes": 276,
+            "compiled_sha1": "afe74115d3575573dd67b34401e5ef30b454290b",
+            "compiled_bytes": 335,
+            "php_chunks": 4,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_wap/html/rss/sogou.html",
+            "source_sha1": "754813de7a83c7e0ec1887720fff3548e5a1a68e",
+            "source_bytes": 313,
+            "compiled_sha1": "bcb6e9fda2f402ee5eb9ce49cf03bb30e12d618e",
+            "compiled_bytes": 372,
+            "php_chunks": 4,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_wap/html/topic/detail.html",
+            "source_sha1": "e911e3037242b4931a61d449b2f42856fdaa983e",
+            "source_bytes": 2801,
+            "compiled_sha1": "92918574e5cb35b3e9db14bb7a44f15c3ed8e8da",
+            "compiled_bytes": 5486,
+            "php_chunks": 44,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_wap/html/topic/index.html",
+            "source_sha1": "af73be8592a13638f5fe52fd109f4ee2b1d8acf2",
+            "source_bytes": 1852,
+            "compiled_sha1": "b00fc217fd38375970e2fb5b19620ff2a6bff7b1",
+            "compiled_bytes": 6694,
+            "php_chunks": 58,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_wap/html/user/ajax_info.html",
+            "source_sha1": "4fe416f729d3f3b6ec8f91e569c59cc5d02a8a7c",
+            "source_bytes": 830,
+            "compiled_sha1": "644f50cb9dac9891f8870a272da93deba4f0b7dd",
+            "compiled_bytes": 935,
+            "php_chunks": 7,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_wap/html/user/ajax_login.html",
+            "source_sha1": "750e6b9bba6bd2837aea561cd793b357f24685f7",
+            "source_bytes": 1088,
+            "compiled_sha1": "c2b5798a8c638f0d64d683e4e677d4e62be08a80",
+            "compiled_bytes": 1131,
+            "php_chunks": 5,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_wap/html/user/bind.html",
+            "source_sha1": "00b0c20e5d9f8a6b9e96b403e1cbf3c41f4b10d4",
+            "source_bytes": 4966,
+            "compiled_sha1": "1ca51039aecf07e577d55a802b21fdad45c0b507",
+            "compiled_bytes": 5312,
+            "php_chunks": 13,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_wap/html/user/buy.html",
+            "source_sha1": "de83bc187819b0474a13015261f4caca4aed4f21",
+            "source_bytes": 3360,
+            "compiled_sha1": "4fd71493ba83ebd93380239b5ee95b7dd514051f",
+            "compiled_bytes": 3732,
+            "php_chunks": 12,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_wap/html/user/cards.html",
+            "source_sha1": "ac2b40346fd7a2ab408afd660fe1f6c23b946310",
+            "source_bytes": 1500,
+            "compiled_sha1": "f0a645b2dd25d685d5be72838fabba7d1189d73b",
+            "compiled_bytes": 2114,
+            "php_chunks": 12,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_wap/html/user/cash.html",
+            "source_sha1": "16b7fe839a672241faea0258aaf442fe5408f206",
+            "source_bytes": 5031,
+            "compiled_sha1": "c26af98a6a3fbd909a7a7ccb226c37989a73b117",
+            "compiled_bytes": 5767,
+            "php_chunks": 23,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_wap/html/user/downs.html",
+            "source_sha1": "b9ce6d01d59ed843aec9a903d437f50a76a30696",
+            "source_bytes": 2135,
+            "compiled_sha1": "b98c2cef2d879ac2a152b76c15449a8832228511",
+            "compiled_bytes": 2882,
+            "php_chunks": 19,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_wap/html/user/favs.html",
+            "source_sha1": "35dbb1015d045c733af61434045c2bc24ba07d42",
+            "source_bytes": 2404,
+            "compiled_sha1": "43667257a0620587309be9196e9cd897ea2644bb",
+            "compiled_bytes": 3164,
+            "php_chunks": 23,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_wap/html/user/findpass.html",
+            "source_sha1": "8f00a5add69a52abf279ea8a6d0b65539cc8a42d",
+            "source_bytes": 3445,
+            "compiled_sha1": "99d39ed8f90688a037556c96b16fc7fb12407a4f",
+            "compiled_bytes": 3954,
+            "php_chunks": 11,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_wap/html/user/findpass_msg.html",
+            "source_sha1": "95e7215ec90a40e57716a213198d18598a0b3446",
+            "source_bytes": 4202,
+            "compiled_sha1": "6b69e1b6acbc8f19f9a69b864d4431451ad3ac64",
+            "compiled_bytes": 4763,
+            "php_chunks": 15,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_wap/html/user/foot.html",
+            "source_sha1": "49207bd92d802fa33993886fa66200004cca8712",
+            "source_bytes": 164,
+            "compiled_sha1": "b41413843bc60d2956c28a8dd69c638c5eedfbdd",
+            "compiled_bytes": 196,
+            "php_chunks": 2,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_wap/html/user/head.html",
+            "source_sha1": "da39a3ee5e6b4b0d3255bfef95601890afd80709",
+            "source_bytes": 0,
+            "compiled_sha1": "da39a3ee5e6b4b0d3255bfef95601890afd80709",
+            "compiled_bytes": 0,
+            "php_chunks": 0,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_wap/html/user/include.html",
+            "source_sha1": "28e2cab73c4696a26c6285aa081d56e3ab25f95e",
+            "source_bytes": 252,
+            "compiled_sha1": "5ade6b56b3539690e51ccf7981740666737be471",
+            "compiled_bytes": 268,
+            "php_chunks": 1,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_wap/html/user/index.html",
+            "source_sha1": "913f6324707a9ef81065b61b26c6fad9507c3946",
+            "source_bytes": 2946,
+            "compiled_sha1": "7a420b3bd79ea87b65ffb289f71aae900a28aa01",
+            "compiled_bytes": 3606,
+            "php_chunks": 34,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_wap/html/user/info.html",
+            "source_sha1": "b0181eeea6c101645ca85edf4db49c10706dbfa3",
+            "source_bytes": 4108,
+            "compiled_sha1": "e872c3c2e00289aaa7cba1a15fac36a137fc7ab6",
+            "compiled_bytes": 4577,
+            "php_chunks": 21,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_wap/html/user/login.html",
+            "source_sha1": "b9f2bcca217d816fd5beb530637f0311a346df73",
+            "source_bytes": 2792,
+            "compiled_sha1": "d35a80037affcb473dc3154ab4ef620b51825d08",
+            "compiled_bytes": 3280,
+            "php_chunks": 11,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_wap/html/user/orders.html",
+            "source_sha1": "6d225a458c2d5a77f14fc981b80ac30bb3a5c1c2",
+            "source_bytes": 1743,
+            "compiled_sha1": "8fbfd0314997cd80f16922fab1399d1dc5ccf747",
+            "compiled_bytes": 2413,
+            "php_chunks": 19,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_wap/html/user/pay.html",
+            "source_sha1": "eb1074e0400ddf30a32f89f540d64c21a501ebfd",
+            "source_bytes": 2990,
+            "compiled_sha1": "901fb21f58a7a622e40ca7b5a9753059a2a7b743",
+            "compiled_bytes": 3657,
+            "php_chunks": 22,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_wap/html/user/payment_weixin.html",
+            "source_sha1": "1dfa156fc905e2abdb6d573cb04b617dcffcb0a3",
+            "source_bytes": 1360,
+            "compiled_sha1": "e20ff4b02949b1642f9af4116d513db400498ebe",
+            "compiled_bytes": 1730,
+            "php_chunks": 10,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_wap/html/user/plays.html",
+            "source_sha1": "5b39bb18f1eea30492ba4caee86638ad1046f30f",
+            "source_bytes": 2099,
+            "compiled_sha1": "aac8455a77a201461e06ddbcfe8c244bd36407fe",
+            "compiled_bytes": 2831,
+            "php_chunks": 18,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_wap/html/user/plog.html",
+            "source_sha1": "c67feb57a3349c09f4b2256e340f7253231acead",
+            "source_bytes": 2011,
+            "compiled_sha1": "6c36fb6392e4f9e8d0f8ef1ecae45ea2e55fb8ea",
+            "compiled_bytes": 2647,
+            "php_chunks": 15,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_wap/html/user/popedom.html",
+            "source_sha1": "2588c567d66b6feec42e749e51362b0f5e09926d",
+            "source_bytes": 1950,
+            "compiled_sha1": "84456361962addded0e7ae28a722a71bb3b5faaa",
+            "compiled_bytes": 3310,
+            "php_chunks": 24,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_wap/html/user/reg.html",
+            "source_sha1": "cdbf938110c0c88e4f3431521bc9ea33d2d7ea9e",
+            "source_bytes": 5624,
+            "compiled_sha1": "cfe2fbc705174a9b40624946133a6f32405005d0",
+            "compiled_bytes": 6114,
+            "php_chunks": 13,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_wap/html/user/reward.html",
+            "source_sha1": "6a89523cf4fe1107ac6df416b46083a9847c3670",
+            "source_bytes": 2142,
+            "compiled_sha1": "86c5b3784d86fdc4a6203ada9cda2812036337e3",
+            "compiled_bytes": 2778,
+            "php_chunks": 18,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_wap/html/user/upgrade.html",
+            "source_sha1": "526751309165944ef44bf3aedb91fe2a0cea27e5",
+            "source_bytes": 3165,
+            "compiled_sha1": "4080227c33aba21a91a30d90459a1ed372b54fdf",
+            "compiled_bytes": 4033,
+            "php_chunks": 29,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_wap/html/vod/confirm.html",
+            "source_sha1": "d17dd0c45c4262cb2c0dda08532fa355f7452c8d",
+            "source_bytes": 1472,
+            "compiled_sha1": "388615ec3d6975d359e4974ecbb1c1ec4c373a5b",
+            "compiled_bytes": 1669,
+            "php_chunks": 17,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_wap/html/vod/copyright.html",
+            "source_sha1": "ad6f5f54099eec20a7d5ad942055278fdfd77069",
+            "source_bytes": 1380,
+            "compiled_sha1": "94a9871ded90314cc4685d7bc4885ef7a361e1c3",
+            "compiled_bytes": 1431,
+            "php_chunks": 8,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_wap/html/vod/detail.html",
+            "source_sha1": "723be093a0a331497321d7211f8731f446e117b7",
+            "source_bytes": 7835,
+            "compiled_sha1": "cadb3caab8a43689bf41f09ea22b3e66f43f88c8",
+            "compiled_bytes": 10978,
+            "php_chunks": 74,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_wap/html/vod/detail_pwd.html",
+            "source_sha1": "90f7c930e9ceff6699d8a39cb0a35caee6723501",
+            "source_bytes": 2015,
+            "compiled_sha1": "384e94c644fd67a34ac077acf60a0c9992da664d",
+            "compiled_bytes": 2163,
+            "php_chunks": 12,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_wap/html/vod/down.html",
+            "source_sha1": "e313dede53a6717bc00c2ad175fcf89a726f4ec7",
+            "source_bytes": 5866,
+            "compiled_sha1": "3b3f10f9bd58676943c9891cd855f467a172f5b0",
+            "compiled_bytes": 8599,
+            "php_chunks": 48,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_wap/html/vod/downer.html",
+            "source_sha1": "c0a502c24460e4f22a74b8c15be3fae495909377",
+            "source_bytes": 2691,
+            "compiled_sha1": "69c14052e53b1391d673ba1228e928771c342b7c",
+            "compiled_bytes": 2965,
+            "php_chunks": 22,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_wap/html/vod/downer_pwd.html",
+            "source_sha1": "ab1c296c85dd3b25849844f898c7c11cc19bc5e9",
+            "source_bytes": 2066,
+            "compiled_sha1": "05814de4222d394672591fceda269abbbab6df77",
+            "compiled_bytes": 2214,
+            "php_chunks": 12,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_wap/html/vod/play.html",
+            "source_sha1": "ea347c645c1e95d1a5e670bc21d586c63f864614",
+            "source_bytes": 6676,
+            "compiled_sha1": "ed6db8dc87d1e48d690b18fd76761a92ae356876",
+            "compiled_bytes": 9590,
+            "php_chunks": 59,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_wap/html/vod/player.html",
+            "source_sha1": "96317b1cd0ea710030056d1de8909b295e3b1783",
+            "source_bytes": 2691,
+            "compiled_sha1": "c2282ce8dc6e5f9e3122a90ef4108bd0ad00a882",
+            "compiled_bytes": 2965,
+            "php_chunks": 22,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_wap/html/vod/player_pwd.html",
+            "source_sha1": "04a13820126f9b8a48bad2ca3e069057b8e56a7c",
+            "source_bytes": 2067,
+            "compiled_sha1": "94ad8e303f601d4042dd8d77548646bc951a093e",
+            "compiled_bytes": 2215,
+            "php_chunks": 12,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_wap/html/vod/plot.html",
+            "source_sha1": "d33f70e7d9b586dbe7e1f40c08c24c7214e81736",
+            "source_bytes": 1778,
+            "compiled_sha1": "bb6619bedf0134b65e87792e6e90f592bad23a4b",
+            "compiled_bytes": 4622,
+            "php_chunks": 38,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_wap/html/vod/rss.html",
+            "source_sha1": "6d6826d2bdcb3328056fbddab0fbb3a90ec53f02",
+            "source_bytes": 1027,
+            "compiled_sha1": "93445e7a069d36b551c73ca0128924e1222764bd",
+            "compiled_bytes": 1295,
+            "php_chunks": 19,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_wap/html/vod/search.html",
+            "source_sha1": "05822e026edf6b053628254fe537136e5935a2bf",
+            "source_bytes": 3068,
+            "compiled_sha1": "315df5221a8c298bfdcf8feca34fe0772372f1c7",
+            "compiled_bytes": 7777,
+            "php_chunks": 92,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_wap/html/vod/show.html",
+            "source_sha1": "d1266ed1231a32472a4f9b771aaa9eeead62def6",
+            "source_bytes": 6033,
+            "compiled_sha1": "c495cf258a14f373c9ec7e2461d567edf59435ee",
+            "compiled_bytes": 10368,
+            "php_chunks": 77,
+            "model_calls": 0,
+            "info_data_calls": 0
+        },
+        {
+            "path": "default_wap/html/vod/type.html",
+            "source_sha1": "f034ba0db25f0a75192635e8d45a92cf6b6bf9ee",
+            "source_bytes": 5893,
+            "compiled_sha1": "edbd67eeb23c53f6663ca65552dd24598eb676de",
+            "compiled_bytes": 10212,
+            "php_chunks": 76,
+            "model_calls": 0,
+            "info_data_calls": 0
+        }
+    ]
+}

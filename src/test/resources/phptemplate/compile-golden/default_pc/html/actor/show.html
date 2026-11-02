@@ -1,0 +1,168 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title><?php echo $maccms['site_name']; ?>-明星库</title>
+<meta name="keywords" content="<?php echo $maccms['site_keywords']; ?>" />
+<meta name="description" content="<?php echo $maccms['site_description']; ?>" />
+<link href="<?php echo $maccms['path']; ?>static/css/home.css" rel="stylesheet" type="text/css" />
+<link href="<?php echo $maccms['path_tpl']; ?>css/style.css" rel="stylesheet" type="text/css" />
+<script src="<?php echo $maccms['path']; ?>static/js/jquery.js"></script>
+<script src="<?php echo $maccms['path']; ?>static/js/jquery.lazyload.js"></script>
+<script src="<?php echo $maccms['path']; ?>static/js/jquery.autocomplete.js"></script>
+<script src="<?php echo $maccms['path_tpl']; ?>js/jquery.superslide.js"></script>
+<script src="<?php echo $maccms['path_tpl']; ?>js/jquery.lazyload.js"></script>
+<script src="<?php echo $maccms['path_tpl']; ?>js/jquery.base.js"></script>
+<script>var maccms={"path":"__ROOT__","mid":"<?php echo $maccms['mid']; ?>","aid":"<?php echo $maccms['aid']; ?>","url":"<?php echo $maccms['site_url']; ?>","wapurl":"<?php echo $maccms['site_wapurl']; ?>","mob_status":"<?php echo $maccms['mob_status']; ?>"};</script>
+<script src="<?php echo $maccms['path']; ?>static/js/home.js"></script>
+<script></script>
+
+<link href="<?php echo $maccms['path_tpl']; ?>css/actor.css" rel="stylesheet" type="text/css" />
+</head><body>
+<!-- 页头 -->
+<div class="header">
+    <div id="logo"><a href="<?php echo $maccms['path']; ?>" title="<?php echo $maccms['site_name']; ?>"><img src="<?php echo mac_url_img($maccms['site_logo']); ?>" alt="<?php echo $maccms['site_name']; ?>" /></a></div>
+    <div id="searchbar">
+        <div class="ui-search">
+            <form id="search" name="search" method="get" action="<?php echo mac_url('vod/search'); ?>" onSubmit="return qrsearch();">
+                <input type="text" name="wd" class="search-input mac_wd" value="<?php echo $param['wd']; ?>" placeholder="请在此处输入影片名或演员名称" />
+                <input type="submit" id="searchbutton"  class="search-button mac_search" value="搜索影片" />
+            </form>
+        </div>
+        <div class="hotkeys">热搜：
+            {maccms:foreach name=":explode(',',$maccms.search_hot)" id="vo2" key="key2"}
+            <a href="<?php echo mac_url('vod/search',['wd'=>$vo2]); ?>"><?php echo $vo2; ?></a>
+            {/maccms:foreach}
+        </div>
+    </div>
+    <ul id="qire-plus">
+        <li><a href="<?php echo mac_url('label/rank'); ?>" class=""><i class="ui-icon top-icon"></i>排行</a></li>
+        <li><a href="<?php echo mac_url('gbook/index'); ?>"><i class="ui-icon gb-icon"></i>留言</a></li>
+        <li><a href="javascript:void(0);" style="cursor:hand; background:none;" onclick="MAC.Fav(location.href,document.title);"><i class="ui-icon fav-icon"></i>收藏</a></li>
+    </ul>
+</div>
+<!-- 导航菜单 -->
+<div id="navbar">
+    <div class="layout fn-clear">
+        <ul id="nav" class="ui-nav">
+            <li class="nav-item <?php if($maccms['aid'] == 1): ?> current<?php endif; ?>"><a class="nav-link" href="<?php echo $maccms['path']; ?>">网站首页</a></li>
+            {maccms:type ids="parent" order="asc" by="sort"}
+            <li class="nav-item <?php echo $vo['type_id']; ?>=<?php echo $vo['type_pid']; if(($vo['type_id'] == $GLOBALS['type_id'] || $vo['type_id'] == $GLOBALS['type_pid'])): ?> current<?php endif; ?>"><a class="nav-link" href="<?php echo mac_url_type($vo); ?>"><?php echo $vo['type_name']; ?></a></li>
+            {/maccms:type}
+            <li class="nav-item <?php if($maccms['aid'] == 30): ?> current<?php endif; ?>"><a class="nav-link" href="<?php echo mac_url_topic_index(); ?>">专题</a></li>
+            <li class="nav-item mac_user"><a class="nav-link" href="javascript:;">会员</a></li>
+            <li class="nav-item"><a class="nav-link" href="<?php echo mac_url('map/index'); ?>" style=" margin-left:102px; padding:0 0 0 30px; background:url(<?php echo $maccms['path_tpl']; ?>images/ico.png) no-repeat left center;">最近更新</a></li>
+        </ul>
+    </div>
+</div>
+<div class="ui-box filter-focus">
+  <div class="ui-title">
+    <h3>明星档案 - 高级搜索</h3>
+  </div>
+  <div class="ui-cnt">
+    <div class="filter-list fn-clear">
+      <h5>地区:</h5>
+      <ul>
+        <li><a href="<?php echo mac_url('actor/show',['sex'=>$param['sex'],'blood'=>$param['blood'],'starsign'=>$param['starsign'],'letter'=>$param['letter']]); ?>" <?php if($param['area']==''): ?>class="current"<?php endif; ?>>全部</a></li>
+        {maccms:foreach name=":explode(',','内地,香港,日本,美国')" id="vo2" key="key2"}
+        <li><a href="<?php echo mac_url('actor/show',['area'=>$vo2,'sex'=>$param['sex'],'blood'=>$param['blood'],'starsign'=>$param['starsign'],'letter'=>$param['letter']]); ?>" <?php if($param['area'] == $vo2): ?>class="current"<?php endif; ?>><?php echo $vo2; ?></a></li>
+        {/maccms:foreach}
+      </ul>
+    </div>
+    <div class="filter-list fn-clear">
+      <h5>性别:</h5>
+      <ul>
+        <li><a href="<?php echo mac_url('actor/show',['area'=>$param['area'],'blood'=>$param['blood'],'starsign'=>$param['starsign'],'letter'=>$param['letter']]); ?>" <?php if($param['sex']==''): ?>class="current"<?php endif; ?>>全部</a></li>
+        {maccms:foreach name=":explode(',','男,女,变性')" id="vo2" key="key2"}
+        <li><a href="<?php echo mac_url('actor/show',['area'=>$param['area'],'sex'=>$vo2,'blood'=>$param['blood'],'starsign'=>$param['starsign'],'letter'=>$param['letter']]); ?>" <?php if($param['sex'] == $vo2): ?>class="current"<?php endif; ?>><?php echo $vo2; ?></a></li>
+        {/maccms:foreach}
+      </ul>
+    </div>
+    <div class="filter-list fn-clear">
+      <h5>血型:</h5>
+      <ul>
+        <li><a href="<?php echo mac_url('actor/show',['area'=>$param['area'],'sex'=>$param['sex'],'starsign'=>$param['starsign'],'letter'=>$param['letter']]); ?>" <?php if($param['blood']==''): ?>class="current"<?php endif; ?>>全部</a></li>
+        {maccms:foreach name=":explode(',','A型,B型,AB型,O型')" id="vo2" key="key2"}
+        <li><a href="<?php echo mac_url('actor/show',['area'=>$param['area'],'sex'=>$param['sex'],'blood'=>$vo2,'starsign'=>$param['starsign'],'letter'=>$param['letter']]); ?>"<?php if($param['blood']== $vo2): ?>class="current"<?php endif; ?>><?php echo $vo2; ?></a></li>
+        {/maccms:foreach}
+      </ul>
+    </div>
+    <div class="filter-list fn-clear">
+      <h5>星座:</h5>
+      <ul>
+        <li><a href="<?php echo mac_url('actor/show',['area'=>$param['area'],'sex'=>$param['sex'],'blood'=>$param['blood'],'letter'=>$param['letter']]); ?>" <?php if($param['starsign']==''): ?>class="current"<?php endif; ?>>全部</a></li>
+        {maccms:foreach name=":explode(',','白羊座,金牛座,双子座,巨蟹座,狮子座,处女座,天枰座,天蝎座,射手座,摩羯座,水瓶座,双鱼座')" id="vo2" key="key2"}
+        <li><a href="<?php echo mac_url('actor/show',['area'=>$param['area'],'sex'=>$param['sex'],'blood'=>$param['blood'],'starsign'=>$vo2,'letter'=>$param['letter']]); ?>" <?php if($param['starsign'] == $vo2): ?> class="current"<?php endif; ?>><?php echo $vo2; ?></a></li>
+        {/maccms:foreach}
+      </ul>
+    </div>
+    <div class="filter-list filter-list-letter fn-clear">
+      <h5>字母:</h5>
+      <ul>
+        <li><a href="<?php echo mac_url('actor/show',['area'=>$param['area'],'sex'=>$param['sex'],'blood'=>$param['blood'],'starsign'=>$param['starsign']]); ?>" <?php if($param['letter'] ==''): ?> class="current"<?php endif; ?>>全部</a></li>
+        {maccms:foreach name=":explode(',','A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z')" id="vo2" key="key2"}
+        <li><a href="<?php echo mac_url('actor/show',['area'=>$param['area'],'sex'=>$param['sex'],'blood'=>$param['blood'],'starsign'=>$param['starsign'],'letter'=>$vo2]); ?>" <?php if($param['letter'] == $vo2): ?> class="current"<?php endif; ?>><?php echo $vo2; ?></a></li>
+        {/maccms:foreach}
+      </ul>
+    </div>
+  </div>
+</div>
+<div class="main" id="latest-focus">
+  <div class="channel-item btop">
+    <div class="ui-title fn-clear"><span><a href="<?php echo mac_url('actor/show',['area'=>'香港,台湾,澳门']); ?>">查看更多&gt;</a></span>
+      <h2><?php echo $param['area']; ?><?php echo $param['sex']; ?><?php echo $param['blood']; ?><?php echo $param['blood']; ?><?php echo $param['letter']; ?>明星</h2>
+    </div>
+    <div class="box_con">
+      <ul>
+        {maccms:actor num="36" paging="yes" pageurl="actor/show" order="desc" by="time"}
+        <li> <a href="<?php echo mac_url_actor_detail($vo); ?>"><span><img src="<?php echo mac_url_img($vo['actor_pic']); ?>" alt="<?php echo $vo['actor_name']; ?>"></span></a> <a href="<?php echo mac_url_actor_detail($vo); ?>">
+          <h3><?php echo $vo['actor_name']; ?></h3>
+          </a> </li>
+        {/maccms:actor}
+      </ul>
+    </div>
+  </div>
+  <?php if($__PAGING__['record_total'] > 0): ?>
+<div class="mac_pages">
+    <div class="page_tip">共<?php echo $__PAGING__['record_total']; ?>条数据,当前<?php echo $__PAGING__['page_current']; ?>/<?php echo $__PAGING__['page_total']; ?>页</div>
+    <div class="page_info">
+        <a class="page_link" href="<?php echo mac_url_page($__PAGING__['page_url'],1); ?>" title="首页">首页</a>
+        <a class="page_link" href="<?php echo mac_url_page($__PAGING__['page_url'],$__PAGING__['page_prev']); ?>" title="上一页">上一页</a>
+        {maccms:foreach name="$__PAGING__.page_num" id="num"}
+        <?php if($__PAGING__['page_current'] == $num): ?>
+        <a class="page_link page_current" href="javascript:;" title="第<?php echo $num; ?>页"><?php echo $num; ?></a>
+        <?php else: ?>
+        <a class="page_link" href="<?php echo mac_url_page($__PAGING__['page_url'],$num); ?>" title="第<?php echo $num; ?>页" ><?php echo $num; ?></a>
+        <?php endif; ?>
+        {/maccms:foreach}
+        <a class="page_link" href="<?php echo mac_url_page($__PAGING__['page_url'],$__PAGING__['page_next']); ?>" title="下一页">下一页</a>
+        <a class="page_link" href="<?php echo mac_url_page($__PAGING__['page_url'],$__PAGING__['page_total']); ?>" title="尾页">尾页</a>
+
+        <input class="page_input" type="text" placeholder="页码"  id="page" autocomplete="off" style="width:40px">
+        <button class="page_btn mac_page_go" type="button" data-url="<?php echo $__PAGING__['page_url']; ?>" data-total="<?php echo $__PAGING__['page_total']; ?>" data-sp="<?php echo $__PAGING__['page_sp']; ?>" >GO</button>
+    </div>
+</div>
+<?php else: ?>
+<div class="wrap">
+    <h1>没有找到匹配数据</h1>
+</div>
+<?php endif; ?> </div>
+<!-- 页脚 -->
+<div class="footer">
+    <div class="foot-nav">
+        {maccms:type ids="parent" order="asc" by="sort"}
+        <a class="color" href="<?php echo mac_url_type($vo); ?>" title="<?php echo $vo['type_name']; ?>"><?php echo $vo['type_name']; ?></a>-
+        {/maccms:type}
+
+        <a href="<?php echo mac_url('map/index'); ?>" title="最近更新">最近更新</a>-
+        <a href="<?php echo mac_url('gbook/index'); ?>" title="反馈留言">反馈留言</a>-
+        <a href="<?php echo mac_url('rss/index'); ?>" title="rss">RSS</a>-
+        <a href="<?php echo mac_url('rss/baidu'); ?>" target="_blank" title="网站地图">Sitemap</a>
+    </div>
+    <div class="copyright">
+        <p>免责声明：若本站收录的资源侵犯了您的权益，请发邮件至：<?php echo $maccms['site_email']; ?>，我们会及时删除侵权内容，谢谢合作！</p>
+        <p>Copyright &#169; 2012-2018 <?php echo $maccms['site_url']; ?>. All Rights Reserved. <?php echo $maccms['site_tj']; ?> </p>
+    </div>
+</div>
+</body>
+</html>

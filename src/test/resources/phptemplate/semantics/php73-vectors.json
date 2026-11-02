@@ -1,0 +1,2876 @@
+{
+    "_meta": {
+        "generator": "src/test/php/tpl_runtime_golden.php --semantics",
+        "php": "7.3.33",
+        "php_binary": "php.exe",
+        "int_size": 8,
+        "precision": "14",
+        "timezone": "PRC",
+        "lc_all": "C",
+        "design": "9c73bf6ced044f40eeb87ef7861e616b6157499a",
+        "pre5": "b550151b4243622fe7ac060c9ff6e720d83ae605"
+    },
+    "rt2_array_keys": [
+        {
+            "written": "d",
+            "key_type": "integer",
+            "key": "1"
+        },
+        {
+            "written": "b",
+            "key_type": "string",
+            "key": "01"
+        },
+        {
+            "written": "e",
+            "key_type": "string",
+            "key": ""
+        },
+        {
+            "written": "f",
+            "key_type": "integer",
+            "key": "-3"
+        },
+        {
+            "written": "g",
+            "key_type": "string",
+            "key": " 3"
+        },
+        {
+            "written": "h",
+            "key_type": "string",
+            "key": "3 "
+        },
+        {
+            "written": "i",
+            "key_type": "string",
+            "key": "+4"
+        },
+        {
+            "written": "j",
+            "key_type": "string",
+            "key": "-0"
+        },
+        {
+            "written": "k",
+            "key_type": "string",
+            "key": "1.0"
+        },
+        {
+            "written": "l",
+            "key_type": "string",
+            "key": "9223372036854775808"
+        }
+    ],
+    "rt2_array_order": [
+        {
+            "key_type": "string",
+            "key": "b",
+            "value": 1
+        },
+        {
+            "key_type": "integer",
+            "key": "0",
+            "value": 2
+        },
+        {
+            "key_type": "string",
+            "key": "a",
+            "value": 3
+        },
+        {
+            "key_type": "integer",
+            "key": "10",
+            "value": 4
+        },
+        {
+            "key_type": "integer",
+            "key": "11",
+            "value": 5
+        }
+    ],
+    "rt3_stringify": [
+        {
+            "label": "true",
+            "type": "boolean",
+            "string": "1"
+        },
+        {
+            "label": "false",
+            "type": "boolean",
+            "string": ""
+        },
+        {
+            "label": "null",
+            "type": "NULL",
+            "string": ""
+        },
+        {
+            "label": "int0",
+            "type": "integer",
+            "string": "0"
+        },
+        {
+            "label": "int-42",
+            "type": "integer",
+            "string": "-42"
+        },
+        {
+            "label": "int_max",
+            "type": "integer",
+            "string": "9223372036854775807"
+        },
+        {
+            "label": "int_min",
+            "type": "integer",
+            "string": "-9223372036854775808"
+        },
+        {
+            "label": "float0",
+            "type": "double",
+            "string": "0"
+        },
+        {
+            "label": "negzero",
+            "type": "double",
+            "string": "-0"
+        },
+        {
+            "label": "float1",
+            "type": "double",
+            "string": "1"
+        },
+        {
+            "label": "float1_5",
+            "type": "double",
+            "string": "1.5"
+        },
+        {
+            "label": "float_1e14",
+            "type": "double",
+            "string": "1.0E+14"
+        },
+        {
+            "label": "float_1e15",
+            "type": "double",
+            "string": "1.0E+15"
+        },
+        {
+            "label": "float_1e-5",
+            "type": "double",
+            "string": "1.0E-5"
+        },
+        {
+            "label": "float_third",
+            "type": "double",
+            "string": "0.33333333333333"
+        },
+        {
+            "label": "float_pi",
+            "type": "double",
+            "string": "3.1415926535898"
+        },
+        {
+            "label": "float_1_0000000000001",
+            "type": "double",
+            "string": "1.0000000000001"
+        },
+        {
+            "label": "float_big",
+            "type": "double",
+            "string": "1.2345678901235E+17"
+        },
+        {
+            "label": "empty_str",
+            "type": "string",
+            "string": ""
+        },
+        {
+            "label": "str_zero",
+            "type": "string",
+            "string": "0"
+        },
+        {
+            "label": "str_num",
+            "type": "string",
+            "string": "0123"
+        },
+        {
+            "label": "array",
+            "type": "array",
+            "string": "Array"
+        }
+    ],
+    "rt3_json": [
+        {
+            "label": "float0",
+            "value": 0,
+            "json": "0"
+        },
+        {
+            "label": "float1",
+            "value": -0,
+            "json": "-0"
+        },
+        {
+            "label": "float2",
+            "value": 1,
+            "json": "1"
+        },
+        {
+            "label": "float3",
+            "value": 1.5,
+            "json": "1.5"
+        },
+        {
+            "label": "float4",
+            "value": 0.3333333333333333,
+            "json": "0.3333333333333333"
+        },
+        {
+            "label": "float5",
+            "value": 100000000000000,
+            "json": "100000000000000"
+        },
+        {
+            "label": "float6",
+            "value": 1000000000000000,
+            "json": "1000000000000000"
+        },
+        {
+            "label": "float7",
+            "value": 3.141592653589793,
+            "json": "3.141592653589793"
+        },
+        {
+            "label": "float8",
+            "value": 123456789012345,
+            "json": "123456789012345"
+        },
+        {
+            "label": "arr0",
+            "json": "{\"a\":1,\"b\":\"x\"}",
+            "keys": [
+                "a",
+                "b"
+            ]
+        },
+        {
+            "label": "arr1",
+            "json": "[]",
+            "keys": []
+        },
+        {
+            "label": "arr2",
+            "json": "[1,2,3]",
+            "keys": [
+                "0",
+                "1",
+                "2"
+            ]
+        },
+        {
+            "label": "arr3",
+            "json": "[\"a\",\"b\"]",
+            "keys": [
+                "0",
+                "1"
+            ]
+        },
+        {
+            "label": "arr4",
+            "json": "{\"k\":null,\"j\":false}",
+            "keys": [
+                "k",
+                "j"
+            ]
+        },
+        {
+            "label": "arr5",
+            "json": "[true,false,null]",
+            "keys": [
+                "0",
+                "1",
+                "2"
+            ]
+        }
+    ],
+    "rt4_compare": [
+        {
+            "label": "\"abc\" == 0",
+            "lhs": {
+                "type": "string",
+                "hex": "616263"
+            },
+            "rhs": {
+                "type": "integer",
+                "hex": "30"
+            },
+            "eq": true,
+            "neq": false,
+            "identical": false,
+            "lt": false,
+            "gt": false,
+            "lte": true,
+            "gte": true
+        },
+        {
+            "label": "\"1\" == 1",
+            "lhs": {
+                "type": "string",
+                "hex": "31"
+            },
+            "rhs": {
+                "type": "integer",
+                "hex": "31"
+            },
+            "eq": true,
+            "neq": false,
+            "identical": false,
+            "lt": false,
+            "gt": false,
+            "lte": true,
+            "gte": true
+        },
+        {
+            "label": "\"01\" == 1",
+            "lhs": {
+                "type": "string",
+                "hex": "3031"
+            },
+            "rhs": {
+                "type": "integer",
+                "hex": "31"
+            },
+            "eq": true,
+            "neq": false,
+            "identical": false,
+            "lt": false,
+            "gt": false,
+            "lte": true,
+            "gte": true
+        },
+        {
+            "label": "\"1 \" == 1",
+            "lhs": {
+                "type": "string",
+                "hex": "3120"
+            },
+            "rhs": {
+                "type": "integer",
+                "hex": "31"
+            },
+            "eq": true,
+            "neq": false,
+            "identical": false,
+            "lt": false,
+            "gt": false,
+            "lte": true,
+            "gte": true
+        },
+        {
+            "label": "\" 1\" == 1",
+            "lhs": {
+                "type": "string",
+                "hex": "2031"
+            },
+            "rhs": {
+                "type": "integer",
+                "hex": "31"
+            },
+            "eq": true,
+            "neq": false,
+            "identical": false,
+            "lt": false,
+            "gt": false,
+            "lte": true,
+            "gte": true
+        },
+        {
+            "label": "\"1x\" == 1",
+            "lhs": {
+                "type": "string",
+                "hex": "3178"
+            },
+            "rhs": {
+                "type": "integer",
+                "hex": "31"
+            },
+            "eq": true,
+            "neq": false,
+            "identical": false,
+            "lt": false,
+            "gt": false,
+            "lte": true,
+            "gte": true
+        },
+        {
+            "label": "\"x1\" == 1",
+            "lhs": {
+                "type": "string",
+                "hex": "7831"
+            },
+            "rhs": {
+                "type": "integer",
+                "hex": "31"
+            },
+            "eq": false,
+            "neq": true,
+            "identical": false,
+            "lt": true,
+            "gt": false,
+            "lte": true,
+            "gte": false
+        },
+        {
+            "label": "\"\" == 0",
+            "lhs": {
+                "type": "string",
+                "hex": ""
+            },
+            "rhs": {
+                "type": "integer",
+                "hex": "30"
+            },
+            "eq": true,
+            "neq": false,
+            "identical": false,
+            "lt": false,
+            "gt": false,
+            "lte": true,
+            "gte": true
+        },
+        {
+            "label": "null == 0",
+            "lhs": {
+                "type": "NULL",
+                "hex": ""
+            },
+            "rhs": {
+                "type": "integer",
+                "hex": "30"
+            },
+            "eq": true,
+            "neq": false,
+            "identical": false,
+            "lt": false,
+            "gt": false,
+            "lte": true,
+            "gte": true
+        },
+        {
+            "label": "null == \"\"",
+            "lhs": {
+                "type": "NULL",
+                "hex": ""
+            },
+            "rhs": {
+                "type": "string",
+                "hex": ""
+            },
+            "eq": true,
+            "neq": false,
+            "identical": false,
+            "lt": false,
+            "gt": false,
+            "lte": true,
+            "gte": true
+        },
+        {
+            "label": "null == false",
+            "lhs": {
+                "type": "NULL",
+                "hex": ""
+            },
+            "rhs": {
+                "type": "boolean",
+                "hex": ""
+            },
+            "eq": true,
+            "neq": false,
+            "identical": false,
+            "lt": false,
+            "gt": false,
+            "lte": true,
+            "gte": true
+        },
+        {
+            "label": "\"0\" == false",
+            "lhs": {
+                "type": "string",
+                "hex": "30"
+            },
+            "rhs": {
+                "type": "boolean",
+                "hex": ""
+            },
+            "eq": true,
+            "neq": false,
+            "identical": false,
+            "lt": false,
+            "gt": false,
+            "lte": true,
+            "gte": true
+        },
+        {
+            "label": "\"0.0\" == 0",
+            "lhs": {
+                "type": "string",
+                "hex": "302e30"
+            },
+            "rhs": {
+                "type": "integer",
+                "hex": "30"
+            },
+            "eq": true,
+            "neq": false,
+            "identical": false,
+            "lt": false,
+            "gt": false,
+            "lte": true,
+            "gte": true
+        },
+        {
+            "label": "\"1e2\" == 100",
+            "lhs": {
+                "type": "string",
+                "hex": "316532"
+            },
+            "rhs": {
+                "type": "integer",
+                "hex": "313030"
+            },
+            "eq": true,
+            "neq": false,
+            "identical": false,
+            "lt": false,
+            "gt": false,
+            "lte": true,
+            "gte": true
+        },
+        {
+            "label": "[] == false",
+            "lhs": {
+                "type": "array",
+                "hex": ""
+            },
+            "rhs": {
+                "type": "boolean",
+                "hex": ""
+            },
+            "eq": true,
+            "neq": false,
+            "identical": false,
+            "lt": false,
+            "gt": false,
+            "lte": true,
+            "gte": true
+        },
+        {
+            "label": "[] == 0",
+            "lhs": {
+                "type": "array",
+                "hex": ""
+            },
+            "rhs": {
+                "type": "integer",
+                "hex": "30"
+            },
+            "eq": false,
+            "neq": true,
+            "identical": false,
+            "lt": false,
+            "gt": true,
+            "lte": false,
+            "gte": true
+        },
+        {
+            "label": "[0] == false",
+            "lhs": {
+                "type": "array",
+                "hex": "693a303d3e696e74656765722830293b"
+            },
+            "rhs": {
+                "type": "boolean",
+                "hex": ""
+            },
+            "eq": false,
+            "neq": true,
+            "identical": false,
+            "lt": false,
+            "gt": true,
+            "lte": false,
+            "gte": true
+        },
+        {
+            "label": "\"abc\" == \"ABC\"",
+            "lhs": {
+                "type": "string",
+                "hex": "616263"
+            },
+            "rhs": {
+                "type": "string",
+                "hex": "414243"
+            },
+            "eq": false,
+            "neq": true,
+            "identical": false,
+            "lt": false,
+            "gt": true,
+            "lte": false,
+            "gte": true
+        },
+        {
+            "label": "\"10\" == \"1e1\"",
+            "lhs": {
+                "type": "string",
+                "hex": "3130"
+            },
+            "rhs": {
+                "type": "string",
+                "hex": "316531"
+            },
+            "eq": true,
+            "neq": false,
+            "identical": false,
+            "lt": false,
+            "gt": false,
+            "lte": true,
+            "gte": true
+        },
+        {
+            "label": "PHP_INT_MAX == \"9223372036854775807\"",
+            "lhs": {
+                "type": "integer",
+                "hex": "39323233333732303336383534373735383037"
+            },
+            "rhs": {
+                "type": "string",
+                "hex": "39323233333732303336383534373735383037"
+            },
+            "eq": true,
+            "neq": false,
+            "identical": false,
+            "lt": false,
+            "gt": false,
+            "lte": true,
+            "gte": true
+        },
+        {
+            "label": "\"9223372036854775808\" == 9.2233720368548E+18",
+            "lhs": {
+                "type": "string",
+                "hex": "39323233333732303336383534373735383038"
+            },
+            "rhs": {
+                "type": "double",
+                "hex": "392e32323333373230333638353438452b3138"
+            },
+            "eq": true,
+            "neq": false,
+            "identical": false,
+            "lt": false,
+            "gt": false,
+            "lte": true,
+            "gte": true
+        }
+    ],
+    "rt4_in_array": [
+        {
+            "needle": {
+                "type": "string",
+                "hex": "616263"
+            },
+            "haystack": [
+                {
+                    "type": "integer",
+                    "hex": "30"
+                },
+                {
+                    "type": "integer",
+                    "hex": "31"
+                }
+            ],
+            "in_array": true,
+            "in_array_strict": false
+        },
+        {
+            "needle": {
+                "type": "string",
+                "hex": "31"
+            },
+            "haystack": [
+                {
+                    "type": "integer",
+                    "hex": "31"
+                },
+                {
+                    "type": "integer",
+                    "hex": "32"
+                }
+            ],
+            "in_array": true,
+            "in_array_strict": false
+        },
+        {
+            "needle": {
+                "type": "integer",
+                "hex": "30"
+            },
+            "haystack": [
+                {
+                    "type": "string",
+                    "hex": "616263"
+                }
+            ],
+            "in_array": true,
+            "in_array_strict": false
+        },
+        {
+            "needle": {
+                "type": "string",
+                "hex": "616263"
+            },
+            "haystack": [
+                {
+                    "type": "string",
+                    "hex": "414243"
+                }
+            ],
+            "in_array": false,
+            "in_array_strict": false
+        },
+        {
+            "needle": {
+                "type": "NULL",
+                "hex": ""
+            },
+            "haystack": [
+                {
+                    "type": "integer",
+                    "hex": "30"
+                }
+            ],
+            "in_array": true,
+            "in_array_strict": false
+        },
+        {
+            "needle": {
+                "type": "NULL",
+                "hex": ""
+            },
+            "haystack": [
+                {
+                    "type": "string",
+                    "hex": ""
+                }
+            ],
+            "in_array": true,
+            "in_array_strict": false
+        }
+    ],
+    "rt5_undefined": [
+        {
+            "label": "undefined var",
+            "string": "",
+            "is_null": true
+        },
+        {
+            "label": "undefined index",
+            "string": "",
+            "is_null": true
+        },
+        {
+            "label": "nested undefined",
+            "string": ""
+        },
+        {
+            "label": "isset undefined",
+            "isset": false
+        },
+        {
+            "label": "empty undefined",
+            "empty": true
+        }
+    ],
+    "rt5_str_index": [
+        {
+            "index": 0,
+            "char": "a",
+            "type": "string"
+        },
+        {
+            "index": 1,
+            "char": "b",
+            "type": "string"
+        },
+        {
+            "index": 2,
+            "char": "c",
+            "type": "string"
+        },
+        {
+            "index": 3,
+            "char": "",
+            "type": "string"
+        },
+        {
+            "index": -1,
+            "char": "c",
+            "type": "string"
+        },
+        {
+            "index": "1",
+            "char": "b",
+            "type": "string"
+        }
+    ],
+    "rt5_str_index_bytes": [
+        {
+            "index": 0,
+            "byte_hex": "e4"
+        },
+        {
+            "index": 1,
+            "byte_hex": "bd"
+        },
+        {
+            "index": 2,
+            "byte_hex": "a0"
+        },
+        {
+            "index": 3,
+            "byte_hex": ""
+        }
+    ],
+    "gap1_bare_identifier": [
+        {
+            "label": "color",
+            "is_string": true,
+            "string": "color"
+        },
+        {
+            "label": "defined-true",
+            "bool": true
+        }
+    ],
+    "gap1_mac_day_color": [
+        {
+            "label": "today",
+            "t": {
+                "type": "integer",
+                "hex": "31373933353833303030"
+            },
+            "now": "2026-11-02",
+            "out": {
+                "type": "string",
+                "hex": "3c666f6e7420636f6c6f723d2223464630303030223e323032362d31312d30322030393a33303a30303c2f666f6e743e"
+            }
+        },
+        {
+            "label": "yesterday",
+            "t": {
+                "type": "integer",
+                "hex": "31373933343936363030"
+            },
+            "now": "2026-11-02",
+            "out": {
+                "type": "string",
+                "hex": "323032362d31312d30312030393a33303a3030"
+            }
+        },
+        {
+            "label": "null",
+            "t": {
+                "type": "NULL",
+                "hex": ""
+            },
+            "now": "2026-11-02",
+            "out": {
+                "type": "string",
+                "hex": ""
+            }
+        }
+    ],
+    "fn_mac_day": [
+        {
+            "label": "null",
+            "f": "(omitted)",
+            "t": {
+                "type": "NULL",
+                "hex": ""
+            },
+            "now": "2026-11-02",
+            "out": {
+                "type": "string",
+                "hex": ""
+            }
+        },
+        {
+            "label": "null",
+            "f": "color",
+            "t": {
+                "type": "NULL",
+                "hex": ""
+            },
+            "now": "2026-11-02",
+            "out": {
+                "type": "string",
+                "hex": ""
+            }
+        },
+        {
+            "label": "null",
+            "f": "colou",
+            "t": {
+                "type": "NULL",
+                "hex": ""
+            },
+            "now": "2026-11-02",
+            "out": {
+                "type": "string",
+                "hex": ""
+            }
+        },
+        {
+            "label": "null",
+            "f": "COLOR",
+            "t": {
+                "type": "NULL",
+                "hex": ""
+            },
+            "now": "2026-11-02",
+            "out": {
+                "type": "string",
+                "hex": ""
+            }
+        },
+        {
+            "label": "int0",
+            "f": "(omitted)",
+            "t": {
+                "type": "integer",
+                "hex": "30"
+            },
+            "now": "2026-11-02",
+            "out": {
+                "type": "string",
+                "hex": ""
+            }
+        },
+        {
+            "label": "int0",
+            "f": "color",
+            "t": {
+                "type": "integer",
+                "hex": "30"
+            },
+            "now": "2026-11-02",
+            "out": {
+                "type": "string",
+                "hex": ""
+            }
+        },
+        {
+            "label": "int0",
+            "f": "colou",
+            "t": {
+                "type": "integer",
+                "hex": "30"
+            },
+            "now": "2026-11-02",
+            "out": {
+                "type": "string",
+                "hex": ""
+            }
+        },
+        {
+            "label": "int0",
+            "f": "COLOR",
+            "t": {
+                "type": "integer",
+                "hex": "30"
+            },
+            "now": "2026-11-02",
+            "out": {
+                "type": "string",
+                "hex": ""
+            }
+        },
+        {
+            "label": "emptystr",
+            "f": "(omitted)",
+            "t": {
+                "type": "string",
+                "hex": ""
+            },
+            "now": "2026-11-02",
+            "out": {
+                "type": "string",
+                "hex": ""
+            }
+        },
+        {
+            "label": "emptystr",
+            "f": "color",
+            "t": {
+                "type": "string",
+                "hex": ""
+            },
+            "now": "2026-11-02",
+            "out": {
+                "type": "string",
+                "hex": ""
+            }
+        },
+        {
+            "label": "emptystr",
+            "f": "colou",
+            "t": {
+                "type": "string",
+                "hex": ""
+            },
+            "now": "2026-11-02",
+            "out": {
+                "type": "string",
+                "hex": ""
+            }
+        },
+        {
+            "label": "emptystr",
+            "f": "COLOR",
+            "t": {
+                "type": "string",
+                "hex": ""
+            },
+            "now": "2026-11-02",
+            "out": {
+                "type": "string",
+                "hex": ""
+            }
+        },
+        {
+            "label": "emptyarr",
+            "f": "(omitted)",
+            "t": {
+                "type": "array",
+                "hex": ""
+            },
+            "now": "2026-11-02",
+            "out": {
+                "type": "string",
+                "hex": ""
+            }
+        },
+        {
+            "label": "emptyarr",
+            "f": "color",
+            "t": {
+                "type": "array",
+                "hex": ""
+            },
+            "now": "2026-11-02",
+            "out": {
+                "type": "string",
+                "hex": ""
+            }
+        },
+        {
+            "label": "emptyarr",
+            "f": "colou",
+            "t": {
+                "type": "array",
+                "hex": ""
+            },
+            "now": "2026-11-02",
+            "out": {
+                "type": "string",
+                "hex": ""
+            }
+        },
+        {
+            "label": "emptyarr",
+            "f": "COLOR",
+            "t": {
+                "type": "array",
+                "hex": ""
+            },
+            "now": "2026-11-02",
+            "out": {
+                "type": "string",
+                "hex": ""
+            }
+        },
+        {
+            "label": "int-today",
+            "f": "(omitted)",
+            "t": {
+                "type": "integer",
+                "hex": "31373933353833303030"
+            },
+            "now": "2026-11-02",
+            "out": {
+                "type": "string",
+                "hex": "323032362d31312d30322030393a33303a3030"
+            }
+        },
+        {
+            "label": "int-today",
+            "f": "color",
+            "t": {
+                "type": "integer",
+                "hex": "31373933353833303030"
+            },
+            "now": "2026-11-02",
+            "out": {
+                "type": "string",
+                "hex": "3c666f6e7420636f6c6f723d2223464630303030223e323032362d31312d30322030393a33303a30303c2f666f6e743e"
+            }
+        },
+        {
+            "label": "int-today",
+            "f": "colou",
+            "t": {
+                "type": "integer",
+                "hex": "31373933353833303030"
+            },
+            "now": "2026-11-02",
+            "out": {
+                "type": "string",
+                "hex": "323032362d31312d30322030393a33303a3030"
+            }
+        },
+        {
+            "label": "int-today",
+            "f": "COLOR",
+            "t": {
+                "type": "integer",
+                "hex": "31373933353833303030"
+            },
+            "now": "2026-11-02",
+            "out": {
+                "type": "string",
+                "hex": "323032362d31312d30322030393a33303a3030"
+            }
+        },
+        {
+            "label": "int-yesterday",
+            "f": "(omitted)",
+            "t": {
+                "type": "integer",
+                "hex": "31373933343936363030"
+            },
+            "now": "2026-11-02",
+            "out": {
+                "type": "string",
+                "hex": "323032362d31312d30312030393a33303a3030"
+            }
+        },
+        {
+            "label": "int-yesterday",
+            "f": "color",
+            "t": {
+                "type": "integer",
+                "hex": "31373933343936363030"
+            },
+            "now": "2026-11-02",
+            "out": {
+                "type": "string",
+                "hex": "323032362d31312d30312030393a33303a3030"
+            }
+        },
+        {
+            "label": "int-yesterday",
+            "f": "colou",
+            "t": {
+                "type": "integer",
+                "hex": "31373933343936363030"
+            },
+            "now": "2026-11-02",
+            "out": {
+                "type": "string",
+                "hex": "323032362d31312d30312030393a33303a3030"
+            }
+        },
+        {
+            "label": "int-yesterday",
+            "f": "COLOR",
+            "t": {
+                "type": "integer",
+                "hex": "31373933343936363030"
+            },
+            "now": "2026-11-02",
+            "out": {
+                "type": "string",
+                "hex": "323032362d31312d30312030393a33303a3030"
+            }
+        },
+        {
+            "label": "str-datetime-today",
+            "f": "(omitted)",
+            "t": {
+                "type": "string",
+                "hex": "323032362d31312d30322030393a33303a3030"
+            },
+            "now": "2026-11-02",
+            "out": {
+                "type": "string",
+                "hex": "323032362d31312d30322030393a33303a3030"
+            }
+        },
+        {
+            "label": "str-datetime-today",
+            "f": "color",
+            "t": {
+                "type": "string",
+                "hex": "323032362d31312d30322030393a33303a3030"
+            },
+            "now": "2026-11-02",
+            "out": {
+                "type": "string",
+                "hex": "3c666f6e7420636f6c6f723d2223464630303030223e323032362d31312d30322030393a33303a30303c2f666f6e743e"
+            }
+        },
+        {
+            "label": "str-datetime-today",
+            "f": "colou",
+            "t": {
+                "type": "string",
+                "hex": "323032362d31312d30322030393a33303a3030"
+            },
+            "now": "2026-11-02",
+            "out": {
+                "type": "string",
+                "hex": "323032362d31312d30322030393a33303a3030"
+            }
+        },
+        {
+            "label": "str-datetime-today",
+            "f": "COLOR",
+            "t": {
+                "type": "string",
+                "hex": "323032362d31312d30322030393a33303a3030"
+            },
+            "now": "2026-11-02",
+            "out": {
+                "type": "string",
+                "hex": "323032362d31312d30322030393a33303a3030"
+            }
+        },
+        {
+            "label": "str-datetime-yesterday",
+            "f": "(omitted)",
+            "t": {
+                "type": "string",
+                "hex": "323032362d31312d30312030393a33303a3030"
+            },
+            "now": "2026-11-02",
+            "out": {
+                "type": "string",
+                "hex": "323032362d31312d30312030393a33303a3030"
+            }
+        },
+        {
+            "label": "str-datetime-yesterday",
+            "f": "color",
+            "t": {
+                "type": "string",
+                "hex": "323032362d31312d30312030393a33303a3030"
+            },
+            "now": "2026-11-02",
+            "out": {
+                "type": "string",
+                "hex": "323032362d31312d30312030393a33303a3030"
+            }
+        },
+        {
+            "label": "str-datetime-yesterday",
+            "f": "colou",
+            "t": {
+                "type": "string",
+                "hex": "323032362d31312d30312030393a33303a3030"
+            },
+            "now": "2026-11-02",
+            "out": {
+                "type": "string",
+                "hex": "323032362d31312d30312030393a33303a3030"
+            }
+        },
+        {
+            "label": "str-datetime-yesterday",
+            "f": "COLOR",
+            "t": {
+                "type": "string",
+                "hex": "323032362d31312d30312030393a33303a3030"
+            },
+            "now": "2026-11-02",
+            "out": {
+                "type": "string",
+                "hex": "323032362d31312d30312030393a33303a3030"
+            }
+        },
+        {
+            "label": "str-date-today",
+            "f": "(omitted)",
+            "t": {
+                "type": "string",
+                "hex": "323032362d31312d3032"
+            },
+            "now": "2026-11-02",
+            "out": {
+                "type": "string",
+                "hex": "323032362d31312d3032"
+            }
+        },
+        {
+            "label": "str-date-today",
+            "f": "color",
+            "t": {
+                "type": "string",
+                "hex": "323032362d31312d3032"
+            },
+            "now": "2026-11-02",
+            "out": {
+                "type": "string",
+                "hex": "3c666f6e7420636f6c6f723d2223464630303030223e323032362d31312d30323c2f666f6e743e"
+            }
+        },
+        {
+            "label": "str-date-today",
+            "f": "colou",
+            "t": {
+                "type": "string",
+                "hex": "323032362d31312d3032"
+            },
+            "now": "2026-11-02",
+            "out": {
+                "type": "string",
+                "hex": "323032362d31312d3032"
+            }
+        },
+        {
+            "label": "str-date-today",
+            "f": "COLOR",
+            "t": {
+                "type": "string",
+                "hex": "323032362d31312d3032"
+            },
+            "now": "2026-11-02",
+            "out": {
+                "type": "string",
+                "hex": "323032362d31312d3032"
+            }
+        },
+        {
+            "label": "numericstr-ts",
+            "f": "(omitted)",
+            "t": {
+                "type": "string",
+                "hex": "31373933343936363030"
+            },
+            "now": "2026-11-02",
+            "out": {
+                "type": "string",
+                "hex": "323032362d31312d30312030393a33303a3030"
+            }
+        },
+        {
+            "label": "numericstr-ts",
+            "f": "color",
+            "t": {
+                "type": "string",
+                "hex": "31373933343936363030"
+            },
+            "now": "2026-11-02",
+            "out": {
+                "type": "string",
+                "hex": "323032362d31312d30312030393a33303a3030"
+            }
+        },
+        {
+            "label": "numericstr-ts",
+            "f": "colou",
+            "t": {
+                "type": "string",
+                "hex": "31373933343936363030"
+            },
+            "now": "2026-11-02",
+            "out": {
+                "type": "string",
+                "hex": "323032362d31312d30312030393a33303a3030"
+            }
+        },
+        {
+            "label": "numericstr-ts",
+            "f": "COLOR",
+            "t": {
+                "type": "string",
+                "hex": "31373933343936363030"
+            },
+            "now": "2026-11-02",
+            "out": {
+                "type": "string",
+                "hex": "323032362d31312d30312030393a33303a3030"
+            }
+        },
+        {
+            "label": "nonnumericstr",
+            "f": "(omitted)",
+            "t": {
+                "type": "string",
+                "hex": "6e6f742d612d64617465"
+            },
+            "now": "2026-11-02",
+            "out": {
+                "type": "string",
+                "hex": "6e6f742d612d64617465"
+            }
+        },
+        {
+            "label": "nonnumericstr",
+            "f": "color",
+            "t": {
+                "type": "string",
+                "hex": "6e6f742d612d64617465"
+            },
+            "now": "2026-11-02",
+            "out": {
+                "type": "string",
+                "hex": "6e6f742d612d64617465"
+            }
+        },
+        {
+            "label": "nonnumericstr",
+            "f": "colou",
+            "t": {
+                "type": "string",
+                "hex": "6e6f742d612d64617465"
+            },
+            "now": "2026-11-02",
+            "out": {
+                "type": "string",
+                "hex": "6e6f742d612d64617465"
+            }
+        },
+        {
+            "label": "nonnumericstr",
+            "f": "COLOR",
+            "t": {
+                "type": "string",
+                "hex": "6e6f742d612d64617465"
+            },
+            "now": "2026-11-02",
+            "out": {
+                "type": "string",
+                "hex": "6e6f742d612d64617465"
+            }
+        }
+    ],
+    "fn_date": [
+        {
+            "fmt": "Y-m-d",
+            "label": "int-ts",
+            "arg": {
+                "type": "integer",
+                "hex": "31373933343936363030"
+            },
+            "out": {
+                "type": "string",
+                "hex": "323032362d31312d3031"
+            },
+            "raw_type": "string"
+        },
+        {
+            "fmt": "Y-m-d",
+            "label": "numstr-ts",
+            "arg": {
+                "type": "string",
+                "hex": "31373933343936363030"
+            },
+            "out": {
+                "type": "string",
+                "hex": "323032362d31312d3031"
+            },
+            "raw_type": "string"
+        },
+        {
+            "fmt": "Y-m-d",
+            "label": "int0",
+            "arg": {
+                "type": "integer",
+                "hex": "30"
+            },
+            "out": {
+                "type": "string",
+                "hex": "313937302d30312d3031"
+            },
+            "raw_type": "string"
+        },
+        {
+            "fmt": "Y-m-d",
+            "label": "numstr0",
+            "arg": {
+                "type": "string",
+                "hex": "30"
+            },
+            "out": {
+                "type": "string",
+                "hex": "313937302d30312d3031"
+            },
+            "raw_type": "string"
+        },
+        {
+            "fmt": "Y-m-d",
+            "label": "null",
+            "arg": {
+                "type": "NULL",
+                "hex": ""
+            },
+            "out": {
+                "type": "string",
+                "hex": "313937302d30312d3031"
+            },
+            "raw_type": "string"
+        },
+        {
+            "fmt": "Y-m-d",
+            "label": "emptystr",
+            "arg": {
+                "type": "string",
+                "hex": ""
+            },
+            "out": {
+                "type": "boolean",
+                "hex": ""
+            },
+            "raw_type": "boolean"
+        },
+        {
+            "fmt": "Y-m-d",
+            "label": "nonnumeric",
+            "arg": {
+                "type": "string",
+                "hex": "6e6f742d612d64617465"
+            },
+            "out": {
+                "type": "boolean",
+                "hex": ""
+            },
+            "raw_type": "boolean"
+        },
+        {
+            "fmt": "Y-m-d",
+            "label": "float",
+            "arg": {
+                "type": "double",
+                "hex": "31373933353832343030"
+            },
+            "out": {
+                "type": "string",
+                "hex": "323032362d31312d3032"
+            },
+            "raw_type": "string"
+        },
+        {
+            "fmt": "Y-m-d H:i:s",
+            "label": "int-ts",
+            "arg": {
+                "type": "integer",
+                "hex": "31373933343936363030"
+            },
+            "out": {
+                "type": "string",
+                "hex": "323032362d31312d30312030393a33303a3030"
+            },
+            "raw_type": "string"
+        },
+        {
+            "fmt": "Y-m-d H:i:s",
+            "label": "numstr-ts",
+            "arg": {
+                "type": "string",
+                "hex": "31373933343936363030"
+            },
+            "out": {
+                "type": "string",
+                "hex": "323032362d31312d30312030393a33303a3030"
+            },
+            "raw_type": "string"
+        },
+        {
+            "fmt": "Y-m-d H:i:s",
+            "label": "int0",
+            "arg": {
+                "type": "integer",
+                "hex": "30"
+            },
+            "out": {
+                "type": "string",
+                "hex": "313937302d30312d30312030383a30303a3030"
+            },
+            "raw_type": "string"
+        },
+        {
+            "fmt": "Y-m-d H:i:s",
+            "label": "numstr0",
+            "arg": {
+                "type": "string",
+                "hex": "30"
+            },
+            "out": {
+                "type": "string",
+                "hex": "313937302d30312d30312030383a30303a3030"
+            },
+            "raw_type": "string"
+        },
+        {
+            "fmt": "Y-m-d H:i:s",
+            "label": "null",
+            "arg": {
+                "type": "NULL",
+                "hex": ""
+            },
+            "out": {
+                "type": "string",
+                "hex": "313937302d30312d30312030383a30303a3030"
+            },
+            "raw_type": "string"
+        },
+        {
+            "fmt": "Y-m-d H:i:s",
+            "label": "emptystr",
+            "arg": {
+                "type": "string",
+                "hex": ""
+            },
+            "out": {
+                "type": "boolean",
+                "hex": ""
+            },
+            "raw_type": "boolean"
+        },
+        {
+            "fmt": "Y-m-d H:i:s",
+            "label": "nonnumeric",
+            "arg": {
+                "type": "string",
+                "hex": "6e6f742d612d64617465"
+            },
+            "out": {
+                "type": "boolean",
+                "hex": ""
+            },
+            "raw_type": "boolean"
+        },
+        {
+            "fmt": "Y-m-d H:i:s",
+            "label": "float",
+            "arg": {
+                "type": "double",
+                "hex": "31373933353832343030"
+            },
+            "out": {
+                "type": "string",
+                "hex": "323032362d31312d30322030393a32303a3030"
+            },
+            "raw_type": "string"
+        },
+        {
+            "fmt": "m-d",
+            "label": "int-ts",
+            "arg": {
+                "type": "integer",
+                "hex": "31373933343936363030"
+            },
+            "out": {
+                "type": "string",
+                "hex": "31312d3031"
+            },
+            "raw_type": "string"
+        },
+        {
+            "fmt": "m-d",
+            "label": "numstr-ts",
+            "arg": {
+                "type": "string",
+                "hex": "31373933343936363030"
+            },
+            "out": {
+                "type": "string",
+                "hex": "31312d3031"
+            },
+            "raw_type": "string"
+        },
+        {
+            "fmt": "m-d",
+            "label": "int0",
+            "arg": {
+                "type": "integer",
+                "hex": "30"
+            },
+            "out": {
+                "type": "string",
+                "hex": "30312d3031"
+            },
+            "raw_type": "string"
+        },
+        {
+            "fmt": "m-d",
+            "label": "numstr0",
+            "arg": {
+                "type": "string",
+                "hex": "30"
+            },
+            "out": {
+                "type": "string",
+                "hex": "30312d3031"
+            },
+            "raw_type": "string"
+        },
+        {
+            "fmt": "m-d",
+            "label": "null",
+            "arg": {
+                "type": "NULL",
+                "hex": ""
+            },
+            "out": {
+                "type": "string",
+                "hex": "30312d3031"
+            },
+            "raw_type": "string"
+        },
+        {
+            "fmt": "m-d",
+            "label": "emptystr",
+            "arg": {
+                "type": "string",
+                "hex": ""
+            },
+            "out": {
+                "type": "boolean",
+                "hex": ""
+            },
+            "raw_type": "boolean"
+        },
+        {
+            "fmt": "m-d",
+            "label": "nonnumeric",
+            "arg": {
+                "type": "string",
+                "hex": "6e6f742d612d64617465"
+            },
+            "out": {
+                "type": "boolean",
+                "hex": ""
+            },
+            "raw_type": "boolean"
+        },
+        {
+            "fmt": "m-d",
+            "label": "float",
+            "arg": {
+                "type": "double",
+                "hex": "31373933353832343030"
+            },
+            "out": {
+                "type": "string",
+                "hex": "31312d3032"
+            },
+            "raw_type": "string"
+        }
+    ],
+    "fn_list": [
+        {
+            "fn": "str_replace",
+            "args": [
+                {
+                    "type": "string",
+                    "hex": "e3808c61e3808d"
+                },
+                {
+                    "type": "array",
+                    "hex": "693a303d3e737472696e672861293b"
+                },
+                {
+                    "type": "array",
+                    "hex": "693a303d3e737472696e672862293b"
+                },
+                {
+                    "type": "string",
+                    "hex": "e3808c61e3808d"
+                }
+            ],
+            "out": {
+                "type": "array",
+                "hex": "693a303d3e737472696e672862293b"
+            },
+            "php_type": "array"
+        },
+        {
+            "fn": "str_replace",
+            "args": [
+                {
+                    "type": "string",
+                    "hex": "616263"
+                },
+                {
+                    "type": "array",
+                    "hex": "693a303d3e737472696e67286162293b693a313d3e737472696e672863293b"
+                },
+                {
+                    "type": "array",
+                    "hex": "693a303d3e737472696e6728293b693a313d3e737472696e672858293b"
+                },
+                {
+                    "type": "string",
+                    "hex": "616263"
+                }
+            ],
+            "out": {
+                "type": "array",
+                "hex": "693a303d3e737472696e6728293b693a313d3e737472696e672858293b"
+            },
+            "php_type": "array"
+        },
+        {
+            "fn": "str_replace",
+            "args": [
+                {
+                    "type": "string",
+                    "hex": ""
+                },
+                {
+                    "type": "array",
+                    "hex": "693a303d3e737472696e672861293b"
+                },
+                {
+                    "type": "array",
+                    "hex": "693a303d3e737472696e672862293b"
+                },
+                {
+                    "type": "string",
+                    "hex": ""
+                }
+            ],
+            "out": {
+                "type": "array",
+                "hex": "693a303d3e737472696e672862293b"
+            },
+            "php_type": "array"
+        },
+        {
+            "fn": "htmlspecialchars",
+            "args": [
+                {
+                    "type": "string",
+                    "hex": "3c6120687265663d2278223e26273c2f613e"
+                },
+                {
+                    "type": "NULL",
+                    "hex": ""
+                },
+                {
+                    "type": "NULL",
+                    "hex": ""
+                },
+                {
+                    "type": "NULL",
+                    "hex": ""
+                }
+            ],
+            "out": {
+                "type": "string",
+                "hex": "266c743b6120687265663d2278222667743b26616d703b27266c743b2f612667743b"
+            },
+            "php_type": "string"
+        },
+        {
+            "fn": "mac_default",
+            "args": [
+                {
+                    "type": "string",
+                    "hex": ""
+                },
+                {
+                    "type": "string",
+                    "hex": "78"
+                }
+            ],
+            "out": {
+                "type": "string",
+                "hex": "78"
+            },
+            "php_type": "string"
+        },
+        {
+            "fn": "mac_default",
+            "args": [
+                {
+                    "type": "NULL",
+                    "hex": ""
+                },
+                {
+                    "type": "string",
+                    "hex": "78"
+                }
+            ],
+            "out": {
+                "type": "string",
+                "hex": "78"
+            },
+            "php_type": "string"
+        },
+        {
+            "fn": "mac_default",
+            "args": [
+                {
+                    "type": "string",
+                    "hex": "30"
+                },
+                {
+                    "type": "string",
+                    "hex": "78"
+                }
+            ],
+            "out": {
+                "type": "string",
+                "hex": "78"
+            },
+            "php_type": "string"
+        },
+        {
+            "fn": "mac_default",
+            "args": [
+                {
+                    "type": "string",
+                    "hex": "76"
+                },
+                {
+                    "type": "string",
+                    "hex": "78"
+                }
+            ],
+            "out": {
+                "type": "string",
+                "hex": "76"
+            },
+            "php_type": "string"
+        },
+        {
+            "fn": "mac_substring",
+            "args": [
+                {
+                    "type": "string",
+                    "hex": "616263646566"
+                },
+                {
+                    "type": "integer",
+                    "hex": "33"
+                },
+                {
+                    "type": "string",
+                    "hex": "2e2e2e"
+                }
+            ],
+            "out": {
+                "type": "string",
+                "hex": "616263"
+            },
+            "php_type": "string"
+        },
+        {
+            "fn": "mac_substring",
+            "args": [
+                {
+                    "type": "string",
+                    "hex": "616263646566"
+                },
+                {
+                    "type": "integer",
+                    "hex": "30"
+                },
+                {
+                    "type": "string",
+                    "hex": "2e2e2e"
+                }
+            ],
+            "out": {
+                "type": "string",
+                "hex": "61"
+            },
+            "php_type": "string"
+        },
+        {
+            "fn": "mac_substring",
+            "args": [
+                {
+                    "type": "string",
+                    "hex": "616263646566"
+                },
+                {
+                    "type": "integer",
+                    "hex": "3130"
+                },
+                {
+                    "type": "string",
+                    "hex": "2e2e2e"
+                }
+            ],
+            "out": {
+                "type": "string",
+                "hex": "616263646566"
+            },
+            "php_type": "string"
+        },
+        {
+            "fn": "mac_substring",
+            "args": [
+                {
+                    "type": "string",
+                    "hex": ""
+                },
+                {
+                    "type": "integer",
+                    "hex": "33"
+                },
+                {
+                    "type": "string",
+                    "hex": "2e2e2e"
+                }
+            ],
+            "out": {
+                "type": "string",
+                "hex": ""
+            },
+            "php_type": "string"
+        },
+        {
+            "fn": "mac_substring",
+            "args": [
+                {
+                    "type": "string",
+                    "hex": "3c613ee4b8ade6968726616d703b"
+                },
+                {
+                    "type": "integer",
+                    "hex": "34"
+                },
+                {
+                    "type": "string",
+                    "hex": "2e2e"
+                }
+            ],
+            "out": {
+                "type": "string",
+                "hex": "3c613ee4b8ad"
+            },
+            "php_type": "string"
+        },
+        {
+            "fn": "long2ip",
+            "args": [
+                {
+                    "type": "integer",
+                    "hex": "313637373732313631"
+                }
+            ],
+            "out": {
+                "type": "string",
+                "hex": "31302e302e302e31"
+            },
+            "php_type": "string"
+        },
+        {
+            "fn": "long2ip",
+            "args": [
+                {
+                    "type": "integer",
+                    "hex": "30"
+                }
+            ],
+            "out": {
+                "type": "string",
+                "hex": "302e302e302e30"
+            },
+            "php_type": "string"
+        },
+        {
+            "fn": "long2ip",
+            "args": [
+                {
+                    "type": "integer",
+                    "hex": "34323934393637323935"
+                }
+            ],
+            "out": {
+                "type": "string",
+                "hex": "3235352e3235352e3235352e323535"
+            },
+            "php_type": "string"
+        },
+        {
+            "fn": "long2ip",
+            "args": [
+                {
+                    "type": "integer",
+                    "hex": "2d31"
+                }
+            ],
+            "out": {
+                "type": "string",
+                "hex": "3235352e3235352e3235352e323535"
+            },
+            "php_type": "string"
+        },
+        {
+            "fn": "mac_long2ip",
+            "args": [
+                {
+                    "type": "integer",
+                    "hex": "313637373732313631"
+                }
+            ],
+            "out": {
+                "type": "string",
+                "hex": "31302e302e2a2e2a"
+            },
+            "php_type": "string"
+        },
+        {
+            "fn": "mac_long2ip",
+            "args": [
+                {
+                    "type": "integer",
+                    "hex": "30"
+                }
+            ],
+            "out": {
+                "type": "string",
+                "hex": "302e302e2a2e2a"
+            },
+            "php_type": "string"
+        },
+        {
+            "fn": "mac_long2ip",
+            "args": [
+                {
+                    "type": "string",
+                    "hex": "313637373732313631"
+                }
+            ],
+            "out": {
+                "type": "string",
+                "hex": "31302e302e2a2e2a"
+            },
+            "php_type": "string"
+        },
+        {
+            "fn": "mac_long2ip",
+            "args": [
+                {
+                    "type": "string",
+                    "hex": "616263"
+                }
+            ],
+            "out": {
+                "type": "string",
+                "hex": ""
+            },
+            "php_type": "string"
+        },
+        {
+            "fn": "mac_long2ip",
+            "args": [
+                {
+                    "type": "NULL",
+                    "hex": ""
+                }
+            ],
+            "out": {
+                "type": "string",
+                "hex": "302e302e2a2e2a"
+            },
+            "php_type": "string"
+        },
+        {
+            "fn": "ceil",
+            "args": [
+                {
+                    "type": "double",
+                    "hex": "312e32"
+                }
+            ],
+            "out": {
+                "type": "double",
+                "hex": "32"
+            },
+            "php_type": "double"
+        },
+        {
+            "fn": "ceil",
+            "args": [
+                {
+                    "type": "double",
+                    "hex": "31"
+                }
+            ],
+            "out": {
+                "type": "double",
+                "hex": "31"
+            },
+            "php_type": "double"
+        },
+        {
+            "fn": "ceil",
+            "args": [
+                {
+                    "type": "double",
+                    "hex": "2d312e32"
+                }
+            ],
+            "out": {
+                "type": "double",
+                "hex": "2d31"
+            },
+            "php_type": "double"
+        },
+        {
+            "fn": "ceil",
+            "args": [
+                {
+                    "type": "integer",
+                    "hex": "30"
+                }
+            ],
+            "out": {
+                "type": "double",
+                "hex": "30"
+            },
+            "php_type": "double"
+        },
+        {
+            "fn": "ceil",
+            "args": [
+                {
+                    "type": "string",
+                    "hex": "322e31"
+                }
+            ],
+            "out": {
+                "type": "double",
+                "hex": "33"
+            },
+            "php_type": "double"
+        },
+        {
+            "fn": "count",
+            "args": [
+                {
+                    "type": "array",
+                    "hex": "693a303d3e696e74656765722831293b693a313d3e696e74656765722832293b693a323d3e696e74656765722833293b"
+                }
+            ],
+            "out": {
+                "type": "integer",
+                "hex": "33"
+            },
+            "php_type": "integer"
+        },
+        {
+            "fn": "count",
+            "args": [
+                {
+                    "type": "array",
+                    "hex": ""
+                }
+            ],
+            "out": {
+                "type": "integer",
+                "hex": "30"
+            },
+            "php_type": "integer"
+        },
+        {
+            "fn": "count",
+            "args": [
+                {
+                    "type": "NULL",
+                    "hex": ""
+                }
+            ],
+            "out": {
+                "type": "integer",
+                "hex": "30"
+            },
+            "php_type": "integer"
+        },
+        {
+            "fn": "mac_filter_html",
+            "args": [
+                {
+                    "type": "string",
+                    "hex": "3c7020636c6173733d2278223e613c7363726970743e616c6572742831293c2f7363726970743e3c2f703e"
+                }
+            ],
+            "out": {
+                "type": "string",
+                "hex": "61616c657274283129"
+            },
+            "php_type": "string"
+        },
+        {
+            "fn": "mac_filter_html",
+            "args": [
+                {
+                    "type": "string",
+                    "hex": ""
+                }
+            ],
+            "out": {
+                "type": "string",
+                "hex": ""
+            },
+            "php_type": "string"
+        },
+        {
+            "fn": "intval",
+            "args": [
+                {
+                    "type": "integer",
+                    "hex": "3130"
+                }
+            ],
+            "out": {
+                "type": "integer",
+                "hex": "3130"
+            },
+            "php_type": "integer"
+        },
+        {
+            "fn": "intval",
+            "args": [
+                {
+                    "type": "double",
+                    "hex": "31302e39"
+                }
+            ],
+            "out": {
+                "type": "integer",
+                "hex": "3130"
+            },
+            "php_type": "integer"
+        },
+        {
+            "fn": "intval",
+            "args": [
+                {
+                    "type": "string",
+                    "hex": "3130"
+                }
+            ],
+            "out": {
+                "type": "integer",
+                "hex": "3130"
+            },
+            "php_type": "integer"
+        },
+        {
+            "fn": "intval",
+            "args": [
+                {
+                    "type": "string",
+                    "hex": "3130616263"
+                }
+            ],
+            "out": {
+                "type": "integer",
+                "hex": "3130"
+            },
+            "php_type": "integer"
+        },
+        {
+            "fn": "intval",
+            "args": [
+                {
+                    "type": "string",
+                    "hex": "616263"
+                }
+            ],
+            "out": {
+                "type": "integer",
+                "hex": "30"
+            },
+            "php_type": "integer"
+        },
+        {
+            "fn": "intval",
+            "args": [
+                {
+                    "type": "NULL",
+                    "hex": ""
+                }
+            ],
+            "out": {
+                "type": "integer",
+                "hex": "30"
+            },
+            "php_type": "integer"
+        },
+        {
+            "fn": "intval",
+            "args": [
+                {
+                    "type": "boolean",
+                    "hex": "31"
+                }
+            ],
+            "out": {
+                "type": "integer",
+                "hex": "31"
+            },
+            "php_type": "integer"
+        },
+        {
+            "fn": "intval",
+            "args": [
+                {
+                    "type": "string",
+                    "hex": "30783141"
+                }
+            ],
+            "out": {
+                "type": "integer",
+                "hex": "30"
+            },
+            "php_type": "integer"
+        },
+        {
+            "fn": "intval",
+            "args": [
+                {
+                    "type": "integer",
+                    "hex": "353131"
+                }
+            ],
+            "out": {
+                "type": "integer",
+                "hex": "353131"
+            },
+            "php_type": "integer"
+        },
+        {
+            "fn": "strip_tags",
+            "args": [
+                {
+                    "type": "string",
+                    "hex": "3c703e613c623e623c2f623e3c2f703e"
+                },
+                {
+                    "type": "string",
+                    "hex": "3c623e"
+                }
+            ],
+            "out": {
+                "type": "string",
+                "hex": "613c623e623c2f623e"
+            },
+            "php_type": "string"
+        },
+        {
+            "fn": "strip_tags",
+            "args": [
+                {
+                    "type": "string",
+                    "hex": "3c703e613c623e623c2f623e3c2f703e"
+                },
+                {
+                    "type": "NULL",
+                    "hex": ""
+                }
+            ],
+            "out": {
+                "type": "string",
+                "hex": "6162"
+            },
+            "php_type": "string"
+        },
+        {
+            "fn": "urlencode",
+            "args": [
+                {
+                    "type": "string",
+                    "hex": "61206226633d642fe4b8ad"
+                }
+            ],
+            "out": {
+                "type": "string",
+                "hex": "612b622532366325334464253246254534254238254144"
+            },
+            "php_type": "string"
+        },
+        {
+            "fn": "urlencode",
+            "args": [
+                {
+                    "type": "string",
+                    "hex": ""
+                }
+            ],
+            "out": {
+                "type": "string",
+                "hex": ""
+            },
+            "php_type": "string"
+        },
+        {
+            "fn": "explode",
+            "args": [
+                {
+                    "type": "string",
+                    "hex": "612c622c2c63"
+                },
+                {
+                    "type": "string",
+                    "hex": "2c"
+                }
+            ],
+            "out": {
+                "type": "array",
+                "hex": "693a303d3e737472696e67282c293b"
+            },
+            "php_type": "array"
+        },
+        {
+            "fn": "explode",
+            "args": [
+                {
+                    "type": "string",
+                    "hex": "2c612c"
+                },
+                {
+                    "type": "string",
+                    "hex": "2c"
+                }
+            ],
+            "out": {
+                "type": "array",
+                "hex": "693a303d3e737472696e67282c293b"
+            },
+            "php_type": "array"
+        },
+        {
+            "fn": "explode",
+            "args": [
+                {
+                    "type": "string",
+                    "hex": "616263"
+                },
+                {
+                    "type": "string",
+                    "hex": "2c"
+                }
+            ],
+            "out": {
+                "type": "array",
+                "hex": "693a303d3e737472696e67282c293b"
+            },
+            "php_type": "array"
+        },
+        {
+            "fn": "explode",
+            "args": [
+                {
+                    "type": "string",
+                    "hex": "612c62"
+                },
+                {
+                    "type": "string",
+                    "hex": ""
+                }
+            ],
+            "out": {
+                "type": "array",
+                "hex": "693a303d3e737472696e6728293b"
+            },
+            "php_type": "array"
+        },
+        {
+            "fn": "mac_em_replace",
+            "args": [
+                {
+                    "type": "string",
+                    "hex": "5b656d315d20e68da2e8a18c"
+                }
+            ],
+            "out": {
+                "type": "string",
+                "hex": "5b656d315d20e68da2e8a18c"
+            },
+            "php_type": "string"
+        },
+        {
+            "fn": "mac_em_replace",
+            "args": [
+                {
+                    "type": "string",
+                    "hex": ""
+                }
+            ],
+            "out": {
+                "type": "string",
+                "hex": ""
+            },
+            "php_type": "string"
+        },
+        {
+            "fn": "mac_get_plog_type_text",
+            "args": [
+                {
+                    "type": "integer",
+                    "hex": "31"
+                }
+            ],
+            "out": {
+                "type": "string",
+                "hex": "696e74656772616c5f7265636861726765"
+            },
+            "php_type": "string"
+        },
+        {
+            "fn": "mac_get_plog_type_text",
+            "args": [
+                {
+                    "type": "integer",
+                    "hex": "32"
+                }
+            ],
+            "out": {
+                "type": "string",
+                "hex": "726567697374726174696f6e5f70726f6d6f74696f6e"
+            },
+            "php_type": "string"
+        },
+        {
+            "fn": "mac_get_plog_type_text",
+            "args": [
+                {
+                    "type": "integer",
+                    "hex": "33"
+                }
+            ],
+            "out": {
+                "type": "string",
+                "hex": "76697369745f70726f6d6f74696f6e"
+            },
+            "php_type": "string"
+        },
+        {
+            "fn": "mac_get_plog_type_text",
+            "args": [
+                {
+                    "type": "integer",
+                    "hex": "34"
+                }
+            ],
+            "out": {
+                "type": "string",
+                "hex": "6f6e655f6c6576656c5f646973747269627574696f6e"
+            },
+            "php_type": "string"
+        },
+        {
+            "fn": "mac_get_plog_type_text",
+            "args": [
+                {
+                    "type": "integer",
+                    "hex": "35"
+                }
+            ],
+            "out": {
+                "type": "string",
+                "hex": "74776f5f6c6576656c5f646973747269627574696f6e"
+            },
+            "php_type": "string"
+        },
+        {
+            "fn": "mac_get_plog_type_text",
+            "args": [
+                {
+                    "type": "integer",
+                    "hex": "30"
+                }
+            ],
+            "out": {
+                "type": "NULL",
+                "hex": ""
+            },
+            "php_type": "NULL"
+        },
+        {
+            "fn": "mac_get_plog_type_text",
+            "args": [
+                {
+                    "type": "string",
+                    "hex": "31"
+                }
+            ],
+            "out": {
+                "type": "string",
+                "hex": "696e74656772616c5f7265636861726765"
+            },
+            "php_type": "string"
+        }
+    ],
+    "fn_url_list": [
+        {
+            "fn": "mac_url_img",
+            "exists": true,
+            "reflection": "Function [ <user> function mac_url_img ] {\n  @@ <REPO>/php/application/common.php 1633 - 1657\n\n  - Parameters [1] {\n    Parameter #0 [ <required> $url ]\n  }\n}\n"
+        },
+        {
+            "fn": "mac_url_create",
+            "exists": true,
+            "reflection": "Function [ <user> function mac_url_create ] {\n  @@ <REPO>/php/application/common.php 2436 - 2460\n\n  - Parameters [5] {\n    Parameter #0 [ <required> $str ]\n    Parameter #1 [ <optional> $type = 'actor' ]\n    Parameter #2 [ <optional> $flag = 'vod' ]\n    Parameter #3 [ <optional> $ac = 'search' ]\n    Parameter #4 [ <optional> $sp = '&nbsp;' ]\n  }\n}\n"
+        },
+        {
+            "fn": "mac_url_actor_detail",
+            "exists": true,
+            "reflection": "Function [ <user> function mac_url_actor_detail ] {\n  @@ <REPO>/php/application/common.php 2512 - 2515\n\n  - Parameters [1] {\n    Parameter #0 [ <required> $info ]\n  }\n}\n"
+        },
+        {
+            "fn": "mac_url_page",
+            "exists": true,
+            "reflection": "Function [ <user> function mac_url_page ] {\n  @@ <REPO>/php/application/common.php 2429 - 2434\n\n  - Parameters [2] {\n    Parameter #0 [ <required> $url ]\n    Parameter #1 [ <required> $num ]\n  }\n}\n"
+        },
+        {
+            "fn": "mac_url_vod_detail",
+            "exists": true,
+            "reflection": "Function [ <user> function mac_url_vod_detail ] {\n  @@ <REPO>/php/application/common.php 2564 - 2567\n\n  - Parameters [1] {\n    Parameter #0 [ <required> $info ]\n  }\n}\n"
+        },
+        {
+            "fn": "mac_url_vod_plot",
+            "exists": true,
+            "reflection": "Function [ <user> function mac_url_vod_plot ] {\n  @@ <REPO>/php/application/common.php 2528 - 2531\n\n  - Parameters [2] {\n    Parameter #0 [ <required> $info ]\n    Parameter #1 [ <optional> $param = Array ]\n  }\n}\n"
+        },
+        {
+            "fn": "mac_url_art_detail",
+            "exists": true,
+            "reflection": "Function [ <user> function mac_url_art_detail ] {\n  @@ <REPO>/php/application/common.php 2552 - 2555\n\n  - Parameters [2] {\n    Parameter #0 [ <required> $info ]\n    Parameter #1 [ <optional> $param = Array ]\n  }\n}\n"
+        },
+        {
+            "fn": "mac_url_type",
+            "exists": true,
+            "reflection": "Function [ <user> function mac_url_type ] {\n  @@ <REPO>/php/application/common.php 2467 - 2487\n\n  - Parameters [3] {\n    Parameter #0 [ <required> $info ]\n    Parameter #1 [ <optional> $param = Array ]\n    Parameter #2 [ <optional> $flag = 'type' ]\n  }\n}\n"
+        },
+        {
+            "fn": "mac_get_user_portrait",
+            "exists": true,
+            "reflection": "Function [ <user> function mac_get_user_portrait ] {\n  @@ <REPO>/php/application/common.php 1205 - 1215\n\n  - Parameters [1] {\n    Parameter #0 [ <required> $user_id ]\n  }\n}\n"
+        },
+        {
+            "fn": "mac_url_content_img",
+            "exists": true,
+            "reflection": "Function [ <user> function mac_url_content_img ] {\n  @@ <REPO>/php/application/common.php 1659 - 1679\n\n  - Parameters [1] {\n    Parameter #0 [ <required> $content ]\n  }\n}\n"
+        }
+    ],
+    "fn_internal": [
+        {
+            "fn": "is_array",
+            "exists": true,
+            "reflection": "Function [ <internal:standard> function is_array ] {\n\n  - Parameters [1] {\n    Parameter #0 [ <required> $var ]\n  }\n}\n"
+        },
+        {
+            "fn": "count",
+            "exists": true,
+            "reflection": "Function [ <internal:standard> function count ] {\n\n  - Parameters [2] {\n    Parameter #0 [ <required> $var ]\n    Parameter #1 [ <optional> $mode ]\n  }\n}\n"
+        },
+        {
+            "fn": "array_slice",
+            "exists": true,
+            "reflection": "Function [ <internal:standard> function array_slice ] {\n\n  - Parameters [4] {\n    Parameter #0 [ <required> $arg ]\n    Parameter #1 [ <required> $offset ]\n    Parameter #2 [ <optional> $length ]\n    Parameter #3 [ <optional> $preserve_keys ]\n  }\n}\n"
+        },
+        {
+            "fn": "isset",
+            "exists": false,
+            "reflection": null
+        },
+        {
+            "fn": "empty",
+            "exists": false,
+            "reflection": null
+        },
+        {
+            "fn": "in_array",
+            "exists": true,
+            "reflection": "Function [ <internal:standard> function in_array ] {\n\n  - Parameters [3] {\n    Parameter #0 [ <required> $needle ]\n    Parameter #1 [ <required> $haystack ]\n    Parameter #2 [ <optional> $strict ]\n  }\n}\n"
+        },
+        {
+            "fn": "explode",
+            "exists": true,
+            "reflection": "Function [ <internal:standard> function explode ] {\n\n  - Parameters [3] {\n    Parameter #0 [ <required> $separator ]\n    Parameter #1 [ <required> $str ]\n    Parameter #2 [ <optional> $limit ]\n  }\n}\n"
+        },
+        {
+            "fn": "trim",
+            "exists": true,
+            "reflection": "Function [ <internal:standard> function trim ] {\n\n  - Parameters [2] {\n    Parameter #0 [ <required> $str ]\n    Parameter #1 [ <optional> $character_mask ]\n  }\n}\n"
+        },
+        {
+            "fn": "substr",
+            "exists": true,
+            "reflection": "Function [ <internal:standard> function substr ] {\n\n  - Parameters [3] {\n    Parameter #0 [ <required> $str ]\n    Parameter #1 [ <required> $start ]\n    Parameter #2 [ <optional> $length ]\n  }\n}\n"
+        },
+        {
+            "fn": "str_replace",
+            "exists": true,
+            "reflection": "Function [ <internal:standard> function str_replace ] {\n\n  - Parameters [4] {\n    Parameter #0 [ <required> $search ]\n    Parameter #1 [ <required> $replace ]\n    Parameter #2 [ <required> $subject ]\n    Parameter #3 [ <optional> &$replace_count ]\n  }\n}\n"
+        },
+        {
+            "fn": "htmlspecialchars",
+            "exists": true,
+            "reflection": "Function [ <internal:standard> function htmlspecialchars ] {\n\n  - Parameters [4] {\n    Parameter #0 [ <required> $string ]\n    Parameter #1 [ <optional> $quote_style ]\n    Parameter #2 [ <optional> $encoding ]\n    Parameter #3 [ <optional> $double_encode ]\n  }\n}\n"
+        },
+        {
+            "fn": "sprintf",
+            "exists": true,
+            "reflection": "Function [ <internal:standard> function sprintf ] {\n\n  - Parameters [2] {\n    Parameter #0 [ <required> $format ]\n    Parameter #1 [ <optional> ...$args ]\n  }\n}\n"
+        },
+        {
+            "fn": "implode",
+            "exists": true,
+            "reflection": "Function [ <internal:standard> function implode ] {\n\n  - Parameters [2] {\n    Parameter #0 [ <required> $glue ]\n    Parameter #1 [ <required> $pieces ]\n  }\n}\n"
+        },
+        {
+            "fn": "join",
+            "exists": true,
+            "reflection": "Function [ <internal:standard> function join ] {\n\n  - Parameters [2] {\n    Parameter #0 [ <required> $glue ]\n    Parameter #1 [ <required> $pieces ]\n  }\n}\n"
+        }
+    ],
+    "tag_names": {
+        "label_maccms": [
+            "path",
+            "siteaid",
+            "sitetid",
+            "siteid"
+        ],
+        "raw_output_tpl11": [
+            "path",
+            "siteaid",
+            "sitetid",
+            "siteid",
+            "link_gbook",
+            "link_map_baidu",
+            "link_map_google",
+            "link_map_rss",
+            "link_map_vod"
+        ]
+    },
+    "art_info_empty_where": {
+        "code": 1001,
+        "msg": "param_err"
+    },
+    "art_info_not_found": {
+        "code": 1002,
+        "msg": "obtain_err"
+    }
+}

@@ -1,0 +1,100 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width = device-width ,initial-scale = 1,minimum-scale = 1,maximum-scale = 1,user-scalable =no,"/>
+	<title>在线支付 - <?php echo $maccms['site_name']; ?></title>
+	<link href="<?php echo $maccms['path_tpl']; ?>css/user.css" type="text/css" rel="stylesheet"/>
+<script>var SitePath='{maccms:path}',SiteAid='{maccms:siteaid}',SiteTid='{maccms:sitetid}',SiteId='{maccms:siteid}';</script>
+<script src="__STATIC__/js/jquery.js"></script>
+</head>
+
+<body class="bg-fff">
+<!--子页顶部-->
+<div class="zy-search zy-tit">
+	<div class="sch-w clearfix">
+		<a class="go-back" href="#"><img src="<?php echo $maccms['path_tpl']; ?>images/user/go-back.png"></a>
+		<div class="tit">
+			确认付款
+		</div>
+	</div>
+</div>
+<form method="post" target="_blank" action="<?php echo url('user/gopay'); ?>">
+	<input type="hidden" name="order_id" value="<?php echo $info['order_id']; ?>">
+	<input type="hidden" name="order_code" value="<?php echo $info['order_code']; ?>">
+<div class="wrap mb80">
+	<div class="payment line">
+
+		<div class="radio-box">
+			<label class="radio" for="">订单编号：</label>
+			<p><?php echo $info['order_code']; ?></p>
+		</div>
+
+		<div class="radio-box">
+			<label class="radio" for="">订单金额：</label>
+			<p><?php echo $info['order_price']; ?>元</p>
+		</div>
+
+		<div class="radio-box">
+			<label class="radio" for="">支付方式：</label>
+			<p><select name="payment" id="payment" style="height:50px;line-height: 50px;width:300px;">
+				<option value ="">请选择...</option>
+				<?php if(is_array($ext_list) || $ext_list instanceof /think/Collection || $ext_list instanceof /think/Paginator): $i = 0; $__LIST__ = $ext_list;if( count($__LIST__)==0 ) : echo "" ;else: foreach($__LIST__ as $key=>$vo): $mod = ($i % 2 );++$i;?>
+				<option value="<?php echo $key; ?>"><?php echo $vo; ?>支付</option>
+				<?php endforeach; endif; else: echo "" ;endif; ?>
+			</select></p>
+		</div>
+
+
+		<div class="radio-box" id="paytype_box" style="display:none;">
+			<label class="radio" for="">支付类型：</label>
+			<p>
+				<select class="paytype" id="paytype" name="paytype" style="height:50px;line-height: 50px;width:300px;">
+				</select>
+			</p>
+		</div>
+
+	</div>
+</div>
+
+<div class="pch-foot clearfix">
+
+	<input class="btn ml10" type="submit" name="do" value="确认付款" id="btn_submit" >
+	<div class="total cf-total " style="margin-top: 1em;">
+		支付金额：<span class="price">￥<span id="cart_price_total"><?php echo $info['order_price']; ?></span></span>
+	</div>
+</div>
+</form>
+
+<!--loading start-->
+<div class="loading_box"></div>
+<!--loading end-->
+
+<script>
+	var codepay_type = '{maccms:foreach name=":explode(',',$config.codepay.type)"}<option value ="<?php echo $vo; ?>"><?php if($vo==1): ?>支付宝二维码<?php elseif($vo==2): ?>QQ钱包二维<?php elseif($vo==3): ?>微信二维码<?php endif; ?></option>{/maccms:foreach}';
+	var zhapay_type ='{maccms:foreach name=":explode(',',$config.zhapay.type)"}<option value ="<?php echo $vo; ?>"><?php if($vo==1): ?>微信<?php elseif($vo==2): ?>支付宝<?php endif; ?></option> {/maccms:foreach}';
+
+	$("#payment").change(function() {
+		$('#paytype').html('');
+		if($("#payment").val()=="codepay" || $("#payment").val()=="zhapay"){
+			if($("#payment").val()=="codepay") {
+				$('#paytype').html(codepay_type);
+			}
+			if($("#payment").val()=="zhapay") {
+				$('#paytype').html(zhapay_type);
+			}
+
+			$("#paytype_box").slideDown();
+		}
+		else{
+			$("#paytype_box").slideUp();
+		}
+	});
+
+	$(".paytype").change(function() {
+		$('#paytype').val( $(this).val() );
+	});
+</script>
+</body>
+</html>

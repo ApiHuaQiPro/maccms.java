@@ -14,6 +14,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import tools.jackson.databind.JsonNode;
@@ -58,6 +59,7 @@ class SiteTemplateSelectionGoldenTest {
                 assertThat(j.pathTpl()).isEqualTo("/template/default/html/");
                 continue;
             }
+            // 黄金键 path_tpl 记录的是 MAC_PATH_TPL，模板变量见 SiteVariant.pathTpl
             List<String> php = List.of("mob=" + r.get("mob").asInt(), "tpl=" + r.get("path_tpl").asString(),
                     "ads=" + r.get("path_ads").asString(), "template=" + r.get("path_template").asString(),
                     "root=" + r.get("root_template").asString());
@@ -91,6 +93,30 @@ class SiteTemplateSelectionGoldenTest {
         }
         assertThat(mismatches).isEmpty();
         assertThat(compared).isEqualTo(92);
+    }
+
+    /** DEC-3 取值下三个路径量分开（PATH-2～PATH-4）：Result 与 PHP 常量一一对应，不随 SiteVariant.pathTpl 的修正而变。 */
+    @Test
+    void dec3ValuesSplitThePathConstants() {
+        Map<Object, PhpValue> site = new LinkedHashMap<>();
+        site.put("install_dir", new PhpValue.PhpString("/"));
+        site.put("mob_status", new PhpValue.PhpString("2"));
+        site.put("template_dir", new PhpValue.PhpString("default_pc"));
+        site.put("html_dir", new PhpValue.PhpString("html"));
+        site.put("ads_dir", new PhpValue.PhpString("ads"));
+        site.put("mob_template_dir", new PhpValue.PhpString("default_wap"));
+        site.put("mob_html_dir", new PhpValue.PhpString("html"));
+        site.put("mob_ads_dir", new PhpValue.PhpString("ads"));
+        SiteTemplateSelection.Result pc = SiteTemplateSelection.resolve(new PhpArray(site), null,
+                "Mozilla/5.0 (Windows NT 10.0)", "www.test");
+        assertThat(List.of(pc.wap(), pc.pathTemplate(), pc.pathTpl(), pc.pathAds(), pc.templateDir(), pc.htmlDir()))
+                .containsExactly(false, "/template/default_pc/", "/template/default_pc/html/", "/template/default_pc/ads/",
+                        "default_pc", "html");
+        SiteTemplateSelection.Result wap = SiteTemplateSelection.resolve(new PhpArray(site), null,
+                "Mozilla/5.0 (Linux; Android 14)", "www.test");
+        assertThat(List.of(wap.wap(), wap.pathTemplate(), wap.pathTpl(), wap.pathAds(), wap.templateDir(), wap.htmlDir()))
+                .containsExactly(true, "/template/default_wap/", "/template/default_wap/html/", "/template/default_wap/ads/",
+                        "default_wap", "html");
     }
 
     private static PhpValue php(JsonNode v) {
