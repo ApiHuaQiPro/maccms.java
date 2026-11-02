@@ -531,7 +531,7 @@ git --attr-source=e939e25 diff --check 1775e26 e939e25 → 无输出，退出码
 | 名字 | `[A-Za-z_\x80-\xff][A-Za-z0-9_\x80-\xff]*`；`a\b` 为 `QUALIFIED`、`\think\Collection`/`\color` 为 `FULLY_QUALIFIED`，整个记号从前导 `\` 起算（BV-5 偏移口径）；悬空 `\` → `token` | 探针 `fq` |
 | 保留字 | PHP 7.3 保留字（不分大小写）→ `Keyword`；`true`/`false`/`null` 不是保留字，与 `color`、函数名一样是 `Name`，裸名/函数名在解析阶段按下一个记号判定（BARE-1/BARE-2，S3-07b）；`->` 之后一律是 `Name`（`$a->list`） | 探针 `prop` |
 | `/think/…` | 归一化黄金里的 `/think/Collection` 切成 `/`、`Name think`、`/`、`Name Collection`，不当作完整类名（OP-T8） | 全量黄金测试：98 个 `think` 均为 `UNQUALIFIED` |
-| 数字 | 十进制整数、`1.5`/`.5`/`2.`/指数浮点；超出 64 位的整数按 float；八/十六/二进制整数不在 RT-1 → `token` | 探针 `oct` |
+| 数字 | 十进制整数、`1.5`/`.5`/`2.`/指数浮点；带小数点或指数的前导零串（`00.5`、`01.5`、`00e1`、`00.`、`09.5`）是十进制 float（REV-1 修订）；超出 64 位的整数按 float；八进制整数（无小数点、无指数的前导零串：`00`、`07`、`012`、`00e` 的 `00`）与十六/二进制整数不在 RT-1 → `token` | 探针 `oct`、REV-1 探针 |
 | 其他 | `(int)` 等类型转换为一个 `Cast` 记号（解析器拒绝）；运算符最长匹配（含 `<=>`、`**`、`...`）；块注释、`#`、反引号、heredoc、非法字节 → `token`；`$$a` 切成 `$` + `$a`（解析器拒绝） | 探针 `cast` |
 
 ### AC-307A → 测试映射
@@ -539,10 +539,10 @@ git --attr-source=e939e25 diff --check 1775e26 e939e25 → 无输出，退出码
 | AC | 测试 | 断言 |
 | --- | --- | --- |
 | AC-307A-1 原始字节与偏移、TPL-5 | `PhpLexerTest$Segmentation`（7）、`$Tpl5CloseTagNewline`（5）；`PhpLexerGoldenTest.wholeCompileGoldenSplitsIntoContiguousSegmentsWithoutNormalisation` | 字面段原样含 CRLF/TAB/多字节；段首尾相接覆盖全部字节；LF/CRLF 只吃一个，第二个换行原样留在下一字面段；168 个编译黄金逐文件分段连续、`codeBlocks=6032` |
-| AC-307A-2 记号、引号转义、`//` 不吞 `?>`、名字/变量/类名区分 | `$Strings`（8）、`$Comments`（5）、`$NamesAndVariables`（8）、`$NumbersAndOperators`（5）、`$OpenTags`（2）、`sourceIsCopiedDefensively` | 字符串/注释边界各自独立；`color`、`color(`、`$color`、`\think\Collection`、`a\color` 记号种类与偏移；`/think/` 不成类名 |
+| AC-307A-2 记号、引号转义、`//` 不吞 `?>`、名字/变量/类名区分 | `$Strings`（8）、`$Comments`（5）、`$NamesAndVariables`（8）、`$NumbersAndOperators`（7，含 REV-1 两项）、`$OpenTags`（2）、`sourceIsCopiedDefensively` | 字符串/注释边界各自独立；`color`、`color(`、`$color`、`\think\Collection`、`a\color` 记号种类与偏移；`/think/` 不成类名 |
 | AC-307A-3 名单、JDK-only、诊断不读宿主 | `RuntimeDiagnosticsTest`（13）；既有 `PhpSemanticsTest.runtimeDependsOnlyOnJdk` | `REGISTERED == Set.of("color")` 且不可改；类 final、字段唯一且 `public static final`；异常 kind/偏移/片段、片段不截断 UTF-8；四个新文件不含 `System.getProperty/getenv`、反射、文件、日志等；`BareConst` 只接受登记名；词法器不拒绝任何名字（`color(1)`、`PHP_EOL` 都只是 `Name`） |
 | AC-307A-4 真实黄金 R15/P15/B15 | `PhpLexerGoldenTest.s15SampleBoundaryAndLexerSegmentation[default_pc, default_wap]` | 原始字节读取；无 `0x0d`、26 个 LF；R15 91 字节、SHA-256 `2fca28e7…59d9b`、后接 LF；EX-15 `<?php`/`?>` 各 1 次、s=33、e=91；P15 33 字节、B15 58 字节且 SHA-256 `6d67a065…b3de7e`；词法切分 R15+LF = 字面 P15 + 代码段 [33, 92)、`TAG_LF`；R15 无 LF → `TAG`；B15 单独切分 [0, 58)；B15 记号与偏移逐个相等（`'user_last_login_time'` 是字符串记号，`color` 是 `Name`）；整份文件中该代码段位于原始偏移 |
-| AC-307A-5 有效/无效/截断、先红后绿 | 以上全部；无效与截断见 `unterminatedStringsReportStartOffset`、`complexInterpolationIsUnsupported`、`nonDecimalIntegerLiteralsAreUnsupported`、`unsupportedLexemes`、`shortEchoAndShortOpenTagsAreUnsupported`、`danglingNamespaceSeparatorIsUnsupported`、`otherCommentFormsAreOutsideRt1` | 每个拒绝都断言 kind 与原始字节偏移 |
+| AC-307A-5 有效/无效/截断、先红后绿 | 以上全部；无效与截断见 `unterminatedStringsReportStartOffset`、`complexInterpolationIsUnsupported`、`nonDecimalIntegerLiteralsAreUnsupported`、`leadingZeroIntegerWithoutFractionOrExponentStaysUnsupported`、`unsupportedLexemes`、`shortEchoAndShortOpenTagsAreUnsupported`、`danglingNamespaceSeparatorIsUnsupported`、`otherCommentFormsAreOutsideRt1` | 每个拒绝都断言 kind 与原始字节偏移 |
 
 本批只验证切分与定位：BV-6 的执行层（BV-6c/6d，S15-4 的 `STUB` 输出）、BV-1～BV-5 的求值与拒绝判定属 S3-07b/S3-07c，本批不冒充其通过。
 
@@ -572,10 +572,44 @@ git diff --check f98ad7d HEAD → 无输出，退出码 0
   （S3-06 的 3046 项 + 本批新增 58 项；无退步）
 ```
 
+### REV-1 修复（后端评审第 1 轮，评论 `01a19ab6-92bf-7192-94a6-b94aa6987c25`）
+
+- 缺陷：`PhpLexer.number()` 原先在读完整数位后、识别小数点/指数之前，把“长度 > 1 且首字节为 `0`”的数字串一律按八进制拒绝，误拒 PHP 7.3 合法的十进制 `T_DNUMBER`（`00.5`、`01.5`、`00e1`）。
+- 修复：`0x`/`0b` 前缀仍在读整数位后立即拒绝；八进制判断移到小数点/指数识别之后，只在结果**不是 float** 且整数位长度 > 1、首字节为 `0` 时拒绝。非十进制整数的拒绝范围不变，TPL-5、黄金、JDK-only、诊断边界不动。
+- PHP 7.3.33 `token_get_all("<?php X;")` 实测（`D:\Tools\php\7.3\php.exe`；脚本在仓库外临时目录，不入库）：
+
+| 输入 | PHP 7.3.33 记号 | 本实现 |
+| --- | --- | --- |
+| `00.5` / `01.5` / `00e1` | `T_DNUMBER` 各 1 个 | `FloatLit` 0.5 / 1.5 / 0.0 |
+| `00.` / `09.5` / `08e1` / `0012.25` / `00E+2` / `00.5e-1` | `T_DNUMBER` 各 1 个 | `FloatLit` 0.0 / 9.5 / 80.0 / 12.25 / 0.0 / 0.05 |
+| `0.5` / `0e1` | `T_DNUMBER` | `FloatLit`（原有行为） |
+| `00` / `07` / `012` | `T_LNUMBER`（八进制） | 拒绝 `token`，偏移 6 |
+| `00e` | `T_LNUMBER "00"` + `T_STRING "e"` | 拒绝 `token`，偏移 6（`00` 是八进制整数） |
+| `0x1A` / `0b11` | `T_LNUMBER` | 拒绝 `token`，偏移 6（原有行为） |
+
+| REV-1 | 测试 | 断言 |
+| --- | --- | --- |
+| 前导零浮点/指数合法 | `PhpLexerTest$NumbersAndOperators.leadingZeroDecimalFloatsAndExponentsAreDecimal` | 9 个输入逐个为单个 `FloatLit`，值与上表一致；`0012.25` 记号为原始字节 [6, 13) |
+| 拒绝边界保留 | `…leadingZeroIntegerWithoutFractionOrExponentStaysUnsupported`；既有 `nonDecimalIntegerLiteralsAreUnsupported` | `00`、`07`、`00e`、`00...$a`（`...` 不是小数点）及 `012`/`0x1A`/`0b11` 都是 `token`、偏移 6 |
+
+```bash
+# 先红（只加测试、未改实现）
+./mvnw -B -q test -Dtest='PhpLexerTest$NumbersAndOperators'
+  → Tests run: 7, Failures: 0, Errors: 1（leadingZeroDecimalFloatsAndExponentsAreDecimal 抛 TemplateUnsupportedException；拒绝边界一项本就应通过）
+# 后绿
+./mvnw -B test -Dtest='PhpLexerTest,PhpLexerGoldenTest,RuntimeDiagnosticsTest,PhpSemanticsTest'
+  → Tests run: 69, Failures: 0, Errors: 0, Skipped: 0；BUILD SUCCESS
+# 全量回归（工作区 = REV-1 修复提交的代码与测试）
+./mvnw -B verify
+  → Tests run: 3106, Failures: 0, Errors: 0, Skipped: 0；BUILD SUCCESS；耗时 09:07；退出码 0（3104 + 新增 2 项，无退步）
+# 空白检查（目标属性）
+git diff --check 0b3fcd58cbbe67438035c554b8e61549821cce94 HEAD → 无输出，退出码 0
+```
+
 ### 迁移与回滚
 
 - 无数据库或数据迁移；不读写表、配置或文件；没有调用方（解析器/解释器尚未接入），产品行为不变。
-- 回滚：`git revert` 本节所在提交与 `a3e040e`（只删 4 个新类与 3 个测试类）；黄金提交 `d037731` 与 C-17 合并 `d25577a` 可保留（后续批次要用）。
+- 回滚：`git revert` REV-1 修复提交、本节所在提交与 `a3e040e`（只删 4 个新类与 3 个测试类）；黄金提交 `d037731` 与 C-17 合并 `d25577a` 可保留（后续批次要用）。
 
 ### S3-07a 自查（自查不代替审计）
 
