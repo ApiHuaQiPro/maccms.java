@@ -152,30 +152,30 @@ class PhpParserTest {
         }
 
         @ParameterizedTest
-        @CsvSource(delimiter = '|', value = {
-            "<?php break; ?>|6",
-            "<?php foreach($a as $v){ break 2; } ?>|30",
-            "<?php switch($a): default: default: endswitch; ?>|28",
-            "<?php switch($a): ?> x <?php case 1: endswitch; ?>|20",
-            "<?php switch($a): echo 1; case 1: endswitch; ?>|19",
-            "<?php if($a): else if($b): endif; endif; ?>|23",
-            "<?php if($a){ } elseif($b): endif; ?>|26",
-            "<?php foreach($a as &$v){} ?>|20",
-            "<?php foreach($a as $k => $v['x']){} ?>|31",
-            "<?php echo 1|10",
-            "<?php continue; ?>|6",
-            "<?php while(1){} ?>|6",
-            "<?php print 1; ?>|6",
-            "<?php exit; ?>|6",
-            "<?php return; ?>|6",
-            "<?php function f(){} ?>|6",
-            "<?php class A{} ?>|6",
-            "<?php include 'a.php'; ?>|6",
-            "<?php eval('1'); ?>|6",
-            "<?php $x = new A; ?>|11",
-            "<?php list($a) = $b; ?>|6",
-            "<?php unset($a); ?>|6",
-            "<?php global $a; ?>|6",
+        @CsvSource(delimiter = '#', value = {
+            "<?php break; ?>#6",
+            "<?php foreach($a as $v){ break 2; } ?>#31",
+            "<?php switch($a): default: default: endswitch; ?>#27",
+            "<?php switch($a): ?> x <?php case 1: endswitch; ?>#20",
+            "<?php switch($a): echo 1; case 1: endswitch; ?>#18",
+            "<?php if($a): else if($b): endif; endif; ?>#19",
+            "<?php if($a){ } elseif($b): endif; ?>#26",
+            "<?php foreach($a as &$v){} ?>#20",
+            "<?php foreach($a as $k => $v['x']){} ?>#28",
+            "<?php echo 1#12",
+            "<?php continue; ?>#6",
+            "<?php while(1){} ?>#6",
+            "<?php print 1; ?>#6",
+            "<?php exit; ?>#6",
+            "<?php return; ?>#6",
+            "<?php function f(){} ?>#6",
+            "<?php class A{} ?>#6",
+            "<?php include 'a.php'; ?>#6",
+            "<?php eval('1'); ?>#6",
+            "<?php $x = new A; ?>#11",
+            "<?php list($a) = $b; ?>#6",
+            "<?php unset($a); ?>#6",
+            "<?php global $a; ?>#6",
         })
         void unsupportedStatementsAreSyntaxErrors(String src, int offset) {
             rejects(src, Kind.SYNTAX, offset);
@@ -239,36 +239,36 @@ class PhpParserTest {
         }
 
         @ParameterizedTest
-        @CsvSource(delimiter = '|', value = {
-            "$a == $b == $c|20",
-            "$a < $b < $c|19",
-            "$a ?? 1|14",
-            "$a & 1|14",
-            "$a | 1|14",
-            "$a ^ 1|14",
-            "$a << 1|14",
-            "$a <=> $b|14",
-            "~$a|11",
-            "(int)$a|11",
-            "@f()|11",
-            "--$a|11",
-            "$a--|13",
-            "$a[]|14",
-            "$$a|11",
-            "${'a'}|11",
-            "$f()|13",
-            "'abc'[0]|16",
-            "f()[0]|14",
-            "($a)['x']|15",
-            "[&$a]|12",
-            "[1,,2]|14",
-            "[...$a]|12",
-            "f(...$a)|13",
-            "f(1,)|15",
-            "isset(1)|17",
-            "`ls`|11",
-            "$a{0}|13",
-            "array($a => &$b)|20",
+        @CsvSource(delimiter = '#', quoteCharacter = '"', value = {
+            "$a == $b == $c#20",
+            "$a < $b < $c#19",
+            "$a ?? 1#14",
+            "$a & 1#14",
+            "$a | 1#14",
+            "$a ^ 1#14",
+            "$a << 1#14",
+            "$a <=> $b#14",
+            "~$a#11",
+            "(int)$a#11",
+            "@f()#11",
+            "--$a#11",
+            "$a--#13",
+            "$a[]#14",
+            "$$a#11",
+            "${'a'}#11",
+            "$f()#13",
+            "'abc'[0]#16",
+            "f()[0]#14",
+            "($a)['x']#15",
+            "[&$a]#12",
+            "[1,,2]#14",
+            "[...$a]#12",
+            "f(...$a)#13",
+            "f(1,)#15",
+            "isset(1)#17",
+            "`ls`#11",
+            "$a{0}#13",
+            "array($a => &$b)#23",
         })
         void unsupportedExpressionFormsAreRejected(String expr, int offset) {
             TemplateUnsupportedException e = rejects("<?php echo " + expr + "; ?>", NO_DYNAMIC);
@@ -316,10 +316,10 @@ class PhpParserTest {
 
         /** BV-5：9 个裸名样例 bare_identifier @11，constant/defined 走 RT-7（function @11），片段含名字。 */
         @ParameterizedTest
-        @CsvSource(delimiter = '|', value = {
-            "COLOR|bare_identifier", "Color|bare_identifier", "PHP_EOL|bare_identifier", "E_ALL|bare_identifier",
-            "MAC_PATH|bare_identifier", "\\color|bare_identifier", "a\\color|bare_identifier", "X::Y|bare_identifier",
-            "__LINE__|bare_identifier", "constant('color')|function", "defined('color')|function",
+        @CsvSource(delimiter = '#', value = {
+            "COLOR#bare_identifier", "Color#bare_identifier", "PHP_EOL#bare_identifier", "E_ALL#bare_identifier",
+            "MAC_PATH#bare_identifier", "\\color#bare_identifier", "a\\color#bare_identifier", "X::Y#bare_identifier",
+            "__LINE__#bare_identifier", "constant('color')#function", "defined('color')#function",
         })
         void bv5RejectionsCarryKindOffsetAndSnippet(String name, String kind) {
             TemplateUnsupportedException e = rejects("<?php echo " + name + "; ?>", NO_DYNAMIC);
@@ -336,14 +336,14 @@ class PhpParserTest {
         }
 
         @ParameterizedTest
-        @CsvSource(delimiter = '|', value = {
-            "PHP_VERSION|bare_identifier|11", "DIRECTORY_SEPARATOR|bare_identifier|11", "THINK_PATH|bare_identifier|11",
-            "APP_PATH|bare_identifier|11", "ROOT_PATH|bare_identifier|11", "IS_AJAX|bare_identifier|11",
-            "__FILE__|bare_identifier|11", "__DIR__|bare_identifier|11", "__CLASS__|bare_identifier|11",
-            "self::Y|bare_identifier|11", "static::Y|bare_identifier|11", "X::y()|bare_identifier|11",
-            "\\f(1)|function|11", "a\\f(1)|function|11", "getenv('A')|function|11", "ini_get('a')|function|11",
-            "phpversion()|function|11", "get_defined_constants()|function|11", "define('A',1)|function|11",
-            "call_user_func('f')|function|11", "Model('art')->infoData()|function|11",
+        @CsvSource(delimiter = '#', value = {
+            "PHP_VERSION#bare_identifier#11", "DIRECTORY_SEPARATOR#bare_identifier#11", "THINK_PATH#bare_identifier#11",
+            "APP_PATH#bare_identifier#11", "ROOT_PATH#bare_identifier#11", "IS_AJAX#bare_identifier#11",
+            "__FILE__#bare_identifier#11", "__DIR__#bare_identifier#11", "__CLASS__#bare_identifier#11",
+            "self::Y#bare_identifier#11", "static::Y#bare_identifier#11", "X::y()#bare_identifier#11",
+            "\\f(1)#function#11", "a\\f(1)#function#11", "getenv('A')#function#11", "ini_get('a')#function#11",
+            "phpversion()#function#11", "get_defined_constants()#function#11", "define('A',1)#function#11",
+            "call_user_func('f')#function#11", "Model('art')->infoData()#function#11",
         })
         void otherConstantsNamespacesClassesMagicAndHostFunctionsAreRejected(String expr, String kind, int offset) {
             TemplateUnsupportedException e = rejects("<?php echo " + expr + "; ?>", NO_DYNAMIC);
@@ -368,17 +368,17 @@ class PhpParserTest {
         }
 
         @ParameterizedTest
-        @CsvSource(delimiter = '|', value = {
-            "model($m)->infoData()|11",
-            "model('art')|11",
-            "model()->infoData()|11",
-            "model('a','b')->infoData()|11",
-            "model(\"a$b\")->infoData()|11",
-            "model('art')->info|11",
-            "model('art')::infoData()|11",
-            "model('art')->infoData()->x()|35",
-            "model('art')->infoData()['code']|35",
-            "model('art')->$m()|11",
+        @CsvSource(delimiter = '#', value = {
+            "model($m)->infoData()#11",
+            "model('art')#11",
+            "model()->infoData()#11",
+            "model('a','b')->infoData()#11",
+            "model(\"a$b\")->infoData()#11",
+            "model('art')->info#11",
+            "model('art')::infoData()#11",
+            "model('art')->infoData()->x()#35",
+            "model('art')->infoData()['code']#35",
+            "model('art')->$m()#11",
         })
         void mc1RejectsOtherModelForms(String expr, int offset) {
             rejects("<?php echo " + expr + "; ?>", Kind.MODEL_CALL, offset);
@@ -410,36 +410,36 @@ class PhpParserTest {
         }
 
         @ParameterizedTest
-        @CsvSource(delimiter = '|', value = {
+        @CsvSource(delimiter = '#', value = {
             // 其他 / 非完整 / 动态类名、归一化黄金写法：拒绝点是类名记号
-            "if($a instanceof \\think\\Model): endif;|22",
-            "if($a instanceof Collection): endif;|22",
-            "if($a instanceof think\\Collection): endif;|22",
-            "if($a instanceof \\Think\\Collection): endif;|22",
-            "if($a instanceof $b): endif;|22",
-            "if($a instanceof /think/Collection): endif;|22",
-            "if(1 instanceof \\think\\Collection): endif;|11",
+            "if($a instanceof \\think\\Model): endif;#23",
+            "if($a instanceof Collection): endif;#23",
+            "if($a instanceof think\\Collection): endif;#23",
+            "if($a instanceof \\Think\\Collection): endif;#23",
+            "if($a instanceof $b): endif;#23",
+            "if($a instanceof /think/Collection): endif;#23",
+            "if(1 instanceof \\think\\Collection): endif;#11",
             // 登记类名但不在固定形态里：拒绝点是该判定的首字节
-            "if($a instanceof \\think\\Collection): endif;|9",
-            "echo $a instanceof \\think\\Collection;|11",
-            "echo is_array($a) || $a instanceof \\think\\Collection || $a instanceof \\think\\Paginator;|27",
-            "if(is_array($a) || $b instanceof \\think\\Collection || $b instanceof \\think\\Paginator): endif;|25",
-            "if(is_array($a) || $a instanceof \\think\\Paginator || $a instanceof \\think\\Collection): endif;|25",
-            "if(count($a) || $a instanceof \\think\\Collection || $a instanceof \\think\\Paginator): endif;|22",
-            "if(is_array($a) || $a instanceof \\think\\Collection): endif;|25",
-            "if(empty($a) || (($a instanceof \\think\\Collection || $a instanceof \\think\\Paginator) && $b->isEmpty())): endif;|23",
-            "if(empty($a) || ($a instanceof \\think\\Collection && $a->isEmpty())): endif;|23",
-            "if(false): if(is_array($a) || $a instanceof \\think\\Collection): endif; endif;|35",
+            "if($a instanceof \\think\\Collection): endif;#9",
+            "echo $a instanceof \\think\\Collection;#11",
+            "echo is_array($a) || $a instanceof \\think\\Collection || $a instanceof \\think\\Paginator;#27",
+            "if(is_array($a) || $b instanceof \\think\\Collection || $b instanceof \\think\\Paginator): endif;#25",
+            "if(is_array($a) || $a instanceof \\think\\Paginator || $a instanceof \\think\\Collection): endif;#25",
+            "if(count($a) || $a instanceof \\think\\Collection || $a instanceof \\think\\Paginator): endif;#22",
+            "if(is_array($a) || $a instanceof \\think\\Collection): endif;#25",
+            "if(empty($a) || (($a instanceof \\think\\Collection || $a instanceof \\think\\Paginator) && $b->isEmpty())): endif;#24",
+            "if(empty($a) || ($a instanceof \\think\\Collection && $a->isEmpty())): endif;#23",
+            "if(false): if(is_array($a) || $a instanceof \\think\\Collection): endif; endif;#36",
             // 任意成员访问、独立 / 变形 / 链式方法
-            "echo $a->b;|13",
-            "echo $a->b();|13",
-            "echo $a['x']->b;|18",
-            "echo $a::B;|13",
-            "if($a->isEmpty()): endif;|9",
-            "echo $a->IsEmpty();|13",
-            "echo $a->isEmpty(1);|13",
-            "echo $a->isEmpty()->x();|24",
-            "echo f()->x;|14",
+            "echo $a->b;#13",
+            "echo $a->b();#13",
+            "echo $a['x']->b;#18",
+            "echo $a::B;#13",
+            "if($a->isEmpty()): endif;#9",
+            "echo $a->IsEmpty();#13",
+            "echo $a->isEmpty(1);#13",
+            "echo $a->isEmpty()->x();#24",
+            "echo f()->x;#14",
         })
         void otherObjectFormsAreRejected(String code, int offset) {
             rejects("<?php " + code + " ?>", Kind.OBJECT, offset);

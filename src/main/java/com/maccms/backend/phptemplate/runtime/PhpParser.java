@@ -1,13 +1,5 @@
 package com.maccms.backend.phptemplate.runtime;
 
-import com.maccms.backend.phptemplate.runtime.PhpAst.ArrayItem;
-import com.maccms.backend.phptemplate.runtime.PhpAst.Branch;
-import com.maccms.backend.phptemplate.runtime.PhpAst.Case;
-import com.maccms.backend.phptemplate.runtime.PhpAst.Expr;
-import com.maccms.backend.phptemplate.runtime.PhpAst.Stmt;
-import com.maccms.backend.phptemplate.runtime.PhpLexer.Segment;
-import com.maccms.backend.phptemplate.runtime.PhpLexer.Token;
-import com.maccms.backend.phptemplate.runtime.TemplateUnsupportedException.Kind;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -33,15 +25,15 @@ import java.util.function.Predicate;
  *       &lt; 三元（左结合，含 {@code ?:}）&lt; {@code ||} &lt; {@code &&} &lt; 相等（不结合）&lt; 大小比较（不结合）
  *       &lt; {@code + - .}（同级左结合）&lt; {@code * / %} &lt; {@code !}/一元 {@code -}{@code +} &lt; {@code instanceof}
  *       &lt; {@code ++}、下标。</li>
- *   <li>BARE-1/BARE-2：名字后接 {@code (} 是函数调用，只查解析时注入的 RT-7 白名单，白名单外报 {@link Kind#FUNCTION}，不回退为裸名；
+ *   <li>BARE-1/BARE-2：名字后接 {@code (} 是函数调用，只查解析时注入的 RT-7 白名单，白名单外报 {@link TemplateUnsupportedException.Kind#FUNCTION}，不回退为裸名；
  *       不接 {@code (} 的名字：{@code true/false/null}（不分大小写）是字面量，原样在 {@link BareIdentifiers#REGISTERED} 内是
- *       {@link PhpAst.BareConst}，其余（含限定名、{@code X::Y}、魔术常量）报 {@link Kind#BARE_IDENTIFIER}（BARE-5）。</li>
+ *       {@link PhpAst.BareConst}，其余（含限定名、{@code X::Y}、魔术常量）报 {@link TemplateUnsupportedException.Kind#BARE_IDENTIFIER}（BARE-5）。</li>
  *   <li>MC-1：只有 {@code model(<无插值字符串字面量>)->名字(实参)} 是 {@link PhpAst.ModelCall}；其他 {@code model} 用法报
- *       {@link Kind#MODEL_CALL}。</li>
+ *       {@link TemplateUnsupportedException.Kind#MODEL_CALL}。</li>
  *   <li>OP-T7：{@code instanceof} 右侧只接受 {@link PhpAst#REGISTERED_CLASSES} 的完整类名，且整个 {@code if}/{@code elseif}
  *       条件必须是下面两种固定形态之一（S 为同一个变量/字面量下标链）；{@code ->isEmpty()} 只在形态 B 里接受。
  *       其他类名、动态类名、{@code ->} 属性/方法、链式调用、固定形态以外出现的 {@code instanceof}/{@code isEmpty} 都报
- *       {@link Kind#OBJECT}：
+ *       {@link TemplateUnsupportedException.Kind#OBJECT}：
  *       <pre>
  *       A: is_array(S) || S instanceof \think\Collection || S instanceof \think\Paginator
  *       B: empty(S) || ((S instanceof \think\Collection || S instanceof \think\Paginator ) &amp;&amp; S-&gt;isEmpty())
@@ -64,7 +56,7 @@ public final class PhpParser {
     private int pos;
     private int breakDepth;
     /** OP-T7：已构造、尚未被固定形态认领的 instanceof / isEmpty 节点。 */
-    private final Set<Expr> pendingObjects = Collections.newSetFromMap(new IdentityHashMap<>());
+    private final Set<PhpAst.Expr> pendingObjects = Collections.newSetFromMap(new IdentityHashMap<>());
 
     private PhpParser(byte[] src, List<Tok> toks, Predicate<String> functions) {
         this.src = src;
@@ -95,28 +87,28 @@ public final class PhpParser {
     private enum TK { OP, VAR, NAME, KW, CAST, INT, FLOAT, STR, INTERP, HTML, EOF }
 
     /** 统一记号：lexer 记号、字面段（HTML）、{@code ?>} 充当的 {@code ;}（virtual）、结尾。 */
-    private record Tok(TK k, int start, int end, String text, Token token, boolean virtual) {
+    private record Tok(TK k, int start, int end, String text, PhpLexer.Token token, boolean virtual) {
     }
 
     private static List<Tok> flatten(PhpLexer.Result lexed, byte[] source) {
         List<Tok> out = new ArrayList<>();
-        for (Segment seg : lexed.segments()) {
-            if (seg instanceof Segment.Literal lit) {
+        for (PhpLexer.Segment seg : lexed.segments()) {
+            if (seg instanceof PhpLexer.Segment.Literal lit) {
                 out.add(new Tok(TK.HTML, lit.start(), lit.end(), null, null, false));
                 continue;
             }
-            Segment.Code code = (Segment.Code) seg;
-            for (Token t : code.tokens()) {
+            PhpLexer.Segment.Code code = (PhpLexer.Segment.Code) seg;
+            for (PhpLexer.Token t : code.tokens()) {
                 out.add(switch (t) {
-                    case Token.Op o -> new Tok(TK.OP, o.start(), o.end(), o.symbol(), t, false);
-                    case Token.Variable v -> new Tok(TK.VAR, v.start(), v.end(), v.name(), t, false);
-                    case Token.Name n -> new Tok(TK.NAME, n.start(), n.end(), n.name(), t, false);
-                    case Token.Keyword w -> new Tok(TK.KW, w.start(), w.end(), w.word(), t, false);
-                    case Token.Cast c -> new Tok(TK.CAST, c.start(), c.end(), c.type(), t, false);
-                    case Token.IntLit i -> new Tok(TK.INT, i.start(), i.end(), null, t, false);
-                    case Token.FloatLit f -> new Tok(TK.FLOAT, f.start(), f.end(), null, t, false);
-                    case Token.Str s -> new Tok(TK.STR, s.start(), s.end(), null, t, false);
-                    case Token.Interpolated s -> new Tok(TK.INTERP, s.start(), s.end(), null, t, false);
+                    case PhpLexer.Token.Op o -> new Tok(TK.OP, o.start(), o.end(), o.symbol(), t, false);
+                    case PhpLexer.Token.Variable v -> new Tok(TK.VAR, v.start(), v.end(), v.name(), t, false);
+                    case PhpLexer.Token.Name n -> new Tok(TK.NAME, n.start(), n.end(), n.name(), t, false);
+                    case PhpLexer.Token.Keyword w -> new Tok(TK.KW, w.start(), w.end(), w.word(), t, false);
+                    case PhpLexer.Token.Cast c -> new Tok(TK.CAST, c.start(), c.end(), c.type(), t, false);
+                    case PhpLexer.Token.IntLit i -> new Tok(TK.INT, i.start(), i.end(), null, t, false);
+                    case PhpLexer.Token.FloatLit f -> new Tok(TK.FLOAT, f.start(), f.end(), null, t, false);
+                    case PhpLexer.Token.Str s -> new Tok(TK.STR, s.start(), s.end(), null, t, false);
+                    case PhpLexer.Token.Interpolated s -> new Tok(TK.INTERP, s.start(), s.end(), null, t, false);
                 });
             }
             if (code.close() != PhpLexer.Close.EOF) {
@@ -158,43 +150,43 @@ public final class PhpParser {
 
     private Tok expectOp(String symbol) {
         if (!atOp(symbol)) {
-            throw fail(Kind.SYNTAX, peek().start);
+            throw fail(TemplateUnsupportedException.Kind.SYNTAX, peek().start);
         }
         return next();
     }
 
     private Tok expectKw(String word) {
         if (!atKw(word)) {
-            throw fail(Kind.SYNTAX, peek().start);
+            throw fail(TemplateUnsupportedException.Kind.SYNTAX, peek().start);
         }
         return next();
     }
 
-    private TemplateUnsupportedException fail(Kind kind, int offset) {
+    private TemplateUnsupportedException fail(TemplateUnsupportedException.Kind kind, int offset) {
         return new TemplateUnsupportedException(kind, src, offset);
     }
 
     // ---- 语句 ----
 
     private PhpAst.Program program() {
-        List<Stmt> out = statementsUntil();
+        List<PhpAst.Stmt> out = statementsUntil();
         if (peek().k != TK.EOF) {
-            throw fail(Kind.SYNTAX, peek().start);
+            throw fail(TemplateUnsupportedException.Kind.SYNTAX, peek().start);
         }
         if (!pendingObjects.isEmpty()) {
             int first = Integer.MAX_VALUE;
-            for (Expr e : pendingObjects) {
+            for (PhpAst.Expr e : pendingObjects) {
                 first = Math.min(first, e.offset());
             }
-            throw fail(Kind.OBJECT, first);
+            throw fail(TemplateUnsupportedException.Kind.OBJECT, first);
         }
         return new PhpAst.Program(out);
     }
 
     /** 解析语句直到 EOF 或遇到 stops 里的关键字 / {@code }}（不消费）。 */
-    private List<Stmt> statementsUntil(String... stops) {
+    private List<PhpAst.Stmt> statementsUntil(String... stops) {
         Set<String> stopSet = Set.of(stops);
-        List<Stmt> out = new ArrayList<>();
+        List<PhpAst.Stmt> out = new ArrayList<>();
         while (true) {
             Tok t = peek();
             if (t.k == TK.EOF) {
@@ -207,7 +199,7 @@ public final class PhpParser {
         }
     }
 
-    private void statement(List<Stmt> out) {
+    private void statement(List<PhpAst.Stmt> out) {
         Tok t = peek();
         if (t.k == TK.HTML) {
             next();
@@ -255,7 +247,7 @@ public final class PhpParser {
                 }
             }
         }
-        Expr e = expr();
+        PhpAst.Expr e = expr();
         endStatement();
         out.add(new PhpAst.ExprStmt(e.offset(), e));
     }
@@ -266,7 +258,7 @@ public final class PhpParser {
 
     private PhpAst.Echo echo() {
         Tok kw = next();
-        List<Expr> values = new ArrayList<>();
+        List<PhpAst.Expr> values = new ArrayList<>();
         values.add(expr());
         while (atOp(",")) {
             next();
@@ -276,17 +268,17 @@ public final class PhpParser {
         return new PhpAst.Echo(kw.start, values);
     }
 
-    private Expr parenExpr() {
+    private PhpAst.Expr parenExpr() {
         expectOp("(");
-        Expr e = expr();
+        PhpAst.Expr e = expr();
         expectOp(")");
         return e;
     }
 
-    private List<Stmt> singleStatement() {
-        List<Stmt> body = new ArrayList<>();
+    private List<PhpAst.Stmt> singleStatement() {
+        List<PhpAst.Stmt> body = new ArrayList<>();
         if (peek().k == TK.EOF) {
-            throw fail(Kind.SYNTAX, peek().start);
+            throw fail(TemplateUnsupportedException.Kind.SYNTAX, peek().start);
         }
         statement(body);
         return body;
@@ -294,18 +286,18 @@ public final class PhpParser {
 
     private PhpAst.If ifStmt() {
         Tok kw = next();
-        Expr cond = condition();
-        List<Branch> branches = new ArrayList<>();
-        List<Stmt> elseBody = null;
+        PhpAst.Expr cond = condition();
+        List<PhpAst.Branch> branches = new ArrayList<>();
+        List<PhpAst.Stmt> elseBody = null;
         if (atOp(":")) {
             next();
-            branches.add(new Branch(kw.start, cond, statementsUntil("elseif", "else", "endif")));
+            branches.add(new PhpAst.Branch(kw.start, cond, statementsUntil("elseif", "else", "endif")));
             while (true) {
                 if (atKw("elseif")) {
                     Tok ek = next();
-                    Expr c = condition();
+                    PhpAst.Expr c = condition();
                     expectOp(":");
-                    branches.add(new Branch(ek.start, c, statementsUntil("elseif", "else", "endif")));
+                    branches.add(new PhpAst.Branch(ek.start, c, statementsUntil("elseif", "else", "endif")));
                 } else if (atKw("else")) {
                     next();
                     expectOp(":");
@@ -318,19 +310,19 @@ public final class PhpParser {
             expectKw("endif");
             endStatement();
         } else {
-            branches.add(new Branch(kw.start, cond, singleStatement()));
+            branches.add(new PhpAst.Branch(kw.start, cond, singleStatement()));
             while (true) {
                 if (atKw("elseif")) {
                     Tok ek = next();
-                    Expr c = condition();
+                    PhpAst.Expr c = condition();
                     if (atOp(":")) {
-                        throw fail(Kind.SYNTAX, peek().start);
+                        throw fail(TemplateUnsupportedException.Kind.SYNTAX, peek().start);
                     }
-                    branches.add(new Branch(ek.start, c, singleStatement()));
+                    branches.add(new PhpAst.Branch(ek.start, c, singleStatement()));
                 } else if (atKw("else")) {
                     next();
                     if (atOp(":")) {
-                        throw fail(Kind.SYNTAX, peek().start);
+                        throw fail(TemplateUnsupportedException.Kind.SYNTAX, peek().start);
                     }
                     elseBody = singleStatement();
                     break;
@@ -343,8 +335,8 @@ public final class PhpParser {
     }
 
     /** if/elseif 的括号条件；条件整体若是 OP-T7 固定形态，认领其中的 instanceof/isEmpty 节点。 */
-    private Expr condition() {
-        Expr c = parenExpr();
+    private PhpAst.Expr condition() {
+        PhpAst.Expr c = parenExpr();
         claimFixedForm(c);
         return c;
     }
@@ -352,7 +344,7 @@ public final class PhpParser {
     private PhpAst.Foreach foreachStmt() {
         Tok kw = next();
         expectOp("(");
-        Expr subject = expr();
+        PhpAst.Expr subject = expr();
         expectKw("as");
         PhpAst.Variable first = foreachVariable();
         PhpAst.Variable key = null;
@@ -363,25 +355,25 @@ public final class PhpParser {
             value = foreachVariable();
         }
         expectOp(")");
-        List<Stmt> body = loopBody("endforeach");
+        List<PhpAst.Stmt> body = loopBody("endforeach");
         return new PhpAst.Foreach(kw.start, subject, key, value, body);
     }
 
     private PhpAst.Variable foreachVariable() {
         Tok t = peek();
         if (t.k != TK.VAR) {
-            throw fail(Kind.SYNTAX, t.start);
+            throw fail(TemplateUnsupportedException.Kind.SYNTAX, t.start);
         }
         next();
         return new PhpAst.Variable(t.start, t.text);
     }
 
-    private List<Stmt> loopBody(String endWord) {
+    private List<PhpAst.Stmt> loopBody(String endWord) {
         breakDepth++;
         try {
             if (atOp(":")) {
                 next();
-                List<Stmt> body = statementsUntil(endWord);
+                List<PhpAst.Stmt> body = statementsUntil(endWord);
                 expectKw(endWord);
                 endStatement();
                 return body;
@@ -395,18 +387,18 @@ public final class PhpParser {
     private PhpAst.For forStmt() {
         Tok kw = next();
         expectOp("(");
-        List<Expr> init = exprList(";");
+        List<PhpAst.Expr> init = exprList(";");
         expectOp(";");
-        List<Expr> cond = exprList(";");
+        List<PhpAst.Expr> cond = exprList(";");
         expectOp(";");
-        List<Expr> step = exprList(")");
+        List<PhpAst.Expr> step = exprList(")");
         expectOp(")");
-        List<Stmt> body = loopBody("endfor");
+        List<PhpAst.Stmt> body = loopBody("endfor");
         return new PhpAst.For(kw.start, init, cond, step, body);
     }
 
-    private List<Expr> exprList(String close) {
-        List<Expr> out = new ArrayList<>();
+    private List<PhpAst.Expr> exprList(String close) {
+        List<PhpAst.Expr> out = new ArrayList<>();
         if (atOp(close)) {
             return out;
         }
@@ -420,21 +412,21 @@ public final class PhpParser {
 
     private PhpAst.Switch switchStmt() {
         Tok kw = next();
-        Expr subject = parenExpr();
+        PhpAst.Expr subject = parenExpr();
         boolean alt;
         if (atOp(":")) {
             alt = true;
         } else if (atOp("{")) {
             alt = false;
         } else {
-            throw fail(Kind.SYNTAX, peek().start);
+            throw fail(TemplateUnsupportedException.Kind.SYNTAX, peek().start);
         }
         next();
         if (atOp(";")) {
             next(); // PHP 文法允许 switch 后紧跟一个 ;（含 ?> 充当的 ;）
         }
         String end = alt ? "endswitch" : "}";
-        List<Case> cases = new ArrayList<>();
+        List<PhpAst.Case> cases = new ArrayList<>();
         boolean seenDefault = false;
         breakDepth++;
         try {
@@ -445,20 +437,20 @@ public final class PhpParser {
                 }
                 if (t.k == TK.KW && t.text.equals("case")) {
                     next();
-                    Expr test = expr();
+                    PhpAst.Expr test = expr();
                     expectOp(":");
-                    cases.add(new Case(t.start, test, statementsUntil("case", "default", end)));
+                    cases.add(new PhpAst.Case(t.start, test, statementsUntil("case", "default", end)));
                 } else if (t.k == TK.KW && t.text.equals("default")) {
                     if (seenDefault) {
-                        throw fail(Kind.SYNTAX, t.start);
+                        throw fail(TemplateUnsupportedException.Kind.SYNTAX, t.start);
                     }
                     seenDefault = true;
                     next();
                     expectOp(":");
-                    cases.add(new Case(t.start, null, statementsUntil("case", "default", end)));
+                    cases.add(new PhpAst.Case(t.start, null, statementsUntil("case", "default", end)));
                 } else {
                     // switch 与第一个 case 之间的字面文本、其他语句：PHP 7.3 解析错误
-                    throw fail(Kind.SYNTAX, t.start);
+                    throw fail(TemplateUnsupportedException.Kind.SYNTAX, t.start);
                 }
             }
         } finally {
@@ -476,10 +468,10 @@ public final class PhpParser {
     private PhpAst.Break breakStmt() {
         Tok kw = next();
         if (breakDepth == 0) {
-            throw fail(Kind.SYNTAX, kw.start);
+            throw fail(TemplateUnsupportedException.Kind.SYNTAX, kw.start);
         }
         if (!atOp(";")) {
-            throw fail(Kind.SYNTAX, peek().start); // break N 不在 RT-1
+            throw fail(TemplateUnsupportedException.Kind.SYNTAX, peek().start); // break N 不在 RT-1
         }
         endStatement();
         return new PhpAst.Break(kw.start);
@@ -487,8 +479,8 @@ public final class PhpParser {
 
     // ---- 表达式 ----
 
-    private Expr expr() {
-        Expr left = lowXor();
+    private PhpAst.Expr expr() {
+        PhpAst.Expr left = lowXor();
         while (atKw("or")) {
             next();
             left = new PhpAst.Binary(left.offset(), "or", left, lowXor());
@@ -496,8 +488,8 @@ public final class PhpParser {
         return left;
     }
 
-    private Expr lowXor() {
-        Expr left = lowAnd();
+    private PhpAst.Expr lowXor() {
+        PhpAst.Expr left = lowAnd();
         while (atKw("xor")) {
             next();
             left = new PhpAst.Binary(left.offset(), "xor", left, lowAnd());
@@ -505,8 +497,8 @@ public final class PhpParser {
         return left;
     }
 
-    private Expr lowAnd() {
-        Expr left = assignment();
+    private PhpAst.Expr lowAnd() {
+        PhpAst.Expr left = assignment();
         while (atKw("and")) {
             next();
             left = new PhpAst.Binary(left.offset(), "and", left, assignment());
@@ -515,23 +507,23 @@ public final class PhpParser {
     }
 
     /** 赋值级 = 三元级（赋值本身在 {@link #postfix()} 里按左值识别，右侧回到本级，右结合）。 */
-    private Expr assignment() {
-        Expr cond = orExpr();
+    private PhpAst.Expr assignment() {
+        PhpAst.Expr cond = orExpr();
         while (atOp("?")) {
             next();
-            Expr then = null;
+            PhpAst.Expr then = null;
             if (!atOp(":")) {
                 then = assignment();
             }
             expectOp(":");
-            Expr otherwise = orExpr();
+            PhpAst.Expr otherwise = orExpr();
             cond = new PhpAst.Ternary(cond.offset(), cond, then, otherwise);
         }
         return cond;
     }
 
-    private Expr orExpr() {
-        Expr left = andExpr();
+    private PhpAst.Expr orExpr() {
+        PhpAst.Expr left = andExpr();
         while (atOp("||")) {
             next();
             left = new PhpAst.Binary(left.offset(), "||", left, andExpr());
@@ -539,8 +531,8 @@ public final class PhpParser {
         return left;
     }
 
-    private Expr andExpr() {
-        Expr left = equality();
+    private PhpAst.Expr andExpr() {
+        PhpAst.Expr left = equality();
         while (atOp("&&")) {
             next();
             left = new PhpAst.Binary(left.offset(), "&&", left, equality());
@@ -548,32 +540,32 @@ public final class PhpParser {
         return left;
     }
 
-    private Expr equality() {
-        Expr left = comparison();
+    private PhpAst.Expr equality() {
+        PhpAst.Expr left = comparison();
         if (peek().k == TK.OP && EQUALITY_OPS.contains(peek().text)) {
             String op = next().text;
             left = new PhpAst.Binary(left.offset(), op, left, comparison());
             if (peek().k == TK.OP && EQUALITY_OPS.contains(peek().text)) {
-                throw fail(Kind.SYNTAX, peek().start); // PHP 7.3：相等运算不结合
+                throw fail(TemplateUnsupportedException.Kind.SYNTAX, peek().start); // PHP 7.3：相等运算不结合
             }
         }
         return left;
     }
 
-    private Expr comparison() {
-        Expr left = additive();
+    private PhpAst.Expr comparison() {
+        PhpAst.Expr left = additive();
         if (peek().k == TK.OP && COMPARISON_OPS.contains(peek().text)) {
             String op = next().text;
             left = new PhpAst.Binary(left.offset(), op, left, additive());
             if (peek().k == TK.OP && COMPARISON_OPS.contains(peek().text)) {
-                throw fail(Kind.SYNTAX, peek().start); // PHP 7.3：大小比较不结合
+                throw fail(TemplateUnsupportedException.Kind.SYNTAX, peek().start); // PHP 7.3：大小比较不结合
             }
         }
         return left;
     }
 
-    private Expr additive() {
-        Expr left = multiplicative();
+    private PhpAst.Expr additive() {
+        PhpAst.Expr left = multiplicative();
         while (atOp("+") || atOp("-") || atOp(".")) {
             String op = next().text;
             left = new PhpAst.Binary(left.offset(), op, left, multiplicative());
@@ -581,8 +573,8 @@ public final class PhpParser {
         return left;
     }
 
-    private Expr multiplicative() {
-        Expr left = unary();
+    private PhpAst.Expr multiplicative() {
+        PhpAst.Expr left = unary();
         while (atOp("*") || atOp("/") || atOp("%")) {
             String op = next().text;
             left = new PhpAst.Binary(left.offset(), op, left, unary());
@@ -590,7 +582,7 @@ public final class PhpParser {
         return left;
     }
 
-    private Expr unary() {
+    private PhpAst.Expr unary() {
         Tok t = peek();
         if (isOp(t, "!") || isOp(t, "-") || isOp(t, "+")) {
             next();
@@ -598,32 +590,32 @@ public final class PhpParser {
         }
         if (isOp(t, "++")) {
             next();
-            Expr target = postfixNoAssign();
+            PhpAst.Expr target = postfixNoAssign();
             if (!PhpAst.isLvalue(target)) {
-                throw fail(Kind.SYNTAX, target.offset());
+                throw fail(TemplateUnsupportedException.Kind.SYNTAX, target.offset());
             }
             return new PhpAst.Increment(t.start, target, true);
         }
         if (t.k == TK.CAST || isOp(t, "--") || isOp(t, "~") || isOp(t, "@") || isOp(t, "&")) {
-            throw fail(Kind.SYNTAX, t.start);
+            throw fail(TemplateUnsupportedException.Kind.SYNTAX, t.start);
         }
-        Expr e = postfix();
+        PhpAst.Expr e = postfix();
         if (atKw("instanceof")) {
             e = instanceOf(e);
         }
         return e;
     }
 
-    private Expr instanceOf(Expr subject) {
+    private PhpAst.Expr instanceOf(PhpAst.Expr subject) {
         Tok kw = next();
         Tok cls = peek();
         if (!PhpAst.isLvalue(subject)) {
-            throw fail(Kind.OBJECT, kw.start);
+            throw fail(TemplateUnsupportedException.Kind.OBJECT, kw.start);
         }
-        if (cls.k != TK.NAME || !(cls.token instanceof Token.Name n)
+        if (cls.k != TK.NAME || !(cls.token instanceof PhpLexer.Token.Name n)
                 || n.kind() != PhpLexer.NameKind.FULLY_QUALIFIED || !PhpAst.REGISTERED_CLASSES.contains(n.name())) {
             // 其他类名、未限定/部分限定类名、动态类名（$x）、归一化黄金里的 /think/… 都不是登记类名
-            throw fail(Kind.OBJECT, cls.start);
+            throw fail(TemplateUnsupportedException.Kind.OBJECT, cls.start);
         }
         next();
         PhpAst.InstanceOf io = new PhpAst.InstanceOf(subject.offset(), subject, n.name());
@@ -632,8 +624,8 @@ public final class PhpParser {
     }
 
     /** 后缀表达式，并在左值后识别赋值与后置 {@code ++}。 */
-    private Expr postfix() {
-        Expr p = postfixNoAssign();
+    private PhpAst.Expr postfix() {
+        PhpAst.Expr p = postfixNoAssign();
         if (!PhpAst.isLvalue(p)) {
             return p;
         }
@@ -647,37 +639,37 @@ public final class PhpParser {
             return new PhpAst.Increment(p.offset(), p, false);
         }
         if (t.k == TK.OP && (COMPOUND_ASSIGN_OPS.contains(t.text) || t.text.equals("--"))) {
-            throw fail(Kind.SYNTAX, t.start);
+            throw fail(TemplateUnsupportedException.Kind.SYNTAX, t.start);
         }
         return p;
     }
 
-    private Expr postfixNoAssign() {
+    private PhpAst.Expr postfixNoAssign() {
         if (atOp("(")) {
             // 括号表达式：不是左值，也不接下标 / -> / 赋值
             next();
-            Expr e = expr();
+            PhpAst.Expr e = expr();
             expectOp(")");
             return e;
         }
-        Expr p = primary();
+        PhpAst.Expr p = primary();
         while (true) {
             Tok t = peek();
             if (isOp(t, "[")) {
                 if (!PhpAst.isLvalue(p)) {
-                    throw fail(Kind.SYNTAX, t.start); // 只对变量/下标取下标
+                    throw fail(TemplateUnsupportedException.Kind.SYNTAX, t.start); // 只对变量/下标取下标
                 }
                 next();
                 if (atOp("]")) {
-                    throw fail(Kind.SYNTAX, peek().start); // $a[] 不在 RT-1
+                    throw fail(TemplateUnsupportedException.Kind.SYNTAX, peek().start); // $a[] 不在 RT-1
                 }
-                Expr idx = expr();
+                PhpAst.Expr idx = expr();
                 expectOp("]");
                 p = new PhpAst.Index(p.offset(), p, idx);
             } else if (isOp(t, "->")) {
                 p = objectOperator(p, t);
             } else if (isOp(t, "::")) {
-                throw fail(Kind.OBJECT, t.start);
+                throw fail(TemplateUnsupportedException.Kind.OBJECT, t.start);
             } else {
                 return p;
             }
@@ -685,7 +677,7 @@ public final class PhpParser {
     }
 
     /** {@code ->}：只认 {@code S->isEmpty()}（OP-T7 形态 B，最后由固定形态认领），其余一律拒绝。 */
-    private Expr objectOperator(Expr subject, Tok arrow) {
+    private PhpAst.Expr objectOperator(PhpAst.Expr subject, Tok arrow) {
         Tok name = peek(1);
         if (PhpAst.isLvalue(subject) && name.k == TK.NAME && "isEmpty".equals(name.text)
                 && isOp(peek(2), "(") && isOp(peek(3), ")")) {
@@ -695,16 +687,16 @@ public final class PhpParser {
             next();
             Tok after = peek();
             if (isOp(after, "->") || isOp(after, "[") || isOp(after, "::")) {
-                throw fail(Kind.OBJECT, after.start); // 链式
+                throw fail(TemplateUnsupportedException.Kind.OBJECT, after.start); // 链式
             }
             PhpAst.IsEmptyCall call = new PhpAst.IsEmptyCall(subject.offset(), subject);
             pendingObjects.add(call);
             return call;
         }
-        throw fail(Kind.OBJECT, arrow.start);
+        throw fail(TemplateUnsupportedException.Kind.OBJECT, arrow.start);
     }
 
-    private Expr primary() {
+    private PhpAst.Expr primary() {
         Tok t = peek();
         switch (t.k) {
             case VAR -> {
@@ -713,20 +705,20 @@ public final class PhpParser {
             }
             case INT -> {
                 next();
-                return new PhpAst.IntLiteral(t.start, ((Token.IntLit) t.token).value());
+                return new PhpAst.IntLiteral(t.start, ((PhpLexer.Token.IntLit) t.token).value());
             }
             case FLOAT -> {
                 next();
-                return new PhpAst.FloatLiteral(t.start, ((Token.FloatLit) t.token).value());
+                return new PhpAst.FloatLiteral(t.start, ((PhpLexer.Token.FloatLit) t.token).value());
             }
             case STR -> {
                 next();
-                return new PhpAst.StringLiteral(t.start, ((Token.Str) t.token).bytes());
+                return new PhpAst.StringLiteral(t.start, ((PhpLexer.Token.Str) t.token).bytes());
             }
             case INTERP -> {
                 next();
-                List<Expr> parts = new ArrayList<>();
-                for (PhpLexer.Part part : ((Token.Interpolated) t.token).parts()) {
+                List<PhpAst.Expr> parts = new ArrayList<>();
+                for (PhpLexer.Part part : ((PhpLexer.Token.Interpolated) t.token).parts()) {
                     if (part instanceof PhpLexer.Part.Text text) {
                         parts.add(new PhpAst.StringLiteral(t.start, text.bytes()));
                     } else {
@@ -748,13 +740,13 @@ public final class PhpParser {
                     return arrayLiteral(t.start, "]");
                 }
                 // 含单独的 $（$$a、${...}，RT-1 拒绝）
-                throw fail(Kind.SYNTAX, t.start);
+                throw fail(TemplateUnsupportedException.Kind.SYNTAX, t.start);
             }
-            default -> throw fail(Kind.SYNTAX, t.start);
+            default -> throw fail(TemplateUnsupportedException.Kind.SYNTAX, t.start);
         }
     }
 
-    private Expr keywordExpr() {
+    private PhpAst.Expr keywordExpr() {
         Tok t = peek();
         switch (t.text) {
             case "array" -> {
@@ -765,11 +757,11 @@ public final class PhpParser {
             case "isset" -> {
                 next();
                 expectOp("(");
-                List<Expr> targets = new ArrayList<>();
+                List<PhpAst.Expr> targets = new ArrayList<>();
                 while (true) {
-                    Expr e = expr();
+                    PhpAst.Expr e = expr();
                     if (!PhpAst.isLvalue(e)) {
-                        throw fail(Kind.SYNTAX, e.offset());
+                        throw fail(TemplateUnsupportedException.Kind.SYNTAX, e.offset());
                     }
                     targets.add(e);
                     if (atOp(",")) {
@@ -784,68 +776,68 @@ public final class PhpParser {
             case "empty" -> {
                 next();
                 expectOp("(");
-                Expr e = expr();
+                PhpAst.Expr e = expr();
                 expectOp(")");
                 return new PhpAst.Empty(t.start, e);
             }
             case "static" -> {
                 if (isOp(peek(1), "::")) {
-                    throw fail(Kind.BARE_IDENTIFIER, t.start); // BARE-5 ②：static::Y
+                    throw fail(TemplateUnsupportedException.Kind.BARE_IDENTIFIER, t.start); // BARE-5 ②：static::Y
                 }
-                throw fail(Kind.SYNTAX, t.start);
+                throw fail(TemplateUnsupportedException.Kind.SYNTAX, t.start);
             }
-            default -> throw fail(Kind.SYNTAX, t.start); // new、function、include、eval、print、exit、list、clone……
+            default -> throw fail(TemplateUnsupportedException.Kind.SYNTAX, t.start); // new、function、include、eval、print、exit、list、clone……
         }
     }
 
-    private Expr arrayLiteral(int offset, String close) {
-        List<ArrayItem> items = new ArrayList<>();
+    private PhpAst.Expr arrayLiteral(int offset, String close) {
+        List<PhpAst.ArrayItem> items = new ArrayList<>();
         while (!atOp(close)) {
             Tok t = peek();
             if (isOp(t, "&") || isOp(t, "...") || isOp(t, ",")) {
-                throw fail(Kind.SYNTAX, t.start);
+                throw fail(TemplateUnsupportedException.Kind.SYNTAX, t.start);
             }
-            Expr first = expr();
+            PhpAst.Expr first = expr();
             if (atOp("=>")) {
                 next();
                 Tok v = peek();
                 if (isOp(v, "&")) {
-                    throw fail(Kind.SYNTAX, v.start);
+                    throw fail(TemplateUnsupportedException.Kind.SYNTAX, v.start);
                 }
-                items.add(new ArrayItem(first.offset(), first, expr()));
+                items.add(new PhpAst.ArrayItem(first.offset(), first, expr()));
             } else {
-                items.add(new ArrayItem(first.offset(), null, first));
+                items.add(new PhpAst.ArrayItem(first.offset(), null, first));
             }
             if (atOp(",")) {
                 next();
             } else if (!atOp(close)) {
-                throw fail(Kind.SYNTAX, peek().start);
+                throw fail(TemplateUnsupportedException.Kind.SYNTAX, peek().start);
             }
         }
         next();
         if (atOp("=")) {
-            throw fail(Kind.SYNTAX, peek().start); // [$a, $b] = ... 解构不在 RT-1
+            throw fail(TemplateUnsupportedException.Kind.SYNTAX, peek().start); // [$a, $b] = ... 解构不在 RT-1
         }
         return new PhpAst.ArrayLiteral(offset, items);
     }
 
-    private Expr name() {
+    private PhpAst.Expr name() {
         Tok t = next();
-        Token.Name n = (Token.Name) t.token;
+        PhpLexer.Token.Name n = (PhpLexer.Token.Name) t.token;
         Tok after = peek();
         if (n.kind() != PhpLexer.NameKind.UNQUALIFIED) {
             // 带命名空间的函数调用不在 RT-7；带命名空间的常量是 BARE-5 ②
-            throw fail(isOp(after, "(") ? Kind.FUNCTION : Kind.BARE_IDENTIFIER, t.start);
+            throw fail(isOp(after, "(") ? TemplateUnsupportedException.Kind.FUNCTION : TemplateUnsupportedException.Kind.BARE_IDENTIFIER, t.start);
         }
         if (isOp(after, "::")) {
-            throw fail(Kind.BARE_IDENTIFIER, t.start); // 类常量 X::Y、self::Y（BARE-5 ②）
+            throw fail(TemplateUnsupportedException.Kind.BARE_IDENTIFIER, t.start); // 类常量 X::Y、self::Y（BARE-5 ②）
         }
         if (isOp(after, "(")) {
             if (t.text.equals("model")) {
                 return modelCall(t);
             }
             if (!functions.test(t.text)) {
-                throw fail(Kind.FUNCTION, t.start); // BARE-2：不回退为裸名
+                throw fail(TemplateUnsupportedException.Kind.FUNCTION, t.start); // BARE-2：不回退为裸名
             }
             return new PhpAst.FunctionCall(t.start, t.text, arguments());
         }
@@ -864,14 +856,14 @@ public final class PhpParser {
                 if (BareIdentifiers.REGISTERED.contains(t.text)) {
                     return new PhpAst.BareConst(t.start, t.text);
                 }
-                throw fail(Kind.BARE_IDENTIFIER, t.start); // BARE-5 ①③
+                throw fail(TemplateUnsupportedException.Kind.BARE_IDENTIFIER, t.start); // BARE-5 ①③
             }
         }
     }
 
-    private List<Expr> arguments() {
+    private List<PhpAst.Expr> arguments() {
         expectOp("(");
-        List<Expr> args = new ArrayList<>();
+        List<PhpAst.Expr> args = new ArrayList<>();
         if (atOp(")")) {
             next();
             return args;
@@ -879,13 +871,13 @@ public final class PhpParser {
         while (true) {
             Tok t = peek();
             if (isOp(t, "...") || isOp(t, "&")) {
-                throw fail(Kind.SYNTAX, t.start);
+                throw fail(TemplateUnsupportedException.Kind.SYNTAX, t.start);
             }
             args.add(expr());
             if (atOp(",")) {
                 next();
                 if (atOp(")")) {
-                    throw fail(Kind.SYNTAX, peek().start); // 尾逗号不在登记写法内
+                    throw fail(TemplateUnsupportedException.Kind.SYNTAX, peek().start); // 尾逗号不在登记写法内
                 }
                 continue;
             }
@@ -895,29 +887,29 @@ public final class PhpParser {
     }
 
     /** MC-1：{@code model('<字面量>')->方法(实参)}，后面不能再接 {@code ->}、下标或 {@code ::}。 */
-    private Expr modelCall(Tok modelTok) {
+    private PhpAst.Expr modelCall(Tok modelTok) {
         if (!isOp(peek(), "(") || peek(1).k != TK.STR || !isOp(peek(2), ")") || !isOp(peek(3), "->")
-                || peek(4).k != TK.NAME || ((Token.Name) peek(4).token).kind() != PhpLexer.NameKind.UNQUALIFIED
+                || peek(4).k != TK.NAME || ((PhpLexer.Token.Name) peek(4).token).kind() != PhpLexer.NameKind.UNQUALIFIED
                 || !isOp(peek(5), "(")) {
-            throw fail(Kind.MODEL_CALL, modelTok.start);
+            throw fail(TemplateUnsupportedException.Kind.MODEL_CALL, modelTok.start);
         }
         next();
         Tok lit = next();
         next();
         next();
         Tok method = next();
-        List<Expr> args = arguments();
+        List<PhpAst.Expr> args = arguments();
         Tok after = peek();
         if (isOp(after, "->") || isOp(after, "[") || isOp(after, "::")) {
-            throw fail(Kind.MODEL_CALL, after.start); // 链式第二次 ->、对结果取下标
+            throw fail(TemplateUnsupportedException.Kind.MODEL_CALL, after.start); // 链式第二次 ->、对结果取下标
         }
-        String model = new String(((Token.Str) lit.token).bytes(), StandardCharsets.UTF_8);
+        String model = new String(((PhpLexer.Token.Str) lit.token).bytes(), StandardCharsets.UTF_8);
         return new PhpAst.ModelCall(modelTok.start, model, method.text, args);
     }
 
     // ---- OP-T7 固定形态 ----
 
-    private void claimFixedForm(Expr c) {
+    private void claimFixedForm(PhpAst.Expr c) {
         // A: (is_array(S) || S instanceof C) || S instanceof P
         if (c instanceof PhpAst.Binary or && or.op().equals("||")
                 && or.right() instanceof PhpAst.InstanceOf p && p.className().equals(PAGINATOR)
@@ -946,7 +938,7 @@ public final class PhpParser {
     }
 
     /** 同一个变量 / 字面量下标链（不比偏移）。 */
-    private static boolean sameSubject(Expr a, Expr b) {
+    private static boolean sameSubject(PhpAst.Expr a, PhpAst.Expr b) {
         if (a instanceof PhpAst.Variable va && b instanceof PhpAst.Variable vb) {
             return va.name().equals(vb.name());
         }
@@ -956,7 +948,7 @@ public final class PhpParser {
         return false;
     }
 
-    private static boolean sameKey(Expr a, Expr b) {
+    private static boolean sameKey(PhpAst.Expr a, PhpAst.Expr b) {
         if (a instanceof PhpAst.StringLiteral sa && b instanceof PhpAst.StringLiteral sb) {
             return Arrays.equals(sa.bytes(), sb.bytes());
         }
