@@ -549,8 +549,8 @@ git --attr-source=e939e25 diff --check 1775e26 e939e25 → 无输出，退出码
 ### 实际执行的命令与结果
 
 ```bash
-# 工作目录：仓库根（Git Bash）；JDK 21，JDK_JAVA_OPTIONS=-Djdk.net.unixdomain.tmpdir=D:\Tools\Java\afunix-tmp（MULTICA.md ⚠ 条）
-# PHP 7.3 词法探针（D:\Tools\php\7.3\php.exe，PHP 7.3.33 NTS x64；脚本在仓库外临时目录，不入库）
+# 工作目录：仓库根（Git Bash）；JDK 21，JDK_JAVA_OPTIONS=-Djdk.net.unixdomain.tmpdir=<专用目录>（按 MULTICA.md ⚠ 条设置）
+# PHP 7.3 词法探针（php，PHP 7.3.33 NTS x64；脚本在仓库外临时目录，不入库）
 #   用例 lf/crlf/cr/lflf/cmt/cmtcr/eofopen/opentab/opencrlf/upper/phpx/prop/fq/dq/oct/cast，对每个源串打印 token_get_all 结果
 #   关键输出：T_CLOSE_TAG "?>\n" / "?>\r\n" / "?>\r"；"a<?php" 为 T_INLINE_HTML；"// x '" 后 T_CLOSE_TAG "?>"；
 #             $a->list 的 list 为 T_STRING；\think\Collection 为 T_NS_SEPARATOR+T_STRING 序列
@@ -576,7 +576,7 @@ git diff --check f98ad7d HEAD → 无输出，退出码 0
 
 - 缺陷：`PhpLexer.number()` 原先在读完整数位后、识别小数点/指数之前，把“长度 > 1 且首字节为 `0`”的数字串一律按八进制拒绝，误拒 PHP 7.3 合法的十进制 `T_DNUMBER`（`00.5`、`01.5`、`00e1`）。
 - 修复：`0x`/`0b` 前缀仍在读整数位后立即拒绝；八进制判断移到小数点/指数识别之后，只在结果**不是 float** 且整数位长度 > 1、首字节为 `0` 时拒绝。非十进制整数的拒绝范围不变，TPL-5、黄金、JDK-only、诊断边界不动。
-- PHP 7.3.33 `token_get_all("<?php X;")` 实测（`D:\Tools\php\7.3\php.exe`；脚本在仓库外临时目录，不入库）：
+- PHP 7.3.33 `token_get_all("<?php X;")` 实测（`php`，PHP 7.3.33 NTS x64；脚本在仓库外临时目录，不入库）：
 
 | 输入 | PHP 7.3.33 记号 | 本实现 |
 | --- | --- | --- |
