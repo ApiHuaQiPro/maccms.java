@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>使用积分购买权限</title>
+	<link rel="stylesheet" href="__STATIC__/css/home.css">
+	<style>
+		body{background:#F9FAFD;color:#818181;}
+		.text a{  padding: 10px 16px;
+			font-size: 18px;
+			line-height: 1.3333333;
+			border-radius: 6px; color: #fff;  background-color: #5cb85c;  border-color: #4cae4c;  }
+	</style>
+	<script src="<?php echo $maccms['path']; ?>static/js/jquery.js"></script>
+	<script>var maccms={"path":"__ROOT__","mid":"<?php echo $maccms['mid']; ?>","url":"<?php echo $maccms['site_url']; ?>","wapurl":"<?php echo $maccms['site_wapurl']; ?>","mob_status":"<?php echo $maccms['mob_status']; ?>"};</script>
+	<script src="<?php echo $maccms['path']; ?>static/js/home.js"></script>
+</head>
+<body>
+<div class="mac_msg_jump">
+	<div class="msg_jump_tit">系统提示:</div>
+	<div class="title">亲爱的用户：</div>
+	<div class="text">
+		<?php echo $popedom['msg']; ?>
+		<p>提示：一次支付，永久观看，不重复扣费，谢谢支持。</p>
+		<p>
+			<?php if($user['group']['group_id'] == 1): ?>
+			<a href="javascript:;" class="mac_user" target="_blank">马上登录</a>
+			<?php else: ?>
+			<a href="<?php echo url('user/buy'); ?>" target="_blank">马上充值</a>
+			<a href="javascript:;" onclick="MAC.User.BuyPopedom(this)" data-id="<?php echo $obj['art_id']; ?>" data-sid="<?php echo $param['page']; ?>" data-nid="0" data-mid="2" data-type="1">确认购买</a>
+			<?php endif; ?>
+		</p>
+	</div>
+</div>
+<script type="text/javascript">
+
+</script>
+</body>
+</html>
+
+
+

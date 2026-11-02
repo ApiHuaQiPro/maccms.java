@@ -1,0 +1,794 @@
+{
+    "generator": "src/test/php/tpl_runtime_golden.php --model-calls art-infodata",
+    "php_version": "7.3.33",
+    "fixture": "src/test/resources/phptemplate/model-fixtures/art-infodata.sql",
+    "design": "tech-design v13 9c73bf6ced044f40eeb87ef7861e616b6157499a: V-16, INFO-1~INFO-7, D1-FLD-1~5, PROJ-1, QG-1~QG-7",
+    "projection": "PROJ-1: only code, msg and info keys of D1-FLD-1 (5 columns) + D1-FLD-2 (type.type_en; type_1.type_id,type_1.type_en); all other keys dropped; encoded per ZDUMP-1",
+    "rows": 54,
+    "on_range": [
+        910001,
+        910052
+    ],
+    "cases": {
+        "IA-1": {
+            "label": "lt a1：较小的一行被状态条件排除",
+            "where": {
+                "art_status": [
+                    "eq",
+                    1
+                ],
+                "art_id": [
+                    "lt",
+                    910001
+                ]
+            },
+            "raw_keys": [],
+            "golden": {
+                "code": 1002,
+                "msg": "obtain_err"
+            },
+            "zdump": {
+                "t": "array",
+                "v": [
+                    [
+                        "code",
+                        {
+                            "t": "int",
+                            "v": "1002"
+                        }
+                    ],
+                    [
+                        "msg",
+                        {
+                            "t": "string",
+                            "v": "b2J0YWluX2Vycg=="
+                        }
+                    ]
+                ]
+            },
+            "bytes": 302
+        },
+        "IA-2": {
+            "label": "gt an：较大的一行被状态条件排除",
+            "where": {
+                "art_status": [
+                    "eq",
+                    1
+                ],
+                "art_id": [
+                    "gt",
+                    910052
+                ]
+            },
+            "raw_keys": [],
+            "golden": {
+                "code": 1002,
+                "msg": "obtain_err"
+            },
+            "zdump": {
+                "t": "array",
+                "v": [
+                    [
+                        "code",
+                        {
+                            "t": "int",
+                            "v": "1002"
+                        }
+                    ],
+                    [
+                        "msg",
+                        {
+                            "t": "string",
+                            "v": "b2J0YWluX2Vycg=="
+                        }
+                    ]
+                ]
+            },
+            "bytes": 302
+        },
+        "IA-3": {
+            "label": "lt a2：命中 a1，键序与 D1-FLD-1/2 一致",
+            "where": {
+                "art_status": [
+                    "eq",
+                    1
+                ],
+                "art_id": [
+                    "lt",
+                    910002
+                ]
+            },
+            "raw_keys": [
+                "art_id",
+                "type_id",
+                "type_id_1",
+                "group_id",
+                "art_name",
+                "art_sub",
+                "art_en",
+                "art_status",
+                "art_letter",
+                "art_color",
+                "art_from",
+                "art_author",
+                "art_tag",
+                "art_class",
+                "art_pic",
+                "art_pic_thumb",
+                "art_pic_slide",
+                "art_pic_screenshot",
+                "art_blurb",
+                "art_remarks",
+                "art_jumpurl",
+                "art_tpl",
+                "art_level",
+                "art_lock",
+                "art_points",
+                "art_points_detail",
+                "art_up",
+                "art_down",
+                "art_hits",
+                "art_hits_day",
+                "art_hits_week",
+                "art_hits_month",
+                "art_time",
+                "art_time_add",
+                "art_time_hits",
+                "art_time_make",
+                "art_score",
+                "art_score_all",
+                "art_score_num",
+                "art_rel_art",
+                "art_rel_vod",
+                "art_pwd",
+                "art_pwd_url",
+                "art_title",
+                "art_note",
+                "art_content",
+                "art_page_list",
+                "art_page_total",
+                "art_pic_screenshot_list",
+                "type",
+                "type_1",
+                "group"
+            ],
+            "golden": {
+                "code": 1,
+                "msg": "obtain_ok",
+                "info": {
+                    "art_id": 910001,
+                    "type_id": 9102,
+                    "art_name": "篇一 A&B<i>\"",
+                    "art_en": "a1",
+                    "art_time": 1577836800,
+                    "type": {
+                        "type_en": "sub-a"
+                    },
+                    "type_1": {
+                        "type_id": 9101,
+                        "type_en": "top-a"
+                    }
+                }
+            },
+            "zdump": {
+                "t": "array",
+                "v": [
+                    [
+                        "code",
+                        {
+                            "t": "int",
+                            "v": "1"
+                        }
+                    ],
+                    [
+                        "msg",
+                        {
+                            "t": "string",
+                            "v": "b2J0YWluX29r"
+                        }
+                    ],
+                    [
+                        "info",
+                        {
+                            "t": "array",
+                            "v": [
+                                [
+                                    "art_id",
+                                    {
+                                        "t": "int",
+                                        "v": "910001"
+                                    }
+                                ],
+                                [
+                                    "type_id",
+                                    {
+                                        "t": "int",
+                                        "v": "9102"
+                                    }
+                                ],
+                                [
+                                    "art_name",
+                                    {
+                                        "t": "string",
+                                        "v": "56+H5LiAIEEmQjxpPiI="
+                                    }
+                                ],
+                                [
+                                    "art_en",
+                                    {
+                                        "t": "string",
+                                        "v": "YTE="
+                                    }
+                                ],
+                                [
+                                    "art_time",
+                                    {
+                                        "t": "int",
+                                        "v": "1577836800"
+                                    }
+                                ],
+                                [
+                                    "type",
+                                    {
+                                        "t": "array",
+                                        "v": [
+                                            [
+                                                "type_en",
+                                                {
+                                                    "t": "string",
+                                                    "v": "c3ViLWE="
+                                                }
+                                            ]
+                                        ]
+                                    }
+                                ],
+                                [
+                                    "type_1",
+                                    {
+                                        "t": "array",
+                                        "v": [
+                                            [
+                                                "type_id",
+                                                {
+                                                    "t": "int",
+                                                    "v": "9101"
+                                                }
+                                            ],
+                                            [
+                                                "type_en",
+                                                {
+                                                    "t": "string",
+                                                    "v": "dG9wLWE="
+                                                }
+                                            ]
+                                        ]
+                                    }
+                                ]
+                            ]
+                        }
+                    ]
+                ]
+            },
+            "bytes": 2898
+        },
+        "IA-4": {
+            "label": "gt a(n-1)：命中 an，type/type_1 为 null",
+            "where": {
+                "art_status": [
+                    "eq",
+                    1
+                ],
+                "art_id": [
+                    "gt",
+                    910051
+                ]
+            },
+            "raw_keys": [
+                "art_id",
+                "type_id",
+                "type_id_1",
+                "group_id",
+                "art_name",
+                "art_sub",
+                "art_en",
+                "art_status",
+                "art_letter",
+                "art_color",
+                "art_from",
+                "art_author",
+                "art_tag",
+                "art_class",
+                "art_pic",
+                "art_pic_thumb",
+                "art_pic_slide",
+                "art_pic_screenshot",
+                "art_blurb",
+                "art_remarks",
+                "art_jumpurl",
+                "art_tpl",
+                "art_level",
+                "art_lock",
+                "art_points",
+                "art_points_detail",
+                "art_up",
+                "art_down",
+                "art_hits",
+                "art_hits_day",
+                "art_hits_week",
+                "art_hits_month",
+                "art_time",
+                "art_time_add",
+                "art_time_hits",
+                "art_time_make",
+                "art_score",
+                "art_score_all",
+                "art_score_num",
+                "art_rel_art",
+                "art_rel_vod",
+                "art_pwd",
+                "art_pwd_url",
+                "art_title",
+                "art_note",
+                "art_content",
+                "type",
+                "type_1"
+            ],
+            "golden": {
+                "code": 1,
+                "msg": "obtain_ok",
+                "info": {
+                    "art_id": 910052,
+                    "type_id": 9199,
+                    "art_name": "末篇",
+                    "art_en": "an",
+                    "art_time": 1582243200,
+                    "type": null,
+                    "type_1": null
+                }
+            },
+            "zdump": {
+                "t": "array",
+                "v": [
+                    [
+                        "code",
+                        {
+                            "t": "int",
+                            "v": "1"
+                        }
+                    ],
+                    [
+                        "msg",
+                        {
+                            "t": "string",
+                            "v": "b2J0YWluX29r"
+                        }
+                    ],
+                    [
+                        "info",
+                        {
+                            "t": "array",
+                            "v": [
+                                [
+                                    "art_id",
+                                    {
+                                        "t": "int",
+                                        "v": "910052"
+                                    }
+                                ],
+                                [
+                                    "type_id",
+                                    {
+                                        "t": "int",
+                                        "v": "9199"
+                                    }
+                                ],
+                                [
+                                    "art_name",
+                                    {
+                                        "t": "string",
+                                        "v": "5pyr56+H"
+                                    }
+                                ],
+                                [
+                                    "art_en",
+                                    {
+                                        "t": "string",
+                                        "v": "YW4="
+                                    }
+                                ],
+                                [
+                                    "art_time",
+                                    {
+                                        "t": "int",
+                                        "v": "1582243200"
+                                    }
+                                ],
+                                [
+                                    "type",
+                                    {
+                                        "t": "null"
+                                    }
+                                ],
+                                [
+                                    "type_1",
+                                    {
+                                        "t": "null"
+                                    }
+                                ]
+                            ]
+                        }
+                    ]
+                ]
+            },
+            "bytes": 1852
+        },
+        "IA-5a": {
+            "label": "多候选 lt an：结果等于 PHP 黄金（不预设是哪一行）",
+            "where": {
+                "art_status": [
+                    "eq",
+                    1
+                ],
+                "art_id": [
+                    "lt",
+                    910052
+                ]
+            },
+            "raw_keys": [
+                "art_id",
+                "type_id",
+                "type_id_1",
+                "group_id",
+                "art_name",
+                "art_sub",
+                "art_en",
+                "art_status",
+                "art_letter",
+                "art_color",
+                "art_from",
+                "art_author",
+                "art_tag",
+                "art_class",
+                "art_pic",
+                "art_pic_thumb",
+                "art_pic_slide",
+                "art_pic_screenshot",
+                "art_blurb",
+                "art_remarks",
+                "art_jumpurl",
+                "art_tpl",
+                "art_level",
+                "art_lock",
+                "art_points",
+                "art_points_detail",
+                "art_up",
+                "art_down",
+                "art_hits",
+                "art_hits_day",
+                "art_hits_week",
+                "art_hits_month",
+                "art_time",
+                "art_time_add",
+                "art_time_hits",
+                "art_time_make",
+                "art_score",
+                "art_score_all",
+                "art_score_num",
+                "art_rel_art",
+                "art_rel_vod",
+                "art_pwd",
+                "art_pwd_url",
+                "art_title",
+                "art_note",
+                "art_content",
+                "art_page_list",
+                "art_page_total",
+                "art_pic_screenshot_list",
+                "type",
+                "type_1",
+                "group"
+            ],
+            "golden": {
+                "code": 1,
+                "msg": "obtain_ok",
+                "info": {
+                    "art_id": 910001,
+                    "type_id": 9102,
+                    "art_name": "篇一 A&B<i>\"",
+                    "art_en": "a1",
+                    "art_time": 1577836800,
+                    "type": {
+                        "type_en": "sub-a"
+                    },
+                    "type_1": {
+                        "type_id": 9101,
+                        "type_en": "top-a"
+                    }
+                }
+            },
+            "zdump": {
+                "t": "array",
+                "v": [
+                    [
+                        "code",
+                        {
+                            "t": "int",
+                            "v": "1"
+                        }
+                    ],
+                    [
+                        "msg",
+                        {
+                            "t": "string",
+                            "v": "b2J0YWluX29r"
+                        }
+                    ],
+                    [
+                        "info",
+                        {
+                            "t": "array",
+                            "v": [
+                                [
+                                    "art_id",
+                                    {
+                                        "t": "int",
+                                        "v": "910001"
+                                    }
+                                ],
+                                [
+                                    "type_id",
+                                    {
+                                        "t": "int",
+                                        "v": "9102"
+                                    }
+                                ],
+                                [
+                                    "art_name",
+                                    {
+                                        "t": "string",
+                                        "v": "56+H5LiAIEEmQjxpPiI="
+                                    }
+                                ],
+                                [
+                                    "art_en",
+                                    {
+                                        "t": "string",
+                                        "v": "YTE="
+                                    }
+                                ],
+                                [
+                                    "art_time",
+                                    {
+                                        "t": "int",
+                                        "v": "1577836800"
+                                    }
+                                ],
+                                [
+                                    "type",
+                                    {
+                                        "t": "array",
+                                        "v": [
+                                            [
+                                                "type_en",
+                                                {
+                                                    "t": "string",
+                                                    "v": "c3ViLWE="
+                                                }
+                                            ]
+                                        ]
+                                    }
+                                ],
+                                [
+                                    "type_1",
+                                    {
+                                        "t": "array",
+                                        "v": [
+                                            [
+                                                "type_id",
+                                                {
+                                                    "t": "int",
+                                                    "v": "9101"
+                                                }
+                                            ],
+                                            [
+                                                "type_en",
+                                                {
+                                                    "t": "string",
+                                                    "v": "dG9wLWE="
+                                                }
+                                            ]
+                                        ]
+                                    }
+                                ]
+                            ]
+                        }
+                    ]
+                ]
+            },
+            "bytes": 2898
+        },
+        "IA-5b": {
+            "label": "多候选 gt a1：结果等于 PHP 黄金（不预设是哪一行）",
+            "where": {
+                "art_status": [
+                    "eq",
+                    1
+                ],
+                "art_id": [
+                    "gt",
+                    910001
+                ]
+            },
+            "raw_keys": [
+                "art_id",
+                "type_id",
+                "type_id_1",
+                "group_id",
+                "art_name",
+                "art_sub",
+                "art_en",
+                "art_status",
+                "art_letter",
+                "art_color",
+                "art_from",
+                "art_author",
+                "art_tag",
+                "art_class",
+                "art_pic",
+                "art_pic_thumb",
+                "art_pic_slide",
+                "art_pic_screenshot",
+                "art_blurb",
+                "art_remarks",
+                "art_jumpurl",
+                "art_tpl",
+                "art_level",
+                "art_lock",
+                "art_points",
+                "art_points_detail",
+                "art_up",
+                "art_down",
+                "art_hits",
+                "art_hits_day",
+                "art_hits_week",
+                "art_hits_month",
+                "art_time",
+                "art_time_add",
+                "art_time_hits",
+                "art_time_make",
+                "art_score",
+                "art_score_all",
+                "art_score_num",
+                "art_rel_art",
+                "art_rel_vod",
+                "art_pwd",
+                "art_pwd_url",
+                "art_title",
+                "art_note",
+                "art_content",
+                "art_page_list",
+                "art_page_total",
+                "type",
+                "type_1"
+            ],
+            "golden": {
+                "code": 1,
+                "msg": "obtain_ok",
+                "info": {
+                    "art_id": 910002,
+                    "type_id": 9102,
+                    "art_name": "第2篇",
+                    "art_en": "a2",
+                    "art_time": 1577923200,
+                    "type": {
+                        "type_en": "sub-a"
+                    },
+                    "type_1": {
+                        "type_id": 9101,
+                        "type_en": "top-a"
+                    }
+                }
+            },
+            "zdump": {
+                "t": "array",
+                "v": [
+                    [
+                        "code",
+                        {
+                            "t": "int",
+                            "v": "1"
+                        }
+                    ],
+                    [
+                        "msg",
+                        {
+                            "t": "string",
+                            "v": "b2J0YWluX29r"
+                        }
+                    ],
+                    [
+                        "info",
+                        {
+                            "t": "array",
+                            "v": [
+                                [
+                                    "art_id",
+                                    {
+                                        "t": "int",
+                                        "v": "910002"
+                                    }
+                                ],
+                                [
+                                    "type_id",
+                                    {
+                                        "t": "int",
+                                        "v": "9102"
+                                    }
+                                ],
+                                [
+                                    "art_name",
+                                    {
+                                        "t": "string",
+                                        "v": "56ysMuevhw=="
+                                    }
+                                ],
+                                [
+                                    "art_en",
+                                    {
+                                        "t": "string",
+                                        "v": "YTI="
+                                    }
+                                ],
+                                [
+                                    "art_time",
+                                    {
+                                        "t": "int",
+                                        "v": "1577923200"
+                                    }
+                                ],
+                                [
+                                    "type",
+                                    {
+                                        "t": "array",
+                                        "v": [
+                                            [
+                                                "type_en",
+                                                {
+                                                    "t": "string",
+                                                    "v": "c3ViLWE="
+                                                }
+                                            ]
+                                        ]
+                                    }
+                                ],
+                                [
+                                    "type_1",
+                                    {
+                                        "t": "array",
+                                        "v": [
+                                            [
+                                                "type_id",
+                                                {
+                                                    "t": "int",
+                                                    "v": "9101"
+                                                }
+                                            ],
+                                            [
+                                                "type_en",
+                                                {
+                                                    "t": "string",
+                                                    "v": "dG9wLWE="
+                                                }
+                                            ]
+                                        ]
+                                    }
+                                ]
+                            ]
+                        }
+                    ]
+                ]
+            },
+            "bytes": 2890
+        }
+    }
+}

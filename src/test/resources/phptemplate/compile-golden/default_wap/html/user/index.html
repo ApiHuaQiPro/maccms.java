@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width = device-width ,initial-scale = 1,minimum-scale = 1,maximum-scale = 1,user-scalable =no,"/>
+	<title>个人中心 - <?php echo $maccms['site_name']; ?></title>
+	<link href="<?php echo $maccms['path_tpl']; ?>css/user.css" type="text/css" rel="stylesheet"/>
+<script>var SitePath='{maccms:path}',SiteAid='{maccms:siteaid}',SiteTid='{maccms:sitetid}',SiteId='{maccms:siteid}';</script>
+<script src="__STATIC__/js/jquery.js"></script>
+</head>
+
+<body>
+<!--个人中心-->
+<div class="wrap mb80">
+	<div class="member-top">
+		<div class="cont-w">
+			<div class="cont">
+				<div>
+					<img class="face" src="<?php echo mac_url_img(mac_default($obj['user_portrait'],'static/images/touxiang.png')); ?>">
+					<p><?php echo $obj['user_name']; ?></p>
+				</div>
+				<div class="meb-info clearfix">
+					<span>会员组：<?php echo $obj['group']['group_name']; ?></span>
+					<span>积分：<?php echo $obj['user_points']; ?></span>
+					<span>期限：<?php if($obj['group_id'] < 3): ?>永久<?php else: ?><?php echo date('Y-m-d',$obj['user_end_time']); endif; ?></span>
+					<span>电话：<?php echo $obj['user_phone']; ?></span>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="member-main">
+		<ul>
+			<li><a href="<?php echo url('user/info'); ?>"><i class="mb-user"></i>我的资料</a></li>
+			<li><a href="<?php echo url('user/favs'); ?>"><i class="mb-collect"></i>我的收藏</a></li>
+			<li><a href="<?php echo url('user/plays'); ?>"><i class="mb-myorder"></i>我的播放</a></li>
+			<li><a href="<?php echo url('user/downs'); ?>"><i class="mb-myorder"></i>我的下载</a></li>
+			<li><a href="<?php echo url('user/buy'); ?>"><i class="mb-credit"></i>购买会员</a></li>
+			<li><a href="<?php echo url('user/upgrade'); ?>"><i class="mb-credit"></i>升级会员组</a></li>
+			<li><a href="<?php echo url('user/orders'); ?>"><i class="mb-credit"></i>充值记录</a></li>
+			<li><a href="<?php echo url('user/plog'); ?>"><i class="mb-credit"></i>积分记录</a></li>
+			<li><a href="<?php echo url('user/cash'); ?>"><i class="mb-credit"></i>提现记录</a></li>
+			<li><a href="<?php echo url('user/reward'); ?>"><i class="mb-credit"></i>三级分销</a></li>
+			<?php if($GLOBALS['config']['user']['invite_reg_points'] > 0): ?>
+			<li>推广注册链接：<input id="url" value="<?php echo $maccms['http_type']; ?><?php echo $maccms['site_url']; ?><?php echo mac_url('user/reg'); ?>?uid=<?php echo $obj['user_id']; ?>" size="70" style="width:80%;"></li>
+			<?php endif; if($GLOBALS['config']['user']['invite_visit_points'] > 0): ?>
+			<li>推广访问链接：<input id="url2" value="<?php echo $maccms['http_type']; ?><?php echo $maccms['site_url']; ?><?php echo mac_url('user/visit'); ?>?uid=<?php echo $obj['user_id']; ?>" size="70" style="width:80%;"></li>
+			<?php endif; ?>
+		</ul>
+	</div>
+	<a class="btn-brand" href="<?php echo url('index/index'); ?>" style="width: 40%; float:left;margin-left: 20px; ">返回首页</a>
+	<a class="btn-brand" href="<?php echo url('user/logout'); ?>" style="width: 40%;float:right;margin-right: 20px;">退出登录</a>
+</div>
+
+<!--loading start-->
+<div class="loading_box"></div>
+<!--loading end-->
+<script>
+	$(".face").imageUpload({
+		formAction: "<?php echo url('user/portrait'); ?>",
+		inputFileName:'file',
+		browseButtonValue: '修改头像',
+		browseButtonClass:'btn btn-default btn-xs',
+		automaticUpload: true,
+		hideDeleteButton: true,
+		hover:true
+	})
+	$(".face").on("imageUpload.uploadFailed", function (ev, err) {
+		alert(err);
+	});
+</script>
+</body>
+</html>

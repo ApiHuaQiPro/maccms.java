@@ -1,0 +1,25 @@
+<?php echo '<?'; ?>
+xml version="1.0" encoding="UTF-8" ?>
+<rss version="2.0">
+<channel>
+<title><?php echo $vod_name; ?></title> 
+<link><?php echo $site_url; ?><?php echo mac_url_vod_detail(['id'=>$vod_id]); ?></link>
+<description><![CDATA["<?php echo mac_substring($vod_content,200); ?>"]]></description>
+<language>zh-cn</language> 
+<generator><?php echo $site_url; ?></generator> 
+<webmaster><?php echo $site_email; ?></webmaster>
+{maccms:foreach name="vod_play_list" id="vo"}
+{maccms:foreach name="vo.urls" id="vo2" key="nid"}
+<item>
+<title><?php echo htmlspecialchars($vod_name); ?> <?php echo htmlspecialchars($vo2['title']); ?> <?php echo $vo['player_info']['show']; ?> </title>
+<link><?php echo $site_url; ?><?php echo mac_url_vod_play(['flag'=>'play','id'=>$vod_id,'sid'=>$vo['sid'],'nid'=>$nid]); ?></link>
+<description><![CDATA["<?php echo $vo2['title']; ?>详情地址<?php echo $site_url; ?><?php echo mac_url_vod_play(['flag'=>'play','id'=>$vod_id,'sid'=>$vo['sid'],'nid'=>$nid]); ?>"]]></description>
+<pubDate><?php echo date('Y-m-d H:i:s',$vod_time); ?></pubDate>
+<category><?php echo $type_name; ?></category>
+<author><?php echo htmlspecialchars($vod_author); ?></author>
+<comments><?php echo $site_name; ?></comments>
+</item>
+{/maccms:foreach}
+{/maccms:foreach}
+</channel>
+</rss>
