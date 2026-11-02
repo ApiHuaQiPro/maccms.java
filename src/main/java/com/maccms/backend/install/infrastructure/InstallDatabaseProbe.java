@@ -55,6 +55,10 @@ public class InstallDatabaseProbe {
     static final String VOD_SEARCH_ANY = "SELECT 1 FROM mac_vod_search LIMIT 1";
     static final String VOD_SEARCH = "mac_vod_search";
 
+    /** APPK-2 INS-2 ②：当前库里 {@code mac_} 开头的表数（下划线按字面匹配）。 */
+    static final String MAC_TABLES = "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() "
+            + "AND TABLE_NAME LIKE 'mac\\_%'";
+
     /** 连接测试的结果。 */
     public enum ServerState {
         OK, CONNECT_FAILED, NO_DATABASE
@@ -102,6 +106,22 @@ public class InstallDatabaseProbe {
         } catch (RuntimeException e) {
             LOG.info("安装向导连接目标库失败：{}", SafeExceptionLog.typeChain(e));
             return ServerState.CONNECT_FAILED;
+        }
+    }
+
+    /**
+     * APPK-2 INS-2 ①②：在只读会话上数目标库 {@code mac_} 开头的表（用后关闭）。
+     *
+     * @throws ProbeFailedException 连不上或读取失败（INSTALL_CONNECT_FAILED）
+     */
+    public long macTableCount(InstallTarget t) {
+        try (Connection c = connections.openReadOnly(t); Statement st = c.createStatement();
+             ResultSet rs = st.executeQuery(MAC_TABLES)) {
+            rs.next();
+            return rs.getLong(1);
+        } catch (SQLException | RuntimeException e) {
+            LOG.info("安装向导读取目标库表数失败：{}", SafeExceptionLog.typeChain(e));
+            throw new ProbeFailedException();
         }
     }
 

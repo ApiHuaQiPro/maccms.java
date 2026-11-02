@@ -22,7 +22,6 @@ import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -36,9 +35,10 @@ import org.slf4j.LoggerFactory;
 /**
  * 安装向导的第四、五步（旧 install/controller/Index.php:109-272，B22 docs/architecture/31-b22-install-wizard.md 第 3～6 节）。
  *
- * <p>与旧版的主要差异（零结构变更，路线图第 1.2 节）：不建库、不导入 install.sql、不提供"覆盖"——目标库由部署方在库外建好并原样导入
- * install.sql，这里只读核对结构与 install.sql 完全一致且 26 张表全部为空（相当于旧版导入 install.sql 之后的状态），再写初始分类、
- * 第一个管理员、站点配置与安装锁。数据库连接写进新系统的部署配置文件（{@link DeployConfigFile}），不写 {@code database.php}。
+ * <p>APPK-2 S3-20（技术设计 §6.14 INS-1～INS-4）起第五步与旧版一样执行 {@code install.sql}：目标库不含 {@code mac_} 表、文件原始字节的
+ * SHA-256 等于 {@link InstallSqlFile#INSTALL_SQL_SHA256} 时，按 {@code mac_parse_sql} 切分逐条执行，再写初始分类、第一个管理员与安装锁。
+ * 与旧版的差异：不建库（库由部署方预建，第四步只确认库已存在）、不提供"覆盖"、只执行这一个文件；B22 的"只读核对结构指纹"分支已删除（INS-3）。
+ * 数据库连接写进新系统的部署配置文件（{@link DeployConfigFile}），不写 {@code database.php}。
  */
 public class InstallWizard {
 
@@ -61,12 +61,11 @@ public class InstallWizard {
     // 新版新增的提示（旧版没有对应的情况，31 文档第 3.4 节）
     static final String MSG_PREFIX = "新版只支持数据库前缀 mac_（全部查询按 mac_ 表名编写）";
     static final String MSG_ROOT = "安装向导默认不接受 root 账号：请使用专用账号；本机开发确需使用时设置 MACCMS_INSTALL_ALLOW_ROOT=true";
-    static final String MSG_NO_DATABASE = "数据库不存在。新版不在应用内建库建表：请部署方在库外建库，并用 mysql 命令行原样导入"
-            + " application/install/sql/install.sql 后，再测试数据库连接";
-    static final String MSG_SCHEMA = "目标库的表结构与 install.sql 不一致（共 %d 处，如：%s）。新版不在应用内建表或改表：请部署方在库外"
-            + "重新原样导入 application/install/sql/install.sql 后，再测试数据库连接";
-    static final String MSG_NOT_EMPTY = "目标库的数据与刚导入 install.sql 时不同（%s，共 %d 张表）。安装向导只用于刚原样导入 install.sql 的库"
-            + "（除 mac_group 的 3 个默认会员组外各表为空），不会清空或覆盖已有数据";
+    static final String MSG_NO_DATABASE = "数据库不存在。新版不在应用内建库：请部署方在库外建好空库后，再测试数据库连接";
+    /** APPK-2 INSTALL_TABLES_EXIST（INS-2 ②）。 */
+    static final String MSG_TABLES_EXIST = "已存在数据表";
+    /** APPK-2 INSTALL_SQL_HASH_MISMATCH（INS-2 ③）。 */
+    static final String MSG_SQL_HASH = "文件哈希不一致";
     static final String MSG_INSTALL_DIR = "新版只支持安装在网站根目录（install_dir 为 /）";
     static final String MSG_LOCK = "[application/data/install/install.lock]";
 
@@ -83,6 +82,7 @@ public class InstallWizard {
     private final LegacyConfigService config;
     private final LegacySiteFiles files;
     private final InstallWrites writes;
+    private final InstallConnections connections;
     private final SecureRandom random = new SecureRandom();
     private final Object installLock = new Object();
 
@@ -94,6 +94,7 @@ public class InstallWizard {
         this.config = config;
         this.files = files;
         this.writes = new InstallWrites(connections);
+        this.connections = connections;
     }
 
     /** 已安装（安装锁存在，旧 install.php:30）。 */
@@ -158,10 +159,6 @@ public class InstallWizard {
             }
             case OK -> {
             }
-        }
-        String problem = checkTarget(target, lang);
-        if (problem != null) {
-            return Reply.error(problem);
         }
         try {
             deploy.write(deploymentEntries(target));
@@ -249,12 +246,34 @@ public class InstallWizard {
             if (locked()) {
                 return Reply.error(lang.get("install/access_denied"));
             }
-            String problem = checkTarget(target, lang);
-            if (problem != null) {
-                return Reply.error(problem);
+            // INS-2 ①②：开连接、目标库不得已有 mac_ 表
+            long tables;
+            try {
+                tables = probe.macTableCount(target);
+            } catch (InstallDatabaseProbe.ProbeFailedException e) {
+                return Reply.error(lang.get("install/database_connect_err"));
+            }
+            if (tables > 0) {
+                return Reply.error(MSG_TABLES_EXIST);
+            }
+            // INS-2 ③：原始字节的 SHA-256（不存在、读不出、超过上限都按不一致处理）
+            List<String> statements = installStatements();
+            if (statements == null) {
+                return Reply.error(MSG_SQL_HASH);
             }
             if (!writeSiteConfig(dir)) {
                 return Reply.error(lang.get("write_err_config"));
+            }
+            // INS-2 ④：逐条执行（失败不回滚已执行的 DDL，同 PHP；不写安装锁）
+            switch (connections.executeInstallSql(target, statements)) {
+                case CONNECT_FAILED -> {
+                    return Reply.error(lang.get("install/database_connect_err"));
+                }
+                case SQL_FAILED -> {
+                    return Reply.error(lang.get("install/init_err"));
+                }
+                case OK -> {
+                }
             }
             InstallWrites.Result written;
             try {
@@ -283,33 +302,19 @@ public class InstallWizard {
 
     // ------------------------------------------------------------------ 内部
 
-    /**
-     * 只读核对：结构与 install.sql 一致，各表行数与刚导入 install.sql 时相同（{@link InstallSchema#SEED_ROWS}：只有 mac_group 有 3 行，
-     * 其余为空），即旧版第五步执行 install.sql 之后的状态。通过时为 null，否则为提示。
-     */
-    private String checkTarget(InstallTarget target, LegacyLang lang) {
-        InstallDatabaseProbe.TargetState state;
+    /** 经 SHA-256 校验的 install.sql 语句；文件不存在、读不出或哈希不一致时为 null。 */
+    private List<String> installStatements() {
+        byte[] bytes;
         try {
-            state = probe.inspect(target);
-        } catch (InstallDatabaseProbe.ProbeFailedException e) {
-            return lang.get("install/database_connect_err");
+            bytes = files.readInstallSql(InstallSqlFile.MAX_BYTES);
+        } catch (LegacySiteFiles.FileException e) {
+            LOG.warn("安装向导读取 install.sql 失败：{}", e.reason());
+            return null;
         }
-        List<String> diff = InstallSchema.differences(state.fingerprint());
-        if (!diff.isEmpty()) {
-            List<String> shown = diff.subList(0, Math.min(InstallSchema.SHOWN, diff.size()));
-            return String.format(MSG_SCHEMA, diff.size(), String.join("；", shown));
+        if (!InstallSqlFile.matches(bytes)) {
+            return null;
         }
-        List<String> changed = new ArrayList<>();
-        state.rows().forEach((table, rows) -> {
-            if (rows != InstallSchema.SEED_ROWS.getOrDefault(table, 0L)) {
-                changed.add(table + (rows < 0 ? " 的行数未知" : " 有 " + rows + " 行"));
-            }
-        });
-        if (!changed.isEmpty()) {
-            return String.format(MSG_NOT_EMPTY, String.join("、", changed.subList(0, Math.min(InstallSchema.SHOWN,
-                    changed.size()))), changed.size());
-        }
-        return null;
+        return InstallSqlFile.statements(bytes);
     }
 
     /**

@@ -34,6 +34,13 @@ class SqlEntryGuardTest {
             "table", "B15 数据库工具（24 文档第 9.2 节）：必须出现在 SHOW TABLE STATUS 的结果里且只含字母数字下划线",
             "columns", "B15 数据库工具（24 文档第 9.3 节）：SHOW COLUMNS 的列名逐个校验（只含字母数字下划线）后拼成 CAST(`列` AS CHAR) AS `列`");
 
+    /**
+     * 登记的非常量 SQL 入口：文件 → 允许的方法（每项只抵消一次）。APPK-2 S3-20 INS-2 ④：安装向导逐条执行 install.sql，语句来自
+     * 原始字节 SHA-256 与内置常量一致的固定文件（{@code InstallSqlFile}），不来自请求。其他文件、其他调用一律照旧拦下。
+     */
+    static final Map<String, List<String>> REGISTERED_DYNAMIC = Map.of(
+            "com/maccms/backend/install/infrastructure/InstallConnections.java", List.of("execute"));
+
     private static final Path MAPPERS = JavaSources.MAIN_RESOURCES.resolve("mapper");
 
     private static final Pattern DATA_ACCESS = Pattern.compile(
@@ -54,9 +61,14 @@ class SqlEntryGuardTest {
     void mainSourcesOnlyExecuteConstantSql() throws IOException {
         List<String> all = new ArrayList<>();
         for (Map.Entry<String, String> e : JavaSources.mainJava().entrySet()) {
+            List<String> allowed = new ArrayList<>(REGISTERED_DYNAMIC.getOrDefault(e.getKey(), List.of()));
             for (String v : javaViolations(e.getValue(), REGISTERED_DOLLAR)) {
+                if (allowed.remove(dynamicMethod(v))) {
+                    continue;
+                }
                 all.add(e.getKey() + ": " + v);
             }
+            assertThat(allowed).as(e.getKey() + " 登记的非常量 SQL 入口已不存在，删除登记").isEmpty();
         }
         assertThat(all).as("SQL 入口护栏").isEmpty();
     }
@@ -145,6 +157,12 @@ class SqlEntryGuardTest {
         assertThat(xmlViolations(xml, Map.of())).hasSize(1);
         assertThat(xmlViolations(xml, Map.of("order", "B99：枚举白名单"))).isEmpty();
         assertThat(xmlViolations("<mapper><select id=\"a\">SELECT 1 WHERE a = #{a}</select></mapper>", Map.of())).isEmpty();
+    }
+
+    /** 违规文本 "SQL 执行入口 .m( 的第一个参数不是常量" 中的方法名；其他违规为 null（不能被登记抵消）。 */
+    static String dynamicMethod(String violation) {
+        Matcher m = Pattern.compile("SQL 执行入口 \\.(\\w+)\\( 的第一个参数不是常量").matcher(violation);
+        return m.matches() ? m.group(1) : null;
     }
 
     static List<String> javaViolations(String source, Map<String, String> registeredDollar) {

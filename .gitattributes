@@ -9,3 +9,5 @@ src/main/jte-admin/** text eol=lf
 src/main/resources/install/schema-fingerprint.txt text eol=lf
 # APPK-2 S3-01 官方模板包按字节入库（DEC-1）：验收用 git blob / 目录树 SHA 与官方提交逐字节比对，autocrlf 不得改写，也不做空白检查
 third_party/maccms-template-v2020.1000.1035/** -text -whitespace
+# APPK-2 INS-1（C-67）：安装向导按 SHA-256 校验 install.sql 的原始字节，工作区必须与 blob 同为 LF（autocrlf 检出会变成 CRLF、哈希不符）
+php/application/install/sql/install.sql text eol=lf

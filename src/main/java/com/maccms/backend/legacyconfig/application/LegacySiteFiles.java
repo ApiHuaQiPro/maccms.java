@@ -402,6 +402,24 @@ public class LegacySiteFiles {
         write(root, INSTALL_LOCK, content, AtomicFiles.ABSENT);
     }
 
+    /** 安装向导第 5 步执行的建表文件（APPK-2 INS-1）：{@link #readInstallSql} 只读这一个固定路径。 */
+    public static final String INSTALL_SQL = "application/install/sql/install.sql";
+
+    /**
+     * 只读 {@link #INSTALL_SQL}（APPK-2 S3-20 C-69）：不收调用方传入的路径；经站点根校验、按 {@code NOFOLLOW_LINKS} 打开，返回原始字节
+     * （不做换行转换，INS-2 ③ 按原始字节算哈希）；文件不存在时为 null，不是普通文件、超过 {@code maxBytes} 或读失败时抛 {@link FileException}。
+     */
+    public byte[] readInstallSql(int maxBytes) {
+        if (root == null) {
+            throw new FileException(Reason.NOT_CONFIGURED);
+        }
+        try {
+            return root.read(INSTALL_SQL, maxBytes);
+        } catch (LegacySiteRoot.AccessException e) {
+            throw translate(e);
+        }
+    }
+
     /** 安装向导检查的位置是否可写（只限 {@link #INSTALL_CHECKED}，同旧版 {@code is_writable}/{@code is_dir}）。 */
     public Access installAccess(String relative) {
         if (root == null) {
