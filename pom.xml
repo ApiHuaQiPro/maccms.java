@@ -29,6 +29,14 @@
         -->
         <mysql.version>8.2.0</mysql.version>
         <!--
+          APPK-2 REV-BE-1：覆盖 Spring Boot 4.1.1 默认管理的 Jackson 3.1.5 与 Tomcat 11.0.24，二者在 OSV 有已修复的公开漏洞
+          （Jackson GHSA-7hhh-6rmp-j9qf 等 7 项、Tomcat GHSA-9xv2-5v5q-p794 等 4 项，清单见 docs/api/APPK-2/dep-audit.md）。
+          取 Spring Boot 4.1.2 BOM 采用的同一组版本；升级 Spring Boot 后若 BOM 自带版本不低于这里，删掉这两行。
+          下限由 DependencyVulnerabilityBaselineTest 断言。
+        -->
+        <jackson-bom.version>3.1.7</jackson-bom.version>
+        <tomcat.version>11.0.27</tomcat.version>
+        <!--
           site 模板引擎（MACC-7 选型、用户确认 D2）：jte 固定 3.2.4，不受 Spring Boot 依赖管理。
           只用 jte-runtime + jte-models（预编译 + 类型安全入口），不引入 jte-spring-boot-starter-4。
         -->
@@ -61,6 +69,12 @@
             <groupId>com.mysql</groupId>
             <artifactId>mysql-connector-j</artifactId>
             <scope>runtime</scope>
+        </dependency>
+        <!-- APPK-2 DEC-14（C-76）：只作为 integration.http 出站客户端的内部引擎（每跳固定已校验地址，OUT-1-5）；
+             版本由 Spring Boot BOM 管理，不写 <version>（OutboundNetworkGuardTest 断言） -->
+        <dependency>
+            <groupId>org.apache.httpcomponents.client5</groupId>
+            <artifactId>httpclient5</artifactId>
         </dependency>
         <dependency>
             <groupId>gg.jte</groupId>

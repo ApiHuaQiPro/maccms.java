@@ -72,16 +72,41 @@ class SiteVariantsTest {
         SiteVariant wap = through(v, "Mozilla/5.0 (Linux; Android 14)", "m.test");
         assertThat(wap.wap()).isTrue();
         assertThat(wap.langCode()).isEqualTo("zh-tw");
-        assertThat(wap.pathTpl()).isEqualTo("/template/wapt/html/");
+        assertThat(wap.pathTpl()).isEqualTo("/template/wapt/");
         assertThat(wap.pathAds()).isEqualTo("/template/wapt/wads/");
         assertThat(through(v, "Mozilla/5.0 (Linux; Android 14)", "www.test").wap()).isFalse();
         assertThat(through(v, "Mozilla/5.0 (Windows NT 10.0)", "m.test").wap()).isFalse();
         // 没有 UA：按桌面（D-B12-L2）
         SiteVariant none = through(v, null, "m.test");
         assertThat(none.wap()).isFalse();
-        assertThat(none.pathTpl()).isEqualTo("/template/default/html/");
+        assertThat(none.pathTpl()).isEqualTo("/template/default/");
         assertThat(v.dependsOnUserAgent()).isTrue();
         assertThat(v.wapLogo()).isPresent();
+    }
+
+    /** DEC-3 的 7 个取值下，模板变量 {$maccms.path_tpl}、{$maccms.path_ads} 与旧 label_maccms 相同（All.php:62-63；PATH-2、PATH-4）。 */
+    @Test
+    void pathVariablesFollowLabelMaccms() throws Exception {
+        Map<Object, PhpValue> site = new LinkedHashMap<>();
+        site.put("install_dir", new PhpValue.PhpString("/"));
+        site.put("mob_status", new PhpValue.PhpString("2"));
+        site.put("template_dir", new PhpValue.PhpString("default_pc"));
+        site.put("html_dir", new PhpValue.PhpString("html"));
+        site.put("ads_dir", new PhpValue.PhpString("ads"));
+        site.put("mob_template_dir", new PhpValue.PhpString("default_wap"));
+        site.put("mob_html_dir", new PhpValue.PhpString("html"));
+        site.put("mob_ads_dir", new PhpValue.PhpString("ads"));
+        Map<Object, PhpValue> root = new LinkedHashMap<>();
+        root.put("site", new PhpArray(site));
+        SiteVariants v = SiteVariants.from(new PhpArray(root), null);
+        SiteVariant pc = through(v, "Mozilla/5.0 (Windows NT 10.0)", "www.test");
+        assertThat(pc.wap()).isFalse();
+        assertThat(pc.pathTpl()).isEqualTo("/template/default_pc/");
+        assertThat(pc.pathAds()).isEqualTo("/template/default_pc/ads/");
+        SiteVariant wap = through(v, "Mozilla/5.0 (Linux; Android 14)", "www.test");
+        assertThat(wap.wap()).isTrue();
+        assertThat(wap.pathTpl()).isEqualTo("/template/default_wap/");
+        assertThat(wap.pathAds()).isEqualTo("/template/default_wap/ads/");
     }
 
     @Test
