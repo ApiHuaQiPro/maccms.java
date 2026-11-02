@@ -155,7 +155,7 @@ public final class WriteSequence {
      * 异常是否说明语句肯定没有执行：执行前被本应用拒绝（{@link WriteRejectedException}），或服务端返回了错误（SQLException
      * 带服务端错误码，且不是连接类 SQLState {@code 08xxx}、超时或中止）。其余一律视为不确定。
      */
-    static boolean definitelyNotApplied(Throwable e) {
+    public static boolean definitelyNotApplied(Throwable e) {
         Set<Throwable> seen = Collections.newSetFromMap(new IdentityHashMap<>());
         for (Throwable t = e; t != null && seen.add(t); t = t.getCause()) {
             if (t instanceof WriteRejectedException) {
