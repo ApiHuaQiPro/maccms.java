@@ -391,10 +391,10 @@ git rev-parse 05ffd11:third_party/maccms-template-v2020.1000.1035 → 75038ae7f8
 
 | 黄金分组 | 归属 | 说明 |
 | --- | --- | --- |
-| `rt3_json`（15） | 函数工作（C-22 的 `json_encode` 转义规则 / `TemplateFunctions`） | C-17 的 RT-2～RT-5 不含 `json_encode`；V-11 点名的 `json_encode` 向量待该子任务比对 |
+| `rt3_json`（15） | 模板函数 C-27/S3-11（`TemplateFunctions`，V-15） | C-17 的 RT-2～RT-5 不含 `json_encode`；V-11 点名的 `json_encode` 向量待 S3-11 比对。C-22/S3-09 是标签编译，不承接本组（S306-1 复核意见改正：初版误记为 C-22） |
 | `gap1_bare_identifier`（2） | S3-07 解释器（C-18/C-19） | 裸标识符 `color` 按未定义常量取名字作字符串；GAP-1 须在 S3-07 前完成设计处理 |
-| `gap1_mac_day_color`（3）、`fn_mac_day`（44）、`fn_date`（24）、`fn_list`（58）、`fn_url_list`（10）、`fn_internal`（14） | `TemplateFunctionsGoldenTest`（函数工作） | 函数返回值与签名 |
-| `tag_names` | `TagLibCompileTest`（C-22） | TPL-11 原样输出的标签名 |
+| `gap1_mac_day_color`（3）、`fn_mac_day`（44）、`fn_date`（24）、`fn_list`（58）、`fn_url_list`（10）、`fn_internal`（14） | `TemplateFunctionsGoldenTest`（模板函数 C-27/S3-11） | 函数返回值与签名 |
+| `tag_names` | `TagLibCompileTest`（标签编译 C-22/S3-09） | TPL-11 原样输出的标签名 |
 | `art_info_empty_where`、`art_info_not_found` | `TagModelsInfoDataTest`（S3-12b） | `Art.infoData` 1001/1002 分支 |
 | 变量表、算术、`.` 连接、`echo` 输出缓冲、`ZDUMP-1` 编码 | S3-07（`InterpreterTest`）/ S3-12b | 本批只提供值与语义原语，不含执行；V-11 的 `InterpreterTest` 部分由 S3-07 交付 |
 
@@ -442,3 +442,47 @@ git --attr-source=8a58086 diff --check 2de6979 8a58086 → 无输出，退出码
 - 范围：未实现 S3-07 词法/语法/解释器、函数表、模型调用、模板编译器或页面接入；未改 PRD、设计、API、T1、黄金期望、模板资产、`tests/api/**`；未合入 deploy，未部署。C-35（`ModuleBoundaryTest` 登记 `phptemplate` 分层）不在本单，JDK 依赖约束先由本单测试守住。
 - 安全：不新增路由、输入、查询、文件读写、出站请求或日志；`ZValue.Str`/`ZArray` 的 `toString()` 不输出内容（模板变量可能含用户数据）；字符串下标对 `Long.MIN_VALUE`/`Long.MAX_VALUE` 等极端下标不抛异常（单测覆盖）；没有凭据或个人数据。
 - 已知限制：PHP 的 Notice/Warning（数组转串、未定义下标、非法偏移）不在值层记录，是否写日志由 S3-07 解释器决定；数组作字符串下标按 `zval_get_long` 处理（非空为 1），模板包中无此写法。
+
+### S306-1 返工：NaN 参与的弱比较（独立复核第 1 轮 FAIL 的修改项）
+
+复核意见：NaN 与字符串弱比较不符合 PHP 7.3（`NAN == "0"`、`NAN <= "abc"` 等 Java 为真，PHP 为假）。修复提交 `e939e25`，接在 `1775e26` 之后，不改写已有提交；S3-05 放行黄金 `php73-vectors.json` 未动（blob 仍为 `d28769ad2744c12c8eb9f46170961e734347a13b`）。
+
+**根因**：`numericCompare` 用 `x < y ? -1 : (x > y ? 1 : 0)`，NaN 落到 0（“相等”）。外层 `looseEquals`/`isSmallerOrEqual` 只在“原始两边都是 int/float”时另判 NaN；字符串、数组元素先转数值再进 `compare` 的路径没有这层判断，于是 NaN 与任何字符串都“相等”，`[0] == [NAN]`、分别构造的 `[NAN] == [NAN]` 也为真。
+
+**PHP 7.3 实测规则**：任一侧是 NaN 的数值比较为“不可比较”，`compare_function` 两个方向都得 1，所以 `==`、`<`、`<=` 为假，`!=` 为真；交换操作数得到的 `>`、`>=` 同样为假；数组逐元素比较遇到 NaN 即停在“不可比较”（`[1,NAN] < [2,NAN]` 在第一个元素已分出大小，仍为真）。NaN 与 `null`/`bool` 走布尔比较（NaN 为真值），与数组比较时数组恒大，这两类不受影响。同一张哈希表（`$z = $x`）先判同表即相等，`ZArray` 的 `a == b` 短路与之一致。
+
+**改法**（`PhpSemantics.java`）：`numericCompare` 改为 `x == y ? 0 : (x < y ? -1 : 1)`，NaN 时两个方向都返回 1，与数组键不对应时的“不可比较”同一约定；`looseEquals`、`isSmaller`、`isSmallerOrEqual` 去掉只覆盖纯数值的特判，统一经 `compare`。`in_array` 弱比较经 `looseEquals`，随之修正。设计口径未变（RT-4 仍是“PHP 7.3 `compare_function`”）。
+
+**新增回归**（不改既有测试）：
+
+| 文件 | 内容 |
+| --- | --- |
+| `src/test/php/c17_compare_matrix.php` | 生成器：27 个值（NaN、±INF、整数 0/1/-1、浮点 0.0/-0.0/1.5、数字串/非数字串/前导空格/尾随字母/`"NAN"`/`"INF"`/溢出串、null、true、false、`[]`、`[0]`、`[NAN]`、`["0"]`）两两组合 × 7 列（`==`、`!=`、`<`、`>`、`<=`、`>=`、`in_array(右, [左])`），外加 10 条分别构造的数组用例；只接受 PHP 7.3 运行 |
+| `src/test/resources/phptemplate-runtime/rt4-compare-matrix.txt` | PHP 7.3.33（64 位）生成结果：729 行矩阵 + 10 行补充；不在 `phptemplate/**` 黄金目录内，S3-05 资产不受影响 |
+| `src/test/java/com/maccms/backend/phptemplate/runtime/PhpSemanticsCompareMatrixTest.java` | `looseComparisonMatrixMatchesPhp73`：739 行逐行比对，行数与补充用例数也断言；`nanIsUncomparableWithNumbersAndStringsOnEitherSide`：NaN 在左、右两侧对 `0`、`1`、`0.0`、`1.5`、`"0"`、`"abc"`、`""`、`"1.5"`、`"1abc"`、NaN 均为 `0100000` |
+
+同提交按复核意见改正 `PhpSemanticsGoldenTest.NOT_COVERED_HERE` 与上文“剩余覆盖”表的归属：`rt3_json` 与 `fn_*`、`gap1_mac_day_color` 属模板函数 C-27/S3-11（V-15）；`tag_names` 属标签编译 C-22/S3-09。
+
+```text
+# PHP 7.3.33 复现（复核意见原例）
+php7.3 -r '$a=NAN; foreach ([0,"0","abc"] as $b) { echo json_encode(["rhs"=>$b,"eq"=>$a==$b,"lt"=>$a<$b,"lte"=>$a<=$b]), PHP_EOL; }'
+→ 三行 eq/lt/lte 全为 false（矩阵中 NAN|i0、NAN|s0、NAN|sabc 及反向均为 0100000）
+
+# 生成矩阵（D:\Tools\php\7.3\php.exe，PHP 7.3.33 NTS x64）
+php7.3 src/test/php/c17_compare_matrix.php > src/test/resources/phptemplate-runtime/rt4-compare-matrix.txt → 退出码 0，740 行（表头 1 + 729 + 10）
+
+# 先红：新测试对修复前实现（git show 1775e26:…/PhpSemantics.java）
+./mvnw -B -q test -Dtest=PhpSemanticsCompareMatrixTest → Tests run: 2, Failures: 2；32 处不一致：
+  NAN 对 11 个字符串（左右各 11 = 22 处，php=0100000 java=1000111）、[0]/["0"] 与 [NAN] 互比 4 处、
+  分别构造的 [NAN]==[NAN]、<=、>=、in_array([NAN],[[NAN]])、[NAN,1]<[NAN,2]、[a=>NAN]==[a=>NAN] 6 处；
+  其余 707 行修复前已一致（无关组合的既有行为被同一矩阵锁住）
+# 后绿：修复后
+./mvnw -B -q test -Dtest='PhpSemantics*' → 退出码 0；PhpSemanticsCompareMatrixTest 2、PhpSemanticsGoldenTest 8、PhpSemanticsTest 9，失败/错误/跳过 0
+
+# 空白检查
+git --attr-source=e939e25 diff --check 1775e26 e939e25 → 无输出，退出码 0
+
+# 全量回归（工作区 = 提交 e939e25 的内容；本说明当时未提交，不参与构建）
+./mvnw -B verify → Tests run: 3046, Failures: 0, Errors: 0, Skipped: 0；BUILD SUCCESS；耗时 08:47；退出码 0
+  （S3-06 初版的 3044 项 + 本次新增 2 项；无退步）
+```
