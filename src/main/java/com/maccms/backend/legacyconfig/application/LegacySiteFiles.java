@@ -406,15 +406,16 @@ public class LegacySiteFiles {
     public static final String INSTALL_SQL = "application/install/sql/install.sql";
 
     /**
-     * 只读 {@link #INSTALL_SQL}（APPK-2 S3-20 C-69）：不收调用方传入的路径；经站点根校验、按 {@code NOFOLLOW_LINKS} 打开，返回原始字节
+     * 只读 {@link #INSTALL_SQL}（APPK-2 S3-20 C-69）：不收调用方传入的路径；经站点根校验、最终文件按 {@code NOFOLLOW_LINKS} 打开，返回原始字节
      * （不做换行转换，INS-2 ③ 按原始字节算哈希）；文件不存在时为 null，不是普通文件、超过 {@code maxBytes} 或读失败时抛 {@link FileException}。
+     * 最终文件本身是符号链接时拒绝（{@link Reason#NOT_REGULAR_FILE}），即使目标在站点根内；中间目录按真实路径在站点根内校验。
      */
     public byte[] readInstallSql(int maxBytes) {
         if (root == null) {
             throw new FileException(Reason.NOT_CONFIGURED);
         }
         try {
-            return root.read(INSTALL_SQL, maxBytes);
+            return root.readNoFollowFinal(INSTALL_SQL, maxBytes);
         } catch (LegacySiteRoot.AccessException e) {
             throw translate(e);
         }

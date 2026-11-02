@@ -2,7 +2,7 @@
 
 - 上游：契约 v1.3.0 `bc612e933aa67abab319b90534c5150c10a51452`（API-030）；技术设计 v13 `9c73bf6c…` §6.14 INS-1～INS-4、C-56/C-57/C-67/C-69
 - 分支：`agent/agent/appk-9`（已合入 `feature/APPK-2-be-php-template-migration` @ `2de6979` 作为契约 1.3.0 基线）
-- 实现提交：第 1 段 `5f1164405875a9bd76ce1d484b17538e5f993748`（产品代码、C-57 单测部分）；第 2 段 `d75e9ba8128ed7469e6522c62f6d61a10529fe24`（M-2、M-3）及其后的 IT 改写提交（M-4，提交号见 Issue 回传）
+- 实现提交：第 1 段 `5f1164405875a9bd76ce1d484b17538e5f993748`（产品代码、C-57 单测部分）；第 2 段 `d75e9ba8128ed7469e6522c62f6d61a10529fe24`（M-2、M-3）及其后的 IT 改写提交（M-4，提交号见 Issue 回传）；第 3 段（M-5：`readInstallSql` 拒绝最终文件符号链接，提交号见 Issue 回传）
 - 范围：S3-20 全部（C-56、C-57、C-67、C-69；API-030；AC-12；V-25）。S3-21a～d 已由智能调度拆为 APPK-14～APPK-17，不在本单本轮
 
 ### 变更文件
@@ -13,7 +13,8 @@
 | C-56 | `install/application/InstallWizard.java` | 第 5 步按契约判定顺序：互斥区内复查锁 → INS-2 ①② `mac_` 表数 → ③哈希 → 写 `extra/maccms.php` → ④执行 → ⑤初始数据、管理员 → ⑥安装锁；删除 `checkTarget`（指纹 + 行数只读核对，INS-3），第 4 步同时去掉该调用 |
 | C-56 | `install/infrastructure/InstallConnections.java` | 新增 `executeInstallSql`：本次调用内打开、用后关闭的普通会话（同样禁止多语句、本地文件导入、反序列化），逐条执行，失败即停；日志只记语句序号与异常类型链 |
 | C-56 | `install/infrastructure/InstallDatabaseProbe.java` | 新增 `macTableCount`（只读会话，`information_schema.TABLES`，`LIKE 'mac\_%'`） |
-| C-69 | `legacyconfig/application/LegacySiteFiles.java` | 新增 `readInstallSql(int)`：固定路径 `application/install/sql/install.sql`，经 `LegacySiteRoot` 校验、`NOFOLLOW_LINKS` 读原始字节 |
+| C-69 | `legacyconfig/application/LegacySiteFiles.java` | 新增 `readInstallSql(int)`：固定路径 `application/install/sql/install.sql`，经 `LegacySiteRoot` 校验、`NOFOLLOW_LINKS` 读原始字节；第 3 段（M-5）改为委托 `LegacySiteRoot.readNoFollowFinal` |
+| C-69 | `legacyconfig/infrastructure/LegacySiteRoot.java` | 第 3 段（M-5）新增 `readNoFollowFinal(String, int)`：整条路径先经 `resolve` 校验（目标在根外仍为 `OUTSIDE_ROOT`），再用“上级目录真实路径 + 原始文件名”按 `NOFOLLOW_LINKS` 读属性和打开，最终文件是符号链接（含目标在根内、悬空链接）→ `NOT_REGULAR_FILE`；中间目录规则不变；`read` 及其余方法未改 |
 | C-67 | `.gitattributes` | `php/application/install/sql/install.sql text eol=lf` |
 | C-57（单测部分） | `T/install/InstallSqlFileTest.java`（新增） | 见下表 |
 | C-56（INS-3） | `install/application/InstallSchema.java` | 第 2 段：删除不再使用的 `SHOWN`；类注释改为“运行期不再调用，保留给 `InstallSchemaTest` / `InstallWizardMySqlIT` 核对表结构”；`expected()` / `differences()` / `format()` / `TABLES` / `SEED_ROWS` 保留 |
@@ -39,6 +40,7 @@
 | INS-2 ④ 先写 `maccms.php`，55 条语句（26 DROP + 26 CREATE + 3 INSERT）原样交给 `executeInstallSql`；`CONNECT_FAILED` → `database_connect_err`、`SQL_FAILED` → `init_err`，不写安装锁 | AC-12 | `InstallWizardTest.matchingFileWritesSiteConfigThenExecutesAllStatements` |
 | 以上拒绝分支：0 条语句送执行、`maccms.php` 未改、无安装锁 | AC-12 | `InstallWizardTest` 各条的 `nothingExecutedOrWritten` |
 | C-69 `readInstallSql`：原始字节（LF / CRLF 不转换）、不存在为 null、`TOO_LARGE`、目录 `NOT_REGULAR_FILE`、站点外符号链接 `OUTSIDE_ROOT`、未配置 `NOT_CONFIGURED` | AC-12 | `LegacySiteFilesTest`（6 条） |
+| C-69（M-5）最终文件是符号链接 → 拒绝（`NOT_REGULAR_FILE`），即使目标在站点根内；相对目标链接、悬空链接同样拒绝；中间目录链接到站点根内、最终文件为普通文件时照常读取 | AC-12 | `LegacySiteFilesTest.finalFileSymlinkInsideTheSiteIsRejected`、`directorySymlinkInsideTheSiteStillReadsARegularFile` |
 | V-25 黄金复放（PHP 7.3 / 8.0，空库）：响应一致；建出 26 张表、指纹与 `InstallSchema.expected()` 完全一致、`mac_group` 3 行、`mac_admin` 1 行；正常模式启动前后表结构不变 | AC-12 | `InstallWizardMySqlIT.goldenScenariosMatchPhp73And80` |
 | V-25 语句：DDL 只来自 install.sql 切分结果（55 条全部出现），无 `CREATE DATABASE`；其余只有 SELECT / INSERT（mac_type、mac_admin）/ 驱动会话设置 | AC-12 | 同上两个 IT 的 `assertInstallStatements` |
 
@@ -82,6 +84,36 @@ sha256sum php/application/install/sql/install.sql   # 48dbe0fbd138f670919208d8bc
 
 第 2 段的单测针对第 1 段已写好的产品代码，属于补测，没有红灯阶段可留存；IT 首次运行暴露两处测试自身问题（驱动在语句末尾附加 `[Created on: …]`、令牌作废后仍用旧令牌）并已修正，产品代码未改。
 
+#### 第 3 段（M-5）
+
+```text
+# 先红：新增两条用例后、改实现前
+./mvnw -B -q test -Dtest=LegacySiteFilesTest
+# Tests run: 8, Failures: 1 —— finalFileSymlinkInsideTheSiteIsRejected:115 Expecting code to raise a throwable.
+#（directorySymlinkInsideTheSiteStillReadsARegularFile 改前即通过，锁住“不扩大为禁止目录链接”）
+
+# 后绿：相关测试类
+./mvnw -B -q test -Dtest='LegacySiteFilesTest,InstallWizardTest,InstallSqlFileTest,InstallSchemaTest,InstallModeTest,InstallWizardGoldenTest,LegacyConfigDirectoryTest,ModuleBoundaryTest'
+# LegacySiteFilesTest 8、InstallWizardTest 6、InstallSqlFileTest 4、InstallSchemaTest 3、InstallModeTest 6、InstallWizardGoldenTest 2、
+# LegacyConfigDirectoryTest 24、ModuleBoundaryTest 6：0 失败 0 错误 0 跳过（符号链接用例实际执行）
+
+# 智能调度附带的探针（编译后，在仓库根执行）
+java --class-path target/classes InstallSqlSymlinkProbe.java
+# readInstallSql=REJECTED, reason=NOT_REGULAR_FILE
+
+./mvnw -B verify
+# Tests run: 3045, Failures: 0, Errors: 0, Skipped: 0；BUILD SUCCESS（比第 2 段 3043 多 2 条，即上面两条新用例）
+
+# 真实 MySQL 5.7.44（本机），一次性库 maccms_it_*；MACCMS_IT_ADMIN_* 只在本次进程环境里设置，未写入任何文件
+./mvnw -B verify -Pmysql-it -Dit.test=InstallWizardMySqlIT -Dtest=NoSuchTest -Dsurefire.failIfNoSpecifiedTests=false
+# [mysql-it] B22 golden: 94 steps compared against PHP 7.3/8.0
+# [mysql-it] statement kinds seen by the driver: [CREATE, DROP, INSERT, SELECT, SET] (79 distinct)
+# [mysql-it] statement kinds seen by the driver: [CREATE, DROP, INSERT, SELECT, SET] (78 distinct)
+# [mysql-it] dropped 12 disposable databases (verified absent)
+# Tests run: 3, Failures: 0, Errors: 0, Skipped: 0 —— BUILD SUCCESS
+# 事后 SHOW DATABASES LIKE 'maccms_it_%' 剩 2 个库，名称时间戳为 2026-10-25、2026-10-26，不是本单运行创建的，未动；未连接 maccms_dev
+```
+
 先红后绿（第 1 段）：`InstallSqlFileTest` 先于 `InstallSqlFile` 写好；在改 `.gitattributes` 之前，本机工作区的 install.sql 是 CRLF（45950 字节），`constantEqualsRepositoryFileAndFileIsLf` 的“不含 \r”断言对它必然失败。本段没有单独留存红灯运行的输出。
 
 ### 迁移与回滚
@@ -103,4 +135,4 @@ sha256sum php/application/install/sql/install.sql   # 48dbe0fbd138f670919208d8bc
 2. **第 4 步行为变化**：删除指纹分支（INS-3）后，第 4 步只测连接并确认库存在，不再拒绝空库或结构不同的库。智能调度已确认这符合技术设计 §5.2 C-56 与 §6.14 INS-3（API-030 的“第 4 步行为不变”只说明 operation 只登记 step=5），随 S3-20 交后端评审复核。
 3. **`SqlEntryGuardTest` 登记**：设计 C-56/C-57 没列这个文件；没有这条登记，INS-2 ④ 逐条执行文件内容就过不了护栏。写法与 `SchemaGuardTest.REGISTERED_TEXT`（C-55）相同。请后端评审判定。
 4. install.sql 不存在、读不出或超过 1 MiB，都按 `INSTALL_SQL_HASH_MISMATCH` 返回（PHP 在文件不存在时直接跳过建表；契约没有单列这种情况）。
-5. **`readInstallSql` 与符号链接**：`LegacySiteFiles.Reason` 没有单独的 `SYMLINK`。指向站点根之外的链接（文件或 `install` 目录）按 `OUTSIDE_ROOT` 拒绝（`LegacySiteFilesTest` 已测）；指向站点根之内另一普通文件的链接与 `LegacySiteFiles` 其余读取方法一样按真实路径读取，读到的字节仍须通过 INS-2 ③ 的 SHA-256 才会执行。是否要对 install.sql 另加“禁止任何链接”，请后端评审判定。
+5. **`readInstallSql` 与符号链接（第 3 段 M-5 已按 C-69 修正）**：第 2 段委托 `LegacySiteRoot.read`，`resolve` 先取真实路径，`NOFOLLOW_LINKS` 打开的已是链接目标，原始最终文件是链接这一事实丢失，站点根内的链接会被接受（智能调度探针复现）。现改为 `LegacySiteRoot.readNoFollowFinal`：最终文件本身是符号链接一律拒绝（目标在站点根内、相对目标、悬空链接均拒绝），沿用既有 `NOT_REGULAR_FILE`，不新增 `SYMLINK`；目标在站点根外仍先按 `OUTSIDE_ROOT` 拒绝（既有用例未改）。检查与打开之间若被换成链接，`NOFOLLOW_LINKS` 打开本身失败（按 `IO` 拒绝）。中间目录仍按“真实路径在站点根内”校验，不禁止目录链接；`LegacySiteFiles` 其余读取方法与 `LegacySiteRoot.read` 未改。

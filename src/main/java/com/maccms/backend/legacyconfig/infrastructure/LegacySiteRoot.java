@@ -141,6 +141,44 @@ public final class LegacySiteRoot {
         }
     }
 
+    /**
+     * 同 {@link #read}，但最终文件本身不得是符号链接，即使链接目标在根目录内（{@code NOT_REGULAR_FILE}）。整条路径先经
+     * {@link #resolve} 校验（解析后的目标在根目录之外仍为 {@code OUTSIDE_ROOT}）；随后用“上级目录的真实路径 + 原始文件名”按
+     * {@code NOFOLLOW_LINKS} 读属性并打开，不解析最后一段，所以原始最终文件是链接这一事实不会因先取真实路径而丢失；
+     * 检查后被换成链接时打开本身失败（{@code IO}）。中间目录仍按“真实路径在根目录内”的规则校验。不存在时为 null。
+     */
+    public byte[] readNoFollowFinal(String relative, int maxBytes) throws AccessException {
+        resolve(relative);
+        int slash = relative.lastIndexOf('/');
+        Path dir = slash < 0 ? root : resolve(relative.substring(0, slash));
+        if (!Files.isDirectory(dir, LinkOption.NOFOLLOW_LINKS)) {
+            return null;
+        }
+        Path p = dir.resolve(relative.substring(slash + 1));
+        BasicFileAttributes a;
+        try {
+            a = Files.readAttributes(p, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
+        } catch (NoSuchFileException e) {
+            return null;
+        } catch (IOException e) {
+            throw new AccessException("IO");
+        }
+        if (!a.isRegularFile()) {
+            throw new AccessException("NOT_REGULAR_FILE");
+        }
+        try (InputStream in = Files.newInputStream(p, LinkOption.NOFOLLOW_LINKS)) {
+            byte[] bytes = in.readNBytes(maxBytes + 1);
+            if (bytes.length > maxBytes) {
+                throw new AccessException("TOO_LARGE");
+            }
+            return bytes;
+        } catch (NoSuchFileException e) {
+            return null;
+        } catch (IOException e) {
+            throw new AccessException("IO");
+        }
+    }
+
     /** 文件或目录的状态；不存在时为 null。 */
     public Entry stat(String relative) throws AccessException {
         Path p = resolve(relative);

@@ -97,6 +97,50 @@ class LegacySiteFilesTest {
                         .isEqualTo(LegacySiteFiles.Reason.OUTSIDE_ROOT));
     }
 
+    /**
+     * C-69（M-5）：最终文件本身是符号链接时拒绝，即使目标就在站点根内（原始最终文件是链接这一事实不能因先取真实路径而丢失）；
+     * 换成悬空链接同样拒绝。
+     */
+    @Test
+    void finalFileSymlinkInsideTheSiteIsRejected() throws Exception {
+        LegacySiteFiles files = files();
+        Files.createDirectories(sql.getParent());
+        Path target = Files.writeString(site.resolve("original.sql"), "DROP TABLE x;\n");
+        try {
+            Files.createSymbolicLink(sql, target);
+        } catch (IOException | UnsupportedOperationException | SecurityException e) {
+            Assumptions.abort("本机不允许创建符号链接：" + e.getClass().getSimpleName());
+        }
+        assertThat(Files.isSymbolicLink(sql)).isTrue();
+        assertThatThrownBy(() -> files.readInstallSql(1024)).isInstanceOf(LegacySiteFiles.FileException.class)
+                .satisfies(e -> assertThat(((LegacySiteFiles.FileException) e).reason())
+                        .isEqualTo(LegacySiteFiles.Reason.NOT_REGULAR_FILE));
+        // 相对目标的链接（install.sql → ../../../original.sql）同样拒绝
+        Files.delete(sql);
+        Files.createSymbolicLink(sql, sql.getParent().relativize(target));
+        assertThatThrownBy(() -> files.readInstallSql(1024)).isInstanceOf(LegacySiteFiles.FileException.class);
+        // 悬空链接也不能当作“文件不存在”放过
+        Files.delete(sql);
+        Files.createSymbolicLink(sql, site.resolve("missing.sql"));
+        assertThatThrownBy(() -> files.readInstallSql(1024)).isInstanceOf(LegacySiteFiles.FileException.class);
+    }
+
+    /** 中间目录仍按“真实路径在站点根内”的规则：目录链接到站点根内另一个目录、最终文件是普通文件时照常读取（本项不扩大为禁止目录链接）。 */
+    @Test
+    void directorySymlinkInsideTheSiteStillReadsARegularFile() throws Exception {
+        LegacySiteFiles files = files();
+        Path realDir = Files.createDirectories(site.resolve("elsewhere/sql"));
+        byte[] content = "DROP TABLE x;\n".getBytes(StandardCharsets.UTF_8);
+        Files.write(realDir.resolve("install.sql"), content);
+        Files.createDirectories(sql.getParent().getParent());
+        try {
+            Files.createSymbolicLink(sql.getParent(), realDir);
+        } catch (IOException | UnsupportedOperationException | SecurityException e) {
+            Assumptions.abort("本机不允许创建符号链接：" + e.getClass().getSimpleName());
+        }
+        assertThat(files.readInstallSql(1024)).isEqualTo(content);
+    }
+
     @Test
     void notConfiguredIsRejected() {
         LegacySiteFiles files = new LegacySiteFiles(new LegacyConfigProperties(""));
