@@ -39,15 +39,15 @@ class PhpSemanticsGoldenTest {
 
     /** 黄金里属于后续子任务的分组 → 归属（实现说明“剩余覆盖”一节同表）。 */
     static final Map<String, String> NOT_COVERED_HERE = Map.ofEntries(
-            Map.entry("rt3_json", "json_encode：函数实现（C-22 MaccmsTagLib 转义规则 / TemplateFunctions），非 C-17"),
+            Map.entry("rt3_json", "json_encode：模板函数 C-27/S3-11（TemplateFunctions，V-15），非 C-17"),
             Map.entry("gap1_bare_identifier", "裸标识符求值：S3-07 解释器（C-18/C-19），GAP-1 设计处理后实现"),
-            Map.entry("gap1_mac_day_color", "mac_day：TemplateFunctionsGoldenTest（函数工作），依赖 GAP-1"),
-            Map.entry("fn_mac_day", "mac_day：TemplateFunctionsGoldenTest（函数工作）"),
-            Map.entry("fn_date", "date：TemplateFunctionsGoldenTest（函数工作）"),
-            Map.entry("fn_list", "白名单函数返回值：TemplateFunctionsGoldenTest（函数工作）"),
-            Map.entry("fn_url_list", "mac_url_* 签名：TemplateFunctionsGoldenTest（函数工作）"),
-            Map.entry("fn_internal", "内部函数签名：TemplateFunctionsGoldenTest（函数工作）"),
-            Map.entry("tag_names", "标签名清单：TagLibCompileTest（C-22）"),
+            Map.entry("gap1_mac_day_color", "mac_day：TemplateFunctionsGoldenTest（C-27/S3-11），依赖 GAP-1"),
+            Map.entry("fn_mac_day", "mac_day：TemplateFunctionsGoldenTest（C-27/S3-11）"),
+            Map.entry("fn_date", "date：TemplateFunctionsGoldenTest（C-27/S3-11）"),
+            Map.entry("fn_list", "白名单函数返回值：TemplateFunctionsGoldenTest（C-27/S3-11）"),
+            Map.entry("fn_url_list", "mac_url_* 签名：TemplateFunctionsGoldenTest（C-27/S3-11）"),
+            Map.entry("fn_internal", "内部函数签名：TemplateFunctionsGoldenTest（C-27/S3-11）"),
+            Map.entry("tag_names", "标签名清单：TagLibCompileTest（C-22/S3-09）"),
             Map.entry("art_info_empty_where", "Art.infoData 1001 分支：TagModelsInfoDataTest（S3-12b）"),
             Map.entry("art_info_not_found", "Art.infoData 1002 分支：TagModelsInfoDataTest（S3-12b）"));
 

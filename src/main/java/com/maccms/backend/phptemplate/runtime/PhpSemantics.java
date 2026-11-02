@@ -297,31 +297,23 @@ public final class PhpSemantics {
 
     /** {@code $a == $b}（PHP 7.3 弱比较）。 */
     public static boolean looseEquals(ZValue a, ZValue b) {
-        if (isNumber(a) && isNumber(b)) {
-            return numericCompare(a, b) == 0 && !isNaNPair(a, b);
-        }
         return compare(a, b) == 0;
     }
 
     /** {@code $a < $b}；{@code $a > $b} 即 {@code isSmaller(b, a)}（与 Zend 交换操作数的做法一致）。 */
     public static boolean isSmaller(ZValue a, ZValue b) {
-        if (isNumber(a) && isNumber(b)) {
-            return numericCompare(a, b) < 0;
-        }
         return compare(a, b) < 0;
     }
 
     /** {@code $a <= $b}；{@code $a >= $b} 即 {@code isSmallerOrEqual(b, a)}。 */
     public static boolean isSmallerOrEqual(ZValue a, ZValue b) {
-        if (isNumber(a) && isNumber(b)) {
-            return !isNaNPair(a, b) && numericCompare(a, b) <= 0;
-        }
         return compare(a, b) <= 0;
     }
 
     /**
      * PHP 7.3 {@code compare_function}：返回负数、0 或正数。
-     * 数组之间键不对应时视为“不可比较”并返回 1（所以 {@code <} 与 {@code >} 都为假）。
+     * “不可比较”统一返回 1（所以 {@code ==}、{@code <}、{@code <=} 及交换操作数后的 {@code >}、{@code >=} 都为假）：
+     * 数组之间键不对应；数值比较（含字符串、数组元素转成数值后）任一侧是 NaN（S306-1）。
      */
     public static int compare(ZValue a, ZValue b) {
         if (isNumber(a) && isNumber(b)) {
@@ -392,23 +384,18 @@ public final class PhpSemantics {
         return v instanceof ZValue.Null || (v instanceof ZValue.Bool b && !b.value());
     }
 
-    private static boolean isNaNPair(ZValue a, ZValue b) {
-        return (a instanceof ZValue.Float x && Double.isNaN(x.value()))
-                || (b instanceof ZValue.Float y && Double.isNaN(y.value()));
-    }
-
     private static double toDouble(ZValue v) {
         return v instanceof ZValue.Int i ? (double) i.value() : ((ZValue.Float) v).value();
     }
 
-    /** int/float 之间：两边都是 int 按整数比较，否则转 double 比较（NaN 记为 0，由调用方另判）。 */
+    /** int/float 之间：两边都是 int 按整数比较，否则转 double 比较；有 NaN 时不可比较，两个方向都返回 1。 */
     private static int numericCompare(ZValue a, ZValue b) {
         if (a instanceof ZValue.Int x && b instanceof ZValue.Int y) {
             return Long.compare(x.value(), y.value());
         }
         double x = toDouble(a);
         double y = toDouble(b);
-        return x < y ? -1 : (x > y ? 1 : 0);
+        return x == y ? 0 : (x < y ? -1 : 1);
     }
 
     /** {@code zendi_smart_strcmp}：两边都是完整数值串时按数值比较（含溢出的特殊处理），否则按字节比较。 */
