@@ -1,0 +1,22 @@
+{
+  "_comment": [
+    "APPK-2 技术设计 C-7（v3 §7.3 ENV-3、DEC-3、DEC-4、PHPB-9）。",
+    "对照环境对 application/extra/maccms.php 的整行字面替换表，固定 7 项，只允许这 7 个键。",
+    "其他配置差异不放在这里（由 PRE-2 在 php-baseline-report.md 另行登记）。",
+    "取值来自 DEC-3：site.template_dir=default_pc、site.html_dir=html、",
+    "site.mob_template_dir=default_wap、site.mob_html_dir=html、site.ads_dir=ads、",
+    "site.mob_ads_dir=ads、site.mob_status=2。",
+    "assemble_site.py 只在 site 节内按 '键' => '值', 的整行做替换，不重新序列化文件；",
+    "每个键在基线文件里必须恰好出现一次（替换前后都断言）。"
+  ],
+  "section": "site",
+  "keys": {
+    "template_dir": "default_pc",
+    "html_dir": "html",
+    "mob_template_dir": "default_wap",
+    "mob_html_dir": "html",
+    "ads_dir": "ads",
+    "mob_ads_dir": "ads",
+    "mob_status": "2"
+  }
+}

@@ -31,3 +31,7 @@ Thumbs.db
 .agent_*
 .claude/worktrees/
 __pycache__/
+
+# APPK-2 对照装配目录（C-6）：由 tests/compare/APPK-2/assemble_site.py 生成，
+# 内含从仓库外备份恢复的 vendor/ 与带本地库配置的 database.php，绝不进 git。
+.compare/
