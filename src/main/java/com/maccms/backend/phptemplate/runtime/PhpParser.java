@@ -506,14 +506,18 @@ public final class PhpParser {
         return left;
     }
 
-    /** 赋值级 = 三元级（赋值本身在 {@link #postfix()} 里按左值识别，右侧回到本级，右结合）。 */
+    /**
+     * 赋值级 = 三元级（赋值本身在 {@link #postfix()} 里按左值识别，右侧回到本级，右结合）。
+     * PHP 7.3 文法 {@code expr '?' expr ':' expr}：中间分支由 {@code ?} 与 {@code :} 界定，是完整表达式，
+     * 含 and/or/xor（REV-1）；冒号之后仍只到 {@code ||} 级，三元保持左结合。
+     */
     private PhpAst.Expr assignment() {
         PhpAst.Expr cond = orExpr();
         while (atOp("?")) {
             next();
             PhpAst.Expr then = null;
             if (!atOp(":")) {
-                then = assignment();
+                then = expr();
             }
             expectOp(":");
             PhpAst.Expr otherwise = orExpr();
@@ -590,7 +594,11 @@ public final class PhpParser {
         }
         if (isOp(t, "++")) {
             next();
+            Tok open = peek();
             PhpAst.Expr target = postfixNoAssign();
+            if (isOp(open, "(")) {
+                throw fail(TemplateUnsupportedException.Kind.SYNTAX, open.start); // REV-2：++(…) 不是可写左值
+            }
             if (!PhpAst.isLvalue(target)) {
                 throw fail(TemplateUnsupportedException.Kind.SYNTAX, target.offset());
             }
@@ -623,13 +631,24 @@ public final class PhpParser {
         return io;
     }
 
-    /** 后缀表达式，并在左值后识别赋值与后置 {@code ++}。 */
+    /**
+     * 后缀表达式，并在左值后识别赋值与后置 {@code ++}。
+     * 括号表达式 {@code (…)} 即使内部是变量/下标也不是可写左值（PHP 7.3 的 {@code variable} 文法不含它）：
+     * 后接 {@code =}、{@code .=}、{@code ++}、复合赋值或 {@code --} 都在写操作符处报 syntax（REV-2）。
+     */
     private PhpAst.Expr postfix() {
+        boolean parenthesized = atOp("(");
         PhpAst.Expr p = postfixNoAssign();
+        Tok t = peek();
+        if (parenthesized) {
+            if (isWriteOperator(t)) {
+                throw fail(TemplateUnsupportedException.Kind.SYNTAX, t.start);
+            }
+            return p;
+        }
         if (!PhpAst.isLvalue(p)) {
             return p;
         }
-        Tok t = peek();
         if (isOp(t, "=") || isOp(t, ".=")) {
             next();
             return new PhpAst.Assign(p.offset(), p, t.text, assignment());
@@ -644,9 +663,15 @@ public final class PhpParser {
         return p;
     }
 
+    private static boolean isWriteOperator(Tok t) {
+        return t.k == TK.OP && (t.text.equals("=") || t.text.equals(".=") || t.text.equals("++")
+                || t.text.equals("--") || COMPOUND_ASSIGN_OPS.contains(t.text));
+    }
+
     private PhpAst.Expr postfixNoAssign() {
         if (atOp("(")) {
-            // 括号表达式：不是左值，也不接下标 / -> / 赋值
+            // 括号表达式：不是可写左值（调用方 postfix()/前置 ++ 按起始 '(' 判定，REV-2），也不接下标 / -> / 赋值；
+            // 只读场景（isset 实参、instanceof 主语等）仍按内部节点处理，与 PHP 7.3 一致
             next();
             PhpAst.Expr e = expr();
             expectOp(")");

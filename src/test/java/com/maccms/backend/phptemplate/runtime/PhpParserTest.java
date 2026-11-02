@@ -281,6 +281,132 @@ class PhpParserTest {
         void unsupportedAssignmentsAreRejected(String code) {
             assertThat(rejects("<?php " + code + " ?>", NO_DYNAMIC).kind()).isEqualTo(Kind.SYNTAX);
         }
+
+        /** REV-1：PHP 7.3 三元中间分支是完整表达式（{@code expr '?' expr ':' expr}），可含 and/or/xor。 */
+        @ParameterizedTest
+        @CsvSource({"or, false, true", "and, false, true", "xor, false, true"})
+        void rev1TernaryMiddleAcceptsLowPrecedenceLogic(String op, boolean left, boolean right) {
+            // <?php echo true ? false OP true : false; ?>：true@11，false@18，第二个操作数紧随运算符
+            Ternary t = (Ternary) echoExpr("true ? " + left + " " + op + " " + right + " : false");
+            assertThat(t.offset()).isEqualTo(11);
+            assertThat(t.condition()).isEqualTo(new BoolLiteral(11, true));
+            int rightOffset = 18 + Boolean.toString(left).length() + 1 + op.length() + 1;
+            assertThat(t.then()).isEqualTo(new Binary(18, op, new BoolLiteral(18, left),
+                    new BoolLiteral(rightOffset, right)));
+            assertThat(t.otherwise()).isEqualTo(new BoolLiteral(rightOffset + Boolean.toString(right).length() + 3,
+                    false));
+        }
+
+        @Test
+        void rev1TernaryMiddleKeepsAssignmentAssociativityAndLeftAssociativeTernary() {
+            // PHP 7.3：true ? $x = 1 or 0 : 2 的中间分支是 ($x = 1) or 0
+            Ternary withAssign = (Ternary) echoExpr("true ? $x = 1 or 0 : 2");
+            Binary mid = (Binary) withAssign.then();
+            assertThat(mid.op()).isEqualTo("or");
+            assertThat(mid.left()).isEqualTo(new Assign(18, new Variable(18, "x"), "=", new PhpAst.IntLiteral(23, 1)));
+            assertThat(mid.right()).isEqualTo(new PhpAst.IntLiteral(28, 0));
+            // 中间分支内的三元仍左结合，外层三元仍左结合
+            Ternary nested = (Ternary) echoExpr("$a ? $b and $c : $d ? 1 : 2");
+            Ternary inner = (Ternary) nested.condition();
+            assertThat(((Binary) inner.then()).op()).isEqualTo("and");
+            assertThat(inner.otherwise()).isEqualTo(new Variable(28, "d"));
+            assertThat(nested.then()).isEqualTo(new PhpAst.IntLiteral(33, 1));
+            // 冒号之后仍只到三元级：true ? 1 : 2 or 3 是 (true ? 1 : 2) or 3
+            Binary tail = (Binary) echoExpr("true ? 1 : 2 or 3");
+            assertThat(tail.op()).isEqualTo("or");
+            assertThat(tail.left()).isInstanceOf(Ternary.class);
+            // 中间分支外的 and/or/xor 优先级不变
+            Binary stmt = (Binary) stmtExpr("$a = $b ? $c or $d : $e and $f;");
+            assertThat(stmt.op()).isEqualTo("and");
+            Assign assign = (Assign) stmt.left();
+            assertThat(((Binary) ((Ternary) assign.value()).then()).op()).isEqualTo("or");
+        }
+
+        @Test
+        void rev1TernaryMiddleInFunctionArgumentAndUnexecutedBranch() {
+            FunctionCall call = (FunctionCall) echoExpr("f(true ? $a xor $b : 0, 1)");
+            assertThat(call.args()).hasSize(2);
+            Ternary arg = (Ternary) call.args().get(0);
+            assertThat(arg.then()).isEqualTo(new Binary(20, "xor", new Variable(20, "a"), new Variable(27, "b")));
+            assertThat(arg.otherwise()).isEqualTo(new PhpAst.IntLiteral(32, 0));
+
+            // 未执行分支同样解析成功（解析期不看条件值）
+            If i = (If) parse("<?php if(false){ echo true ? false or true : false; } ?>").get(0);
+            assertThat(i.branches().get(0).condition()).isEqualTo(new BoolLiteral(9, false));
+            Ternary t = (Ternary) ((Echo) i.branches().get(0).body().get(0)).values().get(0);
+            assertThat(t.then()).isEqualTo(new Binary(29, "or", new BoolLiteral(29, false), new BoolLiteral(38, true)));
+            If alt = (If) parse("<?php if(false): echo f(true ? 1 and 2 : 3); endif; ?>").get(0);
+            FunctionCall inBranch = (FunctionCall) ((Echo) alt.branches().get(0).body().get(0)).values().get(0);
+            assertThat(((Binary) ((Ternary) inBranch.args().get(0)).then()).op()).isEqualTo("and");
+        }
+
+        /** REV-2：括号表达式不是可写左值；PHP 7.3.33 对以下写法均报 ParseError。偏移指向写操作符或前置 ++ 后的 {@code (}。 */
+        @ParameterizedTest
+        @CsvSource(delimiter = '#', quoteCharacter = '"', value = {
+            "<?php ($a) = 1; ?>#11",
+            "<?php ($a) .= 'x'; ?>#11",
+            "<?php ($a)++; ?>#10",
+            "<?php ++($a); ?>#8",
+            "<?php ($a) += 1; ?>#11",
+            "<?php ($a)--; ?>#10",
+            "<?php (($a)) = 1; ?>#13",
+            "<?php (($a)) .= 'x'; ?>#13",
+            "<?php (($a))++; ?>#12",
+            "<?php ++(($a)); ?>#8",
+            "<?php ($a['k']) = 1; ?>#16",
+            "<?php ($a['k']) .= 'x'; ?>#16",
+            "<?php ($a['k'])++; ?>#15",
+            "<?php ++($a['k']); ?>#8",
+            "<?php (($a['x'])) = 2; ?>#18",
+            "<?php (($a['x'][0]))++; ?>#20",
+            "<?php ++((($a['x']))); ?>#8",
+            "<?php $b = ($a) = 1; ?>#16",
+            "<?php echo ($a)++; ?>#15",
+            "<?php echo f(($a) = 1); ?>#18",
+            "<?php if(false){ ($a) = 1; } ?>#22",
+            "<?php if(false): ++($a); endif; ?>#19",
+        })
+        void rev2ParenthesizedExpressionIsNotAWritableLvalue(String src, int offset) {
+            rejects(src, Kind.SYNTAX, offset);
+        }
+
+        @Test
+        void rev2ParenthesizedReadsAndDirectWritesStillParse() {
+            // 普通括号算术与括号读取
+            Binary arith = (Binary) echoExpr("(1 + 2) * ((3))");
+            assertThat(arith.op()).isEqualTo("*");
+            assertThat(((Binary) arith.left()).op()).isEqualTo("+");
+            assertThat(arith.right()).isEqualTo(new PhpAst.IntLiteral(23, 3));
+            assertThat(echoExpr("($a)")).isEqualTo(new Variable(12, "a"));
+            assertThat(echoExpr("(($a['k']))")).isInstanceOf(Index.class);
+            Assign readParen = (Assign) stmtExpr("$x = ($a) . (($b['k']));");
+            assertThat(readParen.target()).isEqualTo(new Variable(6, "x"));
+            assertThat(((Binary) readParen.value()).op()).isEqualTo(".");
+            // 括号包住的赋值作为右值仍合法：$a = ($b = 1)
+            Assign nested = (Assign) stmtExpr("$a = ($b = 1);");
+            assertThat(nested.value()).isEqualTo(new Assign(12, new Variable(12, "b"), "=", new PhpAst.IntLiteral(17, 1)));
+            // PHP 7.3 接受 isset(($a))（括号不产生 AST 节点，只读场景）
+            assertThat(((PhpAst.Isset) echoExpr("isset(($a))")).targets()).containsExactly(new Variable(18, "a"));
+
+            // 直接变量 / 下标的赋值、.=、前后置 ++ 不回退
+            assertThat(stmtExpr("$a = 1;")).isEqualTo(new Assign(6, new Variable(6, "a"), "=", new PhpAst.IntLiteral(11, 1)));
+            assertThat(((Assign) stmtExpr("$a .= 'x';")).op()).isEqualTo(".=");
+            Assign idx = (Assign) stmtExpr("$a['k'] = 1;");
+            assertThat(idx.target()).isInstanceOf(Index.class);
+            assertThat(((Assign) stmtExpr("$a['k'] .= 'x';")).target()).isInstanceOf(Index.class);
+            assertThat(stmtExpr("$i++;")).isEqualTo(new PhpAst.Increment(6, new Variable(6, "i"), false));
+            assertThat(stmtExpr("++$i;")).isEqualTo(new PhpAst.Increment(6, new Variable(8, "i"), true));
+            PhpAst.Increment postIdx = (PhpAst.Increment) stmtExpr("$a['k']++;");
+            assertThat(postIdx.prefix()).isFalse();
+            assertThat(postIdx.target()).isInstanceOf(Index.class);
+            PhpAst.Increment preIdx = (PhpAst.Increment) stmtExpr("++$a['k'][0];");
+            assertThat(preIdx.prefix()).isTrue();
+            assertThat(((Index) preIdx.target()).base()).isInstanceOf(Index.class);
+            // 编译器产物里的 $mod = ($i % 2 ); ++$i;
+            List<Stmt> compiled = parse("<?php $mod = ($i % 2 );++$i; ?>");
+            assertThat(((Binary) ((Assign) ((ExprStmt) compiled.get(0)).expr()).value()).op()).isEqualTo("%");
+            assertThat(((ExprStmt) compiled.get(1)).expr()).isInstanceOf(PhpAst.Increment.class);
+        }
     }
 
     @Nested
