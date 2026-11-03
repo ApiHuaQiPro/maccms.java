@@ -716,3 +716,82 @@ git --attr-source=HEAD diff --check c02c686f3f5e32b504a2d1315586a2db6d2e0c12 HEA
 ```
 
 **自查**：没有新增依赖，runtime 仍只用 JDK（`PhpSemanticsTest.runtimeDependsOnlyOnJdk` 通过）。没有新增日志、I/O 和接口。诊断仍只含 kind、偏移和有界片段。修复只收紧了接受面：REV-2 变为拒绝；REV-1 新接受的只是 PHP 7.3 合法、本就由既有节点表示的 `and/or/xor`，没有引入新节点、新函数或新对象形态，白名单判定照旧，未执行分支同样经过白名单。黄金目录无改动。没有迁移，回滚方式是撤销本修复提交。
+
+## S3-07c：C-19 解释执行与资源限额（APPK-4；RT-1～RT-8；MC-1/2/4/6；BARE-4、BV-1～6；OP-T7）
+
+依据：技术设计 v15 `docs/design/APPK-2/tech-design.md` @ `9671aae615450647d75647eb6a0e1c549c99001e` §5.2 C-19、§6.3、§6.5 RT-1～RT-8、§6.5.1 BARE-4/BARE-7（S15-1～S15-4）、§6.21 MC-1～MC-6、§8.2 V-11、OP-T7（方向：评论 `01a19a29-0da2-7580-867e-5aaa35b1c877`，核验 `01a19a2b-3f7b-796c-b374-4970aa9edec3`；实现约束：架构评审 `01a19a32-5623-7329-ba71-e0e14cea9835`）。C-17 @ `ff3a1a659dcc15c7cc3eda18541bcd1406922b4e`；黄金 @ `b71b1aa4be0190f85686650a7b22459c995cf57e`（本分支内容与之逐字节相同，未改）。契约：N/A（没有 HTTP 路由、没有 API-ID）。
+
+上游 A/B：APPK-4 描述写明由调度在启动前补充 A/B 提交号，但派单评论只写“APPK-3 已两层 PASS”，没有给出提交号。本批取 APPK-3 两层 PASS 评论里明确写出的提交：S3-07b `4991e0d90f61ad2d9405daad56ea5e9eba224cc5`（调度独立复核 `01a19bc0-…`、后端评审第 2/3 轮 `01a19bd4-…`），它的祖先包含 S3-07a `8588474f763271766812b4f72ca807347b084df5` 与 C-17 `ff3a1a6…`。本分支起点 `9cc145b` 不含它们，因此用普通合并取得：`1d2fa67`（无冲突，没有改写历史）。
+
+### 变更文件
+
+| 文件 | 说明 |
+| --- | --- |
+| `runtime/Interpreter.java`（新增） | 执行语法树，输出写到字节缓冲；`render(source, vars)` = 解析 + 执行，`execute(source, program, vars)` 执行已有语法树 |
+| `runtime/ExecutionLimits.java`（新增） | RT-8 上限记录，`DEFAULTS = (1_000_000, 32 MiB, 64)`；负值拒绝；不读配置（application 层按 `maccms.phptemplate.limits.*` 构造） |
+| `runtime/ModelCallHandler.java`（新增） | `call(model, method, args)`，MC-1～MC-6 的唯一分派口；唯一生产实现 `TagModels` 归 S3-12 |
+| `runtime/FunctionDispatcher.java`（新增） | runtime 侧函数桩接口：`isRegistered(name)`（同时交给解析器做 RT-7 判定）、`call(name, args)`；生产实现 `FunctionTable`/`TemplateFunctions` 归 C-27/S3-11 |
+| `runtime/TemplateUnsupportedException.java` | kind 追加 `limit`（RT-8 超限）、`runtime`（PHP 7.3 本身会致命终止的执行期操作） |
+| `RuntimeDiagnosticsTest.java` | kind 精确列表追加上述 2 项 |
+| `InterpreterTest.java`（新增） | 47 例，见下表 |
+
+runtime 仍只 import `java.*`（`PhpSemanticsTest.runtimeDependsOnlyOnJdk` 通过）；没有反射、文件、网络、数据库、日志。
+
+### 执行语义要点
+
+- 值语义只用 C-17：`PhpSemantics.toBytes/isTrue/empty/isset/looseEquals/identical/isSmaller/compare/fetchDim/fetchDimQuiet/parseNumeric/toLong`，`ZArray.put/append/copy`。
+- 写时复制的等价做法：数组在赋值、`foreach`（遍历快照，值变量取副本）、函数实参、模型实参、数组字面量元素处一律 `copy()`；作用域里的数组由作用域独占，下标写入就地修改。
+- 下标写入 `$a[k1]…[kn] = v`：先按源码顺序求下标，再求右值，最后写入（PHP 7.3 顺序）。途经 null、未定义、false 时自动建数组；途经非空标量（int 等）时与 PHP 一样只写 Warning、不写入；途经字符串（字符串下标写入）不在 RT-1，报 `runtime`。
+- `++`：null→1、int 溢出转 float、数字串按数值、其他字符串按 Perl 规则（`z`→`aa`、`Az`→`Ba`、`a9`→`b0`、`''`→`'1'`），bool/数组不变。
+- 算术：整数溢出转 float；`/` 整除得 int，否则 float；`/0` 得 INF/-INF/NAN（PHP 7 的 Warning 只进日志）；`%` 按 `zval_get_long`，除数 0 报 `runtime`（PHP 7 抛 DivisionByZeroError）；数组 `+` 数组是并集，数组参与其他算术报 `runtime`（PHP 致命错误）。
+- `&&`/`||`/`and`/`or` 短路，`xor` 两侧都求值；`?:` 取条件值本身；`switch` 用弱比较，贯穿到 `break`。
+- `foreach` 对非数组跳过（PHP Warning 只进日志）。
+- 函数调用：执行期再判一次 `isRegistered`，未登记报 `function`（防止绕过解析器直接给语法树）。
+- 裸名 `BareConst` 求值为 `ZValue.of(name)`，不查表、不写日志（BARE-4）。
+- OP-T7：`instanceof` 先求主语，再按 `ZValue` 封闭类型逐个分支（数组、null、bool、int、float、string）给出 false，没有默认分支；`IsEmptyCall` 被执行到即报 `object`，偏移是该节点首字节。
+- RT-8：循环总次数按一次渲染里全部 `foreach`/`for` 的迭代累计（每次 `render` 重新计数），超限报在循环语句偏移；输出字节在写入前检查（字面段也计入），超限报在当前写出项的偏移；嵌套深度按 `if`/`foreach`/`for`/`switch` 语句体计，未进入的分支不计。
+- MC：模型名按 MC-2 规范化后交处理器；实参是 `List.copyOf` 的深复制快照；处理器抛出的任何异常不捕获、不包装（MC-6、QG-5）；返回值原样交给模板（赋值时取副本）。白名单只在处理器里判定，解释器不判、也不放宽。
+
+### AC → 测试（`InterpreterTest`）
+
+| AC | 测试 | 断言 |
+| --- | --- | --- |
+| AC-307C-1 | `$Execution` 8 例 | 字面段原样（含 CRLF），TPL-5 只吃 `?>` 后一个 LF 或整个 CRLF，单独 CR 不吃；数组赋值值语义、嵌套下标自动建数组、标量不写入、字符串下标写入拒绝；`.=`、前后置 `++`、Perl 字符串递增、溢出；if/elseif/else、foreach 键值/break/快照/非数组跳过、for（含空条件 + break）、switch 弱比较与贯穿；插值、转义、未定义变量/下标、字符串下标（负数、越界、`'1'`）、isset/empty；算术、7.3 弱比较（`'abc'==0` 为真）、xor、`?:`、数组并集、`runtime` 拒绝及偏移；短路时函数桩调用 0 次；函数实参快照、执行期未登记函数拒绝 |
+| AC-307C-1 / V-11 黄金 | `$BareIdentifiers.bv1GoldenGroupGap1BareIdentifierFromRealVectors` | 读真实 `semantics/php73-vectors.json` 的 `gap1_bare_identifier` 两条，期望只取黄金（`is_string`、`string`、`bool`） |
+| AC-307C-2 | `$Limits` 6 例 | 默认值恰为 1,000,000 / 33,554,432 / 64，负值拒绝；小上限下 3 次通过、4 次 `limit`@循环偏移，跨循环累计，每次渲染重置；默认 1,000,000 次通过、1,000,001 次与 `for(;;)` 拒绝；输出 5 字节通过、6 字节 `limit`@13，字面段计入；默认 32 MiB 恰好通过、多 1 字节拒绝；深度 2 通过、3 拒绝（含 foreach/switch），默认 64 通过、65 拒绝，未进入分支不计 |
+| AC-307C-3 | `$ModelCalls` 5 例 | 分派（`art`→`Art`、`Vod`、`user_group`→`UserGroup`，方法名原文，3 个实参值与类型，未定义实参为 null）；实参快照两个方向（处理器改实参不影响模板，模板之后改 `$where` 不影响前一次调用收到的值，模板改返回值不影响处理器持有对象）；处理器抛出的异常（普通运行时异常、`TemplateUnsupportedException`）`isSameAs` 原样上抛；非登记形态在调用处理器前被拒 |
+| AC-307C-4 | `$BareIdentifiers` 24 例 | BV-1/BV-3：`color` 是 string `"color"`，`color.'x'`、`color=='color'`、`f(color)` 实参类型；BV-2：8 种大小写的 true/false/null；BV-4：`color(1)` 报 `function`@11，`$color` 为 null；BV-5：9 个裸名 `bare_identifier`@11 且片段含名字、函数桩 0 次调用，`constant`/`defined` 报 `function`@11，`if(false){ echo PHP_EOL; }` 报 @22；BV-6a～d：两包真实黄金按 S15-1/S15-3 取 R15（91 字节、SHA-256、后跟 LF、全文件无 CR）、s=33/e=91、P15/B15 字节；执行 B15 输出 `53545542`，执行 R15+LF（92 字节）输出 P15+`STUB`（37 字节、无尾 LF）；两次执行桩都恰好调用 1 次，实参 (int `1793496600`, string `636f6c6f72`)；`obj` 由宿主用字符串键构造；模板源里不带引号的键按 BARE-5 拒绝。BV-1/3/6 都在根日志器挂 Logback `ListAppender`，断言无 WARN 及以上事件 |
+| AC-307C-5 | `$ObjectForms` 4 例 | 12 类代表输入（null、true、false、0、7、0.0、1.5、`""`、`"0"`、`"abc"`、`[]`、`['k'=>'v']`，覆盖 6 种类型）逐个跑形态 A、形态 B 的真实写法：A 只有数组走真分支，B 结果等于 `empty()`，全程不抛异常，说明 `isEmpty` 从未执行；`instanceof` 对 12 类输入都为 false，并证明主语确实被求值（下标里的函数桩被调用）；`IsEmptyCall` 被执行到时报 `object`@11（直接语法树，含 `true && isEmpty` 强制到达）；归一化黄金 `/think/…`、其他类名、独立 `->isEmpty()`/`->属性`、固定形态以外的 instanceof 都被拒 |
+| AC-307C-6 | 见下方命令 | 定向、全量、空白检查 |
+
+### 实际执行的命令
+
+```text
+export JDK_JAVA_OPTIONS=-Djdk.net.unixdomain.tmpdir=D:/Tools/Java/afunix-tmp
+./mvnw -B -o test -Dtest='InterpreterTest*,PhpParser*,PhpLexer*,RuntimeDiagnosticsTest,PhpSemantics*'
+  → BUILD SUCCESS；Tests run: 293, Failures: 0, Errors: 0, Skipped: 0
+    （S3-07b 交付时为 246；+47 为本批 InterpreterTest，既有用例未删改，只在 RuntimeDiagnosticsTest 的 kind 精确列表追加 2 项）
+./mvnw -B -o verify      → 结果见交付评论
+git --attr-source=HEAD diff --check 9cc145b HEAD    → 结果见交付评论
+```
+
+**测试先行的偏差（如实记录）**：本批先写了 `Interpreter` 再写 `InterpreterTest`，没有保留“先红”记录；`InterpreterTest` 首次运行即全绿。断言都是对照设计条文和黄金逐项写的期望值（不是读实现回填），但这一条不满足 TDD 的先红要求，请评审按此判断。
+
+### 自查与已知问题
+
+- 安全：没有反射、宿主类加载、文件/网络/数据库访问；函数、模型只经注入接口；裸名不查任何表；诊断只含 kind、偏移、有界片段，不含变量值。RT-8 三项上限均有边界测试，防止模板死循环、超大输出、深嵌套拖垮进程。
+- 新增 kind `limit`、`runtime`：C-23 的 kind 列表在设计里没有逐项列出执行期情况。`limit` 对应 RT-8 “超限按不支持处理”；`runtime` 用于 PHP 7.3 本身会致命终止的操作。BR-3 说这类情况要给 ThinkPHP 错误页，C-24 可以按 kind 区分处理。**请调度/架构确认这两个名字。**
+- “递归深度”的口径：模板没有用户函数，这里按语句体嵌套计数，不计表达式嵌套（表达式深度先受解析器约束）。**请架构确认。**
+- `FunctionDispatcher` 是本批为“runtime 内函数桩接口”起的名字；设计里 C-19 写的是“函数只经 `FunctionTable` 分派”，`FunctionTable` 在 application 层（C-27），实现本接口即可。
+- 解释器拿到的是编译产物的原始字节；归一化黄金的 `/think/…` 会被拒绝，测试已覆盖。
+
+### 剩余（不在本批）
+
+| 项 | 归属 |
+| --- | --- |
+| 用 166 个可解析的编译黄金整文件跑解释器（需要 C-27 函数表或全量桩）；与 PHP 渲染黄金 `render-golden/` 逐字节对照 | S3-08/S3-10（V-12/AC-4），或由调度另拆 |
+| `rt2_*`、`rt3_*`、`rt4_*`、`rt5_*` 黄金分组：仍由 C-17 `PhpSemanticsGoldenTest` 直接比对；`$o[] = …`（rt2_array_order 的写法）不在 RT-1，解释器不执行 | C-17（已覆盖）/ 设计 |
+| `TemplateFunctions`/`FunctionTable` 实现、`gap1_mac_day_color` | C-27 / S3-11 |
+| `TagModels`（MC-3 白名单、`listCacheData`/`infoData`）、QG-3/4 的 `ApiException` | S3-12 |
+| `ExecutionLimits` 读 `maccms.phptemplate.limits.*`、`TemplateUnsupportedException` 转 500 与 `模板文件:行号` | C-24 / S3-10 |
+| GAP-2（RSS `->属性`） | 架构师（S3-07b 已登记，冻结） |
