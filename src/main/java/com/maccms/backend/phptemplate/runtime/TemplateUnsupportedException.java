@@ -36,7 +36,14 @@ public final class TemplateUnsupportedException extends RuntimeException {
         /** MC-1：{@code model(...)} 不是“字符串字面量 + 一次 {@code ->方法(实参)}”的形态（S3-07b）。 */
         MODEL_CALL("model_call"),
         /** OP-T7：对象写法——登记类名以外的 {@code instanceof}、{@code ->} 属性/方法、非固定形态（S3-07b）。 */
-        OBJECT("object");
+        OBJECT("object"),
+        /** RT-8：循环总次数、输出字节数或语句嵌套深度超过 {@link ExecutionLimits}（执行期，S3-07c）。 */
+        LIMIT("limit"),
+        /**
+         * 执行期遇到 PHP 7.3 本身会以致命错误终止的操作（数组参与算术、{@code %} 除数为 0、字符串下标写入等），
+         * 解释器不猜结果，按不支持拒绝（S3-07c）。
+         */
+        RUNTIME("runtime");
 
         private final String code;
 

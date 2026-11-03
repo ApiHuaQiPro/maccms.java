@@ -36,7 +36,7 @@ class RuntimeDiagnosticsTest {
     void kindCodesAreStable() {
         assertThat(Arrays.stream(Kind.values()).map(Kind::code))
                 .containsExactly("open_tag", "token", "unterminated", "interpolation", "bare_identifier",
-                        "syntax", "function", "model_call", "object");
+                        "syntax", "function", "model_call", "object", "limit", "runtime");
     }
 
     @Test
