@@ -1,0 +1,192 @@
+{
+    "_meta": {
+        "generator": "src/test/php/tpl_runtime_golden.php --render-sample art-detail-prevnext",
+        "php": "7.3.33",
+        "sample_slice": "default_pc/html/art/detail.html:32-50",
+        "slice_bytes": 808,
+        "slice_git_blob": "a615d09d955020c6c86924bf3c8a2a88852b308e",
+        "design": "9c73bf6ced044f40eeb87ef7861e616b6157499a"
+    },
+    "scenarios": {
+        "a": {
+            "label": "both-hit",
+            "bytes": 197,
+            "calls": [
+                {
+                    "model": "Art",
+                    "where": {
+                        "art_status": [
+                            "eq",
+                            1
+                        ],
+                        "art_id": [
+                            "lt",
+                            20
+                        ]
+                    },
+                    "field": "*",
+                    "cache": 1
+                },
+                {
+                    "model": "Art",
+                    "where": {
+                        "art_status": [
+                            "eq",
+                            1
+                        ],
+                        "art_id": [
+                            "gt",
+                            20
+                        ]
+                    },
+                    "field": "*",
+                    "cache": 1
+                }
+            ]
+        },
+        "b": {
+            "label": "prev-1002",
+            "bytes": 121,
+            "calls": [
+                {
+                    "model": "Art",
+                    "where": {
+                        "art_status": [
+                            "eq",
+                            1
+                        ],
+                        "art_id": [
+                            "lt",
+                            20
+                        ]
+                    },
+                    "field": "*",
+                    "cache": 1
+                },
+                {
+                    "model": "Art",
+                    "where": {
+                        "art_status": [
+                            "eq",
+                            1
+                        ],
+                        "art_id": [
+                            "gt",
+                            20
+                        ]
+                    },
+                    "field": "*",
+                    "cache": 1
+                }
+            ]
+        },
+        "c": {
+            "label": "next-1002",
+            "bytes": 126,
+            "calls": [
+                {
+                    "model": "Art",
+                    "where": {
+                        "art_status": [
+                            "eq",
+                            1
+                        ],
+                        "art_id": [
+                            "lt",
+                            20
+                        ]
+                    },
+                    "field": "*",
+                    "cache": 1
+                },
+                {
+                    "model": "Art",
+                    "where": {
+                        "art_status": [
+                            "eq",
+                            1
+                        ],
+                        "art_id": [
+                            "gt",
+                            20
+                        ]
+                    },
+                    "field": "*",
+                    "cache": 1
+                }
+            ]
+        },
+        "d": {
+            "label": "both-1002",
+            "bytes": 50,
+            "calls": [
+                {
+                    "model": "Art",
+                    "where": {
+                        "art_status": [
+                            "eq",
+                            1
+                        ],
+                        "art_id": [
+                            "lt",
+                            20
+                        ]
+                    },
+                    "field": "*",
+                    "cache": 1
+                },
+                {
+                    "model": "Art",
+                    "where": {
+                        "art_status": [
+                            "eq",
+                            1
+                        ],
+                        "art_id": [
+                            "gt",
+                            20
+                        ]
+                    },
+                    "field": "*",
+                    "cache": 1
+                }
+            ]
+        },
+        "e": {
+            "label": "prev-code-string-1",
+            "bytes": 126,
+            "calls": [
+                {
+                    "model": "Art",
+                    "where": {
+                        "art_status": [
+                            "eq",
+                            1
+                        ],
+                        "art_id": [
+                            "lt",
+                            20
+                        ]
+                    },
+                    "field": "*",
+                    "cache": 1
+                },
+                {
+                    "model": "Art",
+                    "where": {
+                        "art_status": [
+                            "eq",
+                            1
+                        ],
+                        "art_id": [
+                            "gt",
+                            20
+                        ]
+                    },
+                    "field": "*",
+                    "cache": 1
+                }
+            ]
+        }
+    }
+}

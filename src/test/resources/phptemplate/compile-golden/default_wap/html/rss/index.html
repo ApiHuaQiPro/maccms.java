@@ -1,0 +1,24 @@
+<?php echo '<?'; ?>
+xml version="1.0" encoding="UTF-8" ?>
+<rss version="2.0">
+<channel>
+<title><?php echo $maccms['site_name']; ?></title>
+<description><?php echo $maccms['site_name']; ?></description>
+<link><?php echo $maccms['site_url']; ?></link>
+<language>zh-cn</language>
+<docs><?php echo $maccms['site_name']; ?></docs>
+<generator>Rss Powered By <?php echo $maccms['site_url']; ?></generator>
+<image>
+<url>http://<?php echo $maccms->site_url; ?><?php echo $maccms->path_tpl; ?>images/logo.png</url>
+</image>
+{maccms:vod num="30" paging="yes" order="desc" by="time"}
+<item>
+<title><?php echo htmlspecialchars($vo['vod_name']); ?> <?php echo htmlspecialchars($vo['vod_remarks']); ?></title>
+<link>http://<?php echo $maccms['site_url']; ?><?php echo mac_url_vod_detail($vo); ?></link>
+<author><?php echo htmlspecialchars($vo['vod_actor']); ?></author>
+<pubDate><?php echo date('Y-m-d H:i:s',$vo['vod_time']); ?></pubDate>
+<description><![CDATA["<?php echo mac_substring(strip_tags($vo['vod_content']),50); ?>"]]></description>
+</item>
+{/maccms:vod}
+</channel>
+</rss>

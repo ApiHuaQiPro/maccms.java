@@ -92,7 +92,7 @@ public final class SiteVariants {
             return new SiteVariant(false, false, lang, "", "");
         }
         SiteTemplateSelection.Result r = SiteTemplateSelection.resolve(site, domains, userAgent, host == null ? "" : host);
-        return new SiteVariant(r.wap(), r.domain(), lang, r.pathTpl(), r.pathAds());
+        return new SiteVariant(r.wap(), r.domain(), lang, r.pathTemplate(), r.pathAds());
     }
 
     /** 每个请求开始时算出选择并放进请求属性。 */

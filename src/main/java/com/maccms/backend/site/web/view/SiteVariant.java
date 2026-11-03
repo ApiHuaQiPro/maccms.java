@@ -13,8 +13,9 @@ import com.maccms.backend.common.lang.LegacyLang;
  * @param wap     旧 {@code MAC_MOB}：手机访问、未命中站群，且 {@code mob_status} 为 2，或为 1 且 {@code Host} 等于 {@code site_wapurl}
  * @param domain  命中了站群（{@code extra/domain.php} 里有本次 {@code Host} 的非空项）
  * @param lang    语言包（旧 {@code app.lang}，不按请求切换）
- * @param pathTpl 旧 {@code {$maccms.path_tpl}}（没有旧配置时为空串）
- * @param pathAds 旧 {@code {$maccms.path_ads}}（没有旧配置时为空串）
+ * @param pathTpl 旧 {@code {$maccms.path_tpl}} = {@code MAC_PATH_TEMPLATE}（{@code All.php:62}），即 {@code install_dir + template/<模板目录>/}，
+ *                不含 {@code html_dir}（没有旧配置时为空串）
+ * @param pathAds 旧 {@code {$maccms.path_ads}} = {@code MAC_PATH_ADS}（{@code All.php:63}；没有旧配置时为空串）
  */
 public record SiteVariant(boolean wap, boolean domain, LegacyLang lang, String pathTpl, String pathAds) {
 
