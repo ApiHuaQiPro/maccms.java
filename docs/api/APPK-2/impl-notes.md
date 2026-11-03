@@ -749,7 +749,7 @@ runtime 仍只 import `java.*`（`PhpSemanticsTest.runtimeDependsOnlyOnJdk` 通�
 - 函数调用：执行期再判一次 `isRegistered`，未登记报 `function`（防止绕过解析器直接给语法树）。
 - 裸名 `BareConst` 求值为 `ZValue.of(name)`，不查表、不写日志（BARE-4）。
 - OP-T7：`instanceof` 先求主语，再按 `ZValue` 封闭类型逐个分支（数组、null、bool、int、float、string）给出 false，没有默认分支；`IsEmptyCall` 被执行到即报 `object`，偏移是该节点首字节。
-- RT-8：循环总次数按一次渲染里全部 `foreach`/`for` 的迭代累计（每次 `render` 重新计数），超限报在循环语句偏移；输出字节在写入前检查（字面段也计入），超限报在当前写出项的偏移；嵌套深度按 `if`/`foreach`/`for`/`switch` 语句体计，未进入的分支不计。
+- RT-8：循环总次数按一次渲染里全部 `foreach`/`for` 的迭代累计（每次 `render` 重新计数），超限报在循环语句偏移；输出字节在写入前检查（字面段也计入），超限报在当前写出项的偏移；嵌套深度只在解释器的 `if`/`foreach`/`for`/`switch` 语句体处计数，未进入的分支不计。**这只覆盖一条递归路径**：表达式求值 `eval()` 与解析器 `PhpParser` 的递归都没有深度保护，深输入会落为宿主栈溢出，见下文“修订 1”的 REV-1。
 - MC：模型名按 MC-2 规范化后交处理器；实参是 `List.copyOf` 的深复制快照；处理器抛出的任何异常不捕获、不包装（MC-6、QG-5）；返回值原样交给模板（赋值时取副本）。白名单只在处理器里判定，解释器不判、也不放宽。
 
 ### AC → 测试（`InterpreterTest`）
@@ -767,7 +767,7 @@ runtime 仍只 import `java.*`（`PhpSemanticsTest.runtimeDependsOnlyOnJdk` 通�
 ### 实际执行的命令
 
 ```text
-export JDK_JAVA_OPTIONS=-Djdk.net.unixdomain.tmpdir=D:/Tools/Java/afunix-tmp
+export JDK_JAVA_OPTIONS=-Djdk.net.unixdomain.tmpdir=<专用目录>   # 按 MULTICA.md §3 ⚠：Windows 运行机须指向一个已建好的专用目录
 ./mvnw -B -o test -Dtest='InterpreterTest*,PhpParser*,PhpLexer*,RuntimeDiagnosticsTest,PhpSemantics*'
   → BUILD SUCCESS；Tests run: 293, Failures: 0, Errors: 0, Skipped: 0
     （S3-07b 交付时为 246；+47 为本批 InterpreterTest，既有用例未删改，只在 RuntimeDiagnosticsTest 的 kind 精确列表追加 2 项）
@@ -775,13 +775,13 @@ export JDK_JAVA_OPTIONS=-Djdk.net.unixdomain.tmpdir=D:/Tools/Java/afunix-tmp
 git --attr-source=HEAD diff --check 9cc145b HEAD    → 结果见交付评论
 ```
 
-**测试先行的偏差（如实记录）**：本批先写了 `Interpreter` 再写 `InterpreterTest`，没有保留“先红”记录；`InterpreterTest` 首次运行即全绿。断言都是对照设计条文和黄金逐项写的期望值（不是读实现回填），但这一条不满足 TDD 的先红要求，请评审按此判断。
+**测试先行的偏差（如实记录）**：本批先写了 `Interpreter` 再写 `InterpreterTest`，没有保留“先红”记录；`InterpreterTest` 首次运行即全绿。断言都是对照设计条文和黄金逐项写的期望值（不是读实现回填），但这一条不满足 TDD 的先红要求，请评审按此判断。修订 1 没有补写历史先红，也没有提供原 47 例的事后有效性核验：在实现前基线 `4991e0d` 上这些用例只会因为 `Interpreter` 等类不存在而编译失败，不能说明断言本身有效，所以不把它当证据。
 
 ### 自查与已知问题
 
 - 安全：没有反射、宿主类加载、文件/网络/数据库访问；函数、模型只经注入接口；裸名不查任何表；诊断只含 kind、偏移、有界片段，不含变量值。RT-8 三项上限均有边界测试，防止模板死循环、超大输出、深嵌套拖垮进程。
-- 新增 kind `limit`、`runtime`：C-23 的 kind 列表在设计里没有逐项列出执行期情况。`limit` 对应 RT-8 “超限按不支持处理”；`runtime` 用于 PHP 7.3 本身会致命终止的操作。BR-3 说这类情况要给 ThinkPHP 错误页，C-24 可以按 kind 区分处理。**请调度/架构确认这两个名字。**
-- “递归深度”的口径：模板没有用户函数，这里按语句体嵌套计数，不计表达式嵌套（表达式深度先受解析器约束）。**请架构确认。**
+- 新增 kind `limit`、`runtime`：C-23 的 kind 列表在设计里没有逐项列出执行期情况。`limit` 对应 RT-8 “超限按不支持处理”；`runtime` 用于 PHP 7.3 本身会致命终止的操作。BR-3 说这类情况要给 ThinkPHP 错误页，C-24 可以按 kind 区分处理。这两个名字目前只是实现选择，没有得到架构批准，**请调度/架构确认**。
+- “递归深度”的口径：模板没有用户函数，当前实现只按解释器的语句体嵌套计数，不计表达式嵌套。原稿此处写“表达式深度先受解析器约束”，**没有代码和测试依据，是错的**：`PhpParser` 的 `breakDepth` 只用来判 `break` 是否合法，解析器没有任何深度上限。可复跑证据与待决策点见“修订 1”的 REV-1。这个口径没有得到确认。
 - `FunctionDispatcher` 是本批为“runtime 内函数桩接口”起的名字；设计里 C-19 写的是“函数只经 `FunctionTable` 分派”，`FunctionTable` 在 application 层（C-27），实现本接口即可。
 - 解释器拿到的是编译产物的原始字节；归一化黄金的 `/think/…` 会被拒绝，测试已覆盖。
 
@@ -795,3 +795,53 @@ git --attr-source=HEAD diff --check 9cc145b HEAD    → 结果见交付评论
 | `TagModels`（MC-3 白名单、`listCacheData`/`infoData`）、QG-3/4 的 `ApiException` | S3-12 |
 | `ExecutionLimits` 读 `maccms.phptemplate.limits.*`、`TemplateUnsupportedException` 转 500 与 `模板文件:行号` | C-24 / S3-10 |
 | GAP-2（RSS `->属性`） | 架构师（S3-07b 已登记，冻结） |
+
+### 修订 1：DOC-1、REV-1（调度独立复核第 1 次退回，评论 `01a1a012-97c0-7b99-850a-3898c4303311`）
+
+**DOC-1**：上文“实际执行的命令”里的本机绝对路径改成 `<专用目录>` 占位，并注明按 MULTICA.md §3 的 ⚠ 条目设置。只改本批新增的这一行，没有清理更早的历史文档。
+
+**REV-1：递归深度保护覆盖了哪些路径（只有证据，没有修代码）**
+
+证据探针：`src/test/java/com/maccms/backend/phptemplate/runtime/RuntimeDepthProbe.java`。它是证据，不是回归测试：类名不符合 surefire 默认的 include 规则，所以不进 `verify`，也不影响测试总数和跳过数。复跑命令：
+
+```text
+./mvnw -B -o test -Dtest=RuntimeDepthProbe -Dsurefire.failIfNoSpecifiedTests=false
+```
+
+① 用默认上限（64）跑深嵌套输入。`parse:` 表示在 `PhpParser.parse` 里结束，`exec:` 表示在 `Interpreter.execute` 里结束；`SOE` 是 `StackOverflowError`，`LIMIT` 是 `TemplateUnsupportedException(limit)`。线程栈用的是 surefire 默认大小，换栈大小后溢出的阈值会变。
+
+| 形态（N 层/项） | N=65 | N=200 | N=1000 | N=5000 | N=100000 |
+| --- | --- | --- | --- | --- | --- |
+| 括号 `((…1…))` | OK | OK | parse:SOE | parse:SOE | parse:SOE |
+| 一元 `!!…1` | OK | OK | OK | parse:SOE | parse:SOE |
+| 数组字面量 `[[…1…]]` | OK | OK | parse:SOE | parse:SOE | parse:SOE |
+| 函数实参 `f(f(…1…))` | OK | OK | parse:SOE | parse:SOE | parse:SOE |
+| 连续赋值 `$a=$a=…1` | OK | OK | parse:SOE | parse:SOE | parse:SOE |
+| 嵌套 `if(1){…}` | exec:LIMIT | exec:LIMIT | **parse:SOE** | parse:SOE | parse:SOE |
+| 嵌套在 `if(0){…}` 里（不进入） | OK | OK | parse:SOE | parse:SOE | parse:SOE |
+| 左结合链 `1+1+…`、`'a'.'a'.…`、`1&&1&&…`、`1?1:1?1:…`、`$a[0][0]…` | OK | OK | OK | **exec:SOE** | exec:SOE |
+
+结论：
+
+- 现有的 RT-8 深度检查只在解释器 `body()`（`Interpreter.java:97`）。表达式求值 `eval()` 的递归没有计数：左结合链由解析器循环建成一棵左深树，解析能通过，但执行时 `eval()` 按链长递归，5000 项就会栈溢出。
+- 解析器是递归下降，没有深度上限。所以即使是语句嵌套，只要到 1000 层，`render()` 也会在解析阶段栈溢出，根本走不到解释器的 64 层检查。没有执行到的分支同样会溢出。
+- 结果是：深表达式和深语句都可以绕过 RT-8，落为宿主 `StackOverflowError`，而不是“按不支持处理”。这与 RT-8 “防止模板写错拖垮进程”的目的不符。
+
+② 真实模板的深度（同一探针，168 个编译黄金。解析前只按 `PhpParserGoldenTest` 的做法把归一化的 `instanceof` 类名还原，166 个解析通过，2 个按 GAP-2 拒绝）：
+
+| 指标 | 实测最大值 | 文件 |
+| --- | --- | --- |
+| 语句体嵌套（含未进入的分支） | 10 | `default_pc/html/user/popedom.html` |
+| 表达式树深度 | 7 | `default_pc/html/vod/show.html` |
+| 同一路径上语句嵌套 + 表达式深度 | 11 | `default_pc/html/user/popedom.html` |
+
+**为什么本轮不修**：要修，先得决定深度怎么数，而这个口径设计里没有写。RT-8 只写了“递归深度 64 层”，没有说表达式算不算、解析期算不算、左结合链怎么算。另外，解析器 `PhpParser` 是 S3-07b 已经两层 PASS 的产物，不在本批的改动范围（Interpreter、ExecutionLimits、ModelCallHandler）里。不论选哪个口径都是新的决定，所以本轮没有修代码，也没有提交会失败的测试。口径定下来以后，按上表的形态先写失败的回归（先红），再改代码（后绿）。
+
+**待决策点（交调度，由主单请求人类决定；下面的建议只是建议，没有得到确认）**
+
+| # | 问题 | 选项 | 建议 |
+| --- | --- | --- | --- |
+| D-1 | 表达式嵌套算不算 RT-8 的“递归深度” | a. 语句嵌套和表达式深度沿同一路径合计，共用 `limits.depth`（64）；b. 两者分开计数，各自上限都是 `limits.depth`；c. 只数语句（维持现状），表达式另设上限（需要设计新增配置项） | a：黄金实测合计最大 11，离 64 很远；只用一个配置项，与设计里的 `limits.depth` 一致 |
+| D-2 | 左结合链（`.`、`+`、`&&`、三元、连续下标）怎么数 | a. 按语法树深度数，链长超过 64 就拒绝（PHP 本身不拒）；b. 执行时把链改成循环求值，不计深度 | a：黄金实测表达式深度最大 7；b 要重写求值顺序，回归风险更大 |
+| D-3 | 解析期要不要限深度，以及能不能放开 S3-07b 的范围 | a. 授权在 `PhpParser` 加解析期深度上限（对所有分支都生效，包括不会执行的分支），超限报 `limit`，需要给解析器传上限或使用常量；b. 不改解析器，只在解释器里限深度（深输入仍会在解析阶段溢出，RT-8 依然可以绕过） | a；同时请确认解析期“不进入的分支也计数”可以取代现有测试里“未进入分支不计”的口径 |
+| D-4 | 要不要加一道兜底：捕获 `StackOverflowError` 转成 `limit` | a. 不加；b. 只作为最后一道防线加上 | a：能否触发取决于线程栈的大小，边界不确定，不符合 RT-8 “真实边界”的要求 |
